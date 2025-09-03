@@ -96,6 +96,13 @@ export default function GeneratorPage() {
               // Create canvas with proper dimensions
               let canvas = p.createCanvas(1200 + (30 * 4), 800 + (30 * 4)) // doormatHeight + fringe, doormatWidth + fringe
               canvas.parent('canvas-container')
+              
+              // Ensure canvas is properly constrained within container
+              canvas.style.maxWidth = '100%'
+              canvas.style.maxHeight = '100%'
+              canvas.style.width = 'auto'
+              canvas.style.height = 'auto'
+              
               p.pixelDensity(2.5)
               p.noLoop()
               console.log('🎨 P5.js setup completed, canvas created with proper dimensions')
@@ -604,9 +611,10 @@ export default function GeneratorPage() {
                   width: '1320px',  // Fixed width to match P5.js canvas exactly
                   height: '920px',   // Fixed height to match P5.js canvas exactly
                   maxWidth: '100%',  // Responsive constraint
-                  overflow: 'visible', // Allow canvas to be fully visible
+                  overflow: 'hidden', // Prevent canvas overflow
                   boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
-                  border: '1px solid #e5e7eb'
+                  border: '1px solid #e5e7eb',
+                  position: 'relative' // Ensure proper positioning context
                 }}
               >
                 {!isLoaded && (
