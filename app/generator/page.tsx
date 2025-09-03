@@ -93,24 +93,17 @@ export default function GeneratorPage() {
           const p5Instance = new (window as any).p5((p: any) => {
             // This is the setup function that gets called automatically
                          p.setup = () => {
-               // Don't create canvas here - let doormat.js handle it
-               // Our global interceptor will control the dimensions and DOM rendering
+               // Create canvas with proper dimensions
+               let canvas = p.createCanvas(1200 + (30 * 4), 800 + (30 * 4)) // doormatHeight + fringe, doormatWidth + fringe
+               canvas.parent('canvas-container')
+               
+               // Set canvas to fill container completely
+               canvas.style.width = '100%'
+               canvas.style.height = '100%'
+               
                p.pixelDensity(1)
                p.noLoop()
-               console.log('🎨 P5.js setup completed, waiting for doormat.js canvas creation')
-               
-               // Force canvas display and ensure full art coverage after a short delay
-               setTimeout(() => {
-                 if (typeof (window as any).forceCanvasDisplay === 'function') {
-                   (window as any).forceCanvasDisplay()
-                 }
-                 if (typeof (window as any).resizeExistingCanvas === 'function') {
-                   (window as any).resizeExistingCanvas()
-                 }
-                 if (typeof (window as any).ensureFullArtCoverage === 'function') {
-                   (window as any).ensureFullArtCoverage()
-                 }
-               }, 500)
+               console.log('🎨 P5.js setup completed, canvas created with proper dimensions')
              }
             
             // Bind the global draw function to this P5.js instance
@@ -130,196 +123,9 @@ export default function GeneratorPage() {
             ;(window as any).noise = p5Instance.noise.bind(p5Instance) // Add missing noise function
             ;(window as any).blendMode = p5Instance.blendMode.bind(p5Instance) // Add missing blendMode function
             ;(window as any).saveCanvas = p5Instance.saveCanvas.bind(p5Instance)
-            
-            // Intercept createCanvas to control DOM rendering immediately
-            ;(window as any).createCanvas = function(width: number, height: number) {
-              console.log(`🎯 Intercepting createCanvas call: ${width}x${height}`)
-              
-              // FORCE canvas to always be 1200x800 for perfect container fit
-              const forcedWidth = 1200
-              const forcedHeight = 800
-              
-              // Use the global P5.js instance that's actually running the sketch
-              const globalP5 = (window as any).p5 || p5Instance
-              
-              // Create canvas with forced dimensions
-              const canvas = globalP5.createCanvas(forcedWidth, forcedHeight)
-              
-              // Use pixelDensity(1) for display to avoid internal dimension blowup
-              globalP5.pixelDensity(1)
-              
-              // Set canvas to fill container completely
-              canvas.style.width = '100%'
-              canvas.style.height = '100%'
-              canvas.style.maxWidth = '100%'
-              canvas.style.maxHeight = '100%'
-              
-              // Force the canvas to fill the container completely
-              canvas.style.objectFit = 'cover'
-              canvas.style.objectPosition = 'center'
-              
-              // Store canvas reference for later use
-              ;(window as any).currentCanvas = canvas
-              
-              // Force the canvas element to have the correct dimensions
-              canvas.width = forcedWidth
-              canvas.height = forcedHeight
-              
-              console.log(`🎯 Canvas FORCED to ${forcedWidth}x${forcedHeight} for perfect container fit`)
-              return canvas
-            }
-            
-            // High-quality export function that temporarily increases pixel density
-            ;(window as any).exportHighQuality = function() {
-              // Temporarily increase pixel density for export
-              p5Instance.pixelDensity(2.5)
-              // Redraw at high quality
-              if (typeof (window as any).redraw === 'function') {
-                (window as any).redraw()
-              }
-              // Save the high-quality version
-              p5Instance.saveCanvas(`rug-export-${Date.now()}`, 'png')
-              // Reset to display quality
-              p5Instance.pixelDensity(1)
-              console.log('🎨 High-quality export completed with pixelDensity(2.5)')
-            }
-            
-            // Function to fix any existing canvas sizing
-            ;(window as any).fixCanvasSizing = function() {
-              const existingCanvas = document.querySelector('#defaultCanvas0') as HTMLCanvasElement
-              if (existingCanvas) {
-                existingCanvas.style.width = '100%'
-                existingCanvas.style.height = '100%'
-                existingCanvas.style.maxWidth = '100%'
-                existingCanvas.style.maxHeight = '100%'
-                existingCanvas.style.objectFit = 'cover'
-                existingCanvas.style.objectPosition = 'center'
-                console.log('🎯 Fixed existing canvas sizing to fill container')
-              }
-            }
-            
-            // Function to ensure art fills entire canvas
-            ;(window as any).ensureFullArtCoverage = function() {
-              // Get the current canvas
-              const canvas = (window as any).currentCanvas || document.querySelector('#defaultCanvas0')
-              if (canvas) {
-                console.log(`🎯 Ensuring art fills entire canvas: ${canvas.width}x${canvas.height}`)
-                
-                // FORCE canvas dimensions to be exactly 1200x800
-                if (canvas.width !== 1200 || canvas.height !== 800) {
-                  console.log('🎯 FORCING canvas dimensions to 1200x800')
-                  
-                  // Directly set canvas dimensions
-                  canvas.width = 1200
-                  canvas.height = 800
-                  
-                  // Force P5.js to recognize new dimensions
-                  if (p5Instance && typeof p5Instance.resizeCanvas === 'function') {
-                    p5Instance.resizeCanvas(1200, 800)
-                  }
-                  
-                  // Trigger redraw with new dimensions
-                  if (typeof (window as any).redraw === 'function') {
-                    (window as any).redraw()
-                  }
-                }
-                
-                // Ensure canvas fills container completely
-                canvas.style.width = '100%'
-                canvas.style.height = '100%'
-                canvas.style.maxWidth = '100%'
-                canvas.style.maxHeight = '100%'
-                canvas.style.objectFit = 'cover'
-                canvas.style.objectPosition = 'center'
-                
-                console.log('🎯 Canvas forced to fill entire container')
-              }
-            }
-            
-            // Override P5.js drawing functions to ensure they work with our dimensions
-            ;(window as any).background = function(...args: any[]) {
-              // Ensure background covers entire canvas
-              const result = p5Instance.background(...args)
-              // Force canvas to fill container after background is drawn
-              setTimeout(() => {
-                if (typeof (window as any).ensureFullArtCoverage === 'function') {
-                  (window as any).ensureFullArtCoverage()
-                }
-              }, 100)
-              return result
-            }
-            
-            // Function to resize existing canvas instead of replacing it
-            ;(window as any).resizeExistingCanvas = function() {
-              const existingCanvas = document.querySelector('#defaultCanvas0') as HTMLCanvasElement
-              if (existingCanvas && (existingCanvas.width !== 1200 || existingCanvas.height !== 800)) {
-                console.log('🎯 Resizing existing canvas to 1200x800')
-                
-                // Resize the existing canvas (preserves art)
-                existingCanvas.width = 1200
-                existingCanvas.height = 800
-                
-                // Apply proper styling
-                existingCanvas.style.width = '100%'
-                existingCanvas.style.height = '100%'
-                existingCanvas.style.maxWidth = '100%'
-                existingCanvas.style.maxHeight = '100%'
-                existingCanvas.style.objectFit = 'cover'
-                existingCanvas.style.objectPosition = 'center'
-                
-                // Store reference
-                ;(window as any).currentCanvas = existingCanvas
-                
-                console.log('🎯 Canvas resized to 1200x800 while preserving art')
-                
-                // Redraw the art at the new dimensions
-                setTimeout(() => {
-                  if (typeof (window as any).redraw === 'function') {
-                    console.log('🎨 Redrawing art on resized canvas')
-                    ;(window as any).redraw()
-                  }
-                }, 100)
-              }
-            }
-            
-            // Function to force canvas visibility and proper display
-            ;(window as any).forceCanvasDisplay = function() {
-              console.log('🎯 Forcing canvas to be visible and properly displayed')
-              
-              // Find the canvas
-              const canvas = document.querySelector('#defaultCanvas0') as HTMLCanvasElement
-              if (!canvas) {
-                console.log('⚠️ No canvas found, waiting...')
-                return
-              }
-              
-              // Force canvas to be visible and properly sized
-              canvas.style.display = 'block'
-              canvas.style.visibility = 'visible'
-              canvas.style.opacity = '1'
-              canvas.style.width = '100%'
-              canvas.style.height = '100%'
-              canvas.style.maxWidth = '100%'
-              canvas.style.maxHeight = '100%'
-              canvas.style.objectFit = 'cover'
-              canvas.style.objectPosition = 'center'
-              
-              // Ensure canvas is positioned correctly in the container
-              canvas.style.position = 'relative'
-              canvas.style.top = '0'
-              canvas.style.left = '0'
-              
-              console.log('🎯 Canvas forced to be visible and properly displayed')
-              
-              // Trigger a redraw to ensure art is visible
-              if (typeof (window as any).redraw === 'function') {
-                setTimeout(() => {
-                  console.log('🎨 Triggering redraw after forcing canvas display')
-                  ;(window as any).redraw()
-                }, 200)
-              }
-            }
+            ;(window as any).createCanvas = p5Instance.createCanvas.bind(p5Instance)
             ;(window as any).pixelDensity = p5Instance.pixelDensity.bind(p5Instance) // Add missing pixelDensity function
+            ;(window as any).background = p5Instance.background.bind(p5Instance)
             ;(window as any).fill = p5Instance.fill.bind(p5Instance)
             ;(window as any).noFill = p5Instance.noFill.bind(p5Instance)
             ;(window as any).stroke = p5Instance.stroke.bind(p5Instance)
@@ -466,13 +272,6 @@ export default function GeneratorPage() {
         // Generate initial doormat
         ;(window as any).generateDoormat(currentSeed)
         
-        // Force canvas display after generation
-        setTimeout(() => {
-          if (typeof (window as any).forceCanvasDisplay === 'function') {
-            (window as any).forceCanvasDisplay()
-          }
-        }, 1000)
-        
         // Update UI after generation
       setTimeout(() => {
           updatePaletteDisplay()
@@ -524,13 +323,6 @@ export default function GeneratorPage() {
     if (typeof (window as any).generateDoormat === 'function' && typeof (window as any).draw === 'function') {
       console.log('🎨 Generating new doormat with seed:', seed)
       ;(window as any).generateDoormat(seed)
-      
-      // Force canvas display after generation
-      setTimeout(() => {
-        if (typeof (window as any).forceCanvasDisplay === 'function') {
-          (window as any).forceCanvasDisplay()
-        }
-      }, 1000)
       
       // Update UI after generation
       setTimeout(() => {
@@ -669,7 +461,7 @@ export default function GeneratorPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100">
       <Navigation />
-      <div className="max-w-[1800px] mx-auto px-4 pt-24">
+      <div className="max-w-[2000px] mx-auto px-4 pt-24">
       {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -699,34 +491,35 @@ export default function GeneratorPage() {
               <h2 className="text-lg font-bold text-green-400 text-center font-mono mb-6">🎨 RUG GENERATOR v1.0</h2>
               
                             {/* Old-School CRT Monitor Box */}
-              <div className="relative mx-auto w-full max-w-7xl">
+              <div className="relative mx-auto" style={{ width: '1400px', maxWidth: '100%' }}>
                 {/* Monitor Bezel - Yellowed Plastic */}
-                <div className="bg-amber-100 border-6 border-amber-200 rounded-t-2xl rounded-b-xl p-8 shadow-2xl">
+                <div className="bg-amber-100 border-6 border-amber-200 rounded-t-2xl rounded-b-xl p-10 shadow-2xl">
                   {/* Monitor Screen Area */}
-                  <div className="bg-gray-800 rounded-lg p-2 border-3 border-gray-700 shadow-inner">
+                  <div className="bg-gray-800 rounded-lg p-4 border-3 border-gray-700 shadow-inner">
                     {/* CRT Screen with Scan Lines Effect */}
-                    <div className="bg-black rounded-lg p-1 border-2 border-gray-600 relative overflow-hidden">
+                    <div className="bg-black rounded-lg p-3 border-2 border-gray-600 relative overflow-hidden">
                       {/* Scan Lines Overlay */}
                       <div className="absolute inset-0 pointer-events-none" style={{
                         backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 255, 0, 0.03) 2px, rgba(0, 255, 0, 0.03) 4px)',
                         zIndex: 1
                       }}></div>
                       
-                      {/* Canvas Container - Fixed dimensions to match canvas exactly */}
-                      <div 
-                        ref={canvasContainerRef}
-                        id="canvas-container"
-                        className="bg-gray-900 rounded-lg flex items-center justify-center relative mx-auto border border-green-500/30"
-                        style={{ 
-                          width: '1200px',        // Fixed width to match canvas exactly
-                          height: '800px',        // Fixed height to match canvas exactly
-                          maxWidth: '100%',       // Responsive constraint
-                          overflow: 'hidden',     // Prevent canvas overflow
-                          boxShadow: '0 0 20px rgba(0, 255, 0, 0.1)',
-                          position: 'relative',   // Ensure proper positioning context for loading overlay
-                          zIndex: 2              // Above scan lines
-                        }}
-                      >
+                                                                    {/* Canvas Container - Match P5.js canvas dimensions exactly */}
+                                                 <div 
+                           ref={canvasContainerRef}
+                           id="canvas-container"
+                           className="bg-gray-900 rounded-lg flex items-center justify-center relative w-full border border-green-500/30"
+                          style={{ 
+                            width: '100%',     // Use full width of parent container
+                            height: '100%',    // Use full height of parent container
+                            maxWidth: '100%',  // Responsive constraint
+                            maxHeight: '100%', // Responsive constraint
+                            overflow: 'hidden', // Prevent canvas overflow
+                            boxShadow: '0 0 20px rgba(0, 255, 0, 0.1)',
+                            position: 'relative', // Ensure proper positioning context for loading overlay
+                            zIndex: 2 // Above scan lines
+                          }}
+                        >
                         {!isLoaded && (
                           <div className="absolute inset-0 flex flex-col items-center justify-center text-green-400 bg-gray-900 rounded-lg">
                             <motion.div
@@ -741,9 +534,9 @@ export default function GeneratorPage() {
                           </div>
                         )}
                       </div>
-                </div>
-              </div>
-
+                    </div>
+                  </div>
+                  
                   {/* Monitor Base - Taller Frame with Logo */}
                   <div className="bg-amber-100 mt-4 pt-6 pb-8 rounded-b-xl border-t-6 border-amber-200">
                     {/* Rugpull Computer Logo and Text */}
@@ -787,7 +580,7 @@ export default function GeneratorPage() {
                 </div>
                 <div className="text-sm text-green-500">
                   {isLoaded ? 'READY' : 'LOADING...'}
-                  </div>
+                </div>
               </div>
               
               {/* Simple Terminal Commands */}
