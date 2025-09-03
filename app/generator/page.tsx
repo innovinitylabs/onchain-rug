@@ -1,14 +1,18 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Shuffle, Download, FileText, X, Plus, Minus } from 'lucide-react'
+import { Shuffle, Download, FileText, Plus, X } from 'lucide-react'
 
 export default function GeneratorPage() {
   const [isLoaded, setIsLoaded] = useState(false)
   const [currentSeed, setCurrentSeed] = useState(42)
   const [textInputs, setTextInputs] = useState([''])
   const [currentRowCount, setCurrentRowCount] = useState(1)
+  const [palette, setPalette] = useState<any>(null)
+  const [traits, setTraits] = useState<any>(null)
+  
+  const canvasContainerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     // Load P5.js first
@@ -47,10 +51,33 @@ export default function GeneratorPage() {
       }
     }
 
+    // Setup global functions for React integration
+    const setupGlobalFunctions = () => {
+      // Update palette display function
+      ;(window as any).updatePaletteDisplay = (paletteName: string, colors: string[]) => {
+        setPalette({ name: paletteName, colors })
+      }
+
+      // Update traits display function
+      ;(window as any).updateTraitsFromSketch = () => {
+        if (typeof (window as any).calculateTraits === 'function') {
+          const calculatedTraits = (window as any).calculateTraits()
+          setTraits(calculatedTraits)
+        }
+      }
+
+      // Text input validation
+      ;(window as any).validateTextInput = (input: HTMLInputElement) => {
+        input.value = input.value.replace(/[^A-Za-z0-9\s]/g, '')
+        input.value = input.value.toUpperCase()
+      }
+    }
+
     // Initialize everything
     const init = async () => {
       await loadP5()
       await loadDoormatScripts()
+      setupGlobalFunctions()
       
       // Wait for everything to load, then initialize
       setTimeout(() => {
@@ -71,52 +98,33 @@ export default function GeneratorPage() {
     init()
   }, [])
 
-  // Functions copied exactly from the original HTML
+  // React functions that call the P5.js functions
   const generateNew = () => {
     const seed = Math.floor(Math.random() * 10000)
     setCurrentSeed(seed)
-    const seedInput = document.getElementById('seedInput') as HTMLInputElement
-    if (seedInput) seedInput.value = seed.toString()
     
     if (typeof (window as any).generateDoormat === 'function') {
       (window as any).generateDoormat(seed)
       
-      // Update palette and traits display after a short delay to ensure the sketch has updated
+      // Update palette and traits after generation
       setTimeout(() => {
-        if (typeof (window as any).updatePaletteDisplay === 'function' && typeof (window as any).getCurrentPalette === 'function') {
-          const currentPalette = (window as any).getCurrentPalette()
-          if (currentPalette) {
-            (window as any).updatePaletteDisplay(currentPalette.name, currentPalette.colors)
-          }
-        }
-        // Force traits update as backup
         if (typeof (window as any).updateTraitsFromSketch === 'function') {
           (window as any).updateTraitsFromSketch()
         }
-      }, 150)
+      }, 200)
     }
   }
 
   const generateFromSeed = () => {
-    const seed = parseInt((document.getElementById('seedInput') as HTMLInputElement)?.value || '42')
-    setCurrentSeed(seed)
-    
     if (typeof (window as any).generateDoormat === 'function') {
-      (window as any).generateDoormat(seed)
+      (window as any).generateDoormat(currentSeed)
       
-      // Update palette and traits display after a short delay to ensure the sketch has updated
+      // Update palette and traits after generation
       setTimeout(() => {
-        if (typeof (window as any).updatePaletteDisplay === 'function' && typeof (window as any).getCurrentPalette === 'function') {
-          const currentPalette = (window as any).getCurrentPalette()
-          if (currentPalette) {
-            (window as any).updatePaletteDisplay(currentPalette.name, currentPalette.colors)
-          }
-        }
-        // Force traits update as backup
         if (typeof (window as any).updateTraitsFromSketch === 'function') {
           (window as any).updateTraitsFromSketch()
         }
-      }, 150)
+      }, 200)
     }
   }
 
@@ -127,132 +135,40 @@ export default function GeneratorPage() {
   }
 
   const addTextToDoormat = () => {
-    const textRows = []
-    for (let i = 1; i <= 5; i++) {
-      const input = document.getElementById('textInput' + i) as HTMLInputElement
-      if (input) {
-        const text = input.value.trim()
-        if (text) {
-          textRows.push(text)
-        }
-      }
-    }
+    const textRows = textInputs.filter(text => text.trim() !== '')
     if (textRows.length > 0 && typeof (window as any).addTextToDoormatInSketch === 'function') {
       (window as any).addTextToDoormatInSketch(textRows)
     }
   }
 
-  const toggleAdditionalRows = () => {
-    if (currentRowCount < 5) {
-      addRow()
-    } else {
-      // Hide all additional rows
-      const additionalRows = document.getElementById('additionalRows')
-      if (additionalRows) {
-        additionalRows.innerHTML = ''
-        additionalRows.style.display = 'none'
-      }
-      setCurrentRowCount(1)
-
-      const toggleBtn = document.getElementById('toggleRowsBtn')
-      if (toggleBtn) {
-        toggleBtn.textContent = '+ Add More Rows'
-        toggleBtn.style.backgroundColor = '#4CAF50'
-      }
-
-      // Clear all additional row inputs
-      for (let i = 2; i <= 5; i++) {
-        const input = document.getElementById('textInput' + i) as HTMLInputElement
-        if (input) input.value = ''
-      }
+  const addTextRow = () => {
+    if (textInputs.length < 5) {
+      setTextInputs([...textInputs, ''])
+      setCurrentRowCount(prev => prev + 1)
     }
   }
 
-  const addRow = () => {
-    if (currentRowCount >= 5) return // Maximum 5 rows
-
-    setCurrentRowCount(prev => prev + 1)
-    const additionalRows = document.getElementById('additionalRows')
-    if (!additionalRows) return
-
-    // Create new row element
-    const newRow = document.createElement('div')
-    newRow.style.display = 'flex'
-    newRow.style.gap = '5px'
-    newRow.style.alignItems = 'center'
-    newRow.id = 'row' + (currentRowCount + 1)
-
-    newRow.innerHTML = `
-      <label style="font-size: 12px; width: 60px;">Row ${currentRowCount + 1}:</label>
-      <input type="text" id="textInput${currentRowCount + 1}" class="text-input" placeholder="Enter text (A-Z, 0-9, space)" maxlength="11" oninput="validateTextInput(this)">
-      <button onclick="removeRow(${currentRowCount + 1})" style="background-color: #f44336; font-size: 10px; padding: 4px 8px;">×</button>
-    `
-
-    additionalRows.appendChild(newRow)
-    additionalRows.style.display = 'block'
-
-    // Update button text
-    updateAddRowButton()
-  }
-
-  const removeRow = (rowNumber: number) => {
-    if (rowNumber <= 1) return // Can't remove first row
-
-    const rowElement = document.getElementById('row' + rowNumber)
-    if (rowElement) {
-      rowElement.remove()
+  const removeTextRow = (index: number) => {
+    if (textInputs.length > 1) {
+      const newInputs = textInputs.filter((_, i) => i !== index)
+      setTextInputs(newInputs)
       setCurrentRowCount(prev => prev - 1)
-
-      // Clear the input value
-      const input = document.getElementById('textInput' + rowNumber) as HTMLInputElement
-      if (input) input.value = ''
-
-      // Update button text and hide container if no additional rows
-      updateAddRowButton()
     }
   }
 
-  const updateAddRowButton = () => {
-    const toggleBtn = document.getElementById('toggleRowsBtn')
-    if (!toggleBtn) return
-
-    if (currentRowCount >= 5) {
-      toggleBtn.textContent = '− Hide All Rows'
-      toggleBtn.style.backgroundColor = '#f44336'
-    } else {
-      toggleBtn.textContent = '+ Add Row'
-      toggleBtn.style.backgroundColor = '#4CAF50'
-    }
+  const updateTextInput = (index: number, value: string) => {
+    const newInputs = [...textInputs]
+    newInputs[index] = value.toUpperCase().replace(/[^A-Z0-9\s]/g, '').slice(0, 11)
+    setTextInputs(newInputs)
   }
 
   const clearText = () => {
-    // Clear all input values
-    for (let i = 1; i <= 5; i++) {
-      const input = document.getElementById('textInput' + i) as HTMLInputElement
-      if (input) input.value = ''
-    }
-
-    // Remove all additional rows and reset to single row
-    const additionalRows = document.getElementById('additionalRows')
-    if (additionalRows) {
-      additionalRows.innerHTML = ''
-      additionalRows.style.display = 'none'
-    }
-
-    // Reset row count and button
+    setTextInputs([''])
     setCurrentRowCount(1)
-    updateAddRowButton()
-
+    
     if (typeof (window as any).clearTextFromDoormat === 'function') {
       (window as any).clearTextFromDoormat()
     }
-  }
-
-  const validateTextInput = (input: HTMLInputElement) => {
-    // Remove any characters that are not A-Z, 0-9, or space
-    input.value = input.value.replace(/[^A-Za-z0-9\s]/g, '')
-    // Convert to uppercase
-    input.value = input.value.toUpperCase()
   }
 
   const exportNFT = () => {
@@ -261,187 +177,265 @@ export default function GeneratorPage() {
     }
   }
 
-  // Make functions globally available for the P5.js sketch
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      ;(window as any).validateTextInput = validateTextInput
-      ;(window as any).removeRow = removeRow
-      ;(window as any).updateAddRowButton = updateAddRowButton
+  // Helper function to get rarity color
+  const getRarityColor = (rarity: string) => {
+    switch (rarity) {
+      case 'Legendary': return '#ff6b35'
+      case 'Epic': return '#9b59b6'
+      case 'Rare': return '#3498db'
+      case 'Uncommon': return '#2ecc71'
+      case 'Common': return '#95a5a6'
+      default: return '#666'
     }
-  }, [])
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100 py-8">
-      <div className="max-w-7xl mx-auto px-4">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <motion.h1 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-4xl md:text-5xl font-bold text-amber-800 mb-4"
-          >
-            Generative Doormat Art
-          </motion.h1>
-          <motion.p 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="text-lg text-amber-700 max-w-3xl mx-auto"
-          >
-            A P5.js generative art piece inspired by traditional woven doormats.<br />
-            Each generation creates unique stripe patterns, colors, and textures with fringe details.
-          </motion.p>
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50">
+      {/* Header */}
+      <header className="bg-white/80 backdrop-blur-sm border-b border-amber-200/50 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-center">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
+            🧶 Onchain Rug Generator
+          </h1>
         </div>
+      </header>
 
-        {/* Controls */}
-        <div className="flex flex-wrap gap-3 justify-center mb-6">
-          <motion.button
-            onClick={generateNew}
-            className="bg-amber-700 hover:bg-amber-800 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Controls Panel */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6 }}
+            className="lg:col-span-1"
           >
-            <Shuffle className="w-5 h-5" />
-            Generate New Doormat
-          </motion.button>
-          
-          <motion.button
-            onClick={saveDoormat}
-            className="bg-amber-700 hover:bg-amber-800 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <Download className="w-5 h-5" />
-            Save as Image
-          </motion.button>
-          
-          <input
-            type="number"
-            id="seedInput"
-            className="border-2 border-amber-700 rounded-lg px-4 py-3 text-center font-mono text-lg w-32"
-            placeholder="Seed"
-            defaultValue={42}
-          />
-          
-          <motion.button
-            onClick={generateFromSeed}
-            className="bg-amber-700 hover:bg-amber-800 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <FileText className="w-5 h-5" />
-            Use Seed
-          </motion.button>
-          
-          <motion.button
-            onClick={exportNFT}
-            className="bg-amber-700 hover:bg-amber-800 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            Export NFT
-          </motion.button>
-        </div>
-
-        {/* Text Inputs */}
-        <div className="flex flex-col gap-3 items-center mb-6">
-          <div className="flex flex-col gap-3 items-center">
-            <div className="flex gap-2 items-center">
-              <label className="text-sm font-medium text-amber-800 w-16">Row 1:</label>
-              <input
-                type="text"
-                id="textInput1"
-                className="border-2 border-amber-700 rounded-lg px-4 py-2 w-48 text-center uppercase"
-                placeholder="Enter text (A-Z, 0-9, space)"
-                maxLength={11}
-                onInput={(e) => validateTextInput(e.target as HTMLInputElement)}
-              />
-            </div>
-            
-            <div id="additionalRows" style={{ display: 'none' }}>
-              {/* Additional rows will be added here dynamically */}
-            </div>
-            
-            <div className="flex gap-3 items-center">
-              <button
-                id="toggleRowsBtn"
-                onClick={toggleAdditionalRows}
-                className="bg-green-500 hover:bg-green-600 text-white text-sm px-4 py-2 rounded-lg transition-colors"
-              >
-                + Add More Rows
-              </button>
+            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-amber-200/50 sticky top-24">
+              <h2 className="text-xl font-bold text-amber-800 mb-6">🎛️ Controls</h2>
               
-              <motion.button
-                onClick={addTextToDoormat}
-                className="bg-amber-700 hover:bg-amber-800 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                Add Text
-              </motion.button>
-              
-              <motion.button
-                onClick={clearText}
-                className="bg-amber-700 hover:bg-amber-800 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                Clear Text
-              </motion.button>
-            </div>
-          </div>
-        </div>
-
-        {/* Canvas Container */}
-        <div className="flex justify-center mb-8">
-          <div 
-            id="canvas-container"
-            className="shadow-lg rounded-lg overflow-hidden bg-white"
-            style={{
-              width: '1320px',
-              height: '920px',
-              maxWidth: '100%'
-            }}
-          >
-            {!isLoaded && (
-              <div className="flex items-center justify-center h-64 text-amber-700">
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                  className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full mr-4"
-                />
-                Loading doormat generator...
+              {/* Seed Controls */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-amber-700 mb-2">
+                  Seed Number
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    value={currentSeed}
+                    onChange={(e) => setCurrentSeed(parseInt(e.target.value) || 42)}
+                    className="flex-1 px-3 py-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    placeholder="42"
+                  />
+                  <motion.button
+                    onClick={generateFromSeed}
+                    className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <FileText className="w-4 h-4" />
+                  </motion.button>
+                </div>
               </div>
-            )}
-          </div>
+
+              {/* Generate Button */}
+              <motion.button
+                onClick={generateNew}
+                disabled={!isLoaded}
+                className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 mb-6 flex items-center justify-center gap-2 ${
+                  isLoaded 
+                    ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 cursor-pointer' 
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+                whileHover={isLoaded ? { scale: 1.02 } : {}}
+                whileTap={isLoaded ? { scale: 0.98 } : {}}
+              >
+                <Shuffle className="w-5 h-5" />
+                {isLoaded ? 'Generate New Rug' : 'Loading...'}
+              </motion.button>
+
+              {/* Text Inputs */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-amber-700 mb-2">
+                  Custom Text (Max 11 chars each)
+                </label>
+                {textInputs.map((text, index) => (
+                  <div key={index} className="flex gap-2 mb-2">
+                    <input
+                      type="text"
+                      value={text}
+                      onChange={(e) => updateTextInput(index, e.target.value)}
+                      className="flex-1 px-3 py-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                      placeholder={`Row ${index + 1}`}
+                      maxLength={11}
+                    />
+                    {textInputs.length > 1 && (
+                      <motion.button
+                        onClick={() => removeTextRow(index)}
+                        className="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <X className="w-4 h-4" />
+                      </motion.button>
+                    )}
+                  </div>
+                ))}
+                
+                <div className="flex gap-2 mt-3">
+                  {textInputs.length < 5 && (
+                    <motion.button
+                      onClick={addTextRow}
+                      className="flex-1 px-3 py-2 border border-amber-300 text-amber-700 rounded-lg hover:bg-amber-50 transition-colors flex items-center justify-center gap-1"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add Row
+                    </motion.button>
+                  )}
+                  <motion.button
+                    onClick={addTextToDoormat}
+                    className="flex-1 px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    Apply Text
+                  </motion.button>
+                  <motion.button
+                    onClick={clearText}
+                    className="px-3 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    Clear
+                  </motion.button>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="space-y-3">
+                <motion.button
+                  onClick={saveDoormat}
+                  className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center gap-2"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Download className="w-4 h-4" />
+                  Save Image
+                </motion.button>
+                
+                <motion.button
+                  onClick={exportNFT}
+                  className="w-full bg-purple-500 text-white py-2 px-4 rounded-lg hover:bg-purple-600 transition-colors flex items-center justify-center gap-2"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  Export NFT
+                </motion.button>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Canvas Area */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="lg:col-span-2"
+          >
+            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-amber-200/50">
+              <h2 className="text-xl font-bold text-amber-800 mb-4">🎨 Your Onchain Rug</h2>
+              
+              {/* Canvas Container */}
+              <div 
+                ref={canvasContainerRef}
+                id="canvas-container"
+                className="w-full bg-gray-100 rounded-lg flex items-center justify-center relative overflow-hidden"
+                style={{ 
+                  width: '100%',
+                  maxWidth: '1320px',
+                  height: '600px',
+                  margin: '0 auto'
+                }}
+              >
+                {!isLoaded && (
+                  <div className="text-center text-amber-700">
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                      className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full mx-auto mb-4"
+                    />
+                    <div>Loading P5.js and doormat generator...</div>
+                    <div className="text-sm text-amber-600 mt-2">
+                      This may take a few seconds
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              {/* Palette & Traits Info */}
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="font-semibold text-amber-800 mb-2">Current Palette</h3>
+                  <div className="text-amber-700 mb-2">{palette?.name || 'Loading...'}</div>
+                  <div className="flex gap-2 flex-wrap">
+                    {palette?.colors?.map((color: string, index: number) => (
+                      <motion.div
+                        key={index}
+                        className="w-8 h-8 rounded border-2 border-gray-300 cursor-pointer"
+                        style={{ backgroundColor: color }}
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => navigator.clipboard.writeText(color)}
+                        title={`Click to copy: ${color}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className="font-semibold text-amber-800 mb-2">NFT Traits</h3>
+                  <div className="space-y-1 text-sm">
+                    {traits ? (
+                      <>
+                        <div className="flex justify-between">
+                          <span>Text Lines:</span>
+                          <span className="font-medium">{traits.textLines || 0}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Characters:</span>
+                          <span className="font-medium">{traits.totalCharacters || 0}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Palette:</span>
+                          <span className="font-medium">{traits.paletteName || 'Unknown'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Rarity:</span>
+                          <span 
+                            className="font-bold text-xs uppercase"
+                            style={{ color: getRarityColor(traits.paletteRarity || 'Common') }}
+                          >
+                            {traits.paletteRarity || 'Common'}
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-amber-600">Loading traits...</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
         </div>
 
-        {/* Palette Display */}
-        <div className="text-center mb-8">
-          <h3 className="text-xl font-bold text-amber-800 mb-4">Current Color Palette</h3>
-          <div id="paletteName" className="font-bold text-amber-700 mb-4">Loading...</div>
-          <div id="colorSwatches" className="flex gap-2 justify-center flex-wrap max-w-2xl mx-auto">
-            {/* Color swatches will be displayed here */}
-          </div>
-        </div>
-
-        {/* Traits Display */}
-        <div className="text-center mb-8 max-w-4xl mx-auto">
-          <h3 className="text-xl font-bold text-amber-800 mb-6">NFT Traits</h3>
-          <div id="traitsContainer" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-left">
-            {/* Traits will be displayed here */}
-          </div>
-        </div>
-
-        {/* Instructions */}
-        <div className="text-center text-amber-700 max-w-3xl mx-auto">
-          <p className="text-lg">
-            <strong>Instructions:</strong><br />
-            • Click "Generate New Doormat" for a random pattern<br />
-            • Enter a seed number and click "Use Seed" for reproducible results<br />
-            • Enter text to embed it into the doormat pattern (max 11 characters, A-Z, 0-9, space only)<br />
-            • Click "Save as Image" to download your doormat
-          </p>
+        {/* Hidden elements for P5.js compatibility */}
+        <div style={{ display: 'none' }}>
+          <div id="paletteName"></div>
+          <div id="colorSwatches"></div>
+          <div id="traitsContainer"></div>
+          <div id="additionalRows"></div>
+          <button id="toggleRowsBtn"></button>
         </div>
       </div>
     </div>
