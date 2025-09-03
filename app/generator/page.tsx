@@ -104,7 +104,9 @@ export default function GeneratorPage() {
                
                p.pixelDensity(2.5)
                p.noLoop()
-               console.log('🎨 P5.js setup completed, DOM rendering controlled for container fit')
+               console.log('🎨 P5.js setup completed, global createCanvas interceptor will handle DOM rendering')
+               
+
              }
             
             // Bind the global draw function to this P5.js instance
@@ -124,7 +126,18 @@ export default function GeneratorPage() {
             ;(window as any).noise = p5Instance.noise.bind(p5Instance) // Add missing noise function
             ;(window as any).blendMode = p5Instance.blendMode.bind(p5Instance) // Add missing blendMode function
             ;(window as any).saveCanvas = p5Instance.saveCanvas.bind(p5Instance)
-            ;(window as any).createCanvas = p5Instance.createCanvas.bind(p5Instance)
+            
+            // Intercept createCanvas to control DOM rendering immediately
+            ;(window as any).createCanvas = function(width: number, height: number) {
+              const canvas = p5Instance.createCanvas(width, height)
+              // Immediately control DOM rendering to fit container
+              canvas.style.width = '100%'
+              canvas.style.height = '100%'
+              canvas.style.maxWidth = '100%'
+              canvas.style.maxHeight = '100%'
+              console.log(`🎯 Canvas ${width}x${height} created with DOM rendering controlled`)
+              return canvas
+            }
             ;(window as any).pixelDensity = p5Instance.pixelDensity.bind(p5Instance) // Add missing pixelDensity function
             ;(window as any).background = p5Instance.background.bind(p5Instance)
             ;(window as any).fill = p5Instance.fill.bind(p5Instance)
