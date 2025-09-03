@@ -99,13 +99,10 @@ export default function GeneratorPage() {
                p.noLoop()
                console.log('🎨 P5.js setup completed, waiting for doormat.js canvas creation')
                
-               // Fix any existing canvas sizing and art positioning after a short delay
+               // Ensure full art coverage after a short delay
                setTimeout(() => {
-                 if (typeof (window as any).fixCanvasSizing === 'function') {
-                   (window as any).fixCanvasSizing()
-                 }
-                 if (typeof (window as any).fixArtPositioning === 'function') {
-                   (window as any).fixArtPositioning()
+                 if (typeof (window as any).ensureFullArtCoverage === 'function') {
+                   (window as any).ensureFullArtCoverage()
                  }
                }, 500)
              }
@@ -132,8 +129,11 @@ export default function GeneratorPage() {
             ;(window as any).createCanvas = function(width: number, height: number) {
               console.log(`🎯 Intercepting createCanvas call: ${width}x${height}`)
               
-              // Create canvas with the dimensions that were requested (don't force override)
-              const canvas = p5Instance.createCanvas(width, height)
+              // FORCE canvas to always be 1200x800 for perfect container fit
+              const forcedWidth = 1200
+              const forcedHeight = 800
+              
+              const canvas = p5Instance.createCanvas(forcedWidth, forcedHeight)
               
               // Use pixelDensity(1) for display to avoid internal dimension blowup
               p5Instance.pixelDensity(1)
@@ -151,7 +151,7 @@ export default function GeneratorPage() {
               // Store canvas reference for later use
               ;(window as any).currentCanvas = canvas
               
-              console.log(`🎯 Canvas ${width}x${height} created with pixelDensity(1) and 100% container filling`)
+              console.log(`🎯 Canvas FORCED to ${forcedWidth}x${forcedHeight} for perfect container fit`)
               return canvas
             }
             
@@ -184,42 +184,47 @@ export default function GeneratorPage() {
               }
             }
             
-            // Function to ensure art is properly scaled and positioned
-            ;(window as any).fixArtPositioning = function() {
+            // Function to ensure art fills entire canvas
+            ;(window as any).ensureFullArtCoverage = function() {
               // Get the current canvas
               const canvas = (window as any).currentCanvas || document.querySelector('#defaultCanvas0')
               if (canvas) {
-                // Clear the canvas and redraw with proper scaling
-                const ctx = canvas.getContext('2d')
-                if (ctx) {
-                  // Clear the canvas
-                  ctx.clearRect(0, 0, canvas.width, canvas.height)
-                  
-                  // Set up proper scaling to fit the entire art
-                  const scaleX = canvas.width / 1200  // Scale to fit canvas width
-                  const scaleY = canvas.height / 800   // Scale to fit canvas height
-                  const scale = Math.min(scaleX, scaleY) // Use smaller scale to maintain aspect ratio
-                  
-                  // Center the art within the canvas
-                  const offsetX = (canvas.width - (1200 * scale)) / 2
-                  const offsetY = (canvas.height - (800 * scale)) / 2
-                  
-                  ctx.save()
-                  ctx.translate(offsetX, offsetY)
-                  ctx.scale(scale, scale)
-                  
-                  // Redraw the art at the proper scale and position
+                console.log(`🎯 Ensuring art fills entire canvas: ${canvas.width}x${canvas.height}`)
+                
+                // Force canvas to be exactly 1200x800
+                if (canvas.width !== 1200 || canvas.height !== 800) {
+                  console.log('🎯 Resizing canvas to 1200x800 for perfect fit')
+                  // This will trigger a redraw with proper dimensions
                   if (typeof (window as any).redraw === 'function') {
                     (window as any).redraw()
                   }
-                  
-                  ctx.restore()
-                  console.log('🎯 Art repositioned and scaled to fit canvas properly')
                 }
+                
+                // Ensure canvas fills container completely
+                canvas.style.width = '100%'
+                canvas.style.height = '100%'
+                canvas.style.maxWidth = '100%'
+                canvas.style.maxHeight = '100%'
+                canvas.style.objectFit = 'cover'
+                canvas.style.objectPosition = 'center'
+                
+                console.log('🎯 Canvas forced to fill entire container')
               }
             }
+            
+            // Override P5.js drawing functions to ensure they work with our dimensions
+            ;(window as any).background = function(...args: any[]) {
+              // Ensure background covers entire canvas
+              const result = p5Instance.background(...args)
+              // Force canvas to fill container after background is drawn
+              setTimeout(() => {
+                if (typeof (window as any).ensureFullArtCoverage === 'function') {
+                  (window as any).ensureFullArtCoverage()
+                }
+              }, 100)
+              return result
+            }
             ;(window as any).pixelDensity = p5Instance.pixelDensity.bind(p5Instance) // Add missing pixelDensity function
-            ;(window as any).background = p5Instance.background.bind(p5Instance)
             ;(window as any).fill = p5Instance.fill.bind(p5Instance)
             ;(window as any).noFill = p5Instance.noFill.bind(p5Instance)
             ;(window as any).stroke = p5Instance.stroke.bind(p5Instance)
