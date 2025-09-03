@@ -353,18 +353,46 @@ function Scene() {
         // Load doormat config
         if (!window.DOORMAT_CONFIG) {
           console.log('⚙️ Loading doormat config...')
-          const configResponse = await fetch('/lib/doormat/doormat-config.js')
-          const configText = await configResponse.text()
-          const configMatch = configText.match(/window\.DOORMAT_CONFIG = (\{[\s\S]*?\});/)
-          if (configMatch) {
-            const configCode = configMatch[1]
-            window.DOORMAT_CONFIG = new Function(`return ${configCode}`)()
-            console.log('✅ Doormat config loaded:', window.DOORMAT_CONFIG)
+          try {
+            // Since the config file is wrapped in an IIFE, we'll set default values
+            // and let the config file execute to override them
+            window.DOORMAT_CONFIG = {
+              DOORMAT_WIDTH: 800,
+              DOORMAT_HEIGHT: 1200,
+              FRINGE_LENGTH: 30,
+              WEFT_THICKNESS: 8,
+              WARP_THICKNESS: 2,
+              TEXT_SCALE: 2,
+              MAX_CHARS: 11,
+              MAX_TEXT_ROWS: 5
+            }
+            
+            // Load the config script to override our defaults
+            const script = document.createElement('script')
+            script.src = '/lib/doormat/doormat-config.js'
+            script.onload = () => {
+              console.log('✅ Doormat config script loaded and executed')
+              // Small delay to ensure config is applied
+              setTimeout(() => {
+                console.log('✅ Final config after script execution:', window.DOORMAT_CONFIG)
+              }, 100)
+            }
+            script.onerror = () => {
+              console.log('⚠️ Config script failed to load, using defaults')
+            }
+            document.head.appendChild(script)
+            
+            console.log('✅ Doormat config initialized with defaults:', window.DOORMAT_CONFIG)
+          } catch (error) {
+            console.log('⚠️ Using fallback config values')
           }
         }
 
         console.log('🎉 All P5.js dependencies loaded successfully!')
-        setDependenciesLoaded(true)
+        // Small delay to ensure config script has time to execute
+        setTimeout(() => {
+          setDependenciesLoaded(true)
+        }, 200)
       } catch (error) {
         console.error('❌ Failed to load P5.js dependencies:', error)
         // Fallback to default values
