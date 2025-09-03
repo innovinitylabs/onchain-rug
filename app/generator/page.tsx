@@ -124,9 +124,14 @@ export default function GeneratorPage() {
             ;(window as any).noFill = p5Instance.noFill.bind(p5Instance)
             ;(window as any).stroke = p5Instance.stroke.bind(p5Instance)
             ;(window as any).noStroke = p5Instance.noStroke.bind(p5Instance)
+            ;(window as any).strokeWeight = p5Instance.strokeWeight.bind(p5Instance) // Add missing strokeWeight
             ;(window as any).rect = p5Instance.rect.bind(p5Instance)
             ;(window as any).ellipse = p5Instance.ellipse.bind(p5Instance)
             ;(window as any).line = p5Instance.line.bind(p5Instance)
+            ;(window as any).arc = p5Instance.arc.bind(p5Instance) // Add missing arc function
+            ;(window as any).beginShape = p5Instance.beginShape.bind(p5Instance) // Add missing beginShape
+            ;(window as any).vertex = p5Instance.vertex.bind(p5Instance) // Add missing vertex
+            ;(window as any).endShape = p5Instance.endShape.bind(p5Instance) // Add missing endShape
             ;(window as any).text = p5Instance.text.bind(p5Instance)
             ;(window as any).textSize = p5Instance.textSize.bind(p5Instance)
             ;(window as any).textAlign = p5Instance.textAlign.bind(p5Instance)
