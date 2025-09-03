@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Shuffle, Download, FileText, Plus, X } from 'lucide-react'
 import Navigation from '@/components/Navigation'
+import NFTExporter from '@/components/NFTExporter'
 
 export default function GeneratorPage() {
   const [isLoaded, setIsLoaded] = useState(false)
@@ -679,6 +680,15 @@ export default function GeneratorPage() {
                       CLEAR
                     </button>
                   </div>
+                </div>
+                
+                {/* NFT Export Section */}
+                <div className="border-t border-green-500/30 pt-4">
+                  <NFTExporter 
+                    currentSeed={currentSeed}
+                    textInputs={textInputs}
+                    isLoaded={isLoaded}
+                  />
                 </div>
               </div>
             </div>
