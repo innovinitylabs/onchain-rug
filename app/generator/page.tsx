@@ -89,13 +89,18 @@ export default function GeneratorPage() {
           console.log('✅ P5.js loaded, creating instance to get functions')
           // Create a P5.js instance to get access to functions
           try {
-            const p5Instance = new (window as any).p5(() => {})
-            
-            // Set the canvas parent to our container
-            if (p5Instance.canvas) {
-              p5Instance.canvas.parent('canvas-container')
-              console.log('🎨 P5.js canvas parent set to canvas-container')
-            }
+            // Use the proper P5.js initialization - this will call setup() automatically
+            const p5Instance = new (window as any).p5((p: any) => {
+              // This is the setup function that gets called automatically
+              p.setup = () => {
+                // Create canvas with proper dimensions
+                let canvas = p.createCanvas(1200 + (30 * 4), 800 + (30 * 4)) // doormatHeight + fringe, doormatWidth + fringe
+                canvas.parent('canvas-container')
+                p.pixelDensity(2.5)
+                p.noLoop()
+                console.log('🎨 P5.js setup completed, canvas created with proper dimensions')
+              }
+            })
             
             // Now expose the instance functions globally
             ;(window as any).randomSeed = p5Instance.randomSeed.bind(p5Instance)
