@@ -518,7 +518,7 @@ export default function GeneratorPage() {
                                                  <div 
                            ref={canvasContainerRef}
                            id="canvas-container"
-                           className="bg-gray-900 rounded-lg flex items-center justify-center relative mx-auto border border-green-500/30"
+                           className="bg-gray-900 rounded-lg relative mx-auto border border-green-500/30"
                           style={{ 
                             width: '1320px',   // Exact P5.js canvas width
                             height: '900px',   // Exact P5.js canvas height
@@ -550,7 +550,10 @@ export default function GeneratorPage() {
                             height: 100% !important;
                             max-width: 100% !important;
                             max-height: 100% !important;
-                            object-fit: contain !important;
+                            object-fit: fill !important;
+                            position: absolute !important;
+                            top: 0 !important;
+                            left: 0 !important;
                           }
                         `}</style>
                       </div>
