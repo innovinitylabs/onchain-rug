@@ -97,21 +97,20 @@ export default function GeneratorPage() {
                let canvas = p.createCanvas(1200, 800)
                canvas.parent('canvas-container')
                
-               // Set canvas to fill container properly
-               canvas.style.width = '100%'
-               canvas.style.height = '100%'
-               
-               // Make container fit the canvas
+               // Make canvas fit container like wallpaper - scale to fit while maintaining aspect ratio
                const container = document.getElementById('canvas-container')
                if (container) {
-                 container.style.width = '100%'
-                 container.style.height = 'auto'
-                 container.style.aspectRatio = '1200/800'
+                 // Set canvas to fit container like wallpaper
+                 canvas.style.width = '100%'
+                 canvas.style.height = '100%'
+                 canvas.style.objectFit = 'contain'
+                 canvas.style.maxWidth = '100%'
+                 canvas.style.maxHeight = '100%'
                }
                
                p.pixelDensity(2.5)
                p.noLoop()
-               console.log('🎨 P5.js setup completed, canvas created and container sized to fit')
+               console.log('🎨 P5.js setup completed, canvas created to fit container like wallpaper')
              }
             
             // Bind the global draw function to this P5.js instance
@@ -512,15 +511,14 @@ export default function GeneratorPage() {
                         zIndex: 1
                       }}></div>
                       
-                      {/* Canvas Container - Responsive sizing */}
+                      {/* Canvas Container - Fixed dimensions for wallpaper fit */}
                       <div 
                         ref={canvasContainerRef}
                         id="canvas-container"
                         className="bg-gray-900 rounded-lg flex items-center justify-center relative mx-auto border border-green-500/30"
                         style={{ 
-                          width: '100%',          // Take full available width
-                          height: 'auto',         // Auto height based on aspect ratio
-                          aspectRatio: '1200/800', // Match P5.js canvas ratio
+                          width: '1200px',        // Fixed width to match canvas
+                          height: '800px',        // Fixed height to match canvas
                           maxWidth: '100%',       // Responsive constraint
                           overflow: 'hidden',     // Prevent canvas overflow
                           boxShadow: '0 0 20px rgba(0, 255, 0, 0.1)',
