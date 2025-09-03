@@ -461,7 +461,7 @@ export default function GeneratorPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100">
       <Navigation />
-      <div className="max-w-[1600px] mx-auto px-4 pt-24">
+      <div className="max-w-[1800px] mx-auto px-4 pt-24">
       {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -478,7 +478,7 @@ export default function GeneratorPage() {
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-6 gap-8">
           {/* Controls Panel */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
@@ -595,7 +595,7 @@ export default function GeneratorPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="lg:col-span-4"
+            className="lg:col-span-5"
           >
             <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-amber-200/50">
               <h2 className="text-xl font-bold text-amber-800 mb-4">🎨 Your Onchain Rug</h2>
