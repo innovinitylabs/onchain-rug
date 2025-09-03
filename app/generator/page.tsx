@@ -16,7 +16,7 @@ export default function GeneratorPage() {
   const canvasContainerRef = useRef<HTMLDivElement>(null)
   const scriptsLoadedRef = useRef<Set<string>>(new Set())
 
-  // Load P5.js and ensure it's properly available globally
+  // Load P5.js - simple and direct approach
   const loadP5 = () => {
     return new Promise<void>((resolve) => {
       if ((window as any).p5 && typeof (window as any).randomSeed === 'function') {
@@ -27,48 +27,19 @@ export default function GeneratorPage() {
       const script = document.createElement('script')
       script.src = 'https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js'
       script.onload = () => {
-        // Wait for P5.js to be fully initialized
-        const checkP5 = () => {
-          if ((window as any).p5 && typeof (window as any).randomSeed === 'function') {
-            console.log('✅ P5.js loaded successfully with randomSeed available')
-            resolve()
-          } else if ((window as any).p5 && typeof (window as any).p5.randomSeed === 'function') {
-            console.log('✅ P5.js loaded with p5.randomSeed available')
-            // Make randomSeed globally available
-            ;(window as any).randomSeed = (window as any).p5.randomSeed
-            ;(window as any).noiseSeed = (window as any).p5.noiseSeed
-            ;(window as any).saveCanvas = (window as any).p5.saveCanvas
-            resolve()
-          } else if (typeof (window as any).randomSeed === 'function') {
-            console.log('✅ randomSeed already available globally')
-            resolve()
-          } else {
-            console.log('⏳ P5.js loading, waiting for randomSeed...')
-            setTimeout(checkP5, 100)
-          }
+        // Simple check - if p5 exists, we're good
+        if ((window as any).p5) {
+          console.log('✅ P5.js loaded successfully')
+          resolve()
+        } else {
+          console.log('⏳ P5.js loading, waiting...')
+          setTimeout(() => resolve(), 500)
         }
-        
-        // Start checking after a short delay
-        setTimeout(checkP5, 100)
       }
-      
       script.onerror = () => {
-        console.error('❌ Failed to load P5.js from CDN, creating fallback')
-        // Create a basic fallback P5.js environment
-        ;(window as any).p5 = {}
-        ;(window as any).randomSeed = (seed: number) => {
-          console.log('Fallback randomSeed called with:', seed)
-        }
-        ;(window as any).noiseSeed = (seed: number) => {
-          console.log('Fallback noiseSeed called with:', seed)
-        }
-        ;(window as any).saveCanvas = (filename: string, format: string) => {
-          console.log('Fallback saveCanvas called:', filename, format)
-          alert('Canvas save not available in fallback mode')
-        }
-        resolve()
+        console.error('❌ Failed to load P5.js')
+        resolve() // Continue anyway
       }
-      
       document.head.appendChild(script)
     })
   }
@@ -122,7 +93,7 @@ export default function GeneratorPage() {
       console.log('✅ Doormat scripts loaded')
       
       // Wait a bit for scripts to initialize
-      await new Promise(resolve => setTimeout(resolve, 500))
+      await new Promise(resolve => setTimeout(resolve, 1000))
       
       // Check if key functions are available
       if (typeof (window as any).generateDoormat === 'function') {
@@ -136,7 +107,7 @@ export default function GeneratorPage() {
           updatePaletteDisplay()
           updateTraitsDisplay()
           setIsLoaded(true)
-        }, 1000)
+        }, 500)
         
       } else {
         console.error('❌ generateDoormat function not available')
@@ -411,15 +382,15 @@ export default function GeneratorPage() {
             <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-amber-200/50">
               <h2 className="text-xl font-bold text-amber-800 mb-4">🎨 Your Onchain Rug</h2>
               
-              {/* Canvas Container - Matches original doormat dimensions */}
+              {/* Canvas Container - Horizontal orientation matching doormat */}
               <div 
                 ref={canvasContainerRef}
                 id="canvas-container"
                 className="w-full bg-gray-100 rounded-lg flex items-center justify-center relative p-4"
                 style={{ 
                   width: '100%',
-                  maxWidth: '1320px', // DOORMAT_HEIGHT + (FRINGE_LENGTH * 4) = 1200 + 120
-                  height: '920px',    // DOORMAT_WIDTH + (FRINGE_LENGTH * 4) = 800 + 120
+                  maxWidth: '920px',   // DOORMAT_WIDTH + (FRINGE_LENGTH * 4) = 800 + 120
+                  height: '1320px',    // DOORMAT_HEIGHT + (FRINGE_LENGTH * 4) = 1200 + 120
                   margin: '0 auto',
                   overflow: 'visible'
                 }}
