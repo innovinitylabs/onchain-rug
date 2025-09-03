@@ -488,22 +488,37 @@ export default function GeneratorPage() {
             className="w-full mb-0"
           >
             <div className="bg-black border-b border-green-500/50 p-4">
-              <h2 className="text-lg font-bold text-green-400 text-center font-mono">🎨 RUG GENERATOR v1.0</h2>
+              <h2 className="text-lg font-bold text-green-400 text-center font-mono mb-6">🎨 RUG GENERATOR v1.0</h2>
               
-              {/* Canvas Container - Match P5.js canvas dimensions exactly */}
-              <div 
-                ref={canvasContainerRef}
-                id="canvas-container"
-                className="bg-gray-900 rounded-lg flex items-center justify-center relative mx-auto border border-green-500/30"
-                style={{ 
-                  width: '1320px',  // Fixed width to match P5.js canvas exactly
-                  height: '920px',   // Fixed height to match P5.js canvas exactly
-                  maxWidth: '100%',  // Responsive constraint
-                  overflow: 'hidden', // Prevent canvas overflow
-                  boxShadow: '0 0 20px rgba(0, 255, 0, 0.1)',
-                  position: 'relative' // Ensure proper positioning context for loading overlay
-                }}
-              >
+              {/* Old-School CRT Monitor Box */}
+              <div className="relative mx-auto" style={{ width: '1400px', maxWidth: '100%' }}>
+                {/* Monitor Bezel - Yellowed Plastic */}
+                <div className="bg-amber-100 border-8 border-amber-200 rounded-t-3xl rounded-b-2xl p-8 shadow-2xl">
+                  {/* Monitor Screen Area */}
+                  <div className="bg-gray-800 rounded-xl p-6 border-4 border-gray-700 shadow-inner">
+                    {/* CRT Screen with Scan Lines Effect */}
+                    <div className="bg-black rounded-lg p-4 border-2 border-gray-600 relative overflow-hidden">
+                      {/* Scan Lines Overlay */}
+                      <div className="absolute inset-0 pointer-events-none" style={{
+                        backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 255, 0, 0.03) 2px, rgba(0, 255, 0, 0.03) 4px)',
+                        zIndex: 1
+                      }}></div>
+                      
+                      {/* Canvas Container - Match P5.js canvas dimensions exactly */}
+                      <div 
+                        ref={canvasContainerRef}
+                        id="canvas-container"
+                        className="bg-gray-900 rounded-lg flex items-center justify-center relative mx-auto border border-green-500/30"
+                        style={{ 
+                          width: '1320px',  // Fixed width to match P5.js canvas exactly
+                          height: '920px',   // Fixed height to match P5.js canvas exactly
+                          maxWidth: '100%',  // Responsive constraint
+                          overflow: 'hidden', // Prevent canvas overflow
+                          boxShadow: '0 0 20px rgba(0, 255, 0, 0.1)',
+                          position: 'relative', // Ensure proper positioning context for loading overlay
+                          zIndex: 2 // Above scan lines
+                        }}
+                      >
                 {!isLoaded && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center text-green-400 bg-gray-900 rounded-lg">
                     <motion.div
@@ -517,6 +532,10 @@ export default function GeneratorPage() {
                     </div>
                   </div>
                 )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </motion.div>
