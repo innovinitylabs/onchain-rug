@@ -90,6 +90,13 @@ export default function GeneratorPage() {
           // Create a P5.js instance to get access to functions
           try {
             const p5Instance = new (window as any).p5(() => {})
+            
+            // Set the canvas parent to our container
+            if (p5Instance.canvas) {
+              p5Instance.canvas.parent('canvas-container')
+              console.log('🎨 P5.js canvas parent set to canvas-container')
+            }
+            
             // Now expose the instance functions globally
             ;(window as any).randomSeed = p5Instance.randomSeed.bind(p5Instance)
             ;(window as any).noiseSeed = p5Instance.noiseSeed.bind(p5Instance)
@@ -368,6 +375,16 @@ export default function GeneratorPage() {
           if (canvasContainerRef.current && !canvasContainerRef.current.contains(canvas)) {
             console.log('🔄 Moving P5.js canvas to our container')
             canvasContainerRef.current.appendChild(canvas)
+          }
+          
+          // Check if canvas dimensions are correct
+          if (canvas.width === 200 && canvas.height === 200) {
+            console.log('⚠️ Canvas has default dimensions, trying to fix...')
+            // Try to trigger P5.js setup function
+            if (typeof (window as any).setup === 'function') {
+              console.log('🔄 Calling P5.js setup function')
+              ;(window as any).setup()
+            }
           }
         } else {
           console.log('❌ No P5.js canvas found in DOM')
