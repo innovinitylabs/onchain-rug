@@ -491,7 +491,7 @@ export default function GeneratorPage() {
               <h2 className="text-lg font-bold text-green-400 text-center font-mono mb-6">🎨 RUG GENERATOR v1.0</h2>
               
                             {/* Old-School CRT Monitor Box */}
-              <div className="relative mx-auto" style={{ width: '1200px', maxWidth: '100%' }}>
+              <div className="relative mx-auto" style={{ width: '1300px', maxWidth: '100%' }}>
                 {/* Monitor Bezel - Yellowed Plastic */}
                 <div className="bg-amber-100 border-6 border-amber-200 rounded-t-2xl rounded-b-xl p-8 shadow-2xl">
                   {/* Monitor Screen Area */}
