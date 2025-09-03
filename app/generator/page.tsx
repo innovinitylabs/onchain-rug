@@ -478,216 +478,148 @@ export default function GeneratorPage() {
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-6 gap-8">
-          {/* Controls Panel */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="lg:col-span-1"
-          >
-            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-amber-200/50">
-              <h2 className="text-xl font-bold text-amber-800 mb-4">🎛️ Controls</h2>
-              
-              {/* Generation Controls */}
-              <div className="space-y-4 mb-6">
-                <div className="flex gap-2">
-                  <button
-                    onClick={generateNew}
-                    disabled={!isLoaded}
-                    className="flex-1 bg-amber-600 hover:bg-amber-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                  >
-                    <Shuffle className="w-4 h-4 mr-2" />
-                    Generate New
-                  </button>
-                  <button
-                    onClick={saveDoormat}
-                    disabled={!isLoaded}
-                    className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                  >
-                    <Download className="w-4 h-4" />
-                  </button>
-                </div>
-                
-                <div className="flex gap-2">
-                  <input
-                    type="number"
-                    value={currentSeed}
-                    onChange={(e) => setCurrentSeed(parseInt(e.target.value) || 42)}
-                    className="flex-1 px-3 py-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                    placeholder="Seed"
-                  />
-                  <button
-                    onClick={generateFromSeed}
-                    disabled={!isLoaded}
-                    className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                  >
-                    Use Seed
-                  </button>
-                </div>
-              </div>
-
-              {/* Text Input Controls */}
-              <div className="space-y-4 mb-6">
-                <h3 className="font-semibold text-amber-800">📝 Text Embedding</h3>
-                
-                {textInputs.map((text, index) => (
-                  <div key={index} className="flex gap-2">
-                    <input
-                      type="text"
-                      value={text}
-                      onChange={(e) => updateTextInput(index, e.target.value)}
-                      placeholder={`Row ${index + 1} (A-Z, 0-9, space)`}
-                      maxLength={11}
-                      className="flex-1 px-3 py-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                    />
-                    {index > 0 && (
-                      <button
-                        onClick={() => removeTextRow(index)}
-                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg transition-colors"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                ))}
-                
-                <div className="flex gap-2">
-                  {currentRowCount < 5 && (
-                    <button
-                      onClick={addTextRow}
-                      className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Row
-                    </button>
-                  )}
-                  <button
-                    onClick={addTextToDoormat}
-                    disabled={!isLoaded}
-                    className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                  >
-                    <FileText className="w-4 h-4 mr-2" />
-                    Add Text
-                  </button>
-                  <button
-                    onClick={clearText}
-                    className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                  >
-                    Clear
-                  </button>
-                </div>
-              </div>
-
-              {/* Instructions */}
-              <div className="text-sm text-amber-700 space-y-2">
-                <p><strong>Instructions:</strong></p>
-                <p>• Click "Generate New" for random patterns</p>
-                <p>• Enter a seed for reproducible results</p>
-                <p>• Add text (max 11 chars, A-Z, 0-9, space)</p>
-                <p>• Click "Save" to download your rug</p>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Canvas and Info */}
+        {/* Old-School Terminal Layout - Art on Top, Terminal on Bottom */}
+        <div className="space-y-0">
+          {/* Canvas Display - Full Width at Top */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="lg:col-span-5"
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="w-full mb-0"
           >
-            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-amber-200/50">
-              <h2 className="text-xl font-bold text-amber-800 mb-3">🎨 Your Onchain Rug</h2>
+            <div className="bg-black border-b border-green-500/50 p-4">
+              <h2 className="text-lg font-bold text-green-400 text-center font-mono">🎨 RUG GENERATOR v1.0</h2>
               
               {/* Canvas Container - Match P5.js canvas dimensions exactly */}
               <div 
                 ref={canvasContainerRef}
                 id="canvas-container"
-                className="bg-gray-100 rounded-lg flex items-center justify-center relative mx-auto"
+                className="bg-gray-900 rounded-lg flex items-center justify-center relative mx-auto border border-green-500/30"
                 style={{ 
                   width: '1320px',  // Fixed width to match P5.js canvas exactly
                   height: '920px',   // Fixed height to match P5.js canvas exactly
                   maxWidth: '100%',  // Responsive constraint
                   overflow: 'hidden', // Prevent canvas overflow
-                  boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
-                  border: '1px solid #e5e7eb',
+                  boxShadow: '0 0 20px rgba(0, 255, 0, 0.1)',
                   position: 'relative' // Ensure proper positioning context for loading overlay
                 }}
               >
                 {!isLoaded && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center text-amber-700 bg-gray-100 rounded-lg">
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-green-400 bg-gray-900 rounded-lg">
                     <motion.div
                       animate={{ rotate: 360 }}
                       transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                      className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full mb-4"
+                      className="w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full mb-4"
                     />
-                    <div className="text-lg font-medium">Loading P5.js and doormat generator...</div>
-                    <div className="text-sm text-amber-600 mt-2">
-                      This may take a few seconds
+                    <div className="text-lg font-medium font-mono">Loading P5.js...</div>
+                    <div className="text-sm text-green-500 mt-2 font-mono">
+                      Initializing rug generator
                     </div>
                   </div>
                 )}
-                
+              </div>
+            </div>
+          </motion.div>
 
+          {/* Terminal Interface - Fixed at Bottom */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="w-full"
+          >
+            <div className="bg-black text-green-400 p-6 font-mono border-t-2 border-green-500">
+              {/* Terminal Header */}
+              <div className="flex items-center justify-between mb-4 pb-2 border-b border-green-500/30">
+                <div className="flex items-center space-x-2">
+                  <span className="text-green-400">$</span>
+                  <span className="text-green-300">rug-generator</span>
+                  <span className="text-green-500">&gt;</span>
+                </div>
+                <div className="text-sm text-green-500">
+                  {isLoaded ? 'READY' : 'LOADING...'}
+                </div>
               </div>
               
-              {/* Palette & Traits Info */}
-              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h3 className="font-semibold text-amber-800 mb-2">Current Palette</h3>
-                  <div className="text-amber-700 mb-2">{palette?.name || 'Loading...'}</div>
-                  <div className="flex gap-2 flex-wrap">
-                    {palette?.colors?.map((color: string, index: number) => (
-                      <motion.div
-                        key={index}
-                        className="w-8 h-8 rounded border-2 border-gray-300 cursor-pointer"
-                        style={{ backgroundColor: color }}
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => navigator.clipboard.writeText(color)}
-                        title={`Click to copy: ${color}`}
-                      />
-                    ))}
-                  </div>
+              {/* Simple Terminal Commands */}
+              <div className="space-y-4">
+                {/* Generate and Save */}
+                <div className="flex gap-3">
+                  <button
+                    onClick={generateNew}
+                    disabled={!isLoaded}
+                    className="bg-green-600 hover:bg-green-700 disabled:bg-gray-700 text-black font-bold px-6 py-3 rounded font-mono transition-colors border border-green-400"
+                  >
+                    <Shuffle className="w-5 h-5 mr-2" />
+                    GENERATE
+                  </button>
+                  <button
+                    onClick={saveDoormat}
+                    disabled={!isLoaded}
+                    className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 text-white px-6 py-3 rounded font-mono transition-colors border border-blue-400"
+                  >
+                    <Download className="w-5 h-5 mr-2" />
+                    SAVE
+                  </button>
                 </div>
                 
-                <div>
-                  <h3 className="font-semibold text-amber-800 mb-2">NFT Traits</h3>
-                  <div className="space-y-1 text-sm text-amber-800">
-                    {traits ? (
-                      <>
-                        <div className="flex justify-between">
-                          <span>Text Lines:</span>
-                          <span className="font-medium">{traits.textLines || 0}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Characters:</span>
-                          <span className="font-medium">{traits.totalCharacters || 0}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Palette:</span>
-                          <span className="font-medium">{traits.paletteName || 'Unknown'}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Rarity:</span>
-                          <span 
-                            className="font-bold text-xs uppercase"
-                            style={{ color: getRarityColor(traits.paletteRarity || 'Common') }}
-                          >
-                            {traits.paletteRarity || 'Common'}
-                          </span>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="text-amber-600">Loading traits...</div>
+                {/* Text Input */}
+                <div className="space-y-3">
+                  <div className="text-green-300 text-sm">Add text to rug (max 11 chars per row):</div>
+                  {textInputs.map((text, index) => (
+                    <div key={index} className="flex gap-2">
+                      <span className="text-green-400 font-mono">$</span>
+                      <input
+                        type="text"
+                        value={text}
+                        onChange={(e) => updateTextInput(index, e.target.value)}
+                        placeholder={`text_${index + 1}`}
+                        maxLength={11}
+                        className="flex-1 px-3 py-2 bg-gray-900 border border-green-500/50 text-green-400 rounded focus:ring-2 focus:ring-green-500 focus:border-transparent font-mono"
+                      />
+                      {index > 0 && (
+                        <button
+                          onClick={() => removeTextRow(index)}
+                          className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded font-mono transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  
+                  {/* Text Control Buttons */}
+                  <div className="flex gap-3 pt-2">
+                    {currentRowCount < 5 && (
+                      <button
+                        onClick={addTextRow}
+                        className="bg-green-600 hover:bg-green-700 text-black font-bold px-4 py-2 rounded font-mono transition-colors border border-green-400"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        ADD ROW
+                      </button>
                     )}
+                    <button
+                      onClick={addTextToDoormat}
+                      disabled={!isLoaded}
+                      className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-700 text-white px-4 py-2 rounded font-mono transition-colors border border-purple-400"
+                    >
+                      <FileText className="w-4 h-4 mr-2" />
+                      EMBED TEXT
+                    </button>
+                    <button
+                      onClick={clearText}
+                      className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded font-mono transition-colors border border-gray-400"
+                    >
+                      CLEAR
+                    </button>
                   </div>
                 </div>
               </div>
             </div>
           </motion.div>
         </div>
+
 
         {/* Hidden elements for P5.js compatibility */}
         <div style={{ display: 'none' }}>
