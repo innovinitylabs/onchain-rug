@@ -93,17 +93,17 @@ export default function GeneratorPage() {
           const p5Instance = new (window as any).p5((p: any) => {
             // This is the setup function that gets called automatically
             p.setup = () => {
-              // Create canvas with proper dimensions
-              let canvas = p.createCanvas(1200 + (30 * 4), 800 + (30 * 4)) // doormatHeight + fringe, doormatWidth + fringe
+              // Create canvas with scaled dimensions (0.8x scale)
+              let canvas = p.createCanvas(960 + (30 * 4), 640 + (30 * 4)) // Scaled down: (1200 * 0.8) + fringe, (800 * 0.8) + fringe
               canvas.parent('canvas-container')
               
-              // Set canvas to exact dimensions to match container
-              canvas.style.width = '1320px'
-              canvas.style.height = '920px'
+              // Set canvas to exact scaled dimensions to match container
+              canvas.style.width = '1056px'
+              canvas.style.height = '736px'
               
               p.pixelDensity(2.5)
               p.noLoop()
-              console.log('🎨 P5.js setup completed, canvas created with proper dimensions')
+              console.log('🎨 P5.js setup completed, canvas created with scaled dimensions (1056x736)')
             }
             
             // Bind the global draw function to this P5.js instance
