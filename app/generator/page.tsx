@@ -490,7 +490,7 @@ export default function GeneratorPage() {
             <div className="bg-black border-b border-green-500/50 p-4">
               <h2 className="text-lg font-bold text-green-400 text-center font-mono mb-6">🎨 RUG GENERATOR v1.0</h2>
               
-              {/* Old-School CRT Monitor Box */}
+                            {/* Old-School CRT Monitor Box */}
               <div className="relative mx-auto" style={{ width: '1500px', maxWidth: '100%' }}>
                 {/* Monitor Bezel - Yellowed Plastic */}
                 <div className="bg-amber-100 border-8 border-amber-200 rounded-t-3xl rounded-b-2xl p-12 shadow-2xl">
@@ -519,19 +519,41 @@ export default function GeneratorPage() {
                           zIndex: 2 // Above scan lines
                         }}
                       >
-                {!isLoaded && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center text-green-400 bg-gray-900 rounded-lg">
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                      className="w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full mb-4"
-                    />
-                    <div className="text-lg font-medium font-mono">Loading P5.js...</div>
-                    <div className="text-sm text-green-500 mt-2 font-mono">
-                      Initializing rug generator
+                        {!isLoaded && (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center text-green-400 bg-gray-900 rounded-lg">
+                            <motion.div
+                              animate={{ rotate: 360 }}
+                              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                              className="w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full mb-4"
+                            />
+                            <div className="text-lg font-medium font-mono">Loading P5.js...</div>
+                            <div className="text-sm text-green-500 mt-2 font-mono">
+                              Initializing rug generator
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                )}
+                  
+                  {/* Monitor Base - Taller Frame with Logo */}
+                  <div className="bg-amber-100 mt-6 pt-8 pb-12 rounded-b-2xl border-t-8 border-amber-200">
+                    {/* Rugpull Computer Logo and Text */}
+                    <div className="flex flex-col items-center space-y-4">
+                      <div className="w-24 h-24 bg-white rounded-full p-2 shadow-lg border-2 border-amber-300">
+                        <img 
+                          src="/rugpull_computer_logo.png" 
+                          alt="Rugpull Computer Logo" 
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                      <div className="text-center">
+                        <h3 className="text-2xl font-bold text-amber-800" style={{ fontFamily: 'Apple Garamond, Garamond, serif' }}>
+                          Rugpull Computer
+                        </h3>
+                        <p className="text-sm text-amber-700 mt-1" style={{ fontFamily: 'Apple Garamond, Garamond, serif' }}>
+                          Generative Art Terminal
+                        </p>
                       </div>
                     </div>
                   </div>
