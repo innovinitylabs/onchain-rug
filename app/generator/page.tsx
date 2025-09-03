@@ -612,17 +612,17 @@ export default function GeneratorPage() {
                   overflow: 'hidden', // Prevent canvas overflow
                   boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
                   border: '1px solid #e5e7eb',
-                  position: 'relative' // Ensure proper positioning context
+                  position: 'relative' // Ensure proper positioning context for loading overlay
                 }}
               >
                 {!isLoaded && (
-                  <div className="text-center text-amber-700">
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-amber-700 bg-gray-100 rounded-lg">
                     <motion.div
                       animate={{ rotate: 360 }}
                       transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                      className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full mx-auto mb-4"
+                      className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full mb-4"
                     />
-                    <div>Loading P5.js and doormat generator...</div>
+                    <div className="text-lg font-medium">Loading P5.js and doormat generator...</div>
                     <div className="text-sm text-amber-600 mt-2">
                       This may take a few seconds
                     </div>
