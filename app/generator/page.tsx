@@ -31,7 +31,7 @@ export default function GeneratorPage() {
       script.src = 'https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js'
       script.async = false // Force synchronous loading like original HTML
       script.onload = () => {
-        // P5.js loads synchronously, so functions should be immediately available
+        // P5.js loads synchronously, but we need to create an instance to get functions
         if ((window as any).randomSeed && typeof (window as any).randomSeed === 'function') {
           console.log('✅ P5.js loaded synchronously - functions globally available')
           resolve()
@@ -69,6 +69,47 @@ export default function GeneratorPage() {
           ;(window as any).HALF_PI = (window as any).p5.HALF_PI
           console.log('✅ All P5.js functions made globally available')
           resolve()
+        } else if ((window as any).p5) {
+          console.log('✅ P5.js loaded, creating instance to get functions')
+          // Create a P5.js instance to get access to functions
+          try {
+            const p5Instance = new (window as any).p5(() => {})
+            // Now expose the instance functions globally
+            ;(window as any).randomSeed = p5Instance.randomSeed.bind(p5Instance)
+            ;(window as any).noiseSeed = p5Instance.noiseSeed.bind(p5Instance)
+            ;(window as any).saveCanvas = p5Instance.saveCanvas.bind(p5Instance)
+            ;(window as any).createCanvas = p5Instance.createCanvas.bind(p5Instance)
+            ;(window as any).background = p5Instance.background.bind(p5Instance)
+            ;(window as any).fill = p5Instance.fill.bind(p5Instance)
+            ;(window as any).noFill = p5Instance.noFill.bind(p5Instance)
+            ;(window as any).stroke = p5Instance.stroke.bind(p5Instance)
+            ;(window as any).noStroke = p5Instance.noStroke.bind(p5Instance)
+            ;(window as any).rect = p5Instance.rect.bind(p5Instance)
+            ;(window as any).ellipse = p5Instance.ellipse.bind(p5Instance)
+            ;(window as any).line = p5Instance.line.bind(p5Instance)
+            ;(window as any).text = p5Instance.text.bind(p5Instance)
+            ;(window as any).textSize = p5Instance.textSize.bind(p5Instance)
+            ;(window as any).textAlign = p5Instance.textAlign.bind(p5Instance)
+            ;(window as any).push = p5Instance.push.bind(p5Instance)
+            ;(window as any).pop = p5Instance.pop.bind(p5Instance)
+            ;(window as any).translate = p5Instance.translate.bind(p5Instance)
+            ;(window as any).rotate = p5Instance.rotate.bind(p5Instance)
+            ;(window as any).scale = p5Instance.scale.bind(p5Instance)
+            ;(window as any).random = p5Instance.random.bind(p5Instance)
+            ;(window as any).map = p5Instance.map.bind(p5Instance)
+            ;(window as any).constrain = p5Instance.constrain.bind(p5Instance)
+            ;(window as any).dist = p5Instance.dist.bind(p5Instance)
+            ;(window as any).sin = p5Instance.sin.bind(p5Instance)
+            ;(window as any).cos = p5Instance.cos.bind(p5Instance)
+            ;(window as any).PI = p5Instance.PI
+            ;(window as any).TWO_PI = p5Instance.TWO_PI
+            ;(window as any).HALF_PI = p5Instance.HALF_PI
+            console.log('✅ All P5.js functions made globally available via instance')
+            resolve()
+          } catch (error) {
+            console.error('❌ Failed to create P5.js instance:', error)
+            resolve()
+          }
         } else {
           console.log('❌ P5.js loaded but functions not accessible')
           resolve()
