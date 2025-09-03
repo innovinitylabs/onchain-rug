@@ -629,14 +629,7 @@ export default function GeneratorPage() {
                   </div>
                 )}
                 
-                {/* Debug info */}
-                {isLoaded && (
-                  <div className="text-center text-amber-700 text-sm">
-                    <div>✅ P5.js loaded and ready</div>
-                    <div>Canvas should appear above</div>
-                    <div>Check browser console for any errors</div>
-                  </div>
-                )}
+
               </div>
               
               {/* Palette & Traits Info */}
