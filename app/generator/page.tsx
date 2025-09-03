@@ -67,6 +67,12 @@ export default function GeneratorPage() {
           ;(window as any).PI = (window as any).p5.PI
           ;(window as any).TWO_PI = (window as any).p5.TWO_PI
           ;(window as any).HALF_PI = (window as any).p5.HALF_PI
+          // Add color utility functions
+          ;(window as any).color = (window as any).p5.color
+          ;(window as any).red = (window as any).p5.red
+          ;(window as any).green = (window as any).p5.green
+          ;(window as any).blue = (window as any).p5.blue
+          ;(window as any).lerpColor = (window as any).p5.lerpColor
           console.log('✅ All P5.js functions made globally available')
           resolve()
         } else if ((window as any).p5) {
@@ -104,6 +110,12 @@ export default function GeneratorPage() {
             ;(window as any).PI = p5Instance.PI
             ;(window as any).TWO_PI = p5Instance.TWO_PI
             ;(window as any).HALF_PI = p5Instance.HALF_PI
+            // Add color utility functions
+            ;(window as any).color = p5Instance.color.bind(p5Instance)
+            ;(window as any).red = p5Instance.red.bind(p5Instance)
+            ;(window as any).green = p5Instance.green.bind(p5Instance)
+            ;(window as any).blue = p5Instance.blue.bind(p5Instance)
+            ;(window as any).lerpColor = p5Instance.lerpColor.bind(p5Instance)
             console.log('✅ All P5.js functions made globally available via instance')
             resolve()
           } catch (error) {
