@@ -99,10 +99,13 @@ export default function GeneratorPage() {
                p.noLoop()
                console.log('🎨 P5.js setup completed, waiting for doormat.js canvas creation')
                
-               // Fix any existing canvas sizing after a short delay
+               // Fix any existing canvas sizing and art positioning after a short delay
                setTimeout(() => {
                  if (typeof (window as any).fixCanvasSizing === 'function') {
                    (window as any).fixCanvasSizing()
+                 }
+                 if (typeof (window as any).fixArtPositioning === 'function') {
+                   (window as any).fixArtPositioning()
                  }
                }, 500)
              }
@@ -145,6 +148,9 @@ export default function GeneratorPage() {
               canvas.style.objectFit = 'cover'
               canvas.style.objectPosition = 'center'
               
+              // Store canvas reference for later use
+              ;(window as any).currentCanvas = canvas
+              
               console.log(`🎯 Canvas ${width}x${height} created with pixelDensity(1) and 100% container filling`)
               return canvas
             }
@@ -175,6 +181,41 @@ export default function GeneratorPage() {
                 existingCanvas.style.objectFit = 'cover'
                 existingCanvas.style.objectPosition = 'center'
                 console.log('🎯 Fixed existing canvas sizing to fill container')
+              }
+            }
+            
+            // Function to ensure art is properly scaled and positioned
+            ;(window as any).fixArtPositioning = function() {
+              // Get the current canvas
+              const canvas = (window as any).currentCanvas || document.querySelector('#defaultCanvas0')
+              if (canvas) {
+                // Clear the canvas and redraw with proper scaling
+                const ctx = canvas.getContext('2d')
+                if (ctx) {
+                  // Clear the canvas
+                  ctx.clearRect(0, 0, canvas.width, canvas.height)
+                  
+                  // Set up proper scaling to fit the entire art
+                  const scaleX = canvas.width / 1200  // Scale to fit canvas width
+                  const scaleY = canvas.height / 800   // Scale to fit canvas height
+                  const scale = Math.min(scaleX, scaleY) // Use smaller scale to maintain aspect ratio
+                  
+                  // Center the art within the canvas
+                  const offsetX = (canvas.width - (1200 * scale)) / 2
+                  const offsetY = (canvas.height - (800 * scale)) / 2
+                  
+                  ctx.save()
+                  ctx.translate(offsetX, offsetY)
+                  ctx.scale(scale, scale)
+                  
+                  // Redraw the art at the proper scale and position
+                  if (typeof (window as any).redraw === 'function') {
+                    (window as any).redraw()
+                  }
+                  
+                  ctx.restore()
+                  console.log('🎯 Art repositioned and scaled to fit canvas properly')
+                }
               }
             }
             ;(window as any).pixelDensity = p5Instance.pixelDensity.bind(p5Instance) // Add missing pixelDensity function
