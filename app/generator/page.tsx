@@ -13,40 +13,71 @@ export default function GeneratorPage() {
   const [traits, setTraits] = useState<any>(null)
   
   const canvasContainerRef = useRef<HTMLDivElement>(null)
+  const scriptsLoadedRef = useRef<Set<string>>(new Set())
 
   useEffect(() => {
-    // Load P5.js first
+    // Load P5.js first and ensure it's fully loaded
     const loadP5 = () => {
       return new Promise<void>((resolve) => {
-        if ((window as any).p5) {
+        if ((window as any).p5 && typeof (window as any).randomSeed === 'function') {
           resolve()
           return
         }
         
         const script = document.createElement('script')
         script.src = 'https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js'
-        script.onload = () => resolve()
+        script.onload = () => {
+          // Wait for P5.js to be fully initialized
+          setTimeout(() => {
+            if ((window as any).p5 && typeof (window as any).randomSeed === 'function') {
+              console.log('P5.js loaded successfully')
+              resolve()
+            } else {
+              console.error('P5.js failed to load properly')
+              resolve() // Don't block forever
+            }
+          }, 200)
+        }
+        script.onerror = () => {
+          console.error('Failed to load P5.js')
+          resolve() // Don't block forever
+        }
         document.head.appendChild(script)
       })
     }
 
-    // Load doormat scripts in order
+    // Load doormat scripts only once
     const loadDoormatScripts = async () => {
       const scripts = [
-        '/lib/doormat/doormat-config.js',
-        '/lib/doormat/color-palettes.js',
-        '/lib/doormat/character-map.js',
-        '/lib/doormat/trait-calculator.js',
-        '/lib/doormat/doormat.js',
-        '/lib/doormat/html-interface.js'
+        { src: '/lib/doormat/doormat-config.js', id: 'doormat-config' },
+        { src: '/lib/doormat/color-palettes.js', id: 'color-palettes' },
+        { src: '/lib/doormat/character-map.js', id: 'character-map' },
+        { src: '/lib/doormat/trait-calculator.js', id: 'trait-calculator' },
+        { src: '/lib/doormat/doormat.js', id: 'doormat' },
+        { src: '/lib/doormat/html-interface.js', id: 'html-interface' }
       ]
 
-      for (const scriptSrc of scripts) {
+      for (const script of scripts) {
+        // Check if script is already loaded
+        if (scriptsLoadedRef.current.has(script.id) || document.getElementById(script.id)) {
+          console.log(`Script ${script.id} already loaded, skipping`)
+          continue
+        }
+
         await new Promise<void>((resolve) => {
-          const script = document.createElement('script')
-          script.src = scriptSrc
-          script.onload = () => resolve()
-          document.head.appendChild(script)
+          const scriptElement = document.createElement('script')
+          scriptElement.src = script.src
+          scriptElement.id = script.id
+          scriptElement.onload = () => {
+            scriptsLoadedRef.current.add(script.id)
+            console.log(`Loaded script: ${script.id}`)
+            resolve()
+          }
+          scriptElement.onerror = () => {
+            console.error(`Failed to load script: ${script.id}`)
+            resolve() // Continue with other scripts
+          }
+          document.head.appendChild(scriptElement)
         })
       }
     }
@@ -75,24 +106,64 @@ export default function GeneratorPage() {
 
     // Initialize everything
     const init = async () => {
-      await loadP5()
-      await loadDoormatScripts()
-      setupGlobalFunctions()
-      
-      // Wait for everything to load, then initialize
-      setTimeout(() => {
-        if (typeof (window as any).generateFromSeed === 'function') {
-          (window as any).generateFromSeed()
+      try {
+        console.log('Starting initialization...')
+        await loadP5()
+        console.log('P5.js loaded, loading doormat scripts...')
+        await loadDoormatScripts()
+        console.log('All scripts loaded, setting up global functions...')
+        setupGlobalFunctions()
+        
+        // Wait for everything to be fully loaded, then initialize
+        setTimeout(() => {
+          console.log('Checking if everything is ready...')
+          console.log('P5.js available:', !!(window as any).p5)
+          console.log('randomSeed available:', typeof (window as any).randomSeed)
+          console.log('generateFromSeed available:', typeof (window as any).generateFromSeed)
           
-          // Update traits after initial generation
-          setTimeout(() => {
-            if (typeof (window as any).updateTraitsFromSketch === 'function') {
-              (window as any).updateTraitsFromSketch()
+          if ((window as any).p5 && typeof (window as any).randomSeed === 'function' && typeof (window as any).generateFromSeed === 'function') {
+            console.log('All dependencies loaded, initializing generator...')
+            try {
+              (window as any).generateFromSeed()
+            } catch (error) {
+              console.error('Error calling generateFromSeed:', error)
             }
-          }, 200)
-        }
-        setIsLoaded(true)
-      }, 1000)
+            
+            // Update traits after initial generation
+            setTimeout(() => {
+              if (typeof (window as any).updateTraitsFromSketch === 'function') {
+                try {
+                  (window as any).updateTraitsFromSketch()
+                } catch (error) {
+                  console.error('Error calling updateTraitsFromSketch:', error)
+                }
+              }
+            }, 300)
+            
+            setIsLoaded(true)
+          } else {
+            console.warn('Dependencies not fully loaded, will try again...')
+            // Try again after another delay
+            setTimeout(() => {
+              if ((window as any).p5 && typeof (window as any).randomSeed === 'function' && typeof (window as any).generateFromSeed === 'function') {
+                console.log('Second attempt: initializing generator...')
+                try {
+                  (window as any).generateFromSeed()
+                } catch (error) {
+                  console.error('Error calling generateFromSeed on second attempt:', error)
+                }
+                setIsLoaded(true)
+              } else {
+                console.error('Failed to load dependencies after multiple attempts')
+                setIsLoaded(true) // Show UI anyway
+              }
+            }, 2000)
+          }
+        }, 1000)
+      } catch (error) {
+        console.error('Initialization failed:', error)
+        setIsLoaded(true) // Show UI anyway
+      }
     }
 
     init()
@@ -100,6 +171,12 @@ export default function GeneratorPage() {
 
   // React functions that call the P5.js functions
   const generateNew = () => {
+    // Check if P5.js is loaded
+    if (!(window as any).p5 || typeof (window as any).randomSeed !== 'function') {
+      console.warn('P5.js not loaded yet, skipping generation')
+      return
+    }
+
     const seed = Math.floor(Math.random() * 10000)
     setCurrentSeed(seed)
     
@@ -116,6 +193,12 @@ export default function GeneratorPage() {
   }
 
   const generateFromSeed = () => {
+    // Check if P5.js is loaded
+    if (!(window as any).p5 || typeof (window as any).randomSeed !== 'function') {
+      console.warn('P5.js not loaded yet, skipping generation')
+      return
+    }
+
     if (typeof (window as any).generateDoormat === 'function') {
       (window as any).generateDoormat(currentSeed)
       
@@ -129,9 +212,13 @@ export default function GeneratorPage() {
   }
 
   const saveDoormat = () => {
-    if (typeof (window as any).saveCanvas === 'function') {
-      (window as any).saveCanvas('onchain-rug-' + Date.now(), 'png')
+    // Check if P5.js is loaded
+    if (!(window as any).p5 || typeof (window as any).saveCanvas !== 'function') {
+      console.warn('P5.js or saveCanvas not available')
+      return
     }
+    
+    (window as any).saveCanvas('onchain-rug-' + Date.now(), 'png')
   }
 
   const addTextToDoormat = () => {
@@ -172,6 +259,12 @@ export default function GeneratorPage() {
   }
 
   const exportNFT = () => {
+    // Check if P5.js is loaded
+    if (!(window as any).p5) {
+      console.warn('P5.js not loaded yet, cannot export NFT')
+      return
+    }
+    
     if (typeof (window as any).exportNFT === 'function') {
       (window as any).exportNFT()
     }
