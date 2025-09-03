@@ -17,14 +17,29 @@ export default function GeneratorPage() {
     // Load P5.js first
     const loadP5 = () => {
       return new Promise<void>((resolve) => {
-        if ((window as any).p5) {
+        if ((window as any).p5 && typeof (window as any).randomSeed === 'function') {
           resolve()
           return
         }
         
         const script = document.createElement('script')
         script.src = 'https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js'
-        script.onload = () => resolve()
+        script.onload = () => {
+          // Wait a bit more to ensure P5.js is fully initialized
+          setTimeout(() => {
+            if ((window as any).p5 && typeof (window as any).randomSeed === 'function') {
+              console.log('P5.js loaded successfully')
+              resolve()
+            } else {
+              console.error('P5.js failed to load properly')
+              resolve() // Don't block forever
+            }
+          }, 100)
+        }
+        script.onerror = () => {
+          console.error('Failed to load P5.js')
+          resolve() // Don't block forever
+        }
         document.head.appendChild(script)
       })
     }
@@ -84,9 +99,16 @@ export default function GeneratorPage() {
       
       setupGlobalFunctions()
       
-      // Wait a bit for everything to load, then initialize
+      // Wait for everything to be fully loaded, then initialize
       setTimeout(() => {
-        if (typeof (window as any).generateFromSeed === 'function') {
+        console.log('Checking if everything is loaded...')
+        console.log('P5.js available:', !!(window as any).p5)
+        console.log('randomSeed available:', typeof (window as any).randomSeed)
+        console.log('generateFromSeed available:', typeof (window as any).generateFromSeed)
+        
+        // Only initialize if P5.js is fully loaded
+        if ((window as any).p5 && typeof (window as any).randomSeed === 'function' && typeof (window as any).generateFromSeed === 'function') {
+          console.log('All dependencies loaded, initializing generator...')
           (window as any).generateFromSeed()
           
           // Update palette and traits after initial generation
@@ -100,15 +122,32 @@ export default function GeneratorPage() {
             if (typeof (window as any).updateTraitsFromSketch === 'function') {
               (window as any).updateTraitsFromSketch()
             }
-          }, 200)
+          }, 300)
+        } else {
+          console.warn('Dependencies not fully loaded, will try again...')
+          // Try again after another delay
+          setTimeout(() => {
+            if ((window as any).p5 && typeof (window as any).randomSeed === 'function' && typeof (window as any).generateFromSeed === 'function') {
+              console.log('Second attempt: initializing generator...')
+              (window as any).generateFromSeed()
+            } else {
+              console.error('Failed to load dependencies after multiple attempts')
+            }
+          }, 2000)
         }
-      }, 1000)
+      }, 1500)
     }
 
     init()
   }, [])
 
   const generateNew = () => {
+    // Check if P5.js is loaded
+    if (!(window as any).p5 || typeof (window as any).randomSeed !== 'function') {
+      console.warn('P5.js not loaded yet, skipping generation')
+      return
+    }
+
     const newSeed = Math.floor(Math.random() * 10000)
     setCurrentSeed(newSeed)
     
@@ -135,6 +174,12 @@ export default function GeneratorPage() {
   }
 
   const generateFromSeed = () => {
+    // Check if P5.js is loaded
+    if (!(window as any).p5 || typeof (window as any).randomSeed !== 'function') {
+      console.warn('P5.js not loaded yet, skipping generation')
+      return
+    }
+
     if (typeof (window as any).generateDoormat === 'function') {
       (window as any).generateDoormat(currentSeed)
       
@@ -195,12 +240,22 @@ export default function GeneratorPage() {
   }
 
   const saveDoormat = () => {
-    if (typeof (window as any).saveCanvas === 'function') {
-      (window as any).saveCanvas('onchain-rug-' + Date.now(), 'png')
+    // Check if P5.js is loaded
+    if (!(window as any).p5 || typeof (window as any).saveCanvas !== 'function') {
+      console.warn('P5.js or saveCanvas not available')
+      return
     }
+    
+    (window as any).saveCanvas('onchain-rug-' + Date.now(), 'png')
   }
 
   const exportNFT = () => {
+    // Check if P5.js is loaded
+    if (!(window as any).p5) {
+      console.warn('P5.js not loaded yet, cannot export NFT')
+      return
+    }
+    
     if (typeof (window as any).exportNFT === 'function') {
       (window as any).exportNFT()
     }
@@ -276,12 +331,17 @@ export default function GeneratorPage() {
               {/* Generate Button */}
               <motion.button
                 onClick={generateNew}
-                className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white py-3 px-4 rounded-lg font-medium hover:from-amber-600 hover:to-orange-600 transition-all duration-200 mb-6 flex items-center justify-center gap-2"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                disabled={!isLoaded}
+                className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 mb-6 flex items-center justify-center gap-2 ${
+                  isLoaded 
+                    ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 cursor-pointer' 
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+                whileHover={isLoaded ? { scale: 1.02 } : {}}
+                whileTap={isLoaded ? { scale: 0.98 } : {}}
               >
                 <Shuffle className="w-5 h-5" />
-                Generate New Rug
+                {isLoaded ? 'Generate New Rug' : 'Loading...'}
               </motion.button>
 
               {/* Text Inputs */}
@@ -398,7 +458,10 @@ export default function GeneratorPage() {
                       transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                       className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full mx-auto mb-4"
                     />
-                    Loading onchain rug generator...
+                    <div>Loading P5.js and doormat generator...</div>
+                    <div className="text-sm text-amber-600 mt-2">
+                      This may take a few seconds
+                    </div>
                   </div>
                 )}
               </div>
