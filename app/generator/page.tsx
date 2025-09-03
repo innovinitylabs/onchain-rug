@@ -93,14 +93,11 @@ export default function GeneratorPage() {
           const p5Instance = new (window as any).p5((p: any) => {
             // This is the setup function that gets called automatically
                          p.setup = () => {
-               // Create responsive canvas for display
-               let canvas = p.createCanvas(1200, 800)
-               canvas.parent('canvas-container')
-               
-               // Use pixelDensity(1) for display to avoid internal dimension blowup
+               // Don't create canvas here - let doormat.js handle it
+               // Our global interceptor will control the dimensions and DOM rendering
                p.pixelDensity(1)
                p.noLoop()
-               console.log('🎨 P5.js setup completed, responsive display canvas with pixelDensity(1)')
+               console.log('🎨 P5.js setup completed, waiting for doormat.js canvas creation')
              }
             
             // Bind the global draw function to this P5.js instance
@@ -123,15 +120,21 @@ export default function GeneratorPage() {
             
             // Intercept createCanvas to control DOM rendering immediately
             ;(window as any).createCanvas = function(width: number, height: number) {
-              const canvas = p5Instance.createCanvas(width, height)
+              // Force canvas dimensions to match our container exactly
+              const containerWidth = 1200
+              const containerHeight = 800
+              
+              const canvas = p5Instance.createCanvas(containerWidth, containerHeight)
               // Use pixelDensity(1) for display to avoid internal dimension blowup
               p5Instance.pixelDensity(1)
-              // Immediately control DOM rendering to fit container
-              canvas.style.width = '100%'
-              canvas.style.height = '100%'
+              
+              // Set canvas to exactly match container dimensions
+              canvas.style.width = `${containerWidth}px`
+              canvas.style.height = `${containerHeight}px`
               canvas.style.maxWidth = '100%'
               canvas.style.maxHeight = '100%'
-              console.log(`🎯 Canvas ${width}x${height} created with pixelDensity(1) for responsive display`)
+              
+              console.log(`🎯 Canvas forced to ${containerWidth}x${containerHeight} with pixelDensity(1) for perfect container fit`)
               return canvas
             }
             
@@ -529,15 +532,14 @@ export default function GeneratorPage() {
                         zIndex: 1
                       }}></div>
                       
-                      {/* Canvas Container - Responsive sizing for DOM rendering */}
+                      {/* Canvas Container - Fixed dimensions to match canvas exactly */}
                       <div 
                         ref={canvasContainerRef}
                         id="canvas-container"
                         className="bg-gray-900 rounded-lg flex items-center justify-center relative mx-auto border border-green-500/30"
                         style={{ 
-                          width: '100%',          // Take full available width
-                          height: 'auto',         // Auto height based on aspect ratio
-                          aspectRatio: '1200/800', // Match canvas aspect ratio
+                          width: '1200px',        // Fixed width to match canvas exactly
+                          height: '800px',        // Fixed height to match canvas exactly
                           maxWidth: '100%',       // Responsive constraint
                           overflow: 'hidden',     // Prevent canvas overflow
                           boxShadow: '0 0 20px rgba(0, 255, 0, 0.1)',
