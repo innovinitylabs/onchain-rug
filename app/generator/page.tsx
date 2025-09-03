@@ -92,19 +92,24 @@ export default function GeneratorPage() {
                       // Use the proper P5.js initialization - this will call setup() automatically
           const p5Instance = new (window as any).p5((p: any) => {
             // This is the setup function that gets called automatically
-            p.setup = () => {
-              // Create canvas with scaled dimensions (0.8x scale)
-              let canvas = p.createCanvas(960 + (30 * 4), 640 + (30 * 4)) // Scaled down: (1200 * 0.8) + fringe, (800 * 0.8) + fringe
-              canvas.parent('canvas-container')
-              
-                             // Set canvas to exact scaled dimensions to match container
-               canvas.style.width = '1080px'
-               canvas.style.height = '760px'
-              
-              p.pixelDensity(2.5)
-              p.noLoop()
-              console.log('🎨 P5.js setup completed, canvas created with scaled dimensions (1056x736)')
-            }
+                         p.setup = () => {
+               // Get container dimensions for dynamic sizing
+               const container = document.getElementById('canvas-container')
+               const containerWidth = container?.offsetWidth || 1080
+               const containerHeight = container?.offsetHeight || 760
+               
+               // Create canvas with dynamic dimensions based on container
+               let canvas = p.createCanvas(containerWidth, containerHeight)
+               canvas.parent('canvas-container')
+               
+               // Set canvas to fill container dynamically
+               canvas.style.width = '100%'
+               canvas.style.height = '100%'
+               
+               p.pixelDensity(2.5)
+               p.noLoop()
+               console.log(`🎨 P5.js setup completed, canvas created with dynamic dimensions (${containerWidth}x${containerHeight})`)
+             }
             
             // Bind the global draw function to this P5.js instance
             p.draw = () => {
@@ -491,7 +496,7 @@ export default function GeneratorPage() {
               <h2 className="text-lg font-bold text-green-400 text-center font-mono mb-6">🎨 RUG GENERATOR v1.0</h2>
               
                             {/* Old-School CRT Monitor Box */}
-              <div className="relative mx-auto" style={{ width: '1350px', maxWidth: '100%' }}>
+              <div className="relative mx-auto w-full max-w-7xl">
                 {/* Monitor Bezel - Yellowed Plastic */}
                 <div className="bg-amber-100 border-6 border-amber-200 rounded-t-2xl rounded-b-xl p-8 shadow-2xl">
                   {/* Monitor Screen Area */}
@@ -504,19 +509,20 @@ export default function GeneratorPage() {
                         zIndex: 1
                       }}></div>
                       
-                      {/* Canvas Container - Match P5.js canvas dimensions exactly */}
+                      {/* Canvas Container - Dynamic sizing */}
                       <div 
                         ref={canvasContainerRef}
                         id="canvas-container"
                         className="bg-gray-900 rounded-lg flex items-center justify-center relative mx-auto border border-green-500/30"
                         style={{ 
-                          width: '1080px',  // Match P5.js canvas width exactly (960 + 120)
-                          height: '760px',   // Match P5.js canvas height exactly (640 + 120)
-                          maxWidth: '100%',  // Responsive constraint
-                          overflow: 'hidden', // Prevent canvas overflow
+                          width: '100%',           // Take full available width
+                          height: 'auto',          // Auto height based on aspect ratio
+                          aspectRatio: '1080/760', // Maintain P5.js canvas aspect ratio
+                          maxWidth: '100%',        // Responsive constraint
+                          overflow: 'hidden',      // Prevent canvas overflow
                           boxShadow: '0 0 20px rgba(0, 255, 0, 0.1)',
-                          position: 'relative', // Ensure proper positioning context for loading overlay
-                          zIndex: 2 // Above scan lines
+                          position: 'relative',    // Ensure proper positioning context for loading overlay
+                          zIndex: 2               // Above scan lines
                         }}
                       >
                         {!isLoaded && (
