@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Shuffle, Download, FileText, Plus, X } from 'lucide-react'
+import Navigation from '@/components/Navigation'
 
 export default function GeneratorPage() {
   const [isLoaded, setIsLoaded] = useState(false)
@@ -269,8 +270,9 @@ export default function GeneratorPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100 py-8">
-      <div className="max-w-7xl mx-auto px-4">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100">
+      <Navigation />
+      <div className="max-w-7xl mx-auto px-4 pt-24">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -409,16 +411,17 @@ export default function GeneratorPage() {
             <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-amber-200/50">
               <h2 className="text-xl font-bold text-amber-800 mb-4">🎨 Your Onchain Rug</h2>
               
-              {/* Canvas Container */}
+              {/* Canvas Container - Matches original doormat dimensions */}
               <div 
                 ref={canvasContainerRef}
                 id="canvas-container"
-                className="w-full bg-gray-100 rounded-lg flex items-center justify-center relative overflow-hidden"
+                className="w-full bg-gray-100 rounded-lg flex items-center justify-center relative p-4"
                 style={{ 
                   width: '100%',
-                  maxWidth: '1320px',
-                  height: '600px',
-                  margin: '0 auto'
+                  maxWidth: '1320px', // DOORMAT_HEIGHT + (FRINGE_LENGTH * 4) = 1200 + 120
+                  height: '920px',    // DOORMAT_WIDTH + (FRINGE_LENGTH * 4) = 800 + 120
+                  margin: '0 auto',
+                  overflow: 'visible'
                 }}
               >
                 {!isLoaded && (
