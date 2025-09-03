@@ -147,6 +147,13 @@ export default function GeneratorPage() {
             ;(window as any).dist = p5Instance.dist.bind(p5Instance)
             ;(window as any).sin = p5Instance.sin.bind(p5Instance)
             ;(window as any).cos = p5Instance.cos.bind(p5Instance)
+            // Add missing utility functions
+            ;(window as any).max = p5Instance.max.bind(p5Instance)
+            ;(window as any).min = p5Instance.min.bind(p5Instance)
+            ;(window as any).abs = p5Instance.abs.bind(p5Instance)
+            ;(window as any).floor = p5Instance.floor.bind(p5Instance)
+            ;(window as any).ceil = p5Instance.ceil.bind(p5Instance)
+            ;(window as any).round = p5Instance.round.bind(p5Instance)
             ;(window as any).PI = p5Instance.PI
             ;(window as any).TWO_PI = p5Instance.TWO_PI
             ;(window as any).HALF_PI = p5Instance.HALF_PI
