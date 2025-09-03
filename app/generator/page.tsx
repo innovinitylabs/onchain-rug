@@ -89,18 +89,28 @@ export default function GeneratorPage() {
           console.log('✅ P5.js loaded, creating instance to get functions')
           // Create a P5.js instance to get access to functions
           try {
-            // Use the proper P5.js initialization - this will call setup() automatically
-            const p5Instance = new (window as any).p5((p: any) => {
-              // This is the setup function that gets called automatically
-              p.setup = () => {
-                // Create canvas with proper dimensions
-                let canvas = p.createCanvas(1200 + (30 * 4), 800 + (30 * 4)) // doormatHeight + fringe, doormatWidth + fringe
-                canvas.parent('canvas-container')
-                p.pixelDensity(2.5)
-                p.noLoop()
-                console.log('🎨 P5.js setup completed, canvas created with proper dimensions')
+                      // Use the proper P5.js initialization - this will call setup() automatically
+          const p5Instance = new (window as any).p5((p: any) => {
+            // This is the setup function that gets called automatically
+            p.setup = () => {
+              // Create canvas with proper dimensions
+              let canvas = p.createCanvas(1200 + (30 * 4), 800 + (30 * 4)) // doormatHeight + fringe, doormatWidth + fringe
+              canvas.parent('canvas-container')
+              p.pixelDensity(2.5)
+              p.noLoop()
+              console.log('🎨 P5.js setup completed, canvas created with proper dimensions')
+            }
+            
+            // Bind the global draw function to this P5.js instance
+            p.draw = () => {
+              // Call the global draw function that's defined in doormat.js
+              if (typeof (window as any).draw === 'function') {
+                (window as any).draw()
+              } else {
+                console.log('⚠️ Global draw function not available yet, waiting...')
               }
-            })
+            }
+          })
             
             // Now expose the instance functions globally
             ;(window as any).randomSeed = p5Instance.randomSeed.bind(p5Instance)
@@ -221,7 +231,7 @@ export default function GeneratorPage() {
       await new Promise(resolve => setTimeout(resolve, 1000))
       
       // Check if key functions are available
-      if (typeof (window as any).generateDoormat === 'function') {
+      if (typeof (window as any).generateDoormat === 'function' && typeof (window as any).draw === 'function') {
         console.log('✅ generateDoormat function available')
         
         // Generate initial doormat
@@ -235,7 +245,10 @@ export default function GeneratorPage() {
         }, 500)
         
       } else {
-        console.error('❌ generateDoormat function not available')
+        console.error('❌ Required functions not available:')
+        console.error('  - generateDoormat:', typeof (window as any).generateDoormat)
+        console.error('  - draw:', typeof (window as any).draw)
+        console.error('  - Available global functions:', Object.keys(window).filter(key => typeof (window as any)[key] === 'function'))
         setIsLoaded(true) // Show UI anyway
       }
       
@@ -272,7 +285,8 @@ export default function GeneratorPage() {
     const seed = Math.floor(Math.random() * 10000)
     setCurrentSeed(seed)
     
-    if (typeof (window as any).generateDoormat === 'function') {
+    if (typeof (window as any).generateDoormat === 'function' && typeof (window as any).draw === 'function') {
+      console.log('🎨 Generating new doormat with seed:', seed)
       ;(window as any).generateDoormat(seed)
       
       // Update UI after generation
@@ -280,12 +294,17 @@ export default function GeneratorPage() {
         updatePaletteDisplay()
         updateTraitsDisplay()
       }, 500)
+    } else {
+      console.error('❌ Cannot generate: required functions not available')
+      console.error('  - generateDoormat:', typeof (window as any).generateDoormat)
+      console.error('  - draw:', typeof (window as any).draw)
     }
   }
 
   // Generate from seed
   const generateFromSeed = () => {
-    if (typeof (window as any).generateDoormat === 'function') {
+    if (typeof (window as any).generateDoormat === 'function' && typeof (window as any).draw === 'function') {
+      console.log('🎨 Generating doormat from seed:', currentSeed)
       ;(window as any).generateDoormat(currentSeed)
       
       // Update UI after generation
@@ -293,6 +312,10 @@ export default function GeneratorPage() {
         updatePaletteDisplay()
         updateTraitsDisplay()
       }, 500)
+    } else {
+      console.error('❌ Cannot generate: required functions not available')
+      console.error('  - generateDoormat:', typeof (window as any).generateDoormat)
+      console.error('  - draw:', typeof (window as any).draw)
     }
   }
 
