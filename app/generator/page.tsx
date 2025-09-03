@@ -16,7 +16,7 @@ export default function GeneratorPage() {
   const canvasContainerRef = useRef<HTMLDivElement>(null)
   const scriptsLoadedRef = useRef<Set<string>>(new Set())
 
-  // Load P5.js - simple approach like original HTML
+    // Load P5.js synchronously like the original HTML
   const loadP5 = () => {
     return new Promise<void>((resolve) => {
       // Check if P5.js is already loaded
@@ -26,18 +26,18 @@ export default function GeneratorPage() {
         return
       }
       
-      // Create script element exactly like original HTML
+      // Create script element exactly like original HTML - synchronous loading
       const script = document.createElement('script')
       script.src = 'https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js'
+      script.async = false // Force synchronous loading like original HTML
       script.onload = () => {
-              // Wait a bit for P5.js to fully initialize
-      setTimeout(() => {
-        if ((window as any).p5 && typeof (window as any).randomSeed === 'function') {
-          console.log('✅ P5.js loaded and randomSeed available')
+        // P5.js loads synchronously, so functions should be immediately available
+        if ((window as any).randomSeed && typeof (window as any).randomSeed === 'function') {
+          console.log('✅ P5.js loaded synchronously - functions globally available')
           resolve()
         } else if ((window as any).p5 && typeof (window as any).p5.randomSeed === 'function') {
-          console.log('✅ P5.js loaded with p5.randomSeed, making global')
-          // Make P5.js functions globally available - this is what the doormat scripts need
+          console.log('✅ P5.js loaded but functions not global, making them global')
+          // Make P5.js functions globally available
           ;(window as any).randomSeed = (window as any).p5.randomSeed
           ;(window as any).noiseSeed = (window as any).p5.noiseSeed
           ;(window as any).saveCanvas = (window as any).p5.saveCanvas
@@ -70,50 +70,9 @@ export default function GeneratorPage() {
           console.log('✅ All P5.js functions made globally available')
           resolve()
         } else {
-          console.log('⏳ P5.js loaded but randomSeed not ready, waiting...')
-          // Wait longer for P5.js to fully initialize
-          setTimeout(() => {
-            if ((window as any).p5 && typeof (window as any).p5.randomSeed === 'function') {
-              console.log('✅ P5.js ready after waiting, making functions global')
-              // Make P5.js functions globally available
-              ;(window as any).randomSeed = (window as any).p5.randomSeed
-              ;(window as any).noiseSeed = (window as any).p5.noiseSeed
-              ;(window as any).saveCanvas = (window as any).p5.saveCanvas
-              ;(window as any).createCanvas = (window as any).p5.createCanvas
-              ;(window as any).background = (window as any).p5.background
-              ;(window as any).fill = (window as any).p5.fill
-              ;(window as any).noFill = (window as any).p5.noFill
-              ;(window as any).stroke = (window as any).p5.stroke
-              ;(window as any).noStroke = (window as any).p5.noStroke
-              ;(window as any).rect = (window as any).p5.rect
-              ;(window as any).ellipse = (window as any).p5.ellipse
-              ;(window as any).line = (window as any).p5.line
-              ;(window as any).text = (window as any).p5.text
-              ;(window as any).textSize = (window as any).p5.textSize
-              ;(window as any).textAlign = (window as any).p5.textAlign
-              ;(window as any).push = (window as any).p5.push
-              ;(window as any).pop = (window as any).p5.pop
-              ;(window as any).translate = (window as any).p5.translate
-              ;(window as any).rotate = (window as any).p5.rotate
-              ;(window as any).scale = (window as any).p5.scale
-              ;(window as any).random = (window as any).p5.random
-              ;(window as any).map = (window as any).p5.map
-              ;(window as any).constrain = (window as any).p5.constrain
-              ;(window as any).dist = (window as any).p5.dist
-              ;(window as any).sin = (window as any).p5.sin
-              ;(window as any).cos = (window as any).p5.cos
-              ;(window as any).PI = (window as any).p5.PI
-              ;(window as any).TWO_PI = (window as any).p5.TWO_PI
-              ;(window as any).HALF_PI = (window as any).p5.HALF_PI
-              console.log('✅ All P5.js functions made globally available after waiting')
-              resolve()
-            } else {
-              console.log('❌ P5.js still not ready after waiting, but continuing...')
-              resolve()
-            }
-          }, 1000)
+          console.log('❌ P5.js loaded but functions not accessible')
+          resolve()
         }
-      }, 200)
       }
       script.onerror = () => {
         console.error('❌ Failed to load P5.js from CDN')
