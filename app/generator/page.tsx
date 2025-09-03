@@ -93,30 +93,25 @@ export default function GeneratorPage() {
           const p5Instance = new (window as any).p5((p: any) => {
             // This is the setup function that gets called automatically
                          p.setup = () => {
-               // Get the canvas container
+               // Create P5.js canvas with the dimensions it needs
+               let canvas = p.createCanvas(1200, 800)
+               canvas.parent('canvas-container')
+               
+               // Set canvas to fill container properly
+               canvas.style.width = '100%'
+               canvas.style.height = '100%'
+               
+               // Make container fit the canvas
                const container = document.getElementById('canvas-container')
-               if (!container) return
-               
-               // Create P5.js canvas with fixed dimensions that we know work
-               const canvasWidth = 1080
-               const canvasHeight = 760
-               
-               let canvas = p.createCanvas(canvasWidth, canvasHeight)
-               
-               // Set the container to exactly match the canvas size
-               container.style.width = `${canvasWidth}px`
-               container.style.height = `${canvasHeight}px`
-               
-               // Set canvas styles to match container exactly
-               canvas.style.width = `${canvasWidth}px`
-               canvas.style.height = `${canvasHeight}px`
-               
-               // Append canvas to container
-               container.appendChild(canvas)
+               if (container) {
+                 container.style.width = '100%'
+                 container.style.height = 'auto'
+                 container.style.aspectRatio = '1200/800'
+               }
                
                p.pixelDensity(2.5)
                p.noLoop()
-               console.log(`🎨 P5.js setup completed, canvas ${canvasWidth}x${canvasHeight} fits container perfectly`)
+               console.log('🎨 P5.js setup completed, canvas created and container sized to fit')
              }
             
             // Bind the global draw function to this P5.js instance
@@ -517,16 +512,20 @@ export default function GeneratorPage() {
                         zIndex: 1
                       }}></div>
                       
-                      {/* Canvas Container - P5.js will control dimensions */}
+                      {/* Canvas Container - Responsive sizing */}
                       <div 
                         ref={canvasContainerRef}
                         id="canvas-container"
                         className="bg-gray-900 rounded-lg flex items-center justify-center relative mx-auto border border-green-500/30"
                         style={{ 
-                          overflow: 'hidden',      // Prevent canvas overflow
+                          width: '100%',          // Take full available width
+                          height: 'auto',         // Auto height based on aspect ratio
+                          aspectRatio: '1200/800', // Match P5.js canvas ratio
+                          maxWidth: '100%',       // Responsive constraint
+                          overflow: 'hidden',     // Prevent canvas overflow
                           boxShadow: '0 0 20px rgba(0, 255, 0, 0.1)',
-                          position: 'relative',    // Ensure proper positioning context for loading overlay
-                          zIndex: 2               // Above scan lines
+                          position: 'relative',   // Ensure proper positioning context for loading overlay
+                          zIndex: 2              // Above scan lines
                         }}
                       >
                         {!isLoaded && (
