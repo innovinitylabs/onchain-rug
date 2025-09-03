@@ -2,94 +2,174 @@
 
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls, Float, Text3D, Environment } from '@react-three/drei'
-import { Suspense, useRef, useMemo } from 'react'
+import { Suspense, useRef, useMemo, useEffect, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
-// Advanced Flying Rug Component with Cloth Physics
-function FlyingRug({ position, scale = 1, color = '#8B4513', pattern = 'stripes' }: { 
+// Import P5.js functions from your generator
+declare global {
+  interface Window {
+    DOORMAT_CONFIG: any
+    stripeData: any[]
+    characterMap: any
+    colorPalettes: any[]
+    selectedPalette: any
+    warpThickness: number
+  }
+}
+
+// Advanced Flying Rug Component with Your P5.js Generator Logic
+function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: { 
   position: [number, number, number], 
   scale?: number, 
-  color?: string,
-  pattern?: 'stripes' | 'checkers' | 'solid'
+  seed?: number
+  dependenciesLoaded: boolean
 }) {
   const rugRef = useRef<THREE.Mesh>(null)
   const groupRef = useRef<THREE.Group>(null)
   const initialPositions = useRef<Float32Array | null>(null)
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
-  // Create enhanced rug texture with more detail
+  // Create rug texture using your P5.js generator logic
   const rugTexture = useMemo(() => {
+    if (typeof window === 'undefined' || !dependenciesLoaded) {
+      console.log('🚫 Texture generation skipped:', { 
+        isWindow: typeof window !== 'undefined', 
+        dependenciesLoaded 
+      })
+      return null
+    }
+    
+    console.log('🎨 Generating rug texture for seed:', seed)
+    
+    // Create canvas with your generator dimensions
     const canvas = document.createElement('canvas')
-    canvas.width = 1024
-    canvas.height = 1024
     const ctx = canvas.getContext('2d')!
     
-    // Base color with gradient
-    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height)
-    gradient.addColorStop(0, color)
-    gradient.addColorStop(0.5, color)
-    gradient.addColorStop(1, '#654321')
-    ctx.fillStyle = gradient
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    // Set canvas size to match your generator
+    const doormatWidth = window.DOORMAT_CONFIG?.DOORMAT_WIDTH || 800
+    const doormatHeight = window.DOORMAT_CONFIG?.DOORMAT_HEIGHT || 1200
+    const fringeLength = window.DOORMAT_CONFIG?.FRINGE_LENGTH || 30
     
-    // Add detailed pattern
-    if (pattern === 'stripes') {
-      ctx.fillStyle = '#654321'
-      for (let i = 0; i < canvas.height; i += 60) {
-        ctx.fillRect(0, i, canvas.width, 30)
-        // Add texture within stripes
-        ctx.fillStyle = '#543c21'
-        for (let j = 0; j < canvas.width; j += 8) {
-          ctx.fillRect(j, i + 5, 4, 20)
-        }
-        ctx.fillStyle = '#654321'
-      }
-    } else if (pattern === 'checkers') {
-      ctx.fillStyle = '#654321'
-      const size = 80
-      for (let x = 0; x < canvas.width; x += size) {
-        for (let y = 0; y < canvas.height; y += size) {
-          if ((x / size + y / size) % 2 === 0) {
-            ctx.fillRect(x, y, size, size)
-            // Add inner pattern
-            ctx.fillStyle = '#543c21'
-            ctx.fillRect(x + 10, y + 10, size - 20, size - 20)
-            ctx.fillStyle = '#654321'
-          }
-        }
+    console.log('📏 Canvas dimensions:', { doormatWidth, doormatHeight, fringeLength })
+    
+    // Use the same canvas dimensions as your generator
+    canvas.width = doormatHeight + (fringeLength * 4)  // Swapped for rotation
+    canvas.height = doormatWidth + (fringeLength * 4)
+    
+    // Set random seed for consistent generation
+    const randomSeed = (seed: number) => {
+      let m = 0x80000000
+      let a = 1103515245
+      let c = 12345
+      let state = seed ? seed : Math.floor(Math.random() * (m - 1))
+      return () => {
+        state = (a * state + c) % m
+        return state / m
       }
     }
     
-    // Enhanced fringe effect with depth
-    const fringeGradient = ctx.createLinearGradient(0, 0, 0, 50)
+    const random = randomSeed(seed)
+    const randomInt = (min: number, max: number) => Math.floor(random() * (max - min + 1)) + min
+    
+    // Simulate P5.js color function
+    const color = (hex: string) => {
+      const r = parseInt(hex.slice(1, 3), 16)
+      const g = parseInt(hex.slice(3, 5), 16)
+      const b = parseInt(hex.slice(5, 7), 16)
+      return { r, g, b }
+    }
+    
+    // Simulate P5.js lerpColor function
+    const lerpColor = (c1: any, c2: any, amt: number) => {
+      const r = Math.round(c1.r + (c2.r - c1.r) * amt)
+      const g = Math.round(c1.g + (c2.g - c1.g) * amt)
+      const b = Math.round(c1.b + (c2.b - c1.b) * amt)
+      return { r, g, b }
+    }
+    
+    // Get palette and generate colors
+    const colorPalettes = window.colorPalettes || [
+      { name: 'Default', colors: ['#8B4513', '#D2691E', '#A0522D', '#CD853F', '#DEB887'] }
+    ]
+    const selectedPalette = colorPalettes[seed % colorPalettes.length]
+    
+    console.log('🎨 Selected palette:', selectedPalette.name, 'with', selectedPalette.colors.length, 'colors')
+    
+    // Generate stripe data similar to your generator
+    const stripeData = []
+    const numStripes = randomInt(8, 15)
+    for (let i = 0; i < numStripes; i++) {
+      stripeData.push({
+        y: random() * doormatHeight,
+        height: randomInt(20, 80),
+        color: selectedPalette.colors[randomInt(0, selectedPalette.colors.length - 1)]
+      })
+    }
+    
+    console.log('🔄 Generated', stripeData.length, 'stripes')
+    
+    // Draw base doormat
+    ctx.fillStyle = selectedPalette.colors[0]
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    
+    // Draw stripes
+    stripeData.forEach(stripe => {
+      const c = color(stripe.color)
+      ctx.fillStyle = `rgb(${c.r}, ${c.g}, ${c.b})`
+      ctx.fillRect(0, stripe.y, canvas.width, stripe.height)
+    })
+    
+    // Draw fringe (top and bottom)
+    const fringeGradient = ctx.createLinearGradient(0, 0, 0, fringeLength)
     fringeGradient.addColorStop(0, '#5D4037')
     fringeGradient.addColorStop(1, '#3E2723')
     ctx.fillStyle = fringeGradient
     
     for (let i = 0; i < canvas.width; i += 12) {
       // Top fringe
-      ctx.fillRect(i, 0, 8, 50)
-      ctx.fillRect(i + 2, 0, 4, 60)
+      ctx.fillRect(i, 0, 8, fringeLength)
+      ctx.fillRect(i + 2, 0, 4, fringeLength + 10)
       // Bottom fringe
-      ctx.fillRect(i, canvas.height - 50, 8, 50)
-      ctx.fillRect(i + 2, canvas.height - 60, 4, 60)
+      ctx.fillRect(i, canvas.height - fringeLength, 8, fringeLength)
+      ctx.fillRect(i + 2, canvas.height - fringeLength - 10, 4, fringeLength + 10)
+    }
+    
+    // Draw selvedge edges (left and right)
+    const selvedgeGradient = ctx.createLinearGradient(0, 0, fringeLength, 0)
+    selvedgeGradient.addColorStop(0, '#5D4037')
+    selvedgeGradient.addColorStop(1, '#3E2723')
+    ctx.fillStyle = selvedgeGradient
+    
+    for (let i = 0; i < canvas.height; i += 15) {
+      // Left selvedge
+      ctx.fillRect(0, i, fringeLength, 10)
+      ctx.fillRect(0, i + 2, fringeLength + 5, 6)
+      // Right selvedge
+      ctx.fillRect(canvas.width - fringeLength, i, fringeLength, 10)
+      ctx.fillRect(canvas.width - fringeLength - 5, i + 2, fringeLength + 5, 6)
     }
     
     // Add fabric texture noise
     for (let x = 0; x < canvas.width; x += 4) {
       for (let y = 0; y < canvas.height; y += 4) {
-        const noise = Math.random() * 0.2 - 0.1
+        const noise = random() * 0.2 - 0.1
         ctx.fillStyle = `rgba(0, 0, 0, ${Math.abs(noise)})`
         ctx.fillRect(x, y, 2, 2)
       }
     }
     
+    // Store canvas reference for potential updates
+    canvasRef.current = canvas
+    
+    console.log('✅ Rug texture generated successfully for seed:', seed)
+    
     const texture = new THREE.CanvasTexture(canvas)
     texture.wrapS = texture.wrapT = THREE.RepeatWrapping
     return texture
-  }, [color, pattern])
+  }, [seed, dependenciesLoaded])
 
-  // Advanced cloth physics animation
+  // Advanced cloth physics animation (keeping your existing animation)
   useFrame((state) => {
     if (rugRef.current && groupRef.current) {
       const time = state.clock.getElapsedTime()
@@ -105,7 +185,6 @@ function FlyingRug({ position, scale = 1, color = '#8B4513', pattern = 'stripes'
       }
       
       // Advanced cloth simulation with multiple wave patterns
-      const segments = 32
       for (let i = 0; i < positions.count; i++) {
         const x = positions.getX(i)
         const y = positions.getY(i)
@@ -148,6 +227,11 @@ function FlyingRug({ position, scale = 1, color = '#8B4513', pattern = 'stripes'
     }
   })
 
+  // Don't render until dependencies are loaded
+  if (!dependenciesLoaded || !rugTexture) {
+    return null
+  }
+
   return (
     <group ref={groupRef} position={position} scale={[scale, scale, scale]}>
       <Float speed={0.3} rotationIntensity={0.08} floatIntensity={0.15}>
@@ -167,7 +251,7 @@ function FlyingRug({ position, scale = 1, color = '#8B4513', pattern = 'stripes'
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]}>
           <planeGeometry args={[4.3, 6.3]} />
           <meshBasicMaterial 
-            color={color} 
+            color="#8B4513" 
             transparent 
             opacity={0.15}
             side={THREE.DoubleSide}
@@ -219,6 +303,7 @@ function FloatingParticles() {
           count={particles.length}
           array={new Float32Array(particles.flat())}
           itemSize={3}
+          args={[new Float32Array(particles.flat()), 3]}
         />
       </bufferGeometry>
       <pointsMaterial size={0.1} color="#f59e0b" transparent opacity={0.6} />
@@ -229,6 +314,66 @@ function FloatingParticles() {
 // Enhanced Magical Scene
 function Scene() {
   const lightRef = useRef<THREE.DirectionalLight>(null)
+  const [dependenciesLoaded, setDependenciesLoaded] = useState(false)
+
+  // Load P5.js dependencies
+  useEffect(() => {
+    const loadDependencies = async () => {
+      try {
+        console.log('🔄 Loading P5.js dependencies...')
+        
+        // Load color palettes
+        if (!window.colorPalettes) {
+          console.log('📚 Loading color palettes...')
+          const colorPalettesResponse = await fetch('/lib/doormat/color-palettes.js')
+          const colorPalettesText = await colorPalettesResponse.text()
+          // Extract the colorPalettes array from the JS file
+          const colorPalettesMatch = colorPalettesText.match(/const colorPalettes = (\[[\s\S]*?\]);/)
+          if (colorPalettesMatch) {
+            const colorPalettesCode = colorPalettesMatch[1]
+            // Use Function constructor to safely evaluate the array
+            window.colorPalettes = new Function(`return ${colorPalettesCode}`)()
+            console.log('✅ Color palettes loaded:', window.colorPalettes.length, 'palettes')
+          }
+        }
+
+        // Load character map
+        if (!window.characterMap) {
+          console.log('🔤 Loading character map...')
+          const characterMapResponse = await fetch('/lib/doormat/character-map.js')
+          const characterMapText = await characterMapResponse.text()
+          const characterMapMatch = characterMapText.match(/const characterMap = (\{[\s\S]*?\});/)
+          if (characterMapMatch) {
+            const characterMapCode = characterMapMatch[1]
+            window.characterMap = new Function(`return ${characterMapCode}`)()
+            console.log('✅ Character map loaded:', Object.keys(window.characterMap).length, 'characters')
+          }
+        }
+
+        // Load doormat config
+        if (!window.DOORMAT_CONFIG) {
+          console.log('⚙️ Loading doormat config...')
+          const configResponse = await fetch('/lib/doormat/doormat-config.js')
+          const configText = await configResponse.text()
+          const configMatch = configText.match(/window\.DOORMAT_CONFIG = (\{[\s\S]*?\});/)
+          if (configMatch) {
+            const configCode = configMatch[1]
+            window.DOORMAT_CONFIG = new Function(`return ${configCode}`)()
+            console.log('✅ Doormat config loaded:', window.DOORMAT_CONFIG)
+          }
+        }
+
+        console.log('🎉 All P5.js dependencies loaded successfully!')
+        setDependenciesLoaded(true)
+      } catch (error) {
+        console.error('❌ Failed to load P5.js dependencies:', error)
+        // Fallback to default values
+        setDependenciesLoaded(true)
+      }
+    }
+
+    loadDependencies()
+  }, [])
   
   useFrame((state) => {
     const time = state.clock.getElapsedTime()
@@ -268,14 +413,14 @@ function Scene() {
       {/* Environment */}
       <Environment preset="sunset" />
       
-      {/* Flying Rugs with Enhanced Colors */}
-      <FlyingRug position={[0, 0, 0]} scale={1.2} color="#8B4513" pattern="stripes" />
-      <FlyingRug position={[-8, 2, -5]} scale={0.8} color="#D2691E" pattern="checkers" />
-      <FlyingRug position={[8, -1, -3]} scale={0.9} color="#A0522D" pattern="solid" />
-      <FlyingRug position={[5, 3, -8]} scale={0.7} color="#CD853F" pattern="stripes" />
-      <FlyingRug position={[-6, -2, -10]} scale={0.6} color="#DEB887" pattern="checkers" />
-      <FlyingRug position={[-3, 5, -12]} scale={0.5} color="#BC7F36" pattern="solid" />
-      <FlyingRug position={[10, -3, -15]} scale={0.4} color="#E6A75D" pattern="stripes" />
+      {/* Flying Rugs with Your Generator Logic - Each with unique seeds */}
+      <FlyingRug position={[0, 0, 0]} scale={1.2} seed={42} dependenciesLoaded={dependenciesLoaded} />
+      <FlyingRug position={[-8, 2, -5]} scale={0.8} seed={1337} dependenciesLoaded={dependenciesLoaded} />
+      <FlyingRug position={[8, -1, -3]} scale={0.9} seed={777} dependenciesLoaded={dependenciesLoaded} />
+      <FlyingRug position={[5, 3, -8]} scale={0.7} seed={999} dependenciesLoaded={dependenciesLoaded} />
+      <FlyingRug position={[-6, -2, -10]} scale={0.6} seed={555} dependenciesLoaded={dependenciesLoaded} />
+      <FlyingRug position={[-3, 5, -12]} scale={0.5} seed={888} dependenciesLoaded={dependenciesLoaded} />
+      <FlyingRug position={[10, -3, -15]} scale={0.4} seed={111} dependenciesLoaded={dependenciesLoaded} />
       
       {/* Enhanced Floating Particles */}
       <FloatingParticles />
@@ -289,6 +434,7 @@ function Scene() {
               count={200}
               array={new Float32Array(Array.from({length: 600}, () => (Math.random() - 0.5) * 100))}
               itemSize={3}
+              args={[new Float32Array(Array.from({length: 600}, () => (Math.random() - 0.5) * 100)), 3]}
             />
           </bufferGeometry>
           <pointsMaterial size={0.05} color="#ffd700" transparent opacity={0.8} />
