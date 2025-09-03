@@ -12,7 +12,7 @@ export default function GeneratorPage() {
   const [currentRowCount, setCurrentRowCount] = useState(1)
   const [palette, setPalette] = useState<any>(null)
   const [traits, setTraits] = useState<any>(null)
-  
+
   const canvasContainerRef = useRef<HTMLDivElement>(null)
   const scriptsLoadedRef = useRef<Set<string>>(new Set())
 
@@ -211,7 +211,7 @@ export default function GeneratorPage() {
 
   // Load doormat scripts sequentially
   const loadDoormatScripts = async () => {
-    const scripts = [
+      const scripts = [
       { src: '/lib/doormat/doormat-config.js', id: 'doormat-config' },
       { src: '/lib/doormat/color-palettes.js', id: 'color-palettes' },
       { src: '/lib/doormat/character-map.js', id: 'character-map' },
@@ -268,11 +268,11 @@ export default function GeneratorPage() {
         ;(window as any).generateDoormat(currentSeed)
         
         // Update UI after generation
-        setTimeout(() => {
+      setTimeout(() => {
           updatePaletteDisplay()
           updateTraitsDisplay()
           setIsLoaded(true)
-        }, 500)
+      }, 500)
         
       } else {
         console.error('❌ Required functions not available:')
@@ -457,7 +457,7 @@ export default function GeneratorPage() {
     <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100">
       <Navigation />
       <div className="max-w-7xl mx-auto px-4 pt-24">
-        {/* Header */}
+      {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -595,16 +595,16 @@ export default function GeneratorPage() {
             <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-amber-200/50">
               <h2 className="text-xl font-bold text-amber-800 mb-4">🎨 Your Onchain Rug</h2>
               
-              {/* Canvas Container - Increased size for better art preview */}
+              {/* Canvas Container - Match P5.js canvas dimensions exactly */}
               <div 
                 ref={canvasContainerRef}
                 id="canvas-container"
                 className="bg-gray-100 rounded-lg flex items-center justify-center relative mx-auto"
                 style={{ 
                   width: '100%',
-                  maxWidth: '1600px',  // Increased from 1320px for better preview
+                  maxWidth: '1320px',  // Match P5.js canvas width exactly
                   height: 'auto',
-                  aspectRatio: '1600/1100', // Adjusted aspect ratio for larger container
+                  aspectRatio: '1320/920', // Match P5.js canvas aspect ratio exactly
                   overflow: 'visible', // Allow canvas to be fully visible
                   boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
                   border: '1px solid #e5e7eb'
