@@ -471,7 +471,7 @@ export default function GeneratorPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100">
       <Navigation />
-      <div className="max-w-[2200px] mx-auto px-4 pt-24">
+      <div className="max-w-[1800px] mx-auto px-4 pt-24">
       {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -501,13 +501,13 @@ export default function GeneratorPage() {
               <h2 className="text-lg font-bold text-green-400 text-center font-mono mb-6">🎨 RUG GENERATOR v1.0</h2>
               
                             {/* Old-School CRT Monitor Box */}
-              <div className="relative mx-auto" style={{ width: '1600px', maxWidth: '100%' }}>
+              <div className="relative mx-auto" style={{ width: '1400px', maxWidth: '100%' }}>
                 {/* Monitor Bezel - Yellowed Plastic */}
-                <div className="bg-amber-100 border-6 border-amber-200 rounded-t-2xl rounded-b-xl p-12 shadow-2xl">
+                <div className="bg-amber-100 border-6 border-amber-200 rounded-t-2xl rounded-b-xl p-8 shadow-2xl">
                   {/* Monitor Screen Area */}
-                  <div className="bg-gray-800 rounded-lg p-6 border-3 border-gray-700 shadow-inner">
+                  <div className="bg-gray-800 rounded-lg p-4 border-3 border-gray-700 shadow-inner">
                     {/* CRT Screen with Scan Lines Effect */}
-                    <div className="bg-black rounded-lg p-4 border-2 border-gray-600 relative overflow-hidden">
+                    <div className="bg-black rounded-lg p-2 border-2 border-gray-600 relative overflow-hidden">
                       {/* Scan Lines Overlay */}
                       <div className="absolute inset-0 pointer-events-none" style={{
                         backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 255, 0, 0.03) 2px, rgba(0, 255, 0, 0.03) 4px)',
