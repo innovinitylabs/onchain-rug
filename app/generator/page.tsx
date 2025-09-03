@@ -73,6 +73,16 @@ export default function GeneratorPage() {
           ;(window as any).green = (window as any).p5.green
           ;(window as any).blue = (window as any).p5.blue
           ;(window as any).lerpColor = (window as any).p5.lerpColor
+          // Add drawing control functions
+          ;(window as any).redraw = (window as any).p5.redraw
+          ;(window as any).loop = (window as any).p5.loop
+          ;(window as any).noLoop = (window as any).p5.noLoop
+          ;(window as any).frameRate = (window as any).p5.frameRate
+          // Add utility functions
+          ;(window as any).width = (window as any).p5.width
+          ;(window as any).height = (window as any).p5.height
+          ;(window as any).windowWidth = (window as any).p5.windowWidth
+          ;(window as any).windowHeight = (window as any).p5.windowHeight
           console.log('✅ All P5.js functions made globally available')
           resolve()
         } else if ((window as any).p5) {
@@ -116,6 +126,16 @@ export default function GeneratorPage() {
             ;(window as any).green = p5Instance.green.bind(p5Instance)
             ;(window as any).blue = p5Instance.blue.bind(p5Instance)
             ;(window as any).lerpColor = p5Instance.lerpColor.bind(p5Instance)
+            // Add drawing control functions
+            ;(window as any).redraw = p5Instance.redraw.bind(p5Instance)
+            ;(window as any).loop = p5Instance.loop.bind(p5Instance)
+            ;(window as any).noLoop = p5Instance.noLoop.bind(p5Instance)
+            ;(window as any).frameRate = p5Instance.frameRate.bind(p5Instance)
+            // Add utility functions
+            ;(window as any).width = p5Instance.width
+            ;(window as any).height = p5Instance.height
+            ;(window as any).windowWidth = p5Instance.windowWidth
+            ;(window as any).windowHeight = p5Instance.windowHeight
             console.log('✅ All P5.js functions made globally available via instance')
             resolve()
           } catch (error) {
