@@ -23,14 +23,27 @@ const NFTExporter: React.FC<NFTExporterProps> = ({
 
   const exportNFT = async () => {
     setIsExporting(true);
-    
+
     try {
       // Get the current values from the global scope (same as live generator)
       const currentPalette = (window as any).selectedPalette;
       const currentStripeData = (window as any).stripeData || [];
       
+      // Debug logging to see what values we're getting
+      console.log('🔍 Export Debug Info:');
+      console.log('  - Live Generator config:', (window as any).DOORMAT_CONFIG);
+      console.log('  - Live Generator selectedPalette:', (window as any).selectedPalette);
+      console.log('  - Live Generator stripeData:', (window as any).stripeData);
+      console.log('  - Live Generator warpThickness:', (window as any).warpThickness);
+      console.log('  - All window properties with "warp":', Object.keys(window).filter(key => key.includes('warp')));
+      console.log('  - All window properties with "thickness":', Object.keys(window).filter(key => key.includes('thickness')));
+      
       // Create the NFT HTML content with current live data
       const nftHTML = createNFTHTML(safeSeed, currentPalette, currentStripeData, safeTextRows);
+      
+      // Debug: Check what's actually in the generated HTML
+      console.log('📄 Generated HTML config:', (window as any).DOORMAT_CONFIG);
+      console.log('📄 HTML snippet showing warpThickness from config:', nftHTML.includes('let warpThickness = config.WARP_THICKNESS'));
       
       // Create and download the file
       const blob = new Blob([nftHTML], { type: 'text/html' });
@@ -51,8 +64,32 @@ const NFTExporter: React.FC<NFTExporterProps> = ({
   };
 
   const createNFTHTML = (seed: number, palette: any, stripeData: any[], textRows: string[]) => {
-    // Get the current configuration from the live generator
-    const config = (window as any).DOORMAT_CONFIG || {};
+    // Get the current configuration from the live generator, with fallback
+    const liveConfig = (window as any).DOORMAT_CONFIG || {};
+    
+    // Get the actual current warpThickness from the live generator
+    const currentWarpThickness = (window as any).warpThickness || liveConfig.WARP_THICKNESS || 2;
+    
+    const config = {
+      DOORMAT_WIDTH: liveConfig.DOORMAT_WIDTH || 800,
+      DOORMAT_HEIGHT: liveConfig.DOORMAT_HEIGHT || 1200,
+      FRINGE_LENGTH: liveConfig.FRINGE_LENGTH || 30,
+      WEFT_THICKNESS: liveConfig.WEFT_THICKNESS || 8,
+      WARP_THICKNESS: currentWarpThickness, // Use the actual live generator value
+      TEXT_SCALE: liveConfig.TEXT_SCALE || 2,
+      MAX_CHARS: liveConfig.MAX_CHARS || 11,
+      MAX_TEXT_ROWS: liveConfig.MAX_TEXT_ROWS || 5
+    };
+    
+    // Debug: Log what we're actually passing to the template
+    console.log("🔧 createNFTHTML called with:");
+    console.log("  - seed:", seed);
+    console.log("  - palette:", palette);
+    console.log("  - stripeData length:", stripeData?.length);
+    console.log("  - textRows:", textRows);
+    console.log("  - liveConfig:", liveConfig);
+    console.log("  - currentWarpThickness:", currentWarpThickness);
+    console.log("  - final config:", config);
     
     return `<!DOCTYPE html>
 <html lang="en">
@@ -105,6 +142,7 @@ const NFTExporter: React.FC<NFTExporterProps> = ({
         let doormatHeight = config.DOORMAT_HEIGHT || 1200;
         let fringeLength = config.FRINGE_LENGTH || 30;
         let weftThickness = config.WEFT_THICKNESS || 8;
+        let warpThickness = config.WARP_THICKNESS || 2; // Use config instead of parameter
         let TEXT_SCALE = config.TEXT_SCALE || 2;
         let MAX_CHARS = config.MAX_CHARS || 11;
         
@@ -116,7 +154,8 @@ const NFTExporter: React.FC<NFTExporterProps> = ({
 
         // Colors
         let lightTextColor, darkTextColor;
-        let warpThickness = ${(window as any).warpThickness || 2}; // Use live generator's warp thickness
+        console.log("🎯 Exported HTML warpThickness set to:", warpThickness);
+        console.log("🔍 warpThickness type:", typeof warpThickness, "value:", warpThickness);
 
 function setup() {
             // Set the random seed to recreate the exact same doormat
@@ -601,6 +640,10 @@ function drawFringe() {
             const textRows = doormatTextRows || [];
             if (!textRows || textRows.length === 0) return;
             
+            // Filter out empty text rows (same as live generator)
+            const nonEmptyTextRows = textRows.filter(row => row && row.trim() !== '');
+            if (nonEmptyTextRows.length === 0) return;
+            
             const warpSpacing = warpThickness + 1;
             const weftSpacing = weftThickness + 1;
             const scaledWarp = warpSpacing * TEXT_SCALE;
@@ -614,22 +657,23 @@ function drawFringe() {
             // Calculate spacing between rows (horizontal spacing after rotation)
             const rowSpacing = charWidth * 1.5; // Space between rows
             
-            // Calculate total width needed for all rows
-            const totalRowsWidth = textRows.length * charWidth + (textRows.length - 1) * rowSpacing;
+            // Calculate total width needed for all NON-EMPTY rows
+            const totalRowsWidth = nonEmptyTextRows.length * charWidth + (nonEmptyTextRows.length - 1) * rowSpacing;
             
-            // Calculate starting X position to center all rows
+            // Calculate starting X position to center all NON-EMPTY rows
             const baseStartX = (doormatWidth - totalRowsWidth) / 2;
             
+            let currentRowIndex = 0;
             for (let rowIndex = 0; rowIndex < textRows.length; rowIndex++) {
                 const rowText = textRows[rowIndex];
-                if (!rowText) continue;
+                if (!rowText || rowText.trim() === '') continue; // Skip empty rows
                 
                 // Calculate text dimensions for this row
                 const textWidth = charWidth;
                 const textHeight = rowText.length * (charHeight + spacing) - spacing;
                 
-                // Position for this row (left to right becomes after rotation)
-                const startX = baseStartX + rowIndex * (charWidth + rowSpacing);
+                // Position for this NON-EMPTY row (left to right becomes after rotation)
+                const startX = baseStartX + currentRowIndex * (charWidth + rowSpacing);
                 const startY = (doormatHeight - textHeight) / 2;
                 
                 // Generate character data vertically bottom-to-top for this row
@@ -639,6 +683,8 @@ function drawFringe() {
                     const charPixels = generateCharacterPixels(char, startX, charY, textWidth, charHeight);
                     textData.push(...charPixels);
                 }
+                
+                currentRowIndex++; // Only increment for non-empty rows
             }
         }
         
