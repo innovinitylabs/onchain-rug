@@ -99,8 +99,11 @@ export default function GeneratorPage() {
                p.noLoop()
                console.log('🎨 P5.js setup completed, waiting for doormat.js canvas creation')
                
-               // Resize existing canvas and ensure full art coverage after a short delay
+               // Force canvas display and ensure full art coverage after a short delay
                setTimeout(() => {
+                 if (typeof (window as any).forceCanvasDisplay === 'function') {
+                   (window as any).forceCanvasDisplay()
+                 }
                  if (typeof (window as any).resizeExistingCanvas === 'function') {
                    (window as any).resizeExistingCanvas()
                  }
@@ -136,11 +139,14 @@ export default function GeneratorPage() {
               const forcedWidth = 1200
               const forcedHeight = 800
               
+              // Use the global P5.js instance that's actually running the sketch
+              const globalP5 = (window as any).p5 || p5Instance
+              
               // Create canvas with forced dimensions
-              const canvas = p5Instance.createCanvas(forcedWidth, forcedHeight)
+              const canvas = globalP5.createCanvas(forcedWidth, forcedHeight)
               
               // Use pixelDensity(1) for display to avoid internal dimension blowup
-              p5Instance.pixelDensity(1)
+              globalP5.pixelDensity(1)
               
               // Set canvas to fill container completely
               canvas.style.width = '100%'
@@ -273,6 +279,44 @@ export default function GeneratorPage() {
                     ;(window as any).redraw()
                   }
                 }, 100)
+              }
+            }
+            
+            // Function to force canvas visibility and proper display
+            ;(window as any).forceCanvasDisplay = function() {
+              console.log('🎯 Forcing canvas to be visible and properly displayed')
+              
+              // Find the canvas
+              const canvas = document.querySelector('#defaultCanvas0') as HTMLCanvasElement
+              if (!canvas) {
+                console.log('⚠️ No canvas found, waiting...')
+                return
+              }
+              
+              // Force canvas to be visible and properly sized
+              canvas.style.display = 'block'
+              canvas.style.visibility = 'visible'
+              canvas.style.opacity = '1'
+              canvas.style.width = '100%'
+              canvas.style.height = '100%'
+              canvas.style.maxWidth = '100%'
+              canvas.style.maxHeight = '100%'
+              canvas.style.objectFit = 'cover'
+              canvas.style.objectPosition = 'center'
+              
+              // Ensure canvas is positioned correctly in the container
+              canvas.style.position = 'relative'
+              canvas.style.top = '0'
+              canvas.style.left = '0'
+              
+              console.log('🎯 Canvas forced to be visible and properly displayed')
+              
+              // Trigger a redraw to ensure art is visible
+              if (typeof (window as any).redraw === 'function') {
+                setTimeout(() => {
+                  console.log('🎨 Triggering redraw after forcing canvas display')
+                  ;(window as any).redraw()
+                }, 200)
               }
             }
             ;(window as any).pixelDensity = p5Instance.pixelDensity.bind(p5Instance) // Add missing pixelDensity function
@@ -422,6 +466,13 @@ export default function GeneratorPage() {
         // Generate initial doormat
         ;(window as any).generateDoormat(currentSeed)
         
+        // Force canvas display after generation
+        setTimeout(() => {
+          if (typeof (window as any).forceCanvasDisplay === 'function') {
+            (window as any).forceCanvasDisplay()
+          }
+        }, 1000)
+        
         // Update UI after generation
       setTimeout(() => {
           updatePaletteDisplay()
@@ -473,6 +524,13 @@ export default function GeneratorPage() {
     if (typeof (window as any).generateDoormat === 'function' && typeof (window as any).draw === 'function') {
       console.log('🎨 Generating new doormat with seed:', seed)
       ;(window as any).generateDoormat(seed)
+      
+      // Force canvas display after generation
+      setTimeout(() => {
+        if (typeof (window as any).forceCanvasDisplay === 'function') {
+          (window as any).forceCanvasDisplay()
+        }
+      }, 1000)
       
       // Update UI after generation
       setTimeout(() => {
