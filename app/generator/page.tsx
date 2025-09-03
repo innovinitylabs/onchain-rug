@@ -93,32 +93,30 @@ export default function GeneratorPage() {
           const p5Instance = new (window as any).p5((p: any) => {
             // This is the setup function that gets called automatically
                          p.setup = () => {
-               // Calculate available space within monitor frame
-               const monitorContainer = document.querySelector('.max-w-7xl') as HTMLElement
-               const monitorWidth = monitorContainer?.offsetWidth || 1200
-               
-               // Account for monitor padding: bezel (32px) + screen area (8px) + CRT screen (4px) = 44px per side
-               const availableWidth = monitorWidth - (44 * 2) - 32 // 32px for borders
-               const availableHeight = (availableWidth * 760) / 1080 // Maintain aspect ratio
-               
-               // Create canvas that fits available space
-               let canvas = p.createCanvas(availableWidth, availableHeight)
-               canvas.parent('canvas-container')
-               
-               // Set canvas to fill available space
-               canvas.style.width = '100%'
-               canvas.style.height = '100%'
-               
-               // Resize container to match available space
+               // Get the canvas container
                const container = document.getElementById('canvas-container')
-               if (container) {
-                 container.style.width = `${availableWidth}px`
-                 container.style.height = `${availableHeight}px`
-               }
+               if (!container) return
+               
+               // Create P5.js canvas with fixed dimensions that we know work
+               const canvasWidth = 1080
+               const canvasHeight = 760
+               
+               let canvas = p.createCanvas(canvasWidth, canvasHeight)
+               
+               // Set the container to exactly match the canvas size
+               container.style.width = `${canvasWidth}px`
+               container.style.height = `${canvasHeight}px`
+               
+               // Set canvas styles to match container exactly
+               canvas.style.width = `${canvasWidth}px`
+               canvas.style.height = `${canvasHeight}px`
+               
+               // Append canvas to container
+               container.appendChild(canvas)
                
                p.pixelDensity(2.5)
                p.noLoop()
-               console.log(`🎨 P5.js setup completed, canvas created with dimensions (${availableWidth}x${availableHeight}) fitting monitor space`)
+               console.log(`🎨 P5.js setup completed, canvas ${canvasWidth}x${canvasHeight} fits container perfectly`)
              }
             
             // Bind the global draw function to this P5.js instance
