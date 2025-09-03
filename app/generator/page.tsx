@@ -491,13 +491,13 @@ export default function GeneratorPage() {
               <h2 className="text-lg font-bold text-green-400 text-center font-mono mb-6">🎨 RUG GENERATOR v1.0</h2>
               
                             {/* Old-School CRT Monitor Box */}
-              <div className="relative mx-auto" style={{ width: '1500px', maxWidth: '100%' }}>
+              <div className="relative mx-auto" style={{ width: '1200px', maxWidth: '100%' }}>
                 {/* Monitor Bezel - Yellowed Plastic */}
-                <div className="bg-amber-100 border-8 border-amber-200 rounded-t-3xl rounded-b-2xl p-12 shadow-2xl">
+                <div className="bg-amber-100 border-6 border-amber-200 rounded-t-2xl rounded-b-xl p-8 shadow-2xl">
                   {/* Monitor Screen Area */}
-                  <div className="bg-gray-800 rounded-xl p-6 border-4 border-gray-700 shadow-inner">
+                  <div className="bg-gray-800 rounded-lg p-4 border-3 border-gray-700 shadow-inner">
                     {/* CRT Screen with Scan Lines Effect */}
-                    <div className="bg-black rounded-lg p-4 border-2 border-gray-600 relative overflow-hidden">
+                    <div className="bg-black rounded-lg p-3 border-2 border-gray-600 relative overflow-hidden">
                       {/* Scan Lines Overlay */}
                       <div className="absolute inset-0 pointer-events-none" style={{
                         backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 255, 0, 0.03) 2px, rgba(0, 255, 0, 0.03) 4px)',
@@ -510,8 +510,8 @@ export default function GeneratorPage() {
                         id="canvas-container"
                         className="bg-gray-900 rounded-lg flex items-center justify-center relative mx-auto border border-green-500/30"
                         style={{ 
-                          width: '1320px',  // Fixed width to match P5.js canvas exactly
-                          height: '920px',   // Fixed height to match P5.js canvas exactly
+                          width: '1056px',  // Scaled down from 1320px (0.8x)
+                          height: '736px',   // Scaled down from 920px (0.8x)
                           maxWidth: '100%',  // Responsive constraint
                           overflow: 'hidden', // Prevent canvas overflow
                           boxShadow: '0 0 20px rgba(0, 255, 0, 0.1)',
@@ -537,10 +537,10 @@ export default function GeneratorPage() {
                   </div>
                   
                   {/* Monitor Base - Taller Frame with Logo */}
-                  <div className="bg-amber-100 mt-6 pt-8 pb-12 rounded-b-2xl border-t-8 border-amber-200">
+                  <div className="bg-amber-100 mt-4 pt-6 pb-8 rounded-b-xl border-t-6 border-amber-200">
                     {/* Rugpull Computer Logo and Text */}
-                    <div className="flex flex-col items-center space-y-4">
-                      <div className="w-24 h-24 bg-white rounded-full p-2 shadow-lg border-2 border-amber-300">
+                    <div className="flex flex-col items-center space-y-3">
+                      <div className="w-20 h-20 bg-white rounded-full p-2 shadow-lg border-2 border-amber-300">
                         <img 
                           src="/rugpull_computer_logo.png" 
                           alt="Rugpull Computer Logo" 
@@ -548,10 +548,10 @@ export default function GeneratorPage() {
                         />
                       </div>
                       <div className="text-center">
-                        <h3 className="text-2xl font-bold text-amber-800" style={{ fontFamily: 'Apple Garamond, Garamond, serif' }}>
+                        <h3 className="text-xl font-bold text-amber-800" style={{ fontFamily: 'Apple Garamond, Garamond, serif' }}>
                           Rugpull Computer
                         </h3>
-                        <p className="text-sm text-amber-700 mt-1" style={{ fontFamily: 'Apple Garamond, Garamond, serif' }}>
+                        <p className="text-xs text-amber-700 mt-1" style={{ fontFamily: 'Apple Garamond, Garamond, serif' }}>
                           Generative Art Terminal
                         </p>
                       </div>
