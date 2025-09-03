@@ -601,10 +601,9 @@ export default function GeneratorPage() {
                 id="canvas-container"
                 className="bg-gray-100 rounded-lg flex items-center justify-center relative mx-auto"
                 style={{ 
-                  width: '100%',
-                  maxWidth: '1320px',  // Match P5.js canvas width exactly
-                  height: 'auto',
-                  aspectRatio: '1320/920', // Match P5.js canvas aspect ratio exactly
+                  width: '1320px',  // Fixed width to match P5.js canvas exactly
+                  height: '920px',   // Fixed height to match P5.js canvas exactly
+                  maxWidth: '100%',  // Responsive constraint
                   overflow: 'visible', // Allow canvas to be fully visible
                   boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
                   border: '1px solid #e5e7eb'
