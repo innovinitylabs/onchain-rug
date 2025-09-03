@@ -98,6 +98,13 @@ export default function GeneratorPage() {
                p.pixelDensity(1)
                p.noLoop()
                console.log('🎨 P5.js setup completed, waiting for doormat.js canvas creation')
+               
+               // Fix any existing canvas sizing after a short delay
+               setTimeout(() => {
+                 if (typeof (window as any).fixCanvasSizing === 'function') {
+                   (window as any).fixCanvasSizing()
+                 }
+               }, 500)
              }
             
             // Bind the global draw function to this P5.js instance
@@ -120,17 +127,17 @@ export default function GeneratorPage() {
             
             // Intercept createCanvas to control DOM rendering immediately
             ;(window as any).createCanvas = function(width: number, height: number) {
-              // Force canvas dimensions to match our container exactly
-              const containerWidth = 1200
-              const containerHeight = 800
+              console.log(`🎯 Intercepting createCanvas call: ${width}x${height}`)
               
-              const canvas = p5Instance.createCanvas(containerWidth, containerHeight)
+              // Create canvas with the dimensions that were requested (don't force override)
+              const canvas = p5Instance.createCanvas(width, height)
+              
               // Use pixelDensity(1) for display to avoid internal dimension blowup
               p5Instance.pixelDensity(1)
               
-              // Set canvas to exactly match container dimensions
-              canvas.style.width = `${containerWidth}px`
-              canvas.style.height = `${containerHeight}px`
+              // Set canvas to fill container completely
+              canvas.style.width = '100%'
+              canvas.style.height = '100%'
               canvas.style.maxWidth = '100%'
               canvas.style.maxHeight = '100%'
               
@@ -138,20 +145,7 @@ export default function GeneratorPage() {
               canvas.style.objectFit = 'cover'
               canvas.style.objectPosition = 'center'
               
-              // Override the parent function to ensure proper positioning
-              const originalParent = canvas.parent
-              canvas.parent = function(container: any) {
-                const result = originalParent.call(this, container)
-                // After parent is set, ensure canvas fills container
-                this.style.width = '100%'
-                this.style.height = '100%'
-                this.style.objectFit = 'cover'
-                this.style.objectPosition = 'center'
-                console.log('🎯 Canvas parent set and forced to fill container')
-                return result
-              }
-              
-              console.log(`🎯 Canvas forced to ${containerWidth}x${containerHeight} with pixelDensity(1) for perfect container fit`)
+              console.log(`🎯 Canvas ${width}x${height} created with pixelDensity(1) and 100% container filling`)
               return canvas
             }
             
@@ -168,6 +162,20 @@ export default function GeneratorPage() {
               // Reset to display quality
               p5Instance.pixelDensity(1)
               console.log('🎨 High-quality export completed with pixelDensity(2.5)')
+            }
+            
+            // Function to fix any existing canvas sizing
+            ;(window as any).fixCanvasSizing = function() {
+              const existingCanvas = document.querySelector('#defaultCanvas0') as HTMLCanvasElement
+              if (existingCanvas) {
+                existingCanvas.style.width = '100%'
+                existingCanvas.style.height = '100%'
+                existingCanvas.style.maxWidth = '100%'
+                existingCanvas.style.maxHeight = '100%'
+                existingCanvas.style.objectFit = 'cover'
+                existingCanvas.style.objectPosition = 'center'
+                console.log('🎯 Fixed existing canvas sizing to fill container')
+              }
             }
             ;(window as any).pixelDensity = p5Instance.pixelDensity.bind(p5Instance) // Add missing pixelDensity function
             ;(window as any).background = p5Instance.background.bind(p5Instance)
