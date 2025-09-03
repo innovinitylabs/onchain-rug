@@ -99,10 +99,10 @@ export default function GeneratorPage() {
                p.noLoop()
                console.log('🎨 P5.js setup completed, waiting for doormat.js canvas creation')
                
-               // Replace wrong-sized canvas and ensure full art coverage after a short delay
+               // Resize existing canvas and ensure full art coverage after a short delay
                setTimeout(() => {
-                 if (typeof (window as any).replaceWrongCanvas === 'function') {
-                   (window as any).replaceWrongCanvas()
+                 if (typeof (window as any).resizeExistingCanvas === 'function') {
+                   (window as any).resizeExistingCanvas()
                  }
                  if (typeof (window as any).ensureFullArtCoverage === 'function') {
                    (window as any).ensureFullArtCoverage()
@@ -243,34 +243,36 @@ export default function GeneratorPage() {
               return result
             }
             
-            // Function to directly replace wrong-sized canvas
-            ;(window as any).replaceWrongCanvas = function() {
+            // Function to resize existing canvas instead of replacing it
+            ;(window as any).resizeExistingCanvas = function() {
               const existingCanvas = document.querySelector('#defaultCanvas0') as HTMLCanvasElement
               if (existingCanvas && (existingCanvas.width !== 1200 || existingCanvas.height !== 800)) {
-                console.log('🎯 Replacing wrong-sized canvas with proper 1200x800')
+                console.log('🎯 Resizing existing canvas to 1200x800')
                 
-                // Create new canvas with correct dimensions
-                const newCanvas = document.createElement('canvas')
-                newCanvas.id = 'defaultCanvas0'
-                newCanvas.className = 'p5Canvas'
-                newCanvas.width = 1200
-                newCanvas.height = 800
+                // Resize the existing canvas (preserves art)
+                existingCanvas.width = 1200
+                existingCanvas.height = 800
                 
                 // Apply proper styling
-                newCanvas.style.width = '100%'
-                newCanvas.style.height = '100%'
-                newCanvas.style.maxWidth = '100%'
-                newCanvas.style.maxHeight = '100%'
-                newCanvas.style.objectFit = 'cover'
-                newCanvas.style.objectPosition = 'center'
-                
-                // Replace the old canvas
-                existingCanvas.parentNode?.replaceChild(newCanvas, existingCanvas)
+                existingCanvas.style.width = '100%'
+                existingCanvas.style.height = '100%'
+                existingCanvas.style.maxWidth = '100%'
+                existingCanvas.style.maxHeight = '100%'
+                existingCanvas.style.objectFit = 'cover'
+                existingCanvas.style.objectPosition = 'center'
                 
                 // Store reference
-                ;(window as any).currentCanvas = newCanvas
+                ;(window as any).currentCanvas = existingCanvas
                 
-                console.log('🎯 Canvas replaced with proper 1200x800 dimensions')
+                console.log('🎯 Canvas resized to 1200x800 while preserving art')
+                
+                // Redraw the art at the new dimensions
+                setTimeout(() => {
+                  if (typeof (window as any).redraw === 'function') {
+                    console.log('🎨 Redrawing art on resized canvas')
+                    ;(window as any).redraw()
+                  }
+                }, 100)
               }
             }
             ;(window as any).pixelDensity = p5Instance.pixelDensity.bind(p5Instance) // Add missing pixelDensity function
