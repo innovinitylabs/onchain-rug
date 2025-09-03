@@ -353,6 +353,31 @@ export default function GeneratorPage() {
     init()
   }, [])
 
+  // Check if P5.js canvas is visible
+  useEffect(() => {
+    if (isLoaded) {
+      // Wait a bit for P5.js to create canvas, then check
+      const timer = setTimeout(() => {
+        const canvas = document.querySelector('canvas')
+        if (canvas) {
+          console.log('🎨 P5.js canvas found:', canvas)
+          console.log('Canvas dimensions:', canvas.width, 'x', canvas.height)
+          console.log('Canvas container:', canvasContainerRef.current)
+          
+          // Move canvas to our container if it's not there
+          if (canvasContainerRef.current && !canvasContainerRef.current.contains(canvas)) {
+            console.log('🔄 Moving P5.js canvas to our container')
+            canvasContainerRef.current.appendChild(canvas)
+          }
+        } else {
+          console.log('❌ No P5.js canvas found in DOM')
+        }
+      }, 1000)
+      
+      return () => clearTimeout(timer)
+    }
+  }, [isLoaded])
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100">
       <Navigation />
@@ -521,6 +546,15 @@ export default function GeneratorPage() {
                     <div className="text-sm text-amber-600 mt-2">
                       This may take a few seconds
                     </div>
+                  </div>
+                )}
+                
+                {/* Debug info */}
+                {isLoaded && (
+                  <div className="text-center text-amber-700 text-sm">
+                    <div>✅ P5.js loaded and ready</div>
+                    <div>Canvas should appear above</div>
+                    <div>Check browser console for any errors</div>
                   </div>
                 )}
               </div>
