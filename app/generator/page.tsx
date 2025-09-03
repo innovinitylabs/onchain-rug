@@ -27,16 +27,17 @@ export default function GeneratorPage() {
         const script = document.createElement('script')
         script.src = 'https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js'
         script.onload = () => {
-          // Wait for P5.js to be fully initialized
-          setTimeout(() => {
+          // Wait for P5.js to be fully initialized and available globally
+          const checkP5 = () => {
             if ((window as any).p5 && typeof (window as any).randomSeed === 'function') {
-              console.log('P5.js loaded successfully')
+              console.log('P5.js loaded successfully with randomSeed available')
               resolve()
             } else {
-              console.error('P5.js failed to load properly')
-              resolve() // Don't block forever
+              console.log('P5.js loading, waiting for randomSeed...')
+              setTimeout(checkP5, 100)
             }
-          }, 200)
+          }
+          checkP5()
         }
         script.onerror = () => {
           console.error('Failed to load P5.js')
@@ -155,6 +156,9 @@ export default function GeneratorPage() {
                 setIsLoaded(true)
               } else {
                 console.error('Failed to load dependencies after multiple attempts')
+                console.log('Final check - P5.js:', !!(window as any).p5)
+                console.log('Final check - randomSeed:', typeof (window as any).randomSeed)
+                console.log('Final check - generateFromSeed:', typeof (window as any).generateFromSeed)
                 setIsLoaded(true) // Show UI anyway
               }
             }, 2000)
