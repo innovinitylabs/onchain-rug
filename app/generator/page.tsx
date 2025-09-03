@@ -119,6 +119,7 @@ export default function GeneratorPage() {
             ;(window as any).blendMode = p5Instance.blendMode.bind(p5Instance) // Add missing blendMode function
             ;(window as any).saveCanvas = p5Instance.saveCanvas.bind(p5Instance)
             ;(window as any).createCanvas = p5Instance.createCanvas.bind(p5Instance)
+            ;(window as any).pixelDensity = p5Instance.pixelDensity.bind(p5Instance) // Add missing pixelDensity function
             ;(window as any).background = p5Instance.background.bind(p5Instance)
             ;(window as any).fill = p5Instance.fill.bind(p5Instance)
             ;(window as any).noFill = p5Instance.noFill.bind(p5Instance)
@@ -169,6 +170,7 @@ export default function GeneratorPage() {
             ;(window as any).green = p5Instance.green.bind(p5Instance)
             ;(window as any).blue = p5Instance.blue.bind(p5Instance)
             ;(window as any).lerpColor = p5Instance.lerpColor.bind(p5Instance)
+            ;(window as any).lerp = p5Instance.lerp.bind(p5Instance) // Add missing lerp function
             // Add drawing control functions
             ;(window as any).redraw = p5Instance.redraw.bind(p5Instance)
             ;(window as any).loop = p5Instance.loop.bind(p5Instance)
