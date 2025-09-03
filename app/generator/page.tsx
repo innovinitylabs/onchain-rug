@@ -93,20 +93,14 @@ export default function GeneratorPage() {
           const p5Instance = new (window as any).p5((p: any) => {
             // This is the setup function that gets called automatically
                          p.setup = () => {
-               // Let doormat.js create the canvas with its internal dimensions
-               // We'll control the DOM rendering layer instead
+               // Create responsive canvas for display
                let canvas = p.createCanvas(1200, 800)
                canvas.parent('canvas-container')
                
-               // Control DOM rendering - make canvas fit container like wallpaper
-               canvas.style('width', '100%')  // Fit container width
-               canvas.style('height', 'auto') // Maintain aspect ratio
-               
-               p.pixelDensity(2.5)
+               // Use pixelDensity(1) for display to avoid internal dimension blowup
+               p.pixelDensity(1)
                p.noLoop()
-               console.log('🎨 P5.js setup completed, global createCanvas interceptor will handle DOM rendering')
-               
-
+               console.log('🎨 P5.js setup completed, responsive display canvas with pixelDensity(1)')
              }
             
             // Bind the global draw function to this P5.js instance
@@ -130,13 +124,30 @@ export default function GeneratorPage() {
             // Intercept createCanvas to control DOM rendering immediately
             ;(window as any).createCanvas = function(width: number, height: number) {
               const canvas = p5Instance.createCanvas(width, height)
+              // Use pixelDensity(1) for display to avoid internal dimension blowup
+              p5Instance.pixelDensity(1)
               // Immediately control DOM rendering to fit container
               canvas.style.width = '100%'
               canvas.style.height = '100%'
               canvas.style.maxWidth = '100%'
               canvas.style.maxHeight = '100%'
-              console.log(`🎯 Canvas ${width}x${height} created with DOM rendering controlled`)
+              console.log(`🎯 Canvas ${width}x${height} created with pixelDensity(1) for responsive display`)
               return canvas
+            }
+            
+            // High-quality export function that temporarily increases pixel density
+            ;(window as any).exportHighQuality = function() {
+              // Temporarily increase pixel density for export
+              p5Instance.pixelDensity(2.5)
+              // Redraw at high quality
+              if (typeof (window as any).redraw === 'function') {
+                (window as any).redraw()
+              }
+              // Save the high-quality version
+              p5Instance.saveCanvas(`rug-export-${Date.now()}`, 'png')
+              // Reset to display quality
+              p5Instance.pixelDensity(1)
+              console.log('🎨 High-quality export completed with pixelDensity(2.5)')
             }
             ;(window as any).pixelDensity = p5Instance.pixelDensity.bind(p5Instance) // Add missing pixelDensity function
             ;(window as any).background = p5Instance.background.bind(p5Instance)
