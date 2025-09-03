@@ -115,6 +115,7 @@ export default function GeneratorPage() {
             // Now expose the instance functions globally
             ;(window as any).randomSeed = p5Instance.randomSeed.bind(p5Instance)
             ;(window as any).noiseSeed = p5Instance.noiseSeed.bind(p5Instance)
+            ;(window as any).noise = p5Instance.noise.bind(p5Instance) // Add missing noise function
             ;(window as any).saveCanvas = p5Instance.saveCanvas.bind(p5Instance)
             ;(window as any).createCanvas = p5Instance.createCanvas.bind(p5Instance)
             ;(window as any).background = p5Instance.background.bind(p5Instance)
