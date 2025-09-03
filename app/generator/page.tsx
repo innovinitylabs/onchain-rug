@@ -29,19 +29,53 @@ export default function GeneratorPage() {
         script.onload = () => {
           // Wait for P5.js to be fully initialized and available globally
           const checkP5 = () => {
+            // Check multiple ways P5.js might be available
             if ((window as any).p5 && typeof (window as any).randomSeed === 'function') {
               console.log('P5.js loaded successfully with randomSeed available')
               resolve()
+            } else if ((window as any).p5 && typeof (window as any).p5.randomSeed === 'function') {
+              console.log('P5.js loaded with p5.randomSeed available')
+              // Make randomSeed globally available
+              ;(window as any).randomSeed = (window as any).p5.randomSeed
+              resolve()
+            } else if (typeof (window as any).randomSeed === 'function') {
+              console.log('randomSeed already available globally')
+              resolve()
             } else {
               console.log('P5.js loading, waiting for randomSeed...')
+              // Add a timeout to prevent infinite waiting
+              if (Date.now() - startTime > 10000) { // 10 second timeout
+                console.error('P5.js loading timeout, proceeding anyway')
+                resolve()
+                return
+              }
               setTimeout(checkP5, 100)
             }
           }
+          
+          const startTime = Date.now()
           checkP5()
         }
         script.onerror = () => {
-          console.error('Failed to load P5.js')
-          resolve() // Don't block forever
+          console.error('Failed to load P5.js from CDN, creating fallback')
+          // Create a basic fallback P5.js environment
+          ;(window as any).p5 = {}
+          ;(window as any).randomSeed = (seed: number) => {
+            // Simple fallback random seed implementation
+            ;(Math as any).seedrandom = (Math as any).seedrandom || function(seed: number) {
+              const x = Math.sin(seed) * 10000
+              return x - Math.floor(x)
+            }
+          }
+          ;(window as any).noiseSeed = (seed: number) => {
+            // Simple fallback noise seed
+            console.log('Noise seed set to:', seed)
+          }
+          ;(window as any).saveCanvas = (filename: string, format: string) => {
+            console.log('Save canvas called:', filename, format)
+            alert('Canvas save not available in fallback mode')
+          }
+          resolve()
         }
         document.head.appendChild(script)
       })
