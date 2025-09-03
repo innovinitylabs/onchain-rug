@@ -473,7 +473,7 @@ export default function GeneratorPage() {
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Controls Panel */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
@@ -590,22 +590,22 @@ export default function GeneratorPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="lg:col-span-2"
+            className="lg:col-span-3"
           >
             <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-amber-200/50">
               <h2 className="text-xl font-bold text-amber-800 mb-4">🎨 Your Onchain Rug</h2>
               
-              {/* Canvas Container - Correct dimensions for P5.js canvas */}
+              {/* Canvas Container - Increased size for better art preview */}
               <div 
                 ref={canvasContainerRef}
                 id="canvas-container"
                 className="bg-gray-100 rounded-lg flex items-center justify-center relative mx-auto"
                 style={{ 
                   width: '100%',
-                  maxWidth: '1320px',  // P5.js canvas width: doormatHeight + (fringeLength * 4) = 1200 + 120
+                  maxWidth: '1600px',  // Increased from 1320px for better preview
                   height: 'auto',
-                  aspectRatio: '1320/920', // P5.js canvas aspect ratio: width/height
-                  overflow: 'hidden', // Prevent canvas from overflowing
+                  aspectRatio: '1600/1100', // Adjusted aspect ratio for larger container
+                  overflow: 'visible', // Allow canvas to be fully visible
                   boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
                   border: '1px solid #e5e7eb'
                 }}
