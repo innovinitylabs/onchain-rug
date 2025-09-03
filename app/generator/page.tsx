@@ -558,9 +558,9 @@ export default function GeneratorPage() {
                           }
                         `}</style>
                       </div>
-                    </div>
-                  </div>
-                  
+                </div>
+              </div>
+
                   {/* Monitor Base - Taller Frame with Logo */}
                   <div className="bg-amber-100 mt-4 pt-6 pb-8 rounded-b-xl border-t-6 border-amber-200">
                     {/* Rugpull Computer Logo and Text */}
@@ -604,7 +604,7 @@ export default function GeneratorPage() {
                 </div>
                 <div className="text-sm text-green-500">
                   {isLoaded ? 'READY' : 'LOADING...'}
-                </div>
+                  </div>
               </div>
               
               {/* Simple Terminal Commands */}
@@ -686,8 +686,9 @@ export default function GeneratorPage() {
                 <div className="border-t border-green-500/30 pt-4">
                   <NFTExporter 
                     currentSeed={currentSeed}
-                    textInputs={textInputs}
-                    isLoaded={isLoaded}
+                    currentPalette={null}
+                    currentStripeData={[]}
+                    textRows={textInputs}
                   />
                 </div>
               </div>

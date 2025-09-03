@@ -70,8 +70,8 @@ export default function Hero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1 }}
           >
-            Each NFT is a unique, woven masterpiece with 102 color palettes, 
-            custom text embedding, and authentic cloth physics. 
+            Each NFT is a unique, woven masterpiece with 102 color palettes, and 
+            custom text embedding. 
             <br />
             <span className="font-semibold">Max supply: 1111 onchain rugs</span>
           </motion.p>
