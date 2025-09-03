@@ -28,7 +28,8 @@ export default function GeneratorPage() {
       
       // Create script element exactly like original HTML
       const script = document.createElement('script')
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js'
+      // Try older P5.js version that might have better global function support
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js'
       script.onload = () => {
               // Wait a bit for P5.js to fully initialize
       setTimeout(() => {
@@ -42,6 +43,31 @@ export default function GeneratorPage() {
           ;(window as any).noiseSeed = (window as any).p5.noiseSeed
           ;(window as any).saveCanvas = (window as any).p5.saveCanvas
           resolve()
+        } else if ((window as any).p5) {
+          console.log('✅ P5.js loaded, checking for instance methods')
+          // Try to find P5.js instance and extract functions
+          const p5Instance = (window as any).p5
+          if (p5Instance && typeof p5Instance.randomSeed === 'function') {
+            console.log('✅ Found P5.js instance methods, making global')
+            ;(window as any).randomSeed = p5Instance.randomSeed
+            ;(window as any).noiseSeed = p5Instance.noiseSeed
+            ;(window as any).saveCanvas = p5Instance.saveCanvas
+            resolve()
+          } else {
+            console.log('⏳ P5.js loaded but methods not accessible, forcing global exposure')
+            // Force P5.js to expose functions globally by creating a dummy instance
+            try {
+              const dummyP5 = new (window as any).p5(() => {})
+              ;(window as any).randomSeed = dummyP5.randomSeed
+              ;(window as any).noiseSeed = dummyP5.noiseSeed
+              ;(window as any).saveCanvas = dummyP5.saveCanvas
+              console.log('✅ Forced P5.js functions to global scope')
+              resolve()
+            } catch (error) {
+              console.log('⚠️ Could not force P5.js global exposure, continuing anyway')
+              resolve()
+            }
+          }
         } else {
           console.log('⏳ P5.js loaded but randomSeed not ready, waiting...')
           // Wait longer for P5.js to fully initialize
@@ -53,8 +79,19 @@ export default function GeneratorPage() {
       }, 200)
       }
       script.onerror = () => {
-        console.error('❌ Failed to load P5.js from CDN')
-        resolve() // Continue anyway
+        console.error('❌ Failed to load P5.js v1.6.0, trying v1.7.0')
+        // Fallback to newer version
+        const fallbackScript = document.createElement('script')
+        fallbackScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js'
+        fallbackScript.onload = () => {
+          console.log('✅ P5.js v1.7.0 loaded as fallback')
+          setTimeout(() => resolve(), 500)
+        }
+        fallbackScript.onerror = () => {
+          console.error('❌ Failed to load P5.js from CDN entirely')
+          resolve() // Continue anyway
+        }
+        document.head.appendChild(fallbackScript)
       }
       
       // Append to head like original HTML
