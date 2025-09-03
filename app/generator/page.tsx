@@ -382,17 +382,19 @@ export default function GeneratorPage() {
             <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-amber-200/50">
               <h2 className="text-xl font-bold text-amber-800 mb-4">🎨 Your Onchain Rug</h2>
               
-              {/* Canvas Container - Horizontal orientation matching doormat */}
+              {/* Canvas Container - Proper dimensions for rotated P5.js canvas */}
               <div 
                 ref={canvasContainerRef}
                 id="canvas-container"
-                className="w-full bg-gray-100 rounded-lg flex items-center justify-center relative p-4"
+                className="bg-gray-100 rounded-lg flex items-center justify-center relative mx-auto"
                 style={{ 
                   width: '100%',
                   maxWidth: '920px',   // DOORMAT_WIDTH + (FRINGE_LENGTH * 4) = 800 + 120
-                  height: '1320px',    // DOORMAT_HEIGHT + (FRINGE_LENGTH * 4) = 1200 + 120
-                  margin: '0 auto',
-                  overflow: 'visible'
+                  height: 'auto',
+                  aspectRatio: '920/1320', // Maintain proper proportions
+                  overflow: 'hidden', // Prevent canvas from overflowing
+                  boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
+                  border: '1px solid #e5e7eb'
                 }}
               >
                 {!isLoaded && (
