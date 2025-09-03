@@ -94,7 +94,7 @@ export default function GeneratorPage() {
             // This is the setup function that gets called automatically
                          p.setup = () => {
                // Create canvas with proper dimensions
-               let canvas = p.createCanvas(1320, 920) // Exact canvas dimensions
+               let canvas = p.createCanvas(1320, 900) // Exact canvas dimensions
                canvas.parent('canvas-container')
                
                // Set canvas to fill container completely
@@ -449,6 +449,16 @@ export default function GeneratorPage() {
               ;(window as any).setup()
             }
           }
+          
+          // Ensure P5.js canvas fits container exactly
+          if (canvasContainerRef.current) {
+            canvas.style.width = '100%'
+            canvas.style.height = '100%'
+            canvas.style.maxWidth = '100%'
+            canvas.style.maxHeight = '100%'
+            canvas.style.objectFit = 'contain'
+            console.log('🎯 P5.js canvas resized to fit container')
+          }
         } else {
           console.log('❌ No P5.js canvas found in DOM')
         }
@@ -511,7 +521,7 @@ export default function GeneratorPage() {
                            className="bg-gray-900 rounded-lg flex items-center justify-center relative mx-auto border border-green-500/30"
                           style={{ 
                             width: '1320px',   // Exact P5.js canvas width
-                            height: '920px',   // Exact P5.js canvas height
+                            height: '900px',   // Exact P5.js canvas height
                             maxWidth: '100%',  // Responsive constraint
                             overflow: 'hidden', // Prevent canvas overflow
                             boxShadow: '0 0 20px rgba(0, 255, 0, 0.1)',
@@ -532,6 +542,17 @@ export default function GeneratorPage() {
                             </div>
                           </div>
                         )}
+                        
+                        {/* P5.js Canvas Styling Override */}
+                        <style jsx>{`
+                          #defaultCanvas0 {
+                            width: 100% !important;
+                            height: 100% !important;
+                            max-width: 100% !important;
+                            max-height: 100% !important;
+                            object-fit: contain !important;
+                          }
+                        `}</style>
                       </div>
                     </div>
                   </div>
