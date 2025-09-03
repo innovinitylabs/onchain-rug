@@ -93,24 +93,18 @@ export default function GeneratorPage() {
           const p5Instance = new (window as any).p5((p: any) => {
             // This is the setup function that gets called automatically
                          p.setup = () => {
-               // Create P5.js canvas with the dimensions it needs
+               // Let doormat.js create the canvas with its internal dimensions
+               // We'll control the DOM rendering layer instead
                let canvas = p.createCanvas(1200, 800)
                canvas.parent('canvas-container')
                
-               // Make canvas fit container like wallpaper - scale to fit while maintaining aspect ratio
-               const container = document.getElementById('canvas-container')
-               if (container) {
-                 // Set canvas to fit container like wallpaper
-                 canvas.style.width = '100%'
-                 canvas.style.height = '100%'
-                 canvas.style.objectFit = 'contain'
-                 canvas.style.maxWidth = '100%'
-                 canvas.style.maxHeight = '100%'
-               }
+               // Control DOM rendering - make canvas fit container like wallpaper
+               canvas.style('width', '100%')  // Fit container width
+               canvas.style('height', 'auto') // Maintain aspect ratio
                
                p.pixelDensity(2.5)
                p.noLoop()
-               console.log('🎨 P5.js setup completed, canvas created to fit container like wallpaper')
+               console.log('🎨 P5.js setup completed, DOM rendering controlled for container fit')
              }
             
             // Bind the global draw function to this P5.js instance
@@ -511,14 +505,15 @@ export default function GeneratorPage() {
                         zIndex: 1
                       }}></div>
                       
-                      {/* Canvas Container - Fixed dimensions for wallpaper fit */}
+                      {/* Canvas Container - Responsive sizing for DOM rendering */}
                       <div 
                         ref={canvasContainerRef}
                         id="canvas-container"
                         className="bg-gray-900 rounded-lg flex items-center justify-center relative mx-auto border border-green-500/30"
                         style={{ 
-                          width: '1200px',        // Fixed width to match canvas
-                          height: '800px',        // Fixed height to match canvas
+                          width: '100%',          // Take full available width
+                          height: 'auto',         // Auto height based on aspect ratio
+                          aspectRatio: '1200/800', // Match canvas aspect ratio
                           maxWidth: '100%',       // Responsive constraint
                           overflow: 'hidden',     // Prevent canvas overflow
                           boxShadow: '0 0 20px rgba(0, 255, 0, 0.1)',
