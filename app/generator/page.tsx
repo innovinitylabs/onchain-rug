@@ -97,11 +97,9 @@ export default function GeneratorPage() {
               let canvas = p.createCanvas(1200 + (30 * 4), 800 + (30 * 4)) // doormatHeight + fringe, doormatWidth + fringe
               canvas.parent('canvas-container')
               
-              // Ensure canvas is properly constrained within container
-              canvas.style.maxWidth = '100%'
-              canvas.style.maxHeight = '100%'
-              canvas.style.width = 'auto'
-              canvas.style.height = 'auto'
+              // Set canvas to exact dimensions to match container
+              canvas.style.width = '1320px'
+              canvas.style.height = '920px'
               
               p.pixelDensity(2.5)
               p.noLoop()
