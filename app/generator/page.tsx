@@ -16,30 +16,48 @@ export default function GeneratorPage() {
   const canvasContainerRef = useRef<HTMLDivElement>(null)
   const scriptsLoadedRef = useRef<Set<string>>(new Set())
 
-  // Load P5.js - simple and direct approach
+  // Load P5.js - simple approach like original HTML
   const loadP5 = () => {
     return new Promise<void>((resolve) => {
+      // Check if P5.js is already loaded
       if ((window as any).p5 && typeof (window as any).randomSeed === 'function') {
+        console.log('✅ P5.js already available')
         resolve()
         return
       }
       
+      // Create script element exactly like original HTML
       const script = document.createElement('script')
       script.src = 'https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js'
       script.onload = () => {
-        // Simple check - if p5 exists, we're good
-        if ((window as any).p5) {
-          console.log('✅ P5.js loaded successfully')
+              // Wait a bit for P5.js to fully initialize
+      setTimeout(() => {
+        if ((window as any).p5 && typeof (window as any).randomSeed === 'function') {
+          console.log('✅ P5.js loaded and randomSeed available')
+          resolve()
+        } else if ((window as any).p5 && typeof (window as any).p5.randomSeed === 'function') {
+          console.log('✅ P5.js loaded with p5.randomSeed, making global')
+          // Make P5.js functions globally available
+          ;(window as any).randomSeed = (window as any).p5.randomSeed
+          ;(window as any).noiseSeed = (window as any).p5.noiseSeed
+          ;(window as any).saveCanvas = (window as any).p5.saveCanvas
           resolve()
         } else {
-          console.log('⏳ P5.js loading, waiting...')
-          setTimeout(() => resolve(), 500)
+          console.log('⏳ P5.js loaded but randomSeed not ready, waiting...')
+          // Wait longer for P5.js to fully initialize
+          setTimeout(() => {
+            console.log('✅ P5.js initialization complete')
+            resolve()
+          }, 1000)
         }
+      }, 200)
       }
       script.onerror = () => {
-        console.error('❌ Failed to load P5.js')
+        console.error('❌ Failed to load P5.js from CDN')
         resolve() // Continue anyway
       }
+      
+      // Append to head like original HTML
       document.head.appendChild(script)
     })
   }
@@ -382,16 +400,16 @@ export default function GeneratorPage() {
             <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-amber-200/50">
               <h2 className="text-xl font-bold text-amber-800 mb-4">🎨 Your Onchain Rug</h2>
               
-              {/* Canvas Container - Proper dimensions for rotated P5.js canvas */}
+              {/* Canvas Container - Correct dimensions for P5.js canvas */}
               <div 
                 ref={canvasContainerRef}
                 id="canvas-container"
                 className="bg-gray-100 rounded-lg flex items-center justify-center relative mx-auto"
                 style={{ 
                   width: '100%',
-                  maxWidth: '920px',   // DOORMAT_WIDTH + (FRINGE_LENGTH * 4) = 800 + 120
+                  maxWidth: '1320px',  // P5.js canvas width: doormatHeight + (fringeLength * 4) = 1200 + 120
                   height: 'auto',
-                  aspectRatio: '920/1320', // Maintain proper proportions
+                  aspectRatio: '1320/920', // P5.js canvas aspect ratio: width/height
                   overflow: 'hidden', // Prevent canvas from overflowing
                   boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
                   border: '1px solid #e5e7eb'
