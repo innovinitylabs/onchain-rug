@@ -94,7 +94,7 @@ export default function GeneratorPage() {
             // This is the setup function that gets called automatically
                          p.setup = () => {
                // Create canvas with proper dimensions
-               let canvas = p.createCanvas(1200 + (30 * 4), 800 + (30 * 4)) // doormatHeight + fringe, doormatWidth + fringe
+               let canvas = p.createCanvas(1320, 920) // Exact canvas dimensions
                canvas.parent('canvas-container')
                
                // Set canvas to fill container completely
@@ -508,12 +508,11 @@ export default function GeneratorPage() {
                                                  <div 
                            ref={canvasContainerRef}
                            id="canvas-container"
-                           className="bg-gray-900 rounded-lg flex items-center justify-center relative w-full border border-green-500/30"
+                           className="bg-gray-900 rounded-lg flex items-center justify-center relative mx-auto border border-green-500/30"
                           style={{ 
-                            width: '100%',     // Use full width of parent container
-                            height: '100%',    // Use full height of parent container
+                            width: '1320px',   // Exact P5.js canvas width
+                            height: '920px',   // Exact P5.js canvas height
                             maxWidth: '100%',  // Responsive constraint
-                            maxHeight: '100%', // Responsive constraint
                             overflow: 'hidden', // Prevent canvas overflow
                             boxShadow: '0 0 20px rgba(0, 255, 0, 0.1)',
                             position: 'relative', // Ensure proper positioning context for loading overlay
