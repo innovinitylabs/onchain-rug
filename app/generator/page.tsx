@@ -116,6 +116,7 @@ export default function GeneratorPage() {
             ;(window as any).randomSeed = p5Instance.randomSeed.bind(p5Instance)
             ;(window as any).noiseSeed = p5Instance.noiseSeed.bind(p5Instance)
             ;(window as any).noise = p5Instance.noise.bind(p5Instance) // Add missing noise function
+            ;(window as any).blendMode = p5Instance.blendMode.bind(p5Instance) // Add missing blendMode function
             ;(window as any).saveCanvas = p5Instance.saveCanvas.bind(p5Instance)
             ;(window as any).createCanvas = p5Instance.createCanvas.bind(p5Instance)
             ;(window as any).background = p5Instance.background.bind(p5Instance)
@@ -143,6 +144,20 @@ export default function GeneratorPage() {
             ;(window as any).PI = p5Instance.PI
             ;(window as any).TWO_PI = p5Instance.TWO_PI
             ;(window as any).HALF_PI = p5Instance.HALF_PI
+            // Add blend mode constants
+            ;(window as any).MULTIPLY = p5Instance.MULTIPLY
+            ;(window as any).ADD = p5Instance.ADD
+            ;(window as any).SUBTRACT = p5Instance.SUBTRACT
+            ;(window as any).DARKEST = p5Instance.DARKEST
+            ;(window as any).LIGHTEST = p5Instance.LIGHTEST
+            ;(window as any).DIFFERENCE = p5Instance.DIFFERENCE
+            ;(window as any).EXCLUSION = p5Instance.EXCLUSION
+            ;(window as any).OVERLAY = p5Instance.OVERLAY
+            ;(window as any).SOFT_LIGHT = p5Instance.SOFT_LIGHT
+            ;(window as any).HARD_LIGHT = p5Instance.HARD_LIGHT
+            ;(window as any).COLOR_DODGE = p5Instance.COLOR_DODGE
+            ;(window as any).COLOR_BURN = p5Instance.COLOR_BURN
+            ;(window as any).SCREEN = p5Instance.SCREEN
             // Add color utility functions
             ;(window as any).color = p5Instance.color.bind(p5Instance)
             ;(window as any).red = p5Instance.red.bind(p5Instance)
