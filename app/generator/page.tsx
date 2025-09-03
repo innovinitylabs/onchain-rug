@@ -89,48 +89,33 @@ export default function GeneratorPage() {
           console.log('✅ P5.js loaded, creating instance to get functions')
           // Create a P5.js instance to get access to functions
           try {
-            console.log('🚀 Creating P5.js instance...')
-            // Use the proper P5.js initialization - this will call setup() automatically
-            const p5Instance = new (window as any).p5((p: any) => {
-              // This is the setup function that gets called automatically
-              p.setup = () => {
-                console.log('🎨 P5.js setup starting...')
-                // Create canvas with scaled dimensions (0.8x scale)
-                let canvas = p.createCanvas(960 + (30 * 4), 640 + (30 * 4)) // Scaled down: (1200 * 0.8) + fringe, (800 * 0.8) + fringe
-                canvas.parent('canvas-container')
-                
-                // Set canvas to exact scaled dimensions to match container
-                canvas.style.width = '1056px'
-                canvas.style.height = '736px'
-                
-                p.pixelDensity(2.5)
-                p.noLoop()
-                console.log('🎨 P5.js setup completed, canvas created with scaled dimensions (1056x736)')
-                
-                // Mark as loaded since P5.js is ready
-                setIsLoaded(true)
-              }
+                      // Use the proper P5.js initialization - this will call setup() automatically
+          const p5Instance = new (window as any).p5((p: any) => {
+            // This is the setup function that gets called automatically
+            p.setup = () => {
+              // Create canvas with scaled dimensions (0.8x scale)
+              let canvas = p.createCanvas(960 + (30 * 4), 640 + (30 * 4)) // Scaled down: (1200 * 0.8) + fringe, (800 * 0.8) + fringe
+              canvas.parent('canvas-container')
               
-              // Bind the global draw function to this P5.js instance
-              p.draw = () => {
-                // Call the global draw function that's defined in doormat.js
-                if (typeof (window as any).draw === 'function') {
-                  (window as any).draw()
-                } else {
-                  console.log('⚠️ Global draw function not available yet, waiting...')
-                }
-              }
-            })
+                             // Set canvas to exact scaled dimensions to match container
+               canvas.style.width = '1080px'
+               canvas.style.height = '760px'
+              
+              p.pixelDensity(2.5)
+              p.noLoop()
+              console.log('🎨 P5.js setup completed, canvas created with scaled dimensions (1056x736)')
+            }
             
-            console.log('✅ P5.js instance created successfully')
-            
-            // Fallback: if P5.js setup doesn't complete within 3 seconds, show UI anyway
-            setTimeout(() => {
-              if (!isLoaded) {
-                console.log('⏰ P5.js setup timeout, showing UI anyway')
-                setIsLoaded(true)
+            // Bind the global draw function to this P5.js instance
+            p.draw = () => {
+              // Call the global draw function that's defined in doormat.js
+              if (typeof (window as any).draw === 'function') {
+                (window as any).draw()
+              } else {
+                console.log('⚠️ Global draw function not available yet, waiting...')
               }
-            }, 3000)
+            }
+          })
             
             // Now expose the instance functions globally
             ;(window as any).randomSeed = p5Instance.randomSeed.bind(p5Instance)
@@ -525,8 +510,8 @@ export default function GeneratorPage() {
                         id="canvas-container"
                         className="bg-gray-900 rounded-lg flex items-center justify-center relative mx-auto border border-green-500/30"
                         style={{ 
-                          width: '1056px',  // Scaled down from 1320px (0.8x)
-                          height: '736px',   // Scaled down from 920px (0.8x)
+                          width: '1080px',  // Match P5.js canvas width exactly (960 + 120)
+                          height: '760px',   // Match P5.js canvas height exactly (640 + 120)
                           maxWidth: '100%',  // Responsive constraint
                           overflow: 'hidden', // Prevent canvas overflow
                           boxShadow: '0 0 20px rgba(0, 255, 0, 0.1)',
@@ -548,9 +533,9 @@ export default function GeneratorPage() {
                           </div>
                         )}
                       </div>
-                    </div>
-                  </div>
-                  
+                </div>
+              </div>
+
                   {/* Monitor Base - Taller Frame with Logo */}
                   <div className="bg-amber-100 mt-4 pt-6 pb-8 rounded-b-xl border-t-6 border-amber-200">
                     {/* Rugpull Computer Logo and Text */}
@@ -594,7 +579,7 @@ export default function GeneratorPage() {
                 </div>
                 <div className="text-sm text-green-500">
                   {isLoaded ? 'READY' : 'LOADING...'}
-                </div>
+                  </div>
               </div>
               
               {/* Simple Terminal Commands */}
