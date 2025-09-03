@@ -134,6 +134,23 @@ export default function GeneratorPage() {
               canvas.style.maxWidth = '100%'
               canvas.style.maxHeight = '100%'
               
+              // Force the canvas to fill the container completely
+              canvas.style.objectFit = 'cover'
+              canvas.style.objectPosition = 'center'
+              
+              // Override the parent function to ensure proper positioning
+              const originalParent = canvas.parent
+              canvas.parent = function(container: any) {
+                const result = originalParent.call(this, container)
+                // After parent is set, ensure canvas fills container
+                this.style.width = '100%'
+                this.style.height = '100%'
+                this.style.objectFit = 'cover'
+                this.style.objectPosition = 'center'
+                console.log('🎯 Canvas parent set and forced to fill container')
+                return result
+              }
+              
               console.log(`🎯 Canvas forced to ${containerWidth}x${containerHeight} with pixelDensity(1) for perfect container fit`)
               return canvas
             }
