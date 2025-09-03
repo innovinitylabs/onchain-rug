@@ -597,8 +597,8 @@ export default function GeneratorPage() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="lg:col-span-5"
           >
-            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-amber-200/50">
-              <h2 className="text-xl font-bold text-amber-800 mb-4">🎨 Your Onchain Rug</h2>
+            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-amber-200/50">
+              <h2 className="text-xl font-bold text-amber-800 mb-3">🎨 Your Onchain Rug</h2>
               
               {/* Canvas Container - Match P5.js canvas dimensions exactly */}
               <div 
@@ -654,7 +654,7 @@ export default function GeneratorPage() {
                 
                 <div>
                   <h3 className="font-semibold text-amber-800 mb-2">NFT Traits</h3>
-                  <div className="space-y-1 text-sm">
+                  <div className="space-y-1 text-sm text-amber-800">
                     {traits ? (
                       <>
                         <div className="flex justify-between">
