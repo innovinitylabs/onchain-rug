@@ -631,6 +631,21 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
       console.log('🔍 DEBUG: window.warpThickness:', window.warpThickness)
       console.log('🔍 DEBUG: window.textData length:', window.textData?.length || 0)
       
+      // FIXED: If P5.js text generation failed, generate text manually
+      if (!window.textData || window.textData.length === 0) {
+        console.log('⚠️ P5.js text generation failed, generating text manually...')
+        if (window.characterMap && window.generateTextDataInSketch) {
+          try {
+            window.generateTextDataInSketch()
+            console.log('✅ Manual text generation completed, textData length:', window.textData?.length || 0)
+          } catch (error) {
+            console.error('❌ Manual text generation failed:', error)
+          }
+        } else {
+          console.log('⚠️ Character map or text generation function not available')
+        }
+      }
+      
       // Now we need to get the generated data from the P5.js functions
       console.log('✅ P5.js generation complete. Stripe data:', window.stripeData?.length || 0, 'stripes')
       
@@ -638,9 +653,10 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
       // but draw it using the CORRECT P5.js angles for selvedges
       console.log('🎨 Using P5.js generated data with CORRECT selvedge angles')
       
-      // Get the palette that P5.js selected
-      const selectedPalette = window.selectedPalette || window.colorPalettes?.[seed % window.colorPalettes.length] || { name: 'Default', colors: ['#8B4513', '#D2691E', '#A0522D'] }
+      // Get the palette that P5.js selected - FIXED: Use seed-based palette selection for variety
+      const selectedPalette = window.colorPalettes?.[seed % window.colorPalettes.length] || { name: 'Default', colors: ['#8B4513', '#D2691E', '#A0522D'] }
       console.log('🎨 P5.js selected palette:', selectedPalette.name, 'with', selectedPalette.colors.length, 'colors')
+      console.log('🎨 Using seed-based palette selection for variety (seed:', seed, '-> palette index:', seed % (window.colorPalettes?.length || 1), ')')
       
       // Use P5.js generated stripe data if available
       const stripeData = window.stripeData || generateStripeDataForRug(selectedPalette, doormatHeight, () => Math.random())
@@ -1334,10 +1350,21 @@ function Scene() {
                 console.log('✅ Initialized selectedPalette:', window.selectedPalette)
               }
               
-              // Small delay to ensure all functions are available
-              setTimeout(() => {
+                          // Small delay to ensure all functions are available
+            setTimeout(() => {
+              // FIXED: Ensure character map is loaded before setting dependencies
+              if (window.characterMap) {
+                console.log('✅ Character map confirmed loaded, setting dependencies ready')
                 setDependenciesLoaded(true)
-              }, 100)
+              } else {
+                console.log('⚠️ Character map not loaded yet, waiting...')
+                // Wait a bit more for character map to load
+                setTimeout(() => {
+                  console.log('✅ Setting dependencies ready after character map check')
+                  setDependenciesLoaded(true)
+                }, 500)
+              }
+            }, 100)
             }
             interfaceScript.onerror = () => {
               console.log('⚠️ HTML interface failed to load, using generateDoormatCore directly')
