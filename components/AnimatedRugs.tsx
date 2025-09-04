@@ -66,28 +66,24 @@ const hexToRgb = (hex: string) => {
 }
 
 // Helper function to get dynamic text color using your generator's exact logic
-const getDynamicTextColor = (bgBrightness: number, seed: number) => {
-  const colorPalettes = window.colorPalettes || []
-  if (colorPalettes.length > 0) {
-    const selectedPalette = colorPalettes[seed % colorPalettes.length]
-    if (selectedPalette && selectedPalette.colors) {
-      // Find darkest and lightest colors from palette (matching your generator's updateTextColors logic)
-      let darkest = selectedPalette.colors[0]
-      let lightest = selectedPalette.colors[0]
-      let darkestVal = 999, lightestVal = -1
-      
-      selectedPalette.colors.forEach((hex: string) => {
-        const c = hexToRgb(hex)
-        if (c) {
-          const bright = (c.r + c.g + c.b) / 3
-          if (bright < darkestVal) { darkestVal = bright; darkest = hex }
-          if (bright > lightestVal) { lightestVal = bright; lightest = hex }
-        }
-      })
-      
-      // Use your generator's exact color selection logic
-      return bgBrightness < 128 ? lightest : darkest
-    }
+const getDynamicTextColor = (bgBrightness: number, selectedPalette: any) => {
+  if (selectedPalette && selectedPalette.colors) {
+    // Find darkest and lightest colors from palette (matching your generator's updateTextColors logic)
+    let darkest = selectedPalette.colors[0]
+    let lightest = selectedPalette.colors[0]
+    let darkestVal = 999, lightestVal = -1
+    
+    selectedPalette.colors.forEach((hex: string) => {
+      const c = hexToRgb(hex)
+      if (c) {
+        const bright = (c.r + c.g + c.b) / 3
+        if (bright < darkestVal) { darkestVal = bright; darkest = hex }
+        if (bright > lightestVal) { lightestVal = bright; lightest = hex }
+      }
+    })
+    
+    // Use your generator's exact color selection logic
+    return bgBrightness < 128 ? lightest : darkest
   }
   return '#FFFFFF' // Fallback
 }
@@ -806,7 +802,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
               textColor = bgBrightness < 128 ? lightHex : darkHex
             } else {
               // P5.js colors not working, use direct palette logic
-              textColor = getDynamicTextColor(bgBrightness, seed)
+              textColor = getDynamicTextColor(bgBrightness, selectedPalette)
             }
           } else {
             // P5.js colors not available, use direct palette logic
@@ -815,7 +811,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
             const g = imageData.data[1] 
             const b = imageData.data[2]
             const bgBrightness = (r + g + b) / 3
-            textColor = getDynamicTextColor(bgBrightness, seed)
+            textColor = getDynamicTextColor(bgBrightness, selectedPalette)
           }
           
           // Draw with your generator's exact positioning and colors
@@ -921,7 +917,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
               textColor = bgBrightness < 128 ? lightHex : darkHex
             } else {
               // P5.js colors not working, use direct palette logic
-              textColor = getDynamicTextColor(bgBrightness, seed)
+              textColor = getDynamicTextColor(bgBrightness, selectedPalette)
             }
           } else {
             // P5.js colors not available, use direct palette logic
@@ -930,7 +926,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
             const g = imageData.data[1] 
             const b = imageData.data[2]
             const bgBrightness = (r + g + b) / 3
-            textColor = getDynamicTextColor(bgBrightness, seed)
+            textColor = getDynamicTextColor(bgBrightness, selectedPalette)
           }
           
           // Draw with your generator's exact positioning and colors
