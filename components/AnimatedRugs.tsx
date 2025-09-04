@@ -270,8 +270,8 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
         
         // Draw sophisticated selvedge arc (EXACT COPY of your drawTexturedSelvedgeArc)
         const radius = weftThickness * (random() * 0.6 + 1.2)
-        // FIXED: Use EXACT positioning from P5.js generator
-        const centerX = offsetX + (random() * 4 - 2) // Start at left edge, slight variation
+        // FIXED: Position so arc edge touches canvas boundary perfectly
+        const centerX = offsetX + radius + (random() * 2 - 1) // Left edge + radius for perfect touch
         const centerY = offsetY + y + weftThickness/2 + (random() * 2 - 1) // Slight vertical variation like your generator
         
         // FIXED: Use EXACT angles from your original P5.js generator
@@ -317,8 +317,8 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
         
         // Draw sophisticated selvedge arc (EXACT COPY of your drawTexturedSelvedgeArc)
         const radius = weftThickness * (random() * 0.6 + 1.2)
-        // FIXED: Use EXACT positioning from P5.js generator
-        const centerX = offsetX + doormatWidth + (random() * 4 - 2) // Start at right edge, slight variation
+        // FIXED: Position so arc edge touches canvas boundary perfectly
+        const centerX = offsetX + doormatWidth - radius + (random() * 2 - 1) // Right edge - radius for perfect touch
         const centerY = offsetY + y + weftThickness/2 + (random() * 2 - 1) // Slight vertical variation like your generator
         
         // FIXED: Use EXACT angles from your original P5.js generator
