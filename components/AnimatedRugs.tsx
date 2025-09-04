@@ -508,14 +508,21 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
     const startY = (doormatHeight - textHeight) / 2 + fringeLength * 2  // Center text block
     
     // Generate character pixels for each character - VERTICAL FLOW with TIGHT SPACING
+    console.log('🔤 Generating text:', text, 'with length:', text.length)
+    console.log('📏 Character dimensions:', { charWidth, charHeight, verticalSpacing })
+    console.log('📍 Text positioning:', { startX, startY, textHeight })
+    
     for (let i = 0; i < text.length; i++) {
       const char = text.charAt(i)
       const charDef = window.characterMap[char] || window.characterMap[' ']
+      
+      console.log(`📝 Character ${i}: '${char}' - definition:`, charDef ? 'Found' : 'Missing')
       
       if (charDef) {
         const charY = startY + i * verticalSpacing  // Characters stacked vertically with tight spacing
         
         // Generate pixels for this character - KEEP ROTATION for canvas orientation
+        let pixelCount = 0
         for (let row = 0; row < charDef.length; row++) {
           for (let col = 0; col < charDef[0].length; col++) {
             if (charDef[row][col] === '1') {
@@ -529,12 +536,15 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
                 width: scaledWarp,
                 height: scaledWeft
               })
+              pixelCount++
             }
           }
         }
+        console.log(`✅ Character '${char}' generated ${pixelCount} pixels at Y: ${charY}`)
       }
     }
     
+    console.log('🎯 Total text data generated:', textData.length, 'pixels')
     return textData
   }
   
@@ -747,13 +757,32 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
       
       // Generate text data using your P5.js logic
       const textData = generateTextDataForRug(selectedWord, doormatWidth, doormatHeight, fringeLength)
+      console.log('🎨 Text data for drawing (manual path):', textData.length, 'pixels')
       
       // Draw the text pixels (centered)
       if (textData.length > 0) {
         ctx.fillStyle = '#FFFFFF' // White text for visibility
+        let drawnPixels = 0
         textData.forEach(pixel => {
-          ctx.fillRect(pixel.x + offsetX, pixel.y + offsetY, pixel.width, pixel.height)
+          const drawX = pixel.x + offsetX
+          const drawY = pixel.y + offsetY
+          
+          // Debug: Log first few pixels to see positioning
+          if (drawnPixels < 5) {
+            console.log(`🎯 Drawing pixel ${drawnPixels} (manual):`, { 
+              original: { x: pixel.x, y: pixel.y }, 
+              offset: { offsetX, offsetY }, 
+              final: { drawX, drawY },
+              size: { width: pixel.width, height: pixel.height }
+            })
+          }
+          
+          ctx.fillRect(drawX, drawY, pixel.width, pixel.height)
+          drawnPixels++
         })
+        console.log(`✅ Drawn ${drawnPixels} text pixels on canvas (manual path)`)
+      } else {
+        console.log('❌ No text data to draw (manual path)')
       }
       
       // Draw proper fringe and selvedge as part of the art (EXACTLY like your generator)
