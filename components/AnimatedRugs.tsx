@@ -616,11 +616,18 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
       }
       
       // NOW call the text generation pipeline AFTER generateDoormatCore sets up the palette
+      console.log('🔍 DEBUG: About to call text generation pipeline')
+      console.log('🔍 DEBUG: window.generateTextDataInSketch available:', !!window.generateTextDataInSketch)
+      console.log('🔍 DEBUG: window.doormatTextRows set to:', window.doormatTextRows)
+      console.log('🔍 DEBUG: window.characterMap available:', !!window.characterMap)
+      console.log('🔍 DEBUG: window.warpThickness:', window.warpThickness)
+      
       if (window.generateTextDataInSketch && typeof window.generateTextDataInSketch === 'function') {
         console.log('🚀 Calling your EXACT text generation pipeline!')
         try {
           window.generateTextDataInSketch()
           console.log('✅ Text generation pipeline completed successfully')
+          console.log('🔍 DEBUG: After text generation, window.textData length:', window.textData?.length || 0)
         } catch (error) {
           console.error('❌ Error in text generation pipeline:', error)
         }
