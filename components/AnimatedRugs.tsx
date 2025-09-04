@@ -497,23 +497,23 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
     const scaledWarp = warpSpacing * TEXT_SCALE
     const scaledWeft = weftSpacing * TEXT_SCALE
     
-    // Character dimensions
+    // Character dimensions - REDUCED SPACING for better fit
     const charWidth = 7 * scaledWarp
     const charHeight = 5 * scaledWeft
-    const spacing = scaledWeft
+    const verticalSpacing = charHeight * 0.6  // Reduce spacing between characters
     
     // Center the text on the rug - FLOW ALONG LENGTH (Y-axis)
-    const textHeight = text.length * charHeight
+    const textHeight = (text.length - 1) * verticalSpacing + charHeight  // Account for reduced spacing
     const startX = (doormatWidth - charWidth) / 2 + fringeLength * 2  // Center single character
     const startY = (doormatHeight - textHeight) / 2 + fringeLength * 2  // Center text block
     
-    // Generate character pixels for each character - VERTICAL FLOW
+    // Generate character pixels for each character - VERTICAL FLOW with TIGHT SPACING
     for (let i = 0; i < text.length; i++) {
       const char = text.charAt(i)
       const charDef = window.characterMap[char] || window.characterMap[' ']
       
       if (charDef) {
-        const charY = startY + i * charHeight  // Characters stacked vertically
+        const charY = startY + i * verticalSpacing  // Characters stacked vertically with tight spacing
         
         // Generate pixels for this character - KEEP ROTATION for canvas orientation
         for (let row = 0; row < charDef.length; row++) {
