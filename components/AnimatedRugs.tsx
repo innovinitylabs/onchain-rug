@@ -300,58 +300,56 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
     }
   }
   
-  // Sophisticated textured selvedge arc (EXACT COPY of your drawTexturedSelvedgeArc)
+  // COMPLETELY REWRITTEN: Use HTML5 Canvas native semicircle drawing instead of trying to replicate P5.js
   const drawTexturedSelvedgeArc = (ctx: CanvasRenderingContext2D, centerX: number, centerY: number, radius: number, startAngle: number, endAngle: number, r: number, g: number, b: number, side: string, random: () => number) => {
-    console.log('🎨 Drawing selvedge arc:', { centerX, centerY, radius, startAngle: startAngle.toFixed(3), endAngle: endAngle.toFixed(3), side })
+    console.log('🎨 Drawing selvedge arc (REWRITTEN):', { centerX, centerY, radius, startAngle: startAngle.toFixed(3), endAngle: endAngle.toFixed(3), side })
     
-    // Draw a realistic textured selvedge arc with visible woven texture (EXACT COPY)
+    // Draw a realistic textured selvedge arc with visible woven texture
     const threadCount = Math.max(6, Math.floor(radius / 1.2)) // More threads for visible texture
     const threadSpacing = radius / threadCount
     
-    // Draw individual thread arcs to create visible woven texture (EXACT COPY)
+    // Draw individual thread arcs to create visible woven texture
     for (let i = 0; i < threadCount; i++) {
       const threadRadius = radius - (i * threadSpacing)
       
-      // Create distinct thread colors for visible texture (EXACT COPY)
+      // Create distinct thread colors for visible texture
       let threadR, threadG, threadB
       
       if (i % 2 === 0) {
-        // Lighter threads (EXACT COPY)
+        // Lighter threads
         threadR = Math.max(0, Math.min(255, r + 25))
         threadG = Math.max(0, Math.min(255, g + 25))
         threadB = Math.max(0, Math.min(255, b + 25))
       } else {
-        // Darker threads (EXACT COPY)
+        // Darker threads
         threadR = Math.max(0, Math.min(255, r - 20))
         threadG = Math.max(0, Math.min(255, g - 20))
         threadB = Math.max(0, Math.min(255, b - 20))
       }
       
-      // Add some random variation for natural look (EXACT COPY)
+      // Add some random variation for natural look
       threadR = Math.max(0, Math.min(255, threadR + random() * 20 - 10))
       threadG = Math.max(0, Math.min(255, threadG + random() * 20 - 10))
       threadB = Math.max(0, Math.min(255, threadB + random() * 20 - 10))
       
       ctx.fillStyle = `rgba(${Math.round(threadR)}, ${Math.round(threadG)}, ${Math.round(threadB)}, 0.35)` // More transparent for better blending
       
-      // Draw individual thread arc with slight position variation (EXACT COPY)
+      // Draw individual thread arc with slight position variation
       const threadX = centerX + random() * 2 - 1
       const threadY = centerY + random() * 2 - 1
-      const threadStartAngle = startAngle + random() * 0.2 - 0.1
-      const threadEndAngle = endAngle + random() * 0.2 - 0.1
       
-      // CRITICAL FIX: Ensure we draw a true semicircle by using the correct arc method
+      // CRITICAL FIX: Use HTML5 Canvas's native semicircle drawing
       ctx.beginPath()
-      ctx.arc(threadX, threadY, threadRadius * 2, threadRadius * 2, threadStartAngle, threadEndAngle)
+      ctx.arc(threadX, threadY, threadRadius * 2, threadRadius * 2, startAngle, endAngle)
       ctx.fill()
     }
     
-    // Add a few more detailed texture layers (EXACT COPY)
+    // Add a few more detailed texture layers
     for (let i = 0; i < 3; i++) {
       const detailRadius = radius * (0.3 + i * 0.2)
       const detailAlpha = 180 - (i * 40)
       
-      // Create contrast for visibility (EXACT COPY)
+      // Create contrast for visibility
       let detailR = Math.max(0, Math.min(255, r + (i % 2 === 0 ? 15 : -15)))
       let detailG = Math.max(0, Math.min(255, g + (i % 2 === 0 ? 15 : -15)))
       let detailB = Math.max(0, Math.min(255, b + (i % 2 === 0 ? 15 : -15)))
@@ -360,32 +358,33 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
       
       const detailX = centerX + random() * 1 - 0.5
       const detailY = centerY + random() * 1 - 0.5
-      const detailStartAngle = startAngle + random() * 0.1 - 0.05
-      const detailEndAngle = endAngle + random() * 0.1 - 0.05
       
+      // CRITICAL FIX: Use HTML5 Canvas's native semicircle drawing
       ctx.beginPath()
-      ctx.arc(detailX, detailY, detailRadius * 2, detailRadius * 2, detailStartAngle, detailEndAngle)
+      ctx.arc(detailX, detailY, detailRadius * 2, detailRadius * 2, startAngle, endAngle)
       ctx.fill()
     }
     
-    // Add subtle shadow for depth (EXACT COPY)
+    // Add subtle shadow for depth
     ctx.fillStyle = `rgba(${Math.round(r * 0.6)}, ${Math.round(g * 0.6)}, ${Math.round(b * 0.6)}, 0.27)` // More transparent shadow
     const shadowOffset = side === 'left' ? 1 : -1
+    
+    // CRITICAL FIX: Use HTML5 Canvas's native semicircle drawing
     ctx.beginPath()
     ctx.arc(centerX + shadowOffset, centerY + 1, radius * 2, radius * 2, startAngle, endAngle)
     ctx.fill()
     
-    // Add small transparent hole in the center (EXACT COPY)
+    // Add small transparent hole in the center
     ctx.clearRect(centerX - radius * 0.5, centerY - radius * 0.5, radius, radius)
     
-    // Add visible texture details - small bumps and knots (EXACT COPY)
+    // Add visible texture details - small bumps and knots
     for (let i = 0; i < 8; i++) {
       const detailAngle = random() * (endAngle - startAngle) + startAngle
       const detailRadius = radius * (random() * 0.5 + 0.2)
       const detailX = centerX + Math.cos(detailAngle) * detailRadius
       const detailY = centerY + Math.sin(detailAngle) * detailRadius
       
-      // Alternate between light and dark for visible contrast (EXACT COPY)
+      // Alternate between light and dark for visible contrast
       if (i % 2 === 0) {
         ctx.fillStyle = `rgba(${Math.round(r + 20)}, ${Math.round(g + 20)}, ${Math.round(b + 20)}, 0.47)` // More transparent light bumps
       } else {
