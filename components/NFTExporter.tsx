@@ -149,29 +149,29 @@ const NFTExporter: React.FC<NFTExporterProps> = ({
         // Current settings
         let selectedPalette = ${JSON.stringify(palette)};
         let stripeData = ${JSON.stringify(stripeData)};
-        let doormatTextRows = ${JSON.stringify(textRows)};
-        let textData = [];
+let doormatTextRows = ${JSON.stringify(textRows)};
+let textData = [];
 
         // Colors
-        let lightTextColor, darkTextColor;
+let lightTextColor, darkTextColor;
         console.log("🎯 Exported HTML warpThickness set to:", warpThickness);
         console.log("🔍 warpThickness type:", typeof warpThickness, "value:", warpThickness);
 
 function setup() {
             // Set the random seed to recreate the exact same doormat
-            randomSeed(${seed});
-            noiseSeed(${seed});
-            
+    randomSeed(${seed});
+    noiseSeed(${seed});
+    
             // Create canvas with swapped dimensions for 90-degree rotation
             let canvas = createCanvas(doormatHeight + (fringeLength * 4), doormatWidth + (fringeLength * 4));
             canvas.parent('canvas-container');
             
             // Initialize text colors
-            updateTextColors();
+    updateTextColors();
             
             // Generate text data
-            generateTextData();
-            
+    generateTextData();
+    
             noLoop();
         }
         
@@ -192,7 +192,7 @@ function setup() {
             // Make text colors more prominent
             darkTextColor = lerpColor(color(darkest), color(0), 0.4);
             lightTextColor = lerpColor(color(lightest), color(255), 0.3);
-        }
+}
 
 function draw() {
             // Use a background that won't create visible bands after rotation
@@ -215,9 +215,9 @@ function draw() {
             }
             
             // Add overall texture overlay
-            drawTextureOverlay();
+    drawTextureOverlay();
             
-            pop();
+    pop();
     
             // Draw fringe with adjusted positioning for larger canvas
     drawFringe();
@@ -388,9 +388,9 @@ function drawFringe() {
             
             // Draw selvedge edges (weft loops) on left and right sides
             drawSelvedgeEdges();
-        }
-        
-        function drawSelvedgeEdges() {
+}
+
+function drawSelvedgeEdges() {
             let weftSpacing = weftThickness + 1;
             let isFirst = true;
             let isLast = false;
@@ -633,10 +633,10 @@ function drawFringe() {
                     endShape();
                 }
             }
-        }
-        
-        function generateTextData() {
-            textData = [];
+}
+
+function generateTextData() {
+    textData = [];
             const textRows = doormatTextRows || [];
             if (!textRows || textRows.length === 0) return;
             
