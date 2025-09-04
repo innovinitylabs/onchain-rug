@@ -22,6 +22,7 @@ declare global {
     textData?: Array<{x: number, y: number, width: number, height: number}>
     lightTextColor?: any
     darkTextColor?: any
+    __doormatJsLoaded?: boolean
     // P5.js functions that need to be mocked
     randomSeed: (seed: number) => () => number
     noise: (x: number) => number
@@ -1209,8 +1210,11 @@ function Scene() {
         }
 
         // CRITICAL: Load the main P5.js doormat.js file to get the actual drawing functions
-        if (!window.generateDoormatCore) {
+        if (!window.generateDoormatCore && !window.__doormatJsLoaded) {
           console.log('🎨 Loading main P5.js doormat.js file...')
+          
+          // Mark as loaded to prevent multiple loading
+          window.__doormatJsLoaded = true
           
           // CRITICAL: Mock P5.js functions before loading doormat.js
           console.log('🔧 Mocking P5.js functions...')
@@ -1417,6 +1421,8 @@ function Scene() {
           }
           script.onerror = () => {
             console.error('❌ Failed to load main P5.js doormat.js file')
+            // Reset the flag on error so we can try again
+            window.__doormatJsLoaded = false
             setDependenciesLoaded(true)
           }
           document.head.appendChild(script)
