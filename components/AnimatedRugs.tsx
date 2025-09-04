@@ -102,7 +102,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
   const textureRef = useRef<THREE.CanvasTexture | null>(null)
   
   // Your curated word list for the flying rugs
-  // NOTE: First rug (seed 0) always shows WELCOME, other rugs randomly select from all words
+  // NOTE: First rug (seed 0) always shows WELCOME (hardcoded), other rugs randomly select from this array
   // To add more words: just add them to this array after 'GOOD VIBES ONLY'
   const rugWords = [
     'WELCOME',
@@ -631,7 +631,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
     
                 // CRITICAL: Use the ACTUAL P5.js generateDoormatCore function instead of manual recreation!
       if (window.generateDoormatCore && typeof window.generateDoormatCore === 'function') {
-        // Set the text for this rug - Welcome always in selection, first rug gets Welcome
+        // Set the text for this rug - First rug always gets WELCOME, others randomly from array
         const selectedWord = seed === 0 ? 'WELCOME' : rugWords[Math.floor(Math.random() * rugWords.length)]
         
         // FIXED: Use proper multi-line text processing like your generator
