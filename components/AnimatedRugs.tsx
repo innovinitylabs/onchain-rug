@@ -606,7 +606,16 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
       const textRows = selectedWord.split(' ').map(word => word.toUpperCase())
       window.doormatTextRows = textRows
       
-      // FIXED: Call the proper text generation pipeline
+      // Call the actual P5.js function to generate the rug FIRST
+      console.log('🚀 About to call generateDoormatCore with seed:', seed)
+      try {
+        window.generateDoormatCore(seed)
+        console.log('✅ P5.js generateDoormatCore completed successfully')
+      } catch (error) {
+        console.error('❌ Error calling generateDoormatCore:', error)
+      }
+      
+      // NOW call the text generation pipeline AFTER generateDoormatCore sets up the palette
       if (window.generateTextDataInSketch && typeof window.generateTextDataInSketch === 'function') {
         console.log('🚀 Calling your EXACT text generation pipeline!')
         try {
@@ -617,15 +626,6 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
         }
       } else {
         console.log('⚠️ generateTextDataInSketch function not available')
-      }
-      
-      // Call the actual P5.js function to generate the rug
-      console.log('🚀 About to call generateDoormatCore with seed:', seed)
-      try {
-        window.generateDoormatCore(seed)
-        console.log('✅ P5.js generateDoormatCore completed successfully')
-      } catch (error) {
-        console.error('❌ Error calling generateDoormatCore:', error)
       }
       
       // Now we need to get the generated data from the P5.js functions
