@@ -261,9 +261,9 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
     
     console.log('📏 Canvas dimensions:', { doormatWidth, doormatHeight, fringeLength })
     
-    // Use the same canvas dimensions as your generator
-    canvas.width = doormatHeight + (fringeLength * 4)  // Swapped for rotation
-    canvas.height = doormatWidth + (fringeLength * 4)
+    // Use the same canvas dimensions as your generator (NO swapping needed)
+    canvas.width = doormatWidth + (fringeLength * 4)
+    canvas.height = doormatHeight + (fringeLength * 4)
     
     // CRITICAL: Clear the entire canvas completely before drawing
     ctx.clearRect(0, 0, canvas.width, canvas.height)
@@ -478,7 +478,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
     <group ref={groupRef} position={position} scale={[scale, scale, scale]}>
       <Float speed={0.3} rotationIntensity={0.08} floatIntensity={0.15}>
         <mesh ref={rugRef} rotation={[-Math.PI / 2, 0, 0]} castShadow receiveShadow>
-          <planeGeometry args={[6, 4, 48, 48]} />
+          <planeGeometry args={[4, 6, 48, 48]} />
           <meshStandardMaterial 
             map={rugTexture} 
             side={THREE.DoubleSide}
@@ -491,7 +491,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
         
         {/* Enhanced glow with multiple layers */}
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]}>
-          <planeGeometry args={[6.3, 4.3]} />
+          <planeGeometry args={[4.3, 6.3]} />
           <meshBasicMaterial 
             color="#8B4513" 
             transparent 
