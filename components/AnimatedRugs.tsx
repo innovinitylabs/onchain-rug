@@ -372,7 +372,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
       
       // CRITICAL FIX: Use HTML5 Canvas's native semicircle drawing
       ctx.beginPath()
-      ctx.arc(threadX, threadY, threadRadius * 2, threadRadius * 2, startAngle, endAngle)
+      ctx.arc(threadX, threadY, threadRadius * 2, startAngle, endAngle)
       ctx.fill()
     }
     
@@ -393,7 +393,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
       
       // CRITICAL FIX: Use HTML5 Canvas's native semicircle drawing
       ctx.beginPath()
-      ctx.arc(detailX, detailY, detailRadius * 2, detailRadius * 2, startAngle, endAngle)
+      ctx.arc(detailX, detailY, detailRadius * 2, startAngle, endAngle)
       ctx.fill()
     }
     
@@ -403,7 +403,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
     
     // CRITICAL FIX: Use HTML5 Canvas's native semicircle drawing
     ctx.beginPath()
-    ctx.arc(centerX + shadowOffset, centerY + 1, radius * 2, radius * 2, startAngle, endAngle)
+    ctx.arc(centerX + shadowOffset, centerY + 1, radius * 2, startAngle, endAngle)
     ctx.fill()
     
     // Add small transparent hole in the center
@@ -425,7 +425,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
       
       const bumpSize = random() * 2 + 1.5
       ctx.beginPath()
-      ctx.arc(detailX, detailY, bumpSize, bumpSize, 0, Math.PI * 2)
+      ctx.arc(detailX, detailY, bumpSize, 0, Math.PI * 2)
       ctx.fill()
     }
   }
@@ -486,6 +486,9 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
     
     const textData: Array<{x: number, y: number, width: number, height: number}> = []
     
+    // CRITICAL FIX: Convert text to uppercase since character map only has uppercase letters
+    const upperText = text.toUpperCase()
+    
     // Use your existing text generation logic
     const warpThickness = window.warpThickness || 2
     const weftThickness = window.DOORMAT_CONFIG?.WEFT_THICKNESS || 8
@@ -503,20 +506,20 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
     const verticalSpacing = charHeight * 0.6  // Reduce spacing between characters
     
     // Center the text on the rug - FLOW ALONG LENGTH (Y-axis)
-    const textHeight = (text.length - 1) * verticalSpacing + charHeight  // Account for reduced spacing
+    const textHeight = (upperText.length - 1) * verticalSpacing + charHeight  // Account for reduced spacing
     const startX = (doormatWidth - charWidth) / 2 + fringeLength * 2  // Center single character
     const startY = (doormatHeight - textHeight) / 2 + fringeLength * 2  // Center text block
     
     // Generate character pixels for each character - VERTICAL FLOW with TIGHT SPACING
-    console.log('🔤 Generating text:', text, 'with length:', text.length)
+    console.log('🔤 Generating text:', text, '-> UPPERCASE:', upperText, 'with length:', upperText.length)
     console.log('📏 Character dimensions:', { charWidth, charHeight, verticalSpacing })
     console.log('📍 Text positioning:', { startX, startY, textHeight })
     
-    for (let i = 0; i < text.length; i++) {
-      const char = text.charAt(i)
+    for (let i = 0; i < upperText.length; i++) {
+      const char = upperText.charAt(i)
       const charDef = window.characterMap[char] || window.characterMap[' ']
       
-      console.log(`📝 Character ${i}: '${char}' - definition:`, charDef ? 'Found' : 'Missing')
+      console.log(`📝 Character ${i}: '${char}' (from '${text.charAt(i)}') - definition:`, charDef ? 'Found' : 'Missing')
       
       if (charDef) {
         const charY = startY + i * verticalSpacing  // Characters stacked vertically with tight spacing
@@ -540,7 +543,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
             }
           }
         }
-        console.log(`✅ Character '${char}' generated ${pixelCount} pixels at Y: ${charY}`)
+        console.log(`✅ Character '${char}' (from '${text.charAt(i)}') generated ${pixelCount} pixels at Y: ${charY}`)
       }
     }
     
