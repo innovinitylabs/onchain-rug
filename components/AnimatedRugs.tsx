@@ -456,88 +456,104 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
     }
   }
   
-  // Text generation function using your P5.js logic
+  // Use your AMAZING text algorithm from the generator instead of low-effort stuff
   const generateTextDataForRug = (text: string, doormatWidth: number, doormatHeight: number, fringeLength: number) => {
     if (!window.characterMap) return []
     
-    const textData: Array<{x: number, y: number, width: number, height: number}> = []
+    // Set up doormatTextRows for your proper text algorithm
+    const textRows = [text.toUpperCase()]
+    window.doormatTextRows = textRows
     
-    // CRITICAL FIX: Convert text to uppercase since character map only has uppercase letters
-    const upperText = text.toUpperCase()
-    
-    // Use your existing text generation logic
+    // Use your actual thread spacing from the generator
     const warpThickness = window.warpThickness || 2
     const weftThickness = window.DOORMAT_CONFIG?.WEFT_THICKNESS || 8
     const TEXT_SCALE = window.DOORMAT_CONFIG?.TEXT_SCALE || 2
     
-    // Calculate spacing based on your generator logic
+    // Use your exact spacing calculations
     const warpSpacing = warpThickness + 1
     const weftSpacing = weftThickness + 1
     const scaledWarp = warpSpacing * TEXT_SCALE
     const scaledWeft = weftSpacing * TEXT_SCALE
     
-    // Character dimensions - INCREASED SPACING for readability
-    const charWidth = 7 * scaledWarp
-    const charHeight = 5 * scaledWeft
-    const verticalSpacing = charHeight * 1.8  // INCREASE spacing between characters for readability
-    const lineSpacing = charHeight * 1.5      // Spacing between lines
+    // Your exact character dimensions
+    const charWidth = 7 * scaledWarp // width after rotation (7 columns)
+    const charHeight = 5 * scaledWeft // height after rotation (5 rows)
+    const spacing = scaledWeft // vertical gap between stacked characters
     
-    // Split text into lines for better readability
-    const lines = upperText.split(' ')
-    console.log('🔤 Generating text:', text, '-> UPPERCASE:', upperText, '-> LINES:', lines)
+    // Your exact row spacing
+    const rowSpacing = charWidth * 1.5 // Space between rows
     
-    // Calculate total height for all lines
-    const totalTextHeight = (lines.length - 1) * lineSpacing + charHeight
-    const startX = (doormatWidth - charWidth) / 2 + fringeLength * 2  // Center single character
-    const startY = (doormatHeight - totalTextHeight) / 2 + fringeLength * 2  // Center text block
+    // Calculate total width needed for all rows (your algorithm)
+    const totalRowsWidth = textRows.length * charWidth + (textRows.length - 1) * rowSpacing
     
-    console.log('📏 Character dimensions:', { charWidth, charHeight, verticalSpacing, lineSpacing })
-    console.log('📍 Text positioning:', { startX, startY, totalTextHeight, lines: lines.length })
+    // Calculate starting X position to center all rows (your algorithm)
+    const baseStartX = (doormatWidth - totalRowsWidth) / 2
     
-    // Process each line
-    lines.forEach((line, lineIndex) => {
-      const lineY = startY + lineIndex * lineSpacing
+    const textData: Array<{x: number, y: number, width: number, height: number}> = []
+    
+    // Generate text data for each row (your exact algorithm)
+    for (let rowIndex = 0; rowIndex < textRows.length; rowIndex++) {
+      const doormatText = textRows[rowIndex]
+      if (!doormatText) continue
       
-      // Process each character in the line
-      for (let i = 0; i < line.length; i++) {
-        const char = line.charAt(i)
-        const charDef = window.characterMap[char] || window.characterMap[' ']
-        
-        console.log(`📝 Line ${lineIndex + 1}, Character ${i + 1}: '${char}' - definition:`, charDef ? 'Found' : 'Missing')
-        
-        if (charDef) {
-          const charY = lineY + i * verticalSpacing  // Characters stacked vertically within line
-          
-          // Generate pixels for this character - KEEP ROTATION for canvas orientation
-          let pixelCount = 0
-          for (let row = 0; row < charDef.length; row++) {
-            for (let col = 0; col < charDef[0].length; col++) {
-              if (charDef[row][col] === '1') {
-                // KEEP rotation but flow vertically along length
-                const newCol = row
-                const newRow = charDef[0].length - 1 - col
-                
-                // ADD horizontal spacing between characters for better readability
-                const charSpacing = charWidth * 0.3  // 30% of character width as spacing
-                const adjustedX = startX + newCol * scaledWarp + (i * charSpacing)
-                
-                textData.push({
-                  x: adjustedX,
-                  y: charY + newRow * scaledWeft,
-                  width: scaledWarp,
-                  height: scaledWeft
-                })
-                pixelCount++
-              }
-            }
-          }
-          console.log(`✅ Line ${lineIndex + 1}, Character '${char}' generated ${pixelCount} pixels at Y: ${charY}`)
+      // Calculate text dimensions for this row (your algorithm)
+      const textWidth = charWidth
+      const textHeight = doormatText.length * (charHeight + spacing) - spacing
+      
+      // Position for this row (your algorithm)
+      const startX = baseStartX + rowIndex * (charWidth + rowSpacing)
+      const startY = (doormatHeight - textHeight) / 2
+      
+      // Generate character data vertically bottom-to-top for this row (your algorithm)
+      for (let i = 0; i < doormatText.length; i++) {
+        const char = doormatText.charAt(i)
+        const charY = startY + (doormatText.length - 1 - i) * (charHeight + spacing)
+        const charPixels = generateCharacterPixels(char, startX, charY, charWidth, charHeight)
+        textData.push(...charPixels)
+      }
+    }
+    
+    console.log('🎯 Using your AMAZING text algorithm:', textData.length, 'pixels')
+    return textData
+  }
+  
+  // Your exact character pixel generation function
+  const generateCharacterPixels = (char: string, x: number, y: number, width: number, height: number) => {
+    const pixels: Array<{x: number, y: number, width: number, height: number}> = []
+    
+    // Use your actual thread spacing
+    const warpThickness = window.warpThickness || 2
+    const weftThickness = window.DOORMAT_CONFIG?.WEFT_THICKNESS || 8
+    const TEXT_SCALE = window.DOORMAT_CONFIG?.TEXT_SCALE || 2
+    const warpSpacing = warpThickness + 1
+    const weftSpacing = weftThickness + 1
+    const scaledWarp = warpSpacing * TEXT_SCALE
+    const scaledWeft = weftSpacing * TEXT_SCALE
+
+    // Character definitions from your character map
+    const charDef = window.characterMap[char] || window.characterMap[' ']
+    if (!charDef) return pixels
+
+    const numRows = charDef.length
+    const numCols = charDef[0].length
+
+    // Your exact rotation logic: Rotate 90° CCW: newX = col, newY = numRows - 1 - row
+    for (let row = 0; row < numRows; row++) {
+      for (let col = 0; col < numCols; col++) {
+        if (charDef[row][col] === '1') {
+          // Your exact rotation: Rotate 180°: flip both axes
+          const newCol = row
+          const newRow = numCols - 1 - col
+          pixels.push({
+            x: x + newCol * scaledWarp,
+            y: y + newRow * scaledWeft,
+            width: scaledWarp,
+            height: scaledWeft
+          })
         }
       }
-    })
-    
-    console.log('🎯 Total text data generated:', textData.length, 'pixels')
-    return textData
+    }
+    return pixels
   }
   
   // Create rug texture using your P5.js generator logic
