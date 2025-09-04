@@ -130,6 +130,98 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
     return stripeData
   }
   
+  // Fringe and selvedge drawing function (EXACTLY like your generator)
+  const drawFringeAndSelvedge = (ctx: CanvasRenderingContext2D, stripeData: any[], doormatWidth: number, doormatHeight: number, fringeLength: number, random: () => number, offsetX: number, offsetY: number) => {
+    const warpThickness = window.warpThickness || 2
+    const weftThickness = window.DOORMAT_CONFIG?.WEFT_THICKNESS || 8
+    
+    // Draw top fringe (warp ends) - part of the art
+    for (let x = 0; x < doormatWidth; x += warpThickness + 1) {
+      const stripe = stripeData.find(s => x >= 0 && x < doormatWidth && 0 >= s.y && 0 < s.y + s.height)
+      if (stripe) {
+        const color = stripe.primaryColor
+        const r = parseInt(color.slice(1, 3), 16) * 0.8
+        const g = parseInt(color.slice(3, 5), 16) * 0.8
+        const b = parseInt(color.slice(5, 7), 16) * 0.8
+        
+        ctx.fillStyle = `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`
+        
+        // Draw individual warp threads as fringe
+        for (let i = 0; i < fringeLength; i += 2) {
+          const threadLength = random() * 4 + 6
+          ctx.fillRect(x + offsetX, i, warpThickness, threadLength)
+        }
+      }
+    }
+    
+    // Draw bottom fringe (warp ends) - part of the art
+    for (let x = 0; x < doormatWidth; x += warpThickness + 1) {
+      const stripe = stripeData.find(s => x >= 0 && x < doormatWidth && (doormatHeight - fringeLength) >= s.y && (doormatHeight - fringeLength) < s.y + s.height)
+      if (stripe) {
+        const color = stripe.primaryColor
+        const r = parseInt(color.slice(1, 3), 16) * 0.8
+        const g = parseInt(color.slice(3, 5), 16) * 0.8
+        const b = parseInt(color.slice(5, 7), 16) * 0.8
+        
+        ctx.fillStyle = `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`
+        
+        // Draw individual warp threads as fringe
+        for (let i = 0; i < fringeLength; i += 2) {
+          const threadLength = random() * 4 + 6
+          ctx.fillRect(x + offsetX, doormatHeight + offsetY - fringeLength + i, warpThickness, threadLength)
+        }
+      }
+    }
+    
+    // Draw left selvedge (weft loops) - part of the art
+    for (let stripe of stripeData) {
+      for (let y = stripe.y; y < stripe.y + stripe.height; y += weftThickness + 1) {
+        if (y > 0 && y < doormatHeight - weftThickness) { // Skip first and last
+          const color = stripe.primaryColor
+          const r = parseInt(color.slice(1, 3), 16) * 0.8
+          const g = parseInt(color.slice(3, 5), 16) * 0.8
+          const b = parseInt(color.slice(5, 7), 16) * 0.8
+          
+          ctx.fillStyle = `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`
+          
+          // Draw semicircular weft loops
+          const radius = weftThickness * (random() * 0.6 + 1.2)
+          const centerX = offsetX - radius
+          const centerY = y + offsetY + weftThickness / 2
+          
+          // Draw arc (simplified semicircle)
+          ctx.beginPath()
+          ctx.arc(centerX, centerY, radius, Math.PI / 2, -Math.PI / 2)
+          ctx.stroke()
+        }
+      }
+    }
+    
+    // Draw right selvedge (weft loops) - part of the art
+    for (let stripe of stripeData) {
+      for (let y = stripe.y; y < stripe.y + stripe.height; y += weftThickness + 1) {
+        if (y > 0 && y < doormatHeight - weftThickness) { // Skip first and last
+          const color = stripe.primaryColor
+          const r = parseInt(color.slice(1, 3), 16) * 0.8
+          const g = parseInt(color.slice(3, 5), 16) * 0.8
+          const b = parseInt(color.slice(5, 7), 16) * 0.8
+          
+          ctx.fillStyle = `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`
+          
+          // Draw semicircular weft loops
+          const radius = weftThickness * (random() * 0.6 + 1.2)
+          const centerX = offsetX + doormatWidth + radius
+          const centerY = y + offsetY + weftThickness / 2
+          
+          // Draw arc (simplified semicircle)
+          ctx.beginPath()
+          ctx.arc(centerX, centerY, radius, -Math.PI / 2, Math.PI / 2)
+          ctx.stroke()
+        }
+      }
+    }
+  }
+  
   // Stripe drawing function with proper weaving (EXACTLY like your generator)
   const drawStripeWithWeaving = (ctx: CanvasRenderingContext2D, stripe: any, doormatWidth: number, doormatHeight: number, random: () => number, offsetX: number, offsetY: number) => {
     const warpThickness = window.warpThickness || 2
@@ -344,35 +436,8 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
       })
     }
     
-    // Draw fringe (top and bottom) - using softer colors to avoid harsh edges
-    const fringeGradient = ctx.createLinearGradient(0, 0, 0, fringeLength)
-    fringeGradient.addColorStop(0, '#8B7355')  // Softer brown
-    fringeGradient.addColorStop(1, '#6B4423')  // Lighter brown
-    ctx.fillStyle = fringeGradient
-    
-    for (let i = 0; i < canvas.width; i += 12) {
-      // Top fringe
-      ctx.fillRect(i, 0, 8, fringeLength)
-      ctx.fillRect(i + 2, 0, 4, fringeLength + 10)
-      // Bottom fringe
-      ctx.fillRect(i, canvas.height - fringeLength, 8, fringeLength)
-      ctx.fillRect(i + 2, canvas.height - fringeLength - 10, 4, fringeLength + 10)
-    }
-    
-    // Draw selvedge edges (left and right) - using softer colors to avoid harsh edges
-    const selvedgeGradient = ctx.createLinearGradient(0, 0, fringeLength, 0)
-    selvedgeGradient.addColorStop(0, '#8B7355')  // Softer brown
-    selvedgeGradient.addColorStop(1, '#6B4423')  // Lighter brown
-    ctx.fillStyle = selvedgeGradient
-    
-    for (let i = 0; i < canvas.height; i += 15) {
-      // Left selvedge
-      ctx.fillRect(0, i, fringeLength, 10)
-      ctx.fillRect(0, i + 2, fringeLength + 5, 6)
-      // Right selvedge
-      ctx.fillRect(canvas.width - fringeLength, i, fringeLength, 10)
-      ctx.fillRect(canvas.width - fringeLength - 5, i + 2, fringeLength + 5, 6)
-    }
+    // Draw proper fringe and selvedge as part of the art (EXACTLY like your generator)
+    drawFringeAndSelvedge(ctx, stripeData, doormatWidth, doormatHeight, fringeLength, random, offsetX, offsetY)
     
     // Add subtle fabric texture noise (much more subtle to avoid black bands)
     for (let x = 0; x < canvas.width; x += 8) {
