@@ -42,8 +42,6 @@ let textData = []; // Text positioning and character data
 window.stripeData = stripeData;
 window.doormatTextRows = doormatTextRows;
 window.warpThickness = warpThickness; // Expose initial warpThickness globally
-console.log("🎲 Initial warpThickness set to:", warpThickness);
-console.log("🌐 Exposed warpThickness globally:", window.warpThickness);
 
 // Initialize with a default palette
 function initializePalette() {
@@ -75,11 +73,9 @@ function generateDoormatCore(seed) {
     
     // Set random warp thickness between 1 and 6
     warpThickness = random([1, 2, 3, 4, 5, 6]);
-    console.log("Generated warp thickness:", warpThickness);
     
     // Expose warpThickness globally so export can read it
     window.warpThickness = warpThickness;
-    console.log("🌐 Exposed warpThickness globally:", window.warpThickness);
     
     // Select random palette
     selectedPalette = random(colorPalettes);
@@ -97,12 +93,9 @@ function generateDoormatCore(seed) {
     
     // Update traits after everything is generated
     if (typeof window !== 'undefined' && typeof window.updateTraitsFromSketch === 'function') {
-        console.log("Calling updateTraitsFromSketch from generateDoormatCore");
         setTimeout(() => {
             window.updateTraitsFromSketch();
         }, 100);
-    } else {
-        console.log("updateTraitsFromSketch function not available");
     }
 }
 

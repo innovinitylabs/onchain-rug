@@ -518,14 +518,10 @@
 
         // Function to update traits from the sketch
         function updateTraitsFromSketch() {
-            console.log("updateTraitsFromSketch called");
+            
             if (typeof window.calculateTraits === 'function') {
-                console.log("calculateTraits function found");
                 const traits = window.calculateTraits();
-                console.log("About to update traits display with:", traits);
                 updateTraitsDisplay(traits);
-            } else {
-                console.log("calculateTraits function not found");
             }
         }
 
@@ -909,7 +905,7 @@ function generateCharacterPixels() { return []; }`;
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
                 
-                console.log('NFT file size:', Math.round(compressedHTML.length / 1024) + 'KB');
+                
                 alert('NFT HTML exported! File size: ' + Math.round(compressedHTML.length / 1024) + 'KB - ready for on-chain storage.');
                 
             } catch (error) {

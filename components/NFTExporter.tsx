@@ -29,21 +29,12 @@ const NFTExporter: React.FC<NFTExporterProps> = ({
       const currentPalette = (window as any).selectedPalette;
       const currentStripeData = (window as any).stripeData || [];
       
-      // Debug logging to see what values we're getting
-      console.log('🔍 Export Debug Info:');
-      console.log('  - Live Generator config:', (window as any).DOORMAT_CONFIG);
-      console.log('  - Live Generator selectedPalette:', (window as any).selectedPalette);
-      console.log('  - Live Generator stripeData:', (window as any).stripeData);
-      console.log('  - Live Generator warpThickness:', (window as any).warpThickness);
-      console.log('  - All window properties with "warp":', Object.keys(window).filter(key => key.includes('warp')));
-      console.log('  - All window properties with "thickness":', Object.keys(window).filter(key => key.includes('thickness')));
+      
       
       // Create the NFT HTML content with current live data
       const nftHTML = createNFTHTML(safeSeed, currentPalette, currentStripeData, safeTextRows);
       
-      // Debug: Check what's actually in the generated HTML
-      console.log('📄 Generated HTML config:', (window as any).DOORMAT_CONFIG);
-      console.log('📄 HTML snippet showing warpThickness from config:', nftHTML.includes('let warpThickness = config.WARP_THICKNESS'));
+      // Debug logging removed for production
       
       // Create and download the file
       const blob = new Blob([nftHTML], { type: 'text/html' });
@@ -82,14 +73,7 @@ const NFTExporter: React.FC<NFTExporterProps> = ({
     };
     
     // Debug: Log what we're actually passing to the template
-    console.log("🔧 createNFTHTML called with:");
-    console.log("  - seed:", seed);
-    console.log("  - palette:", palette);
-    console.log("  - stripeData length:", stripeData?.length);
-    console.log("  - textRows:", textRows);
-    console.log("  - liveConfig:", liveConfig);
-    console.log("  - currentWarpThickness:", currentWarpThickness);
-    console.log("  - final config:", config);
+      // Function called with parameters (logging removed for production)
     
     return `<!DOCTYPE html>
 <html lang="en">
@@ -154,8 +138,7 @@ let textData = [];
 
         // Colors
 let lightTextColor, darkTextColor;
-        console.log("🎯 Exported HTML warpThickness set to:", warpThickness);
-        console.log("🔍 warpThickness type:", typeof warpThickness, "value:", warpThickness);
+        
 
 function setup() {
             // Set the random seed to recreate the exact same doormat
