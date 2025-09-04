@@ -131,7 +131,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
   }
   
   // Stripe drawing function with proper weaving (EXACTLY like your generator)
-  const drawStripeWithWeaving = (ctx: CanvasRenderingContext2D, stripe: any, doormatWidth: number, doormatHeight: number, random: () => number) => {
+  const drawStripeWithWeaving = (ctx: CanvasRenderingContext2D, stripe: any, doormatWidth: number, doormatHeight: number, random: () => number, offsetX: number, offsetY: number) => {
     const warpThickness = window.warpThickness || 2
     const weftThickness = window.DOORMAT_CONFIG?.WEFT_THICKNESS || 8
     
@@ -151,7 +151,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
         b = Math.max(0, Math.min(255, b))
         
         ctx.fillStyle = `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`
-        ctx.fillRect(x, y, warpThickness, weftSpacing)
+        ctx.fillRect(x + offsetX, y + offsetY, warpThickness, weftSpacing)
       }
     }
     
@@ -175,7 +175,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
         b = Math.max(0, Math.min(255, b))
         
         ctx.fillStyle = `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`
-        ctx.fillRect(x, y, warpSpacing, weftThickness)
+        ctx.fillRect(x + offsetX, y + offsetY, warpSpacing, weftThickness)
       }
     }
   }
@@ -316,13 +316,17 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
     
     console.log('🔄 Generated', stripeData.length, 'stripes with weave patterns')
     
-    // Draw base doormat
-    ctx.fillStyle = selectedPalette.colors[0]
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    // Calculate center offset to position rug content in the middle of canvas
+    const offsetX = fringeLength * 2
+    const offsetY = fringeLength * 2
     
-    // Draw stripes with proper weaving structure
+    // Draw base doormat (centered)
+    ctx.fillStyle = selectedPalette.colors[0]
+    ctx.fillRect(offsetX, offsetY, doormatWidth, doormatHeight)
+    
+    // Draw stripes with proper weaving structure (centered)
     stripeData.forEach(stripe => {
-      drawStripeWithWeaving(ctx, stripe, doormatWidth, doormatHeight, random)
+      drawStripeWithWeaving(ctx, stripe, doormatWidth, doormatHeight, random, offsetX, offsetY)
     })
     
     // Generate and draw text on the rug
@@ -332,11 +336,11 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
     // Generate text data using your P5.js logic
     const textData = generateTextDataForRug(selectedWord, doormatWidth, doormatHeight, fringeLength)
     
-    // Draw the text pixels
+    // Draw the text pixels (centered)
     if (textData.length > 0) {
       ctx.fillStyle = '#FFFFFF' // White text for visibility
       textData.forEach(pixel => {
-        ctx.fillRect(pixel.x, pixel.y, pixel.width, pixel.height)
+        ctx.fillRect(pixel.x + offsetX, pixel.y + offsetY, pixel.width, pixel.height)
       })
     }
     
