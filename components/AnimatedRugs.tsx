@@ -858,7 +858,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
       console.log('📝 Using your generator\'s text data for manual fallback:', selectedWord)
       
       // Set up text rows and call your generator's text pipeline
-      const textRows = selectedWord.split(' ').map(word => word.toUpperCase())
+      const textRows = selectedWord.split(' ').map((word: string) => word.toUpperCase())
       window.doormatTextRows = textRows
       
       if (window.generateTextDataInSketch && typeof window.generateTextDataInSketch === 'function') {
