@@ -30,6 +30,10 @@ function updateTextColors() {
     // make colours more contrasted
     lightTextColor = lerpColor(color(lightest), color(255), 0.3);
     darkTextColor  = lerpColor(color(darkest), color(0),   0.4);
+    
+    // Expose text colors globally for animated rugs
+    window.lightTextColor = lightTextColor;
+    window.darkTextColor = darkTextColor;
 }
 
 // Color palettes are now loaded from external file (color-palettes.js)
@@ -41,6 +45,8 @@ let textData = []; // Text positioning and character data
 // Initialize global data structures
 window.stripeData = stripeData;
 window.doormatTextRows = doormatTextRows;
+window.lightTextColor = null;
+window.darkTextColor = null;
 
 // Initialize with a default palette
 function initializePalette() {

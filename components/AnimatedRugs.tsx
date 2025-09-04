@@ -742,8 +742,40 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
             const b = imageData.data[2]
             const bgBrightness = (r + g + b) / 3
             
-            // Use your generator's exact color selection logic
-            textColor = bgBrightness < 128 ? window.lightTextColor : window.darkTextColor
+            // FIXED: Convert P5.js color objects to hex strings for proper rendering
+            // Your generator uses P5.js color() objects, but we need hex strings for Canvas
+            if (typeof window.lightTextColor === 'object' && window.lightTextColor.toString) {
+              // Convert P5.js color to hex
+              const lightHex = window.lightTextColor.toString()
+              const darkHex = window.darkTextColor.toString()
+              
+              // Use your generator's exact color selection logic
+              textColor = bgBrightness < 128 ? lightHex : darkHex
+            } else {
+              // Fallback to palette-based colors if P5.js colors not available
+              const colorPalettes = window.colorPalettes || []
+              if (colorPalettes.length > 0) {
+                const selectedPalette = colorPalettes[seed % colorPalettes.length]
+                if (selectedPalette && selectedPalette.colors) {
+                  // Find darkest and lightest colors from palette (matching your generator's updateTextColors logic)
+                  let darkest = selectedPalette.colors[0]
+                  let lightest = selectedPalette.colors[0]
+                  let darkestVal = 999, lightestVal = -1
+                  
+                  selectedPalette.colors.forEach((hex: string) => {
+                    const c = hexToRgb(hex)
+                    if (c) {
+                      const bright = (c.r + c.g + c.b) / 3
+                      if (bright < darkestVal) { darkestVal = bright; darkest = hex }
+                      if (bright > lightestVal) { lightestVal = bright; lightest = hex }
+                    }
+                  })
+                  
+                  // Use your generator's exact color selection logic
+                  textColor = bgBrightness < 128 ? lightest : darkest
+                }
+              }
+            }
           }
           
           // Draw with your generator's exact positioning and colors
@@ -837,8 +869,40 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
             const b = imageData.data[2]
             const bgBrightness = (r + g + b) / 3
             
-            // Use your generator's exact color selection logic
-            textColor = bgBrightness < 128 ? window.lightTextColor : window.darkTextColor
+            // FIXED: Convert P5.js color objects to hex strings for proper rendering
+            // Your generator uses P5.js color() objects, but we need hex strings for Canvas
+            if (typeof window.lightTextColor === 'object' && window.lightTextColor.toString) {
+              // Convert P5.js color to hex
+              const lightHex = window.lightTextColor.toString()
+              const darkHex = window.darkTextColor.toString()
+              
+              // Use your generator's exact color selection logic
+              textColor = bgBrightness < 128 ? lightHex : darkHex
+            } else {
+              // Fallback to palette-based colors if P5.js colors not available
+              const colorPalettes = window.colorPalettes || []
+              if (colorPalettes.length > 0) {
+                const selectedPalette = colorPalettes[seed % colorPalettes.length]
+                if (selectedPalette && selectedPalette.colors) {
+                  // Find darkest and lightest colors from palette (matching your generator's updateTextColors logic)
+                  let darkest = selectedPalette.colors[0]
+                  let lightest = selectedPalette.colors[0]
+                  let darkestVal = 999, lightestVal = -1
+                  
+                  selectedPalette.colors.forEach((hex: string) => {
+                    const c = hexToRgb(hex)
+                    if (c) {
+                      const bright = (c.r + c.g + c.b) / 3
+                      if (bright < darkestVal) { darkestVal = bright; darkest = hex }
+                      if (bright > lightestVal) { lightestVal = bright; lightest = hex }
+                    }
+                  })
+                  
+                  // Use your generator's exact color selection logic
+                  textColor = bgBrightness < 128 ? lightest : darkest
+                }
+              }
+            }
           }
           
           // Draw with your generator's exact positioning and colors
@@ -894,6 +958,16 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
       }
     }
   }, [])
+
+  // Helper function to convert hex to RGB (matches your generator's color logic)
+  const hexToRgb = (hex: string) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+    return result ? {
+      r: parseInt(result[1], 16),
+      g: parseInt(result[2], 16),
+      b: parseInt(result[3], 16)
+    } : null
+  }
 
   // Advanced cloth physics animation (keeping your existing animation)
   useFrame((state) => {
