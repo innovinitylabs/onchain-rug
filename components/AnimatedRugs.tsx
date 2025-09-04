@@ -1167,37 +1167,51 @@ function Scene() {
             script.src = 'https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js'
             script.async = false
             script.onload = () => {
+              console.log('📚 P5.js script loaded, checking availability...')
+              console.log('🔍 window.p5 available:', !!(window as any).p5)
+              console.log('🔍 window.p5.randomSeed available:', !!(window as any).p5?.randomSeed)
+              
               // Make P5.js functions globally available like the live generator
-              if (window.p5 && typeof window.p5.randomSeed === 'function') {
-                window.randomSeed = window.p5.randomSeed
-                window.noiseSeed = window.p5.noiseSeed
-                window.random = window.p5.random
-                window.color = window.p5.color
-                window.red = window.p5.red
-                window.green = window.p5.green
-                window.blue = window.p5.blue
-                window.lerpColor = window.p5.lerpColor
-                window.createCanvas = window.p5.createCanvas
-                window.background = window.p5.background
-                window.fill = window.p5.fill
-                window.noFill = window.p5.noFill
-                window.noStroke = window.p5.noStroke
-                window.arc = window.p5.arc
-                window.ellipse = window.p5.ellipse
-                window.beginShape = window.p5.beginShape
-                window.vertex = window.p5.vertex
-                window.endShape = window.p5.endShape
-                window.strokeWeight = window.p5.strokeWeight
-                window.noLoop = window.p5.noLoop
-                window.redraw = window.p5.redraw
-                window.constrain = window.p5.constrain
-                window.max = window.p5.max
-                window.min = window.p5.min
-                window.floor = window.p5.floor
-                window.cos = window.p5.cos
-                window.sin = window.p5.sin
-                window.PI = window.p5.PI
-                console.log('✅ P5.js functions made globally available')
+              if ((window as any).p5 && typeof (window as any).p5.randomSeed === 'function') {
+                console.log('✅ P5.js loaded but functions not global, making them global')
+                // Make P5.js functions globally available
+                ;(window as any).randomSeed = (window as any).p5.randomSeed
+                ;(window as any).noiseSeed = (window as any).p5.noiseSeed
+                ;(window as any).noise = (window as any).p5.noise
+                ;(window as any).random = (window as any).p5.random
+                ;(window as any).color = (window as any).p5.color
+                ;(window as any).red = (window as any).p5.red
+                ;(window as any).green = (window as any).p5.green
+                ;(window as any).blue = (window as any).p5.blue
+                ;(window as any).lerpColor = (window as any).p5.lerpColor
+                ;(window as any).createCanvas = (window as any).p5.createCanvas
+                ;(window as any).background = (window as any).p5.background
+                ;(window as any).fill = (window as any).p5.fill
+                ;(window as any).noFill = (window as any).p5.noFill
+                ;(window as any).noStroke = (window as any).p5.noStroke
+                ;(window as any).arc = (window as any).p5.arc
+                ;(window as any).ellipse = (window as any).p5.ellipse
+                ;(window as any).beginShape = (window as any).p5.beginShape
+                ;(window as any).vertex = (window as any).p5.vertex
+                ;(window as any).endShape = (window as any).p5.endShape
+                ;(window as any).strokeWeight = (window as any).p5.strokeWeight
+                ;(window as any).noLoop = (window as any).p5.noLoop
+                ;(window as any).redraw = (window as any).p5.redraw
+                ;(window as any).constrain = (window as any).p5.constrain
+                ;(window as any).max = (window as any).p5.max
+                ;(window as any).min = (window as any).p5.min
+                ;(window as any).floor = (window as any).p5.floor
+                ;(window as any).cos = (window as any).p5.cos
+                ;(window as any).sin = (window as any).p5.sin
+                ;(window as any).PI = (window as any).p5.PI
+                console.log('✅ All P5.js functions made globally available')
+                
+                // Verify the functions are actually set
+                console.log('🔍 Verification - randomSeed available:', typeof (window as any).randomSeed === 'function')
+                console.log('🔍 Verification - noise available:', typeof (window as any).noise === 'function')
+              } else {
+                console.log('⚠️ P5.js loaded but randomSeed function not available')
+                console.log('🔍 Available p5 properties:', Object.keys((window as any).p5 || {}))
               }
               resolve()
             }
