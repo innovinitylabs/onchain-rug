@@ -270,13 +270,14 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
         
         // Draw sophisticated selvedge arc (EXACT COPY of your drawTexturedSelvedgeArc)
         const radius = weftThickness * (random() * 0.6 + 1.2)
-        const centerX = offsetX - radius + (random() * 4 - 2) // Slight position variation like your generator
+        // FIXED: Use EXACT positioning from P5.js generator
+        const centerX = offsetX + (random() * 4 - 2) // Start at left edge, slight variation
         const centerY = offsetY + y + weftThickness/2 + (random() * 2 - 1) // Slight vertical variation like your generator
         
-        // CRITICAL FIX: Use EXACT angles from your original P5.js generator
-        // Left selvedge: P5.js uses 90° to -90°, but Canvas needs -90° to 90° for semicircle
-        const startAngle = (-Math.PI / 2) + (random() * 0.4 - 0.2) // Start from bottom (-90°)
-        const endAngle = (Math.PI / 2) + (random() * 0.4 - 0.2)    // End at top (90°)
+        // FIXED: Use EXACT angles from your original P5.js generator
+        // Left selvedge: P5.js uses 90° to -90°, Canvas needs 90° to -90° for correct semicircle
+        const startAngle = (Math.PI / 2) + (random() * 0.4 - 0.2) // Start from top (90°)
+        const endAngle = (-Math.PI / 2) + (random() * 0.4 - 0.2)    // End at bottom (-90°)
         
         console.log('🎯 LEFT Selvedge angles (FIXED):', { startAngle: startAngle.toFixed(3), endAngle: endAngle.toFixed(3), startDegrees: (startAngle * 180 / Math.PI).toFixed(1), endDegrees: (endAngle * 180 / Math.PI).toFixed(1) })
         
@@ -316,15 +317,16 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
         
         // Draw sophisticated selvedge arc (EXACT COPY of your drawTexturedSelvedgeArc)
         const radius = weftThickness * (random() * 0.6 + 1.2)
-        const centerX = offsetX + doormatWidth + radius + (random() * 4 - 2) // Slight position variation like your generator
+        // FIXED: Use EXACT positioning from P5.js generator
+        const centerX = offsetX + doormatWidth + (random() * 4 - 2) // Start at right edge, slight variation
         const centerY = offsetY + y + weftThickness/2 + (random() * 2 - 1) // Slight vertical variation like your generator
         
-        // CRITICAL FIX: Use EXACT angles from your original P5.js generator
-        // Right selvedge: P5.js uses -90° to 90°, Canvas also uses -90° to 90° = perfect semicircle
+        // FIXED: Use EXACT angles from your original P5.js generator
+        // Right selvedge: P5.js uses -90° to 90°, Canvas needs -90° to 90° for correct semicircle
         const startAngle = (-Math.PI / 2) + (random() * 0.4 - 0.2) // Start from bottom (-90°)
         const endAngle = (Math.PI / 2) + (random() * 0.4 - 0.2)    // End at top (90°)
         
-        console.log('🎯 RIGHT Selvedge angles:', { startAngle: startAngle.toFixed(3), endAngle: endAngle.toFixed(3), startDegrees: (startAngle * 180 / Math.PI).toFixed(1), endDegrees: (endAngle * 180 / Math.PI).toFixed(1) })
+        console.log('🎯 RIGHT Selvedge angles (FIXED):', { startAngle: startAngle.toFixed(3), endAngle: endAngle.toFixed(3), startDegrees: (startAngle * 180 / Math.PI).toFixed(1), endDegrees: (endAngle * 180 / Math.PI).toFixed(1) })
         
         // Draw textured selvedge arc with multiple layers (EXACT COPY) - RIGHT SIDE semicircle
         drawTexturedSelvedgeArc(ctx, centerX, centerY, radius, startAngle, endAngle, r, g, b, 'right', random)
