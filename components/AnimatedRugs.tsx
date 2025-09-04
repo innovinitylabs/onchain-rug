@@ -1174,35 +1174,35 @@ function Scene() {
               // Make P5.js functions globally available like the live generator
               if ((window as any).p5 && typeof (window as any).p5.randomSeed === 'function') {
                 console.log('✅ P5.js loaded but functions not global, making them global')
-                // Make P5.js functions globally available
-                ;(window as any).randomSeed = (window as any).p5.randomSeed
-                ;(window as any).noiseSeed = (window as any).p5.noiseSeed
-                ;(window as any).noise = (window as any).p5.noise
-                ;(window as any).random = (window as any).p5.random
-                ;(window as any).color = (window as any).p5.color
-                ;(window as any).red = (window as any).p5.red
-                ;(window as any).green = (window as any).p5.green
-                ;(window as any).blue = (window as any).p5.blue
-                ;(window as any).lerpColor = (window as any).p5.lerpColor
-                ;(window as any).createCanvas = (window as any).p5.createCanvas
-                ;(window as any).background = (window as any).p5.background
-                ;(window as any).fill = (window as any).p5.fill
-                ;(window as any).noFill = (window as any).p5.noFill
-                ;(window as any).noStroke = (window as any).p5.noStroke
-                ;(window as any).arc = (window as any).p5.arc
-                ;(window as any).ellipse = (window as any).p5.ellipse
-                ;(window as any).beginShape = (window as any).p5.beginShape
-                ;(window as any).vertex = (window as any).p5.vertex
-                ;(window as any).endShape = (window as any).p5.endShape
-                ;(window as any).strokeWeight = (window as any).p5.strokeWeight
-                ;(window as any).noLoop = (window as any).p5.noLoop
-                ;(window as any).redraw = (window as any).p5.redraw
-                ;(window as any).constrain = (window as any).p5.constrain
-                ;(window as any).max = (window as any).p5.max
-                ;(window as any).min = (window as any).p5.min
-                ;(window as any).floor = (window as any).p5.floor
-                ;(window as any).cos = (window as any).p5.cos
-                ;(window as any).sin = (window as any).p5.sin
+                // Make P5.js functions globally available with proper binding
+                ;(window as any).randomSeed = (window as any).p5.randomSeed.bind((window as any).p5)
+                ;(window as any).noiseSeed = (window as any).p5.noiseSeed.bind((window as any).p5)
+                ;(window as any).noise = (window as any).p5.noise.bind((window as any).p5)
+                ;(window as any).random = (window as any).p5.random.bind((window as any).p5)
+                ;(window as any).color = (window as any).p5.color.bind((window as any).p5)
+                ;(window as any).red = (window as any).p5.red.bind((window as any).p5)
+                ;(window as any).green = (window as any).p5.green.bind((window as any).p5)
+                ;(window as any).blue = (window as any).p5.blue.bind((window as any).p5)
+                ;(window as any).lerpColor = (window as any).p5.lerpColor.bind((window as any).p5)
+                ;(window as any).createCanvas = (window as any).p5.createCanvas.bind((window as any).p5)
+                ;(window as any).background = (window as any).p5.background.bind((window as any).p5)
+                ;(window as any).fill = (window as any).p5.fill.bind((window as any).p5)
+                ;(window as any).noFill = (window as any).p5.noFill.bind((window as any).p5)
+                ;(window as any).noStroke = (window as any).p5.noStroke.bind((window as any).p5)
+                ;(window as any).arc = (window as any).p5.arc.bind((window as any).p5)
+                ;(window as any).ellipse = (window as any).p5.ellipse.bind((window as any).p5)
+                ;(window as any).beginShape = (window as any).p5.beginShape.bind((window as any).p5)
+                ;(window as any).vertex = (window as any).p5.vertex.bind((window as any).p5)
+                ;(window as any).endShape = (window as any).p5.endShape.bind((window as any).p5)
+                ;(window as any).strokeWeight = (window as any).p5.strokeWeight.bind((window as any).p5)
+                ;(window as any).noLoop = (window as any).p5.noLoop.bind((window as any).p5)
+                ;(window as any).redraw = (window as any).p5.redraw.bind((window as any).p5)
+                ;(window as any).constrain = (window as any).p5.constrain.bind((window as any).p5)
+                ;(window as any).max = (window as any).p5.max.bind((window as any).p5)
+                ;(window as any).min = (window as any).p5.min.bind((window as any).p5)
+                ;(window as any).floor = (window as any).p5.floor.bind((window as any).p5)
+                ;(window as any).cos = (window as any).p5.cos.bind((window as any).p5)
+                ;(window as any).sin = (window as any).p5.sin.bind((window as any).p5)
                 ;(window as any).PI = (window as any).p5.PI
                 console.log('✅ All P5.js functions made globally available')
                 
@@ -1290,11 +1290,11 @@ function Scene() {
         }
 
         // CRITICAL: Load the main P5.js doormat.js file to get the actual drawing functions
-        if (!window.generateDoormatCore) {
+        if (!window.generateDoormatCore && !(window as any).__doormatJsLoaded) {
           console.log('🎨 Loading main P5.js doormat.js file...')
           
-          // Use the SAME P5.js approach as the live generator - no mocking needed!
-          console.log('✅ Using real P5.js functions from CDN')
+          // Mark as loaded to prevent multiple loading
+          ;(window as any).__doormatJsLoaded = true
           
           const script = document.createElement('script')
           script.src = '/lib/doormat/doormat.js'
@@ -1315,11 +1315,12 @@ function Scene() {
           }
           script.onerror = () => {
             console.error('❌ Failed to load main P5.js doormat.js file')
+            ;(window as any).__doormatJsLoaded = false // Reset flag on error
             setDependenciesLoaded(true)
           }
           document.head.appendChild(script)
         } else {
-          console.log('✅ Main P5.js doormat.js already loaded')
+          console.log('✅ Main P5.js doormat.js already loaded or loading in progress')
           setDependenciesLoaded(true)
         }
 
