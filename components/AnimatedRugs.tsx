@@ -597,6 +597,13 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
       const stripeData = window.stripeData || generateStripeDataForRug(selectedPalette, doormatHeight, () => Math.random())
       console.log('🔄 Using P5.js stripe data:', stripeData.length, 'stripes')
       
+      // DEBUG: Log the first stripe to see its structure
+      if (stripeData.length > 0) {
+        console.log('🔍 First stripe structure:', stripeData[0])
+        console.log('🔍 Stripe primaryColor type:', typeof stripeData[0].primaryColor)
+        console.log('🔍 Stripe primaryColor value:', stripeData[0].primaryColor)
+      }
+      
       // Calculate center offset to position rug content in the middle of canvas
       const offsetX = fringeLength * 2
       const offsetY = fringeLength * 2
@@ -605,9 +612,28 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
       ctx.fillStyle = selectedPalette.colors[0]
       ctx.fillRect(offsetX, offsetY, doormatWidth, doormatHeight)
       
-      // Draw stripes with proper weaving structure (centered)
+      // CRITICAL: Handle P5.js stripe data structure vs manual structure
       stripeData.forEach(stripe => {
-        drawStripeWithWeaving(ctx, stripe, doormatWidth, doormatHeight, () => Math.random(), offsetX, offsetY)
+        // Check if this is P5.js generated data or manual data
+        if (stripe.primaryColor && typeof stripe.primaryColor === 'object' && stripe.primaryColor.r !== undefined) {
+          // P5.js generated data - convert color object to hex
+          const colorObj = stripe.primaryColor
+          const hexColor = `#${Math.round(colorObj.r).toString(16).padStart(2, '0')}${Math.round(colorObj.g).toString(16).padStart(2, '0')}${Math.round(colorObj.b).toString(16).padStart(2, '0')}`
+          console.log('🎨 Converting P5.js color object to hex:', colorObj, '→', hexColor)
+          
+          // Create a compatible stripe object
+          const compatibleStripe = {
+            ...stripe,
+            primaryColor: hexColor,
+            secondaryColor: stripe.secondaryColor ? 
+              `#${Math.round(stripe.secondaryColor.r).toString(16).padStart(2, '0')}${Math.round(stripe.secondaryColor.g).toString(16).padStart(2, '0')}${Math.round(stripe.secondaryColor.b).toString(16).padStart(2, '0')}` : null
+          }
+          
+          drawStripeWithWeaving(ctx, compatibleStripe, doormatWidth, doormatHeight, () => Math.random(), offsetX, offsetY)
+        } else {
+          // Manual data - use as is
+          drawStripeWithWeaving(ctx, stripe, doormatWidth, doormatHeight, () => Math.random(), offsetX, offsetY)
+        }
       })
       
       // Generate and draw text on the rug
@@ -625,7 +651,26 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
       }
       
       // CRITICAL: Draw selvedges using CORRECT P5.js angles (-90° to 90° for both)
-      drawFringeAndSelvedge(ctx, stripeData, doormatWidth, doormatHeight, fringeLength, () => Math.random(), offsetX, offsetY)
+      // Convert stripe data to compatible format for selvedge drawing
+      const compatibleStripeData = stripeData.map(stripe => {
+        if (stripe.primaryColor && typeof stripe.primaryColor === 'object' && stripe.primaryColor.r !== undefined) {
+          // P5.js generated data - convert color object to hex
+          const colorObj = stripe.primaryColor
+          const hexColor = `#${Math.round(colorObj.r).toString(16).padStart(2, '0')}${Math.round(colorObj.g).toString(16).padStart(2, '0')}${Math.round(colorObj.b).toString(16).padStart(2, '0')}`
+          
+          return {
+            ...stripe,
+            primaryColor: hexColor,
+            secondaryColor: stripe.secondaryColor ? 
+              `#${Math.round(stripe.secondaryColor.r).toString(16).padStart(2, '0')}${Math.round(stripe.secondaryColor.g).toString(16).padStart(2, '0')}${Math.round(stripe.secondaryColor.b).toString(16).padStart(2, '0')}` : null
+          }
+        } else {
+          // Manual data - use as is
+          return stripe
+        }
+      })
+      
+      drawFringeAndSelvedge(ctx, compatibleStripeData, doormatWidth, doormatHeight, fringeLength, () => Math.random(), offsetX, offsetY)
       
     } else {
       console.log('❌ P5.js generateDoormatCore not available, using manual fallback')
