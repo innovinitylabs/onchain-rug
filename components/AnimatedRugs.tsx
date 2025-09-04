@@ -515,17 +515,14 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
       if (charDef) {
         const charX = startX + i * charWidth
         
-        // Generate pixels for this character
+        // Generate pixels for this character - NO ROTATION for length-wise flow
         for (let row = 0; row < charDef.length; row++) {
           for (let col = 0; col < charDef[0].length; col++) {
             if (charDef[row][col] === '1') {
-              // Apply rotation and positioning like your generator
-              const newCol = row
-              const newRow = charDef[0].length - 1 - col
-              
+              // NO rotation - text flows naturally along length
               textData.push({
-                x: charX + newCol * scaledWarp,
-                y: startY + newRow * scaledWeft,
+                x: charX + col * scaledWarp,
+                y: startY + row * scaledWeft,
                 width: scaledWarp,
                 height: scaledWeft
               })
