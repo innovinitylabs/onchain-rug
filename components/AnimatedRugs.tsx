@@ -159,8 +159,8 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
       // Draw individual fringe strand with thin threads (EXACT COPY of your logic)
       for (let j = 0; j < 12; j++) { // More but thinner threads per strand
         const threadX = strandX + random() * strandWidth/3 - strandWidth/6
-        const startY = side === 'top' ? y + h : y
-        const endY = side === 'top' ? y : y + h
+        const startY = side === 'top' ? y : y + h
+        const endY = side === 'top' ? y - h : y + h + h
         
         // Add natural curl/wave to the fringe with more variation (EXACT COPY)
         const waveAmplitude = random() * 3 + 1
@@ -241,7 +241,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
         const centerX = offsetX - radius
         const centerY = offsetY + y + weftThickness/2
         
-        // Draw textured selvedge arc with multiple layers (EXACT COPY)
+        // Draw textured selvedge arc with multiple layers (EXACT COPY) - LEFT SIDE semicircle
         drawTexturedSelvedgeArc(ctx, centerX, centerY, radius, Math.PI/2, -Math.PI/2, r, g, b, 'left', random)
       }
     }
@@ -280,7 +280,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
         const centerX = offsetX + doormatWidth + radius
         const centerY = offsetY + y + weftThickness/2
         
-        // Draw textured selvedge arc with multiple layers (EXACT COPY)
+        // Draw textured selvedge arc with multiple layers (EXACT COPY) - RIGHT SIDE semicircle
         drawTexturedSelvedgeArc(ctx, centerX, centerY, radius, -Math.PI/2, Math.PI/2, r, g, b, 'right', random)
       }
     }
