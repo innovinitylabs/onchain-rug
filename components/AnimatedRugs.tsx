@@ -614,6 +614,37 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
         !isNaN(stripeData[0].primaryColor) && 
         stripeData[0].primaryColor !== null
       
+      // DRAW SELVEDGES FIRST (BELOW THE RUG) to prevent edge glitches
+      if (hasValidP5Data) {
+        console.log('✅ Drawing selvedges FIRST with valid P5.js data (below rug)')
+        // Convert stripe data to compatible format for selvedge drawing
+        const compatibleStripeData = stripeData.map(stripe => {
+          if (stripe.primaryColor && typeof stripe.primaryColor === 'object' && stripe.primaryColor.r !== undefined) {
+            // P5.js generated data - convert color object to hex
+            const colorObj = stripe.primaryColor
+            const hexColor = `#${Math.round(colorObj.r).toString(16).padStart(2, '0')}${Math.round(colorObj.g).toString(16).padStart(2, '0')}${Math.round(colorObj.b).toString(16).padStart(2, '0')}`
+            
+            return {
+              ...stripe,
+              primaryColor: hexColor,
+              secondaryColor: stripe.secondaryColor ? 
+                `#${Math.round(stripe.secondaryColor.r).toString(16).padStart(2, '0')}${Math.round(stripe.secondaryColor.g).toString(16).padStart(2, '0')}${Math.round(stripe.secondaryColor.b).toString(16).padStart(2, '0')}` : null
+            }
+          } else {
+            // Manual data - use as is
+            return stripe
+          }
+        })
+        
+        drawFringeAndSelvedge(ctx, compatibleStripeData, doormatWidth, doormatHeight, fringeLength, () => Math.random(), offsetX, offsetY)
+      } else {
+        console.log('❌ Drawing selvedges FIRST with manual fallback data (below rug)')
+        // Use manual stripe data for selvedge drawing
+        const manualStripeData = generateStripeDataForRug(selectedPalette, doormatHeight, () => Math.random())
+        drawFringeAndSelvedge(ctx, manualStripeData, doormatWidth, doormatHeight, fringeLength, () => Math.random(), offsetX, offsetY)
+      }
+      
+      // NOW DRAW MAIN RUG CONTENT (stripes) ABOVE the selvedges
       if (hasValidP5Data) {
         console.log('✅ Using valid P5.js stripe data')
         stripeData.forEach(stripe => {
@@ -659,37 +690,6 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
         textData.forEach(pixel => {
           ctx.fillRect(pixel.x + offsetX, pixel.y + offsetY, pixel.width, pixel.height)
         })
-      }
-      
-      // CRITICAL: Draw selvedges using CORRECT P5.js angles (-90° to 90° for both)
-      // Use the same validation logic for selvedge drawing
-      if (hasValidP5Data) {
-        console.log('✅ Drawing selvedges with valid P5.js data')
-        // Convert stripe data to compatible format for selvedge drawing
-        const compatibleStripeData = stripeData.map(stripe => {
-          if (stripe.primaryColor && typeof stripe.primaryColor === 'object' && stripe.primaryColor.r !== undefined) {
-            // P5.js generated data - convert color object to hex
-            const colorObj = stripe.primaryColor
-            const hexColor = `#${Math.round(colorObj.r).toString(16).padStart(2, '0')}${Math.round(colorObj.g).toString(16).padStart(2, '0')}${Math.round(colorObj.b).toString(16).padStart(2, '0')}`
-            
-            return {
-              ...stripe,
-              primaryColor: hexColor,
-              secondaryColor: stripe.secondaryColor ? 
-                `#${Math.round(stripe.secondaryColor.r).toString(16).padStart(2, '0')}${Math.round(stripe.secondaryColor.g).toString(16).padStart(2, '0')}${Math.round(stripe.secondaryColor.b).toString(16).padStart(2, '0')}` : null
-            }
-          } else {
-            // Manual data - use as is
-            return stripe
-          }
-        })
-        
-        drawFringeAndSelvedge(ctx, compatibleStripeData, doormatWidth, doormatHeight, fringeLength, () => Math.random(), offsetX, offsetY)
-      } else {
-        console.log('❌ Drawing selvedges with manual fallback data')
-        // Use manual stripe data for selvedge drawing
-        const manualStripeData = generateStripeDataForRug(selectedPalette, doormatHeight, () => Math.random())
-        drawFringeAndSelvedge(ctx, manualStripeData, doormatWidth, doormatHeight, fringeLength, () => Math.random(), offsetX, offsetY)
       }
       
     } else {
