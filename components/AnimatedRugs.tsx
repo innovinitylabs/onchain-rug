@@ -641,11 +641,12 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
       // NO BASE BACKGROUND - Keep transparent for animation
       
       // CRITICAL: Handle P5.js stripe data structure vs manual structure
-      // Check if P5.js data is valid (not NaN)
+      // Check if P5.js data is valid and properly populated
       const hasValidP5Data = stripeData.length > 0 && 
         stripeData[0].primaryColor && 
-        !isNaN(stripeData[0].primaryColor) && 
-        stripeData[0].primaryColor !== null
+        stripeData[0].primaryColor !== null &&
+        (typeof stripeData[0].primaryColor === 'string' || 
+         (typeof stripeData[0].primaryColor === 'object' && stripeData[0].primaryColor.r !== undefined))
       
       // DRAW SELVEDGES FIRST (BELOW THE RUG) to prevent edge glitches
       if (hasValidP5Data) {
@@ -717,6 +718,14 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
       // Get the text data that your generator created
       const textData = window.textData || []
       console.log('🎯 Your generator created text data:', textData.length, 'pixels')
+      
+      // DEBUG: Check text colors
+      console.log('🎨 Text colors from P5.js:', {
+        lightTextColor: window.lightTextColor,
+        darkTextColor: window.darkTextColor,
+        lightTextColorType: typeof window.lightTextColor,
+        darkTextColorType: typeof window.darkTextColor
+      })
       
       // Draw the text pixels using your generator's EXACT positioning (no coordinate modifications)
       if (textData.length > 0) {
@@ -843,6 +852,14 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
       // Get the text data that your generator created
       const textData = window.textData || []
       console.log('🎯 Your generator created text data (manual path):', textData.length, 'pixels')
+      
+      // DEBUG: Check text colors in manual path
+      console.log('🎨 Text colors from P5.js (manual path):', {
+        lightTextColor: window.lightTextColor,
+        darkTextColor: window.darkTextColor,
+        lightTextColorType: typeof window.lightTextColor,
+        darkTextColorType: typeof window.darkTextColor
+      })
       
       // Draw the text pixels using your generator's EXACT positioning (no manual rotation)
       if (textData.length > 0) {
@@ -1241,32 +1258,61 @@ function Scene() {
             }
           }
           
-          // Mock P5.js color function
+          // Mock P5.js color function to return hex strings for compatibility
           window.color = (r: number | string, g?: number, b?: number, a?: number) => {
             if (typeof r === 'string') {
-              // Hex color
-              const hex = r.replace('#', '')
-              return {
-                r: parseInt(hex.slice(0, 2), 16),
-                g: parseInt(hex.slice(2, 4), 16),
-                b: parseInt(hex.slice(4, 6), 16)
-              }
+              // Hex color - return as is for compatibility
+              return r
             } else {
-              return { r, g: g || 0, b: b || 0, a: a || 255 }
+              // RGB values - convert to hex
+              const hex = `#${Math.round(r).toString(16).padStart(2, '0')}${Math.round(g || 0).toString(16).padStart(2, '0')}${Math.round(b || 0).toString(16).padStart(2, '0')}`
+              return hex
             }
           }
           
+
+          
           // Mock P5.js red, green, blue functions
-          window.red = (c: any) => c.r || 0
-          window.green = (c: any) => c.g || 0
-          window.blue = (c: any) => c.b || 0
+          window.red = (c: any) => {
+            if (typeof c === 'string' && c.startsWith('#')) {
+              return parseInt(c.slice(1, 3), 16)
+            }
+            return c.r || 0
+          }
+          window.green = (c: any) => {
+            if (typeof c === 'string' && c.startsWith('#')) {
+              return parseInt(c.slice(3, 5), 16)
+            }
+            return c.g || 0
+          }
+          window.blue = (c: any) => {
+            if (typeof c === 'string' && c.startsWith('#')) {
+              return parseInt(c.slice(5, 7), 16)
+            }
+            return c.b || 0
+          }
           
           // Mock P5.js lerpColor function
           window.lerpColor = (c1: any, c2: any, amt: number) => {
+            // Convert hex colors to RGB if needed
+            const getRGB = (c: any) => {
+              if (typeof c === 'string' && c.startsWith('#')) {
+                return {
+                  r: parseInt(c.slice(1, 3), 16),
+                  g: parseInt(c.slice(3, 5), 16),
+                  b: parseInt(c.slice(5, 7), 16)
+                }
+              }
+              return c
+            }
+            
+            const rgb1 = getRGB(c1)
+            const rgb2 = getRGB(c2)
+            
             return {
-              r: Math.round(c1.r + (c2.r - c1.r) * amt),
-              g: Math.round(c1.g + (c2.g - c1.g) * amt),
-              b: Math.round(c1.b + (c2.b - c1.b) * amt)
+              r: Math.round(rgb1.r + (rgb2.r - rgb1.r) * amt),
+              g: Math.round(rgb1.g + (rgb2.g - rgb1.g) * amt),
+              b: Math.round(rgb1.b + (rgb2.b - rgb1.b) * amt)
             }
           }
           
@@ -1353,6 +1399,13 @@ function Scene() {
           script.onload = () => {
             console.log('✅ Main P5.js doormat.js loaded successfully!')
             console.log('🎯 Available functions:', Object.keys(window).filter(key => key.includes('generate') || key.includes('draw')))
+            
+            // Ensure global variables are properly initialized
+            if (window.colorPalettes && window.colorPalettes.length > 0) {
+              window.selectedPalette = window.colorPalettes[0]
+              console.log('✅ Initialized selectedPalette:', window.selectedPalette)
+            }
+            
             // Small delay to ensure all functions are available
             setTimeout(() => {
               setDependenciesLoaded(true)
