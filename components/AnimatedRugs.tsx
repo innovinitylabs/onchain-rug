@@ -22,7 +22,7 @@ declare global {
     randomSeed: (seed: number) => () => number
     noise: (x: number) => number
     noiseSeed: (seed: number) => void
-    random: (min?: number, max?: number) => number
+    random: (min?: number | any[], max?: number) => any
     color: (r: number | string, g?: number, b?: number, a?: number) => any
     red: (c: any) => number
     green: (c: any) => number
@@ -46,6 +46,7 @@ declare global {
     noLoop: () => void
     createCanvas: (w: number, h: number) => any
     redraw: () => void
+    PI: number
   }
 }
 
@@ -1051,10 +1052,16 @@ function Scene() {
           }
           
           // Mock P5.js random function
-          window.random = (min?: number, max?: number) => {
+          window.random = (min?: number | any[], max?: number) => {
+            // Handle array input (random element selection)
+            if (Array.isArray(min)) {
+              const array = min
+              return array[Math.floor(Math.random() * array.length)]
+            }
+            // Handle number ranges
             if (min !== undefined && max !== undefined) {
               return Math.random() * (max - min) + min
-            } else if (min !== undefined) {
+            } else if (min !== undefined && typeof min === 'number') {
               return Math.random() * min
             } else {
               return Math.random()
@@ -1099,6 +1106,9 @@ function Scene() {
           window.max = Math.max
           window.min = Math.min
           window.floor = Math.floor
+          
+          // Mock P5.js PI constant
+          window.PI = Math.PI
           
           // Mock P5.js cos, sin functions
           window.cos = Math.cos
