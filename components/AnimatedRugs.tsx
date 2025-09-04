@@ -102,12 +102,12 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
   const textureRef = useRef<THREE.CanvasTexture | null>(null)
   
   // Your curated word list for the flying rugs
-  // NOTE: First word (WELCOME) is always selected for seed 0, others shuffle randomly
+  // NOTE: First rug (seed 0) always shows WELCOME, other rugs randomly select from all words
   // To add more words: just add them to this array after 'GOOD VIBES ONLY'
   const rugWords = [
     'WELCOME',
     'HODL ZONE',
-    'SOFT',
+    'SOFT RUG',
     'FLOOR IS LAVA',
     'HOME SWEET HOME',
     'GOOD VIBES ONLY'
@@ -631,8 +631,8 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
     
                 // CRITICAL: Use the ACTUAL P5.js generateDoormatCore function instead of manual recreation!
       if (window.generateDoormatCore && typeof window.generateDoormatCore === 'function') {
-        // Set the text for this rug - Welcome always selected, others shuffle randomly
-        const selectedWord = seed === 0 ? 'WELCOME' : rugWords[Math.floor(Math.random() * (rugWords.length - 1)) + 1]
+        // Set the text for this rug - Welcome always in selection, first rug gets Welcome
+        const selectedWord = seed === 0 ? 'WELCOME' : rugWords[Math.floor(Math.random() * rugWords.length)]
         
         // FIXED: Use proper multi-line text processing like your generator
         const textRows = selectedWord.split(' ').map(word => word.toUpperCase())
@@ -825,7 +825,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
       })
       
       // FIXED: Use your generator's text data for manual fallback too
-      const selectedWord = seed === 0 ? 'WELCOME' : rugWords[Math.floor(Math.random() * (rugWords.length - 1)) + 1]
+      const selectedWord = seed === 0 ? 'WELCOME' : rugWords[Math.floor(Math.random() * rugWords.length)]
       
       // Set up text rows and call your generator's text pipeline
       const textRows = selectedWord.split(' ').map(word => word.toUpperCase())
