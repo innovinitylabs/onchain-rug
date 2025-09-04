@@ -41,6 +41,7 @@ declare global {
     fill: (r: number, g?: number, b?: number, a?: number) => void
     noStroke: () => void
     noFill: () => void
+    background: (r: number, g?: number, b?: number, a?: number) => void
     arc: (x: number, y: number, w: number, h: number, start: number, stop: number) => void
     ellipse: (x: number, y: number, w: number, h: number) => void
     beginShape: () => void
@@ -606,11 +607,24 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
       // FIXED: Call the proper text generation pipeline
       if (window.generateTextDataInSketch && typeof window.generateTextDataInSketch === 'function') {
         console.log('🚀 Calling your EXACT text generation pipeline!')
-        window.generateTextDataInSketch()
+        try {
+          window.generateTextDataInSketch()
+          console.log('✅ Text generation pipeline completed successfully')
+        } catch (error) {
+          console.error('❌ Error in text generation pipeline:', error)
+        }
+      } else {
+        console.log('⚠️ generateTextDataInSketch function not available')
       }
       
       // Call the actual P5.js function to generate the rug
-      window.generateDoormatCore(seed)
+      console.log('🚀 About to call generateDoormatCore with seed:', seed)
+      try {
+        window.generateDoormatCore(seed)
+        console.log('✅ P5.js generateDoormatCore completed successfully')
+      } catch (error) {
+        console.error('❌ Error calling generateDoormatCore:', error)
+      }
       
       // Now we need to get the generated data from the P5.js functions
       console.log('✅ P5.js generation complete. Stripe data:', window.stripeData?.length || 0, 'stripes')
@@ -1385,6 +1399,11 @@ function Scene() {
               console.log('🎨 P5.js canvas.parent called with:', container)
             }
             return canvas
+          }
+          
+          // Mock P5.js background function to track calls
+          window.background = (r: number, g?: number, b?: number, a?: number) => {
+            console.log('🎨 P5.js background called with:', r, g, b, a)
           }
           
           // Mock P5.js redraw function
