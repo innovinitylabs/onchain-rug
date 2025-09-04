@@ -611,7 +611,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
     
     // Create canvas with your generator dimensions
     const canvas = document.createElement('canvas')
-    const ctx = canvas.getContext('2d')!
+    const ctx = canvas.getContext('2d', { willReadFrequently: true })!
     
     // Set canvas size to match your generator
     const doormatWidth = window.DOORMAT_CONFIG?.DOORMAT_WIDTH || 800
