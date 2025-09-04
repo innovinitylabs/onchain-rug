@@ -1226,12 +1226,13 @@ function Scene() {
           })
         }
         
-        // Load color palettes via script tag (same as generator)
-        if (!window.colorPalettes) {
+        // Load color palettes via script tag (same as generator) - WITH DUPLICATE PREVENTION
+        if (!window.colorPalettes && !document.getElementById('color-palettes-script') && !(window as any).colorPalettes) {
           console.log('📚 Loading color palettes via script tag...')
           await new Promise<void>((resolve) => {
             const script = document.createElement('script')
             script.src = '/lib/doormat/color-palettes.js'
+            script.id = 'color-palettes-script' // Prevent duplicate loading
             script.onload = () => {
               console.log('✅ Color palettes script loaded')
               resolve()
@@ -1242,14 +1243,17 @@ function Scene() {
             }
             document.head.appendChild(script)
           })
+        } else {
+          console.log('✅ Color palettes already loaded or loading in progress')
         }
 
-        // Load character map via script tag (same as generator)
-        if (!window.characterMap) {
+        // Load character map via script tag (same as generator) - WITH DUPLICATE PREVENTION
+        if (!window.characterMap && !document.getElementById('character-map-script') && !(window as any).characterMap) {
           console.log('🔤 Loading character map via script tag...')
           await new Promise<void>((resolve) => {
             const script = document.createElement('script')
             script.src = '/lib/doormat/character-map.js'
+            script.id = 'character-map-script' // Prevent duplicate loading
             script.onload = () => {
               console.log('✅ Character map script loaded')
               resolve()
@@ -1260,6 +1264,8 @@ function Scene() {
             }
             document.head.appendChild(script)
           })
+        } else {
+          console.log('✅ Character map already loaded or loading in progress')
         }
 
         // Load doormat config
@@ -1301,7 +1307,7 @@ function Scene() {
         }
 
         // CRITICAL: Load the main P5.js doormat.js file to get the actual drawing functions
-        if (!window.generateDoormatCore && !(window as any).__doormatJsLoaded) {
+        if (!window.generateDoormatCore && !(window as any).__doormatJsLoaded && !document.getElementById('doormat-js-script')) {
           console.log('🎨 Loading main P5.js doormat.js file...')
           
           // Mark as loaded to prevent multiple loading
@@ -1309,6 +1315,7 @@ function Scene() {
           
           const script = document.createElement('script')
           script.src = '/lib/doormat/doormat.js'
+          script.id = 'doormat-js-script' // Prevent duplicate loading
           script.onload = () => {
             console.log('✅ Main P5.js doormat.js loaded successfully!')
             console.log('🎯 Available functions:', Object.keys(window).filter(key => key.includes('generate') || key.includes('draw')))
@@ -1317,6 +1324,7 @@ function Scene() {
             console.log('🔗 Loading html-interface.js to get generateDoormat wrapper...')
             const interfaceScript = document.createElement('script')
             interfaceScript.src = '/lib/doormat/html-interface.js'
+            interfaceScript.id = 'html-interface-script' // Prevent duplicate loading
             interfaceScript.onload = () => {
               console.log('✅ HTML interface loaded, generateDoormat wrapper available')
               
