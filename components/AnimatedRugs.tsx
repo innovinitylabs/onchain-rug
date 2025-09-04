@@ -16,7 +16,6 @@ declare global {
     selectedPalette: any
     warpThickness: number
     generateDoormatCore: (seed: number) => void
-    generateDoormat: (seed: number) => void
     drawTexturedSelvedgeArc: (centerX: number, centerY: number, radius: number, startAngle: number, endAngle: number, r: number, g: number, b: number, side: string) => void
     doormatTextRows: string[]
     generateTextDataInSketch?: () => void
@@ -607,43 +606,33 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
       const textRows = selectedWord.split(' ').map(word => word.toUpperCase())
       window.doormatTextRows = textRows
       
-      // FIXED: Use the SAME function the generator uses (generateDoormat wrapper)
-      console.log('🚀 About to call generateDoormat with seed:', seed)
+      // Call the actual P5.js function to generate the rug FIRST
+      console.log('🚀 About to call generateDoormatCore with seed:', seed)
       try {
-        if (window.generateDoormat && typeof window.generateDoormat === 'function') {
-          window.generateDoormat(seed)
-          console.log('✅ P5.js generateDoormat completed successfully')
-        } else {
-          // Fallback to direct call if wrapper not available
-          console.log('⚠️ generateDoormat wrapper not available, using generateDoormatCore directly')
-          window.generateDoormatCore(seed)
-          console.log('✅ P5.js generateDoormatCore completed successfully')
-        }
+        window.generateDoormatCore(seed)
+        console.log('✅ P5.js generateDoormatCore completed successfully')
       } catch (error) {
-        console.error('❌ Error calling P5.js generation:', error)
+        console.error('❌ Error calling generateDoormatCore:', error)
       }
       
-      // FIXED: Text generation now happens AUTOMATICALLY inside generateDoormat
-      // No need to call generateTextDataInSketch manually
-      console.log('🔍 DEBUG: Text generation should happen automatically')
+      // NOW call the text generation pipeline AFTER generateDoormatCore sets up the palette
+      console.log('🔍 DEBUG: About to call text generation pipeline')
+      console.log('🔍 DEBUG: window.generateTextDataInSketch available:', !!window.generateTextDataInSketch)
       console.log('🔍 DEBUG: window.doormatTextRows set to:', window.doormatTextRows)
       console.log('🔍 DEBUG: window.characterMap available:', !!window.characterMap)
       console.log('🔍 DEBUG: window.warpThickness:', window.warpThickness)
-      console.log('🔍 DEBUG: window.textData length:', window.textData?.length || 0)
       
-      // FIXED: If P5.js text generation failed, generate text manually
-      if (!window.textData || window.textData.length === 0) {
-        console.log('⚠️ P5.js text generation failed, generating text manually...')
-        if (window.characterMap && window.generateTextDataInSketch) {
-          try {
-            window.generateTextDataInSketch()
-            console.log('✅ Manual text generation completed, textData length:', window.textData?.length || 0)
-          } catch (error) {
-            console.error('❌ Manual text generation failed:', error)
-          }
-        } else {
-          console.log('⚠️ Character map or text generation function not available')
+      if (window.generateTextDataInSketch && typeof window.generateTextDataInSketch === 'function') {
+        console.log('🚀 Calling your EXACT text generation pipeline!')
+        try {
+          window.generateTextDataInSketch()
+          console.log('✅ Text generation pipeline completed successfully')
+          console.log('🔍 DEBUG: After text generation, window.textData length:', window.textData?.length || 0)
+        } catch (error) {
+          console.error('❌ Error in text generation pipeline:', error)
         }
+      } else {
+        console.log('⚠️ generateTextDataInSketch function not available')
       }
       
       // Now we need to get the generated data from the P5.js functions
@@ -653,10 +642,9 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
       // but draw it using the CORRECT P5.js angles for selvedges
       console.log('🎨 Using P5.js generated data with CORRECT selvedge angles')
       
-      // Get the palette that P5.js selected - FIXED: Use seed-based palette selection for variety
-      const selectedPalette = window.colorPalettes?.[seed % window.colorPalettes.length] || { name: 'Default', colors: ['#8B4513', '#D2691E', '#A0522D'] }
+      // Get the palette that P5.js selected
+      const selectedPalette = window.selectedPalette || window.colorPalettes?.[seed % window.colorPalettes.length] || { name: 'Default', colors: ['#8B4513', '#D2691E', '#A0522D'] }
       console.log('🎨 P5.js selected palette:', selectedPalette.name, 'with', selectedPalette.colors.length, 'colors')
-      console.log('🎨 Using seed-based palette selection for variety (seed:', seed, '-> palette index:', seed % (window.colorPalettes?.length || 1), ')')
       
       // Use P5.js generated stripe data if available
       const stripeData = window.stripeData || generateStripeDataForRug(selectedPalette, doormatHeight, () => Math.random())
@@ -1242,46 +1230,32 @@ function Scene() {
           })
         }
         
-        // Load color palettes via script tag (same as generator) - WITH DUPLICATE PREVENTION
-        if (!window.colorPalettes && !document.getElementById('color-palettes-script') && !(window as any).colorPalettes) {
-          console.log('📚 Loading color palettes via script tag...')
-          await new Promise<void>((resolve) => {
-            const script = document.createElement('script')
-            script.src = '/lib/doormat/color-palettes.js'
-            script.id = 'color-palettes-script' // Prevent duplicate loading
-            script.onload = () => {
-              console.log('✅ Color palettes script loaded')
-              resolve()
-            }
-            script.onerror = () => {
-              console.log('⚠️ Color palettes script failed to load')
-              resolve()
-            }
-            document.head.appendChild(script)
-          })
-        } else {
-          console.log('✅ Color palettes already loaded or loading in progress')
+        // Load color palettes
+        if (!window.colorPalettes) {
+          console.log('📚 Loading color palettes...')
+          const colorPalettesResponse = await fetch('/lib/doormat/color-palettes.js')
+          const colorPalettesText = await colorPalettesResponse.text()
+          // Extract the colorPalettes array from the JS file
+          const colorPalettesMatch = colorPalettesText.match(/const colorPalettes = (\[[\s\S]*?\]);/)
+          if (colorPalettesMatch) {
+            const colorPalettesCode = colorPalettesMatch[1]
+            // Use Function constructor to safely evaluate the array
+            window.colorPalettes = new Function(`return ${colorPalettesCode}`)()
+            console.log('✅ Color palettes loaded:', window.colorPalettes.length, 'palettes')
+          }
         }
 
-        // Load character map via script tag (same as generator) - WITH DUPLICATE PREVENTION
-        if (!window.characterMap && !document.getElementById('character-map-script') && !(window as any).characterMap) {
-          console.log('🔤 Loading character map via script tag...')
-          await new Promise<void>((resolve) => {
-            const script = document.createElement('script')
-            script.src = '/lib/doormat/character-map.js'
-            script.id = 'character-map-script' // Prevent duplicate loading
-            script.onload = () => {
-              console.log('✅ Character map script loaded')
-              resolve()
-            }
-            script.onerror = () => {
-              console.log('⚠️ Character map script failed to load')
-              resolve()
-            }
-            document.head.appendChild(script)
-          })
-        } else {
-          console.log('✅ Character map already loaded or loading in progress')
+        // Load character map
+        if (!window.characterMap) {
+          console.log('🔤 Loading character map...')
+          const characterMapResponse = await fetch('/lib/doormat/character-map.js')
+          const characterMapText = await characterMapResponse.text()
+          const characterMapMatch = characterMapText.match(/const characterMap = (\{[\s\S]*?\});/)
+          if (characterMapMatch) {
+            const characterMapCode = characterMapMatch[1]
+            window.characterMap = new Function(`return ${characterMapCode}`)()
+            console.log('✅ Character map loaded:', Object.keys(window.characterMap).length, 'characters')
+          }
         }
 
         // Load doormat config
@@ -1323,7 +1297,7 @@ function Scene() {
         }
 
         // CRITICAL: Load the main P5.js doormat.js file to get the actual drawing functions
-        if (!window.generateDoormatCore && !(window as any).__doormatJsLoaded && !document.getElementById('doormat-js-script')) {
+        if (!window.generateDoormatCore && !(window as any).__doormatJsLoaded) {
           console.log('🎨 Loading main P5.js doormat.js file...')
           
           // Mark as loaded to prevent multiple loading
@@ -1331,53 +1305,20 @@ function Scene() {
           
           const script = document.createElement('script')
           script.src = '/lib/doormat/doormat.js'
-          script.id = 'doormat-js-script' // Prevent duplicate loading
           script.onload = () => {
             console.log('✅ Main P5.js doormat.js loaded successfully!')
             console.log('🎯 Available functions:', Object.keys(window).filter(key => key.includes('generate') || key.includes('draw')))
             
-            // FIXED: Load html-interface.js to get the generateDoormat wrapper
-            console.log('🔗 Loading html-interface.js to get generateDoormat wrapper...')
-            const interfaceScript = document.createElement('script')
-            interfaceScript.src = '/lib/doormat/html-interface.js'
-            interfaceScript.id = 'html-interface-script' // Prevent duplicate loading
-            interfaceScript.onload = () => {
-              console.log('✅ HTML interface loaded, generateDoormat wrapper available')
-              
-              // Ensure global variables are properly initialized
-              if (window.colorPalettes && window.colorPalettes.length > 0) {
-                window.selectedPalette = window.colorPalettes[0]
-                console.log('✅ Initialized selectedPalette:', window.selectedPalette)
-              }
-              
-                          // Small delay to ensure all functions are available
+            // Ensure global variables are properly initialized
+            if (window.colorPalettes && window.colorPalettes.length > 0) {
+              window.selectedPalette = window.colorPalettes[0]
+              console.log('✅ Initialized selectedPalette:', window.selectedPalette)
+            }
+            
+            // Small delay to ensure all functions are available
             setTimeout(() => {
-              // FIXED: Ensure character map is loaded before setting dependencies
-              if (window.characterMap) {
-                console.log('✅ Character map confirmed loaded, setting dependencies ready')
-                setDependenciesLoaded(true)
-              } else {
-                console.log('⚠️ Character map not loaded yet, waiting...')
-                // Wait a bit more for character map to load
-                setTimeout(() => {
-                  console.log('✅ Setting dependencies ready after character map check')
-                  setDependenciesLoaded(true)
-                }, 500)
-              }
+              setDependenciesLoaded(true)
             }, 100)
-            }
-            interfaceScript.onerror = () => {
-              console.log('⚠️ HTML interface failed to load, using generateDoormatCore directly')
-              // Continue without wrapper
-              if (window.colorPalettes && window.colorPalettes.length > 0) {
-                window.selectedPalette = window.colorPalettes[0]
-                console.log('✅ Initialized selectedPalette:', window.selectedPalette)
-              }
-              setTimeout(() => {
-                setDependenciesLoaded(true)
-              }, 100)
-            }
-            document.head.appendChild(interfaceScript)
           }
           script.onerror = () => {
             console.error('❌ Failed to load main P5.js doormat.js file')
