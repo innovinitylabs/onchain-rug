@@ -18,6 +18,8 @@ declare global {
     generateDoormatCore: (seed: number) => void
     drawTexturedSelvedgeArc: (centerX: number, centerY: number, radius: number, startAngle: number, endAngle: number, r: number, g: number, b: number, side: string) => void
     doormatTextRows: string[]
+    generateTextDataInSketch?: () => void
+    textData?: Array<{x: number, y: number, width: number, height: number}>
     // P5.js functions that need to be mocked
     randomSeed: (seed: number) => () => number
     noise: (x: number) => number
@@ -592,9 +594,18 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
     if (window.generateDoormatCore && typeof window.generateDoormatCore === 'function') {
       console.log('🚀 Calling ACTUAL P5.js generateDoormatCore function!')
       
-      // Set the text for this rug
+      // Set the text for this rug using your EXACT generator algorithm
       const selectedWord = rugWords[seed % rugWords.length]
-      window.doormatTextRows = [selectedWord]
+      
+      // FIXED: Use proper multi-line text processing like your generator
+      const textRows = selectedWord.split(' ').map(word => word.toUpperCase())
+      window.doormatTextRows = textRows
+      
+      // FIXED: Call the proper text generation pipeline
+      if (window.generateTextDataInSketch && typeof window.generateTextDataInSketch === 'function') {
+        console.log('🚀 Calling your EXACT text generation pipeline!')
+        window.generateTextDataInSketch()
+      }
       
       // Call the actual P5.js function to generate the rug
       window.generateDoormatCore(seed)
@@ -698,18 +709,23 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
         })
       }
       
-      // Generate and draw text on the rug
-      console.log('📝 Adding text to rug:', selectedWord, 'for seed:', seed)
+      // FIXED: Use your generator's text data instead of generating our own
+      console.log('📝 Using your generator\'s text data for rug:', selectedWord, '-> Rows:', textRows)
       
-      // Generate text data using your P5.js logic
-      const textData = generateTextDataForRug(selectedWord, doormatWidth, doormatHeight, fringeLength)
+      // Get the text data that your generator created
+      const textData = window.textData || []
+      console.log('🎯 Your generator created text data:', textData.length, 'pixels')
       
-      // Draw the text pixels (centered)
+      // Draw the text pixels using your generator's exact positioning
       if (textData.length > 0) {
         ctx.fillStyle = '#FFFFFF' // White text for visibility
         textData.forEach(pixel => {
-          ctx.fillRect(pixel.x + offsetX, pixel.y + offsetY, pixel.width, pixel.height)
+          // Use your generator's exact positioning (no offset needed)
+          ctx.fillRect(pixel.x, pixel.y, pixel.width, pixel.height)
         })
+        console.log('✅ Drew', textData.length, 'text pixels using your generator\'s data')
+      } else {
+        console.log('⚠️ No text data from generator, text may not render')
       }
       
     } else {
@@ -753,38 +769,34 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
         drawStripeWithWeaving(ctx, stripe, doormatWidth, doormatHeight, random, offsetX, offsetY)
       })
       
-      // Generate and draw text on the rug
+      // FIXED: Use your generator's text data for manual fallback too
       const selectedWord = rugWords[seed % rugWords.length]
-      console.log('📝 Adding text to rug:', selectedWord, 'for seed:', seed)
+      console.log('📝 Using your generator\'s text data for manual fallback:', selectedWord)
       
-      // Generate text data using your P5.js logic
-      const textData = generateTextDataForRug(selectedWord, doormatWidth, doormatHeight, fringeLength)
-      console.log('🎨 Text data for drawing (manual path):', textData.length, 'pixels')
+      // Set up text rows and call your generator's text pipeline
+      const textRows = selectedWord.split(' ').map(word => word.toUpperCase())
+      window.doormatTextRows = textRows
       
-      // Draw the text pixels (centered)
+      if (window.generateTextDataInSketch && typeof window.generateTextDataInSketch === 'function') {
+        window.generateTextDataInSketch()
+      }
+      
+      // Get the text data that your generator created
+      const textData = window.textData || []
+      console.log('🎯 Your generator created text data (manual path):', textData.length, 'pixels')
+      
+      // Draw the text pixels using your generator's exact positioning
       if (textData.length > 0) {
         ctx.fillStyle = '#FFFFFF' // White text for visibility
         let drawnPixels = 0
-        textData.forEach(pixel => {
-          const drawX = pixel.x + offsetX
-          const drawY = pixel.y + offsetY
-          
-          // Debug: Log first few pixels to see positioning
-          if (drawnPixels < 5) {
-            console.log(`🎯 Drawing pixel ${drawnPixels} (manual):`, { 
-              original: { x: pixel.x, y: pixel.y }, 
-              offset: { offsetX, offsetY }, 
-              final: { drawX, drawY },
-              size: { width: pixel.width, height: pixel.height }
-            })
-          }
-          
-          ctx.fillRect(drawX, drawY, pixel.width, pixel.height)
+        textData.forEach((pixel: any) => {
+          // Use your generator's exact positioning (no offset needed)
+          ctx.fillRect(pixel.x, pixel.y, pixel.width, pixel.height)
           drawnPixels++
         })
-        console.log(`✅ Drawn ${drawnPixels} text pixels on canvas (manual path)`)
+        console.log(`✅ Drew ${drawnPixels} text pixels using your generator\'s data (manual path)`)
       } else {
-        console.log('❌ No text data to draw (manual path)')
+        console.log('⚠️ No text data from generator, text may not render (manual path)')
       }
       
       // Draw proper fringe and selvedge as part of the art (EXACTLY like your generator)
