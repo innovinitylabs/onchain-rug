@@ -159,8 +159,8 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
       // Draw individual fringe strand with thin threads (EXACT COPY of your logic)
       for (let j = 0; j < 12; j++) { // More but thinner threads per strand
         const threadX = strandX + random() * strandWidth/3 - strandWidth/6
-        const startY = side === 'top' ? y : y + h
-        const endY = side === 'top' ? y - fringeLength : y + h + fringeLength
+        const startY = side === 'top' ? y : y
+        const endY = side === 'top' ? y - fringeLength : y + fringeLength
         
         // Add natural curl/wave to the fringe with more variation (EXACT COPY)
         const waveAmplitude = random() * 3 + 1
@@ -238,11 +238,15 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
         
         // Draw sophisticated selvedge arc (EXACT COPY of your drawTexturedSelvedgeArc)
         const radius = weftThickness * (random() * 0.6 + 1.2)
-        const centerX = offsetX - radius
-        const centerY = offsetY + y + weftThickness/2
+        const centerX = offsetX - radius + (random() * 4 - 2) // Slight position variation like your generator
+        const centerY = offsetY + y + weftThickness/2 + (random() * 2 - 1) // Slight vertical variation like your generator
+        
+        // Vary the arc angles for more natural look (EXACT COPY of your generator)
+        const startAngle = Math.PI/2 + (random() * 0.4 - 0.2)
+        const endAngle = -Math.PI/2 + (random() * 0.4 - 0.2)
         
         // Draw textured selvedge arc with multiple layers (EXACT COPY) - LEFT SIDE semicircle
-        drawTexturedSelvedgeArc(ctx, centerX, centerY, radius, Math.PI/2, -Math.PI/2, r, g, b, 'left', random)
+        drawTexturedSelvedgeArc(ctx, centerX, centerY, radius, startAngle, endAngle, r, g, b, 'left', random)
       }
     }
     
@@ -277,11 +281,15 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
         
         // Draw sophisticated selvedge arc (EXACT COPY of your drawTexturedSelvedgeArc)
         const radius = weftThickness * (random() * 0.6 + 1.2)
-        const centerX = offsetX + doormatWidth + radius
-        const centerY = offsetY + y + weftThickness/2
+        const centerX = offsetX + doormatWidth + radius + (random() * 4 - 2) // Slight position variation like your generator
+        const centerY = offsetY + y + weftThickness/2 + (random() * 2 - 1) // Slight vertical variation like your generator
+        
+        // Vary the arc angles for more natural look (EXACT COPY of your generator)
+        const startAngle = -Math.PI/2 + (random() * 0.4 - 0.2)
+        const endAngle = Math.PI/2 + (random() * 0.4 - 0.2)
         
         // Draw textured selvedge arc with multiple layers (EXACT COPY) - RIGHT SIDE semicircle
-        drawTexturedSelvedgeArc(ctx, centerX, centerY, radius, -Math.PI/2, Math.PI/2, r, g, b, 'right', random)
+        drawTexturedSelvedgeArc(ctx, centerX, centerY, radius, startAngle, endAngle, r, g, b, 'right', random)
       }
     }
   }
