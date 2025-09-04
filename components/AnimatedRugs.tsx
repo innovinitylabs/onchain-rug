@@ -241,10 +241,10 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
         const centerX = offsetX - radius + (random() * 4 - 2) // Slight position variation like your generator
         const centerY = offsetY + y + weftThickness/2 + (random() * 2 - 1) // Slight vertical variation like your generator
         
-        // CRITICAL FIX: HTML5 Canvas draws arcs in shortest path, so we need to reverse the order for left selvedge
-        // Left selvedge should draw from -90° to 90° (bottom to top) to get a proper semicircle
-        const startAngle = -Math.PI/2 + (random() * 0.4 - 0.2) // Start from bottom (-90°)
-        const endAngle = Math.PI/2 + (random() * 0.4 - 0.2)   // End at top (90°)
+        // CRITICAL FIX: Use absolute positive angles to ensure proper semicircle drawing
+        // Left selvedge: draw from 270° to 90° (bottom to top) = 180° arc
+        const startAngle = (3 * Math.PI / 2) + (random() * 0.4 - 0.2) // Start from bottom (270°)
+        const endAngle = (Math.PI / 2) + (random() * 0.4 - 0.2)       // End at top (90°)
         
         console.log('🎯 LEFT Selvedge angles (FIXED):', { startAngle: startAngle.toFixed(3), endAngle: endAngle.toFixed(3), startDegrees: (startAngle * 180 / Math.PI).toFixed(1), endDegrees: (endAngle * 180 / Math.PI).toFixed(1) })
         
@@ -287,9 +287,10 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
         const centerX = offsetX + doormatWidth + radius + (random() * 4 - 2) // Slight position variation like your generator
         const centerY = offsetY + y + weftThickness/2 + (random() * 2 - 1) // Slight vertical variation like your generator
         
-        // Vary the arc angles for more natural look (EXACT COPY of your generator)
-        const startAngle = -Math.PI/2 + (random() * 0.4 - 0.2)
-        const endAngle = Math.PI/2 + (random() * 0.4 - 0.2)
+        // CRITICAL FIX: Use absolute positive angles to ensure proper semicircle drawing
+        // Right selvedge: draw from 270° to 90° (bottom to top) = 180° arc
+        const startAngle = (3 * Math.PI / 2) + (random() * 0.4 - 0.2) // Start from bottom (270°)
+        const endAngle = (Math.PI / 2) + (random() * 0.4 - 0.2)       // End at top (90°)
         
         console.log('🎯 RIGHT Selvedge angles:', { startAngle: startAngle.toFixed(3), endAngle: endAngle.toFixed(3), startDegrees: (startAngle * 180 / Math.PI).toFixed(1), endDegrees: (endAngle * 180 / Math.PI).toFixed(1) })
         
