@@ -502,27 +502,30 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
     const charHeight = 5 * scaledWeft
     const spacing = scaledWeft
     
-    // Center the text on the rug
-    const textWidth = text.length * charWidth
-    const startX = (doormatWidth - textWidth) / 2 + fringeLength * 2
-    const startY = (doormatHeight - charHeight) / 2 + fringeLength * 2
+    // Center the text on the rug - FLOW ALONG LENGTH (Y-axis)
+    const textHeight = text.length * charHeight
+    const startX = (doormatWidth - charWidth) / 2 + fringeLength * 2  // Center single character
+    const startY = (doormatHeight - textHeight) / 2 + fringeLength * 2  // Center text block
     
-    // Generate character pixels for each character
+    // Generate character pixels for each character - VERTICAL FLOW
     for (let i = 0; i < text.length; i++) {
       const char = text.charAt(i)
       const charDef = window.characterMap[char] || window.characterMap[' ']
       
       if (charDef) {
-        const charX = startX + i * charWidth
+        const charY = startY + i * charHeight  // Characters stacked vertically
         
-        // Generate pixels for this character - NO ROTATION for length-wise flow
+        // Generate pixels for this character - KEEP ROTATION for canvas orientation
         for (let row = 0; row < charDef.length; row++) {
           for (let col = 0; col < charDef[0].length; col++) {
             if (charDef[row][col] === '1') {
-              // NO rotation - text flows naturally along length
+              // KEEP rotation but flow vertically along length
+              const newCol = row
+              const newRow = charDef[0].length - 1 - col
+              
               textData.push({
-                x: charX + col * scaledWarp,
-                y: startY + row * scaledWeft,
+                x: startX + newCol * scaledWarp,
+                y: charY + newRow * scaledWeft,
                 width: scaledWarp,
                 height: scaledWeft
               })
