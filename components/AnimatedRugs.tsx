@@ -18,6 +18,34 @@ declare global {
     generateDoormatCore: (seed: number) => void
     drawTexturedSelvedgeArc: (centerX: number, centerY: number, radius: number, startAngle: number, endAngle: number, r: number, g: number, b: number, side: string) => void
     doormatTextRows: string[]
+    // P5.js functions that need to be mocked
+    randomSeed: (seed: number) => () => number
+    noise: (x: number) => number
+    noiseSeed: (seed: number) => void
+    random: (min?: number, max?: number) => number
+    color: (r: number | string, g?: number, b?: number, a?: number) => any
+    red: (c: any) => number
+    green: (c: any) => number
+    blue: (c: any) => number
+    lerpColor: (c1: any, c2: any, amt: number) => any
+    constrain: (n: number, low: number, high: number) => number
+    max: (...args: number[]) => number
+    min: (...args: number[]) => number
+    floor: (x: number) => number
+    cos: (x: number) => number
+    sin: (x: number) => number
+    fill: (r: number, g?: number, b?: number, a?: number) => void
+    noStroke: () => void
+    noFill: () => void
+    arc: (x: number, y: number, w: number, h: number, start: number, stop: number) => void
+    ellipse: (x: number, y: number, w: number, h: number) => void
+    beginShape: () => void
+    vertex: (x: number, y: number) => void
+    endShape: () => void
+    strokeWeight: (weight: number) => void
+    noLoop: () => void
+    createCanvas: (w: number, h: number) => any
+    redraw: () => void
   }
 }
 
@@ -923,6 +951,150 @@ function Scene() {
         // CRITICAL: Load the main P5.js doormat.js file to get the actual drawing functions
         if (!window.generateDoormatCore) {
           console.log('🎨 Loading main P5.js doormat.js file...')
+          
+          // CRITICAL: Mock P5.js functions before loading doormat.js
+          console.log('🔧 Mocking P5.js functions...')
+          
+          // Mock P5.js randomSeed function
+          window.randomSeed = (seed: number) => {
+            console.log('🎲 P5.js randomSeed called with:', seed)
+            // Return a seeded random function
+            let m = 0x80000000
+            let a = 1103515245
+            let c = 12345
+            let state = seed
+            return () => {
+              state = (a * state + c) % m
+              return state / m
+            }
+          }
+          
+          // Mock P5.js noise function
+          window.noise = (x: number) => {
+            // Simple noise implementation
+            return (Math.sin(x * 12.9898) + Math.sin(x * 78.233)) * 43758.5453 % 1
+          }
+          
+          // Mock P5.js noiseSeed function
+          window.noiseSeed = (seed: number) => {
+            console.log('🌊 P5.js noiseSeed called with:', seed)
+          }
+          
+          // Mock P5.js random function
+          window.random = (min?: number, max?: number) => {
+            if (min !== undefined && max !== undefined) {
+              return Math.random() * (max - min) + min
+            } else if (min !== undefined) {
+              return Math.random() * min
+            } else {
+              return Math.random()
+            }
+          }
+          
+          // Mock P5.js color function
+          window.color = (r: number | string, g?: number, b?: number, a?: number) => {
+            if (typeof r === 'string') {
+              // Hex color
+              const hex = r.replace('#', '')
+              return {
+                r: parseInt(hex.slice(0, 2), 16),
+                g: parseInt(hex.slice(2, 4), 16),
+                b: parseInt(hex.slice(4, 6), 16)
+              }
+            } else {
+              return { r, g: g || 0, b: b || 0, a: a || 255 }
+            }
+          }
+          
+          // Mock P5.js red, green, blue functions
+          window.red = (c: any) => c.r || 0
+          window.green = (c: any) => c.g || 0
+          window.blue = (c: any) => c.b || 0
+          
+          // Mock P5.js lerpColor function
+          window.lerpColor = (c1: any, c2: any, amt: number) => {
+            return {
+              r: Math.round(c1.r + (c2.r - c1.r) * amt),
+              g: Math.round(c1.g + (c2.g - c1.g) * amt),
+              b: Math.round(c1.b + (c2.b - c1.b) * amt)
+            }
+          }
+          
+          // Mock P5.js constrain function
+          window.constrain = (n: number, low: number, high: number) => {
+            return Math.max(low, Math.min(high, n))
+          }
+          
+          // Mock P5.js max, min, floor functions
+          window.max = Math.max
+          window.min = Math.min
+          window.floor = Math.floor
+          
+          // Mock P5.js cos, sin functions
+          window.cos = Math.cos
+          window.sin = Math.sin
+          
+          // Mock P5.js fill function
+          window.fill = (r: number, g?: number, b?: number, a?: number) => {
+            // This will be handled by the drawing context
+          }
+          
+          // Mock P5.js noStroke function
+          window.noStroke = () => {
+            // This will be handled by the drawing context
+          }
+          
+          // Mock P5.js noFill function
+          window.noFill = () => {
+            // This will be handled by the drawing context
+          }
+          
+          // Mock P5.js arc function
+          window.arc = (x: number, y: number, w: number, h: number, start: number, stop: number) => {
+            // This will be handled by the drawing context
+          }
+          
+          // Mock P5.js ellipse function
+          window.ellipse = (x: number, y: number, w: number, h: number) => {
+            // This will be handled by the drawing context
+          }
+          
+          // Mock P5.js beginShape, vertex, endShape functions
+          window.beginShape = () => {}
+          window.vertex = (x: number, y: number) => {}
+          window.endShape = () => {}
+          
+          // Mock P5.js strokeWeight function
+          window.strokeWeight = (weight: number) => {}
+          
+          // Mock P5.js noLoop function
+          window.noLoop = () => {}
+          
+          // Mock P5.js createCanvas function
+          window.createCanvas = (w: number, h: number) => {
+            const canvas = document.createElement('canvas')
+            canvas.width = w
+            canvas.height = h
+            return canvas
+          }
+          
+          // Mock P5.js canvas.parent function
+          const originalCreateCanvas = window.createCanvas
+          window.createCanvas = (w: number, h: number) => {
+            const canvas = originalCreateCanvas(w, h)
+            canvas.parent = (container: string) => {
+              console.log('🎨 P5.js canvas.parent called with:', container)
+            }
+            return canvas
+          }
+          
+          // Mock P5.js redraw function
+          window.redraw = () => {
+            console.log('🔄 P5.js redraw called')
+          }
+          
+          console.log('✅ P5.js functions mocked successfully')
+          
           const script = document.createElement('script')
           script.src = '/lib/doormat/doormat.js'
           script.onload = () => {
