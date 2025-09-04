@@ -22,6 +22,8 @@ declare global {
     textData?: Array<{x: number, y: number, width: number, height: number}>
     lightTextColor?: any
     darkTextColor?: any
+    // P5.js library and functions
+    p5?: any
     // P5.js functions that need to be mocked
     randomSeed: (seed: number) => () => number
     noise: (x: number) => number
@@ -1157,6 +1159,56 @@ function Scene() {
       try {
         console.log('🔄 Loading P5.js dependencies...')
         
+        // Load P5.js from CDN like the live generator does
+        if (!window.randomSeed) {
+          console.log('📚 Loading P5.js from CDN...')
+          await new Promise<void>((resolve) => {
+            const script = document.createElement('script')
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js'
+            script.async = false
+            script.onload = () => {
+              // Make P5.js functions globally available like the live generator
+              if (window.p5 && typeof window.p5.randomSeed === 'function') {
+                window.randomSeed = window.p5.randomSeed
+                window.noiseSeed = window.p5.noiseSeed
+                window.random = window.p5.random
+                window.color = window.p5.color
+                window.red = window.p5.red
+                window.green = window.p5.green
+                window.blue = window.p5.blue
+                window.lerpColor = window.p5.lerpColor
+                window.createCanvas = window.p5.createCanvas
+                window.background = window.p5.background
+                window.fill = window.p5.fill
+                window.noFill = window.p5.noFill
+                window.noStroke = window.p5.noStroke
+                window.arc = window.p5.arc
+                window.ellipse = window.p5.ellipse
+                window.beginShape = window.p5.beginShape
+                window.vertex = window.p5.vertex
+                window.endShape = window.p5.endShape
+                window.strokeWeight = window.p5.strokeWeight
+                window.noLoop = window.p5.noLoop
+                window.redraw = window.p5.redraw
+                window.constrain = window.p5.constrain
+                window.max = window.p5.max
+                window.min = window.p5.min
+                window.floor = window.p5.floor
+                window.cos = window.p5.cos
+                window.sin = window.p5.sin
+                window.PI = window.p5.PI
+                console.log('✅ P5.js functions made globally available')
+              }
+              resolve()
+            }
+            script.onerror = () => {
+              console.error('❌ Failed to load P5.js from CDN')
+              resolve()
+            }
+            document.head.appendChild(script)
+          })
+        }
+        
         // Load color palettes
         if (!window.colorPalettes) {
           console.log('📚 Loading color palettes...')
@@ -1227,191 +1279,8 @@ function Scene() {
         if (!window.generateDoormatCore) {
           console.log('🎨 Loading main P5.js doormat.js file...')
           
-          // CRITICAL: Mock P5.js functions before loading doormat.js
-          console.log('🔧 Mocking P5.js functions...')
-          
-          // Mock P5.js randomSeed function
-          window.randomSeed = (seed: number) => {
-            console.log('🎲 P5.js randomSeed called with:', seed)
-            // Return a seeded random function
-            let m = 0x80000000
-            let a = 1103515245
-            let c = 12345
-            let state = seed
-            return () => {
-              state = (a * state + c) % m
-              return state / m
-            }
-          }
-          
-          // Mock P5.js noise function
-          window.noise = (x: number) => {
-            // Simple noise implementation
-            return (Math.sin(x * 12.9898) + Math.sin(x * 78.233)) * 43758.5453 % 1
-          }
-          
-          // Mock P5.js noiseSeed function
-          window.noiseSeed = (seed: number) => {
-            console.log('🌊 P5.js noiseSeed called with:', seed)
-          }
-          
-          // Mock P5.js random function
-          window.random = (min?: number | any[], max?: number) => {
-            // Handle array input (random element selection)
-            if (Array.isArray(min)) {
-              const array = min
-              return array[Math.floor(Math.random() * array.length)]
-            }
-            // Handle number ranges
-            if (min !== undefined && max !== undefined) {
-              return Math.random() * (max - min) + min
-            } else if (min !== undefined && typeof min === 'number') {
-              return Math.random() * min
-            } else {
-              return Math.random()
-            }
-          }
-          
-          // Mock P5.js color function to return hex strings for compatibility
-          window.color = (r: number | string, g?: number, b?: number, a?: number) => {
-            if (typeof r === 'string') {
-              // Hex color - return as is for compatibility
-              return r
-            } else {
-              // RGB values - convert to hex
-              const hex = `#${Math.round(r).toString(16).padStart(2, '0')}${Math.round(g || 0).toString(16).padStart(2, '0')}${Math.round(b || 0).toString(16).padStart(2, '0')}`
-              return hex
-            }
-          }
-          
-
-          
-          // Mock P5.js red, green, blue functions
-          window.red = (c: any) => {
-            if (typeof c === 'string' && c.startsWith('#')) {
-              return parseInt(c.slice(1, 3), 16)
-            }
-            return c.r || 0
-          }
-          window.green = (c: any) => {
-            if (typeof c === 'string' && c.startsWith('#')) {
-              return parseInt(c.slice(3, 5), 16)
-            }
-            return c.g || 0
-          }
-          window.blue = (c: any) => {
-            if (typeof c === 'string' && c.startsWith('#')) {
-              return parseInt(c.slice(5, 7), 16)
-            }
-            return c.b || 0
-          }
-          
-          // Mock P5.js lerpColor function
-          window.lerpColor = (c1: any, c2: any, amt: number) => {
-            // Convert hex colors to RGB if needed
-            const getRGB = (c: any) => {
-              if (typeof c === 'string' && c.startsWith('#')) {
-                return {
-                  r: parseInt(c.slice(1, 3), 16),
-                  g: parseInt(c.slice(3, 5), 16),
-                  b: parseInt(c.slice(5, 7), 16)
-                }
-              }
-              return c
-            }
-            
-            const rgb1 = getRGB(c1)
-            const rgb2 = getRGB(c2)
-            
-            return {
-              r: Math.round(rgb1.r + (rgb2.r - rgb1.r) * amt),
-              g: Math.round(rgb1.g + (rgb2.g - rgb1.g) * amt),
-              b: Math.round(rgb1.b + (rgb2.b - rgb1.b) * amt)
-            }
-          }
-          
-          // Mock P5.js constrain function
-          window.constrain = (n: number, low: number, high: number) => {
-            return Math.max(low, Math.min(high, n))
-          }
-          
-          // Mock P5.js max, min, floor functions
-          window.max = Math.max
-          window.min = Math.min
-          window.floor = Math.floor
-          
-          // Mock P5.js PI constant
-          window.PI = Math.PI
-          
-          // Mock P5.js cos, sin functions
-          window.cos = Math.cos
-          window.sin = Math.sin
-          
-          // Mock P5.js fill function
-          window.fill = (r: number, g?: number, b?: number, a?: number) => {
-            // This will be handled by the drawing context
-          }
-          
-          // Mock P5.js noStroke function
-          window.noStroke = () => {
-            // This will be handled by the drawing context
-          }
-          
-          // Mock P5.js noFill function
-          window.noFill = () => {
-            // This will be handled by the drawing context
-          }
-          
-          // Mock P5.js arc function
-          window.arc = (x: number, y: number, w: number, h: number, start: number, stop: number) => {
-            // This will be handled by the drawing context
-          }
-          
-          // Mock P5.js ellipse function
-          window.ellipse = (x: number, y: number, w: number, h: number) => {
-            // This will be handled by the drawing context
-          }
-          
-          // Mock P5.js beginShape, vertex, endShape functions
-          window.beginShape = () => {}
-          window.vertex = (x: number, y: number) => {}
-          window.endShape = () => {}
-          
-          // Mock P5.js strokeWeight function
-          window.strokeWeight = (weight: number) => {}
-          
-          // Mock P5.js noLoop function
-          window.noLoop = () => {}
-          
-          // Mock P5.js createCanvas function
-          window.createCanvas = (w: number, h: number) => {
-            const canvas = document.createElement('canvas')
-            canvas.width = w
-            canvas.height = h
-            return canvas
-          }
-          
-          // Mock P5.js canvas.parent function
-          const originalCreateCanvas = window.createCanvas
-          window.createCanvas = (w: number, h: number) => {
-            const canvas = originalCreateCanvas(w, h)
-            canvas.parent = (container: string) => {
-              console.log('🎨 P5.js canvas.parent called with:', container)
-            }
-            return canvas
-          }
-          
-          // Mock P5.js background function to track calls
-          window.background = (r: number, g?: number, b?: number, a?: number) => {
-            console.log('🎨 P5.js background called with:', r, g, b, a)
-          }
-          
-          // Mock P5.js redraw function
-          window.redraw = () => {
-            console.log('🔄 P5.js redraw called')
-          }
-          
-          console.log('✅ P5.js functions mocked successfully')
+          // Use the SAME P5.js approach as the live generator - no mocking needed!
+          console.log('✅ Using real P5.js functions from CDN')
           
           const script = document.createElement('script')
           script.src = '/lib/doormat/doormat.js'
