@@ -65,8 +65,8 @@ const hexToRgb = (hex: string) => {
   } : null
 }
 
-// Helper function to get dynamic text color using your generator's exact logic
-const getDynamicTextColor = (bgBrightness: number, selectedPalette: any) => {
+  // Helper function to get dynamic text color using your generator's exact logic
+  const getDynamicTextColor = (bgBrightness: number, selectedPalette: any) => {
   if (selectedPalette && selectedPalette.colors) {
     // Find darkest and lightest colors from palette (matching your generator's updateTextColors logic)
     let darkest = selectedPalette.colors[0]
