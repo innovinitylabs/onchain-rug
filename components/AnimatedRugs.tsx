@@ -245,6 +245,8 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
         const startAngle = Math.PI/2 + (random() * 0.4 - 0.2)
         const endAngle = -Math.PI/2 + (random() * 0.4 - 0.2)
         
+        console.log('🎯 LEFT Selvedge angles:', { startAngle: startAngle.toFixed(3), endAngle: endAngle.toFixed(3), startDegrees: (startAngle * 180 / Math.PI).toFixed(1), endDegrees: (endAngle * 180 / Math.PI).toFixed(1) })
+        
         // Draw textured selvedge arc with multiple layers (EXACT COPY) - LEFT SIDE semicircle
         drawTexturedSelvedgeArc(ctx, centerX, centerY, radius, startAngle, endAngle, r, g, b, 'left', random)
       }
@@ -287,6 +289,8 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
         // Vary the arc angles for more natural look (EXACT COPY of your generator)
         const startAngle = -Math.PI/2 + (random() * 0.4 - 0.2)
         const endAngle = Math.PI/2 + (random() * 0.4 - 0.2)
+        
+        console.log('🎯 RIGHT Selvedge angles:', { startAngle: startAngle.toFixed(3), endAngle: endAngle.toFixed(3), startDegrees: (startAngle * 180 / Math.PI).toFixed(1), endDegrees: (endAngle * 180 / Math.PI).toFixed(1) })
         
         // Draw textured selvedge arc with multiple layers (EXACT COPY) - RIGHT SIDE semicircle
         drawTexturedSelvedgeArc(ctx, centerX, centerY, radius, startAngle, endAngle, r, g, b, 'right', random)
