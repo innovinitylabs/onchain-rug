@@ -57,7 +57,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
   seed?: number
   dependenciesLoaded: boolean
 }) {
-    const rugRef = useRef<THREE.Mesh>(null)
+  const rugRef = useRef<THREE.Mesh>(null)
   const groupRef = useRef<THREE.Group>(null)
   const initialPositions = useRef<Float32Array | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -820,20 +820,20 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
         const x = positions.getX(i)
         const y = positions.getY(i)
         
-        // Multiple wave layers for realistic cloth movement
-        const wave1 = Math.sin(x * 1.5 + time * 2) * 0.15
-        const wave2 = Math.sin(y * 1.2 + time * 1.8) * 0.08
-        const wave3 = Math.sin((x + y) * 0.8 + time * 2.5) * 0.05
-        const ripple = Math.sin(Math.sqrt(x*x + y*y) * 2 - time * 3) * 0.03
+        // Multiple wave layers for realistic cloth movement - FLOWING ALONG LENGTH (Y-axis)
+        const wave1 = Math.sin(y * 1.5 + time * 2) * 0.15        // Y-axis flow (length)
+        const wave2 = Math.sin(x * 1.2 + time * 1.8) * 0.08     // X-axis flow (width) - secondary
+        const wave3 = Math.sin((y + x) * 0.8 + time * 2.5) * 0.05 // Combined flow
+        const ripple = Math.sin(Math.sqrt(y*y + x*x) * 2 - time * 3) * 0.03 // Radial flow
         
-        // Wind effect simulation
-        const windX = Math.sin(time * 0.7 + x * 0.5) * 0.04
-        const windY = Math.cos(time * 0.9 + y * 0.3) * 0.03
+        // Wind effect simulation - PRIMARY FLOW ALONG LENGTH
+        const windY = Math.sin(time * 0.7 + y * 0.5) * 0.04      // Y-axis wind (length)
+        const windX = Math.cos(time * 0.9 + x * 0.3) * 0.03     // X-axis wind (width) - secondary
         
-        // Edge effects for natural cloth behavior
-        const edgeFactorX = Math.abs(x) / 2
-        const edgeFactorY = Math.abs(y) / 3
-        const edgeAmplification = 1 + (edgeFactorX + edgeFactorY) * 0.5
+        // Edge effects for natural cloth behavior - ENHANCED ALONG LENGTH
+        const edgeFactorY = Math.abs(y) / 2    // Primary edge effect along length
+        const edgeFactorX = Math.abs(x) / 4    // Secondary edge effect along width
+        const edgeAmplification = 1 + (edgeFactorY + edgeFactorX * 0.5) * 0.5
         
         const totalWave = (wave1 + wave2 + wave3 + ripple + windX + windY) * edgeAmplification
         positions.setZ(i, totalWave)
