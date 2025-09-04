@@ -270,8 +270,8 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
         
         // Draw sophisticated selvedge arc (EXACT COPY of your drawTexturedSelvedgeArc)
         const radius = weftThickness * (random() * 0.6 + 1.2)
-        // FIXED: Position so arc edge touches canvas boundary perfectly
-        const centerX = offsetX + radius + (random() * 2 - 1) // Left edge + radius for perfect touch
+        // FIXED: Move below rug and closer to eliminate transparency gaps
+        const centerX = offsetX + radius * 0.8 + (random() * 2 - 1) // Closer to edge, below rug layer
         const centerY = offsetY + y + weftThickness/2 + (random() * 2 - 1) // Slight vertical variation like your generator
         
         // FIXED: Use EXACT angles from your original P5.js generator
@@ -317,8 +317,8 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
         
         // Draw sophisticated selvedge arc (EXACT COPY of your drawTexturedSelvedgeArc)
         const radius = weftThickness * (random() * 0.6 + 1.2)
-        // FIXED: Position so arc edge touches canvas boundary perfectly
-        const centerX = offsetX + doormatWidth - radius + (random() * 2 - 1) // Right edge - radius for perfect touch
+        // FIXED: Move below rug and closer to eliminate transparency gaps
+        const centerX = offsetX + doormatWidth - radius * 0.8 + (random() * 2 - 1) // Closer to edge, below rug layer
         const centerY = offsetY + y + weftThickness/2 + (random() * 2 - 1) // Slight vertical variation like your generator
         
         // FIXED: Use EXACT angles from your original P5.js generator
