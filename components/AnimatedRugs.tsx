@@ -590,9 +590,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
     // CRITICAL: Clear the entire canvas completely before drawing
     ctx.clearRect(0, 0, canvas.width, canvas.height)
     
-    // Set a transparent background to ensure no artifacts
-    ctx.fillStyle = 'rgba(0, 0, 0, 0)'
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    // NO BACKGROUND FILL - Keep canvas transparent for animation
     
     // CRITICAL: Use the ACTUAL P5.js generateDoormatCore function instead of manual recreation!
     if (window.generateDoormatCore && typeof window.generateDoormatCore === 'function') {
@@ -631,9 +629,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
       const offsetX = fringeLength * 2
       const offsetY = fringeLength * 2
       
-      // Draw base doormat (centered)
-      ctx.fillStyle = selectedPalette.colors[0]
-      ctx.fillRect(offsetX, offsetY, doormatWidth, doormatHeight)
+      // NO BASE BACKGROUND - Keep transparent for animation
       
       // CRITICAL: Handle P5.js stripe data structure vs manual structure
       // Check if P5.js data is valid (not NaN)
@@ -754,9 +750,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
       const offsetX = fringeLength * 2
       const offsetY = fringeLength * 2
       
-      // Draw base doormat (centered)
-      ctx.fillStyle = selectedPalette.colors[0]
-      ctx.fillRect(offsetX, offsetY, doormatWidth, doormatHeight)
+      // NO BASE BACKGROUND - Keep transparent for animation
       
       // Draw stripes with proper weaving structure (centered)
       stripeData.forEach(stripe => {
@@ -919,24 +913,24 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
           />
         </mesh>
         
-        {/* Enhanced glow with multiple layers */}
+        {/* Enhanced glow with multiple layers - TRANSPARENT */}
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]}>
           <planeGeometry args={[4.3, 6.3]} />
           <meshBasicMaterial 
-            color="#8B4513" 
+            color="#ffffff" 
             transparent 
-            opacity={0.15}
+            opacity={0.05}
             side={THREE.DoubleSide}
           />
         </mesh>
         
-        {/* Magical shimmer effect */}
+        {/* Magical shimmer effect - TRANSPARENT */}
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]}>
           <planeGeometry args={[4.1, 6.1]} />
           <meshBasicMaterial 
-            color="#ffd700" 
+            color="#ffffff" 
             transparent 
-            opacity={0.1}
+            opacity={0.03}
             side={THREE.DoubleSide}
           />
         </mesh>
@@ -1282,8 +1276,8 @@ function Scene() {
         castShadow
       />
       
-      {/* Environment */}
-      <Environment preset="sunset" />
+      {/* Environment - TRANSPARENT */}
+      <Environment preset="sunset" background={false} />
       
       {/* Flying Rugs with Your Generator Logic - Each with unique seeds */}
       <FlyingRug position={[0, 0, 0]} scale={1.2} seed={42} dependenciesLoaded={dependenciesLoaded} />
