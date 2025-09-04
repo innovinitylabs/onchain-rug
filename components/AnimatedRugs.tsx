@@ -711,42 +711,46 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
         })
       }
       
-      // FIXED: Use your generator's text data with proper positioning and colors
+      // FIXED: Use your generator's text data EXACTLY as positioned (no manual rotation)
       console.log('📝 Using your generator\'s text data for rug:', selectedWord, '-> Rows:', textRows)
       
       // Get the text data that your generator created
       const textData = window.textData || []
       console.log('🎯 Your generator created text data:', textData.length, 'pixels')
       
-      // Draw the text pixels using your generator's exact positioning and colors
+      // Draw the text pixels using your generator's EXACT positioning (no coordinate modifications)
       if (textData.length > 0) {
         textData.forEach(pixel => {
-          // FIXED: Calculate proper positioning accounting for canvas rotation and fringe offsets
-          // Your generator positions text relative to doormatWidth/Height, but we need to account for:
-          // 1. Canvas rotation (90° CCW)
-          // 2. Fringe offsets
-          // 3. Canvas centering
+          // FIXED: Use your generator's coordinates directly - it already handles rotation correctly
+          // Your generator's generateCharacterPixels() already calculates the correct rotated positions
+          // We just need to add the fringe offsets for canvas centering
           
-          // Calculate the rotated and offset position
-          const rotatedX = pixel.y + offsetY  // Y becomes X after 90° CCW rotation
-          const rotatedY = (doormatWidth - pixel.x) + offsetX  // X becomes Y, flipped after rotation
+          const finalX = pixel.x + offsetX  // Add fringe offset for canvas centering
+          const finalY = pixel.y + offsetY  // Add fringe offset for canvas centering
           
-          // FIXED: Use your generator's per-pixel color logic instead of plain white
-          // Get the background color at this position to determine text color
+          // FIXED: Use your generator's per-pixel color logic
+          // Get the actual background color at this position to determine text color
           let textColor = '#FFFFFF' // Default fallback
           
-          // Try to get the actual colors from your generator
+          // Use your generator's dynamic color logic based on actual background brightness
           if (window.lightTextColor && window.darkTextColor) {
-            // Use your generator's color logic
-            const bgBrightness = 128 // Default brightness, could be calculated from actual background
+            // Calculate actual background brightness at this pixel position
+            // This matches your generator's logic in drawStripe()
+            const imageData = ctx.getImageData(finalX, finalY, 1, 1)
+            const r = imageData.data[0]
+            const g = imageData.data[1] 
+            const b = imageData.data[2]
+            const bgBrightness = (r + g + b) / 3
+            
+            // Use your generator's exact color selection logic
             textColor = bgBrightness < 128 ? window.lightTextColor : window.darkTextColor
           }
           
-          // Draw with proper color and positioning
+          // Draw with your generator's exact positioning and colors
           ctx.fillStyle = textColor
-          ctx.fillRect(rotatedX, rotatedY, pixel.height, pixel.width) // Swap width/height for rotation
+          ctx.fillRect(finalX, finalY, pixel.width, pixel.height) // Use original dimensions
         })
-        console.log('✅ Drew', textData.length, 'text pixels using your generator\'s data with proper positioning and colors')
+        console.log('✅ Drew', textData.length, 'text pixels using your generator\'s EXACT logic')
       } else {
         console.log('⚠️ No text data from generator, text may not render')
       }
@@ -808,31 +812,41 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
       const textData = window.textData || []
       console.log('🎯 Your generator created text data (manual path):', textData.length, 'pixels')
       
-      // Draw the text pixels using your generator's exact positioning and colors
+      // Draw the text pixels using your generator's EXACT positioning (no manual rotation)
       if (textData.length > 0) {
         let drawnPixels = 0
         textData.forEach((pixel: any) => {
-          // FIXED: Calculate proper positioning accounting for canvas rotation and fringe offsets
-          // Calculate the rotated and offset position
-          const rotatedX = pixel.y + offsetY  // Y becomes X after 90° CCW rotation
-          const rotatedY = (doormatWidth - pixel.x) + offsetX  // X becomes Y, flipped after rotation
+          // FIXED: Use your generator's coordinates directly - it already handles rotation correctly
+          // Your generator's generateCharacterPixels() already calculates the correct rotated positions
+          // We just need to add the fringe offsets for canvas centering
           
-          // FIXED: Use your generator's per-pixel color logic instead of plain white
+          const finalX = pixel.x + offsetX  // Add fringe offset for canvas centering
+          const finalY = pixel.y + offsetY  // Add fringe offset for canvas centering
+          
+          // FIXED: Use your generator's per-pixel color logic
+          // Get the actual background color at this position to determine text color
           let textColor = '#FFFFFF' // Default fallback
           
-          // Try to get the actual colors from your generator
+          // Use your generator's dynamic color logic based on actual background brightness
           if (window.lightTextColor && window.darkTextColor) {
-            // Use your generator's color logic
-            const bgBrightness = 128 // Default brightness, could be calculated from actual background
+            // Calculate actual background brightness at this pixel position
+            // This matches your generator's logic in drawStripe()
+            const imageData = ctx.getImageData(finalX, finalY, 1, 1)
+            const r = imageData.data[0]
+            const g = imageData.data[1] 
+            const b = imageData.data[2]
+            const bgBrightness = (r + g + b) / 3
+            
+            // Use your generator's exact color selection logic
             textColor = bgBrightness < 128 ? window.lightTextColor : window.darkTextColor
           }
           
-          // Draw with proper color and positioning
+          // Draw with your generator's exact positioning and colors
           ctx.fillStyle = textColor
-          ctx.fillRect(rotatedX, rotatedY, pixel.height, pixel.width) // Swap width/height for rotation
+          ctx.fillRect(finalX, finalY, pixel.width, pixel.height) // Use original dimensions
           drawnPixels++
         })
-        console.log(`✅ Drew ${drawnPixels} text pixels using your generator\'s data with proper positioning and colors (manual path)`)
+        console.log(`✅ Drew ${drawnPixels} text pixels using your generator\'s EXACT logic (manual path)`)
       } else {
         console.log('⚠️ No text data from generator, text may not render (manual path)')
       }
