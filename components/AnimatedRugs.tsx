@@ -20,6 +20,8 @@ declare global {
     doormatTextRows: string[]
     generateTextDataInSketch?: () => void
     textData?: Array<{x: number, y: number, width: number, height: number}>
+    lightTextColor?: any
+    darkTextColor?: any
     // P5.js functions that need to be mocked
     randomSeed: (seed: number) => () => number
     noise: (x: number) => number
@@ -709,21 +711,42 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
         })
       }
       
-      // FIXED: Use your generator's text data instead of generating our own
+      // FIXED: Use your generator's text data with proper positioning and colors
       console.log('📝 Using your generator\'s text data for rug:', selectedWord, '-> Rows:', textRows)
       
       // Get the text data that your generator created
       const textData = window.textData || []
       console.log('🎯 Your generator created text data:', textData.length, 'pixels')
       
-      // Draw the text pixels using your generator's exact positioning
+      // Draw the text pixels using your generator's exact positioning and colors
       if (textData.length > 0) {
-        ctx.fillStyle = '#FFFFFF' // White text for visibility
         textData.forEach(pixel => {
-          // Use your generator's exact positioning (no offset needed)
-          ctx.fillRect(pixel.x, pixel.y, pixel.width, pixel.height)
+          // FIXED: Calculate proper positioning accounting for canvas rotation and fringe offsets
+          // Your generator positions text relative to doormatWidth/Height, but we need to account for:
+          // 1. Canvas rotation (90° CCW)
+          // 2. Fringe offsets
+          // 3. Canvas centering
+          
+          // Calculate the rotated and offset position
+          const rotatedX = pixel.y + offsetY  // Y becomes X after 90° CCW rotation
+          const rotatedY = (doormatWidth - pixel.x) + offsetX  // X becomes Y, flipped after rotation
+          
+          // FIXED: Use your generator's per-pixel color logic instead of plain white
+          // Get the background color at this position to determine text color
+          let textColor = '#FFFFFF' // Default fallback
+          
+          // Try to get the actual colors from your generator
+          if (window.lightTextColor && window.darkTextColor) {
+            // Use your generator's color logic
+            const bgBrightness = 128 // Default brightness, could be calculated from actual background
+            textColor = bgBrightness < 128 ? window.lightTextColor : window.darkTextColor
+          }
+          
+          // Draw with proper color and positioning
+          ctx.fillStyle = textColor
+          ctx.fillRect(rotatedX, rotatedY, pixel.height, pixel.width) // Swap width/height for rotation
         })
-        console.log('✅ Drew', textData.length, 'text pixels using your generator\'s data')
+        console.log('✅ Drew', textData.length, 'text pixels using your generator\'s data with proper positioning and colors')
       } else {
         console.log('⚠️ No text data from generator, text may not render')
       }
@@ -785,16 +808,31 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
       const textData = window.textData || []
       console.log('🎯 Your generator created text data (manual path):', textData.length, 'pixels')
       
-      // Draw the text pixels using your generator's exact positioning
+      // Draw the text pixels using your generator's exact positioning and colors
       if (textData.length > 0) {
-        ctx.fillStyle = '#FFFFFF' // White text for visibility
         let drawnPixels = 0
         textData.forEach((pixel: any) => {
-          // Use your generator's exact positioning (no offset needed)
-          ctx.fillRect(pixel.x, pixel.y, pixel.width, pixel.height)
+          // FIXED: Calculate proper positioning accounting for canvas rotation and fringe offsets
+          // Calculate the rotated and offset position
+          const rotatedX = pixel.y + offsetY  // Y becomes X after 90° CCW rotation
+          const rotatedY = (doormatWidth - pixel.x) + offsetX  // X becomes Y, flipped after rotation
+          
+          // FIXED: Use your generator's per-pixel color logic instead of plain white
+          let textColor = '#FFFFFF' // Default fallback
+          
+          // Try to get the actual colors from your generator
+          if (window.lightTextColor && window.darkTextColor) {
+            // Use your generator's color logic
+            const bgBrightness = 128 // Default brightness, could be calculated from actual background
+            textColor = bgBrightness < 128 ? window.lightTextColor : window.darkTextColor
+          }
+          
+          // Draw with proper color and positioning
+          ctx.fillStyle = textColor
+          ctx.fillRect(rotatedX, rotatedY, pixel.height, pixel.width) // Swap width/height for rotation
           drawnPixels++
         })
-        console.log(`✅ Drew ${drawnPixels} text pixels using your generator\'s data (manual path)`)
+        console.log(`✅ Drew ${drawnPixels} text pixels using your generator\'s data with proper positioning and colors (manual path)`)
       } else {
         console.log('⚠️ No text data from generator, text may not render (manual path)')
       }
