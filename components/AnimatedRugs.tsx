@@ -206,25 +206,34 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
     const weftThickness = window.DOORMAT_CONFIG?.WEFT_THICKNESS || 8
     
     // Draw sophisticated fringe sections (EXACT COPY of your drawFringeSection)
-    drawFringeSection(ctx, offsetX, offsetY, doormatWidth, fringeLength, 'top', random, fringeLength)
-    drawFringeSection(ctx, offsetX, offsetY + doormatHeight, doormatWidth, fringeLength, 'bottom', random, fringeLength)
+    drawFringeSection(ctx, offsetX, offsetY, doormatWidth, fringeLength, 'top', random, fringeLength, stripeData)
+    drawFringeSection(ctx, offsetX, offsetY + doormatHeight, doormatWidth, fringeLength, 'bottom', random, fringeLength, stripeData)
     
     // Draw sophisticated selvedge edges (EXACT COPY of your drawSelvedgeEdges)
     drawSelvedgeEdges(ctx, stripeData, doormatWidth, doormatHeight, fringeLength, random, offsetX, offsetY)
   }
   
   // Sophisticated fringe section drawing (EXACT COPY of your drawFringeSection)
-  const drawFringeSection = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, side: string, random: () => number, fringeLength: number) => {
+  const drawFringeSection = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, side: string, random: () => number, fringeLength: number, stripeData: any[]) => {
     const fringeStrands = Math.floor(w / 12) // More fringe strands for thinner threads
     const strandWidth = w / fringeStrands
     
     for (let i = 0; i < fringeStrands; i++) {
       const strandX = x + i * strandWidth
       
-      // Get random color from palette
-      const colorPalettes = window.colorPalettes || [{ colors: ['#8B4513', '#D2691E', '#A0522D'] }]
-      const selectedPalette = colorPalettes[Math.floor(random() * colorPalettes.length)]
-      const strandColor = selectedPalette.colors[Math.floor(random() * selectedPalette.colors.length)]
+      // FIXED: Use the rug's actual stripe colors instead of random palette colors
+      // Map fringe strand position to corresponding rug stripe for color matching
+      const strandPosition = (strandX - x) / w // 0 to 1 across the rug width
+      const stripeIndex = Math.floor(strandPosition * stripeData.length)
+      const stripe = stripeData[Math.min(stripeIndex, stripeData.length - 1)]
+      
+      // Get color from the actual rug stripe, with fallback to palette
+      let strandColor = stripe?.primaryColor || '#8B4513'
+      
+      // Handle P5.js color objects (convert to hex)
+      if (typeof strandColor === 'object' && strandColor.r !== undefined) {
+        strandColor = `#${Math.round(strandColor.r).toString(16).padStart(2, '0')}${Math.round(strandColor.g).toString(16).padStart(2, '0')}${Math.round(strandColor.b).toString(16).padStart(2, '0')}`
+      }
       
       // Draw individual fringe strand with thin threads (EXACT COPY of your logic)
       for (let j = 0; j < 12; j++) { // More but thinner threads per strand
