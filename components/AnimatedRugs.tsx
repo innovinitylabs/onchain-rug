@@ -16,15 +16,12 @@ declare global {
     selectedPalette: any
     warpThickness: number
     generateDoormatCore: (seed: number) => void
-    generateDoormat: (seed: number) => void
     drawTexturedSelvedgeArc: (centerX: number, centerY: number, radius: number, startAngle: number, endAngle: number, r: number, g: number, b: number, side: string) => void
     doormatTextRows: string[]
     generateTextDataInSketch?: () => void
     textData?: Array<{x: number, y: number, width: number, height: number}>
     lightTextColor?: any
     darkTextColor?: any
-    // P5.js library and functions
-    p5?: any
     // P5.js functions that need to be mocked
     randomSeed: (seed: number) => () => number
     noise: (x: number) => number
@@ -607,43 +604,26 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
       const textRows = selectedWord.split(' ').map(word => word.toUpperCase())
       window.doormatTextRows = textRows
       
-      // FIXED: Use the SAME function the generator uses (generateDoormat wrapper)
-      console.log('🚀 About to call generateDoormat with seed:', seed)
-      try {
-        if (window.generateDoormat && typeof window.generateDoormat === 'function') {
-          window.generateDoormat(seed)
-          console.log('✅ P5.js generateDoormat completed successfully')
-        } else {
-          // Fallback to direct call if wrapper not available
-          console.log('⚠️ generateDoormat wrapper not available, using generateDoormatCore directly')
-          window.generateDoormatCore(seed)
-          console.log('✅ P5.js generateDoormatCore completed successfully')
+      // FIXED: Call the proper text generation pipeline
+      if (window.generateTextDataInSketch && typeof window.generateTextDataInSketch === 'function') {
+        console.log('🚀 Calling your EXACT text generation pipeline!')
+        try {
+          window.generateTextDataInSketch()
+          console.log('✅ Text generation pipeline completed successfully')
+        } catch (error) {
+          console.error('❌ Error in text generation pipeline:', error)
         }
-      } catch (error) {
-        console.error('❌ Error calling P5.js generation:', error)
+      } else {
+        console.log('⚠️ generateTextDataInSketch function not available')
       }
       
-      // FIXED: Text generation now happens AUTOMATICALLY inside generateDoormat
-      // No need to call generateTextDataInSketch manually
-      console.log('🔍 DEBUG: Text generation should happen automatically')
-      console.log('🔍 DEBUG: window.doormatTextRows set to:', window.doormatTextRows)
-      console.log('🔍 DEBUG: window.characterMap available:', !!window.characterMap)
-      console.log('🔍 DEBUG: window.warpThickness:', window.warpThickness)
-      console.log('🔍 DEBUG: window.textData length:', window.textData?.length || 0)
-      
-      // FIXED: If P5.js text generation failed, generate text manually
-      if (!window.textData || window.textData.length === 0) {
-        console.log('⚠️ P5.js text generation failed, generating text manually...')
-        if (window.characterMap && window.generateTextDataInSketch) {
-          try {
-            window.generateTextDataInSketch()
-            console.log('✅ Manual text generation completed, textData length:', window.textData?.length || 0)
-          } catch (error) {
-            console.error('❌ Manual text generation failed:', error)
-          }
-        } else {
-          console.log('⚠️ Character map or text generation function not available')
-        }
+      // Call the actual P5.js function to generate the rug
+      console.log('🚀 About to call generateDoormatCore with seed:', seed)
+      try {
+        window.generateDoormatCore(seed)
+        console.log('✅ P5.js generateDoormatCore completed successfully')
+      } catch (error) {
+        console.error('❌ Error calling generateDoormatCore:', error)
       }
       
       // Now we need to get the generated data from the P5.js functions
@@ -653,10 +633,9 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
       // but draw it using the CORRECT P5.js angles for selvedges
       console.log('🎨 Using P5.js generated data with CORRECT selvedge angles')
       
-      // Get the palette that P5.js selected - FIXED: Use seed-based palette selection for variety
-      const selectedPalette = window.colorPalettes?.[seed % window.colorPalettes.length] || { name: 'Default', colors: ['#8B4513', '#D2691E', '#A0522D'] }
+      // Get the palette that P5.js selected
+      const selectedPalette = window.selectedPalette || window.colorPalettes?.[seed % window.colorPalettes.length] || { name: 'Default', colors: ['#8B4513', '#D2691E', '#A0522D'] }
       console.log('🎨 P5.js selected palette:', selectedPalette.name, 'with', selectedPalette.colors.length, 'colors')
-      console.log('🎨 Using seed-based palette selection for variety (seed:', seed, '-> palette index:', seed % (window.colorPalettes?.length || 1), ')')
       
       // Use P5.js generated stripe data if available
       const stripeData = window.stripeData || generateStripeDataForRug(selectedPalette, doormatHeight, () => Math.random())
@@ -877,7 +856,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
       console.log('📝 Using your generator\'s text data for manual fallback:', selectedWord)
       
       // Set up text rows and call your generator's text pipeline
-      const textRows = selectedWord.split(' ').map((word: string) => word.toUpperCase())
+      const textRows = selectedWord.split(' ').map(word => word.toUpperCase())
       window.doormatTextRows = textRows
       
       if (window.generateTextDataInSketch && typeof window.generateTextDataInSketch === 'function') {
@@ -1178,110 +1157,32 @@ function Scene() {
       try {
         console.log('🔄 Loading P5.js dependencies...')
         
-        // Load P5.js from CDN like the live generator does
-        if (!window.randomSeed) {
-          console.log('📚 Loading P5.js from CDN...')
-          await new Promise<void>((resolve) => {
-            const script = document.createElement('script')
-            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js'
-            script.async = false
-            script.onload = () => {
-              console.log('📚 P5.js script loaded, checking availability...')
-              console.log('🔍 window.p5 available:', !!(window as any).p5)
-              console.log('🔍 window.p5.randomSeed available:', !!(window as any).p5?.randomSeed)
-              
-              // Make P5.js functions globally available like the live generator
-              if ((window as any).p5 && typeof (window as any).p5.randomSeed === 'function') {
-                console.log('✅ P5.js loaded but functions not global, making them global')
-                // Make P5.js functions globally available with proper binding
-                ;(window as any).randomSeed = (window as any).p5.randomSeed.bind((window as any).p5)
-                ;(window as any).noiseSeed = (window as any).p5.noiseSeed.bind((window as any).p5)
-                ;(window as any).noise = (window as any).p5.noise.bind((window as any).p5)
-                ;(window as any).random = (window as any).p5.random.bind((window as any).p5)
-                ;(window as any).color = (window as any).p5.color.bind((window as any).p5)
-                ;(window as any).red = (window as any).p5.red.bind((window as any).p5)
-                ;(window as any).green = (window as any).p5.green.bind((window as any).p5)
-                ;(window as any).blue = (window as any).p5.blue.bind((window as any).p5)
-                ;(window as any).lerpColor = (window as any).p5.lerpColor.bind((window as any).p5)
-                ;(window as any).createCanvas = (window as any).p5.createCanvas.bind((window as any).p5)
-                ;(window as any).background = (window as any).p5.background.bind((window as any).p5)
-                ;(window as any).fill = (window as any).p5.fill.bind((window as any).p5)
-                ;(window as any).noFill = (window as any).p5.noFill.bind((window as any).p5)
-                ;(window as any).noStroke = (window as any).p5.noStroke.bind((window as any).p5)
-                ;(window as any).arc = (window as any).p5.arc.bind((window as any).p5)
-                ;(window as any).ellipse = (window as any).p5.ellipse.bind((window as any).p5)
-                ;(window as any).beginShape = (window as any).p5.beginShape.bind((window as any).p5)
-                ;(window as any).vertex = (window as any).p5.vertex.bind((window as any).p5)
-                ;(window as any).endShape = (window as any).p5.endShape.bind((window as any).p5)
-                ;(window as any).strokeWeight = (window as any).p5.strokeWeight.bind((window as any).p5)
-                ;(window as any).noLoop = (window as any).p5.noLoop.bind((window as any).p5)
-                ;(window as any).redraw = (window as any).p5.redraw.bind((window as any).p5)
-                ;(window as any).constrain = (window as any).p5.constrain.bind((window as any).p5)
-                ;(window as any).max = (window as any).p5.max.bind((window as any).p5)
-                ;(window as any).min = (window as any).p5.min.bind((window as any).p5)
-                ;(window as any).floor = (window as any).p5.floor.bind((window as any).p5)
-                ;(window as any).cos = (window as any).p5.cos.bind((window as any).p5)
-                ;(window as any).sin = (window as any).p5.sin.bind((window as any).p5)
-                ;(window as any).PI = (window as any).p5.PI
-                console.log('✅ All P5.js functions made globally available')
-                
-                // Verify the functions are actually set
-                console.log('🔍 Verification - randomSeed available:', typeof (window as any).randomSeed === 'function')
-                console.log('🔍 Verification - noise available:', typeof (window as any).noise === 'function')
-              } else {
-                console.log('⚠️ P5.js loaded but randomSeed function not available')
-                console.log('🔍 Available p5 properties:', Object.keys((window as any).p5 || {}))
-              }
-              resolve()
-            }
-            script.onerror = () => {
-              console.error('❌ Failed to load P5.js from CDN')
-              resolve()
-            }
-            document.head.appendChild(script)
-          })
-        }
-        
-        // Load color palettes via script tag (same as generator) - WITH DUPLICATE PREVENTION
-        if (!window.colorPalettes && !document.getElementById('color-palettes-script') && !(window as any).colorPalettes) {
-          console.log('📚 Loading color palettes via script tag...')
-          await new Promise<void>((resolve) => {
-            const script = document.createElement('script')
-            script.src = '/lib/doormat/color-palettes.js'
-            script.id = 'color-palettes-script' // Prevent duplicate loading
-            script.onload = () => {
-              console.log('✅ Color palettes script loaded')
-              resolve()
-            }
-            script.onerror = () => {
-              console.log('⚠️ Color palettes script failed to load')
-              resolve()
-            }
-            document.head.appendChild(script)
-          })
-        } else {
-          console.log('✅ Color palettes already loaded or loading in progress')
+        // Load color palettes
+        if (!window.colorPalettes) {
+          console.log('📚 Loading color palettes...')
+          const colorPalettesResponse = await fetch('/lib/doormat/color-palettes.js')
+          const colorPalettesText = await colorPalettesResponse.text()
+          // Extract the colorPalettes array from the JS file
+          const colorPalettesMatch = colorPalettesText.match(/const colorPalettes = (\[[\s\S]*?\]);/)
+          if (colorPalettesMatch) {
+            const colorPalettesCode = colorPalettesMatch[1]
+            // Use Function constructor to safely evaluate the array
+            window.colorPalettes = new Function(`return ${colorPalettesCode}`)()
+            console.log('✅ Color palettes loaded:', window.colorPalettes.length, 'palettes')
+          }
         }
 
-        // Load character map via script tag (same as generator) - WITH DUPLICATE PREVENTION
-        if (!window.characterMap && !document.getElementById('character-map-script') && !(window as any).characterMap) {
-          console.log('🔤 Loading character map via script tag...')
-          await new Promise<void>((resolve) => {
-            const script = document.createElement('script')
-            script.src = '/lib/doormat/character-map.js'
-            script.id = 'character-map-script' // Prevent duplicate loading
-            script.onload = () => {
-              console.log('✅ Character map script loaded')
-              resolve()
-            }
-            script.onerror = () => {
-              console.log('⚠️ Character map script failed to load')
-              resolve()
-            }
-            document.head.appendChild(script)
-          })
-        } else {
-          console.log('✅ Character map already loaded or loading in progress')
+        // Load character map
+        if (!window.characterMap) {
+          console.log('🔤 Loading character map...')
+          const characterMapResponse = await fetch('/lib/doormat/character-map.js')
+          const characterMapText = await characterMapResponse.text()
+          const characterMapMatch = characterMapText.match(/const characterMap = (\{[\s\S]*?\});/)
+          if (characterMapMatch) {
+            const characterMapCode = characterMapMatch[1]
+            window.characterMap = new Function(`return ${characterMapCode}`)()
+            console.log('✅ Character map loaded:', Object.keys(window.characterMap).length, 'characters')
+          }
         }
 
         // Load doormat config
@@ -1323,70 +1224,219 @@ function Scene() {
         }
 
         // CRITICAL: Load the main P5.js doormat.js file to get the actual drawing functions
-        if (!window.generateDoormatCore && !(window as any).__doormatJsLoaded && !document.getElementById('doormat-js-script')) {
+        if (!window.generateDoormatCore) {
           console.log('🎨 Loading main P5.js doormat.js file...')
           
-          // Mark as loaded to prevent multiple loading
-          ;(window as any).__doormatJsLoaded = true
+          // CRITICAL: Mock P5.js functions before loading doormat.js
+          console.log('🔧 Mocking P5.js functions...')
+          
+          // Mock P5.js randomSeed function
+          window.randomSeed = (seed: number) => {
+            console.log('🎲 P5.js randomSeed called with:', seed)
+            // Return a seeded random function
+            let m = 0x80000000
+            let a = 1103515245
+            let c = 12345
+            let state = seed
+            return () => {
+              state = (a * state + c) % m
+              return state / m
+            }
+          }
+          
+          // Mock P5.js noise function
+          window.noise = (x: number) => {
+            // Simple noise implementation
+            return (Math.sin(x * 12.9898) + Math.sin(x * 78.233)) * 43758.5453 % 1
+          }
+          
+          // Mock P5.js noiseSeed function
+          window.noiseSeed = (seed: number) => {
+            console.log('🌊 P5.js noiseSeed called with:', seed)
+          }
+          
+          // Mock P5.js random function
+          window.random = (min?: number | any[], max?: number) => {
+            // Handle array input (random element selection)
+            if (Array.isArray(min)) {
+              const array = min
+              return array[Math.floor(Math.random() * array.length)]
+            }
+            // Handle number ranges
+            if (min !== undefined && max !== undefined) {
+              return Math.random() * (max - min) + min
+            } else if (min !== undefined && typeof min === 'number') {
+              return Math.random() * min
+            } else {
+              return Math.random()
+            }
+          }
+          
+          // Mock P5.js color function to return hex strings for compatibility
+          window.color = (r: number | string, g?: number, b?: number, a?: number) => {
+            if (typeof r === 'string') {
+              // Hex color - return as is for compatibility
+              return r
+            } else {
+              // RGB values - convert to hex
+              const hex = `#${Math.round(r).toString(16).padStart(2, '0')}${Math.round(g || 0).toString(16).padStart(2, '0')}${Math.round(b || 0).toString(16).padStart(2, '0')}`
+              return hex
+            }
+          }
+          
+
+          
+          // Mock P5.js red, green, blue functions
+          window.red = (c: any) => {
+            if (typeof c === 'string' && c.startsWith('#')) {
+              return parseInt(c.slice(1, 3), 16)
+            }
+            return c.r || 0
+          }
+          window.green = (c: any) => {
+            if (typeof c === 'string' && c.startsWith('#')) {
+              return parseInt(c.slice(3, 5), 16)
+            }
+            return c.g || 0
+          }
+          window.blue = (c: any) => {
+            if (typeof c === 'string' && c.startsWith('#')) {
+              return parseInt(c.slice(5, 7), 16)
+            }
+            return c.b || 0
+          }
+          
+          // Mock P5.js lerpColor function
+          window.lerpColor = (c1: any, c2: any, amt: number) => {
+            // Convert hex colors to RGB if needed
+            const getRGB = (c: any) => {
+              if (typeof c === 'string' && c.startsWith('#')) {
+                return {
+                  r: parseInt(c.slice(1, 3), 16),
+                  g: parseInt(c.slice(3, 5), 16),
+                  b: parseInt(c.slice(5, 7), 16)
+                }
+              }
+              return c
+            }
+            
+            const rgb1 = getRGB(c1)
+            const rgb2 = getRGB(c2)
+            
+            return {
+              r: Math.round(rgb1.r + (rgb2.r - rgb1.r) * amt),
+              g: Math.round(rgb1.g + (rgb2.g - rgb1.g) * amt),
+              b: Math.round(rgb1.b + (rgb2.b - rgb1.b) * amt)
+            }
+          }
+          
+          // Mock P5.js constrain function
+          window.constrain = (n: number, low: number, high: number) => {
+            return Math.max(low, Math.min(high, n))
+          }
+          
+          // Mock P5.js max, min, floor functions
+          window.max = Math.max
+          window.min = Math.min
+          window.floor = Math.floor
+          
+          // Mock P5.js PI constant
+          window.PI = Math.PI
+          
+          // Mock P5.js cos, sin functions
+          window.cos = Math.cos
+          window.sin = Math.sin
+          
+          // Mock P5.js fill function
+          window.fill = (r: number, g?: number, b?: number, a?: number) => {
+            // This will be handled by the drawing context
+          }
+          
+          // Mock P5.js noStroke function
+          window.noStroke = () => {
+            // This will be handled by the drawing context
+          }
+          
+          // Mock P5.js noFill function
+          window.noFill = () => {
+            // This will be handled by the drawing context
+          }
+          
+          // Mock P5.js arc function
+          window.arc = (x: number, y: number, w: number, h: number, start: number, stop: number) => {
+            // This will be handled by the drawing context
+          }
+          
+          // Mock P5.js ellipse function
+          window.ellipse = (x: number, y: number, w: number, h: number) => {
+            // This will be handled by the drawing context
+          }
+          
+          // Mock P5.js beginShape, vertex, endShape functions
+          window.beginShape = () => {}
+          window.vertex = (x: number, y: number) => {}
+          window.endShape = () => {}
+          
+          // Mock P5.js strokeWeight function
+          window.strokeWeight = (weight: number) => {}
+          
+          // Mock P5.js noLoop function
+          window.noLoop = () => {}
+          
+          // Mock P5.js createCanvas function
+          window.createCanvas = (w: number, h: number) => {
+            const canvas = document.createElement('canvas')
+            canvas.width = w
+            canvas.height = h
+            return canvas
+          }
+          
+          // Mock P5.js canvas.parent function
+          const originalCreateCanvas = window.createCanvas
+          window.createCanvas = (w: number, h: number) => {
+            const canvas = originalCreateCanvas(w, h)
+            canvas.parent = (container: string) => {
+              console.log('🎨 P5.js canvas.parent called with:', container)
+            }
+            return canvas
+          }
+          
+          // Mock P5.js background function to track calls
+          window.background = (r: number, g?: number, b?: number, a?: number) => {
+            console.log('🎨 P5.js background called with:', r, g, b, a)
+          }
+          
+          // Mock P5.js redraw function
+          window.redraw = () => {
+            console.log('🔄 P5.js redraw called')
+          }
+          
+          console.log('✅ P5.js functions mocked successfully')
           
           const script = document.createElement('script')
           script.src = '/lib/doormat/doormat.js'
-          script.id = 'doormat-js-script' // Prevent duplicate loading
           script.onload = () => {
             console.log('✅ Main P5.js doormat.js loaded successfully!')
             console.log('🎯 Available functions:', Object.keys(window).filter(key => key.includes('generate') || key.includes('draw')))
             
-            // FIXED: Load html-interface.js to get the generateDoormat wrapper
-            console.log('🔗 Loading html-interface.js to get generateDoormat wrapper...')
-            const interfaceScript = document.createElement('script')
-            interfaceScript.src = '/lib/doormat/html-interface.js'
-            interfaceScript.id = 'html-interface-script' // Prevent duplicate loading
-            interfaceScript.onload = () => {
-              console.log('✅ HTML interface loaded, generateDoormat wrapper available')
-              
-              // Ensure global variables are properly initialized
-              if (window.colorPalettes && window.colorPalettes.length > 0) {
-                window.selectedPalette = window.colorPalettes[0]
-                console.log('✅ Initialized selectedPalette:', window.selectedPalette)
-              }
-              
-                          // Small delay to ensure all functions are available
+            // Ensure global variables are properly initialized
+            if (window.colorPalettes && window.colorPalettes.length > 0) {
+              window.selectedPalette = window.colorPalettes[0]
+              console.log('✅ Initialized selectedPalette:', window.selectedPalette)
+            }
+            
+            // Small delay to ensure all functions are available
             setTimeout(() => {
-              // FIXED: Ensure character map is loaded before setting dependencies
-              if (window.characterMap) {
-                console.log('✅ Character map confirmed loaded, setting dependencies ready')
-                setDependenciesLoaded(true)
-              } else {
-                console.log('⚠️ Character map not loaded yet, waiting...')
-                // Wait a bit more for character map to load
-                setTimeout(() => {
-                  console.log('✅ Setting dependencies ready after character map check')
-                  setDependenciesLoaded(true)
-                }, 500)
-              }
+              setDependenciesLoaded(true)
             }, 100)
-            }
-            interfaceScript.onerror = () => {
-              console.log('⚠️ HTML interface failed to load, using generateDoormatCore directly')
-              // Continue without wrapper
-              if (window.colorPalettes && window.colorPalettes.length > 0) {
-                window.selectedPalette = window.colorPalettes[0]
-                console.log('✅ Initialized selectedPalette:', window.selectedPalette)
-              }
-              setTimeout(() => {
-                setDependenciesLoaded(true)
-              }, 100)
-            }
-            document.head.appendChild(interfaceScript)
           }
           script.onerror = () => {
             console.error('❌ Failed to load main P5.js doormat.js file')
-            ;(window as any).__doormatJsLoaded = false // Reset flag on error
             setDependenciesLoaded(true)
           }
           document.head.appendChild(script)
         } else {
-          console.log('✅ Main P5.js doormat.js already loaded or loading in progress')
+          console.log('✅ Main P5.js doormat.js already loaded')
           setDependenciesLoaded(true)
         }
 
