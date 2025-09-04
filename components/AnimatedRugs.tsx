@@ -89,11 +89,12 @@ const hexToRgb = (hex: string) => {
 }
 
 // Advanced Flying Rug Component with Your P5.js Generator Logic
-function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: { 
+function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstRug = false }: { 
   position: [number, number, number], 
   scale?: number, 
-  seed?: number
-  dependenciesLoaded: boolean
+  seed?: number,
+  dependenciesLoaded: boolean,
+  isFirstRug?: boolean
 }) {
   const rugRef = useRef<THREE.Mesh>(null)
   const groupRef = useRef<THREE.Group>(null)
@@ -102,15 +103,16 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
   const textureRef = useRef<THREE.CanvasTexture | null>(null)
   
   // Your curated word list for the flying rugs
-  // NOTE: First rug (seed 0) always shows WELCOME (hardcoded), other rugs randomly select from this array
-  // To add more words: just add them to this array after 'GOOD VIBES ONLY'
+  // NOTE: First rug (isFirstRug=true) always shows WELCOME (hardcoded), other rugs randomly select from this array
+  // To add more words: just add them to this array after 'DIAMOND HANDS'
   const rugWords = [
     'WELCOME',
     'HODL ZONE',
     'SOFT RUG',
     'FLOOR IS LAVA',
     'HOME SWEET HOME',
-    'GOOD VIBES ONLY'
+    'GOOD VIBES ONLY',
+    'DIAMOND HANDS'
   ]
   
   // Stripe generation function EXACTLY like your generator
@@ -632,7 +634,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
                 // CRITICAL: Use the ACTUAL P5.js generateDoormatCore function instead of manual recreation!
       if (window.generateDoormatCore && typeof window.generateDoormatCore === 'function') {
         // Set the text for this rug - First rug always gets WELCOME, others randomly from array
-        const selectedWord = seed === 0 ? 'WELCOME' : rugWords[Math.floor(Math.random() * rugWords.length)]
+        const selectedWord = isFirstRug ? 'WELCOME' : rugWords[Math.floor(Math.random() * rugWords.length)]
         
         // FIXED: Use proper multi-line text processing like your generator
         const textRows = selectedWord.split(' ').map(word => word.toUpperCase())
@@ -825,7 +827,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
       })
       
       // FIXED: Use your generator's text data for manual fallback too
-      const selectedWord = seed === 0 ? 'WELCOME' : rugWords[Math.floor(Math.random() * rugWords.length)]
+      const selectedWord = isFirstRug ? 'WELCOME' : rugWords[Math.floor(Math.random() * rugWords.length)]
       
       // Set up text rows and call your generator's text pipeline
       const textRows = selectedWord.split(' ').map(word => word.toUpperCase())
@@ -1429,13 +1431,13 @@ function Scene() {
       <Environment preset="sunset" background={false} />
       
       {/* Flying Rugs with Your Generator Logic - Each with unique seeds */}
-      <FlyingRug position={[0, 0, 0]} scale={1.2} seed={42} dependenciesLoaded={dependenciesLoaded} />
-      <FlyingRug position={[-8, 2, -5]} scale={0.8} seed={1337} dependenciesLoaded={dependenciesLoaded} />
-      <FlyingRug position={[8, -1, -3]} scale={0.9} seed={777} dependenciesLoaded={dependenciesLoaded} />
-      <FlyingRug position={[5, 3, -8]} scale={0.7} seed={999} dependenciesLoaded={dependenciesLoaded} />
-      <FlyingRug position={[-6, -2, -10]} scale={0.6} seed={555} dependenciesLoaded={dependenciesLoaded} />
-      <FlyingRug position={[-3, 5, -12]} scale={0.5} seed={888} dependenciesLoaded={dependenciesLoaded} />
-      <FlyingRug position={[10, -3, -15]} scale={0.4} seed={111} dependenciesLoaded={dependenciesLoaded} />
+      <FlyingRug position={[0, 0, 0]} scale={1.2} seed={42} dependenciesLoaded={dependenciesLoaded} isFirstRug={true} />
+      <FlyingRug position={[-8, 2, -5]} scale={0.8} seed={1337} dependenciesLoaded={dependenciesLoaded} isFirstRug={false} />
+      <FlyingRug position={[8, -1, -3]} scale={0.9} seed={777} dependenciesLoaded={dependenciesLoaded} isFirstRug={false} />
+      <FlyingRug position={[5, 3, -8]} scale={0.7} seed={999} dependenciesLoaded={dependenciesLoaded} isFirstRug={false} />
+      <FlyingRug position={[-6, -2, -10]} scale={0.6} seed={555} dependenciesLoaded={dependenciesLoaded} isFirstRug={false} />
+      <FlyingRug position={[-3, 5, -12]} scale={0.5} seed={888} dependenciesLoaded={dependenciesLoaded} isFirstRug={false} />
+      <FlyingRug position={[10, -3, -15]} scale={0.4} seed={111} dependenciesLoaded={dependenciesLoaded} isFirstRug={false} />
       
       {/* Enhanced Floating Particles */}
       <FloatingParticles />
