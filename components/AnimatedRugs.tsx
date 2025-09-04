@@ -136,15 +136,15 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
     const weftThickness = window.DOORMAT_CONFIG?.WEFT_THICKNESS || 8
     
     // Draw sophisticated fringe sections (EXACT COPY of your drawFringeSection)
-    drawFringeSection(ctx, offsetX, offsetY, doormatWidth, fringeLength, 'top', random)
-    drawFringeSection(ctx, offsetX, offsetY + doormatHeight, doormatWidth, fringeLength, 'bottom', random)
+    drawFringeSection(ctx, offsetX, offsetY, doormatWidth, fringeLength, 'top', random, fringeLength)
+    drawFringeSection(ctx, offsetX, offsetY + doormatHeight, doormatWidth, fringeLength, 'bottom', random, fringeLength)
     
     // Draw sophisticated selvedge edges (EXACT COPY of your drawSelvedgeEdges)
     drawSelvedgeEdges(ctx, stripeData, doormatWidth, doormatHeight, fringeLength, random, offsetX, offsetY)
   }
   
   // Sophisticated fringe section drawing (EXACT COPY of your drawFringeSection)
-  const drawFringeSection = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, side: string, random: () => number) => {
+  const drawFringeSection = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, side: string, random: () => number, fringeLength: number) => {
     const fringeStrands = Math.floor(w / 12) // More fringe strands for thinner threads
     const strandWidth = w / fringeStrands
     
@@ -160,7 +160,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
       for (let j = 0; j < 12; j++) { // More but thinner threads per strand
         const threadX = strandX + random() * strandWidth/3 - strandWidth/6
         const startY = side === 'top' ? y : y + h
-        const endY = side === 'top' ? y - h : y + h + h
+        const endY = side === 'top' ? y - fringeLength : y + h + fringeLength
         
         // Add natural curl/wave to the fringe with more variation (EXACT COPY)
         const waveAmplitude = random() * 3 + 1
