@@ -476,11 +476,11 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
     const scaledWarp = warpSpacing * TEXT_SCALE
     const scaledWeft = weftSpacing * TEXT_SCALE
     
-    // Character dimensions - REDUCED SPACING for better fit
+    // Character dimensions - INCREASED SPACING for readability
     const charWidth = 7 * scaledWarp
     const charHeight = 5 * scaledWeft
-    const verticalSpacing = charHeight * 0.6  // Reduce spacing between characters
-    const lineSpacing = charHeight * 1.2      // Spacing between lines
+    const verticalSpacing = charHeight * 1.8  // INCREASE spacing between characters for readability
+    const lineSpacing = charHeight * 1.5      // Spacing between lines
     
     // Split text into lines for better readability
     const lines = upperText.split(' ')
@@ -517,8 +517,12 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
                 const newCol = row
                 const newRow = charDef[0].length - 1 - col
                 
+                // ADD horizontal spacing between characters for better readability
+                const charSpacing = charWidth * 0.3  // 30% of character width as spacing
+                const adjustedX = startX + newCol * scaledWarp + (i * charSpacing)
+                
                 textData.push({
-                  x: startX + newCol * scaledWarp,
+                  x: adjustedX,
                   y: charY + newRow * scaledWeft,
                   width: scaledWarp,
                   height: scaledWeft
