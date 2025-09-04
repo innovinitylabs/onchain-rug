@@ -28,7 +28,7 @@ function calculateTraits() {
         stripeComplexity: calculateStripeComplexity(data.stripeData)
     };
     
-    console.log("Calculated traits:", traits);
+    
     return traits;
 }
 

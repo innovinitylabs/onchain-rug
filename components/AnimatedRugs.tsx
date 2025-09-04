@@ -65,8 +65,8 @@ const hexToRgb = (hex: string) => {
   } : null
 }
 
-// Helper function to get dynamic text color using your generator's exact logic
-const getDynamicTextColor = (bgBrightness: number, selectedPalette: any) => {
+  // Helper function to get dynamic text color using your generator's exact logic
+  const getDynamicTextColor = (bgBrightness: number, selectedPalette: any) => {
   if (selectedPalette && selectedPalette.colors) {
     // Find darkest and lightest colors from palette (matching your generator's updateTextColors logic)
     let darkest = selectedPalette.colors[0]
@@ -103,12 +103,12 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
   
   // Your curated word list for the flying rugs
   const rugWords = [
-    'Welcome',
-    'HODL Zone',
-    'Soft',
-    'Floor is Lava',
-    'Home Sweet Home',
-    'Good Vibes Only'
+    'WELCOME',
+    'HODL ZONE',
+    'SOFT',
+    'FLOOR IS LAVA',
+    'HOME SWEET HOME',
+    'GOOD VIBES ONLY'
   ]
   
   // Stripe generation function EXACTLY like your generator
@@ -206,25 +206,34 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
     const weftThickness = window.DOORMAT_CONFIG?.WEFT_THICKNESS || 8
     
     // Draw sophisticated fringe sections (EXACT COPY of your drawFringeSection)
-    drawFringeSection(ctx, offsetX, offsetY, doormatWidth, fringeLength, 'top', random, fringeLength)
-    drawFringeSection(ctx, offsetX, offsetY + doormatHeight, doormatWidth, fringeLength, 'bottom', random, fringeLength)
+    drawFringeSection(ctx, offsetX, offsetY, doormatWidth, fringeLength, 'top', random, fringeLength, stripeData)
+    drawFringeSection(ctx, offsetX, offsetY + doormatHeight, doormatWidth, fringeLength, 'bottom', random, fringeLength, stripeData)
     
     // Draw sophisticated selvedge edges (EXACT COPY of your drawSelvedgeEdges)
     drawSelvedgeEdges(ctx, stripeData, doormatWidth, doormatHeight, fringeLength, random, offsetX, offsetY)
   }
   
   // Sophisticated fringe section drawing (EXACT COPY of your drawFringeSection)
-  const drawFringeSection = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, side: string, random: () => number, fringeLength: number) => {
+  const drawFringeSection = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, side: string, random: () => number, fringeLength: number, stripeData: any[]) => {
     const fringeStrands = Math.floor(w / 12) // More fringe strands for thinner threads
     const strandWidth = w / fringeStrands
     
     for (let i = 0; i < fringeStrands; i++) {
       const strandX = x + i * strandWidth
       
-      // Get random color from palette
-      const colorPalettes = window.colorPalettes || [{ colors: ['#8B4513', '#D2691E', '#A0522D'] }]
-      const selectedPalette = colorPalettes[Math.floor(random() * colorPalettes.length)]
-      const strandColor = selectedPalette.colors[Math.floor(random() * selectedPalette.colors.length)]
+      // FIXED: Use the rug's actual stripe colors instead of random palette colors
+      // Map fringe strand position to corresponding rug stripe for color matching
+      const strandPosition = (strandX - x) / w // 0 to 1 across the rug width
+      const stripeIndex = Math.floor(strandPosition * stripeData.length)
+      const stripe = stripeData[Math.min(stripeIndex, stripeData.length - 1)]
+      
+      // Get color from the actual rug stripe, with fallback to palette
+      let strandColor = stripe?.primaryColor || '#8B4513'
+      
+      // Handle P5.js color objects (convert to hex)
+      if (typeof strandColor === 'object' && strandColor.r !== undefined) {
+        strandColor = `#${Math.round(strandColor.r).toString(16).padStart(2, '0')}${Math.round(strandColor.g).toString(16).padStart(2, '0')}${Math.round(strandColor.b).toString(16).padStart(2, '0')}`
+      }
       
       // Draw individual fringe strand with thin threads (EXACT COPY of your logic)
       for (let j = 0; j < 12; j++) { // More but thinner threads per strand
@@ -317,7 +326,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
         const startAngle = (Math.PI / 2) + (random() * 0.4 - 0.2) // Start from top (90°)
         const endAngle = (-Math.PI / 2) + (random() * 0.4 - 0.2)    // End at bottom (-90°)
         
-        console.log('🎯 LEFT Selvedge angles (FIXED):', { startAngle: startAngle.toFixed(3), endAngle: endAngle.toFixed(3), startDegrees: (startAngle * 180 / Math.PI).toFixed(1), endDegrees: (endAngle * 180 / Math.PI).toFixed(1) })
+        
         
         // Draw textured selvedge arc with multiple layers (EXACT COPY) - LEFT SIDE semicircle
         drawTexturedSelvedgeArc(ctx, centerX, centerY, radius, startAngle, endAngle, r, g, b, 'left', random)
@@ -364,7 +373,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
         const startAngle = (-Math.PI / 2) + (random() * 0.4 - 0.2) // Start from bottom (-90°)
         const endAngle = (Math.PI / 2) + (random() * 0.4 - 0.2)    // End at top (90°)
         
-        console.log('🎯 RIGHT Selvedge angles (FIXED):', { startAngle: startAngle.toFixed(3), endAngle: endAngle.toFixed(3), startDegrees: (startAngle * 180 / Math.PI).toFixed(1), endDegrees: (endAngle * 180 / Math.PI).toFixed(1) })
+        
         
         // Draw textured selvedge arc with multiple layers (EXACT COPY) - RIGHT SIDE semicircle
         drawTexturedSelvedgeArc(ctx, centerX, centerY, radius, startAngle, endAngle, r, g, b, 'right', random)
@@ -374,7 +383,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
   
   // FIXED: Eliminate transparency gaps by using solid colors and overlapping arcs
   const drawTexturedSelvedgeArc = (ctx: CanvasRenderingContext2D, centerX: number, centerY: number, radius: number, startAngle: number, endAngle: number, r: number, g: number, b: number, side: string, random: () => number) => {
-    console.log('🎨 Drawing selvedge arc (FIXED):', { centerX, centerY, radius, startAngle: startAngle.toFixed(3), endAngle: endAngle.toFixed(3), side })
+    
     
     // Draw solid base arc first to eliminate gaps
     ctx.fillStyle = `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`
@@ -551,7 +560,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
       }
     }
     
-    console.log('🎯 Using your AMAZING text algorithm:', textData.length, 'pixels')
+    
     return textData
   }
   
@@ -597,25 +606,17 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
   // Create rug texture using your P5.js generator logic
   const rugTexture = useMemo(() => {
     if (typeof window === 'undefined' || !dependenciesLoaded) {
-      console.log('🚫 Texture generation skipped:', { 
-        isWindow: typeof window !== 'undefined', 
-        dependenciesLoaded 
-      })
       return null
     }
     
-    console.log('🎨 Generating rug texture for seed:', seed)
-    
     // Create canvas with your generator dimensions
     const canvas = document.createElement('canvas')
-    const ctx = canvas.getContext('2d')!
+    const ctx = canvas.getContext('2d', { willReadFrequently: true })!
     
     // Set canvas size to match your generator
     const doormatWidth = window.DOORMAT_CONFIG?.DOORMAT_WIDTH || 800
     const doormatHeight = window.DOORMAT_CONFIG?.DOORMAT_HEIGHT || 1200
     const fringeLength = window.DOORMAT_CONFIG?.FRINGE_LENGTH || 30
-    
-    console.log('📏 Canvas dimensions:', { doormatWidth, doormatHeight, fringeLength })
     
     // Use the same canvas dimensions as your generator (NO swapping needed)
     canvas.width = doormatWidth + (fringeLength * 4)
@@ -626,60 +627,36 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
     
     // NO BACKGROUND FILL - Keep canvas transparent for animation
     
-    // CRITICAL: Use the ACTUAL P5.js generateDoormatCore function instead of manual recreation!
-    if (window.generateDoormatCore && typeof window.generateDoormatCore === 'function') {
-      console.log('🚀 Calling ACTUAL P5.js generateDoormatCore function!')
-      
-      // Set the text for this rug using your EXACT generator algorithm
-      const selectedWord = rugWords[seed % rugWords.length]
-      
-      // FIXED: Use proper multi-line text processing like your generator
-      const textRows = selectedWord.split(' ').map(word => word.toUpperCase())
-      window.doormatTextRows = textRows
-      
-      // FIXED: Call the proper text generation pipeline
-      if (window.generateTextDataInSketch && typeof window.generateTextDataInSketch === 'function') {
-        console.log('🚀 Calling your EXACT text generation pipeline!')
-        try {
-          window.generateTextDataInSketch()
-          console.log('✅ Text generation pipeline completed successfully')
-        } catch (error) {
-          console.error('❌ Error in text generation pipeline:', error)
+                // CRITICAL: Use the ACTUAL P5.js generateDoormatCore function instead of manual recreation!
+      if (window.generateDoormatCore && typeof window.generateDoormatCore === 'function') {
+        // Set the text for this rug using your EXACT generator algorithm
+        const selectedWord = rugWords[seed % rugWords.length]
+        
+        // FIXED: Use proper multi-line text processing like your generator
+        const textRows = selectedWord.split(' ').map(word => word.toUpperCase())
+        window.doormatTextRows = textRows
+        
+        // FIXED: Call the proper text generation pipeline
+        if (window.generateTextDataInSketch && typeof window.generateTextDataInSketch === 'function') {
+          try {
+            window.generateTextDataInSketch()
+          } catch (error) {
+            console.error('❌ Error in text generation pipeline:', error)
+          }
         }
-      } else {
-        console.log('⚠️ generateTextDataInSketch function not available')
-      }
-      
-      // Call the actual P5.js function to generate the rug
-      console.log('🚀 About to call generateDoormatCore with seed:', seed)
-      try {
-        window.generateDoormatCore(seed)
-        console.log('✅ P5.js generateDoormatCore completed successfully')
-      } catch (error) {
-        console.error('❌ Error calling generateDoormatCore:', error)
-      }
-      
-      // Now we need to get the generated data from the P5.js functions
-      console.log('✅ P5.js generation complete. Stripe data:', window.stripeData?.length || 0, 'stripes')
-      
-      // CRITICAL: Since we can't directly access P5.js canvas, let's use the generated data
-      // but draw it using the CORRECT P5.js angles for selvedges
-      console.log('🎨 Using P5.js generated data with CORRECT selvedge angles')
-      
-      // Get the palette that P5.js selected
-      const selectedPalette = window.selectedPalette || window.colorPalettes?.[seed % window.colorPalettes.length] || { name: 'Default', colors: ['#8B4513', '#D2691E', '#A0522D'] }
-      console.log('🎨 P5.js selected palette:', selectedPalette.name, 'with', selectedPalette.colors.length, 'colors')
-      
-      // Use P5.js generated stripe data if available
-      const stripeData = window.stripeData || generateStripeDataForRug(selectedPalette, doormatHeight, () => Math.random())
-      console.log('🔄 Using P5.js stripe data:', stripeData.length, 'stripes')
-      
-      // DEBUG: Log the first stripe to see its structure
-      if (stripeData.length > 0) {
-        console.log('🔍 First stripe structure:', stripeData[0])
-        console.log('🔍 Stripe primaryColor type:', typeof stripeData[0].primaryColor)
-        console.log('🔍 Stripe primaryColor value:', stripeData[0].primaryColor)
-      }
+        
+        // Call the actual P5.js function to generate the rug
+        try {
+          window.generateDoormatCore(seed)
+        } catch (error) {
+          console.error('❌ Error calling generateDoormatCore:', error)
+        }
+        
+        // Get the palette that P5.js selected
+        const selectedPalette = window.selectedPalette || window.colorPalettes?.[seed % window.colorPalettes.length] || { name: 'Default', colors: ['#8B4513', '#D2691E', '#A0522D'] }
+        
+        // Use P5.js generated stripe data if available
+        const stripeData = window.stripeData || generateStripeDataForRug(selectedPalette, doormatHeight, () => Math.random())
       
       // Calculate center offset to position rug content in the middle of canvas
       const offsetX = fringeLength * 2
@@ -697,7 +674,6 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
       
       // DRAW SELVEDGES FIRST (BELOW THE RUG) to prevent edge glitches
       if (hasValidP5Data) {
-        console.log('✅ Drawing selvedges FIRST with valid P5.js data (below rug)')
         // Convert stripe data to compatible format for selvedge drawing
         const compatibleStripeData = stripeData.map(stripe => {
           if (stripe.primaryColor && typeof stripe.primaryColor === 'object' && stripe.primaryColor.r !== undefined) {
@@ -719,7 +695,6 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
         
         drawFringeAndSelvedge(ctx, compatibleStripeData, doormatWidth, doormatHeight, fringeLength, () => Math.random(), offsetX, offsetY)
       } else {
-        console.log('❌ Drawing selvedges FIRST with manual fallback data (below rug)')
         // Use manual stripe data for selvedge drawing
         const manualStripeData = generateStripeDataForRug(selectedPalette, doormatHeight, () => Math.random())
         drawFringeAndSelvedge(ctx, manualStripeData, doormatWidth, doormatHeight, fringeLength, () => Math.random(), offsetX, offsetY)
@@ -727,14 +702,12 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
       
       // NOW DRAW MAIN RUG CONTENT (stripes) ABOVE the selvedges
       if (hasValidP5Data) {
-        console.log('✅ Using valid P5.js stripe data')
         stripeData.forEach(stripe => {
           // Check if this is P5.js generated data or manual data
           if (stripe.primaryColor && typeof stripe.primaryColor === 'object' && stripe.primaryColor.r !== undefined) {
             // P5.js generated data - convert color object to hex
             const colorObj = stripe.primaryColor
             const hexColor = `#${Math.round(colorObj.r).toString(16).padStart(2, '0')}${Math.round(colorObj.g).toString(16).padStart(2, '0')}${Math.round(colorObj.b).toString(16).padStart(2, '0')}`
-            console.log('🎨 Converting P5.js color object to hex:', colorObj, '→', hexColor)
             
             // Create a compatible stripe object
             const compatibleStripe = {
@@ -751,7 +724,6 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
           }
         })
       } else {
-        console.log('❌ P5.js data invalid (NaN values), falling back to manual generation')
         // Fallback to manual stripe generation
         const manualStripeData = generateStripeDataForRug(selectedPalette, doormatHeight, () => Math.random())
         manualStripeData.forEach(stripe => {
@@ -760,19 +732,9 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
       }
       
       // FIXED: Use your generator's text data EXACTLY as positioned (no manual rotation)
-      console.log('📝 Using your generator\'s text data for rug:', selectedWord, '-> Rows:', textRows)
       
       // Get the text data that your generator created
       const textData = window.textData || []
-      console.log('🎯 Your generator created text data:', textData.length, 'pixels')
-      
-      // DEBUG: Check text colors
-      console.log('🎨 Text colors from P5.js:', {
-        lightTextColor: window.lightTextColor,
-        darkTextColor: window.darkTextColor,
-        lightTextColorType: typeof window.lightTextColor,
-        darkTextColorType: typeof window.darkTextColor
-      })
       
       // Draw the text pixels using your generator's EXACT positioning (no coordinate modifications)
       if (textData.length > 0) {
@@ -818,13 +780,13 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
           ctx.fillStyle = textColor
           ctx.fillRect(finalX, finalY, pixel.width, pixel.height) // Use original dimensions
         })
-        console.log('✅ Drew', textData.length, 'text pixels using your generator\'s EXACT logic')
+        // Text pixels drawn successfully
       } else {
-        console.log('⚠️ No text data from generator, text may not render')
+        // No text data from generator
       }
       
     } else {
-      console.log('❌ P5.js generateDoormatCore not available, using manual fallback')
+      // P5.js generateDoormatCore not available, using manual fallback
       
       // Fallback to manual generation (keeping existing code)
       const randomSeed = (seed: number) => {
@@ -846,12 +808,8 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
       ]
       const selectedPalette = colorPalettes[seed % colorPalettes.length]
       
-      console.log('🎨 Selected palette:', selectedPalette.name, 'with', selectedPalette.colors.length, 'colors')
-      
       // Generate stripe data EXACTLY like your generator
       const stripeData = generateStripeDataForRug(selectedPalette, doormatHeight, random)
-      
-      console.log('🔄 Generated', stripeData.length, 'stripes with weave patterns')
       
       // Calculate center offset to position rug content in the middle of canvas
       const offsetX = fringeLength * 2
@@ -866,7 +824,6 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
       
       // FIXED: Use your generator's text data for manual fallback too
       const selectedWord = rugWords[seed % rugWords.length]
-      console.log('📝 Using your generator\'s text data for manual fallback:', selectedWord)
       
       // Set up text rows and call your generator's text pipeline
       const textRows = selectedWord.split(' ').map(word => word.toUpperCase())
@@ -878,15 +835,6 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
       
       // Get the text data that your generator created
       const textData = window.textData || []
-      console.log('🎯 Your generator created text data (manual path):', textData.length, 'pixels')
-      
-      // DEBUG: Check text colors in manual path
-      console.log('🎨 Text colors from P5.js (manual path):', {
-        lightTextColor: window.lightTextColor,
-        darkTextColor: window.darkTextColor,
-        lightTextColorType: typeof window.lightTextColor,
-        darkTextColorType: typeof window.darkTextColor
-      })
       
       // Draw the text pixels using your generator's EXACT positioning (no manual rotation)
       if (textData.length > 0) {
@@ -934,9 +882,9 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
           ctx.fillRect(finalX, finalY, pixel.width, pixel.height) // Use original dimensions
           drawnPixels++
         })
-        console.log(`✅ Drew ${drawnPixels} text pixels using your generator\'s EXACT logic (manual path)`)
+        // Text pixels drawn successfully
       } else {
-        console.log('⚠️ No text data from generator, text may not render (manual path)')
+        // No text data from generator
       }
       
       // Draw proper fringe and selvedge as part of the art (EXACTLY like your generator)
@@ -958,7 +906,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
     // Store canvas reference for potential updates
     canvasRef.current = canvas
     
-    console.log('✅ Rug texture generated successfully for seed:', seed)
+    // Rug texture generated successfully
     
     // Dispose of old texture to prevent memory leaks and artifacts
     if (textureRef.current) {
@@ -1146,7 +1094,6 @@ function Scene() {
       try {
         // Prevent multiple simultaneous loading attempts
         if (globalDependenciesLoading) {
-          console.log('⏳ P5.js dependencies already loading, waiting...')
           // Wait for loading to complete
           const checkLoaded = () => {
             if (globalDependenciesLoaded) {
@@ -1161,17 +1108,14 @@ function Scene() {
         
         // If already loaded globally, just set local state
         if (globalDependenciesLoaded) {
-          console.log('✅ P5.js dependencies already loaded globally')
           setDependenciesLoaded(true)
           return
         }
         
         globalDependenciesLoading = true
-        console.log('🔄 Loading P5.js dependencies...')
         
         // Load color palettes
         if (!window.colorPalettes) {
-          console.log('📚 Loading color palettes...')
           const colorPalettesResponse = await fetch('/lib/doormat/color-palettes.js')
           const colorPalettesText = await colorPalettesResponse.text()
           // Extract the colorPalettes array from the JS file
@@ -1180,26 +1124,22 @@ function Scene() {
             const colorPalettesCode = colorPalettesMatch[1]
             // Use Function constructor to safely evaluate the array
             window.colorPalettes = new Function(`return ${colorPalettesCode}`)()
-            console.log('✅ Color palettes loaded:', window.colorPalettes.length, 'palettes')
           }
         }
 
         // Load character map
         if (!window.characterMap) {
-          console.log('🔤 Loading character map...')
           const characterMapResponse = await fetch('/lib/doormat/character-map.js')
           const characterMapText = await characterMapResponse.text()
           const characterMapMatch = characterMapText.match(/const characterMap = (\{[\s\S]*?\});/)
           if (characterMapMatch) {
             const characterMapCode = characterMapMatch[1]
             window.characterMap = new Function(`return ${characterMapCode}`)()
-            console.log('✅ Character map loaded:', Object.keys(window.characterMap).length, 'characters')
           }
         }
 
         // Load doormat config
         if (!window.DOORMAT_CONFIG) {
-          console.log('⚙️ Loading doormat config...')
           try {
             // Since the config file is wrapped in an IIFE, we'll set default values
             // and let the config file execute to override them
@@ -1218,33 +1158,23 @@ function Scene() {
             const script = document.createElement('script')
             script.src = '/lib/doormat/doormat-config.js'
             script.onload = () => {
-              console.log('✅ Doormat config script loaded and executed')
-              // Small delay to ensure config is applied
-              setTimeout(() => {
-                console.log('✅ Final config after script execution:', window.DOORMAT_CONFIG)
-              }, 100)
+              // Config loaded silently
             }
             script.onerror = () => {
-              console.log('⚠️ Config script failed to load, using defaults')
+              // Using defaults silently
             }
             document.head.appendChild(script)
-            
-            console.log('✅ Doormat config initialized with defaults:', window.DOORMAT_CONFIG)
           } catch (error) {
-            console.log('⚠️ Using fallback config values')
+            // Using fallback config values silently
           }
         }
 
-        // CRITICAL: Load the main P5.js doormat.js file to get the actual drawing functions
+                // CRITICAL: Load the main P5.js doormat.js file to get the actual drawing functions
         if (!window.generateDoormatCore && !document.querySelector('script[src="/lib/doormat/doormat.js"]')) {
-          console.log('🎨 Loading main P5.js doormat.js file...')
-          
           // CRITICAL: Mock P5.js functions before loading doormat.js
-          console.log('🔧 Mocking P5.js functions...')
           
           // Mock P5.js randomSeed function
           window.randomSeed = (seed: number) => {
-            console.log('🎲 P5.js randomSeed called with:', seed)
             // Return a seeded random function
             let m = 0x80000000
             let a = 1103515245
@@ -1264,7 +1194,7 @@ function Scene() {
           
           // Mock P5.js noiseSeed function
           window.noiseSeed = (seed: number) => {
-            console.log('🌊 P5.js noiseSeed called with:', seed)
+            // Silent implementation
           }
           
           // Mock P5.js random function
@@ -1296,7 +1226,7 @@ function Scene() {
             }
           }
           
-
+ 
           
           // Mock P5.js red, green, blue functions
           window.red = (c: any) => {
@@ -1408,33 +1338,27 @@ function Scene() {
           window.createCanvas = (w: number, h: number) => {
             const canvas = originalCreateCanvas(w, h)
             canvas.parent = (container: string) => {
-              console.log('🎨 P5.js canvas.parent called with:', container)
+              // Silent implementation
             }
             return canvas
           }
           
-          // Mock P5.js background function to track calls
+          // Mock P5.js background function
           window.background = (r: number, g?: number, b?: number, a?: number) => {
-            console.log('🎨 P5.js background called with:', r, g, b, a)
+            // Silent implementation
           }
           
           // Mock P5.js redraw function
           window.redraw = () => {
-            console.log('🔄 P5.js redraw called')
+            // Silent implementation
           }
-          
-          console.log('✅ P5.js functions mocked successfully')
           
           const script = document.createElement('script')
           script.src = '/lib/doormat/doormat.js'
           script.onload = () => {
-            console.log('✅ Main P5.js doormat.js loaded successfully!')
-            console.log('🎯 Available functions:', Object.keys(window).filter(key => key.includes('generate') || key.includes('draw')))
-            
             // Ensure global variables are properly initialized
             if (window.colorPalettes && window.colorPalettes.length > 0) {
               window.selectedPalette = window.colorPalettes[0]
-              console.log('✅ Initialized selectedPalette:', window.selectedPalette)
             }
             
             // Small delay to ensure all functions are available
@@ -1452,11 +1376,8 @@ function Scene() {
           }
           document.head.appendChild(script)
         } else {
-          console.log('✅ Main P5.js doormat.js already loaded')
           setDependenciesLoaded(true)
         }
-
-        console.log('🎉 All P5.js dependencies loaded successfully!')
       } catch (error) {
         console.error('❌ Failed to load P5.js dependencies:', error)
         // Fallback to default values
