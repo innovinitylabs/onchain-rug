@@ -55,6 +55,43 @@ declare global {
   }
 }
 
+// Helper function to convert hex to RGB (matches your generator's color logic)
+const hexToRgb = (hex: string) => {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+  return result ? {
+    r: parseInt(result[1], 16),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16)
+  } : null
+}
+
+// Helper function to get dynamic text color using your generator's exact logic
+const getDynamicTextColor = (bgBrightness: number, seed: number) => {
+  const colorPalettes = window.colorPalettes || []
+  if (colorPalettes.length > 0) {
+    const selectedPalette = colorPalettes[seed % colorPalettes.length]
+    if (selectedPalette && selectedPalette.colors) {
+      // Find darkest and lightest colors from palette (matching your generator's updateTextColors logic)
+      let darkest = selectedPalette.colors[0]
+      let lightest = selectedPalette.colors[0]
+      let darkestVal = 999, lightestVal = -1
+      
+      selectedPalette.colors.forEach((hex: string) => {
+        const c = hexToRgb(hex)
+        if (c) {
+          const bright = (c.r + c.g + c.b) / 3
+          if (bright < darkestVal) { darkestVal = bright; darkest = hex }
+          if (bright > lightestVal) { lightestVal = bright; lightest = hex }
+        }
+      })
+      
+      // Use your generator's exact color selection logic
+      return bgBrightness < 128 ? lightest : darkest
+    }
+  }
+  return '#FFFFFF' // Fallback
+}
+
 // Advanced Flying Rug Component with Your P5.js Generator Logic
 function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: { 
   position: [number, number, number], 
@@ -950,42 +987,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
     }
   }, [])
 
-  // Helper function to convert hex to RGB (matches your generator's color logic)
-  const hexToRgb = (hex: string) => {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
-    return result ? {
-      r: parseInt(result[1], 16),
-      g: parseInt(result[2], 16),
-      b: parseInt(result[3], 16)
-    } : null
-  }
-  
-  // Helper function to get dynamic text color using your generator's exact logic
-  const getDynamicTextColor = (bgBrightness: number, seed: number) => {
-    const colorPalettes = window.colorPalettes || []
-    if (colorPalettes.length > 0) {
-      const selectedPalette = colorPalettes[seed % colorPalettes.length]
-      if (selectedPalette && selectedPalette.colors) {
-        // Find darkest and lightest colors from palette (matching your generator's updateTextColors logic)
-        let darkest = selectedPalette.colors[0]
-        let lightest = selectedPalette.colors[0]
-        let darkestVal = 999, lightestVal = -1
-        
-        selectedPalette.colors.forEach((hex: string) => {
-          const c = hexToRgb(hex)
-          if (c) {
-            const bright = (c.r + c.g + c.b) / 3
-            if (bright < darkestVal) { darkestVal = bright; darkest = hex }
-            if (bright > lightestVal) { lightestVal = bright; lightest = hex }
-          }
-        })
-        
-        // Use your generator's exact color selection logic
-        return bgBrightness < 128 ? lightest : darkest
-      }
-    }
-    return '#FFFFFF' // Fallback
-  }
+
 
   // Advanced cloth physics animation (keeping your existing animation)
   useFrame((state) => {
