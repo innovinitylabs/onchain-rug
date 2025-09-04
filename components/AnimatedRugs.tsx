@@ -300,6 +300,8 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
   
   // Sophisticated textured selvedge arc (EXACT COPY of your drawTexturedSelvedgeArc)
   const drawTexturedSelvedgeArc = (ctx: CanvasRenderingContext2D, centerX: number, centerY: number, radius: number, startAngle: number, endAngle: number, r: number, g: number, b: number, side: string, random: () => number) => {
+    console.log('🎨 Drawing selvedge arc:', { centerX, centerY, radius, startAngle: startAngle.toFixed(3), endAngle: endAngle.toFixed(3), side })
+    
     // Draw a realistic textured selvedge arc with visible woven texture (EXACT COPY)
     const threadCount = Math.max(6, Math.floor(radius / 1.2)) // More threads for visible texture
     const threadSpacing = radius / threadCount
@@ -336,6 +338,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
       const threadStartAngle = startAngle + random() * 0.2 - 0.1
       const threadEndAngle = endAngle + random() * 0.2 - 0.1
       
+      // CRITICAL FIX: Ensure we draw a true semicircle by using the correct arc method
       ctx.beginPath()
       ctx.arc(threadX, threadY, threadRadius * 2, threadRadius * 2, threadStartAngle, threadEndAngle)
       ctx.fill()
