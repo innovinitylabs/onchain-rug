@@ -22,7 +22,6 @@ declare global {
     textData?: Array<{x: number, y: number, width: number, height: number}>
     lightTextColor?: any
     darkTextColor?: any
-    __doormatJsLoaded?: boolean
     // P5.js functions that need to be mocked
     randomSeed: (seed: number) => () => number
     noise: (x: number) => number
@@ -1132,6 +1131,10 @@ function FloatingParticles() {
   )
 }
 
+// Global loading state to prevent multiple script loads
+let globalDependenciesLoading = false
+let globalDependenciesLoaded = false
+
 // Enhanced Magical Scene
 function Scene() {
   const lightRef = useRef<THREE.DirectionalLight>(null)
@@ -1141,6 +1144,29 @@ function Scene() {
   useEffect(() => {
     const loadDependencies = async () => {
       try {
+        // Prevent multiple simultaneous loading attempts
+        if (globalDependenciesLoading) {
+          console.log('⏳ P5.js dependencies already loading, waiting...')
+          // Wait for loading to complete
+          const checkLoaded = () => {
+            if (globalDependenciesLoaded) {
+              setDependenciesLoaded(true)
+            } else {
+              setTimeout(checkLoaded, 100)
+            }
+          }
+          checkLoaded()
+          return
+        }
+        
+        // If already loaded globally, just set local state
+        if (globalDependenciesLoaded) {
+          console.log('✅ P5.js dependencies already loaded globally')
+          setDependenciesLoaded(true)
+          return
+        }
+        
+        globalDependenciesLoading = true
         console.log('🔄 Loading P5.js dependencies...')
         
         // Load color palettes
@@ -1210,11 +1236,8 @@ function Scene() {
         }
 
         // CRITICAL: Load the main P5.js doormat.js file to get the actual drawing functions
-        if (!window.generateDoormatCore && !window.__doormatJsLoaded) {
+        if (!window.generateDoormatCore && !document.querySelector('script[src="/lib/doormat/doormat.js"]')) {
           console.log('🎨 Loading main P5.js doormat.js file...')
-          
-          // Mark as loaded to prevent multiple loading
-          window.__doormatJsLoaded = true
           
           // CRITICAL: Mock P5.js functions before loading doormat.js
           console.log('🔧 Mocking P5.js functions...')
@@ -1416,13 +1439,15 @@ function Scene() {
             
             // Small delay to ensure all functions are available
             setTimeout(() => {
+              globalDependenciesLoaded = true
+              globalDependenciesLoading = false
               setDependenciesLoaded(true)
             }, 100)
           }
           script.onerror = () => {
             console.error('❌ Failed to load main P5.js doormat.js file')
-            // Reset the flag on error so we can try again
-            window.__doormatJsLoaded = false
+            globalDependenciesLoaded = false
+            globalDependenciesLoading = false
             setDependenciesLoaded(true)
           }
           document.head.appendChild(script)
