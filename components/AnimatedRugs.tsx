@@ -17,6 +17,7 @@ declare global {
     warpThickness: number
     generateDoormatCore: (seed: number) => void
     drawTexturedSelvedgeArc: (centerX: number, centerY: number, radius: number, startAngle: number, endAngle: number, r: number, g: number, b: number, side: string) => void
+    doormatTextRows: string[]
   }
 }
 
@@ -542,88 +543,130 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
     ctx.fillStyle = 'rgba(0, 0, 0, 0)'
     ctx.fillRect(0, 0, canvas.width, canvas.height)
     
-    // Set random seed for consistent generation
-    const randomSeed = (seed: number) => {
-      let m = 0x80000000
-      let a = 1103515245
-      let c = 12345
-      let state = seed ? seed : Math.floor(Math.random() * (m - 1))
-      return () => {
-        state = (a * state + c) % m
-        return state / m
-      }
-    }
-    
-    const random = randomSeed(seed)
-    const randomInt = (min: number, max: number) => Math.floor(random() * (max - min + 1)) + min
-    
-    // Simulate P5.js color function
-    const color = (hex: string) => {
-      const r = parseInt(hex.slice(1, 3), 16)
-      const g = parseInt(hex.slice(3, 5), 16)
-      const b = parseInt(hex.slice(5, 7), 16)
-      return { r, g, b }
-    }
-    
-    // Simulate P5.js lerpColor function
-    const lerpColor = (c1: any, c2: any, amt: number) => {
-      const r = Math.round(c1.r + (c2.r - c1.r) * amt)
-      const g = Math.round(c1.g + (c2.g - c1.g) * amt)
-      const b = Math.round(c1.b + (c2.b - c1.b) * amt)
-      return { r, g, b }
-    }
-    
-    // Get palette and generate colors
-    const colorPalettes = window.colorPalettes || [
-      { name: 'Default', colors: ['#8B4513', '#D2691E', '#A0522D', '#CD853F', '#DEB887'] }
-    ]
-    const selectedPalette = colorPalettes[seed % colorPalettes.length]
-    
-    console.log('🎨 Selected palette:', selectedPalette.name, 'with', selectedPalette.colors.length, 'colors')
-    
-    // Generate stripe data EXACTLY like your generator
-    const stripeData = generateStripeDataForRug(selectedPalette, doormatHeight, random)
-    
-    console.log('🔄 Generated', stripeData.length, 'stripes with weave patterns')
-    
-    // Calculate center offset to position rug content in the middle of canvas
-    const offsetX = fringeLength * 2
-    const offsetY = fringeLength * 2
-    
-    // Draw base doormat (centered)
-    ctx.fillStyle = selectedPalette.colors[0]
-    ctx.fillRect(offsetX, offsetY, doormatWidth, doormatHeight)
-    
-    // Draw stripes with proper weaving structure (centered)
-    stripeData.forEach(stripe => {
-      drawStripeWithWeaving(ctx, stripe, doormatWidth, doormatHeight, random, offsetX, offsetY)
-    })
-    
-    // Generate and draw text on the rug
-    const selectedWord = rugWords[seed % rugWords.length]
-    console.log('📝 Adding text to rug:', selectedWord, 'for seed:', seed)
-    
-    // Generate text data using your P5.js logic
-    const textData = generateTextDataForRug(selectedWord, doormatWidth, doormatHeight, fringeLength)
-    
-    // Draw the text pixels (centered)
-    if (textData.length > 0) {
-      ctx.fillStyle = '#FFFFFF' // White text for visibility
-      textData.forEach(pixel => {
-        ctx.fillRect(pixel.x + offsetX, pixel.y + offsetY, pixel.width, pixel.height)
+    // CRITICAL: Use the ACTUAL P5.js generateDoormatCore function instead of manual recreation!
+    if (window.generateDoormatCore && typeof window.generateDoormatCore === 'function') {
+      console.log('🚀 Calling ACTUAL P5.js generateDoormatCore function!')
+      
+      // Set the text for this rug
+      const selectedWord = rugWords[seed % rugWords.length]
+      window.doormatTextRows = [selectedWord]
+      
+      // Call the actual P5.js function to generate the rug
+      window.generateDoormatCore(seed)
+      
+      // Now we need to get the generated data from the P5.js functions
+      console.log('✅ P5.js generation complete. Stripe data:', window.stripeData?.length || 0, 'stripes')
+      
+      // CRITICAL: Since we can't directly access P5.js canvas, let's use the generated data
+      // but draw it using the CORRECT P5.js angles for selvedges
+      console.log('🎨 Using P5.js generated data with CORRECT selvedge angles')
+      
+      // Get the palette that P5.js selected
+      const selectedPalette = window.selectedPalette || window.colorPalettes?.[seed % window.colorPalettes.length] || { name: 'Default', colors: ['#8B4513', '#D2691E', '#A0522D'] }
+      console.log('🎨 P5.js selected palette:', selectedPalette.name, 'with', selectedPalette.colors.length, 'colors')
+      
+      // Use P5.js generated stripe data if available
+      const stripeData = window.stripeData || generateStripeDataForRug(selectedPalette, doormatHeight, () => Math.random())
+      console.log('🔄 Using P5.js stripe data:', stripeData.length, 'stripes')
+      
+      // Calculate center offset to position rug content in the middle of canvas
+      const offsetX = fringeLength * 2
+      const offsetY = fringeLength * 2
+      
+      // Draw base doormat (centered)
+      ctx.fillStyle = selectedPalette.colors[0]
+      ctx.fillRect(offsetX, offsetY, doormatWidth, doormatHeight)
+      
+      // Draw stripes with proper weaving structure (centered)
+      stripeData.forEach(stripe => {
+        drawStripeWithWeaving(ctx, stripe, doormatWidth, doormatHeight, () => Math.random(), offsetX, offsetY)
       })
+      
+      // Generate and draw text on the rug
+      console.log('📝 Adding text to rug:', selectedWord, 'for seed:', seed)
+      
+      // Generate text data using your P5.js logic
+      const textData = generateTextDataForRug(selectedWord, doormatWidth, doormatHeight, fringeLength)
+      
+      // Draw the text pixels (centered)
+      if (textData.length > 0) {
+        ctx.fillStyle = '#FFFFFF' // White text for visibility
+        textData.forEach(pixel => {
+          ctx.fillRect(pixel.x + offsetX, pixel.y + offsetY, pixel.width, pixel.height)
+        })
+      }
+      
+      // CRITICAL: Draw selvedges using CORRECT P5.js angles (-90° to 90° for both)
+      drawFringeAndSelvedge(ctx, stripeData, doormatWidth, doormatHeight, fringeLength, () => Math.random(), offsetX, offsetY)
+      
+    } else {
+      console.log('❌ P5.js generateDoormatCore not available, using manual fallback')
+      
+      // Fallback to manual generation (keeping existing code)
+      const randomSeed = (seed: number) => {
+        let m = 0x80000000
+        let a = 1103515245
+        let c = 12345
+        let state = seed ? seed : Math.floor(Math.random() * (m - 1))
+        return () => {
+          state = (a * state + c) % m
+          return state / m
+        }
+      }
+      
+      const random = randomSeed(seed)
+      
+      // Get palette and generate colors
+      const colorPalettes = window.colorPalettes || [
+        { name: 'Default', colors: ['#8B4513', '#D2691E', '#A0522D', '#CD853F', '#DEB887'] }
+      ]
+      const selectedPalette = colorPalettes[seed % colorPalettes.length]
+      
+      console.log('🎨 Selected palette:', selectedPalette.name, 'with', selectedPalette.colors.length, 'colors')
+      
+      // Generate stripe data EXACTLY like your generator
+      const stripeData = generateStripeDataForRug(selectedPalette, doormatHeight, random)
+      
+      console.log('🔄 Generated', stripeData.length, 'stripes with weave patterns')
+      
+      // Calculate center offset to position rug content in the middle of canvas
+      const offsetX = fringeLength * 2
+      const offsetY = fringeLength * 2
+      
+      // Draw base doormat (centered)
+      ctx.fillStyle = selectedPalette.colors[0]
+      ctx.fillRect(offsetX, offsetY, doormatWidth, doormatHeight)
+      
+      // Draw stripes with proper weaving structure (centered)
+      stripeData.forEach(stripe => {
+        drawStripeWithWeaving(ctx, stripe, doormatWidth, doormatHeight, random, offsetX, offsetY)
+      })
+      
+      // Generate and draw text on the rug
+      const selectedWord = rugWords[seed % rugWords.length]
+      console.log('📝 Adding text to rug:', selectedWord, 'for seed:', seed)
+      
+      // Generate text data using your P5.js logic
+      const textData = generateTextDataForRug(selectedWord, doormatWidth, doormatHeight, fringeLength)
+      
+      // Draw the text pixels (centered)
+      if (textData.length > 0) {
+        ctx.fillStyle = '#FFFFFF' // White text for visibility
+        textData.forEach(pixel => {
+          ctx.fillRect(pixel.x + offsetX, pixel.y + offsetY, pixel.width, pixel.height)
+        })
+      }
+      
+      // Draw proper fringe and selvedge as part of the art (EXACTLY like your generator)
+      drawFringeAndSelvedge(ctx, stripeData, doormatWidth, doormatHeight, fringeLength, random, offsetX, offsetY)
     }
-    
-    // Draw proper fringe and selvedge as part of the art (EXACTLY like your generator)
-    drawFringeAndSelvedge(ctx, stripeData, doormatWidth, doormatHeight, fringeLength, random, offsetX, offsetY)
     
     // Add subtle fabric texture noise (much more subtle to avoid black bands)
     for (let x = 0; x < canvas.width; x += 8) {
       for (let y = 0; y < canvas.height; y += 8) {
-        const noise = random() * 0.1 - 0.05  // Reduced intensity
+        const noise = Math.random() * 0.1 - 0.05  // Reduced intensity
         if (Math.abs(noise) > 0.02) {  // Only add noise if it's significant
           // Use a very light color instead of black
-          const lightness = 0.95 + (noise * 0.1)
           ctx.fillStyle = `rgba(255, 255, 255, ${Math.abs(noise) * 0.3})`
           ctx.fillRect(x, y, 1, 1)  // Smaller dots
         }
