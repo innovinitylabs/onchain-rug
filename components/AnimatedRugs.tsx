@@ -504,48 +504,57 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
     const charWidth = 7 * scaledWarp
     const charHeight = 5 * scaledWeft
     const verticalSpacing = charHeight * 0.6  // Reduce spacing between characters
+    const lineSpacing = charHeight * 1.2      // Spacing between lines
     
-    // Center the text on the rug - FLOW ALONG LENGTH (Y-axis)
-    const textHeight = (upperText.length - 1) * verticalSpacing + charHeight  // Account for reduced spacing
+    // Split text into lines for better readability
+    const lines = upperText.split(' ')
+    console.log('🔤 Generating text:', text, '-> UPPERCASE:', upperText, '-> LINES:', lines)
+    
+    // Calculate total height for all lines
+    const totalTextHeight = (lines.length - 1) * lineSpacing + charHeight
     const startX = (doormatWidth - charWidth) / 2 + fringeLength * 2  // Center single character
-    const startY = (doormatHeight - textHeight) / 2 + fringeLength * 2  // Center text block
+    const startY = (doormatHeight - totalTextHeight) / 2 + fringeLength * 2  // Center text block
     
-    // Generate character pixels for each character - VERTICAL FLOW with TIGHT SPACING
-    console.log('🔤 Generating text:', text, '-> UPPERCASE:', upperText, 'with length:', upperText.length)
-    console.log('📏 Character dimensions:', { charWidth, charHeight, verticalSpacing })
-    console.log('📍 Text positioning:', { startX, startY, textHeight })
+    console.log('📏 Character dimensions:', { charWidth, charHeight, verticalSpacing, lineSpacing })
+    console.log('📍 Text positioning:', { startX, startY, totalTextHeight, lines: lines.length })
     
-    for (let i = 0; i < upperText.length; i++) {
-      const char = upperText.charAt(i)
-      const charDef = window.characterMap[char] || window.characterMap[' ']
+    // Process each line
+    lines.forEach((line, lineIndex) => {
+      const lineY = startY + lineIndex * lineSpacing
       
-      console.log(`📝 Character ${i}: '${char}' (from '${text.charAt(i)}') - definition:`, charDef ? 'Found' : 'Missing')
-      
-      if (charDef) {
-        const charY = startY + i * verticalSpacing  // Characters stacked vertically with tight spacing
+      // Process each character in the line
+      for (let i = 0; i < line.length; i++) {
+        const char = line.charAt(i)
+        const charDef = window.characterMap[char] || window.characterMap[' ']
         
-        // Generate pixels for this character - KEEP ROTATION for canvas orientation
-        let pixelCount = 0
-        for (let row = 0; row < charDef.length; row++) {
-          for (let col = 0; col < charDef[0].length; col++) {
-            if (charDef[row][col] === '1') {
-              // KEEP rotation but flow vertically along length
-              const newCol = row
-              const newRow = charDef[0].length - 1 - col
-              
-              textData.push({
-                x: startX + newCol * scaledWarp,
-                y: charY + newRow * scaledWeft,
-                width: scaledWarp,
-                height: scaledWeft
-              })
-              pixelCount++
+        console.log(`📝 Line ${lineIndex + 1}, Character ${i + 1}: '${char}' - definition:`, charDef ? 'Found' : 'Missing')
+        
+        if (charDef) {
+          const charY = lineY + i * verticalSpacing  // Characters stacked vertically within line
+          
+          // Generate pixels for this character - KEEP ROTATION for canvas orientation
+          let pixelCount = 0
+          for (let row = 0; row < charDef.length; row++) {
+            for (let col = 0; col < charDef[0].length; col++) {
+              if (charDef[row][col] === '1') {
+                // KEEP rotation but flow vertically along length
+                const newCol = row
+                const newRow = charDef[0].length - 1 - col
+                
+                textData.push({
+                  x: startX + newCol * scaledWarp,
+                  y: charY + newRow * scaledWeft,
+                  width: scaledWarp,
+                  height: scaledWeft
+                })
+                pixelCount++
+              }
             }
           }
+          console.log(`✅ Line ${lineIndex + 1}, Character '${char}' generated ${pixelCount} pixels at Y: ${charY}`)
         }
-        console.log(`✅ Character '${char}' (from '${text.charAt(i)}') generated ${pixelCount} pixels at Y: ${charY}`)
       }
-    }
+    })
     
     console.log('🎯 Total text data generated:', textData.length, 'pixels')
     return textData
