@@ -15,6 +15,8 @@ declare global {
     colorPalettes: any[]
     selectedPalette: any
     warpThickness: number
+    generateDoormatCore: (seed: number) => void
+    drawTexturedSelvedgeArc: (centerX: number, centerY: number, radius: number, startAngle: number, endAngle: number, r: number, g: number, b: number, side: string) => void
   }
 }
 
@@ -875,11 +877,30 @@ function Scene() {
           }
         }
 
-        console.log('🎉 All P5.js dependencies loaded successfully!')
-        // Small delay to ensure config script has time to execute
-        setTimeout(() => {
+        // CRITICAL: Load the main P5.js doormat.js file to get the actual drawing functions
+        if (!window.generateDoormatCore) {
+          console.log('🎨 Loading main P5.js doormat.js file...')
+          const script = document.createElement('script')
+          script.src = '/lib/doormat/doormat.js'
+          script.onload = () => {
+            console.log('✅ Main P5.js doormat.js loaded successfully!')
+            console.log('🎯 Available functions:', Object.keys(window).filter(key => key.includes('generate') || key.includes('draw')))
+            // Small delay to ensure all functions are available
+            setTimeout(() => {
+              setDependenciesLoaded(true)
+            }, 100)
+          }
+          script.onerror = () => {
+            console.error('❌ Failed to load main P5.js doormat.js file')
+            setDependenciesLoaded(true)
+          }
+          document.head.appendChild(script)
+        } else {
+          console.log('✅ Main P5.js doormat.js already loaded')
           setDependenciesLoaded(true)
-        }, 200)
+        }
+
+        console.log('🎉 All P5.js dependencies loaded successfully!')
       } catch (error) {
         console.error('❌ Failed to load P5.js dependencies:', error)
         // Fallback to default values
