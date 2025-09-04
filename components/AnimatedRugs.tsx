@@ -25,11 +25,219 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
   seed?: number
   dependenciesLoaded: boolean
 }) {
-  const rugRef = useRef<THREE.Mesh>(null)
+    const rugRef = useRef<THREE.Mesh>(null)
   const groupRef = useRef<THREE.Group>(null)
   const initialPositions = useRef<Float32Array | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
-
+  const textureRef = useRef<THREE.CanvasTexture | null>(null)
+  
+  // Your curated word list for the flying rugs
+  const rugWords = [
+    'Welcome',
+    'HODL Zone',
+    'Soft',
+    'Floor is Lava',
+    'Home Sweet Home',
+    'Good Vibes Only'
+  ]
+  
+  // Stripe generation function EXACTLY like your generator
+  const generateStripeDataForRug = (selectedPalette: any, doormatHeight: number, random: () => number) => {
+    const stripeData: Array<{
+      y: number,
+      height: number,
+      primaryColor: string,
+      secondaryColor: string | null,
+      weaveType: 'solid' | 'textured' | 'mixed',
+      warpVariation: number
+    }> = []
+    
+    let totalHeight = doormatHeight
+    let currentY = 0
+    
+    // Decide stripe density pattern for this doormat (EXACTLY like your generator)
+    let densityType = random()
+    let minHeight, maxHeight
+    
+    if (densityType < 0.2) {
+      // 20% chance: High density (many thin stripes)
+      minHeight = 15
+      maxHeight = 35
+    } else if (densityType < 0.4) {
+      // 20% chance: Low density (fewer thick stripes) 
+      minHeight = 50
+      maxHeight = 90
+    } else {
+      // 60% chance: Mixed density (varied stripe sizes)
+      minHeight = 20
+      maxHeight = 80
+    }
+    
+    while (currentY < totalHeight) {
+      // Dynamic stripe height based on density type (EXACTLY like your generator)
+      let stripeHeight
+      if (densityType >= 0.4) {
+        // Mixed density: add more randomization within the range
+        let variationType = random()
+        if (variationType < 0.3) {
+          // 30% thin stripes within mixed
+          stripeHeight = random() * 20 + minHeight
+        } else if (variationType < 0.6) {
+          // 30% medium stripes within mixed
+          stripeHeight = random() * 30 + minHeight + 15
+        } else {
+          // 40% thick stripes within mixed
+          stripeHeight = random() * 25 + maxHeight - 25
+        }
+      } else {
+        // High/Low density: more consistent sizing
+        stripeHeight = random() * (maxHeight - minHeight) + minHeight
+      }
+      
+      // Ensure we don't exceed the total height
+      if (currentY + stripeHeight > totalHeight) {
+        stripeHeight = totalHeight - currentY
+      }
+      
+      // Select colors for this stripe (EXACTLY like your generator)
+      let primaryColor = selectedPalette.colors[Math.floor(random() * selectedPalette.colors.length)]
+      let hasSecondaryColor = random() < 0.15 // 15% chance of blended colors
+      let secondaryColor = hasSecondaryColor ? selectedPalette.colors[Math.floor(random() * selectedPalette.colors.length)] : null
+      
+      // Determine weave pattern type with weighted probabilities (EXACTLY like your generator)
+      let weaveRand = random()
+      let weaveType: 'solid' | 'textured' | 'mixed'
+      if (weaveRand < 0.6) {          // 60% chance of solid (simple)
+        weaveType = 'solid'
+      } else if (weaveRand < 0.8) {   // 20% chance of textured 
+        weaveType = 'textured'
+      } else {                        // 20% chance of mixed (most complex)
+        weaveType = 'mixed'
+      }
+      
+      stripeData.push({
+        y: currentY,
+        height: stripeHeight,
+        primaryColor: primaryColor,
+        secondaryColor: secondaryColor,
+        weaveType: weaveType,
+        warpVariation: random() * 0.4 + 0.1 // How much the weave varies
+      })
+      
+      currentY += stripeHeight
+    }
+    
+    return stripeData
+  }
+  
+  // Stripe drawing function with proper weaving (EXACTLY like your generator)
+  const drawStripeWithWeaving = (ctx: CanvasRenderingContext2D, stripe: any, doormatWidth: number, doormatHeight: number, random: () => number) => {
+    const warpThickness = window.warpThickness || 2
+    const weftThickness = window.DOORMAT_CONFIG?.WEFT_THICKNESS || 8
+    
+    let warpSpacing = warpThickness + 1
+    let weftSpacing = weftThickness + 1
+    
+    // Draw warp threads (vertical) as the foundation (EXACTLY like your generator)
+    for (let x = 0; x < doormatWidth; x += warpSpacing) {
+      for (let y = stripe.y; y < stripe.y + stripe.height; y += weftSpacing) {
+        // Parse hex color directly
+        let r = parseInt(stripe.primaryColor.slice(1, 3), 16) + (random() * 30 - 15)
+        let g = parseInt(stripe.primaryColor.slice(3, 5), 16) + (random() * 30 - 15)
+        let b = parseInt(stripe.primaryColor.slice(5, 7), 16) + (random() * 30 - 15)
+        
+        r = Math.max(0, Math.min(255, r))
+        g = Math.max(0, Math.min(255, g))
+        b = Math.max(0, Math.min(255, b))
+        
+        ctx.fillStyle = `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`
+        ctx.fillRect(x, y, warpThickness, weftSpacing)
+      }
+    }
+    
+    // Draw weft threads (horizontal) that interlace with warp (EXACTLY like your generator)
+    for (let y = stripe.y; y < stripe.y + stripe.height; y += weftSpacing) {
+      for (let x = 0; x < doormatWidth; x += warpSpacing) {
+        // Parse hex color directly
+        let r = parseInt(stripe.primaryColor.slice(1, 3), 16) + (random() * 20 - 10)
+        let g = parseInt(stripe.primaryColor.slice(3, 5), 16) + (random() * 20 - 10)
+        let b = parseInt(stripe.primaryColor.slice(5, 7), 16) + (random() * 20 - 10)
+        
+        // Add variation based on weave type (EXACTLY like your generator)
+        if (stripe.weaveType === 'mixed' && stripe.secondaryColor) {
+          r = parseInt(stripe.secondaryColor.slice(1, 3), 16) + (random() * 20 - 10)
+          g = parseInt(stripe.secondaryColor.slice(3, 5), 16) + (random() * 20 - 10)
+          b = parseInt(stripe.secondaryColor.slice(5, 7), 16) + (random() * 20 - 10)
+        }
+        
+        r = Math.max(0, Math.min(255, r))
+        g = Math.max(0, Math.min(255, g))
+        b = Math.max(0, Math.min(255, b))
+        
+        ctx.fillStyle = `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`
+        ctx.fillRect(x, y, warpSpacing, weftThickness)
+      }
+    }
+  }
+  
+  // Text generation function using your P5.js logic
+  const generateTextDataForRug = (text: string, doormatWidth: number, doormatHeight: number, fringeLength: number) => {
+    if (!window.characterMap) return []
+    
+    const textData: Array<{x: number, y: number, width: number, height: number}> = []
+    
+    // Use your existing text generation logic
+    const warpThickness = window.warpThickness || 2
+    const weftThickness = window.DOORMAT_CONFIG?.WEFT_THICKNESS || 8
+    const TEXT_SCALE = window.DOORMAT_CONFIG?.TEXT_SCALE || 2
+    
+    // Calculate spacing based on your generator logic
+    const warpSpacing = warpThickness + 1
+    const weftSpacing = weftThickness + 1
+    const scaledWarp = warpSpacing * TEXT_SCALE
+    const scaledWeft = weftSpacing * TEXT_SCALE
+    
+    // Character dimensions
+    const charWidth = 7 * scaledWarp
+    const charHeight = 5 * scaledWeft
+    const spacing = scaledWeft
+    
+    // Center the text on the rug
+    const textWidth = text.length * charWidth
+    const startX = (doormatWidth - textWidth) / 2 + fringeLength * 2
+    const startY = (doormatHeight - charHeight) / 2 + fringeLength * 2
+    
+    // Generate character pixels for each character
+    for (let i = 0; i < text.length; i++) {
+      const char = text.charAt(i)
+      const charDef = window.characterMap[char] || window.characterMap[' ']
+      
+      if (charDef) {
+        const charX = startX + i * charWidth
+        
+        // Generate pixels for this character
+        for (let row = 0; row < charDef.length; row++) {
+          for (let col = 0; col < charDef[0].length; col++) {
+            if (charDef[row][col] === '1') {
+              // Apply rotation and positioning like your generator
+              const newCol = row
+              const newRow = charDef[0].length - 1 - col
+              
+              textData.push({
+                x: charX + newCol * scaledWarp,
+                y: startY + newRow * scaledWeft,
+                width: scaledWarp,
+                height: scaledWeft
+              })
+            }
+          }
+        }
+      }
+    }
+    
+    return textData
+  }
+  
   // Create rug texture using your P5.js generator logic
   const rugTexture = useMemo(() => {
     if (typeof window === 'undefined' || !dependenciesLoaded) {
@@ -56,6 +264,13 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
     // Use the same canvas dimensions as your generator
     canvas.width = doormatHeight + (fringeLength * 4)  // Swapped for rotation
     canvas.height = doormatWidth + (fringeLength * 4)
+    
+    // CRITICAL: Clear the entire canvas completely before drawing
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    
+    // Set a transparent background to ensure no artifacts
+    ctx.fillStyle = 'rgba(0, 0, 0, 0)'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
     
     // Set random seed for consistent generation
     const randomSeed = (seed: number) => {
@@ -96,34 +311,39 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
     
     console.log('🎨 Selected palette:', selectedPalette.name, 'with', selectedPalette.colors.length, 'colors')
     
-    // Generate stripe data similar to your generator
-    const stripeData = []
-    const numStripes = randomInt(8, 15)
-    for (let i = 0; i < numStripes; i++) {
-      stripeData.push({
-        y: random() * doormatHeight,
-        height: randomInt(20, 80),
-        color: selectedPalette.colors[randomInt(0, selectedPalette.colors.length - 1)]
-      })
-    }
+    // Generate stripe data EXACTLY like your generator
+    const stripeData = generateStripeDataForRug(selectedPalette, doormatHeight, random)
     
-    console.log('🔄 Generated', stripeData.length, 'stripes')
+    console.log('🔄 Generated', stripeData.length, 'stripes with weave patterns')
     
     // Draw base doormat
     ctx.fillStyle = selectedPalette.colors[0]
     ctx.fillRect(0, 0, canvas.width, canvas.height)
     
-    // Draw stripes
+    // Draw stripes with proper weaving structure
     stripeData.forEach(stripe => {
-      const c = color(stripe.color)
-      ctx.fillStyle = `rgb(${c.r}, ${c.g}, ${c.b})`
-      ctx.fillRect(0, stripe.y, canvas.width, stripe.height)
+      drawStripeWithWeaving(ctx, stripe, doormatWidth, doormatHeight, random)
     })
     
-    // Draw fringe (top and bottom)
+    // Generate and draw text on the rug
+    const selectedWord = rugWords[seed % rugWords.length]
+    console.log('📝 Adding text to rug:', selectedWord, 'for seed:', seed)
+    
+    // Generate text data using your P5.js logic
+    const textData = generateTextDataForRug(selectedWord, doormatWidth, doormatHeight, fringeLength)
+    
+    // Draw the text pixels
+    if (textData.length > 0) {
+      ctx.fillStyle = '#FFFFFF' // White text for visibility
+      textData.forEach(pixel => {
+        ctx.fillRect(pixel.x, pixel.y, pixel.width, pixel.height)
+      })
+    }
+    
+    // Draw fringe (top and bottom) - using softer colors to avoid harsh edges
     const fringeGradient = ctx.createLinearGradient(0, 0, 0, fringeLength)
-    fringeGradient.addColorStop(0, '#5D4037')
-    fringeGradient.addColorStop(1, '#3E2723')
+    fringeGradient.addColorStop(0, '#8B7355')  // Softer brown
+    fringeGradient.addColorStop(1, '#6B4423')  // Lighter brown
     ctx.fillStyle = fringeGradient
     
     for (let i = 0; i < canvas.width; i += 12) {
@@ -135,10 +355,10 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
       ctx.fillRect(i + 2, canvas.height - fringeLength - 10, 4, fringeLength + 10)
     }
     
-    // Draw selvedge edges (left and right)
+    // Draw selvedge edges (left and right) - using softer colors to avoid harsh edges
     const selvedgeGradient = ctx.createLinearGradient(0, 0, fringeLength, 0)
-    selvedgeGradient.addColorStop(0, '#5D4037')
-    selvedgeGradient.addColorStop(1, '#3E2723')
+    selvedgeGradient.addColorStop(0, '#8B7355')  // Softer brown
+    selvedgeGradient.addColorStop(1, '#6B4423')  // Lighter brown
     ctx.fillStyle = selvedgeGradient
     
     for (let i = 0; i < canvas.height; i += 15) {
@@ -150,12 +370,16 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
       ctx.fillRect(canvas.width - fringeLength - 5, i + 2, fringeLength + 5, 6)
     }
     
-    // Add fabric texture noise
-    for (let x = 0; x < canvas.width; x += 4) {
-      for (let y = 0; y < canvas.height; y += 4) {
-        const noise = random() * 0.2 - 0.1
-        ctx.fillStyle = `rgba(0, 0, 0, ${Math.abs(noise)})`
-        ctx.fillRect(x, y, 2, 2)
+    // Add subtle fabric texture noise (much more subtle to avoid black bands)
+    for (let x = 0; x < canvas.width; x += 8) {
+      for (let y = 0; y < canvas.height; y += 8) {
+        const noise = random() * 0.1 - 0.05  // Reduced intensity
+        if (Math.abs(noise) > 0.02) {  // Only add noise if it's significant
+          // Use a very light color instead of black
+          const lightness = 0.95 + (noise * 0.1)
+          ctx.fillStyle = `rgba(255, 255, 255, ${Math.abs(noise) * 0.3})`
+          ctx.fillRect(x, y, 1, 1)  // Smaller dots
+        }
       }
     }
     
@@ -164,10 +388,28 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded }: {
     
     console.log('✅ Rug texture generated successfully for seed:', seed)
     
+    // Dispose of old texture to prevent memory leaks and artifacts
+    if (textureRef.current) {
+      textureRef.current.dispose()
+    }
+    
     const texture = new THREE.CanvasTexture(canvas)
     texture.wrapS = texture.wrapT = THREE.RepeatWrapping
+    
+    // Store reference to new texture
+    textureRef.current = texture
+    
     return texture
   }, [seed, dependenciesLoaded])
+
+  // Cleanup textures on unmount
+  useEffect(() => {
+    return () => {
+      if (textureRef.current) {
+        textureRef.current.dispose()
+      }
+    }
+  }, [])
 
   // Advanced cloth physics animation (keeping your existing animation)
   useFrame((state) => {
