@@ -38,20 +38,19 @@ export default function GeneratorPage() {
     }
   }
 
-  // Generate new rug when seed or palette changes
+  // Clean up any existing canvases on mount (from any source)
   useEffect(() => {
-    // Clean up any existing P5.js canvases from old scripts
-    const existingCanvases = document.querySelectorAll('canvas')
-    existingCanvases.forEach(canvas => {
-      if (canvas.id === 'defaultCanvas0' || canvas.id === 'defaultCanvas1') {
-        console.log('🧹 Removing old P5.js canvas:', canvas.id)
-        canvas.remove()
-      }
+    // Clean up Three.js WebGL canvases from AnimatedRugs component
+    const animatedRugsCanvases = document.querySelectorAll('canvas[data-component="animated-rugs"]')
+    animatedRugsCanvases.forEach(canvas => {
+      canvas.remove()
     })
     
-    if (canvasRef.current) {
-      generateRug()
-    }
+    // Also clean up any canvases without IDs that might be from Three.js
+    const unnamedCanvases = document.querySelectorAll('canvas:not([id]):not([data-component])')
+    unnamedCanvases.forEach(canvas => {
+      canvas.remove()
+    })
   }, []) // Empty dependency array - only run once on mount
 
   // Update traits when rug is generated
@@ -62,10 +61,14 @@ export default function GeneratorPage() {
     }
   }, [getTraits])
 
-  // Generate new random seed
+  // Generate new random seed and rug
   const generateNewSeed = () => {
     const newSeed = Math.floor(Math.random() * 1000000)
     setCurrentSeed(newSeed)
+    // Generate rug with the new seed directly
+    if (window.generateDoormatCore) {
+      window.generateDoormatCore(newSeed)
+    }
   }
 
   // Add new text row
@@ -182,7 +185,7 @@ export default function GeneratorPage() {
               <div className="grid md:grid-cols-3 gap-6">
                 {/* Seed Control */}
                 <div className="bg-gray-900 border border-green-500/30 rounded-lg p-4">
-                  <h4 className="text-green-400 font-mono text-sm mb-3">SEED CONTROL</h4>
+                  <h4 className="text-green-400 font-mono text-sm mb-3">RUG GENERATOR</h4>
                   <div className="space-y-3">
                     <div className="text-green-300 font-mono text-xs">
                       Current Seed: <span className="text-yellow-400">{currentSeed}</span>
@@ -190,15 +193,9 @@ export default function GeneratorPage() {
                     <div className="flex gap-2">
                   <button
                         onClick={generateNewSeed}
-                        className="flex-1 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded font-mono text-xs transition-colors"
+                        className="w-full bg-amber-600 hover:bg-amber-700 text-white px-3 py-2 rounded font-mono text-xs transition-colors"
                   >
-                        NEW SEED
-                  </button>
-                  <button
-                        onClick={() => generateRug()}
-                        className="flex-1 bg-amber-600 hover:bg-amber-700 text-white px-3 py-2 rounded font-mono text-xs transition-colors"
-                  >
-                        GENERATE
+                        GENERATE NEW RUG
                   </button>
                     </div>
                   </div>

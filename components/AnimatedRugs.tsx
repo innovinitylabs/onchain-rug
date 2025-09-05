@@ -2,7 +2,7 @@
 
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls, Float, Environment } from '@react-three/drei'
-import { Suspense, useRef, useMemo } from 'react'
+import { Suspense, useRef, useMemo, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
@@ -311,11 +311,38 @@ function Scene() {
 }
 
 export default function AnimatedRugs() {
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  // Check if Three.js canvas already exists before creating
+  useEffect(() => {
+    if (!containerRef.current) return
+    
+    // Check if there's already a Three.js canvas in this container
+    const existingCanvas = containerRef.current.querySelector('canvas[data-component="animated-rugs"]')
+    if (existingCanvas) {
+      console.log('🎯 Three.js canvas already exists in AnimatedRugs container, skipping creation')
+      return
+    }
+    
+    console.log('✅ AnimatedRugs component ready to create Three.js canvas')
+  }, [])
+
   return (
-    <div className="absolute inset-0 w-full h-full">
+    <div ref={containerRef} id="animated-rugs-container" className="absolute inset-0 w-full h-full">
       <Canvas
         camera={{ position: [0, 5, 15], fov: 60 }}
         style={{ background: 'transparent' }}
+        gl={{ 
+          antialias: true,
+          alpha: true,
+          preserveDrawingBuffer: true
+        }}
+        onCreated={({ gl }) => {
+          // Mark this canvas as belonging to AnimatedRugs
+          gl.domElement.setAttribute('data-component', 'animated-rugs')
+          gl.domElement.setAttribute('data-engine', 'three.js')
+          console.log('✅ Three.js canvas created and marked for AnimatedRugs')
+        }}
       >
         <Suspense fallback={null}>
           <Scene />

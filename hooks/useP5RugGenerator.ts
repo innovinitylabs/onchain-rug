@@ -35,9 +35,47 @@ export function useP5RugGenerator(config: RugConfig) {
   // Initialize P5.js sketch
   useEffect(() => {
     if (!canvasRef.current) return
+    
+    // Add wait time to ensure any previous async operations complete
+    const initWithDelay = async () => {
+      // Wait 100ms to let any previous async operations complete
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
+      // ROBUST CHECK: If canvas already exists, don't create another one
+      const existingCanvas = canvasRef.current?.querySelector('canvas[id^="defaultCanvas"]')
+      if (existingCanvas) {
+        console.log(`🎯 P5.js canvas already exists (${existingCanvas.id}), skipping creation`)
+        return
+      }
+      
+      // ROBUST CHECK: If instance already exists, don't create another one
+      if (p5InstanceRef.current) {
+        console.log('🎯 P5.js instance already exists, skipping creation')
+        return
+      }
+      
+      // ROBUST CHECK: Global flag to prevent multiple initializations
+      if ((window as any).p5Initializing) {
+        console.log('🎯 P5.js is already being initialized, skipping creation')
+        return
+      }
+      
+      // Set global flag immediately to prevent race conditions
+      ;(window as any).p5Initializing = true
 
     const initP5 = async () => {
-      const p5 = (await import('p5')).default
+      // Load P5.js from CDN instead of dynamic import
+      if (typeof window.p5 === 'undefined') {
+        await new Promise<void>((resolve, reject) => {
+          const script = document.createElement('script')
+          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js'
+          script.onload = () => resolve()
+          script.onerror = () => reject(new Error('Failed to load P5.js'))
+          document.head.appendChild(script)
+        })
+      }
+      
+      const p5 = window.p5
       
       // Check if scripts are already loaded
       const scriptsLoaded = typeof window.generateDoormatCore === 'function' && 
@@ -45,6 +83,7 @@ export function useP5RugGenerator(config: RugConfig) {
                            typeof window.colorPalettes === 'object'
       
       if (!scriptsLoaded) {
+        console.log('🔄 Scripts not loaded, loading doormat scripts...')
         // Load scripts only if not already loaded
         const loadScript = (src: string): Promise<void> => {
           return new Promise((resolve, reject) => {
@@ -64,15 +103,42 @@ export function useP5RugGenerator(config: RugConfig) {
 
         try {
           await loadScript('/lib/doormat/character-map.js')
+          console.log('✅ character-map.js loaded')
+          
           await loadScript('/lib/doormat/color-palettes.js')
+          console.log('✅ color-palettes.js loaded')
+          
           await loadScript('/lib/doormat/trait-calculator.js')
+          console.log('✅ trait-calculator.js loaded')
+          
           await loadScript('/lib/doormat/doormat.js')
+          console.log('✅ doormat.js loaded')
+          
+          // Wait a bit for scripts to initialize
+          await new Promise(resolve => setTimeout(resolve, 100))
+          
+          // Verify scripts are loaded
+          console.log('🔍 Verifying script loading:')
+          console.log('  - generateDoormatCore:', typeof window.generateDoormatCore)
+          console.log('  - characterMap:', typeof window.characterMap)
+          console.log('  - colorPalettes:', typeof window.colorPalettes)
+          
         } catch (error) {
-          console.error('Failed to load doormat scripts:', error)
+          console.error('❌ Failed to load doormat scripts:', error)
           return
         }
+      } else {
+        console.log('✅ Scripts already loaded, skipping script loading')
       }
 
+      // Verify that doormat functions are available before creating P5.js sketch
+      if (typeof window.generateDoormatCore !== 'function') {
+        console.error('❌ generateDoormatCore function not available, cannot create P5.js sketch')
+        return
+      }
+      
+      console.log('🎨 Creating P5.js sketch...')
+      
       // Now create the P5.js sketch
       const sketch = (p: any) => {
         // Make P5.js functions available globally for doormat.js
@@ -188,17 +254,27 @@ export function useP5RugGenerator(config: RugConfig) {
       }
 
       p5InstanceRef.current = new p5(sketch, canvasRef.current!)
+      console.log('✅ P5.js instance created successfully')
     }
 
     initP5()
+    }
+    
+    // Call the delayed initialization
+    initWithDelay()
 
     return () => {
+      // SIMPLE CLEANUP: Only clean up our own instance
       if (p5InstanceRef.current) {
+        console.log('🧹 Cleaning up P5.js instance')
         p5InstanceRef.current.remove()
         p5InstanceRef.current = null
       }
+      
+      // Clear global flag
+      ;(window as any).p5Initializing = false
     }
-  }, []) // Remove dependencies to prevent infinite re-renders
+  }, [config.seed]) // Only re-run if seed changes
 
   // Generate from seed function (memoized to prevent infinite loops)
   const generateFromSeed = useCallback((seed: number) => {
