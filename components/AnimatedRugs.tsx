@@ -1,7 +1,7 @@
 'use client'
 
 import { Canvas } from '@react-three/fiber'
-import { OrbitControls, Float, Text3D, Environment } from '@react-three/drei'
+import { OrbitControls, Float, Environment } from '@react-three/drei'
 import { Suspense, useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
@@ -105,7 +105,6 @@ function FlyingRug({ position, scale = 1, color = '#8B4513', pattern = 'stripes'
       }
       
       // Advanced cloth simulation with multiple wave patterns
-      const segments = 32
       for (let i = 0; i < positions.count; i++) {
         const x = positions.getX(i)
         const y = positions.getY(i)
@@ -216,8 +215,8 @@ function FloatingParticles() {
       <bufferGeometry>
         <bufferAttribute
           attach="attributes-position"
+          args={[new Float32Array(particles.flat()), 3]}
           count={particles.length}
-          array={new Float32Array(particles.flat())}
           itemSize={3}
         />
       </bufferGeometry>
@@ -286,8 +285,8 @@ function Scene() {
           <bufferGeometry>
             <bufferAttribute
               attach="attributes-position"
+              args={[new Float32Array(Array.from({length: 600}, () => (Math.random() - 0.5) * 100)), 3]}
               count={200}
-              array={new Float32Array(Array.from({length: 600}, () => (Math.random() - 0.5) * 100))}
               itemSize={3}
             />
           </bufferGeometry>

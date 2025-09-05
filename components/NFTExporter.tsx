@@ -3,14 +3,12 @@ import React, { useState } from 'react';
 interface NFTExporterProps {
   currentSeed: number;
   currentPalette: any;
-  currentStripeData: any[];
   textRows: string[];
 }
 
 const NFTExporter: React.FC<NFTExporterProps> = ({
   currentSeed,
   currentPalette,
-  currentStripeData,
   textRows
 }) => {
   const [isExporting, setIsExporting] = useState(false);
@@ -18,7 +16,6 @@ const NFTExporter: React.FC<NFTExporterProps> = ({
   // Add default values and null checks
   const safeSeed = currentSeed || 42;
   const safePalette = currentPalette || { name: 'Default', colors: ['#000000', '#FFFFFF'] };
-  const safeStripeData = currentStripeData || [];
   const safeTextRows = textRows || [];
 
   const exportNFT = async () => {

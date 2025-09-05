@@ -2,8 +2,7 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Wallet, ArrowLeft, Zap, Shield, Heart, Star } from 'lucide-react'
-import Link from 'next/link'
+import { Wallet, Zap, Shield, Heart, Star } from 'lucide-react'
 import Navigation from '@/components/Navigation'
 
 export default function MintPage() {
