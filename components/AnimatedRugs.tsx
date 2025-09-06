@@ -770,21 +770,23 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
     })
 
     // --- Accurate text color using P5.js palette lerpColor logic ---
-    // Determine darkest and lightest colors in the palette (declare only once)
-    let darkest = aniSelectedPalette.colors[0];
-    let lightest = aniSelectedPalette.colors[0];
-    let darkestVal = 999, lightestVal = -1;
+    // Determine darkest and lightest colors in the palette
+    let darkest = aniSelectedPalette.colors[0]
+    let lightest = aniSelectedPalette.colors[0]
+    let darkestVal = 999, lightestVal = -1
+
     aniSelectedPalette.colors.forEach((hex: string) => {
-      const c = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      const c = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
       if (c) {
-        const r = parseInt(c[1], 16);
-        const g = parseInt(c[2], 16);
-        const b = parseInt(c[3], 16);
-        const brightness = (r + g + b) / 3;
-        if (brightness < darkestVal) { darkestVal = brightness; darkest = hex; }
-        if (brightness > lightestVal) { lightestVal = brightness; lightest = hex; }
+        const r = parseInt(c[1], 16)
+        const g = parseInt(c[2], 16)
+        const b = parseInt(c[3], 16)
+        const brightness = (r + g + b)/3
+        if (brightness < darkestVal) { darkestVal = brightness; darkest = hex }
+        if (brightness > lightestVal) { lightestVal = brightness; lightest = hex }
       }
-    });
+    })
+
     // Slightly adjust colors like doormat.js
     function lerpColorP5(hexA: string, hexB: string, t: number) {
       const hexToRgb = (h: string) => {
@@ -800,17 +802,20 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
       const b = c1.b + (c2.b - c1.b) * t
       return rgbToHex(r, g, b)
     }
-    const lightTextColor = lerpColorP5(lightest, '#ffffff', 0.3);
-    const darkTextColor = lerpColorP5(darkest, '#000000', 0.4);
+
+    const lightTextColor = lerpColorP5(lightest, '#ffffff', 0.3)
+    const darkTextColor = lerpColorP5(darkest, '#000000', 0.4)
 
     // Use deterministic word selection
     const aniSelectedWord = isFirstRug
       ? 'WELCOME'
-      : rugWords[aniRandom.nextInt(0, rugWords.length)];
-    const aniTextData = generateTextDataForRug(aniSelectedWord, 800, doormatHeight, fringeLength);
+      : rugWords[aniRandom.nextInt(0, rugWords.length)]
+    const aniTextData = generateTextDataForRug(aniSelectedWord, 800, doormatHeight, fringeLength)
 
     // --- Draw text with per-pixel coloring and shadow using doormat.js logic ---
-    // Reuse darkest and lightest variables above, do not redeclare
+    // Use the already determined darkest and lightest colors from above
+    // Use the already declared lightTextColor and darkTextColor from above
+
     aniTextData.forEach((pixel: any) => {
       const finalX = pixel.x + offsetX;
       const finalY = pixel.y + offsetY;
@@ -841,14 +846,12 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
     const perlin = makePerlin(seed)
     // Save state
     ctx.save()
-    // Texture overlay with multiply blend
-    ctx.globalCompositeOperation = 'multiply'
-    // Only apply overlays to main doormat area (clip to doormat, not fringe)
+    // Texture overlay with multiply blend, CLIPPED to doormat area only
     ctx.save()
     ctx.beginPath()
     ctx.rect(offsetX, offsetY, 800, doormatHeight)
     ctx.clip()
-    // Noise overlay
+    ctx.globalCompositeOperation = 'multiply'
     for (let x = offsetX; x < offsetX + 800; x += 2) {
       for (let y = offsetY; y < offsetY + doormatHeight; y += 2) {
         // P5.js: noise(x*0.02, y*0.02), map to [0,50] alpha
@@ -859,7 +862,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
         ctx.fillRect(x, y, 2, 2)
       }
     }
-    // Relief overlay (P5.js logic)
+    // Relief overlay (P5.js logic), CLIPPED to doormat area only
     for (let x = offsetX; x < offsetX + 800; x += 6) {
       for (let y = offsetY; y < offsetY + doormatHeight; y += 6) {
         const reliefNoise = perlin(x * 0.03, y * 0.03)
@@ -872,8 +875,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
         }
       }
     }
-    ctx.restore()
-    // Restore blend mode
+    // Restore blend mode and clipping
     ctx.globalCompositeOperation = 'source-over'
     ctx.restore()
 
