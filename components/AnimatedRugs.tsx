@@ -586,8 +586,8 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
   const generateTextDataForRug = (text: string, doormatWidth: number, doormatHeight: number, fringeLength: number) => {
     if (!aniCharacterMap) return []
 
-    // Set up doormatTextRows for your proper text algorithm
-    const textRows = [text.toUpperCase()]
+    // Set up doormatTextRows for your proper text algorithm (multi-line like doormat.js)
+    const textRows = text.split(' ').map(word => word.toUpperCase())
 
     // Use your actual thread spacing from the generator
     const animWarpThickness = 2
@@ -681,7 +681,67 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
     return pixels
   }
 
-  // Create rug texture using your P5.js generator logic
+  // --- P5.js-style Perlin noise implementation for overlays ---
+  // Adapted from https://github.com/processing/p5.js/blob/main/src/math/noise.js
+  function makePerlin(seed: number) {
+    // Perlin noise permutation table
+    let p = new Uint8Array(512)
+    let permutation = new Uint8Array(256)
+    // Deterministic shuffle
+    let rand = new AniSeededRandom(seed)
+    for (let i = 0; i < 256; i++) permutation[i] = i
+    for (let i = 255; i > 0; i--) {
+      let j = Math.floor(rand.next() * (i + 1))
+      let temp = permutation[i]; permutation[i] = permutation[j]; permutation[j] = temp
+    }
+    for (let i = 0; i < 512; i++) p[i] = permutation[i & 255]
+    function fade(t: number) { return t * t * t * (t * (t * 6 - 15) + 10) }
+    function lerp(a: number, b: number, t: number) { return a + t * (b - a) }
+    function grad(hash: number, x: number, y: number) {
+      // 2D gradients
+      const h = hash & 3
+      const u = h < 2 ? x : y
+      const v = h < 2 ? y : x
+      return ((h & 1) === 0 ? u : -u) + ((h & 2) === 0 ? v : -v)
+    }
+    // 2D Perlin noise
+    return function perlin2(x: number, y: number) {
+      let X = Math.floor(x) & 255
+      let Y = Math.floor(y) & 255
+      x -= Math.floor(x)
+      y -= Math.floor(y)
+      let u = fade(x)
+      let v = fade(y)
+      let aa = p[p[X] + Y]
+      let ab = p[p[X] + Y + 1]
+      let ba = p[p[X + 1] + Y]
+      let bb = p[p[X + 1] + Y + 1]
+      return lerp(
+        lerp(grad(aa, x, y), grad(ba, x - 1, y), u),
+        lerp(grad(ab, x, y - 1), grad(bb, x - 1, y - 1), u),
+        v
+      ) * 0.5 + 0.5
+    }
+  }
+
+  // P5.js-style lerpColor for text
+  function lerpColorHex(hexA: string, hexB: string, amt: number) {
+    // Accepts hex strings, amt in [0,1]
+    function hexToRgbObj(hex: string) {
+      const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+      return m
+        ? { r: parseInt(m[1], 16), g: parseInt(m[2], 16), b: parseInt(m[3], 16) }
+        : { r: 0, g: 0, b: 0 }
+    }
+    const a = hexToRgbObj(hexA)
+    const b = hexToRgbObj(hexB)
+    const r = Math.round(a.r + (b.r - a.r) * amt)
+    const g = Math.round(a.g + (b.g - a.g) * amt)
+    const b_ = Math.round(a.b + (b.b - a.b) * amt)
+    return `rgb(${r},${g},${b_})`
+  }
+
+  // Create rug texture using your P5.js generator logic, with P5.js-accurate overlays
   const createRugTexture = () => {
     if (typeof window === 'undefined' || !dependenciesLoaded) {
       return null
@@ -690,114 +750,154 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
     // Create canvas with your generator dimensions
     const canvas = document.createElement('canvas')
     const ctx = canvas.getContext('2d', { willReadFrequently: true })!
-
-    // Set canvas size to match your generator
     const doormatHeight = 1200
     const fringeLength = 30
-
-    // Use the same canvas dimensions as your generator (NO swapping needed)
     canvas.width = 800 + (fringeLength * 4)
     canvas.height = doormatHeight + (fringeLength * 4)
-
-    // CRITICAL: Clear the entire canvas completely before drawing
     ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-    // NO BACKGROUND FILL - Keep canvas transparent for animation
-
-    // Only use local ani* generator logic (no window.* or P5.js globals)
-    // Use deterministic seeded random generator for rug features
-    const aniRandom = new AniSeededRandom(seed);
-
-    // Get palette and generate colors
+    const aniRandom = new AniSeededRandom(seed)
     const aniColorPalettes = localColorPalettes || [
       { name: 'Default', colors: ['#8B4513', '#D2691E', '#A0522D', '#CD853F', '#DEB887'] }
     ]
     const aniSelectedPalette = aniColorPalettes[seed % aniColorPalettes.length]
-
-    // Generate stripe data EXACTLY like your generator, using seeded random
     const aniStripeData = generateAniStripeData(aniSelectedPalette, doormatHeight, () => aniRandom.next())
-
-    // Calculate center offset to position rug content in the middle of canvas
     const offsetX = fringeLength * 2
     const offsetY = fringeLength * 2
-
-    // NO BASE BACKGROUND - Keep transparent for animation
-
-    // Draw selvedge edge rectangles and woven effect (before stripes)
-    drawAniSelvedgeEdges(ctx, aniStripeData, 800, doormatHeight, () => aniRandom.next(), offsetX, offsetY);
-    // Draw stripes with proper weaving structure (centered)
+    drawAniSelvedgeEdges(ctx, aniStripeData, 800, doormatHeight, () => aniRandom.next(), offsetX, offsetY)
     aniStripeData.forEach(stripe => {
       drawAniStripe(ctx, stripe, 800, doormatHeight, () => aniRandom.next(), offsetX, offsetY)
     })
 
-    // Use local text generation logic
-    // Use deterministic seeded random for word selection as well (for full determinism)
+    // --- Accurate text color using P5.js palette lerpColor logic ---
+    // Determine darkest and lightest colors in the palette (declare only once)
+    let darkest = aniSelectedPalette.colors[0];
+    let lightest = aniSelectedPalette.colors[0];
+    let darkestVal = 999, lightestVal = -1;
+    aniSelectedPalette.colors.forEach((hex: string) => {
+      const c = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      if (c) {
+        const r = parseInt(c[1], 16);
+        const g = parseInt(c[2], 16);
+        const b = parseInt(c[3], 16);
+        const brightness = (r + g + b) / 3;
+        if (brightness < darkestVal) { darkestVal = brightness; darkest = hex; }
+        if (brightness > lightestVal) { lightestVal = brightness; lightest = hex; }
+      }
+    });
+    // Slightly adjust colors like doormat.js
+    function lerpColorP5(hexA: string, hexB: string, t: number) {
+      const hexToRgb = (h: string) => {
+        const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(h)
+        return m ? { r: parseInt(m[1],16), g: parseInt(m[2],16), b: parseInt(m[3],16) } : { r:0,g:0,b:0 }
+      }
+      const rgbToHex = (r: number, g: number, b: number) =>
+        `#${Math.round(r).toString(16).padStart(2,'0')}${Math.round(g).toString(16).padStart(2,'0')}${Math.round(b).toString(16).padStart(2,'0')}`
+      const c1 = hexToRgb(hexA)
+      const c2 = hexToRgb(hexB)
+      const r = c1.r + (c2.r - c1.r) * t
+      const g = c1.g + (c2.g - c1.g) * t
+      const b = c1.b + (c2.b - c1.b) * t
+      return rgbToHex(r, g, b)
+    }
+    const lightTextColor = lerpColorP5(lightest, '#ffffff', 0.3);
+    const darkTextColor = lerpColorP5(darkest, '#000000', 0.4);
+
+    // Use deterministic word selection
     const aniSelectedWord = isFirstRug
       ? 'WELCOME'
-      : rugWords[aniRandom.nextInt(0, rugWords.length)]
-    // Set up text data using local character map and generator
-    const aniTextData = generateTextDataForRug(aniSelectedWord, 800, doormatHeight, fringeLength)
+      : rugWords[aniRandom.nextInt(0, rugWords.length)];
+    const aniTextData = generateTextDataForRug(aniSelectedWord, 800, doormatHeight, fringeLength);
 
-    // Draw the text pixels using your generator's EXACT positioning (no manual rotation)
-    if (aniTextData.length > 0) {
-      aniTextData.forEach((pixel: any) => {
-        const finalX = pixel.x + offsetX
-        const finalY = pixel.y + offsetY
-        // Use local text colors instead of window globals
-        const lightTextColor = '#FFFFFF';
-        const darkTextColor = '#000000';
-        let textColor = '#FFFFFF'
-        if (lightTextColor && darkTextColor) {
-          const imageData = ctx.getImageData(finalX, finalY, 1, 1)
-          const r = imageData.data[0]
-          const g = imageData.data[1]
-          const b = imageData.data[2]
-          const bgBrightness = (r + g + b) / 3
-          textColor = bgBrightness < 128 ? lightTextColor : darkTextColor
-        } else {
-          // fallback to palette
-          const imageData = ctx.getImageData(finalX, finalY, 1, 1)
-          const r = imageData.data[0]
-          const g = imageData.data[1]
-          const b = imageData.data[2]
-          const bgBrightness = (r + g + b) / 3
-          textColor = getDynamicTextColor(bgBrightness, aniSelectedPalette)
-        }
-        ctx.fillStyle = textColor
-        ctx.fillRect(finalX, finalY, pixel.width, pixel.height)
-      })
+    // --- Draw text with per-pixel coloring and shadow using doormat.js logic ---
+    // Reuse darkest and lightest variables above, do not redeclare
+    aniTextData.forEach((pixel: any) => {
+      const finalX = pixel.x + offsetX;
+      const finalY = pixel.y + offsetY;
+      // Determine the stripe corresponding to this pixel
+      const stripe = aniStripeData.find(
+        str => finalY - offsetY >= str.y && finalY - offsetY < str.y + str.height
+      ) || aniStripeData[0];
+      // Get stripe base color
+      const stripeRgb = hexToRgb(stripe.primaryColor);
+      const bgBrightness = (stripeRgb.r + stripeRgb.g + stripeRgb.b) / 3;
+      // Per-pixel text color: blend with palette lightest/darkest and white/black as in doormat.js
+      let textColor: string;
+      if (bgBrightness < 128) {
+        textColor = lerpColorP5(lightest, '#ffffff', 0.3);
+      } else {
+        textColor = lerpColorP5(darkest, '#000000', 0.4);
+      }
+      // Draw shadow first (as in doormat.js)
+      ctx.fillStyle = 'rgba(0,0,0,0.47)';
+      ctx.fillRect(finalX - 1, finalY - 1, pixel.width + 2, pixel.height + 2);
+      // Draw text pixel
+      ctx.fillStyle = textColor;
+      ctx.fillRect(finalX, finalY, pixel.width, pixel.height);
+    });
+
+    // --- P5.js-accurate texture overlays using Perlin noise and multiply blend ---
+    // Perlin noise seeded by rug seed
+    const perlin = makePerlin(seed)
+    // Save state
+    ctx.save()
+    // Texture overlay with multiply blend
+    ctx.globalCompositeOperation = 'multiply'
+    // Only apply overlays to main doormat area (clip to doormat, not fringe)
+    ctx.save()
+    ctx.beginPath()
+    ctx.rect(offsetX, offsetY, 800, doormatHeight)
+    ctx.clip()
+    // Noise overlay
+    for (let x = offsetX; x < offsetX + 800; x += 2) {
+      for (let y = offsetY; y < offsetY + doormatHeight; y += 2) {
+        // P5.js: noise(x*0.02, y*0.02), map to [0,50] alpha
+        const noiseVal = perlin(x * 0.02, y * 0.02)
+        const alpha = Math.round(noiseVal * 50)
+        // Use black with alpha (as in P5.js)
+        ctx.fillStyle = `rgba(0,0,0,${alpha / 255})`
+        ctx.fillRect(x, y, 2, 2)
+      }
     }
+    // Relief overlay (P5.js logic)
+    for (let x = offsetX; x < offsetX + 800; x += 6) {
+      for (let y = offsetY; y < offsetY + doormatHeight; y += 6) {
+        const reliefNoise = perlin(x * 0.03, y * 0.03)
+        if (reliefNoise > 0.6) {
+          ctx.fillStyle = `rgba(255,255,255,0.098)` // 25/255 ≈ 0.098
+          ctx.fillRect(x, y, 6, 6)
+        } else if (reliefNoise < 0.4) {
+          ctx.fillStyle = `rgba(0,0,0,0.078)` // 20/255 ≈ 0.078
+          ctx.fillRect(x, y, 6, 6)
+        }
+      }
+    }
+    ctx.restore()
+    // Restore blend mode
+    ctx.globalCompositeOperation = 'source-over'
+    ctx.restore()
 
     // Draw proper fringe and selvedge as part of the art (EXACTLY like your generator)
     drawAniFringe(ctx, aniStripeData, 800, doormatHeight, fringeLength, () => aniRandom.next(), offsetX, offsetY)
 
-    // Add subtle fabric texture noise (much more subtle to avoid black bands)
-    for (let x = 0; x < canvas.width; x += 8) {
-      for (let y = 0; y < canvas.height; y += 8) {
-        const noise = Math.random() * 0.1 - 0.05  // Reduced intensity
-        if (Math.abs(noise) > 0.02) {  // Only add noise if it's significant
-          ctx.fillStyle = `rgba(255, 255, 255, ${Math.abs(noise) * 0.3})`
-          ctx.fillRect(x, y, 1, 1)
-        }
-      }
-    }
+    // Subtle extra fabric noise (optional, can keep or remove)
+    // for (let x = 0; x < canvas.width; x += 8) {
+    //   for (let y = 0; y < canvas.height; y += 8) {
+    //     const noise = Math.random() * 0.1 - 0.05
+    //     if (Math.abs(noise) > 0.02) {
+    //       ctx.fillStyle = `rgba(255, 255, 255, ${Math.abs(noise) * 0.3})`
+    //       ctx.fillRect(x, y, 1, 1)
+    //     }
+    //   }
+    // }
 
-    // Store canvas reference for potential updates
     canvasRef.current = canvas
-
-    // Rug texture generated successfully
-
-    // Dispose of old texture to prevent memory leaks and artifacts
     if (textureRef.current) {
       textureRef.current.dispose()
     }
-
     const texture = new THREE.CanvasTexture(canvas)
     texture.wrapS = texture.wrapT = THREE.RepeatWrapping
-
-    // Store reference to new texture
     textureRef.current = texture
-
     return texture
   }
 
