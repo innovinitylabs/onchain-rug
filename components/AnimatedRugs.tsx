@@ -79,6 +79,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
   const initialPositions = useRef<Float32Array | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const textureRef = useRef<THREE.CanvasTexture | null>(null)
+  const startTimeRef = useRef<number | null>(null)
   
   // Your curated word list for the flying rugs
   // NOTE: First rug (isFirstRug=true) always shows WELCOME (hardcoded), other rugs randomly select from this array
@@ -1509,7 +1510,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
   }
 
   // Create rug texture using your P5.js generator logic, with P5.js-accurate overlays
-  const createRugTexture = () => {
+  const createRugTexture = (currentTime: number = 0) => {
     if (typeof window === 'undefined' || !dependenciesLoaded) {
       return null
     }
@@ -1609,56 +1610,66 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
     });
 
     // --- P5.js-accurate texture overlays using Perlin noise and multiply blend ---
-    // Perlin noise seeded by rug seed
-    const perlin = makePerlin(seed)
-    // Save state
-    ctx.save()
-    // Texture overlay with multiply blend, CLIPPED to doormat area only
-    ctx.save()
-    ctx.beginPath()
-    ctx.rect(offsetX, offsetY, 800, doormatHeight)
-    ctx.clip()
-    ctx.globalCompositeOperation = 'multiply'
-    for (let x = offsetX; x < offsetX + 800; x += 2) {
-      for (let y = offsetY; y < offsetY + doormatHeight; y += 2) {
-        // P5.js: noise(x*0.02, y*0.02), map to [0,50] alpha
-        const noiseVal = perlin(x * 0.02, y * 0.02)
-        const alpha = Math.round(noiseVal * 50)
-        // Use black with alpha (as in P5.js)
-        ctx.fillStyle = `rgba(0,0,0,${alpha / 255})`
-        ctx.fillRect(x, y, 2, 2)
-      }
-    }
-    // Relief overlay (P5.js logic), CLIPPED to doormat area only
-    for (let x = offsetX; x < offsetX + 800; x += 6) {
-      for (let y = offsetY; y < offsetY + doormatHeight; y += 6) {
-        const reliefNoise = perlin(x * 0.03, y * 0.03)
-        if (reliefNoise > 0.6) {
-          ctx.fillStyle = `rgba(255,255,255,0.098)` // 25/255 ≈ 0.098
-          ctx.fillRect(x, y, 6, 6)
-        } else if (reliefNoise < 0.4) {
-          ctx.fillStyle = `rgba(0,0,0,0.078)` // 20/255 ≈ 0.078
-          ctx.fillRect(x, y, 6, 6)
+    // Simple on/off switch: no texture for 1 minute, then full texture appears
+    const textureDelay = 120000 // 60 seconds (1 minute) delay
+    const textureOpacity = currentTime >= textureDelay ? 1 : 0
+    
+    if (textureOpacity > 0) {
+      // Perlin noise seeded by rug seed
+      const perlin = makePerlin(seed)
+      // Save state
+      ctx.save()
+      // Texture overlay with multiply blend, CLIPPED to doormat area only
+      ctx.save()
+      ctx.beginPath()
+      ctx.rect(offsetX, offsetY, 800, doormatHeight)
+      ctx.clip()
+      ctx.globalCompositeOperation = 'multiply'
+      for (let x = offsetX; x < offsetX + 800; x += 2) {
+        for (let y = offsetY; y < offsetY + doormatHeight; y += 2) {
+          // P5.js: noise(x*0.02, y*0.02), map to [0,50] alpha
+          const noiseVal = perlin(x * 0.02, y * 0.02)
+          const baseAlpha = Math.round(noiseVal * 50)
+          // Apply animated opacity to the base alpha
+          const animatedAlpha = (baseAlpha * textureOpacity) / 255
+          // Use black with animated alpha (as in P5.js)
+          ctx.fillStyle = `rgba(0,0,0,${animatedAlpha})`
+          ctx.fillRect(x, y, 2, 2)
         }
       }
-    }
-    // Restore blend mode and clipping
-    ctx.globalCompositeOperation = 'source-over'
-    ctx.restore()
+      // Relief overlay (P5.js logic), CLIPPED to doormat area only
+      for (let x = offsetX; x < offsetX + 800; x += 6) {
+        for (let y = offsetY; y < offsetY + doormatHeight; y += 6) {
+          const reliefNoise = perlin(x * 0.03, y * 0.03)
+          if (reliefNoise > 0.6) {
+            // Apply animated opacity to relief highlights
+            ctx.fillStyle = `rgba(255,255,255,${0.098 * textureOpacity})` // 25/255 ≈ 0.098
+            ctx.fillRect(x, y, 6, 6)
+          } else if (reliefNoise < 0.4) {
+            // Apply animated opacity to relief shadows
+            ctx.fillStyle = `rgba(0,0,0,${0.078 * textureOpacity})` // 20/255 ≈ 0.078
+            ctx.fillRect(x, y, 6, 6)
+          }
+        }
+      }
+      // Restore blend mode and clipping
+      ctx.globalCompositeOperation = 'source-over'
+      ctx.restore()
+      }
       
       // Draw proper fringe and selvedge as part of the art (EXACTLY like your generator)
     drawAniFringe(ctx, aniStripeData, 800, doormatHeight, fringeLength, () => aniRandom.next(), offsetX, offsetY)
 
     // Subtle extra fabric noise (optional, can keep or remove)
-    // for (let x = 0; x < canvas.width; x += 8) {
-    //   for (let y = 0; y < canvas.height; y += 8) {
-    //     const noise = Math.random() * 0.1 - 0.05
-    //     if (Math.abs(noise) > 0.02) {
-    //       ctx.fillStyle = `rgba(255, 255, 255, ${Math.abs(noise) * 0.3})`
-    //       ctx.fillRect(x, y, 1, 1)
-    //     }
-    //   }
-    // }
+    for (let x = 0; x < canvas.width; x += 8) {
+      for (let y = 0; y < canvas.height; y += 8) {
+        const noise = Math.random() * 0.1 - 0.05
+        if (Math.abs(noise) > 0.02) {
+          ctx.fillStyle = `rgba(255, 255, 255, ${Math.abs(noise) * 0.3})`
+          ctx.fillRect(x, y, 1, 1)
+        }
+      }
+    }
 
     // --- 180-degree rotation before creating the THREE.CanvasTexture ---
     ctx.save()
@@ -1744,13 +1755,29 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
       groupRef.current.rotation.y = Math.sin(time * 0.3) * 0.15 + Math.cos(time * 0.5) * 0.05
       groupRef.current.rotation.x = Math.sin(time * 0.4) * 0.08 + Math.cos(time * 0.7) * 0.03
       groupRef.current.rotation.z = Math.sin(time * 0.2) * 0.05
+      
+      // Initialize start time on first frame
+      if (startTimeRef.current === null) {
+        startTimeRef.current = time * 1000 // Convert to milliseconds
+      }
+      
+      // Calculate elapsed time since start
+      const elapsedTime = (time * 1000) - startTimeRef.current
+      
+      // Texture will appear automatically when elapsedTime >= textureDelay
+      // No need for periodic updates - it happens naturally when condition is met
     }
   })
 
   // Don't render until dependencies are loaded
-  const rugTexture = createRugTexture()
+  const rugTexture = createRugTexture(0) // Start with no texture overlay
   if (!dependenciesLoaded || !rugTexture) {
     return null
+  }
+  
+  // Store texture reference for updates
+  if (!textureRef.current) {
+    textureRef.current = rugTexture
   }
 
   return (
@@ -1759,7 +1786,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
         <mesh ref={rugRef} rotation={[-Math.PI / 2, 0, 0]} castShadow receiveShadow>
           <planeGeometry args={[5, 7, 48, 48]} />
           <meshStandardMaterial 
-            map={rugTexture} 
+            map={textureRef.current} 
             side={THREE.DoubleSide}
             transparent
             opacity={0.95}
