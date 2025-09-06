@@ -11,6 +11,7 @@ export default function Home() {
   return (
     <main className="bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 min-h-screen">
       <Navigation />
+
       {/* Hero Section with 3D Flying Rugs */}
       <section className="relative h-screen overflow-hidden">
         <Suspense fallback={<div className="h-screen bg-gradient-to-br from-amber-100 to-orange-100" />}>
