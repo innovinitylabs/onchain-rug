@@ -58,23 +58,27 @@ export default function GeneratorPage() {
     try {
       setIsLoading(true)
       setError('')
-      
+
       // Set loading to false first so canvas renders
       setIsLoading(false)
-      
+
       // Wait for canvas to be available
       let attempts = 0
       while (!canvasRef.current && attempts < 50) {
         await new Promise(resolve => setTimeout(resolve, 100))
         attempts++
       }
-      
+
       // Initialize doormat with canvas
       if (canvasRef.current) {
         await initializeDoormat(canvasRef.current)
+      } else {
+        console.error('❌ Canvas ref is still null after waiting')
+        return
       }
-      
+
       setIsInitialized(true)
+      
       // Generate initial doormat
       generateNewDoormat()
     } catch (err) {
