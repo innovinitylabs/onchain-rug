@@ -105,7 +105,7 @@ export default function GeneratorPage() {
       
       // Update palette
       const currentPalette = getCurrentPalette()
-      setPalette(currentPalette || '')
+      setPalette(currentPalette?.name || '')
       
       // Update traits
       const newTraits = calculateTraits()

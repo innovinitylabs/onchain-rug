@@ -7,53 +7,7 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
 // Import P5.js functions from your generator
-declare global {
-  interface Window {
-    DOORMAT_CONFIG: any
-    stripeData: any[]
-    characterMap: any
-    colorPalettes: any[]
-    selectedPalette: any
-    warpThickness: number
-    generateDoormatCore: (seed: number) => void
-    drawTexturedSelvedgeArc: (centerX: number, centerY: number, radius: number, startAngle: number, endAngle: number, r: number, g: number, b: number, side: string) => void
-    doormatTextRows: string[]
-    generateTextDataInSketch?: () => void
-    textData?: Array<{x: number, y: number, width: number, height: number}>
-    lightTextColor?: any
-    darkTextColor?: any
-    // P5.js functions that need to be mocked
-    randomSeed: (seed: number) => () => number
-    noise: (x: number) => number
-    noiseSeed: (seed: number) => void
-    random: (min?: number | any[], max?: number) => any
-    color: (r: number | string, g?: number, b?: number, a?: number) => any
-    red: (c: any) => number
-    green: (c: any) => number
-    blue: (c: any) => number
-    lerpColor: (c1: any, c2: any, amt: number) => any
-    constrain: (n: number, low: number, high: number) => number
-    max: (...args: number[]) => number
-    min: (...args: number[]) => number
-    floor: (x: number) => number
-    cos: (x: number) => number
-    sin: (x: number) => number
-    fill: (r: number, g?: number, b?: number, a?: number) => void
-    noStroke: () => void
-    noFill: () => void
-    background: (r: number, g?: number, b?: number, a?: number) => void
-    arc: (x: number, y: number, w: number, h: number, start: number, stop: number) => void
-    ellipse: (x: number, y: number, w: number, h: number) => void
-    beginShape: () => void
-    vertex: (x: number, y: number) => void
-    endShape: () => void
-    strokeWeight: (weight: number) => void
-    noLoop: () => void
-    createCanvas: (w: number, h: number) => any
-    redraw: () => void
-    PI: number
-  }
-}
+// Global declarations removed - now using ES modules
 
 // Helper function to convert hex to RGB (matches your generator's color logic)
 const hexToRgb = (hex: string) => {
@@ -206,8 +160,8 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
   
   // Sophisticated fringe and selvedge drawing function (EXACT COPY of your generator)
   const drawFringeAndSelvedge = (ctx: CanvasRenderingContext2D, stripeData: any[], doormatWidth: number, doormatHeight: number, fringeLength: number, random: () => number, offsetX: number, offsetY: number) => {
-    const warpThickness = window.warpThickness || 2
-    const weftThickness = window.DOORMAT_CONFIG?.WEFT_THICKNESS || 8
+    const warpThickness = 2
+    const weftThickness = 8
     
     // Draw sophisticated fringe sections (EXACT COPY of your drawFringeSection)
     drawFringeSection(ctx, offsetX, offsetY, doormatWidth, fringeLength, 'top', random, fringeLength, stripeData)
@@ -459,8 +413,8 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
   
   // Stripe drawing function with proper weaving (EXACTLY like your generator)
   const drawStripeWithWeaving = (ctx: CanvasRenderingContext2D, stripe: any, doormatWidth: number, doormatHeight: number, random: () => number, offsetX: number, offsetY: number) => {
-    const warpThickness = window.warpThickness || 2
-    const weftThickness = window.DOORMAT_CONFIG?.WEFT_THICKNESS || 8
+    const warpThickness = 2
+    const weftThickness = 8
     
     let warpSpacing = warpThickness + 1
     let weftSpacing = weftThickness + 1
@@ -516,8 +470,8 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
     window.doormatTextRows = textRows
     
     // Use your actual thread spacing from the generator
-    const warpThickness = window.warpThickness || 2
-    const weftThickness = window.DOORMAT_CONFIG?.WEFT_THICKNESS || 8
+    const warpThickness = 2
+    const weftThickness = 8
     const TEXT_SCALE = window.DOORMAT_CONFIG?.TEXT_SCALE || 2
     
     // Use your exact spacing calculations
@@ -573,8 +527,8 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
     const pixels: Array<{x: number, y: number, width: number, height: number}> = []
     
     // Use your actual thread spacing
-    const warpThickness = window.warpThickness || 2
-    const weftThickness = window.DOORMAT_CONFIG?.WEFT_THICKNESS || 8
+    const warpThickness = 2
+    const weftThickness = 8
     const TEXT_SCALE = window.DOORMAT_CONFIG?.TEXT_SCALE || 2
     const warpSpacing = warpThickness + 1
     const weftSpacing = weftThickness + 1
