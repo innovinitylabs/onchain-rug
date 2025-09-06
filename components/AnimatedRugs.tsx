@@ -1,5 +1,9 @@
 'use client'
 
+// Global palette tracker to ensure unique palettes for each rug
+let usedPaletteIndices = new Set<number>()
+let shuffledPaletteIndices: number[] = []
+
 // --- ani-seeded RNG utilities ---
 class AniSeededRandom {
   private seed: number;
@@ -39,14 +43,14 @@ const hexToRgb = (hex: string) => {
   } : null
 }
 
-// Helper function to get dynamic text color using your generator's exact logic
+  // Helper function to get dynamic text color using your generator's exact logic
 const getDynamicTextColor = (bgBrightness: number, aniSelectedPalette: any) => {
   if (aniSelectedPalette && aniSelectedPalette.colors) {
     // Find darkest and lightest colors from palette (matching your generator's updateTextColors logic)
     let darkest = aniSelectedPalette.colors[0]
     let lightest = aniSelectedPalette.colors[0]
     let darkestVal = 999, lightestVal = -1
-
+    
     aniSelectedPalette.colors.forEach((hex: string) => {
       const c = hexToRgb(hex)
       if (c) {
@@ -55,7 +59,7 @@ const getDynamicTextColor = (bgBrightness: number, aniSelectedPalette: any) => {
         if (bright > lightestVal) { lightestVal = bright; lightest = hex }
       }
     })
-
+    
     // Use your generator's exact color selection logic
     return bgBrightness < 128 ? lightest : darkest
   }
@@ -63,9 +67,9 @@ const getDynamicTextColor = (bgBrightness: number, aniSelectedPalette: any) => {
 }
 
 // Advanced Flying Rug Component with Your P5.js Generator Logic
-function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstRug = false }: {
-  position: [number, number, number],
-  scale?: number,
+function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstRug = false }: { 
+  position: [number, number, number], 
+  scale?: number, 
   seed?: number,
   dependenciesLoaded: boolean,
   isFirstRug?: boolean
@@ -75,7 +79,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
   const initialPositions = useRef<Float32Array | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const textureRef = useRef<THREE.CanvasTexture | null>(null)
-
+  
   // Your curated word list for the flying rugs
   // NOTE: First rug (isFirstRug=true) always shows WELCOME (hardcoded), other rugs randomly select from this array
   // To add more words: just add them to this array after 'DIAMOND HANDS'
@@ -89,6 +93,30 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
     'DIAMOND HANDS'
   ]
 
+  // Function to get a unique palette index
+  const getUniquePaletteIndex = (totalPalettes: number): number => {
+    // If we've used all palettes, reset and shuffle again
+    if (usedPaletteIndices.size >= totalPalettes) {
+      usedPaletteIndices.clear()
+      shuffledPaletteIndices = []
+    }
+    
+    // If we need to shuffle, create a new shuffled array
+    if (shuffledPaletteIndices.length === 0) {
+      shuffledPaletteIndices = Array.from({ length: totalPalettes }, (_, i) => i)
+      // Fisher-Yates shuffle
+      for (let i = shuffledPaletteIndices.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffledPaletteIndices[i], shuffledPaletteIndices[j]] = [shuffledPaletteIndices[j], shuffledPaletteIndices[i]]
+      }
+    }
+    
+    // Get the next unused palette index
+    const nextIndex = shuffledPaletteIndices[usedPaletteIndices.size]
+    usedPaletteIndices.add(nextIndex)
+    return nextIndex
+  }
+  
   // Stripe generation function EXACTLY like your generator
   const generateStripeDataForRug = (aniSelectedPalette: any, doormatHeight: number, random: () => number) => {
     const stripeData: Array<{
@@ -99,14 +127,14 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
       weaveType: 'solid' | 'textured' | 'mixed',
       warpVariation: number
     }> = []
-
+    
     let totalHeight = doormatHeight
     let currentY = 0
-
+    
     // Decide stripe density pattern for this doormat (EXACTLY like your generator)
     let densityType = random()
     let minHeight, maxHeight
-
+    
     if (densityType < 0.2) {
       // 20% chance: High density (many thin stripes)
       minHeight = 15
@@ -120,7 +148,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
       minHeight = 20
       maxHeight = 80
     }
-
+    
     while (currentY < totalHeight) {
       // Dynamic stripe height based on density type (EXACTLY like your generator)
       let stripeHeight
@@ -141,17 +169,17 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
         // High/Low density: more consistent sizing
         stripeHeight = random() * (maxHeight - minHeight) + minHeight
       }
-
+      
       // Ensure we don't exceed the total height
       if (currentY + stripeHeight > totalHeight) {
         stripeHeight = totalHeight - currentY
       }
-
+      
       // Select colors for this stripe (EXACTLY like your generator)
       let primaryColor = aniSelectedPalette.colors[Math.floor(random() * aniSelectedPalette.colors.length)]
       let hasSecondaryColor = random() < 0.15 // 15% chance of blended colors
       let secondaryColor = hasSecondaryColor ? aniSelectedPalette.colors[Math.floor(random() * aniSelectedPalette.colors.length)] : null
-
+      
       // Determine weave pattern type with weighted probabilities (EXACTLY like your generator)
       let weaveRand = random()
       let weaveType: 'solid' | 'textured' | 'mixed'
@@ -162,7 +190,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
       } else {                        // 20% chance of mixed (most complex)
         weaveType = 'mixed'
       }
-
+      
       stripeData.push({
         y: currentY,
         height: stripeHeight,
@@ -171,71 +199,71 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
         weaveType: weaveType,
         warpVariation: random() * 0.4 + 0.1 // How much the weave varies
       })
-
+      
       currentY += stripeHeight
     }
-
+    
     return stripeData
   }
-
+  
   // Sophisticated fringe and selvedge drawing function (EXACT COPY of your generator)
   const drawFringeAndSelvedge = (ctx: CanvasRenderingContext2D, stripeData: any[], doormatWidth: number, doormatHeight: number, fringeLength: number, random: () => number, offsetX: number, offsetY: number) => {
     const animWarpThickness = 2
     const animWeftThickness = 8
-
+    
     // Draw sophisticated fringe sections (EXACT COPY of your drawFringeSection)
     drawFringeSection(ctx, offsetX, offsetY, doormatWidth, fringeLength, 'top', random, fringeLength, stripeData)
     drawFringeSection(ctx, offsetX, offsetY + doormatHeight, doormatWidth, fringeLength, 'bottom', random, fringeLength, stripeData)
-
+    
     // Draw sophisticated selvedge edges (EXACT COPY of your drawSelvedgeEdges)
     drawSelvedgeEdges(ctx, stripeData, doormatWidth, doormatHeight, fringeLength, random, offsetX, offsetY)
   }
-
+  
   // Sophisticated fringe section drawing (EXACT COPY of your drawFringeSection)
   const drawFringeSection = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, side: string, random: () => number, fringeLength: number, stripeData: any[]) => {
     const fringeStrands = Math.floor(w / 12) // More fringe strands for thinner threads
     const strandWidth = w / fringeStrands
-
+    
     for (let i = 0; i < fringeStrands; i++) {
       const strandX = x + i * strandWidth
-
+      
       // FIXED: Use the rug's actual stripe colors instead of random palette colors
       // Map fringe strand position to corresponding rug stripe for color matching
       const strandPosition = (strandX - x) / w // 0 to 1 across the rug width
       const stripeIndex = Math.floor(strandPosition * stripeData.length)
       const stripe = stripeData[Math.min(stripeIndex, stripeData.length - 1)]
-
+      
       // Get color from the actual rug stripe, with fallback to palette
       let strandColor = stripe?.primaryColor || '#8B4513'
-
+      
       // Handle P5.js color objects (convert to hex)
       if (typeof strandColor === 'object' && strandColor.r !== undefined) {
         strandColor = `#${Math.round(strandColor.r).toString(16).padStart(2, '0')}${Math.round(strandColor.g).toString(16).padStart(2, '0')}${Math.round(strandColor.b).toString(16).padStart(2, '0')}`
       }
-
+      
       // Draw individual fringe strand with thin threads (EXACT COPY of your logic)
       for (let j = 0; j < 12; j++) { // More but thinner threads per strand
         const threadX = strandX + random() * strandWidth / 3 - strandWidth / 6
         const startY = side === 'top' ? y : y
         const endY = side === 'top' ? y - fringeLength : y + fringeLength
-
+        
         // Add natural curl/wave to the fringe with more variation (EXACT COPY)
         const waveAmplitude = random() * 3 + 1
         const waveFreq = random() * 0.6 + 0.2
-
+        
         // Randomize the direction and intensity for each thread (EXACT COPY)
         const direction = random() < 0.5 ? -1 : 1 // Random left or right direction
         const curlIntensity = random() * 1.5 + 0.5
         const threadLength = random() * 0.4 + 0.8 // Vary thread length
-
+        
         // Use darker version of strand color for fringe (EXACT COPY)
         const r = parseInt(strandColor.slice(1, 3), 16) * 0.7
         const g = parseInt(strandColor.slice(3, 5), 16) * 0.7
         const b = parseInt(strandColor.slice(5, 7), 16) * 0.7
-
+        
         ctx.strokeStyle = `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`
         ctx.lineWidth = random() * 0.7 + 0.5 // Vary thread thickness
-
+        
         // Draw curved thread with natural variation (EXACT COPY of your beginShape logic)
         ctx.beginPath()
         for (let t = 0; t <= 1; t += 0.1) {
@@ -247,7 +275,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
           if (random() < 0.3) {
             xOffset += random() * 4 - 2
           }
-
+          
           if (t === 0) {
             ctx.moveTo(threadX + xOffset, yPos)
           } else {
@@ -258,12 +286,12 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
       }
     }
   }
-
+  
   // Sophisticated selvedge edges drawing (EXACT COPY of your drawSelvedgeEdges)
   const drawSelvedgeEdges = (ctx: CanvasRenderingContext2D, stripeData: any[], doormatWidth: number, doormatHeight: number, fringeLength: number, random: () => number, offsetX: number, offsetY: number) => {
     const animWeftThickness = 8
     const animWeftSpacing = animWeftThickness + 1
-
+    
     // Left selvedge edge - flowing semicircular weft threads (EXACT COPY)
     let isFirstWeft = true
     for (let stripe of stripeData) {
@@ -273,44 +301,44 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
           isFirstWeft = false
           continue
         }
-
+        
         // Check if this is the last weft thread (EXACT COPY)
         if (stripe === stripeData[stripeData.length - 1] && y + animWeftSpacing >= stripe.y + stripe.height) {
           continue
         }
-
+        
         // Get the color from the current stripe (EXACT COPY)
         let selvedgeColor = stripe.primaryColor
-
+        
         // Check if there's a secondary color for blending (EXACT COPY)
         if (stripe.secondaryColor && stripe.weaveType === 'mixed') {
           // Blend the colors based on noise for variation (EXACT COPY)
           const blendFactor = random() * 0.5 + 0.5
           selvedgeColor = stripe.secondaryColor // Simplified blending
         }
-
+        
         const r = parseInt(selvedgeColor.slice(1, 3), 16) * 0.8
         const g = parseInt(selvedgeColor.slice(3, 5), 16) * 0.8
         const b = parseInt(selvedgeColor.slice(5, 7), 16) * 0.8
-
+        
         // Draw sophisticated selvedge arc (EXACT COPY of your drawTexturedSelvedgeArc)
         const radius = animWeftThickness * (random() * 0.6 + 1.2)
         // FIXED: Move 2 pixels closer to rug edges to eliminate gaps
         const centerX = offsetX + radius * 0.6 + (random() * 2 - 1) // 2 pixels closer to edge
         const centerY = offsetY + y + animWeftThickness / 2 + (random() * 2 - 1) // Slight vertical variation like your generator
-
+        
         // FIXED: Use EXACT angles from your original P5.js generator
         // Left selvedge: P5.js uses 90° to -90°, Canvas needs 90° to -90° for correct semicircle
         const startAngle = (Math.PI / 2) + (random() * 0.4 - 0.2) // Start from top (90°)
         const endAngle = (-Math.PI / 2) + (random() * 0.4 - 0.2)    // End at bottom (-90°)
-
-
-
+        
+        
+        
         // Draw textured selvedge arc with multiple layers (EXACT COPY) - LEFT SIDE semicircle
         drawTexturedSelvedgeArc(ctx, centerX, centerY, radius, startAngle, endAngle, r, g, b, 'left', random)
       }
     }
-
+    
     // Right selvedge edge - flowing semicircular weft threads (EXACT COPY)
     let isFirstWeftRight = true
     for (let stripe of stripeData) {
@@ -320,65 +348,65 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
           isFirstWeftRight = false
           continue
         }
-
+        
         // Check if this is the last weft thread (EXACT COPY)
         if (stripe === stripeData[stripeData.length - 1] && y + animWeftSpacing >= stripe.y + stripe.height) {
           continue
         }
-
+        
         // Get the color from the current stripe (EXACT COPY)
         let selvedgeColor = stripe.primaryColor
-
+        
         // Check if there's a secondary color for blending (EXACT COPY)
         if (stripe.secondaryColor && stripe.weaveType === 'mixed') {
           // Blend the colors based on noise for variation (EXACT COPY)
           const blendFactor = random() * 0.5 + 0.5
           selvedgeColor = stripe.secondaryColor // Simplified blending
         }
-
+        
         const r = parseInt(selvedgeColor.slice(1, 3), 16) * 0.8
         const g = parseInt(selvedgeColor.slice(3, 5), 16) * 0.8
         const b = parseInt(selvedgeColor.slice(5, 7), 16) * 0.8
-
+        
         // Draw sophisticated selvedge arc (EXACT COPY of your drawTexturedSelvedgeArc)
         const radius = animWeftThickness * (random() * 0.6 + 1.2)
         // FIXED: Move 2 pixels closer to rug edges to eliminate gaps
         const centerX = offsetX + doormatWidth - radius * 0.6 + (random() * 2 - 1) // 2 pixels closer to edge
         const centerY = offsetY + y + animWeftThickness / 2 + (random() * 2 - 1) // Slight vertical variation like your generator
-
+        
         // FIXED: Use EXACT angles from your original P5.js generator
         // Right selvedge: P5.js uses -90° to 90°, Canvas needs -90° to 90° for correct semicircle
         const startAngle = (-Math.PI / 2) + (random() * 0.4 - 0.2) // Start from bottom (-90°)
         const endAngle = (Math.PI / 2) + (random() * 0.4 - 0.2)    // End at top (90°)
-
-
-
+        
+        
+        
         // Draw textured selvedge arc with multiple layers (EXACT COPY) - RIGHT SIDE semicircle
         drawTexturedSelvedgeArc(ctx, centerX, centerY, radius, startAngle, endAngle, r, g, b, 'right', random)
       }
     }
   }
-
+  
   // FIXED: Eliminate transparency gaps by using solid colors and overlapping arcs
   const drawTexturedSelvedgeArc = (ctx: CanvasRenderingContext2D, centerX: number, centerY: number, radius: number, startAngle: number, endAngle: number, r: number, g: number, b: number, side: string, random: () => number) => {
-
-
+    
+    
     // Draw solid base arc first to eliminate gaps
     ctx.fillStyle = `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`
     ctx.beginPath()
     ctx.arc(centerX, centerY, radius * 2, startAngle, endAngle)
     ctx.fill()
-
+    
     // Draw overlapping texture layers with solid colors to prevent gaps
     const threadCount = Math.max(4, Math.floor(radius / 1.5)) // Fewer threads, more overlap
     const threadSpacing = radius / (threadCount + 1) // Ensure overlap
-
+    
     for (let i = 0; i < threadCount; i++) {
       const threadRadius = radius - (i * threadSpacing)
-
+      
       // Create distinct thread colors for visible texture
       let threadR, threadG, threadB
-
+      
       if (i % 2 === 0) {
         // Lighter threads
         threadR = Math.max(0, Math.min(255, r + 20))
@@ -390,55 +418,55 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
         threadG = Math.max(0, Math.min(255, g - 15))
         threadB = Math.max(0, Math.min(255, b - 15))
       }
-
+      
       // Use solid colors to prevent transparency gaps
       ctx.fillStyle = `rgb(${Math.round(threadR)}, ${Math.round(threadG)}, ${Math.round(threadB)})`
-
+      
       // Draw overlapping thread arcs to eliminate gaps
       const threadX = centerX + random() * 1 - 0.5
       const threadY = centerY + random() * 1 - 0.5
-
+      
       ctx.beginPath()
       ctx.arc(threadX, threadY, threadRadius * 2, startAngle, endAngle)
       ctx.fill()
     }
-
+    
     // Add solid detail layers for depth without transparency
     for (let i = 0; i < 2; i++) {
       const detailRadius = radius * (0.4 + i * 0.3)
-
+      
       // Create contrast for visibility
       let detailR = Math.max(0, Math.min(255, r + (i % 2 === 0 ? 15 : -15)))
       let detailG = Math.max(0, Math.min(255, g + (i % 2 === 0 ? 15 : -15)))
       let detailB = Math.max(0, Math.min(255, b + (i % 2 === 0 ? 15 : -15)))
-
+      
       ctx.fillStyle = `rgb(${Math.round(detailR)}, ${Math.round(detailG)}, ${Math.round(detailB)})`
-
+      
       const detailX = centerX + random() * 1 - 0.5
       const detailY = centerY + random() * 1 - 0.5
-
+      
       ctx.beginPath()
       ctx.arc(detailX, detailY, detailRadius * 2, startAngle, endAngle)
       ctx.fill()
     }
-
+    
     // Add solid shadow for depth
     ctx.fillStyle = `rgb(${Math.round(r * 0.7)}, ${Math.round(g * 0.7)}, ${Math.round(b * 0.7)})`
     const shadowOffset = side === 'left' ? 1 : -1
-
+    
     ctx.beginPath()
     ctx.arc(centerX + shadowOffset, centerY + 1, radius * 2, startAngle, endAngle)
     ctx.fill()
   }
-
+  
   // Stripe drawing function with proper weaving (EXACTLY like your generator)
   const drawStripeWithWeaving = (ctx: CanvasRenderingContext2D, stripe: any, doormatWidth: number, doormatHeight: number, random: () => number, offsetX: number, offsetY: number) => {
     const animWarpThickness = 2
     const animWeftThickness = 8
-
+    
     let animWarpSpacing = animWarpThickness + 1
     let animWeftSpacing = animWeftThickness + 1
-
+    
     // Draw warp threads (vertical) as the foundation (EXACTLY like your generator)
     for (let x = 0; x < doormatWidth; x += animWarpSpacing) {
       for (let y = stripe.y; y < stripe.y + stripe.height; y += animWeftSpacing) {
@@ -446,16 +474,16 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
         let r = parseInt(stripe.primaryColor.slice(1, 3), 16) + (random() * 30 - 15)
         let g = parseInt(stripe.primaryColor.slice(3, 5), 16) + (random() * 30 - 15)
         let b = parseInt(stripe.primaryColor.slice(5, 7), 16) + (random() * 30 - 15)
-
+        
         r = Math.max(0, Math.min(255, r))
         g = Math.max(0, Math.min(255, g))
         b = Math.max(0, Math.min(255, b))
-
+        
         ctx.fillStyle = `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`
         ctx.fillRect(x + offsetX, y + offsetY, animWarpThickness, animWeftSpacing)
       }
     }
-
+    
     // Draw weft threads (horizontal) that interlace with warp (EXACTLY like your generator)
     for (let y = stripe.y; y < stripe.y + stripe.height; y += animWeftSpacing) {
       for (let x = 0; x < doormatWidth; x += animWarpSpacing) {
@@ -463,18 +491,18 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
         let r = parseInt(stripe.primaryColor.slice(1, 3), 16) + (random() * 20 - 10)
         let g = parseInt(stripe.primaryColor.slice(3, 5), 16) + (random() * 20 - 10)
         let b = parseInt(stripe.primaryColor.slice(5, 7), 16) + (random() * 20 - 10)
-
+        
         // Add variation based on weave type (EXACTLY like your generator)
         if (stripe.weaveType === 'mixed' && stripe.secondaryColor) {
           r = parseInt(stripe.secondaryColor.slice(1, 3), 16) + (random() * 20 - 10)
           g = parseInt(stripe.secondaryColor.slice(3, 5), 16) + (random() * 20 - 10)
           b = parseInt(stripe.secondaryColor.slice(5, 7), 16) + (random() * 20 - 10)
         }
-
+        
         r = Math.max(0, Math.min(255, r))
         g = Math.max(0, Math.min(255, g))
         b = Math.max(0, Math.min(255, b))
-
+        
         ctx.fillStyle = `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`
         ctx.fillRect(x + offsetX, y + offsetY, animWarpSpacing, animWeftThickness)
       }
@@ -539,17 +567,756 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
 
   // Local color palettes for doormat generation
   const localColorPalettes = [
-    { name: 'Earth Tones', colors: ['#8B4513', '#D2691E', '#CD853F'] },
-    { name: 'Slate Gray', colors: ['#2F4F4F', '#708090', '#A9A9A9'] },
-    { name: 'Crimson', colors: ['#8B0000', '#DC143C', '#FF6347'] },
-    { name: 'Forest Green', colors: ['#006400', '#32CD32', '#90EE90'] },
-    { name: 'Purple', colors: ['#4B0082', '#8A2BE2', '#DA70D6'] },
-    { name: 'Gold', colors: ['#FFD700', '#FFA500', '#FF8C00'] },
-    { name: 'Buddhist', colors: ['#8B4513', '#D2691E', '#CD853F'] },
-    { name: 'Indian Peacock', colors: ['#0066CC', '#FF6B6B', '#4ECDC4'] },
-    { name: 'Tamil Classical', colors: ['#FF8C00', '#FFD700', '#FF6347'] },
-    { name: 'Tamil Nadu Temple', colors: ['#8B0000', '#32CD32', '#FF1493'] }
-  ];
+    // ===== GLOBAL PALETTES (25) =====
+    
+    // Classic Red & Black - most common doormat colors
+    {
+        name: "Classic Red & Black",
+        colors: [
+            '#8B0000', '#DC143C', '#B22222', '#000000', '#2F2F2F', '#696969', '#8B4513', '#A0522D'
+        ]
+    },
+    // Natural Jute & Hemp - eco-friendly doormat colors
+    {
+        name: "Natural Jute & Hemp",
+        colors: [
+            '#F5DEB3', '#DEB887', '#D2B48C', '#BC8F8F', '#8B7355', '#A0522D', '#654321', '#2F2F2F'
+        ]
+    },
+    // Coastal Blue & White - beach house style
+    {
+        name: "Coastal Blue & White",
+        colors: [
+            '#4682B4', '#5F9EA0', '#87CEEB', '#B0E0E6', '#F8F8FF', '#F0F8FF', '#E6E6FA', '#B0C4DE'
+        ]
+    },
+    // Rustic Farmhouse - warm, earthy tones
+    {
+        name: "Rustic Farmhouse",
+        colors: [
+            '#8B4513', '#A0522D', '#CD853F', '#D2691E', '#F4A460', '#DEB887', '#F5DEB3', '#F4E4BC'
+        ]
+    },
+    // Modern Gray & White - contemporary minimalist
+    {
+        name: "Modern Gray & White",
+        colors: [
+            '#F5F5F5', '#FFFFFF', '#D3D3D3', '#C0C0C0', '#A9A9A9', '#808080', '#696969', '#2F2F2F'
+        ]
+    },
+    // Autumn Harvest - warm fall colors
+    {
+        name: "Autumn Harvest",
+        colors: [
+            '#8B4513', '#D2691E', '#CD853F', '#F4A460', '#8B0000', '#B22222', '#FF8C00', '#FFA500'
+        ]
+    },
+    // Spring Garden - fresh, vibrant colors
+    {
+        name: "Spring Garden",
+        colors: [
+            '#228B22', '#32CD32', '#90EE90', '#98FB98', '#FF69B4', '#FFB6C1', '#87CEEB', '#F0E68C'
+        ]
+    },
+    // Industrial Metal - urban, modern look
+    {
+        name: "Industrial Metal",
+        colors: [
+            '#2F4F4F', '#696969', '#808080', '#A9A9A9', '#C0C0C0', '#D3D3D3', '#F5F5F5', '#000000'
+        ]
+    },
+    // Mediterranean - warm, sun-baked colors
+    {
+        name: "Mediterranean",
+        colors: [
+            '#FF6347', '#FF4500', '#FF8C00', '#FFA500', '#F4A460', '#DEB887', '#87CEEB', '#4682B4'
+        ]
+    },
+    // Scandinavian - clean, light colors
+    {
+        name: "Scandinavian",
+        colors: [
+            '#FFFFFF', '#F8F9FA', '#E9ECEF', '#DEE2E6', '#CED4DA', '#ADB5BD', '#6C757D', '#495057'
+        ]
+    },
+    // Nordic Forest - deep greens and browns
+    {
+        name: "Nordic Forest",
+        colors: [
+            '#2D5016', '#3A5F0B', '#4A7C59', '#5D8B66', '#6B8E23', '#8FBC8F', '#9ACD32', '#ADFF2F'
+        ]
+    },
+    // Desert Sunset - warm, sandy tones
+    {
+        name: "Desert Sunset",
+        colors: [
+            '#CD853F', '#DEB887', '#F4A460', '#D2B48C', '#BC8F8F', '#8B4513', '#A0522D', '#D2691E'
+        ]
+    },
+    // Arctic Ice - cool, icy colors
+    {
+        name: "Arctic Ice",
+        colors: [
+            '#F0F8FF', '#E6E6FA', '#B0C4DE', '#87CEEB', '#B0E0E6', '#F0FFFF', '#E0FFFF', '#F5F5F5'
+        ]
+    },
+    // Tropical Paradise - vibrant, warm colors
+    {
+        name: "Tropical Paradise",
+        colors: [
+            '#FF6347', '#FF4500', '#FF8C00', '#FFA500', '#32CD32', '#90EE90', '#98FB98', '#00CED1'
+        ]
+    },
+    // Vintage Retro - muted, nostalgic colors
+    {
+        name: "Vintage Retro",
+        colors: [
+            '#8B4513', '#A0522D', '#CD853F', '#D2691E', '#BC8F8F', '#8B7355', '#F5DEB3', '#F4E4BC'
+        ]
+    },
+    // Art Deco - elegant, sophisticated colors
+    {
+        name: "Art Deco",
+        colors: [
+            '#000000', '#2F2F2F', '#696969', '#8B4513', '#A0522D', '#CD853F', '#F5DEB3', '#FFFFFF'
+        ]
+    },
+    // Bohemian - eclectic, artistic colors
+    {
+        name: "Bohemian",
+        colors: [
+            '#8E44AD', '#9B59B6', '#E67E22', '#D35400', '#E74C3C', '#C0392B', '#16A085', '#1ABC9C'
+        ]
+    },
+    // Minimalist - clean, simple colors
+    {
+        name: "Minimalist",
+        colors: [
+            '#FFFFFF', '#F5F5F5', '#E0E0E0', '#CCCCCC', '#999999', '#666666', '#333333', '#000000'
+        ]
+    },
+    // Corporate - professional, business colors
+    {
+        name: "Corporate",
+        colors: [
+            '#2F4F4F', '#696969', '#808080', '#A9A9A9', '#C0C0C0', '#D3D3D3', '#F5F5F5', '#FFFFFF'
+        ]
+    },
+    // Luxury - rich, premium colors
+    {
+        name: "Luxury",
+        colors: [
+            '#000000', '#2F2F2F', '#8B4513', '#A0522D', '#CD853F', '#D2691E', '#F5DEB3', '#FFD700'
+        ]
+    },
+    // Pastel Dreams - soft, gentle colors
+    {
+        name: "Pastel Dreams",
+        colors: [
+            '#FFB6C1', '#FFC0CB', '#FFE4E1', '#F0E68C', '#98FB98', '#90EE90', '#87CEEB', '#E6E6FA'
+        ]
+    },
+    // Earth Tones - natural, organic colors
+    {
+        name: "Earth Tones",
+        colors: [
+            '#8B4513', '#A0522D', '#CD853F', '#D2691E', '#F4A460', '#DEB887', '#D2B48C', '#BC8F8F'
+        ]
+    },
+    // Ocean Depths - deep, marine colors
+    {
+        name: "Ocean Depths",
+        colors: [
+            '#000080', '#191970', '#4169E1', '#4682B4', '#5F9EA0', '#87CEEB', '#B0E0E6', '#E0FFFF'
+        ]
+    },
+    // Mountain Mist - cool, natural colors
+    {
+        name: "Mountain Mist",
+        colors: [
+            '#2F4F4F', '#4A5D6B', '#5F7A7A', '#6B8E8E', '#87CEEB', '#B0C4DE', '#E6E6FA', '#F0F8FF'
+        ]
+    },
+    // Sunset Glow - warm, radiant colors
+    {
+        name: "Sunset Glow",
+        colors: [
+            '#FF6347', '#FF4500', '#FF8C00', '#FFA500', '#FFD700', '#DC143C', '#8B0000', '#2F2F2F'
+        ]
+    },
+    
+    // ===== INDIAN CULTURAL PALETTES (18) =====
+    
+    // Rajasthani - vibrant, royal colors
+    {
+        name: "Rajasthani",
+        colors: [
+            '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#FF1493', '#8B0000', '#4B0082', '#000080'
+        ]
+    },
+
+    // Kerala - coastal, tropical colors
+    {
+        name: "Kerala",
+        colors: [
+            '#228B22', '#32CD32', '#90EE90', '#98FB98', '#00CED1', '#87CEEB', '#4682B4', '#000080'
+        ]
+    },
+    // Gujarat - colorful, festive colors
+    {
+        name: "Gujarat",
+        colors: [
+            '#FF4500', '#FF6347', '#FFD700', '#FFA500', '#DC143C', '#4B0082', '#32CD32', '#FFFFFF'
+        ]
+    },
+    // Punjab - warm, harvest colors
+    {
+        name: "Punjab",
+        colors: [
+            '#FFD700', '#FFA500', '#FF8C00', '#FF6347', '#FF4500', '#8B0000', '#228B22', '#006400'
+        ]
+    },
+    // Bengal - monsoon, lush colors
+    {
+        name: "Bengal",
+        colors: [
+            '#228B22', '#32CD32', '#90EE90', '#F5DEB3', '#DEB887', '#8B4513', '#4682B4', '#000080'
+        ]
+    },
+    // Kashmir - cool, mountain colors
+    {
+        name: "Kashmir",
+        colors: [
+            '#87CEEB', '#B0E0E6', '#E0FFFF', '#F0F8FF', '#E6E6FA', '#B0C4DE', '#4682B4', '#000080'
+        ]
+    },
+    // Maharashtra - earthy, warm colors
+    {
+        name: "Maharashtra",
+        colors: [
+            '#8B4513', '#A0522D', '#CD853F', '#D2691E', '#F4A460', '#DEB887', '#D2B48C', '#BC8F8F'
+        ]
+    },
+    // Tamil Nadu - traditional, cultural colors
+    {
+        name: "Tamil Nadu",
+        colors: [
+            '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#FF1493', '#8B0000', '#4B0082', '#000080'
+        ]
+    },
+    // Karnataka - forest, nature colors
+    {
+        name: "Karnataka",
+        colors: [
+            '#228B22', '#32CD32', '#90EE90', '#98FB98', '#8B4513', '#A0522D', '#CD853F', '#D2691E'
+        ]
+    },
+    // Andhra Pradesh - coastal, vibrant colors
+    {
+        name: "Andhra Pradesh",
+        colors: [
+            '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#00CED1', '#87CEEB', '#4682B4', '#000080'
+        ]
+    },
+    // Telangana - modern, urban colors
+    {
+        name: "Telangana",
+        colors: [
+            '#2F4F4F', '#696969', '#808080', '#A9A9A9', '#C0C0C0', '#D3D3D3', '#F5F5F5', '#FFFFFF'
+        ]
+    },
+    // Odisha - tribal, earthy colors
+    {
+        name: "Odisha",
+        colors: [
+            '#8B4513', '#A0522D', '#CD853F', '#D2691E', '#F4A460', '#DEB887', '#D2B48C', '#BC8F8F'
+        ]
+    },
+    // Madhya Pradesh - central, balanced colors
+    {
+        name: "Madhya Pradesh",
+        colors: [
+            '#228B22', '#32CD32', '#90EE90', '#98FB98', '#8B4513', '#A0522D', '#CD853F', '#D2691E'
+        ]
+    },
+    // Uttar Pradesh - northern, traditional colors
+    {
+        name: "Uttar Pradesh",
+        colors: [
+            '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#FF1493', '#8B0000', '#4B0082', '#000080'
+        ]
+    },
+    // Bihar - eastern, cultural colors
+    {
+        name: "Bihar",
+        colors: [
+            '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#FF1493', '#8B0000', '#4B0082', '#000080'
+        ]
+    },
+    // West Bengal - eastern, artistic colors
+    {
+        name: "West Bengal",
+        colors: [
+            '#228B22', '#32CD32', '#90EE90', '#98FB98', '#00CED1', '#87CEEB', '#4682B4', '#000080'
+        ]
+    },
+    // Assam - northeastern, natural colors
+    {
+        name: "Assam",
+        colors: [
+            '#228B22', '#32CD32', '#90EE90', '#98FB98', '#8B4513', '#A0522D', '#CD853F', '#D2691E'
+        ]
+    },
+    // Himachal Pradesh - mountain, cool colors
+    {
+        name: "Himachal Pradesh",
+        colors: [
+            '#87CEEB', '#B0E0E6', '#E0FFFF', '#F0F8FF', '#E6E6FA', '#B0C4DE', '#4682B4', '#000080'
+        ]
+    },
+    
+    // ===== TAMIL CULTURAL PALETTES (11) =====
+    
+    // Tamil Classical - traditional, ancient colors
+    {
+        name: "Tamil Classical",
+        colors: [
+            '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#FF1493', '#8B0000', '#4B0082', '#000080'
+        ]
+    },
+    // Sangam Era - literary, cultural colors
+    {
+        name: "Sangam Era",
+        colors: [
+            '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#FF1493', '#8B0000', '#4B0082', '#000080'
+        ]
+    },
+    // Chola Dynasty - royal, imperial colors
+    {
+        name: "Chola Dynasty",
+        colors: [
+            '#8B0000', '#DC143C', '#B22222', '#FF4500', '#FF8C00', '#FFD700', '#228B22', '#006400'
+        ]
+    },
+    // Pandya Kingdom - southern, coastal colors
+    {
+        name: "Pandya Kingdom",
+        colors: [
+            '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#00CED1', '#87CEEB', '#4682B4', '#000080'
+        ]
+    },
+    // Chera Dynasty - western coast, spice trade colors
+    {
+        name: "Chera Dynasty",
+        colors: [
+            '#228B22', '#32CD32', '#90EE90', '#8B4513', '#A0522D', '#FFD700', '#00CED1', '#000080'
+        ]
+    },
+    // Pallava Empire - architectural, stone colors
+    {
+        name: "Pallava Empire",
+        colors: [
+            '#8B4513', '#A0522D', '#CD853F', '#D2691E', '#F4A460', '#DEB887', '#D2B48C', '#BC8F8F'
+        ]
+    },
+    // Vijayanagara - golden, prosperous colors
+    {
+        name: "Vijayanagara",
+        colors: [
+            '#FFD700', '#FFA500', '#FF8C00', '#FF6347', '#FF4500', '#8B0000', '#228B22', '#006400'
+        ]
+    },
+    // Nayak Dynasty - artistic, temple colors
+    {
+        name: "Nayak Dynasty",
+        colors: [
+            '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#FF1493', '#8B0000', '#4B0082', '#000080'
+        ]
+    },
+    // Maratha Rule - warrior, strong colors
+    {
+        name: "Maratha Rule",
+        colors: [
+            '#8B0000', '#DC143C', '#B22222', '#FF4500', '#FF8C00', '#FFD700', '#228B22', '#006400'
+        ]
+    },
+    // British Colonial - mixed, hybrid colors
+    {
+        name: "British Colonial",
+        colors: [
+            '#2F4F4F', '#696969', '#808080', '#A9A9A9', '#C0C0C0', '#D3D3D3', '#F5F5F5', '#FFFFFF'
+        ]
+    },
+    // Modern Tamil - contemporary, urban colors
+    {
+        name: "Modern Tamil",
+        colors: [
+            '#2F4F4F', '#696969', '#808080', '#A9A9A9', '#C0C0C0', '#D3D3D3', '#F5F5F5', '#FFFFFF'
+        ]
+    },
+    // Jamakalam - traditional Tamil floor mat colors
+    {
+        name: "Jamakalam",
+        colors: [
+            '#8B0000', '#DC143C', '#FFD700', '#FFA500', '#228B22', '#32CD32', '#4B0082', '#000000'
+        ]
+    },
+    
+    // ===== NATURAL DYE PALETTES (8) =====
+    
+    // Indigo Dye - deep blue, natural colors
+    {
+        name: "Indigo Dye",
+        colors: [
+            '#000080', '#191970', '#4169E1', '#4682B4', '#5F9EA0', '#87CEEB', '#B0E0E6', '#E0FFFF'
+        ]
+    },
+    // Madder Root - red, earthy colors
+    {
+        name: "Madder Root",
+        colors: [
+            '#8B0000', '#DC143C', '#B22222', '#FF4500', '#FF6347', '#CD5C5C', '#F08080', '#FA8072'
+        ]
+    },
+    // Turmeric - golden, warm colors
+    {
+        name: "Turmeric",
+        colors: [
+            '#FFD700', '#FFA500', '#FF8C00', '#FF6347', '#FF4500', '#DAA520', '#B8860B', '#CD853F'
+        ]
+    },
+    // Henna - reddish-brown, natural colors
+    {
+        name: "Henna",
+        colors: [
+            '#8B4513', '#A0522D', '#CD853F', '#D2691E', '#F4A460', '#DEB887', '#D2B48C', '#BC8F8F'
+        ]
+    },
+    // Pomegranate - deep red, rich colors
+    {
+        name: "Pomegranate",
+        colors: [
+            '#8B0000', '#DC143C', '#B22222', '#FF4500', '#FF6347', '#CD5C5C', '#F08080', '#FA8072'
+        ]
+    },
+    // Neem - green, natural colors
+    {
+        name: "Neem",
+        colors: [
+            '#228B22', '#32CD32', '#90EE90', '#98FB98', '#8B4513', '#A0522D', '#CD853F', '#D2691E'
+        ]
+    },
+    // Saffron - golden, precious colors
+    {
+        name: "Saffron",
+        colors: [
+            '#FFD700', '#FFA500', '#FF8C00', '#FF6347', '#FF4500', '#DAA520', '#B8860B', '#CD853F'
+        ]
+    },
+    // Marigold - bright, cheerful colors
+    {
+        name: "Marigold",
+        colors: [
+            '#FFD700', '#FFA500', '#FF8C00', '#FF6347', '#FF4500', '#FF1493', '#FF69B4', '#FFB6C1'
+        ]
+    },
+    
+    // ===== MADRAS CHECKS & TAMIL NADU INSPIRED PALETTES (8) =====
+    
+    // Madras Checks - traditional plaid colors
+    {
+        name: "Madras Checks",
+        colors: [
+            '#8B0000', '#DC143C', '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#228B22', '#006400'
+        ]
+    },
+    // Tamil Nadu Temple - sacred, vibrant colors
+    {
+        name: "Tamil Nadu Temple",
+        colors: [
+            '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#FF1493', '#8B0000', '#4B0082', '#000080'
+        ]
+    },
+    // Kanchipuram Silk - luxurious, traditional colors
+    {
+        name: "Kanchipuram Silk",
+        colors: [
+            '#8B0000', '#DC143C', '#B22222', '#FF4500', '#FF8C00', '#FFD700', '#228B22', '#006400'
+        ]
+    },
+    // Thanjavur Art - classical, artistic colors
+    {
+        name: "Thanjavur Art",
+        colors: [
+            '#FFD700', '#FFA500', '#FF8C00', '#FF6347', '#FF4500', '#8B0000', '#228B22', '#006400'
+        ]
+    },
+    // Chettinad Architecture - heritage, warm colors
+    {
+        name: "Chettinad Architecture",
+        colors: [
+            '#8B4513', '#A0522D', '#CD853F', '#D2691E', '#F4A460', '#DEB887', '#D2B48C', '#BC8F8F'
+        ]
+    },
+    // Madurai Meenakshi - divine, colorful palette
+    {
+        name: "Madurai Meenakshi",
+        colors: [
+            '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#FF1493', '#8B0000', '#4B0082', '#000080'
+        ]
+    },
+    // Coimbatore Cotton - natural, earthy colors
+    {
+        name: "Coimbatore Cotton",
+        colors: [
+            '#F5DEB3', '#DEB887', '#D2B48C', '#BC8F8F', '#8B7355', '#A0522D', '#654321', '#2F2F2F'
+        ]
+    },
+    // Salem Silk - traditional, refined colors
+    {
+        name: "Salem Silk",
+        colors: [
+            '#8B0000', '#DC143C', '#B22222', '#FF4500', '#FF8C00', '#FFD700', '#228B22', '#006400'
+        ]
+    },
+    
+    // ===== WESTERN GHATS BIRDS PALETTES (6) =====
+    
+    // Indian Peacock - majestic, iridescent colors
+    {
+        name: "Indian Peacock",
+        colors: [
+            '#000080', '#191970', '#4169E1', '#4682B4', '#00CED1', '#40E0D0', '#48D1CC', '#20B2AA'
+        ]
+    },
+    // Flamingo - tropical, pink-orange colors
+    {
+        name: "Flamingo",
+        colors: [
+            '#FF69B4', '#FF1493', '#FFB6C1', '#FFC0CB', '#FF6347', '#FF4500', '#FF8C00', '#FFA500'
+        ]
+    },
+    // Toucan - vibrant, tropical colors
+    {
+        name: "Toucan",
+        colors: [
+            '#FFD700', '#FFA500', '#FF8C00', '#FF6347', '#FF4500', '#000000', '#FFFFFF', '#FF1493'
+        ]
+    },
+    // Malabar Trogon - forest, jewel colors
+    {
+        name: "Malabar Trogon",
+        colors: [
+            '#8B0000', '#DC143C', '#FFD700', '#FFA500', '#228B22', '#32CD32', '#000000', '#FFFFFF'
+        ]
+    },
+    // Nilgiri Flycatcher - mountain, cool colors
+    {
+        name: "Nilgiri Flycatcher",
+        colors: [
+            '#87CEEB', '#B0E0E6', '#E0FFFF', '#F0F8FF', '#E6E6FA', '#B0C4DE', '#4682B4', '#000080'
+        ]
+    },
+    // Malabar Parakeet - forest, green colors
+    {
+        name: "Malabar Parakeet",
+        colors: [
+            '#228B22', '#32CD32', '#90EE90', '#98FB98', '#8B4513', '#A0522D', '#CD853F', '#D2691E'
+        ]
+    },
+    
+    // ===== HISTORICAL DYNASTY & CULTURAL PALETTES (6) =====
+    
+    // Pandya Dynasty - southern, maritime colors
+    {
+        name: "Pandya Dynasty",
+        colors: [
+            '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#00CED1', '#87CEEB', '#4682B4', '#000080'
+        ]
+    },
+    // Maratha Empire - warrior, strong colors
+    {
+        name: "Maratha Empire",
+        colors: [
+            '#8B0000', '#DC143C', '#B22222', '#FF4500', '#FF8C00', '#FFD700', '#228B22', '#006400'
+        ]
+    },
+    // Maurya Empire - imperial, ancient colors
+    {
+        name: "Maurya Empire",
+        colors: [
+            '#000080', '#191970', '#4169E1', '#4682B4', '#FFD700', '#FFA500', '#8B4513', '#A0522D'
+        ]
+    },
+    // Buddhist - peaceful, spiritual colors
+    {
+        name: "Buddhist",
+        colors: [
+            '#FFD700', '#FFA500', '#8B4513', '#A0522D', '#228B22', '#32CD32', '#90EE90', '#FFFFFF'
+        ]
+    },
+    
+    // ===== FAMINE & HISTORICAL PERIOD PALETTES (2) =====
+    
+    // Indigo Famine - colonial, oppressive colors
+    {
+        name: "Indigo Famine",
+        colors: [
+            '#000080', '#191970', '#4169E1', '#4682B4', '#2F4F4F', '#696969', '#808080', '#A9A9A9'
+        ]
+    },
+    // Bengal Famine - tragic, somber colors
+    {
+        name: "Bengal Famine",
+        colors: [
+            '#8B0000', '#DC143C', '#B22222', '#2F4F4F', '#696969', '#808080', '#A9A9A9', '#000000'
+        ]
+    },
+    
+    // ===== MADRAS GENERATOR GLOBAL PALETTES (20) =====
+    
+    // Natural Dyes - authentic traditional colors
+    {
+        name: "Natural Dyes",
+        colors: [
+            '#405BAA', '#B33A3A', '#D9A43B', '#1F1E1D', '#5A7A5A', '#8C5832', '#A48E7F', '#FAF1E3'
+        ]
+    },
+    // Expanded Traditional - extended Madras palette
+    {
+        name: "Expanded Traditional",
+        colors: [
+            '#405BAA', '#B33A3A', '#D9A43B', '#5A7A5A', '#8C5832', '#A48E7F', '#1F1E1D', '#FAF1E3'
+        ]
+    },
+    // Bleeding Vintage - aged, worn Madras colors
+    {
+        name: "Bleeding Vintage",
+        colors: [
+            '#3A62B3', '#C13D3D', '#D9A43B', '#7DAC9B', '#D87BA1', '#7A4E8A', '#F2E4BE', '#1F1E1D'
+        ]
+    },
+    // Warm Tamil Madras - warm South Indian tones
+    {
+        name: "Warm Tamil Madras",
+        colors: [
+            '#C13D3D', '#F5C03A', '#3E5F9A', '#88B0D3', '#ADC178', '#E77F37', '#FAF3EB', '#F2E4BE'
+        ]
+    },
+    // Classic Red-Green - traditional Madras contrast
+    {
+        name: "Classic Red-Green",
+        colors: [
+            '#cc0033', '#ffee88', '#004477', '#ffffff', '#e63946', '#f1faee', '#a8dadc', '#457b9d'
+        ]
+    },
+    // Vintage Tamil 04 - retro South Indian style
+    {
+        name: "Vintage Tamil",
+        colors: [
+            '#e63946', '#f1faee', '#a8dadc', '#457b9d', '#ffd700', '#b8860b', '#8b0000', '#f7c873'
+        ]
+    },
+    // Sunset Pondicherry - French colonial colors
+    {
+        name: "Sunset Pondicherry",
+        colors: [
+            '#ffb347', '#ff6961', '#6a0572', '#fff8e7', '#1d3557', '#e63946', '#f7cac9', '#92a8d1'
+        ]
+    },
+    // Chennai Monsoon - rainy season palette
+    {
+        name: "Chennai Monsoon",
+        colors: [
+            '#1d3557', '#457b9d', '#a8dadc', '#f1faee', '#ffd700', '#e94f37', '#393e41', '#3f88c5'
+        ]
+    },
+    // Kanchipuram Gold - luxurious silk colors
+    {
+        name: "Kanchipuram Gold",
+        colors: [
+            '#ffd700', '#b8860b', '#8b0000', '#fff8e7', '#cc0033', '#004477', '#e63946', '#f1faee'
+        ]
+    },
+    // Madras Summer - hot season vibes
+    {
+        name: "Madras Summer",
+        colors: [
+            '#f7c873', '#e94f37', '#393e41', '#3f88c5', '#fff8e7', '#ffb347', '#ff6961', '#1d3557'
+        ]
+    },
+    // Pondy Pastel - soft colonial colors
+    {
+        name: "Pondy Pastel",
+        colors: [
+            '#f7cac9', '#92a8d1', '#034f84', '#f7786b', '#fff8e7', '#393e41', '#ffb347', '#e94f37'
+        ]
+    },
+    // Tamil Sunrise - morning light palette
+    {
+        name: "Tamil Sunrise",
+        colors: [
+            '#ffb347', '#ff6961', '#fff8e7', '#1d3557', '#e63946', '#f7c873', '#e94f37', '#393e41'
+        ]
+    },
+    // Chettinad Spice - aromatic spice colors
+    {
+        name: "Chettinad Spice",
+        colors: [
+            '#d72631', '#a2d5c6', '#077b8a', '#5c3c92', '#f4f4f4', '#ffd700', '#8b0000', '#1a2634'
+        ]
+    },
+    // Kerala Onam - festival celebration colors
+    {
+        name: "Kerala Onam",
+        colors: [
+            '#fff8e7', '#ffd700', '#e94f37', '#393e41', '#3f88c5', '#f7c873', '#ffb347', '#ff6961'
+        ]
+    },
+    // Bengal Indigo - traditional dye colors
+    {
+        name: "Bengal Indigo",
+        colors: [
+            '#1a2634', '#3f88c5', '#f7c873', '#e94f37', '#fff8e7', '#ffd700', '#393e41', '#1d3557'
+        ]
+    },
+    // Goa Beach - coastal vacation colors
+    {
+        name: "Goa Beach",
+        colors: [
+            '#f7cac9', '#f7786b', '#034f84', '#fff8e7', '#393e41', '#ffb347', '#e94f37', '#3f88c5'
+        ]
+    },
+    // Sri Lankan Tea - island tea plantation colors
+    {
+        name: "Sri Lankan Tea",
+        colors: [
+            '#a8dadc', '#457b9d', '#e63946', '#f1faee', '#fff8e7', '#ffd700', '#8b0000', '#1d3557'
+        ]
+    },
+    // African Madras - continental connection colors
+    {
+        name: "African Madras",
+        colors: [
+            '#ffb347', '#e94f37', '#393e41', '#3f88c5', '#ffd700', '#f7c873', '#ff6961', '#1d3557'
+        ]
+    },
+    // Mumbai Monsoon - western coastal rains
+    {
+        name: "Mumbai Monsoon",
+        colors: [
+            '#1d3557', '#457b9d', '#a8dadc', '#f1faee', '#ffd700', '#e94f37', '#393e41', '#3f88c5'
+        ]
+    },
+    // Ivy League - academic prestige colors
+    {
+        name: "Ivy League",
+        colors: [
+            '#002147', '#a6192e', '#f4f4f4', '#ffd700', '#005a9c', '#00356b', '#ffffff', '#8c1515'
+        ]
+    }
+
+];
 
   // Local character map for text rendering
   const aniCharacterMap = {
@@ -581,54 +1348,54 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
     'Z': ["11111", "00010", "00100", "01000", "10000", "10000", "11111"],
     ' ': ["00000", "00000", "00000", "00000", "00000", "00000", "00000"]
   };
-
+  
   // Use your AMAZING text algorithm from the generator instead of low-effort stuff
   const generateTextDataForRug = (text: string, doormatWidth: number, doormatHeight: number, fringeLength: number) => {
     if (!aniCharacterMap) return []
-
+    
     // Set up doormatTextRows for your proper text algorithm (multi-line like doormat.js)
     const textRows = text.split(' ').map(word => word.toUpperCase())
-
+    
     // Use your actual thread spacing from the generator
     const animWarpThickness = 2
     const animWeftThickness = 8
     const TEXT_SCALE = 2
-
+    
     // Use your exact spacing calculations
     const animWarpSpacing = animWarpThickness + 1
     const animWeftSpacing = animWeftThickness + 1
     const scaledWarp = animWarpSpacing * TEXT_SCALE
     const scaledWeft = animWeftSpacing * TEXT_SCALE
-
+    
     // Your exact character dimensions
     const charWidth = 7 * scaledWarp // width after rotation (7 columns)
     const charHeight = 5 * scaledWeft // height after rotation (5 rows)
     const spacing = scaledWeft // vertical gap between stacked characters
-
+    
     // Your exact row spacing
     const rowSpacing = charWidth * 1.5 // Space between rows
-
+    
     // Calculate total width needed for all rows (your algorithm)
     const totalRowsWidth = textRows.length * charWidth + (textRows.length - 1) * rowSpacing
-
+    
     // Calculate starting X position to center all rows (your algorithm)
     const baseStartX = (doormatWidth - totalRowsWidth) / 2
-
+    
     const aniTextData: Array<{ x: number, y: number, width: number, height: number }> = []
-
+    
     // Generate text data for each row (your exact algorithm)
     for (let rowIndex = 0; rowIndex < textRows.length; rowIndex++) {
       const doormatText = textRows[rowIndex]
       if (!doormatText) continue
-
+      
       // Calculate text dimensions for this row (your algorithm)
       const textWidth = charWidth
       const textHeight = doormatText.length * (charHeight + spacing) - spacing
-
+      
       // Position for this row (your algorithm)
       const startX = baseStartX + rowIndex * (charWidth + rowSpacing)
       const startY = (doormatHeight - textHeight) / 2
-
+      
       // Generate character data vertically bottom-to-top for this row (your algorithm)
       for (let i = 0; i < doormatText.length; i++) {
         const char = doormatText.charAt(i)
@@ -637,15 +1404,15 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
         aniTextData.push(...charPixels)
       }
     }
-
-
+    
+    
     return aniTextData
   }
-
+  
   // Your exact character pixel generation function
   const generateCharacterPixels = (char: string, x: number, y: number, width: number, height: number) => {
     const pixels: Array<{ x: number, y: number, width: number, height: number }> = []
-
+    
     // Use your actual thread spacing
     const animWarpThickness = 2
     const animWeftThickness = 8
@@ -680,7 +1447,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
     }
     return pixels
   }
-
+  
   // --- P5.js-style Perlin noise implementation for overlays ---
   // Adapted from https://github.com/processing/p5.js/blob/main/src/math/noise.js
   function makePerlin(seed: number) {
@@ -746,7 +1513,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
     if (typeof window === 'undefined' || !dependenciesLoaded) {
       return null
     }
-
+    
     // Create canvas with your generator dimensions
     const canvas = document.createElement('canvas')
     const ctx = canvas.getContext('2d', { willReadFrequently: true })!
@@ -755,15 +1522,15 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
     canvas.width = 800 + (fringeLength * 4)
     canvas.height = doormatHeight + (fringeLength * 4)
     ctx.clearRect(0, 0, canvas.width, canvas.height)
-
+    
     const aniRandom = new AniSeededRandom(seed)
     const aniColorPalettes = localColorPalettes || [
       { name: 'Default', colors: ['#8B4513', '#D2691E', '#A0522D', '#CD853F', '#DEB887'] }
     ]
-    const aniSelectedPalette = aniColorPalettes[seed % aniColorPalettes.length]
+    const aniSelectedPalette = aniColorPalettes[getUniquePaletteIndex(aniColorPalettes.length)]
     const aniStripeData = generateAniStripeData(aniSelectedPalette, doormatHeight, () => aniRandom.next())
-    const offsetX = fringeLength * 2
-    const offsetY = fringeLength * 2
+      const offsetX = fringeLength * 2
+      const offsetY = fringeLength * 2
     drawAniSelvedgeEdges(ctx, aniStripeData, 800, doormatHeight, () => aniRandom.next(), offsetX, offsetY)
     aniStripeData.forEach(stripe => {
       drawAniStripe(ctx, stripe, 800, doormatHeight, () => aniRandom.next(), offsetX, offsetY)
@@ -830,7 +1597,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
       let textColor: string;
       if (bgBrightness < 128) {
         textColor = lerpColorP5(lightest, '#ffffff', 0.3);
-      } else {
+            } else {
         textColor = lerpColorP5(darkest, '#000000', 0.4);
       }
       // Draw shadow first (as in doormat.js)
@@ -878,8 +1645,8 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
     // Restore blend mode and clipping
     ctx.globalCompositeOperation = 'source-over'
     ctx.restore()
-
-    // Draw proper fringe and selvedge as part of the art (EXACTLY like your generator)
+      
+      // Draw proper fringe and selvedge as part of the art (EXACTLY like your generator)
     drawAniFringe(ctx, aniStripeData, 800, doormatHeight, fringeLength, () => aniRandom.next(), offsetX, offsetY)
 
     // Subtle extra fabric noise (optional, can keep or remove)
@@ -928,7 +1695,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
       const time = state.clock.getElapsedTime()
       const geometry = rugRef.current.geometry as THREE.PlaneGeometry
       const positions = geometry.attributes.position
-
+      
       // Store initial positions on first run
       if (!initialPositions.current) {
         initialPositions.current = new Float32Array(positions.array.length)
@@ -936,43 +1703,43 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
           initialPositions.current[i] = positions.array[i]
         }
       }
-
+      
       // Advanced cloth simulation with multiple wave patterns
       for (let i = 0; i < positions.count; i++) {
         const x = positions.getX(i)
         const y = positions.getY(i)
-
+        
         // Multiple wave layers for realistic cloth movement - FLOWING ALONG LENGTH (Y-axis)
         const wave1 = Math.sin(y * 1.5 + time * 2) * 0.15        // Y-axis flow (length)
         const wave2 = Math.sin(x * 1.2 + time * 1.8) * 0.08     // X-axis flow (width) - secondary
         const wave3 = Math.sin((y + x) * 0.8 + time * 2.5) * 0.05 // Combined flow
         const ripple = Math.sin(Math.sqrt(y * y + x * x) * 2 - time * 3) * 0.03 // Radial flow
-
+        
         // Wind effect simulation - PRIMARY FLOW ALONG LENGTH
         const windY = Math.sin(time * 0.7 + y * 0.5) * 0.04      // Y-axis wind (length)
         const windX = Math.cos(time * 0.9 + x * 0.3) * 0.03     // X-axis wind (width) - secondary
-
+        
         // Edge effects for natural cloth behavior - ENHANCED ALONG LENGTH
         const edgeFactorY = Math.abs(y) / 2    // Primary edge effect along length
         const edgeFactorX = Math.abs(x) / 4    // Secondary edge effect along width
         const edgeAmplification = 1 + (edgeFactorY + edgeFactorX * 0.5) * 0.5
-
+        
         const totalWave = (wave1 + wave2 + wave3 + ripple + windX + windY) * edgeAmplification
         positions.setZ(i, totalWave)
       }
       positions.needsUpdate = true
-
+      
       // Enhanced floating motion with realistic physics
       const floatY = Math.sin(time * 0.4 + position[0]) * 0.4 + Math.cos(time * 0.6) * 0.2
       const driftX = Math.sin(time * 0.2) * 0.3
       const driftZ = Math.cos(time * 0.25) * 0.2
-
+      
       groupRef.current.position.set(
         position[0] + driftX,
         position[1] + floatY,
         position[2] + driftZ
       )
-
+      
       // Complex rotation for natural flying motion
       groupRef.current.rotation.y = Math.sin(time * 0.3) * 0.15 + Math.cos(time * 0.5) * 0.05
       groupRef.current.rotation.x = Math.sin(time * 0.4) * 0.08 + Math.cos(time * 0.7) * 0.03
@@ -991,8 +1758,8 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
       <Float speed={0.3} rotationIntensity={0.08} floatIntensity={0.15}>
         <mesh ref={rugRef} rotation={[-Math.PI / 2, 0, 0]} castShadow receiveShadow>
           <planeGeometry args={[5, 7, 48, 48]} />
-          <meshStandardMaterial
-            map={rugTexture}
+          <meshStandardMaterial 
+            map={rugTexture} 
             side={THREE.DoubleSide}
             transparent
             opacity={0.95}
@@ -1004,24 +1771,24 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
             clippingPlanes={[]}
           />
         </mesh>
-
+        
         {/* Enhanced glow with multiple layers - TRANSPARENT */}
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]}>
           <planeGeometry args={[4.3, 6.3]} />
-          <meshBasicMaterial
-            color="#ffffff"
-            transparent
+          <meshBasicMaterial 
+            color="#ffffff" 
+            transparent 
             opacity={0.05}
             side={THREE.DoubleSide}
           />
         </mesh>
-
+        
         {/* Magical shimmer effect - TRANSPARENT */}
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]}>
           <planeGeometry args={[4.1, 6.1]} />
-          <meshBasicMaterial
-            color="#ffffff"
-            transparent
+          <meshBasicMaterial 
+            color="#ffffff" 
+            transparent 
             opacity={0.03}
             side={THREE.DoubleSide}
           />
@@ -1034,7 +1801,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
 // Floating particles
 function FloatingParticles() {
   const particlesRef = useRef<THREE.Points>(null)
-
+  
   const particles = useMemo(() => {
     const temp = []
     for (let i = 0; i < 100; i++) {
@@ -1078,21 +1845,21 @@ function Scene() {
   const lightRef = useRef<THREE.DirectionalLight>(null)
   const [dependenciesLoaded, setDependenciesLoaded] = useState(false)
 
-  // Global loading state to prevent multiple renders
-  let globalDependenciesLoaded = false
+// Global loading state to prevent multiple renders
+let globalDependenciesLoaded = false
   useEffect(() => {
-    if (globalDependenciesLoaded) {
-      setDependenciesLoaded(true)
-      return
-    }
+            if (globalDependenciesLoaded) {
+              setDependenciesLoaded(true)
+          return
+        }
     // Directly mark as loaded
-    globalDependenciesLoaded = true
-    setDependenciesLoaded(true)
+              globalDependenciesLoaded = true
+              setDependenciesLoaded(true)
   }, [])
-
+  
   useFrame((state) => {
     const time = state.clock.getElapsedTime()
-
+    
     // Animate lighting for magical effect
     if (lightRef.current) {
       lightRef.current.intensity = 1 + Math.sin(time * 0.5) * 0.2
@@ -1105,10 +1872,10 @@ function Scene() {
     <>
       {/* Enhanced Lighting Setup */}
       <ambientLight intensity={0.6} color="#ffeaa7" />
-      <directionalLight
+      <directionalLight 
         ref={lightRef}
-        position={[10, 10, 5]}
-        intensity={1.2}
+        position={[10, 10, 5]} 
+        intensity={1.2} 
         color="#ffb347"
         castShadow
         shadow-mapSize-width={2048}
@@ -1116,18 +1883,18 @@ function Scene() {
       />
       <pointLight position={[-10, -10, -5]} color="#f59e0b" intensity={0.8} />
       <pointLight position={[15, 5, 10]} color="#ff6b35" intensity={0.4} />
-      <spotLight
-        position={[0, 20, 0]}
-        angle={0.3}
-        penumbra={1}
+      <spotLight 
+        position={[0, 20, 0]} 
+        angle={0.3} 
+        penumbra={1} 
         intensity={0.5}
         color="#ffd700"
         castShadow
       />
-
+      
       {/* Environment - TRANSPARENT */}
       <Environment preset="sunset" background={false} />
-
+      
       {/* Flying Rugs with Your Generator Logic - Each with unique seeds */}
       <FlyingRug position={[0, 0, 0]} scale={1.2} seed={42} dependenciesLoaded={dependenciesLoaded} isFirstRug={true} />
       <FlyingRug position={[-8, 2, -5]} scale={0.8} seed={1337} dependenciesLoaded={dependenciesLoaded} isFirstRug={false} />
@@ -1136,10 +1903,10 @@ function Scene() {
       <FlyingRug position={[-6, -2, -10]} scale={0.6} seed={555} dependenciesLoaded={dependenciesLoaded} isFirstRug={false} />
       <FlyingRug position={[-3, 5, -12]} scale={0.5} seed={888} dependenciesLoaded={dependenciesLoaded} isFirstRug={false} />
       <FlyingRug position={[10, -3, -15]} scale={0.4} seed={111} dependenciesLoaded={dependenciesLoaded} isFirstRug={false} />
-
+      
       {/* Enhanced Floating Particles */}
       <FloatingParticles />
-
+      
       {/* Magical Dust Effect */}
       <Float speed={2} rotationIntensity={0.5} floatIntensity={1}>
         <points>
@@ -1155,11 +1922,11 @@ function Scene() {
           <pointsMaterial size={0.05} color="#ffd700" transparent opacity={0.8} />
         </points>
       </Float>
-
+      
       {/* Camera Controls */}
-      <OrbitControls
-        enablePan={false}
-        enableZoom={false}
+      <OrbitControls 
+        enablePan={false} 
+        enableZoom={false} 
         enableRotate={true}
         autoRotate={true}
         autoRotateSpeed={0.3}
