@@ -893,6 +893,14 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
     //   }
     // }
 
+    // --- 180-degree rotation before creating the THREE.CanvasTexture ---
+    ctx.save()
+    ctx.translate(canvas.width / 2, canvas.height / 2)
+    ctx.rotate(Math.PI)
+    ctx.translate(-canvas.width / 2, -canvas.height / 2)
+    ctx.drawImage(canvas, 0, 0)
+    ctx.restore()
+
     canvasRef.current = canvas
     if (textureRef.current) {
       textureRef.current.dispose()
