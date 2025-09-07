@@ -6,6 +6,7 @@ import Hero from '@/components/Hero'
 import AnimatedRugs from '@/components/AnimatedRugs'
 import Features from '@/components/Features'
 import Gallery from '@/components/Gallery'
+import PerformanceMonitor from '@/components/PerformanceMonitor'
 
 export default function Home() {
   const [animationKey, setAnimationKey] = useState(0)
@@ -18,12 +19,15 @@ export default function Home() {
   return (
     <main className="bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 min-h-screen">
       <Navigation />
-      {/* Hero Section with 3D Flying Rugs */}
-      <section className="relative h-screen overflow-hidden">
+      <PerformanceMonitor />
+      {/* Hero Section with 3D Flying Rugs - Performance Optimized */}
+      <section className="relative h-screen overflow-hidden" style={{ willChange: 'auto' }}>
         <Suspense fallback={<div className="h-screen bg-gradient-to-br from-amber-100 to-orange-100" />}>
           <AnimatedRugs key={animationKey} />
         </Suspense>
-        <Hero />
+        <div style={{ willChange: 'auto' }}>
+          <Hero />
+        </div>
       </section>
 
       {/* Features Section */}
