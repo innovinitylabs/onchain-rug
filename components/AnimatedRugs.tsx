@@ -1989,14 +1989,18 @@ export default function AnimatedRugs() {
   }, [])
 
   return (
-    <div className="absolute inset-0 w-full h-full">
+    <div 
+      className="absolute inset-0 w-full h-full"
+      style={{ 
+        transform: isVisible ? 'scale(1)' : 'scale(0.1)',
+        transformOrigin: 'center center',
+        transition: 'transform 1.5s ease-out'
+      }}
+    >
       <Canvas
         camera={{ position: [0, 5, 15], fov: 60 }}
         style={{ 
-          background: 'transparent',
-          transform: isVisible ? 'scale(1)' : 'scale(0.1)',
-          transformOrigin: 'center center',
-          transition: 'transform 1.5s ease-out'
+          background: 'transparent'
         }}
       >
         <Suspense fallback={null}>
