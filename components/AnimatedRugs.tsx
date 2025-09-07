@@ -4,6 +4,12 @@
 let usedPaletteIndices = new Set<number>()
 let shuffledPaletteIndices: number[] = []
 
+// Function to reset global state
+const resetGlobalState = () => {
+  usedPaletteIndices.clear()
+  shuffledPaletteIndices = []
+}
+
 // --- ani-seeded RNG utilities ---
 class AniSeededRandom {
   private seed: number;
@@ -1880,13 +1886,16 @@ function Scene() {
 // Global loading state to prevent multiple renders
 let globalDependenciesLoaded = false
   useEffect(() => {
-            if (globalDependenciesLoaded) {
-              setDependenciesLoaded(true)
-          return
-        }
+    // Reset global state when component mounts
+    resetGlobalState()
+    
+    if (globalDependenciesLoaded) {
+      setDependenciesLoaded(true)
+      return
+    }
     // Directly mark as loaded
-              globalDependenciesLoaded = true
-              setDependenciesLoaded(true)
+    globalDependenciesLoaded = true
+    setDependenciesLoaded(true)
   }, [])
   
   useFrame((state) => {
@@ -1972,6 +1981,17 @@ let globalDependenciesLoaded = false
 }
 
 export default function AnimatedRugs() {
+  useEffect(() => {
+    // Reset global state when component mounts
+    resetGlobalState()
+    
+    // Cleanup function
+    return () => {
+      // Reset global state when component unmounts
+      resetGlobalState()
+    }
+  }, [])
+
   return (
     <div className="absolute inset-0 w-full h-full">
       <Canvas
