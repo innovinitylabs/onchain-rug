@@ -8,6 +8,7 @@ let shuffledPaletteIndices: number[] = []
 const resetGlobalState = () => {
   usedPaletteIndices.clear()
   shuffledPaletteIndices = []
+  globalDependenciesLoaded = false
 }
 
 // --- ani-seeded RNG utilities ---
@@ -1991,6 +1992,8 @@ export default function AnimatedRugs() {
   useEffect(() => {
     // Reset global state when component mounts
     resetGlobalState()
+    // Reset visibility state
+    setIsVisible(false)
     
     // Cleanup function
     return () => {
