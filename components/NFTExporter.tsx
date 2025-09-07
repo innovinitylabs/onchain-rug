@@ -104,6 +104,61 @@ const NFTExporter: React.FC<NFTExporterProps> = ({
             font-weight: bold;
             color: #0066cc;
         }
+        
+        .traits-section {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .traits-section h3 {
+            margin: 0 0 15px 0;
+            color: #333;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .traits-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+        
+        .trait-item {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 10px;
+        }
+        
+        .trait-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        
+        .trait-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: #495057;
+            text-transform: capitalize;
+        }
+        
+        .trait-rarity {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        
+        .trait-value {
+            font-size: 14px;
+            color: #212529;
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -113,6 +168,13 @@ const NFTExporter: React.FC<NFTExporterProps> = ({
             <p>Seed: ${seed}</p>
             <p>Palette: ${palette?.name || 'Custom'}</p>
             <p>Text: ${textRows.join(', ') || 'None'}</p>
+            
+            <div class="traits-section">
+                <h3>NFT Traits & Rarity</h3>
+                <div class="traits-grid" id="traits-container">
+                    <!-- Traits will be populated by JavaScript -->
+                </div>
+            </div>
         </div>
         <div id="canvas-container"></div>
     </div>
@@ -138,7 +200,177 @@ let textData = [];
 
         // Colors
 let lightTextColor, darkTextColor;
-        
+
+        // COMPREHENSIVE TRAIT CALCULATION SYSTEM
+        function getPaletteRarity(paletteName) {
+            const legendaryPalettes = ["Buddhist", "Maurya Empire", "Chola Dynasty", "Indigo Famine", "Bengal Famine", "Jamakalam"];
+            const epicPalettes = ["Indian Peacock", "Flamingo", "Toucan", "Madras Checks", "Kanchipuram Silk", "Natural Dyes", "Bleeding Vintage"];
+            const rarePalettes = ["Tamil Classical", "Sangam Era", "Pandya Dynasty", "Maratha Empire", "Rajasthani"];
+            const uncommonPalettes = ["Tamil Nadu Temple", "Kerala Onam", "Chettinad Spice", "Chennai Monsoon", "Bengal Indigo"];
+            
+            if (legendaryPalettes.includes(paletteName)) return "Legendary";
+            if (epicPalettes.includes(paletteName)) return "Epic";
+            if (rarePalettes.includes(paletteName)) return "Rare";
+            if (uncommonPalettes.includes(paletteName)) return "Uncommon";
+            return "Common";
+        }
+
+        function calculateStripeComplexity(stripeData) {
+            if (!stripeData || stripeData.length === 0) return "Basic";
+            
+            let complexityScore = 0;
+            let mixedCount = 0;
+            let texturedCount = 0;
+            let solidCount = 0;
+            let secondaryColorCount = 0;
+            
+            for (let stripe of stripeData) {
+                if (stripe.weaveType === 'mixed') {
+                    mixedCount++;
+                    complexityScore += 2;
+                } else if (stripe.weaveType === 'textured') {
+                    texturedCount++;
+                    complexityScore += 1.5;
+                } else {
+                    solidCount++;
+                }
+                
+                if (stripe.secondaryColor) {
+                    secondaryColorCount++;
+                    complexityScore += 1;
+                }
+            }
+            
+            const solidRatio = solidCount / stripeData.length;
+            const normalizedComplexity = complexityScore / (stripeData.length * 3);
+            
+            if (solidRatio > 0.9) return "Basic";
+            if (solidRatio > 0.75 && normalizedComplexity < 0.15) return "Simple";
+            if (solidRatio > 0.6 && normalizedComplexity < 0.3) return "Moderate";
+            if (normalizedComplexity < 0.5) return "Complex";
+            return "Very Complex";
+        }
+
+        function getTextLinesRarity(textLines) {
+            if (textLines === 0) return "Common";
+            if (textLines === 1) return "Uncommon";
+            if (textLines === 2) return "Rare";
+            if (textLines === 3) return "Epic";
+            if (textLines >= 4) return "Legendary";
+            return "Common";
+        }
+
+        function getCharacterRarity(totalChars) {
+            if (totalChars === 0) return "Common";
+            if (totalChars <= 5) return "Uncommon";
+            if (totalChars <= 15) return "Rare";
+            if (totalChars <= 30) return "Epic";
+            if (totalChars >= 31) return "Legendary";
+            return "Common";
+        }
+
+        function getStripeCountRarity(count) {
+            if (count < 20) return "Legendary";
+            if (count < 25) return "Epic";
+            if (count < 32) return "Rare";
+            if (count < 40) return "Uncommon";
+            return "Common";
+        }
+
+        function getStripeComplexityRarity(complexity) {
+            switch (complexity) {
+                case "Basic": return "Common";
+                case "Simple": return "Uncommon";
+                case "Moderate": return "Rare";
+                case "Complex": return "Epic";
+                case "Very Complex": return "Legendary";
+                default: return "Common";
+            }
+        }
+
+        function calculateTraits() {
+            const textLines = doormatTextRows.length;
+            const totalCharacters = doormatTextRows.reduce((sum, row) => sum + row.length, 0);
+            const stripeCount = stripeData.length;
+            const stripeComplexity = calculateStripeComplexity(stripeData);
+            const paletteName = selectedPalette ? selectedPalette.name : "Unknown";
+            
+            return {
+                textLines: {
+                    value: textLines,
+                    rarity: getTextLinesRarity(textLines)
+                },
+                totalCharacters: {
+                    value: totalCharacters,
+                    rarity: getCharacterRarity(totalCharacters)
+                },
+                paletteName: {
+                    value: paletteName,
+                    rarity: getPaletteRarity(paletteName)
+                },
+                stripeCount: {
+                    value: stripeCount,
+                    rarity: getStripeCountRarity(stripeCount)
+                },
+                stripeComplexity: {
+                    value: stripeComplexity,
+                    rarity: getStripeComplexityRarity(stripeComplexity)
+                },
+                warpThickness: {
+                    value: warpThickness,
+                    rarity: getWarpThicknessRarity(warpThickness)
+                }
+            };
+        }
+
+        function getRarityColor(rarity) {
+            switch (rarity) {
+                case "Legendary": return "#ff6b35";
+                case "Epic": return "#8a2be2";
+                case "Rare": return "#007bff";
+                case "Uncommon": return "#28a745";
+                case "Common": return "#6c757d";
+                default: return "#6c757d";
+            }
+        }
+
+        // Warp thickness rarity calculation (metadata only)
+        function getWarpThicknessRarity(thickness) {
+            switch (thickness) {
+                case 1: return "Legendary"; // Very thin
+                case 2: return "Uncommon";  // Thin
+                case 3: return "Common";    // Medium-thin
+                case 4: return "Common";    // Medium (most common)
+                case 5: return "Uncommon";  // Thick
+                case 6: return "Legendary"; // Very thick
+                default: return "Common";
+            }
+        }
+
+        // Calculate traits for this NFT
+        const nftTraits = calculateTraits();
+
+        // Populate traits display
+        function populateTraitsDisplay() {
+            const traitsContainer = document.getElementById('traits-container');
+            if (!traitsContainer) return;
+            
+            const traits = calculateTraits();
+            let html = '';
+            Object.entries(traits).forEach(([key, trait]) => {
+                const rarity = trait.rarity || 'Common';
+                const value = trait.value;
+                const rarityColor = getRarityColor(rarity);
+                html += '<div class="trait-item">' +
+                    '<div class="trait-header">' +
+                        '<span class="trait-name">' + key.replace(/([A-Z])/g, ' $1').trim() + '</span>' +
+                        '<span class="trait-rarity" style="background-color: ' + rarityColor + '20; color: ' + rarityColor + '; border: 1px solid ' + rarityColor + '40;">' + rarity + '</span>' +
+                    '</div>' +
+                    '<div class="trait-value">' + (typeof value === 'string' ? value : value.toString()) + '</div>' +
+                '</div>';
+            });
+            traitsContainer.innerHTML = html;
+        }
 
 function setup() {
             // Set the random seed to recreate the exact same doormat
@@ -149,6 +381,9 @@ function setup() {
             let canvas = createCanvas(doormatHeight + (fringeLength * 4), doormatWidth + (fringeLength * 4));
             canvas.parent('canvas-container');
             
+            // Set high DPR for crisp rendering on high-DPI displays
+            pixelDensity(2.5);
+            
             // Initialize text colors
     updateTextColors();
             
@@ -156,6 +391,11 @@ function setup() {
     generateTextData();
     
             noLoop();
+            
+            // Populate traits display after setup
+            setTimeout(() => {
+                populateTraitsDisplay();
+            }, 100);
         }
         
         function updateTextColors() {

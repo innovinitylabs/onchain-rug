@@ -61,23 +61,756 @@ export default function GeneratorPage() {
     
     // Color palettes
     const colorPalettes = [
+      // ===== GLOBAL PALETTES (25) =====
+      
+      // Classic Red & Black - most common doormat colors
       {
-        name: 'Sunset',
-        colors: ['#FF6B35', '#F7931E', '#FFD23F', '#06FFA5', '#3A86FF']
+          name: "Classic Red & Black",
+          colors: [
+              '#8B0000', '#DC143C', '#B22222', '#000000', '#2F2F2F', '#696969', '#8B4513', '#A0522D'
+          ]
       },
+      // Natural Jute & Hemp - eco-friendly doormat colors
       {
-        name: 'Ocean',
-        colors: ['#006466', '#065A60', '#0B525B', '#144552', '#1B3A4B']
+          name: "Natural Jute & Hemp",
+          colors: [
+              '#F5DEB3', '#DEB887', '#D2B48C', '#BC8F8F', '#8B7355', '#A0522D', '#654321', '#2F2F2F'
+          ]
       },
+      // Coastal Blue & White - beach house style
       {
-        name: 'Forest',
-        colors: ['#2D5016', '#4A7C59', '#7BA05B', '#9ACD32', '#ADFF2F']
+          name: "Coastal Blue & White",
+          colors: [
+              '#4682B4', '#5F9EA0', '#87CEEB', '#B0E0E6', '#F8F8FF', '#F0F8FF', '#E6E6FA', '#B0C4DE'
+          ]
       },
+      // Rustic Farmhouse - warm, earthy tones
       {
-        name: 'Desert',
-        colors: ['#8B4513', '#CD853F', '#DEB887', '#F4A460', '#FFE4B5']
+          name: "Rustic Farmhouse",
+          colors: [
+              '#8B4513', '#A0522D', '#CD853F', '#D2691E', '#F4A460', '#DEB887', '#F5DEB3', '#F4E4BC'
+          ]
+      },
+      // Modern Gray & White - contemporary minimalist
+      {
+          name: "Modern Gray & White",
+          colors: [
+              '#F5F5F5', '#FFFFFF', '#D3D3D3', '#C0C0C0', '#A9A9A9', '#808080', '#696969', '#2F2F2F'
+          ]
+      },
+      // Autumn Harvest - warm fall colors
+      {
+          name: "Autumn Harvest",
+          colors: [
+              '#8B4513', '#D2691E', '#CD853F', '#F4A460', '#8B0000', '#B22222', '#FF8C00', '#FFA500'
+          ]
+      },
+      // Spring Garden - fresh, vibrant colors
+      {
+          name: "Spring Garden",
+          colors: [
+              '#228B22', '#32CD32', '#90EE90', '#98FB98', '#FF69B4', '#FFB6C1', '#87CEEB', '#F0E68C'
+          ]
+      },
+      // Industrial Metal - urban, modern look
+      {
+          name: "Industrial Metal",
+          colors: [
+              '#2F4F4F', '#696969', '#808080', '#A9A9A9', '#C0C0C0', '#D3D3D3', '#F5F5F5', '#000000'
+          ]
+      },
+      // Mediterranean - warm, sun-baked colors
+      {
+          name: "Mediterranean",
+          colors: [
+              '#FF6347', '#FF4500', '#FF8C00', '#FFA500', '#F4A460', '#DEB887', '#87CEEB', '#4682B4'
+          ]
+      },
+      // Scandinavian - clean, light colors
+      {
+          name: "Scandinavian",
+          colors: [
+              '#FFFFFF', '#F8F9FA', '#E9ECEF', '#DEE2E6', '#CED4DA', '#ADB5BD', '#6C757D', '#495057'
+          ]
+      },
+      // Nordic Forest - deep greens and browns
+      {
+          name: "Nordic Forest",
+          colors: [
+              '#2D5016', '#3A5F0B', '#4A7C59', '#5D8B66', '#6B8E23', '#8FBC8F', '#9ACD32', '#ADFF2F'
+          ]
+      },
+      // Desert Sunset - warm, sandy tones
+      {
+          name: "Desert Sunset",
+          colors: [
+              '#CD853F', '#DEB887', '#F4A460', '#D2B48C', '#BC8F8F', '#8B4513', '#A0522D', '#D2691E'
+          ]
+      },
+      // Arctic Ice - cool, icy colors
+      {
+          name: "Arctic Ice",
+          colors: [
+              '#F0F8FF', '#E6E6FA', '#B0C4DE', '#87CEEB', '#B0E0E6', '#F0FFFF', '#E0FFFF', '#F5F5F5'
+          ]
+      },
+      // Tropical Paradise - vibrant, warm colors
+      {
+          name: "Tropical Paradise",
+          colors: [
+              '#FF6347', '#FF4500', '#FF8C00', '#FFA500', '#32CD32', '#90EE90', '#98FB98', '#00CED1'
+          ]
+      },
+      // Vintage Retro - muted, nostalgic colors
+      {
+          name: "Vintage Retro",
+          colors: [
+              '#8B4513', '#A0522D', '#CD853F', '#D2691E', '#BC8F8F', '#8B7355', '#F5DEB3', '#F4E4BC'
+          ]
+      },
+      // Art Deco - elegant, sophisticated colors
+      {
+          name: "Art Deco",
+          colors: [
+              '#000000', '#2F2F2F', '#696969', '#8B4513', '#A0522D', '#CD853F', '#F5DEB3', '#FFFFFF'
+          ]
+      },
+      // Bohemian - eclectic, artistic colors
+      {
+          name: "Bohemian",
+          colors: [
+              '#8E44AD', '#9B59B6', '#E67E22', '#D35400', '#E74C3C', '#C0392B', '#16A085', '#1ABC9C'
+          ]
+      },
+      // Minimalist - clean, simple colors
+      {
+          name: "Minimalist",
+          colors: [
+              '#FFFFFF', '#F5F5F5', '#E0E0E0', '#CCCCCC', '#999999', '#666666', '#333333', '#000000'
+          ]
+      },
+      // Corporate - professional, business colors
+      {
+          name: "Corporate",
+          colors: [
+              '#2F4F4F', '#696969', '#808080', '#A9A9A9', '#C0C0C0', '#D3D3D3', '#F5F5F5', '#FFFFFF'
+          ]
+      },
+      // Luxury - rich, premium colors
+      {
+          name: "Luxury",
+          colors: [
+              '#000000', '#2F2F2F', '#8B4513', '#A0522D', '#CD853F', '#D2691E', '#F5DEB3', '#FFD700'
+          ]
+      },
+      // Pastel Dreams - soft, gentle colors
+      {
+          name: "Pastel Dreams",
+          colors: [
+              '#FFB6C1', '#FFC0CB', '#FFE4E1', '#F0E68C', '#98FB98', '#90EE90', '#87CEEB', '#E6E6FA'
+          ]
+      },
+      // Earth Tones - natural, organic colors
+      {
+          name: "Earth Tones",
+          colors: [
+              '#8B4513', '#A0522D', '#CD853F', '#D2691E', '#F4A460', '#DEB887', '#D2B48C', '#BC8F8F'
+          ]
+      },
+      // Ocean Depths - deep, marine colors
+      {
+          name: "Ocean Depths",
+          colors: [
+              '#000080', '#191970', '#4169E1', '#4682B4', '#5F9EA0', '#87CEEB', '#B0E0E6', '#E0FFFF'
+          ]
+      },
+      // Mountain Mist - cool, natural colors
+      {
+          name: "Mountain Mist",
+          colors: [
+              '#2F4F4F', '#4A5D6B', '#5F7A7A', '#6B8E8E', '#87CEEB', '#B0C4DE', '#E6E6FA', '#F0F8FF'
+          ]
+      },
+      // Sunset Glow - warm, radiant colors
+      {
+          name: "Sunset Glow",
+          colors: [
+              '#FF6347', '#FF4500', '#FF8C00', '#FFA500', '#FFD700', '#DC143C', '#8B0000', '#2F2F2F'
+          ]
+      },
+      
+      // ===== INDIAN CULTURAL PALETTES (18) =====
+      
+      // Rajasthani - vibrant, royal colors
+      {
+          name: "Rajasthani",
+          colors: [
+              '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#FF1493', '#8B0000', '#4B0082', '#000080'
+          ]
+      },
+  
+      // Kerala - coastal, tropical colors
+      {
+          name: "Kerala",
+          colors: [
+              '#228B22', '#32CD32', '#90EE90', '#98FB98', '#00CED1', '#87CEEB', '#4682B4', '#000080'
+          ]
+      },
+      // Gujarat - colorful, festive colors
+      {
+          name: "Gujarat",
+          colors: [
+              '#FF4500', '#FF6347', '#FFD700', '#FFA500', '#DC143C', '#4B0082', '#32CD32', '#FFFFFF'
+          ]
+      },
+      // Punjab - warm, harvest colors
+      {
+          name: "Punjab",
+          colors: [
+              '#FFD700', '#FFA500', '#FF8C00', '#FF6347', '#FF4500', '#8B0000', '#228B22', '#006400'
+          ]
+      },
+      // Bengal - monsoon, lush colors
+      {
+          name: "Bengal",
+          colors: [
+              '#228B22', '#32CD32', '#90EE90', '#F5DEB3', '#DEB887', '#8B4513', '#4682B4', '#000080'
+          ]
+      },
+      // Kashmir - cool, mountain colors
+      {
+          name: "Kashmir",
+          colors: [
+              '#87CEEB', '#B0E0E6', '#E0FFFF', '#F0F8FF', '#E6E6FA', '#B0C4DE', '#4682B4', '#000080'
+          ]
+      },
+      // Maharashtra - earthy, warm colors
+      {
+          name: "Maharashtra",
+          colors: [
+              '#8B4513', '#A0522D', '#CD853F', '#D2691E', '#F4A460', '#DEB887', '#D2B48C', '#BC8F8F'
+          ]
+      },
+      // Tamil Nadu - traditional, cultural colors
+      {
+          name: "Tamil Nadu",
+          colors: [
+              '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#FF1493', '#8B0000', '#4B0082', '#000080'
+          ]
+      },
+      // Karnataka - forest, nature colors
+      {
+          name: "Karnataka",
+          colors: [
+              '#228B22', '#32CD32', '#90EE90', '#98FB98', '#8B4513', '#A0522D', '#CD853F', '#D2691E'
+          ]
+      },
+      // Andhra Pradesh - coastal, vibrant colors
+      {
+          name: "Andhra Pradesh",
+          colors: [
+              '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#00CED1', '#87CEEB', '#4682B4', '#000080'
+          ]
+      },
+      // Telangana - modern, urban colors
+      {
+          name: "Telangana",
+          colors: [
+              '#2F4F4F', '#696969', '#808080', '#A9A9A9', '#C0C0C0', '#D3D3D3', '#F5F5F5', '#FFFFFF'
+          ]
+      },
+      // Odisha - tribal, earthy colors
+      {
+          name: "Odisha",
+          colors: [
+              '#8B4513', '#A0522D', '#CD853F', '#D2691E', '#F4A460', '#DEB887', '#D2B48C', '#BC8F8F'
+          ]
+      },
+      // Madhya Pradesh - central, balanced colors
+      {
+          name: "Madhya Pradesh",
+          colors: [
+              '#228B22', '#32CD32', '#90EE90', '#98FB98', '#8B4513', '#A0522D', '#CD853F', '#D2691E'
+          ]
+      },
+      // Uttar Pradesh - northern, traditional colors
+      {
+          name: "Uttar Pradesh",
+          colors: [
+              '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#FF1493', '#8B0000', '#4B0082', '#000080'
+          ]
+      },
+      // Bihar - eastern, cultural colors
+      {
+          name: "Bihar",
+          colors: [
+              '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#FF1493', '#8B0000', '#4B0082', '#000080'
+          ]
+      },
+      // West Bengal - eastern, artistic colors
+      {
+          name: "West Bengal",
+          colors: [
+              '#228B22', '#32CD32', '#90EE90', '#98FB98', '#00CED1', '#87CEEB', '#4682B4', '#000080'
+          ]
+      },
+      // Assam - northeastern, natural colors
+      {
+          name: "Assam",
+          colors: [
+              '#228B22', '#32CD32', '#90EE90', '#98FB98', '#8B4513', '#A0522D', '#CD853F', '#D2691E'
+          ]
+      },
+      // Himachal Pradesh - mountain, cool colors
+      {
+          name: "Himachal Pradesh",
+          colors: [
+              '#87CEEB', '#B0E0E6', '#E0FFFF', '#F0F8FF', '#E6E6FA', '#B0C4DE', '#4682B4', '#000080'
+          ]
+      },
+      
+      // ===== TAMIL CULTURAL PALETTES (11) =====
+      
+      // Tamil Classical - traditional, ancient colors
+      {
+          name: "Tamil Classical",
+          colors: [
+              '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#FF1493', '#8B0000', '#4B0082', '#000080'
+          ]
+      },
+      // Sangam Era - literary, cultural colors
+      {
+          name: "Sangam Era",
+          colors: [
+              '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#FF1493', '#8B0000', '#4B0082', '#000080'
+          ]
+      },
+      // Chola Dynasty - royal, imperial colors
+      {
+          name: "Chola Dynasty",
+          colors: [
+              '#8B0000', '#DC143C', '#B22222', '#FF4500', '#FF8C00', '#FFD700', '#228B22', '#006400'
+          ]
+      },
+      // Pandya Kingdom - southern, coastal colors
+      {
+          name: "Pandya Kingdom",
+          colors: [
+              '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#00CED1', '#87CEEB', '#4682B4', '#000080'
+          ]
+      },
+      // Chera Dynasty - western coast, spice trade colors
+      {
+          name: "Chera Dynasty",
+          colors: [
+              '#228B22', '#32CD32', '#90EE90', '#8B4513', '#A0522D', '#FFD700', '#00CED1', '#000080'
+          ]
+      },
+      // Pallava Empire - architectural, stone colors
+      {
+          name: "Pallava Empire",
+          colors: [
+              '#8B4513', '#A0522D', '#CD853F', '#D2691E', '#F4A460', '#DEB887', '#D2B48C', '#BC8F8F'
+          ]
+      },
+      // Vijayanagara - golden, prosperous colors
+      {
+          name: "Vijayanagara",
+          colors: [
+              '#FFD700', '#FFA500', '#FF8C00', '#FF6347', '#FF4500', '#8B0000', '#228B22', '#006400'
+          ]
+      },
+      // Nayak Dynasty - artistic, temple colors
+      {
+          name: "Nayak Dynasty",
+          colors: [
+              '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#FF1493', '#8B0000', '#4B0082', '#000080'
+          ]
+      },
+      // Maratha Rule - warrior, strong colors
+      {
+          name: "Maratha Rule",
+          colors: [
+              '#8B0000', '#DC143C', '#B22222', '#FF4500', '#FF8C00', '#FFD700', '#228B22', '#006400'
+          ]
+      },
+      // British Colonial - mixed, hybrid colors
+      {
+          name: "British Colonial",
+          colors: [
+              '#2F4F4F', '#696969', '#808080', '#A9A9A9', '#C0C0C0', '#D3D3D3', '#F5F5F5', '#FFFFFF'
+          ]
+      },
+      // Modern Tamil - contemporary, urban colors
+      {
+          name: "Modern Tamil",
+          colors: [
+              '#2F4F4F', '#696969', '#808080', '#A9A9A9', '#C0C0C0', '#D3D3D3', '#F5F5F5', '#FFFFFF'
+          ]
+      },
+      // Jamakalam - traditional Tamil floor mat colors
+      {
+          name: "Jamakalam",
+          colors: [
+              '#8B0000', '#DC143C', '#FFD700', '#FFA500', '#228B22', '#32CD32', '#4B0082', '#000000'
+          ]
+      },
+      
+      // ===== NATURAL DYE PALETTES (8) =====
+      
+      // Indigo Dye - deep blue, natural colors
+      {
+          name: "Indigo Dye",
+          colors: [
+              '#000080', '#191970', '#4169E1', '#4682B4', '#5F9EA0', '#87CEEB', '#B0E0E6', '#E0FFFF'
+          ]
+      },
+      // Madder Root - red, earthy colors
+      {
+          name: "Madder Root",
+          colors: [
+              '#8B0000', '#DC143C', '#B22222', '#FF4500', '#FF6347', '#CD5C5C', '#F08080', '#FA8072'
+          ]
+      },
+      // Turmeric - golden, warm colors
+      {
+          name: "Turmeric",
+          colors: [
+              '#FFD700', '#FFA500', '#FF8C00', '#FF6347', '#FF4500', '#DAA520', '#B8860B', '#CD853F'
+          ]
+      },
+      // Henna - reddish-brown, natural colors
+      {
+          name: "Henna",
+          colors: [
+              '#8B4513', '#A0522D', '#CD853F', '#D2691E', '#F4A460', '#DEB887', '#D2B48C', '#BC8F8F'
+          ]
+      },
+      // Pomegranate - deep red, rich colors
+      {
+          name: "Pomegranate",
+          colors: [
+              '#8B0000', '#DC143C', '#B22222', '#FF4500', '#FF6347', '#CD5C5C', '#F08080', '#FA8072'
+          ]
+      },
+      // Neem - green, natural colors
+      {
+          name: "Neem",
+          colors: [
+              '#228B22', '#32CD32', '#90EE90', '#98FB98', '#8B4513', '#A0522D', '#CD853F', '#D2691E'
+          ]
+      },
+      // Saffron - golden, precious colors
+      {
+          name: "Saffron",
+          colors: [
+              '#FFD700', '#FFA500', '#FF8C00', '#FF6347', '#FF4500', '#DAA520', '#B8860B', '#CD853F'
+          ]
+      },
+      // Marigold - bright, cheerful colors
+      {
+          name: "Marigold",
+          colors: [
+              '#FFD700', '#FFA500', '#FF8C00', '#FF6347', '#FF4500', '#FF1493', '#FF69B4', '#FFB6C1'
+          ]
+      },
+      
+      // ===== MADRAS CHECKS & TAMIL NADU INSPIRED PALETTES (8) =====
+      
+      // Madras Checks - traditional plaid colors
+      {
+          name: "Madras Checks",
+          colors: [
+              '#8B0000', '#DC143C', '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#228B22', '#006400'
+          ]
+      },
+      // Tamil Nadu Temple - sacred, vibrant colors
+      {
+          name: "Tamil Nadu Temple",
+          colors: [
+              '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#FF1493', '#8B0000', '#4B0082', '#000080'
+          ]
+      },
+      // Kanchipuram Silk - luxurious, traditional colors
+      {
+          name: "Kanchipuram Silk",
+          colors: [
+              '#8B0000', '#DC143C', '#B22222', '#FF4500', '#FF8C00', '#FFD700', '#228B22', '#006400'
+          ]
+      },
+      // Thanjavur Art - classical, artistic colors
+      {
+          name: "Thanjavur Art",
+          colors: [
+              '#FFD700', '#FFA500', '#FF8C00', '#FF6347', '#FF4500', '#8B0000', '#228B22', '#006400'
+          ]
+      },
+      // Chettinad Architecture - heritage, warm colors
+      {
+          name: "Chettinad Architecture",
+          colors: [
+              '#8B4513', '#A0522D', '#CD853F', '#D2691E', '#F4A460', '#DEB887', '#D2B48C', '#BC8F8F'
+          ]
+      },
+      // Madurai Meenakshi - divine, colorful palette
+      {
+          name: "Madurai Meenakshi",
+          colors: [
+              '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#FF1493', '#8B0000', '#4B0082', '#000080'
+          ]
+      },
+      // Coimbatore Cotton - natural, earthy colors
+      {
+          name: "Coimbatore Cotton",
+          colors: [
+              '#F5DEB3', '#DEB887', '#D2B48C', '#BC8F8F', '#8B7355', '#A0522D', '#654321', '#2F2F2F'
+          ]
+      },
+      // Salem Silk - traditional, refined colors
+      {
+          name: "Salem Silk",
+          colors: [
+              '#8B0000', '#DC143C', '#B22222', '#FF4500', '#FF8C00', '#FFD700', '#228B22', '#006400'
+          ]
+      },
+      
+      // ===== WESTERN GHATS BIRDS PALETTES (6) =====
+      
+      // Indian Peacock - majestic, iridescent colors
+      {
+          name: "Indian Peacock",
+          colors: [
+              '#000080', '#191970', '#4169E1', '#4682B4', '#00CED1', '#40E0D0', '#48D1CC', '#20B2AA'
+          ]
+      },
+      // Flamingo - tropical, pink-orange colors
+      {
+          name: "Flamingo",
+          colors: [
+              '#FF69B4', '#FF1493', '#FFB6C1', '#FFC0CB', '#FF6347', '#FF4500', '#FF8C00', '#FFA500'
+          ]
+      },
+      // Toucan - vibrant, tropical colors
+      {
+          name: "Toucan",
+          colors: [
+              '#FFD700', '#FFA500', '#FF8C00', '#FF6347', '#FF4500', '#000000', '#FFFFFF', '#FF1493'
+          ]
+      },
+      // Malabar Trogon - forest, jewel colors
+      {
+          name: "Malabar Trogon",
+          colors: [
+              '#8B0000', '#DC143C', '#FFD700', '#FFA500', '#228B22', '#32CD32', '#000000', '#FFFFFF'
+          ]
+      },
+      // Nilgiri Flycatcher - mountain, cool colors
+      {
+          name: "Nilgiri Flycatcher",
+          colors: [
+              '#87CEEB', '#B0E0E6', '#E0FFFF', '#F0F8FF', '#E6E6FA', '#B0C4DE', '#4682B4', '#000080'
+          ]
+      },
+      // Malabar Parakeet - forest, green colors
+      {
+          name: "Malabar Parakeet",
+          colors: [
+              '#228B22', '#32CD32', '#90EE90', '#98FB98', '#8B4513', '#A0522D', '#CD853F', '#D2691E'
+          ]
+      },
+      
+      // ===== HISTORICAL DYNASTY & CULTURAL PALETTES (6) =====
+      
+      // Pandya Dynasty - southern, maritime colors
+      {
+          name: "Pandya Dynasty",
+          colors: [
+              '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#00CED1', '#87CEEB', '#4682B4', '#000080'
+          ]
+      },
+      // Maratha Empire - warrior, strong colors
+      {
+          name: "Maratha Empire",
+          colors: [
+              '#8B0000', '#DC143C', '#B22222', '#FF4500', '#FF8C00', '#FFD700', '#228B22', '#006400'
+          ]
+      },
+      // Maurya Empire - imperial, ancient colors
+      {
+          name: "Maurya Empire",
+          colors: [
+              '#000080', '#191970', '#4169E1', '#4682B4', '#FFD700', '#FFA500', '#8B4513', '#A0522D'
+          ]
+      },
+      // Buddhist - peaceful, spiritual colors
+      {
+          name: "Buddhist",
+          colors: [
+              '#FFD700', '#FFA500', '#8B4513', '#A0522D', '#228B22', '#32CD32', '#90EE90', '#FFFFFF'
+          ]
+      },
+      
+      // ===== FAMINE & HISTORICAL PERIOD PALETTES (2) =====
+      
+      // Indigo Famine - colonial, oppressive colors
+      {
+          name: "Indigo Famine",
+          colors: [
+              '#000080', '#191970', '#4169E1', '#4682B4', '#2F4F4F', '#696969', '#808080', '#A9A9A9'
+          ]
+      },
+      // Bengal Famine - tragic, somber colors
+      {
+          name: "Bengal Famine",
+          colors: [
+              '#8B0000', '#DC143C', '#B22222', '#2F4F4F', '#696969', '#808080', '#A9A9A9', '#000000'
+          ]
+      },
+      
+      // ===== MADRAS GENERATOR GLOBAL PALETTES (20) =====
+      
+      // Natural Dyes - authentic traditional colors
+      {
+          name: "Natural Dyes",
+          colors: [
+              '#405BAA', '#B33A3A', '#D9A43B', '#1F1E1D', '#5A7A5A', '#8C5832', '#A48E7F', '#FAF1E3'
+          ]
+      },
+      // Expanded Traditional - extended Madras palette
+      {
+          name: "Expanded Traditional",
+          colors: [
+              '#405BAA', '#B33A3A', '#D9A43B', '#5A7A5A', '#8C5832', '#A48E7F', '#1F1E1D', '#FAF1E3'
+          ]
+      },
+      // Bleeding Vintage - aged, worn Madras colors
+      {
+          name: "Bleeding Vintage",
+          colors: [
+              '#3A62B3', '#C13D3D', '#D9A43B', '#7DAC9B', '#D87BA1', '#7A4E8A', '#F2E4BE', '#1F1E1D'
+          ]
+      },
+      // Warm Tamil Madras - warm South Indian tones
+      {
+          name: "Warm Tamil Madras",
+          colors: [
+              '#C13D3D', '#F5C03A', '#3E5F9A', '#88B0D3', '#ADC178', '#E77F37', '#FAF3EB', '#F2E4BE'
+          ]
+      },
+      // Classic Red-Green - traditional Madras contrast
+      {
+          name: "Classic Red-Green",
+          colors: [
+              '#cc0033', '#ffee88', '#004477', '#ffffff', '#e63946', '#f1faee', '#a8dadc', '#457b9d'
+          ]
+      },
+      // Vintage Tamil 04 - retro South Indian style
+      {
+          name: "Vintage Tamil",
+          colors: [
+              '#e63946', '#f1faee', '#a8dadc', '#457b9d', '#ffd700', '#b8860b', '#8b0000', '#f7c873'
+          ]
+      },
+      // Sunset Pondicherry - French colonial colors
+      {
+          name: "Sunset Pondicherry",
+          colors: [
+              '#ffb347', '#ff6961', '#6a0572', '#fff8e7', '#1d3557', '#e63946', '#f7cac9', '#92a8d1'
+          ]
+      },
+      // Chennai Monsoon - rainy season palette
+      {
+          name: "Chennai Monsoon",
+          colors: [
+              '#1d3557', '#457b9d', '#a8dadc', '#f1faee', '#ffd700', '#e94f37', '#393e41', '#3f88c5'
+          ]
+      },
+      // Kanchipuram Gold - luxurious silk colors
+      {
+          name: "Kanchipuram Gold",
+          colors: [
+              '#ffd700', '#b8860b', '#8b0000', '#fff8e7', '#cc0033', '#004477', '#e63946', '#f1faee'
+          ]
+      },
+      // Madras Summer - hot season vibes
+      {
+          name: "Madras Summer",
+          colors: [
+              '#f7c873', '#e94f37', '#393e41', '#3f88c5', '#fff8e7', '#ffb347', '#ff6961', '#1d3557'
+          ]
+      },
+      // Pondy Pastel - soft colonial colors
+      {
+          name: "Pondy Pastel",
+          colors: [
+              '#f7cac9', '#92a8d1', '#034f84', '#f7786b', '#fff8e7', '#393e41', '#ffb347', '#e94f37'
+          ]
+      },
+      // Tamil Sunrise - morning light palette
+      {
+          name: "Tamil Sunrise",
+          colors: [
+              '#ffb347', '#ff6961', '#fff8e7', '#1d3557', '#e63946', '#f7c873', '#e94f37', '#393e41'
+          ]
+      },
+      // Chettinad Spice - aromatic spice colors
+      {
+          name: "Chettinad Spice",
+          colors: [
+              '#d72631', '#a2d5c6', '#077b8a', '#5c3c92', '#f4f4f4', '#ffd700', '#8b0000', '#1a2634'
+          ]
+      },
+      // Kerala Onam - festival celebration colors
+      {
+          name: "Kerala Onam",
+          colors: [
+              '#fff8e7', '#ffd700', '#e94f37', '#393e41', '#3f88c5', '#f7c873', '#ffb347', '#ff6961'
+          ]
+      },
+      // Bengal Indigo - traditional dye colors
+      {
+          name: "Bengal Indigo",
+          colors: [
+              '#1a2634', '#3f88c5', '#f7c873', '#e94f37', '#fff8e7', '#ffd700', '#393e41', '#1d3557'
+          ]
+      },
+      // Goa Beach - coastal vacation colors
+      {
+          name: "Goa Beach",
+          colors: [
+              '#f7cac9', '#f7786b', '#034f84', '#fff8e7', '#393e41', '#ffb347', '#e94f37', '#3f88c5'
+          ]
+      },
+      // Sri Lankan Tea - island tea plantation colors
+      {
+          name: "Sri Lankan Tea",
+          colors: [
+              '#a8dadc', '#457b9d', '#e63946', '#f1faee', '#fff8e7', '#ffd700', '#8b0000', '#1d3557'
+          ]
+      },
+      // African Madras - continental connection colors
+      {
+          name: "African Madras",
+          colors: [
+              '#ffb347', '#e94f37', '#393e41', '#3f88c5', '#ffd700', '#f7c873', '#ff6961', '#1d3557'
+          ]
+      },
+      // Mumbai Monsoon - western coastal rains
+      {
+          name: "Mumbai Monsoon",
+          colors: [
+              '#1d3557', '#457b9d', '#a8dadc', '#f1faee', '#ffd700', '#e94f37', '#393e41', '#3f88c5'
+          ]
+      },
+      // Ivy League - academic prestige colors
+      {
+          name: "Ivy League",
+          colors: [
+              '#002147', '#a6192e', '#f4f4f4', '#ffd700', '#005a9c', '#00356b', '#ffffff', '#8c1515'
+          ]
       }
-    ]
+  
+  ]
     
     // Character map for text embedding
     const characterMap = {
@@ -152,24 +885,31 @@ export default function GeneratorPage() {
         return
       }
 
+      // Prevent multiple instances
+      if ((window as any).p5Instance) {
+        console.log('⚠️ P5.js instance already exists, removing old one')
+        ;(window as any).p5Instance.remove()
+        delete (window as any).p5Instance
+      }
+
       try {
         // Use original doormat.js setup and draw functions
         const p5Instance = new (window as any).p5((p: any) => {
           // Original setup function from doormat.js
-          p.setup = () => {
+      p.setup = () => {
             // Create canvas with swapped dimensions for 90-degree rotation (original logic)
             let canvas = p.createCanvas(doormatData.config.DOORMAT_HEIGHT + (doormatData.config.FRINGE_LENGTH * 4), 
                                        doormatData.config.DOORMAT_WIDTH + (doormatData.config.FRINGE_LENGTH * 4))
             canvas.parent('canvas-container')
             canvas.style.width = '100%'
             canvas.style.height = '100%'
-            p.pixelDensity(1)
-            p.noLoop()
+        p.pixelDensity(1)
+        p.noLoop()
             console.log('🎨 P5.js canvas created with original dimensions')
           }
 
           // Original draw function from doormat.js
-          p.draw = () => {
+      p.draw = () => {
             // Use original doormat.js draw logic
             p.background(222, 222, 222)
             
@@ -220,9 +960,34 @@ export default function GeneratorPage() {
       return x - Math.floor(x)
     }
     
-    const warpThicknessOptions = [1, 2, 3, 4, 5, 6]
-    const warpThicknessIndex = Math.floor(seededRandom(seed * 100) * warpThicknessOptions.length)
-    doormatData.warpThickness = warpThicknessOptions[warpThicknessIndex]
+    // RARITY-BASED WARP THICKNESS SELECTION
+    // Make extreme thicknesses rarer
+    const warpThicknessWeights = {
+      1: 0.05,  // 5% - Very thin (rare)
+      2: 0.15,  // 15% - Thin (uncommon)
+      3: 0.25,  // 25% - Medium-thin
+      4: 0.35,  // 35% - Medium (most common)
+      5: 0.15,  // 15% - Thick (uncommon)
+      6: 0.05   // 5% - Very thick (rare)
+    }
+    
+    const warpThicknessRoll = seededRandom(seed * 100)
+    let cumulativeWeight = 0
+    let selectedWarpThickness = 4 // Default to most common
+    
+    console.log(`🎲 Warp Thickness Roll: ${warpThicknessRoll.toFixed(4)} (seed: ${seed})`)
+    
+    for (const [thickness, weight] of Object.entries(warpThicknessWeights)) {
+      cumulativeWeight += weight
+      console.log(`  Thickness ${thickness}: ${(weight * 100).toFixed(1)}% chance (cumulative: ${(cumulativeWeight * 100).toFixed(1)}%)`)
+      if (warpThicknessRoll <= cumulativeWeight) {
+        selectedWarpThickness = parseInt(thickness)
+        console.log(`  ✅ SELECTED: Thickness ${thickness} (roll ${warpThicknessRoll.toFixed(4)} <= ${cumulativeWeight.toFixed(4)})`)
+        break
+      }
+    }
+    
+    doormatData.warpThickness = selectedWarpThickness
     
     // Generate stripes with seeded randomness
     doormatData.stripeData = generateStripes(doormatData, seed)
@@ -258,10 +1023,72 @@ export default function GeneratorPage() {
       return x - Math.floor(x)
     }
     
-    // Select random palette based on seed
-    const paletteIndex = Math.floor(seededRandom(seed) * colorPalettes.length)
-    const palette = colorPalettes[paletteIndex]
+    // RARITY-BASED PALETTE SELECTION
+    // Weighted generation for true rarity distribution
+    const rarityWeights = {
+      Legendary: 0.01,    // 1% chance
+      Epic: 0.05,         // 5% chance  
+      Rare: 0.15,         // 15% chance
+      Uncommon: 0.25,     // 25% chance
+      Common: 0.54        // 54% chance
+    }
+    
+    // Roll for rarity tier first
+    const rarityRoll = seededRandom(seed * 2)
+    let selectedRarity = 'Common'
+    let cumulativeWeight = 0
+    
+    console.log(`🎲 Rarity Roll: ${rarityRoll.toFixed(4)} (seed: ${seed})`)
+    
+    for (const [rarity, weight] of Object.entries(rarityWeights)) {
+      cumulativeWeight += weight
+      console.log(`  ${rarity}: ${(weight * 100).toFixed(1)}% chance (cumulative: ${(cumulativeWeight * 100).toFixed(1)}%)`)
+      if (rarityRoll <= cumulativeWeight) {
+        selectedRarity = rarity
+        console.log(`  ✅ SELECTED: ${rarity} (roll ${rarityRoll.toFixed(4)} <= ${cumulativeWeight.toFixed(4)})`)
+        break
+      }
+    }
+    
+    // Get palettes for the selected rarity tier
+    const legendaryPalettes = ["Buddhist", "Maurya Empire", "Chola Dynasty", "Indigo Famine", "Bengal Famine", "Jamakalam"]
+    const epicPalettes = ["Indian Peacock", "Flamingo", "Toucan", "Madras Checks", "Kanchipuram Silk", "Natural Dyes", "Bleeding Vintage"]
+    const rarePalettes = ["Tamil Classical", "Sangam Era", "Pandya Dynasty", "Maratha Empire", "Rajasthani"]
+    const uncommonPalettes = ["Tamil Nadu Temple", "Kerala Onam", "Chettinad Spice", "Chennai Monsoon", "Bengal Indigo"]
+    
+    let tierPalettes: string[] = []
+    switch (selectedRarity) {
+      case 'Legendary':
+        tierPalettes = legendaryPalettes
+        break
+      case 'Epic':
+        tierPalettes = epicPalettes
+        break
+      case 'Rare':
+        tierPalettes = rarePalettes
+        break
+      case 'Uncommon':
+        tierPalettes = uncommonPalettes
+        break
+      default:
+        // Common - all other palettes
+        tierPalettes = colorPalettes
+          .filter(p => !legendaryPalettes.includes(p.name) && 
+                      !epicPalettes.includes(p.name) && 
+                      !rarePalettes.includes(p.name) && 
+                      !uncommonPalettes.includes(p.name))
+          .map(p => p.name)
+    }
+    
+    // Select random palette from the rarity tier
+    const tierPaletteIndex = Math.floor(seededRandom(seed * 3) * tierPalettes.length)
+    const selectedPaletteName = tierPalettes[tierPaletteIndex]
+    const palette = colorPalettes.find(p => p.name === selectedPaletteName) || colorPalettes[0]
+    
     doormatData.selectedPalette = palette
+    console.log(`🎯 Generated ${selectedRarity} rarity doormat with palette: ${palette.name}`)
+    console.log(`📊 Available ${selectedRarity} palettes: ${tierPalettes.length} options`)
+    console.log(`🎨 Selected palette index: ${tierPaletteIndex}/${tierPalettes.length - 1}`)
     
     // Original doormat.js stripe generation logic
     let totalHeight = config.DOORMAT_HEIGHT
@@ -313,17 +1140,72 @@ export default function GeneratorPage() {
       
       // Select colors for this stripe
       let primaryColor = palette.colors[Math.floor(seededRandom(seed * 8 + currentY) * palette.colors.length)]
-      let hasSecondaryColor = seededRandom(seed * 9 + currentY) < 0.15 // 15% chance of blended colors
+      
+      // RARITY-BASED SECONDARY COLOR GENERATION
+      // Make blended colors rarer based on overall rarity
+      let secondaryColorChance = 0.15 // Base 15% chance
+      
+      if (selectedRarity === 'Legendary') {
+        secondaryColorChance = 0.4 // 40% chance for Legendary
+      } else if (selectedRarity === 'Epic') {
+        secondaryColorChance = 0.3 // 30% chance for Epic
+      } else if (selectedRarity === 'Rare') {
+        secondaryColorChance = 0.25 // 25% chance for Rare
+      } else if (selectedRarity === 'Uncommon') {
+        secondaryColorChance = 0.2 // 20% chance for Uncommon
+      }
+      // Common keeps 15% chance
+      
+      // Log secondary color chance for first stripe only
+      if (currentY === 0) {
+        console.log(`🎨 ${selectedRarity} Secondary Color Chance: ${(secondaryColorChance * 100).toFixed(1)}%`)
+      }
+      
+      let hasSecondaryColor = seededRandom(seed * 9 + currentY) < secondaryColorChance
       let secondaryColor = hasSecondaryColor ? palette.colors[Math.floor(seededRandom(seed * 10 + currentY) * palette.colors.length)] : null
       
-      // Determine weave pattern type with weighted probabilities (original logic)
+      // RARITY-BASED WEAVE PATTERN SELECTION
+      // Make complex patterns rarer based on overall rarity
       let weaveRand = seededRandom(seed * 11 + currentY)
       let weaveType
-      if (weaveRand < 0.6) {          // 60% chance of solid (simple)
+      
+      // Adjust probabilities based on palette rarity
+      let solidChance = 0.6, texturedChance = 0.2, mixedChance = 0.2
+      
+      if (selectedRarity === 'Legendary') {
+        // Legendary: More complex patterns
+        solidChance = 0.3
+        texturedChance = 0.3
+        mixedChance = 0.4
+      } else if (selectedRarity === 'Epic') {
+        // Epic: Balanced with more complexity
+        solidChance = 0.4
+        texturedChance = 0.3
+        mixedChance = 0.3
+      } else if (selectedRarity === 'Rare') {
+        // Rare: Slightly more complex
+        solidChance = 0.5
+        texturedChance = 0.25
+        mixedChance = 0.25
+      } else if (selectedRarity === 'Uncommon') {
+        // Uncommon: Slightly more complex
+        solidChance = 0.55
+        texturedChance = 0.25
+        mixedChance = 0.2
+      }
+      // Common keeps original probabilities
+      
+      // Log weave pattern probabilities for first stripe only
+      if (currentY === 0) {
+        console.log(`🎨 ${selectedRarity} Weave Pattern Probabilities:`)
+        console.log(`  Solid: ${(solidChance * 100).toFixed(1)}%, Textured: ${(texturedChance * 100).toFixed(1)}%, Mixed: ${(mixedChance * 100).toFixed(1)}%`)
+      }
+      
+      if (weaveRand < solidChance) {
         weaveType = 'solid'
-      } else if (weaveRand < 0.8) {   // 20% chance of textured 
+      } else if (weaveRand < solidChance + texturedChance) {
         weaveType = 'textured'
-      } else {                        // 20% chance of mixed (most complex)
+      } else {
         weaveType = 'mixed'
       }
       
@@ -882,16 +1764,174 @@ export default function GeneratorPage() {
     }
   }
 
-  // Update traits display
-  const updateTraitsDisplay = () => {
-    // Simple traits calculation
+  // COMPREHENSIVE TRAIT CALCULATION SYSTEM (from original trait-calculator.js)
+
+  // Get palette rarity classification
+  const getPaletteRarity = (paletteName: string) => {
+    const legendaryPalettes = ["Buddhist", "Maurya Empire", "Chola Dynasty", "Indigo Famine", "Bengal Famine", "Jamakalam"]
+    const epicPalettes = ["Indian Peacock", "Flamingo", "Toucan", "Madras Checks", "Kanchipuram Silk", "Natural Dyes", "Bleeding Vintage"]
+    const rarePalettes = ["Tamil Classical", "Sangam Era", "Pandya Dynasty", "Maratha Empire", "Rajasthani"]
+    const uncommonPalettes = ["Tamil Nadu Temple", "Kerala Onam", "Chettinad Spice", "Chennai Monsoon", "Bengal Indigo"]
+    
+    if (legendaryPalettes.includes(paletteName)) return "Legendary"
+    if (epicPalettes.includes(paletteName)) return "Epic"
+    if (rarePalettes.includes(paletteName)) return "Rare"
+    if (uncommonPalettes.includes(paletteName)) return "Uncommon"
+    return "Common"
+  }
+
+  // Calculate stripe complexity
+  const calculateStripeComplexity = (stripeData: any[]) => {
+    if (!stripeData || stripeData.length === 0) return "Basic"
+    
+    let complexityScore = 0
+    let mixedCount = 0
+    let texturedCount = 0
+    let solidCount = 0
+    let secondaryColorCount = 0
+    
+    // Count different pattern types
+    for (let stripe of stripeData) {
+      if (stripe.weaveType === 'mixed') {
+        mixedCount++
+        complexityScore += 2 // Mixed weave adds more complexity
+      } else if (stripe.weaveType === 'textured') {
+        texturedCount++
+        complexityScore += 1.5 // Textured adds medium complexity
+      } else {
+        solidCount++
+        // Solid adds no complexity
+      }
+      
+      if (stripe.secondaryColor) {
+        secondaryColorCount++
+        complexityScore += 1 // Secondary colors add complexity
+      }
+    }
+    
+    // Calculate ratios
+    const solidRatio = solidCount / stripeData.length
+    const normalizedComplexity = complexityScore / (stripeData.length * 3) // Max possible is 3 per stripe
+    
+    // Much more strict classification
+    if (solidRatio > 0.9) return "Basic" // Almost all solid
+    if (solidRatio > 0.75 && normalizedComplexity < 0.15) return "Simple" // Mostly solid with minimal complexity
+    if (solidRatio > 0.6 && normalizedComplexity < 0.3) return "Moderate" // Good amount of solid with some complexity
+    if (normalizedComplexity < 0.5) return "Complex" // Significant complexity
+    return "Very Complex" // High complexity
+  }
+
+  // Get text lines rarity
+  const getTextLinesRarity = (textLines: number) => {
+    if (textLines === 0) return "Common"
+    if (textLines === 1) return "Uncommon"
+    if (textLines === 2) return "Rare"
+    if (textLines === 3) return "Epic"
+    if (textLines >= 4) return "Legendary"
+    return "Common"
+  }
+
+  // Get character count rarity
+  const getCharacterRarity = (totalChars: number) => {
+    if (totalChars === 0) return "Common"
+    if (totalChars <= 5) return "Uncommon"
+    if (totalChars <= 15) return "Rare"
+    if (totalChars <= 30) return "Epic"
+    if (totalChars >= 31) return "Legendary"
+    return "Common"
+  }
+
+  // Get stripe count rarity
+  const getStripeCountRarity = (count: number) => {
+    if (count < 20) return "Legendary"
+    if (count < 25) return "Epic"
+    if (count < 32) return "Rare"
+    if (count < 40) return "Uncommon"
+    return "Common"
+  }
+
+  // Get stripe complexity rarity
+  const getStripeComplexityRarity = (complexity: string) => {
+    switch (complexity) {
+      case "Basic": return "Common"
+      case "Simple": return "Uncommon"
+      case "Moderate": return "Rare"
+      case "Complex": return "Epic"
+      case "Very Complex": return "Legendary"
+      default: return "Common"
+    }
+  }
+
+  // Get warp thickness rarity
+  const getWarpThicknessRarity = (thickness: number) => {
+    switch (thickness) {
+      case 1: return "Legendary" // 5% chance
+      case 2: return "Uncommon"  // 15% chance
+      case 3: return "Common"    // 25% chance
+      case 4: return "Common"    // 35% chance (most common)
+      case 5: return "Uncommon"  // 15% chance
+      case 6: return "Legendary" // 5% chance
+      default: return "Common"
+    }
+  }
+
+  // Calculate comprehensive traits
+  const calculateTraits = () => {
+    const data = {
+      doormatTextRows: (window as any).doormatTextRows || [],
+      selectedPalette: (window as any).selectedPalette || null,
+      stripeData: (window as any).stripeData || []
+    }
+    
+    const textLines = data.doormatTextRows.length
+    const totalCharacters = data.doormatTextRows.reduce((sum: number, row: string) => sum + row.length, 0)
+    const stripeCount = data.stripeData.length
+    const stripeComplexity = calculateStripeComplexity(data.stripeData)
+    const paletteName = data.selectedPalette ? data.selectedPalette.name : "Unknown"
+    
     const traits = {
-      palette: (window as any).selectedPalette?.name || 'Unknown',
-      stripes: (window as any).stripeData?.length || 0,
+      // Text traits
+      textLines: {
+        value: textLines,
+        rarity: getTextLinesRarity(textLines)
+      },
+      totalCharacters: {
+        value: totalCharacters,
+        rarity: getCharacterRarity(totalCharacters)
+      },
+      
+      // Palette traits
+      paletteName: {
+        value: paletteName,
+        rarity: getPaletteRarity(paletteName)
+      },
+      
+      // Visual traits
+      stripeCount: {
+        value: stripeCount,
+        rarity: getStripeCountRarity(stripeCount)
+      },
+      stripeComplexity: {
+        value: stripeComplexity,
+        rarity: getStripeComplexityRarity(stripeComplexity)
+      },
+      
+      // Additional traits
+      warpThickness: {
+        value: (window as any).warpThickness || 2,
+        rarity: getWarpThicknessRarity((window as any).warpThickness || 2)
+      },
       seed: currentSeed
     }
+    
+    return traits
+  }
+
+  // Update traits display
+  const updateTraitsDisplay = () => {
+    const traits = calculateTraits()
     setTraits(traits)
-    console.log('🏷️ Traits updated:', traits)
+    console.log('🏷️ Comprehensive traits calculated:', traits)
   }
 
   // Generate new doormat
@@ -1020,7 +2060,29 @@ export default function GeneratorPage() {
 
   // Initialize on mount
   useEffect(() => {
-    init()
+    let isInitialized = false
+    
+    const initializeOnce = async () => {
+      if (isInitialized) return
+      isInitialized = true
+      await init()
+    }
+    
+    initializeOnce()
+    
+    // Cleanup function
+    return () => {
+      // Clean up any existing P5.js instances
+      const existingCanvas = document.querySelector('canvas')
+      if (existingCanvas) {
+        existingCanvas.remove()
+      }
+      // Clear global P5.js instance
+      if ((window as any).p5Instance) {
+        (window as any).p5Instance.remove()
+        delete (window as any).p5Instance
+      }
+    }
   }, [])
 
   // Check if P5.js canvas is visible
@@ -1034,21 +2096,8 @@ export default function GeneratorPage() {
           console.log('Canvas dimensions:', canvas.width, 'x', canvas.height)
           console.log('Canvas container:', canvasContainerRef.current)
           
-          // Move canvas to our container if it's not there
-          if (canvasContainerRef.current && !canvasContainerRef.current.contains(canvas)) {
-            console.log('🔄 Moving P5.js canvas to our container')
-            canvasContainerRef.current.appendChild(canvas)
-          }
-          
-          // Check if canvas dimensions are correct
-          if (canvas.width === 200 && canvas.height === 200) {
-            console.log('⚠️ Canvas has default dimensions, trying to fix...')
-            // Try to trigger P5.js setup function
-            if (typeof (window as any).setup === 'function') {
-              console.log('🔄 Calling P5.js setup function')
-              ;(window as any).setup()
-            }
-          }
+          // Don't move canvas or call setup - let P5.js handle it
+          // This prevents double canvas issues
           
           // Ensure P5.js canvas fits container exactly
           if (canvasContainerRef.current) {
@@ -1166,7 +2215,46 @@ export default function GeneratorPage() {
                         </p>
                       </div>
                     </div>
+
+                {/* NFT Traits Display */}
+                {traits && (
+                  <div className="mt-6 pt-4 border-t border-green-500/30">
+                    <div className="text-green-300 text-sm mb-3">NFT Traits & Rarity:</div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {Object.entries(traits).map(([key, trait]: [string, any]) => {
+                        if (key === 'seed') return null // Skip seed display
+                        
+                        const rarity = trait.rarity || 'Common'
+                        const value = trait.value
+                        const rarityColor = getRarityColor(rarity)
+                        
+                        return (
+                          <div key={key} className="bg-gray-900/50 border border-green-500/30 rounded p-3">
+                            <div className="flex justify-between items-center">
+                              <span className="text-green-400 text-sm font-mono capitalize">
+                                {key.replace(/([A-Z])/g, ' $1').trim()}
+                              </span>
+                              <span 
+                                className="text-xs px-2 py-1 rounded font-mono font-bold"
+                                style={{ 
+                                  backgroundColor: rarityColor + '20',
+                                  color: rarityColor,
+                                  border: `1px solid ${rarityColor}40`
+                                }}
+                              >
+                                {rarity}
+                              </span>
                   </div>
+                            <div className="text-green-300 text-sm mt-1 font-mono">
+                              {typeof value === 'string' ? value : value.toString()}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
                 </div>
               </div>
             </div>
