@@ -86,6 +86,8 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const textureRef = useRef<THREE.CanvasTexture | null>(null)
   const startTimeRef = useRef<number | null>(null)
+  const [textureReady, setTextureReady] = useState(false)
+  const [textureOpacity, setTextureOpacity] = useState(0)
   
   // Your curated word list for the flying rugs
   // NOTE: First rug (isFirstRug=true) always shows WELCOME (hardcoded), other rugs randomly select from this array
@@ -1700,6 +1702,25 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
     return texture
   }
 
+  // Delayed texture generation for smooth fade-in
+  useEffect(() => {
+    if (dependenciesLoaded) {
+      // Add a delay before texture generation to allow for smooth fade-in
+      const textureDelay = isFirstRug ? 500 : 800 + (Math.random() * 400) // First rug appears faster, others staggered
+      const timer = setTimeout(() => {
+        setTextureReady(true)
+        // Start opacity fade-in
+        setTextureOpacity(0)
+        const fadeTimer = setTimeout(() => {
+          setTextureOpacity(0.95)
+        }, 100)
+        return () => clearTimeout(fadeTimer)
+      }, textureDelay)
+      
+      return () => clearTimeout(timer)
+    }
+  }, [dependenciesLoaded, isFirstRug])
+
   // Cleanup textures on unmount
   useEffect(() => {
     return () => {
@@ -1780,9 +1801,9 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
     }
   })
 
-  // Don't render until dependencies are loaded
-  const rugTexture = createRugTexture(0) // Start with no texture overlay
-  if (!dependenciesLoaded || !rugTexture) {
+  // Don't render until dependencies are loaded and texture is ready
+  const rugTexture = textureReady ? createRugTexture(0) : null // Only generate texture when ready
+  if (!dependenciesLoaded || !textureReady || !rugTexture) {
     return null
   }
   
@@ -1800,7 +1821,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
             map={textureRef.current} 
             side={THREE.DoubleSide}
             transparent
-            opacity={0.95}
+            opacity={textureOpacity}
             roughness={0.8}
             metalness={0.1}
             depthTest={false}
