@@ -1994,8 +1994,10 @@ export default function AnimatedRugs() {
         camera={{ position: [0, 5, 15], fov: 60 }}
         style={{ 
           background: 'transparent',
+          transform: isVisible ? 'scale(1)' : 'scale(0.3)',
           opacity: isVisible ? 1 : 0,
-          transition: 'opacity 1.5s ease-in-out'
+          transition: 'transform 1.5s ease-out, opacity 1.2s ease-out',
+          transformOrigin: 'center center'
         }}
       >
         <Suspense fallback={null}>
