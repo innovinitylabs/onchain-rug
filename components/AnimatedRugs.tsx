@@ -1878,13 +1878,13 @@ function FloatingParticles() {
 function Scene({ onLoaded }: { onLoaded?: () => void }) {
   const lightRef = useRef<THREE.DirectionalLight>(null)
   const [dependenciesLoaded, setDependenciesLoaded] = useState(false)
-  
+
   useEffect(() => {
     // Reset global state when component mounts
     resetGlobalState()
     
     // Always set as loaded and trigger callback
-    setDependenciesLoaded(true)
+          setDependenciesLoaded(true)
     if (onLoaded) {
       setTimeout(onLoaded, 100) // Small delay to ensure everything is rendered
     }
@@ -1994,7 +1994,7 @@ export default function AnimatedRugs() {
         camera={{ position: [0, 5, 15], fov: 60 }}
         style={{ 
           background: 'transparent',
-          transform: isVisible ? 'scale(1)' : 'scale(0.3)',
+          transform: isVisible ? 'scale(1)' : 'scale(0.1)',
           opacity: isVisible ? 1 : 0,
           transition: 'transform 1.5s ease-out, opacity 1.2s ease-out',
           transformOrigin: 'center center'
