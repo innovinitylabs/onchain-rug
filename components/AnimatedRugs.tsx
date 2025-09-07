@@ -1990,20 +1990,29 @@ export default function AnimatedRugs() {
 
   return (
     <div className="absolute inset-0 w-full h-full">
-      <Canvas
-        camera={{ position: [0, 5, 15], fov: 60 }}
-        style={{ 
-          background: 'transparent',
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
           opacity: isVisible ? 1 : 0,
-          transform: isVisible ? 'scale(1)' : 'scale(0.8)',
+          transform: isVisible ? 'scale(1)' : 'scale(0.3)',
           transformOrigin: 'center center',
-          transition: 'opacity 1.5s ease-out, transform 1.5s ease-out'
+          transition: 'opacity 1.5s ease-in-out, transform 1.5s ease-in-out'
         }}
       >
-        <Suspense fallback={null}>
-          <Scene onLoaded={() => setIsVisible(true)} />
-        </Suspense>
-      </Canvas>
+        <Canvas
+          camera={{ position: [0, 5, 15], fov: 60 }}
+          style={{ 
+            background: 'transparent',
+            width: '100%',
+            height: '100%'
+          }}
+        >
+          <Suspense fallback={null}>
+            <Scene onLoaded={() => setIsVisible(true)} />
+          </Suspense>
+        </Canvas>
+      </div>
     </div>
   )
 }
