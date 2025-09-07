@@ -73,12 +73,13 @@ const getDynamicTextColor = (bgBrightness: number, aniSelectedPalette: any) => {
 }
 
 // Advanced Flying Rug Component with Your P5.js Generator Logic
-function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstRug = false }: { 
+function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstRug = false, rugsOpacity = 1 }: { 
   position: [number, number, number], 
   scale?: number, 
   seed?: number,
   dependenciesLoaded: boolean,
-  isFirstRug?: boolean
+  isFirstRug?: boolean,
+  rugsOpacity?: number
 }) {
   const rugRef = useRef<THREE.Mesh>(null)
   const groupRef = useRef<THREE.Group>(null)
@@ -86,8 +87,6 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const textureRef = useRef<THREE.CanvasTexture | null>(null)
   const startTimeRef = useRef<number | null>(null)
-  const [textureReady, setTextureReady] = useState(false)
-  const [textureOpacity, setTextureOpacity] = useState(0)
   
   // Your curated word list for the flying rugs
   // NOTE: First rug (isFirstRug=true) always shows WELCOME (hardcoded), other rugs randomly select from this array
@@ -1702,24 +1701,6 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
     return texture
   }
 
-  // Delayed texture generation for smooth fade-in
-  useEffect(() => {
-    if (dependenciesLoaded) {
-      // Add a delay before texture generation to allow for smooth fade-in
-      const textureDelay = isFirstRug ? 500 : 800 + (Math.random() * 400) // First rug appears faster, others staggered
-      const timer = setTimeout(() => {
-        setTextureReady(true)
-        // Start opacity fade-in
-        setTextureOpacity(0)
-        const fadeTimer = setTimeout(() => {
-          setTextureOpacity(0.95)
-        }, 100)
-        return () => clearTimeout(fadeTimer)
-      }, textureDelay)
-      
-      return () => clearTimeout(timer)
-    }
-  }, [dependenciesLoaded, isFirstRug])
 
   // Cleanup textures on unmount
   useEffect(() => {
@@ -1801,9 +1782,9 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
     }
   })
 
-  // Don't render until dependencies are loaded and texture is ready
-  const rugTexture = textureReady ? createRugTexture(0) : null // Only generate texture when ready
-  if (!dependenciesLoaded || !textureReady || !rugTexture) {
+  // Don't render until dependencies are loaded
+  const rugTexture = createRugTexture(0) // Generate texture immediately
+  if (!dependenciesLoaded || !rugTexture) {
     return null
   }
   
@@ -1821,7 +1802,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
             map={textureRef.current} 
             side={THREE.DoubleSide}
             transparent
-            opacity={textureOpacity}
+            opacity={0.95 * rugsOpacity}
             roughness={0.8}
             metalness={0.1}
             depthTest={false}
@@ -1899,16 +1880,25 @@ function FloatingParticles() {
 function Scene({ onLoaded }: { onLoaded?: () => void }) {
   const lightRef = useRef<THREE.DirectionalLight>(null)
   const [dependenciesLoaded, setDependenciesLoaded] = useState(false)
+  const [rugsOpacity, setRugsOpacity] = useState(0)
 
   useEffect(() => {
     // Reset global state when component mounts
     resetGlobalState()
     
     // Always set as loaded and trigger callback
-          setDependenciesLoaded(true)
+    setDependenciesLoaded(true)
+    
+    // Smooth fade-in for all rugs together
+    const timer = setTimeout(() => {
+      setRugsOpacity(1)
+    }, 800) // Wait for initial canvas fade-in to complete
+    
     if (onLoaded) {
       setTimeout(onLoaded, 100) // Small delay to ensure everything is rendered
     }
+    
+    return () => clearTimeout(timer)
   }, [onLoaded])
   
   useFrame((state) => {
@@ -1950,13 +1940,13 @@ function Scene({ onLoaded }: { onLoaded?: () => void }) {
       <Environment preset="sunset" background={false} />
       
       {/* Flying Rugs with Your Generator Logic - Each with unique seeds */}
-      <FlyingRug position={[0, 0, 0]} scale={1.2} seed={42} dependenciesLoaded={dependenciesLoaded} isFirstRug={true} />
-      <FlyingRug position={[-8, 2, -5]} scale={0.8} seed={1337} dependenciesLoaded={dependenciesLoaded} isFirstRug={false} />
-      <FlyingRug position={[8, -1, -3]} scale={0.9} seed={777} dependenciesLoaded={dependenciesLoaded} isFirstRug={false} />
-      <FlyingRug position={[5, 3, -8]} scale={0.7} seed={999} dependenciesLoaded={dependenciesLoaded} isFirstRug={false} />
-      <FlyingRug position={[-6, -2, -10]} scale={0.6} seed={555} dependenciesLoaded={dependenciesLoaded} isFirstRug={false} />
-      <FlyingRug position={[-3, 5, -12]} scale={0.5} seed={888} dependenciesLoaded={dependenciesLoaded} isFirstRug={false} />
-      <FlyingRug position={[10, -3, -15]} scale={0.4} seed={111} dependenciesLoaded={dependenciesLoaded} isFirstRug={false} />
+      <FlyingRug position={[0, 0, 0]} scale={1.2} seed={42} dependenciesLoaded={dependenciesLoaded} isFirstRug={true} rugsOpacity={rugsOpacity} />
+      <FlyingRug position={[-8, 2, -5]} scale={0.8} seed={1337} dependenciesLoaded={dependenciesLoaded} isFirstRug={false} rugsOpacity={rugsOpacity} />
+      <FlyingRug position={[8, -1, -3]} scale={0.9} seed={777} dependenciesLoaded={dependenciesLoaded} isFirstRug={false} rugsOpacity={rugsOpacity} />
+      <FlyingRug position={[5, 3, -8]} scale={0.7} seed={999} dependenciesLoaded={dependenciesLoaded} isFirstRug={false} rugsOpacity={rugsOpacity} />
+      <FlyingRug position={[-6, -2, -10]} scale={0.6} seed={555} dependenciesLoaded={dependenciesLoaded} isFirstRug={false} rugsOpacity={rugsOpacity} />
+      <FlyingRug position={[-3, 5, -12]} scale={0.5} seed={888} dependenciesLoaded={dependenciesLoaded} isFirstRug={false} rugsOpacity={rugsOpacity} />
+      <FlyingRug position={[10, -3, -15]} scale={0.4} seed={111} dependenciesLoaded={dependenciesLoaded} isFirstRug={false} rugsOpacity={rugsOpacity} />
       
       {/* Enhanced Floating Particles */}
       <FloatingParticles />
