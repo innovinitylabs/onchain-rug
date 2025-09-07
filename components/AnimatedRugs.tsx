@@ -1,5 +1,29 @@
 'use client'
 
+// Global palette tracker to ensure unique palettes for each rug
+let usedPaletteIndices = new Set<number>()
+let shuffledPaletteIndices: number[] = []
+
+// --- ani-seeded RNG utilities ---
+class AniSeededRandom {
+  private seed: number;
+
+  constructor(seed: number) {
+    this.seed = seed;
+  }
+
+  // returns a float [0,1)
+  next() {
+    const x = Math.sin(this.seed++) * 10000;
+    return x - Math.floor(x);
+  }
+
+  // returns integer [min, max)
+  nextInt(min: number, max: number) {
+    return Math.floor(this.next() * (max - min)) + min;
+  }
+}
+
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls, Float, Text3D, Environment } from '@react-three/drei'
 import { Suspense, useRef, useMemo, useEffect, useState } from 'react'
@@ -7,53 +31,7 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
 // Import P5.js functions from your generator
-declare global {
-  interface Window {
-    DOORMAT_CONFIG: any
-    stripeData: any[]
-    characterMap: any
-    colorPalettes: any[]
-    selectedPalette: any
-    warpThickness: number
-    generateDoormatCore: (seed: number) => void
-    drawTexturedSelvedgeArc: (centerX: number, centerY: number, radius: number, startAngle: number, endAngle: number, r: number, g: number, b: number, side: string) => void
-    doormatTextRows: string[]
-    generateTextDataInSketch?: () => void
-    textData?: Array<{x: number, y: number, width: number, height: number}>
-    lightTextColor?: any
-    darkTextColor?: any
-    // P5.js functions that need to be mocked
-    randomSeed: (seed: number) => () => number
-    noise: (x: number) => number
-    noiseSeed: (seed: number) => void
-    random: (min?: number | any[], max?: number) => any
-    color: (r: number | string, g?: number, b?: number, a?: number) => any
-    red: (c: any) => number
-    green: (c: any) => number
-    blue: (c: any) => number
-    lerpColor: (c1: any, c2: any, amt: number) => any
-    constrain: (n: number, low: number, high: number) => number
-    max: (...args: number[]) => number
-    min: (...args: number[]) => number
-    floor: (x: number) => number
-    cos: (x: number) => number
-    sin: (x: number) => number
-    fill: (r: number, g?: number, b?: number, a?: number) => void
-    noStroke: () => void
-    noFill: () => void
-    background: (r: number, g?: number, b?: number, a?: number) => void
-    arc: (x: number, y: number, w: number, h: number, start: number, stop: number) => void
-    ellipse: (x: number, y: number, w: number, h: number) => void
-    beginShape: () => void
-    vertex: (x: number, y: number) => void
-    endShape: () => void
-    strokeWeight: (weight: number) => void
-    noLoop: () => void
-    createCanvas: (w: number, h: number) => any
-    redraw: () => void
-    PI: number
-  }
-}
+// Global declarations removed - now using ES modules
 
 // Helper function to convert hex to RGB (matches your generator's color logic)
 const hexToRgb = (hex: string) => {
@@ -66,14 +44,14 @@ const hexToRgb = (hex: string) => {
 }
 
   // Helper function to get dynamic text color using your generator's exact logic
-  const getDynamicTextColor = (bgBrightness: number, selectedPalette: any) => {
-  if (selectedPalette && selectedPalette.colors) {
+const getDynamicTextColor = (bgBrightness: number, aniSelectedPalette: any) => {
+  if (aniSelectedPalette && aniSelectedPalette.colors) {
     // Find darkest and lightest colors from palette (matching your generator's updateTextColors logic)
-    let darkest = selectedPalette.colors[0]
-    let lightest = selectedPalette.colors[0]
+    let darkest = aniSelectedPalette.colors[0]
+    let lightest = aniSelectedPalette.colors[0]
     let darkestVal = 999, lightestVal = -1
     
-    selectedPalette.colors.forEach((hex: string) => {
+    aniSelectedPalette.colors.forEach((hex: string) => {
       const c = hexToRgb(hex)
       if (c) {
         const bright = (c.r + c.g + c.b) / 3
@@ -101,6 +79,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
   const initialPositions = useRef<Float32Array | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const textureRef = useRef<THREE.CanvasTexture | null>(null)
+  const startTimeRef = useRef<number | null>(null)
   
   // Your curated word list for the flying rugs
   // NOTE: First rug (isFirstRug=true) always shows WELCOME (hardcoded), other rugs randomly select from this array
@@ -114,9 +93,33 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
     'GOOD VIBES ONLY',
     'DIAMOND HANDS'
   ]
+
+  // Function to get a unique palette index
+  const getUniquePaletteIndex = (totalPalettes: number): number => {
+    // If we've used all palettes, reset and shuffle again
+    if (usedPaletteIndices.size >= totalPalettes) {
+      usedPaletteIndices.clear()
+      shuffledPaletteIndices = []
+    }
+    
+    // If we need to shuffle, create a new shuffled array
+    if (shuffledPaletteIndices.length === 0) {
+      shuffledPaletteIndices = Array.from({ length: totalPalettes }, (_, i) => i)
+      // Fisher-Yates shuffle
+      for (let i = shuffledPaletteIndices.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffledPaletteIndices[i], shuffledPaletteIndices[j]] = [shuffledPaletteIndices[j], shuffledPaletteIndices[i]]
+      }
+    }
+    
+    // Get the next unused palette index
+    const nextIndex = shuffledPaletteIndices[usedPaletteIndices.size]
+    usedPaletteIndices.add(nextIndex)
+    return nextIndex
+  }
   
   // Stripe generation function EXACTLY like your generator
-  const generateStripeDataForRug = (selectedPalette: any, doormatHeight: number, random: () => number) => {
+  const generateStripeDataForRug = (aniSelectedPalette: any, doormatHeight: number, random: () => number) => {
     const stripeData: Array<{
       y: number,
       height: number,
@@ -174,9 +177,9 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
       }
       
       // Select colors for this stripe (EXACTLY like your generator)
-      let primaryColor = selectedPalette.colors[Math.floor(random() * selectedPalette.colors.length)]
+      let primaryColor = aniSelectedPalette.colors[Math.floor(random() * aniSelectedPalette.colors.length)]
       let hasSecondaryColor = random() < 0.15 // 15% chance of blended colors
-      let secondaryColor = hasSecondaryColor ? selectedPalette.colors[Math.floor(random() * selectedPalette.colors.length)] : null
+      let secondaryColor = hasSecondaryColor ? aniSelectedPalette.colors[Math.floor(random() * aniSelectedPalette.colors.length)] : null
       
       // Determine weave pattern type with weighted probabilities (EXACTLY like your generator)
       let weaveRand = random()
@@ -206,8 +209,8 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
   
   // Sophisticated fringe and selvedge drawing function (EXACT COPY of your generator)
   const drawFringeAndSelvedge = (ctx: CanvasRenderingContext2D, stripeData: any[], doormatWidth: number, doormatHeight: number, fringeLength: number, random: () => number, offsetX: number, offsetY: number) => {
-    const warpThickness = window.warpThickness || 2
-    const weftThickness = window.DOORMAT_CONFIG?.WEFT_THICKNESS || 8
+    const animWarpThickness = 2
+    const animWeftThickness = 8
     
     // Draw sophisticated fringe sections (EXACT COPY of your drawFringeSection)
     drawFringeSection(ctx, offsetX, offsetY, doormatWidth, fringeLength, 'top', random, fringeLength, stripeData)
@@ -241,7 +244,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
       
       // Draw individual fringe strand with thin threads (EXACT COPY of your logic)
       for (let j = 0; j < 12; j++) { // More but thinner threads per strand
-        const threadX = strandX + random() * strandWidth/3 - strandWidth/6
+        const threadX = strandX + random() * strandWidth / 3 - strandWidth / 6
         const startY = side === 'top' ? y : y
         const endY = side === 'top' ? y - fringeLength : y + fringeLength
         
@@ -287,13 +290,13 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
   
   // Sophisticated selvedge edges drawing (EXACT COPY of your drawSelvedgeEdges)
   const drawSelvedgeEdges = (ctx: CanvasRenderingContext2D, stripeData: any[], doormatWidth: number, doormatHeight: number, fringeLength: number, random: () => number, offsetX: number, offsetY: number) => {
-    const weftThickness = window.DOORMAT_CONFIG?.WEFT_THICKNESS || 8
-    const weftSpacing = weftThickness + 1
+    const animWeftThickness = 8
+    const animWeftSpacing = animWeftThickness + 1
     
     // Left selvedge edge - flowing semicircular weft threads (EXACT COPY)
     let isFirstWeft = true
     for (let stripe of stripeData) {
-      for (let y = stripe.y; y < stripe.y + stripe.height; y += weftSpacing) {
+      for (let y = stripe.y; y < stripe.y + stripe.height; y += animWeftSpacing) {
         // Skip the very first and very last weft threads (EXACT COPY)
         if (isFirstWeft) {
           isFirstWeft = false
@@ -301,7 +304,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
         }
         
         // Check if this is the last weft thread (EXACT COPY)
-        if (stripe === stripeData[stripeData.length - 1] && y + weftSpacing >= stripe.y + stripe.height) {
+        if (stripe === stripeData[stripeData.length - 1] && y + animWeftSpacing >= stripe.y + stripe.height) {
           continue
         }
         
@@ -320,10 +323,10 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
         const b = parseInt(selvedgeColor.slice(5, 7), 16) * 0.8
         
         // Draw sophisticated selvedge arc (EXACT COPY of your drawTexturedSelvedgeArc)
-        const radius = weftThickness * (random() * 0.6 + 1.2)
+        const radius = animWeftThickness * (random() * 0.6 + 1.2)
         // FIXED: Move 2 pixels closer to rug edges to eliminate gaps
         const centerX = offsetX + radius * 0.6 + (random() * 2 - 1) // 2 pixels closer to edge
-        const centerY = offsetY + y + weftThickness/2 + (random() * 2 - 1) // Slight vertical variation like your generator
+        const centerY = offsetY + y + animWeftThickness / 2 + (random() * 2 - 1) // Slight vertical variation like your generator
         
         // FIXED: Use EXACT angles from your original P5.js generator
         // Left selvedge: P5.js uses 90° to -90°, Canvas needs 90° to -90° for correct semicircle
@@ -340,7 +343,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
     // Right selvedge edge - flowing semicircular weft threads (EXACT COPY)
     let isFirstWeftRight = true
     for (let stripe of stripeData) {
-      for (let y = stripe.y; y < stripe.y + stripe.height; y += weftSpacing) {
+      for (let y = stripe.y; y < stripe.y + stripe.height; y += animWeftSpacing) {
         // Skip the very first and very last weft threads (EXACT COPY)
         if (isFirstWeftRight) {
           isFirstWeftRight = false
@@ -348,7 +351,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
         }
         
         // Check if this is the last weft thread (EXACT COPY)
-        if (stripe === stripeData[stripeData.length - 1] && y + weftSpacing >= stripe.y + stripe.height) {
+        if (stripe === stripeData[stripeData.length - 1] && y + animWeftSpacing >= stripe.y + stripe.height) {
           continue
         }
         
@@ -367,10 +370,10 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
         const b = parseInt(selvedgeColor.slice(5, 7), 16) * 0.8
         
         // Draw sophisticated selvedge arc (EXACT COPY of your drawTexturedSelvedgeArc)
-        const radius = weftThickness * (random() * 0.6 + 1.2)
+        const radius = animWeftThickness * (random() * 0.6 + 1.2)
         // FIXED: Move 2 pixels closer to rug edges to eliminate gaps
         const centerX = offsetX + doormatWidth - radius * 0.6 + (random() * 2 - 1) // 2 pixels closer to edge
-        const centerY = offsetY + y + weftThickness/2 + (random() * 2 - 1) // Slight vertical variation like your generator
+        const centerY = offsetY + y + animWeftThickness / 2 + (random() * 2 - 1) // Slight vertical variation like your generator
         
         // FIXED: Use EXACT angles from your original P5.js generator
         // Right selvedge: P5.js uses -90° to 90°, Canvas needs -90° to 90° for correct semicircle
@@ -459,15 +462,15 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
   
   // Stripe drawing function with proper weaving (EXACTLY like your generator)
   const drawStripeWithWeaving = (ctx: CanvasRenderingContext2D, stripe: any, doormatWidth: number, doormatHeight: number, random: () => number, offsetX: number, offsetY: number) => {
-    const warpThickness = window.warpThickness || 2
-    const weftThickness = window.DOORMAT_CONFIG?.WEFT_THICKNESS || 8
+    const animWarpThickness = 2
+    const animWeftThickness = 8
     
-    let warpSpacing = warpThickness + 1
-    let weftSpacing = weftThickness + 1
+    let animWarpSpacing = animWarpThickness + 1
+    let animWeftSpacing = animWeftThickness + 1
     
     // Draw warp threads (vertical) as the foundation (EXACTLY like your generator)
-    for (let x = 0; x < doormatWidth; x += warpSpacing) {
-      for (let y = stripe.y; y < stripe.y + stripe.height; y += weftSpacing) {
+    for (let x = 0; x < doormatWidth; x += animWarpSpacing) {
+      for (let y = stripe.y; y < stripe.y + stripe.height; y += animWeftSpacing) {
         // Parse hex color directly
         let r = parseInt(stripe.primaryColor.slice(1, 3), 16) + (random() * 30 - 15)
         let g = parseInt(stripe.primaryColor.slice(3, 5), 16) + (random() * 30 - 15)
@@ -478,13 +481,13 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
         b = Math.max(0, Math.min(255, b))
         
         ctx.fillStyle = `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`
-        ctx.fillRect(x + offsetX, y + offsetY, warpThickness, weftSpacing)
+        ctx.fillRect(x + offsetX, y + offsetY, animWarpThickness, animWeftSpacing)
       }
     }
     
     // Draw weft threads (horizontal) that interlace with warp (EXACTLY like your generator)
-    for (let y = stripe.y; y < stripe.y + stripe.height; y += weftSpacing) {
-      for (let x = 0; x < doormatWidth; x += warpSpacing) {
+    for (let y = stripe.y; y < stripe.y + stripe.height; y += animWeftSpacing) {
+      for (let x = 0; x < doormatWidth; x += animWarpSpacing) {
         // Parse hex color directly
         let r = parseInt(stripe.primaryColor.slice(1, 3), 16) + (random() * 20 - 10)
         let g = parseInt(stripe.primaryColor.slice(3, 5), 16) + (random() * 20 - 10)
@@ -502,29 +505,868 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
         b = Math.max(0, Math.min(255, b))
         
         ctx.fillStyle = `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`
-        ctx.fillRect(x + offsetX, y + offsetY, warpSpacing, weftThickness)
+        ctx.fillRect(x + offsetX, y + offsetY, animWarpSpacing, animWeftThickness)
       }
     }
   }
+
+  // --- ani-prefixed compatibility wrappers ---
+  // These wrappers let the rest of AnimatedRugs use the ani* names
+  // while delegating to the already-implemented generator functions.
+
+  const generateAniStripeData = (aniSelectedPalette: any, doormatHeight: number, aniRandomFn: () => number) => {
+    // Reuse the existing stripe generator (generateStripeDataForRug)
+    // which already produces stripe objects matching the original algorithm.
+    return generateStripeDataForRug(aniSelectedPalette, doormatHeight, aniRandomFn)
+  }
+
+  const drawAniStripe = (ctx: CanvasRenderingContext2D, stripe: any, doormatWidth: number, doormatHeight: number, aniRandomFn: () => number, offsetX: number, offsetY: number) => {
+    // Delegate to the full weaving implementation already present
+    drawStripeWithWeaving(ctx, stripe, doormatWidth, doormatHeight, aniRandomFn, offsetX, offsetY)
+  }
+
+  const drawAniFringe = (ctx: CanvasRenderingContext2D, stripeData: any[], doormatWidth: number, doormatHeight: number, fringeLength: number, aniRandomFn: () => number, offsetX: number, offsetY: number) => {
+    // Delegate to the combined fringe + selvedge routine
+    drawFringeAndSelvedge(ctx, stripeData, doormatWidth, doormatHeight, fringeLength, aniRandomFn, offsetX, offsetY)
+  }
+
+  // --- New helper for selvedge edge rectangles (binding) ---
+  // Draws snug edge rectangles and subtle woven effect at the sides
+  const drawAniSelvedgeEdges = (
+    ctx: CanvasRenderingContext2D,
+    aniStripeData: any[],
+    doormatWidth: number,
+    doormatHeight: number,
+    aniRandomFn: () => number,
+    offsetX: number,
+    offsetY: number
+  ) => {
+    const selvedgeWidth = 5; // snug edge binding
+    aniStripeData.forEach((stripe) => {
+      const yStart = stripe.y;
+      const yEnd = stripe.y + stripe.height;
+
+      // Base selvedge rectangles (snug to stripe boundaries)
+      ctx.fillStyle = stripe.color || stripe.primaryColor;
+      ctx.fillRect(offsetX, offsetY + yStart, selvedgeWidth, stripe.height); // left
+      ctx.fillRect(offsetX + doormatWidth - selvedgeWidth, offsetY + yStart, selvedgeWidth, stripe.height); // right
+
+      // Subtle woven effect using secondary or darker color
+      ctx.strokeStyle = stripe.secondaryColor || "#00000033";
+      ctx.lineWidth = 1;
+      for (let y = yStart; y < yEnd; y += 3) {
+        ctx.beginPath();
+        ctx.arc(offsetX + selvedgeWidth / 2, offsetY + y, 1.5, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(offsetX + doormatWidth - selvedgeWidth / 2, offsetY + y, 1.5, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    });
+  }
+
+  // Local color palettes for doormat generation
+  const localColorPalettes = [
+    // ===== GLOBAL PALETTES (25) =====
+    
+    // Classic Red & Black - most common doormat colors
+    {
+        name: "Classic Red & Black",
+        colors: [
+            '#8B0000', '#DC143C', '#B22222', '#000000', '#2F2F2F', '#696969', '#8B4513', '#A0522D'
+        ]
+    },
+    // Natural Jute & Hemp - eco-friendly doormat colors
+    {
+        name: "Natural Jute & Hemp",
+        colors: [
+            '#F5DEB3', '#DEB887', '#D2B48C', '#BC8F8F', '#8B7355', '#A0522D', '#654321', '#2F2F2F'
+        ]
+    },
+    // Coastal Blue & White - beach house style
+    {
+        name: "Coastal Blue & White",
+        colors: [
+            '#4682B4', '#5F9EA0', '#87CEEB', '#B0E0E6', '#F8F8FF', '#F0F8FF', '#E6E6FA', '#B0C4DE'
+        ]
+    },
+    // Rustic Farmhouse - warm, earthy tones
+    {
+        name: "Rustic Farmhouse",
+        colors: [
+            '#8B4513', '#A0522D', '#CD853F', '#D2691E', '#F4A460', '#DEB887', '#F5DEB3', '#F4E4BC'
+        ]
+    },
+    // Modern Gray & White - contemporary minimalist
+    {
+        name: "Modern Gray & White",
+        colors: [
+            '#F5F5F5', '#FFFFFF', '#D3D3D3', '#C0C0C0', '#A9A9A9', '#808080', '#696969', '#2F2F2F'
+        ]
+    },
+    // Autumn Harvest - warm fall colors
+    {
+        name: "Autumn Harvest",
+        colors: [
+            '#8B4513', '#D2691E', '#CD853F', '#F4A460', '#8B0000', '#B22222', '#FF8C00', '#FFA500'
+        ]
+    },
+    // Spring Garden - fresh, vibrant colors
+    {
+        name: "Spring Garden",
+        colors: [
+            '#228B22', '#32CD32', '#90EE90', '#98FB98', '#FF69B4', '#FFB6C1', '#87CEEB', '#F0E68C'
+        ]
+    },
+    // Industrial Metal - urban, modern look
+    {
+        name: "Industrial Metal",
+        colors: [
+            '#2F4F4F', '#696969', '#808080', '#A9A9A9', '#C0C0C0', '#D3D3D3', '#F5F5F5', '#000000'
+        ]
+    },
+    // Mediterranean - warm, sun-baked colors
+    {
+        name: "Mediterranean",
+        colors: [
+            '#FF6347', '#FF4500', '#FF8C00', '#FFA500', '#F4A460', '#DEB887', '#87CEEB', '#4682B4'
+        ]
+    },
+    // Scandinavian - clean, light colors
+    {
+        name: "Scandinavian",
+        colors: [
+            '#FFFFFF', '#F8F9FA', '#E9ECEF', '#DEE2E6', '#CED4DA', '#ADB5BD', '#6C757D', '#495057'
+        ]
+    },
+    // Nordic Forest - deep greens and browns
+    {
+        name: "Nordic Forest",
+        colors: [
+            '#2D5016', '#3A5F0B', '#4A7C59', '#5D8B66', '#6B8E23', '#8FBC8F', '#9ACD32', '#ADFF2F'
+        ]
+    },
+    // Desert Sunset - warm, sandy tones
+    {
+        name: "Desert Sunset",
+        colors: [
+            '#CD853F', '#DEB887', '#F4A460', '#D2B48C', '#BC8F8F', '#8B4513', '#A0522D', '#D2691E'
+        ]
+    },
+    // Arctic Ice - cool, icy colors
+    {
+        name: "Arctic Ice",
+        colors: [
+            '#F0F8FF', '#E6E6FA', '#B0C4DE', '#87CEEB', '#B0E0E6', '#F0FFFF', '#E0FFFF', '#F5F5F5'
+        ]
+    },
+    // Tropical Paradise - vibrant, warm colors
+    {
+        name: "Tropical Paradise",
+        colors: [
+            '#FF6347', '#FF4500', '#FF8C00', '#FFA500', '#32CD32', '#90EE90', '#98FB98', '#00CED1'
+        ]
+    },
+    // Vintage Retro - muted, nostalgic colors
+    {
+        name: "Vintage Retro",
+        colors: [
+            '#8B4513', '#A0522D', '#CD853F', '#D2691E', '#BC8F8F', '#8B7355', '#F5DEB3', '#F4E4BC'
+        ]
+    },
+    // Art Deco - elegant, sophisticated colors
+    {
+        name: "Art Deco",
+        colors: [
+            '#000000', '#2F2F2F', '#696969', '#8B4513', '#A0522D', '#CD853F', '#F5DEB3', '#FFFFFF'
+        ]
+    },
+    // Bohemian - eclectic, artistic colors
+    {
+        name: "Bohemian",
+        colors: [
+            '#8E44AD', '#9B59B6', '#E67E22', '#D35400', '#E74C3C', '#C0392B', '#16A085', '#1ABC9C'
+        ]
+    },
+    // Minimalist - clean, simple colors
+    {
+        name: "Minimalist",
+        colors: [
+            '#FFFFFF', '#F5F5F5', '#E0E0E0', '#CCCCCC', '#999999', '#666666', '#333333', '#000000'
+        ]
+    },
+    // Corporate - professional, business colors
+    {
+        name: "Corporate",
+        colors: [
+            '#2F4F4F', '#696969', '#808080', '#A9A9A9', '#C0C0C0', '#D3D3D3', '#F5F5F5', '#FFFFFF'
+        ]
+    },
+    // Luxury - rich, premium colors
+    {
+        name: "Luxury",
+        colors: [
+            '#000000', '#2F2F2F', '#8B4513', '#A0522D', '#CD853F', '#D2691E', '#F5DEB3', '#FFD700'
+        ]
+    },
+    // Pastel Dreams - soft, gentle colors
+    {
+        name: "Pastel Dreams",
+        colors: [
+            '#FFB6C1', '#FFC0CB', '#FFE4E1', '#F0E68C', '#98FB98', '#90EE90', '#87CEEB', '#E6E6FA'
+        ]
+    },
+    // Earth Tones - natural, organic colors
+    {
+        name: "Earth Tones",
+        colors: [
+            '#8B4513', '#A0522D', '#CD853F', '#D2691E', '#F4A460', '#DEB887', '#D2B48C', '#BC8F8F'
+        ]
+    },
+    // Ocean Depths - deep, marine colors
+    {
+        name: "Ocean Depths",
+        colors: [
+            '#000080', '#191970', '#4169E1', '#4682B4', '#5F9EA0', '#87CEEB', '#B0E0E6', '#E0FFFF'
+        ]
+    },
+    // Mountain Mist - cool, natural colors
+    {
+        name: "Mountain Mist",
+        colors: [
+            '#2F4F4F', '#4A5D6B', '#5F7A7A', '#6B8E8E', '#87CEEB', '#B0C4DE', '#E6E6FA', '#F0F8FF'
+        ]
+    },
+    // Sunset Glow - warm, radiant colors
+    {
+        name: "Sunset Glow",
+        colors: [
+            '#FF6347', '#FF4500', '#FF8C00', '#FFA500', '#FFD700', '#DC143C', '#8B0000', '#2F2F2F'
+        ]
+    },
+    
+    // ===== INDIAN CULTURAL PALETTES (18) =====
+    
+    // Rajasthani - vibrant, royal colors
+    {
+        name: "Rajasthani",
+        colors: [
+            '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#FF1493', '#8B0000', '#4B0082', '#000080'
+        ]
+    },
+
+    // Kerala - coastal, tropical colors
+    {
+        name: "Kerala",
+        colors: [
+            '#228B22', '#32CD32', '#90EE90', '#98FB98', '#00CED1', '#87CEEB', '#4682B4', '#000080'
+        ]
+    },
+    // Gujarat - colorful, festive colors
+    {
+        name: "Gujarat",
+        colors: [
+            '#FF4500', '#FF6347', '#FFD700', '#FFA500', '#DC143C', '#4B0082', '#32CD32', '#FFFFFF'
+        ]
+    },
+    // Punjab - warm, harvest colors
+    {
+        name: "Punjab",
+        colors: [
+            '#FFD700', '#FFA500', '#FF8C00', '#FF6347', '#FF4500', '#8B0000', '#228B22', '#006400'
+        ]
+    },
+    // Bengal - monsoon, lush colors
+    {
+        name: "Bengal",
+        colors: [
+            '#228B22', '#32CD32', '#90EE90', '#F5DEB3', '#DEB887', '#8B4513', '#4682B4', '#000080'
+        ]
+    },
+    // Kashmir - cool, mountain colors
+    {
+        name: "Kashmir",
+        colors: [
+            '#87CEEB', '#B0E0E6', '#E0FFFF', '#F0F8FF', '#E6E6FA', '#B0C4DE', '#4682B4', '#000080'
+        ]
+    },
+    // Maharashtra - earthy, warm colors
+    {
+        name: "Maharashtra",
+        colors: [
+            '#8B4513', '#A0522D', '#CD853F', '#D2691E', '#F4A460', '#DEB887', '#D2B48C', '#BC8F8F'
+        ]
+    },
+    // Tamil Nadu - traditional, cultural colors
+    {
+        name: "Tamil Nadu",
+        colors: [
+            '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#FF1493', '#8B0000', '#4B0082', '#000080'
+        ]
+    },
+    // Karnataka - forest, nature colors
+    {
+        name: "Karnataka",
+        colors: [
+            '#228B22', '#32CD32', '#90EE90', '#98FB98', '#8B4513', '#A0522D', '#CD853F', '#D2691E'
+        ]
+    },
+    // Andhra Pradesh - coastal, vibrant colors
+    {
+        name: "Andhra Pradesh",
+        colors: [
+            '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#00CED1', '#87CEEB', '#4682B4', '#000080'
+        ]
+    },
+    // Telangana - modern, urban colors
+    {
+        name: "Telangana",
+        colors: [
+            '#2F4F4F', '#696969', '#808080', '#A9A9A9', '#C0C0C0', '#D3D3D3', '#F5F5F5', '#FFFFFF'
+        ]
+    },
+    // Odisha - tribal, earthy colors
+    {
+        name: "Odisha",
+        colors: [
+            '#8B4513', '#A0522D', '#CD853F', '#D2691E', '#F4A460', '#DEB887', '#D2B48C', '#BC8F8F'
+        ]
+    },
+    // Madhya Pradesh - central, balanced colors
+    {
+        name: "Madhya Pradesh",
+        colors: [
+            '#228B22', '#32CD32', '#90EE90', '#98FB98', '#8B4513', '#A0522D', '#CD853F', '#D2691E'
+        ]
+    },
+    // Uttar Pradesh - northern, traditional colors
+    {
+        name: "Uttar Pradesh",
+        colors: [
+            '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#FF1493', '#8B0000', '#4B0082', '#000080'
+        ]
+    },
+    // Bihar - eastern, cultural colors
+    {
+        name: "Bihar",
+        colors: [
+            '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#FF1493', '#8B0000', '#4B0082', '#000080'
+        ]
+    },
+    // West Bengal - eastern, artistic colors
+    {
+        name: "West Bengal",
+        colors: [
+            '#228B22', '#32CD32', '#90EE90', '#98FB98', '#00CED1', '#87CEEB', '#4682B4', '#000080'
+        ]
+    },
+    // Assam - northeastern, natural colors
+    {
+        name: "Assam",
+        colors: [
+            '#228B22', '#32CD32', '#90EE90', '#98FB98', '#8B4513', '#A0522D', '#CD853F', '#D2691E'
+        ]
+    },
+    // Himachal Pradesh - mountain, cool colors
+    {
+        name: "Himachal Pradesh",
+        colors: [
+            '#87CEEB', '#B0E0E6', '#E0FFFF', '#F0F8FF', '#E6E6FA', '#B0C4DE', '#4682B4', '#000080'
+        ]
+    },
+    
+    // ===== TAMIL CULTURAL PALETTES (11) =====
+    
+    // Tamil Classical - traditional, ancient colors
+    {
+        name: "Tamil Classical",
+        colors: [
+            '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#FF1493', '#8B0000', '#4B0082', '#000080'
+        ]
+    },
+    // Sangam Era - literary, cultural colors
+    {
+        name: "Sangam Era",
+        colors: [
+            '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#FF1493', '#8B0000', '#4B0082', '#000080'
+        ]
+    },
+    // Chola Dynasty - royal, imperial colors
+    {
+        name: "Chola Dynasty",
+        colors: [
+            '#8B0000', '#DC143C', '#B22222', '#FF4500', '#FF8C00', '#FFD700', '#228B22', '#006400'
+        ]
+    },
+    // Pandya Kingdom - southern, coastal colors
+    {
+        name: "Pandya Kingdom",
+        colors: [
+            '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#00CED1', '#87CEEB', '#4682B4', '#000080'
+        ]
+    },
+    // Chera Dynasty - western coast, spice trade colors
+    {
+        name: "Chera Dynasty",
+        colors: [
+            '#228B22', '#32CD32', '#90EE90', '#8B4513', '#A0522D', '#FFD700', '#00CED1', '#000080'
+        ]
+    },
+    // Pallava Empire - architectural, stone colors
+    {
+        name: "Pallava Empire",
+        colors: [
+            '#8B4513', '#A0522D', '#CD853F', '#D2691E', '#F4A460', '#DEB887', '#D2B48C', '#BC8F8F'
+        ]
+    },
+    // Vijayanagara - golden, prosperous colors
+    {
+        name: "Vijayanagara",
+        colors: [
+            '#FFD700', '#FFA500', '#FF8C00', '#FF6347', '#FF4500', '#8B0000', '#228B22', '#006400'
+        ]
+    },
+    // Nayak Dynasty - artistic, temple colors
+    {
+        name: "Nayak Dynasty",
+        colors: [
+            '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#FF1493', '#8B0000', '#4B0082', '#000080'
+        ]
+    },
+    // Maratha Rule - warrior, strong colors
+    {
+        name: "Maratha Rule",
+        colors: [
+            '#8B0000', '#DC143C', '#B22222', '#FF4500', '#FF8C00', '#FFD700', '#228B22', '#006400'
+        ]
+    },
+    // British Colonial - mixed, hybrid colors
+    {
+        name: "British Colonial",
+        colors: [
+            '#2F4F4F', '#696969', '#808080', '#A9A9A9', '#C0C0C0', '#D3D3D3', '#F5F5F5', '#FFFFFF'
+        ]
+    },
+    // Modern Tamil - contemporary, urban colors
+    {
+        name: "Modern Tamil",
+        colors: [
+            '#2F4F4F', '#696969', '#808080', '#A9A9A9', '#C0C0C0', '#D3D3D3', '#F5F5F5', '#FFFFFF'
+        ]
+    },
+    // Jamakalam - traditional Tamil floor mat colors
+    {
+        name: "Jamakalam",
+        colors: [
+            '#8B0000', '#DC143C', '#FFD700', '#FFA500', '#228B22', '#32CD32', '#4B0082', '#000000'
+        ]
+    },
+    
+    // ===== NATURAL DYE PALETTES (8) =====
+    
+    // Indigo Dye - deep blue, natural colors
+    {
+        name: "Indigo Dye",
+        colors: [
+            '#000080', '#191970', '#4169E1', '#4682B4', '#5F9EA0', '#87CEEB', '#B0E0E6', '#E0FFFF'
+        ]
+    },
+    // Madder Root - red, earthy colors
+    {
+        name: "Madder Root",
+        colors: [
+            '#8B0000', '#DC143C', '#B22222', '#FF4500', '#FF6347', '#CD5C5C', '#F08080', '#FA8072'
+        ]
+    },
+    // Turmeric - golden, warm colors
+    {
+        name: "Turmeric",
+        colors: [
+            '#FFD700', '#FFA500', '#FF8C00', '#FF6347', '#FF4500', '#DAA520', '#B8860B', '#CD853F'
+        ]
+    },
+    // Henna - reddish-brown, natural colors
+    {
+        name: "Henna",
+        colors: [
+            '#8B4513', '#A0522D', '#CD853F', '#D2691E', '#F4A460', '#DEB887', '#D2B48C', '#BC8F8F'
+        ]
+    },
+    // Pomegranate - deep red, rich colors
+    {
+        name: "Pomegranate",
+        colors: [
+            '#8B0000', '#DC143C', '#B22222', '#FF4500', '#FF6347', '#CD5C5C', '#F08080', '#FA8072'
+        ]
+    },
+    // Neem - green, natural colors
+    {
+        name: "Neem",
+        colors: [
+            '#228B22', '#32CD32', '#90EE90', '#98FB98', '#8B4513', '#A0522D', '#CD853F', '#D2691E'
+        ]
+    },
+    // Saffron - golden, precious colors
+    {
+        name: "Saffron",
+        colors: [
+            '#FFD700', '#FFA500', '#FF8C00', '#FF6347', '#FF4500', '#DAA520', '#B8860B', '#CD853F'
+        ]
+    },
+    // Marigold - bright, cheerful colors
+    {
+        name: "Marigold",
+        colors: [
+            '#FFD700', '#FFA500', '#FF8C00', '#FF6347', '#FF4500', '#FF1493', '#FF69B4', '#FFB6C1'
+        ]
+    },
+    
+    // ===== MADRAS CHECKS & TAMIL NADU INSPIRED PALETTES (8) =====
+    
+    // Madras Checks - traditional plaid colors
+    {
+        name: "Madras Checks",
+        colors: [
+            '#8B0000', '#DC143C', '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#228B22', '#006400'
+        ]
+    },
+    // Tamil Nadu Temple - sacred, vibrant colors
+    {
+        name: "Tamil Nadu Temple",
+        colors: [
+            '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#FF1493', '#8B0000', '#4B0082', '#000080'
+        ]
+    },
+    // Kanchipuram Silk - luxurious, traditional colors
+    {
+        name: "Kanchipuram Silk",
+        colors: [
+            '#8B0000', '#DC143C', '#B22222', '#FF4500', '#FF8C00', '#FFD700', '#228B22', '#006400'
+        ]
+    },
+    // Thanjavur Art - classical, artistic colors
+    {
+        name: "Thanjavur Art",
+        colors: [
+            '#FFD700', '#FFA500', '#FF8C00', '#FF6347', '#FF4500', '#8B0000', '#228B22', '#006400'
+        ]
+    },
+    // Chettinad Architecture - heritage, warm colors
+    {
+        name: "Chettinad Architecture",
+        colors: [
+            '#8B4513', '#A0522D', '#CD853F', '#D2691E', '#F4A460', '#DEB887', '#D2B48C', '#BC8F8F'
+        ]
+    },
+    // Madurai Meenakshi - divine, colorful palette
+    {
+        name: "Madurai Meenakshi",
+        colors: [
+            '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#FF1493', '#8B0000', '#4B0082', '#000080'
+        ]
+    },
+    // Coimbatore Cotton - natural, earthy colors
+    {
+        name: "Coimbatore Cotton",
+        colors: [
+            '#F5DEB3', '#DEB887', '#D2B48C', '#BC8F8F', '#8B7355', '#A0522D', '#654321', '#2F2F2F'
+        ]
+    },
+    // Salem Silk - traditional, refined colors
+    {
+        name: "Salem Silk",
+        colors: [
+            '#8B0000', '#DC143C', '#B22222', '#FF4500', '#FF8C00', '#FFD700', '#228B22', '#006400'
+        ]
+    },
+    
+    // ===== WESTERN GHATS BIRDS PALETTES (6) =====
+    
+    // Indian Peacock - majestic, iridescent colors
+    {
+        name: "Indian Peacock",
+        colors: [
+            '#000080', '#191970', '#4169E1', '#4682B4', '#00CED1', '#40E0D0', '#48D1CC', '#20B2AA'
+        ]
+    },
+    // Flamingo - tropical, pink-orange colors
+    {
+        name: "Flamingo",
+        colors: [
+            '#FF69B4', '#FF1493', '#FFB6C1', '#FFC0CB', '#FF6347', '#FF4500', '#FF8C00', '#FFA500'
+        ]
+    },
+    // Toucan - vibrant, tropical colors
+    {
+        name: "Toucan",
+        colors: [
+            '#FFD700', '#FFA500', '#FF8C00', '#FF6347', '#FF4500', '#000000', '#FFFFFF', '#FF1493'
+        ]
+    },
+    // Malabar Trogon - forest, jewel colors
+    {
+        name: "Malabar Trogon",
+        colors: [
+            '#8B0000', '#DC143C', '#FFD700', '#FFA500', '#228B22', '#32CD32', '#000000', '#FFFFFF'
+        ]
+    },
+    // Nilgiri Flycatcher - mountain, cool colors
+    {
+        name: "Nilgiri Flycatcher",
+        colors: [
+            '#87CEEB', '#B0E0E6', '#E0FFFF', '#F0F8FF', '#E6E6FA', '#B0C4DE', '#4682B4', '#000080'
+        ]
+    },
+    // Malabar Parakeet - forest, green colors
+    {
+        name: "Malabar Parakeet",
+        colors: [
+            '#228B22', '#32CD32', '#90EE90', '#98FB98', '#8B4513', '#A0522D', '#CD853F', '#D2691E'
+        ]
+    },
+    
+    // ===== HISTORICAL DYNASTY & CULTURAL PALETTES (6) =====
+    
+    // Pandya Dynasty - southern, maritime colors
+    {
+        name: "Pandya Dynasty",
+        colors: [
+            '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#00CED1', '#87CEEB', '#4682B4', '#000080'
+        ]
+    },
+    // Maratha Empire - warrior, strong colors
+    {
+        name: "Maratha Empire",
+        colors: [
+            '#8B0000', '#DC143C', '#B22222', '#FF4500', '#FF8C00', '#FFD700', '#228B22', '#006400'
+        ]
+    },
+    // Maurya Empire - imperial, ancient colors
+    {
+        name: "Maurya Empire",
+        colors: [
+            '#000080', '#191970', '#4169E1', '#4682B4', '#FFD700', '#FFA500', '#8B4513', '#A0522D'
+        ]
+    },
+    // Buddhist - peaceful, spiritual colors
+    {
+        name: "Buddhist",
+        colors: [
+            '#FFD700', '#FFA500', '#8B4513', '#A0522D', '#228B22', '#32CD32', '#90EE90', '#FFFFFF'
+        ]
+    },
+    
+    // ===== FAMINE & HISTORICAL PERIOD PALETTES (2) =====
+    
+    // Indigo Famine - colonial, oppressive colors
+    {
+        name: "Indigo Famine",
+        colors: [
+            '#000080', '#191970', '#4169E1', '#4682B4', '#2F4F4F', '#696969', '#808080', '#A9A9A9'
+        ]
+    },
+    // Bengal Famine - tragic, somber colors
+    {
+        name: "Bengal Famine",
+        colors: [
+            '#8B0000', '#DC143C', '#B22222', '#2F4F4F', '#696969', '#808080', '#A9A9A9', '#000000'
+        ]
+    },
+    
+    // ===== MADRAS GENERATOR GLOBAL PALETTES (20) =====
+    
+    // Natural Dyes - authentic traditional colors
+    {
+        name: "Natural Dyes",
+        colors: [
+            '#405BAA', '#B33A3A', '#D9A43B', '#1F1E1D', '#5A7A5A', '#8C5832', '#A48E7F', '#FAF1E3'
+        ]
+    },
+    // Expanded Traditional - extended Madras palette
+    {
+        name: "Expanded Traditional",
+        colors: [
+            '#405BAA', '#B33A3A', '#D9A43B', '#5A7A5A', '#8C5832', '#A48E7F', '#1F1E1D', '#FAF1E3'
+        ]
+    },
+    // Bleeding Vintage - aged, worn Madras colors
+    {
+        name: "Bleeding Vintage",
+        colors: [
+            '#3A62B3', '#C13D3D', '#D9A43B', '#7DAC9B', '#D87BA1', '#7A4E8A', '#F2E4BE', '#1F1E1D'
+        ]
+    },
+    // Warm Tamil Madras - warm South Indian tones
+    {
+        name: "Warm Tamil Madras",
+        colors: [
+            '#C13D3D', '#F5C03A', '#3E5F9A', '#88B0D3', '#ADC178', '#E77F37', '#FAF3EB', '#F2E4BE'
+        ]
+    },
+    // Classic Red-Green - traditional Madras contrast
+    {
+        name: "Classic Red-Green",
+        colors: [
+            '#cc0033', '#ffee88', '#004477', '#ffffff', '#e63946', '#f1faee', '#a8dadc', '#457b9d'
+        ]
+    },
+    // Vintage Tamil 04 - retro South Indian style
+    {
+        name: "Vintage Tamil",
+        colors: [
+            '#e63946', '#f1faee', '#a8dadc', '#457b9d', '#ffd700', '#b8860b', '#8b0000', '#f7c873'
+        ]
+    },
+    // Sunset Pondicherry - French colonial colors
+    {
+        name: "Sunset Pondicherry",
+        colors: [
+            '#ffb347', '#ff6961', '#6a0572', '#fff8e7', '#1d3557', '#e63946', '#f7cac9', '#92a8d1'
+        ]
+    },
+    // Chennai Monsoon - rainy season palette
+    {
+        name: "Chennai Monsoon",
+        colors: [
+            '#1d3557', '#457b9d', '#a8dadc', '#f1faee', '#ffd700', '#e94f37', '#393e41', '#3f88c5'
+        ]
+    },
+    // Kanchipuram Gold - luxurious silk colors
+    {
+        name: "Kanchipuram Gold",
+        colors: [
+            '#ffd700', '#b8860b', '#8b0000', '#fff8e7', '#cc0033', '#004477', '#e63946', '#f1faee'
+        ]
+    },
+    // Madras Summer - hot season vibes
+    {
+        name: "Madras Summer",
+        colors: [
+            '#f7c873', '#e94f37', '#393e41', '#3f88c5', '#fff8e7', '#ffb347', '#ff6961', '#1d3557'
+        ]
+    },
+    // Pondy Pastel - soft colonial colors
+    {
+        name: "Pondy Pastel",
+        colors: [
+            '#f7cac9', '#92a8d1', '#034f84', '#f7786b', '#fff8e7', '#393e41', '#ffb347', '#e94f37'
+        ]
+    },
+    // Tamil Sunrise - morning light palette
+    {
+        name: "Tamil Sunrise",
+        colors: [
+            '#ffb347', '#ff6961', '#fff8e7', '#1d3557', '#e63946', '#f7c873', '#e94f37', '#393e41'
+        ]
+    },
+    // Chettinad Spice - aromatic spice colors
+    {
+        name: "Chettinad Spice",
+        colors: [
+            '#d72631', '#a2d5c6', '#077b8a', '#5c3c92', '#f4f4f4', '#ffd700', '#8b0000', '#1a2634'
+        ]
+    },
+    // Kerala Onam - festival celebration colors
+    {
+        name: "Kerala Onam",
+        colors: [
+            '#fff8e7', '#ffd700', '#e94f37', '#393e41', '#3f88c5', '#f7c873', '#ffb347', '#ff6961'
+        ]
+    },
+    // Bengal Indigo - traditional dye colors
+    {
+        name: "Bengal Indigo",
+        colors: [
+            '#1a2634', '#3f88c5', '#f7c873', '#e94f37', '#fff8e7', '#ffd700', '#393e41', '#1d3557'
+        ]
+    },
+    // Goa Beach - coastal vacation colors
+    {
+        name: "Goa Beach",
+        colors: [
+            '#f7cac9', '#f7786b', '#034f84', '#fff8e7', '#393e41', '#ffb347', '#e94f37', '#3f88c5'
+        ]
+    },
+    // Sri Lankan Tea - island tea plantation colors
+    {
+        name: "Sri Lankan Tea",
+        colors: [
+            '#a8dadc', '#457b9d', '#e63946', '#f1faee', '#fff8e7', '#ffd700', '#8b0000', '#1d3557'
+        ]
+    },
+    // African Madras - continental connection colors
+    {
+        name: "African Madras",
+        colors: [
+            '#ffb347', '#e94f37', '#393e41', '#3f88c5', '#ffd700', '#f7c873', '#ff6961', '#1d3557'
+        ]
+    },
+    // Mumbai Monsoon - western coastal rains
+    {
+        name: "Mumbai Monsoon",
+        colors: [
+            '#1d3557', '#457b9d', '#a8dadc', '#f1faee', '#ffd700', '#e94f37', '#393e41', '#3f88c5'
+        ]
+    },
+    // Ivy League - academic prestige colors
+    {
+        name: "Ivy League",
+        colors: [
+            '#002147', '#a6192e', '#f4f4f4', '#ffd700', '#005a9c', '#00356b', '#ffffff', '#8c1515'
+        ]
+    }
+
+];
+
+  // Local character map for text rendering
+  const aniCharacterMap = {
+    'A': ["01110", "10001", "10001", "11111", "10001", "10001", "10001"],
+    'B': ["11110", "10001", "10001", "11110", "10001", "10001", "11110"],
+    'C': ["01111", "10000", "10000", "10000", "10000", "10000", "01111"],
+    'D': ["11110", "10001", "10001", "10001", "10001", "10001", "11110"],
+    'E': ["11111", "10000", "10000", "11110", "10000", "10000", "11111"],
+    'F': ["11111", "10000", "10000", "11110", "10000", "10000", "10000"],
+    'G': ["01111", "10000", "10000", "10011", "10001", "10001", "01111"],
+    'H': ["10001", "10001", "10001", "11111", "10001", "10001", "10001"],
+    'I': ["11111", "00100", "00100", "00100", "00100", "00100", "11111"],
+    'J': ["11111", "00001", "00001", "00001", "10001", "10001", "01110"],
+    'K': ["10001", "10010", "10100", "11000", "10100", "10010", "10001"],
+    'L': ["10000", "10000", "10000", "10000", "10000", "10000", "11111"],
+    'M': ["10001", "11011", "10101", "10001", "10001", "10001", "10001"],
+    'N': ["10001", "11001", "10101", "10011", "10001", "10001", "10001"],
+    'O': ["01110", "10001", "10001", "10001", "10001", "10001", "01110"],
+    'P': ["11110", "10001", "10001", "11110", "10000", "10000", "10000"],
+    'Q': ["01110", "10001", "10001", "10001", "10101", "10010", "01101"],
+    'R': ["11110", "10001", "10001", "11110", "10100", "10010", "10001"],
+    'S': ["01111", "10000", "10000", "01110", "00001", "00001", "11110"],
+    'T': ["11111", "00100", "00100", "00100", "00100", "00100", "00100"],
+    'U': ["10001", "10001", "10001", "10001", "10001", "10001", "01110"],
+    'V': ["10001", "10001", "10001", "10001", "01010", "01010", "00100"],
+    'W': ["10001", "10001", "10001", "10101", "10101", "11011", "10001"],
+    'X': ["10001", "01010", "00100", "00100", "00100", "01010", "10001"],
+    'Y': ["10001", "01010", "00100", "00100", "00100", "00100", "00100"],
+    'Z': ["11111", "00010", "00100", "01000", "10000", "10000", "11111"],
+    ' ': ["00000", "00000", "00000", "00000", "00000", "00000", "00000"]
+  };
   
   // Use your AMAZING text algorithm from the generator instead of low-effort stuff
   const generateTextDataForRug = (text: string, doormatWidth: number, doormatHeight: number, fringeLength: number) => {
-    if (!window.characterMap) return []
+    if (!aniCharacterMap) return []
     
-    // Set up doormatTextRows for your proper text algorithm
-    const textRows = [text.toUpperCase()]
-    window.doormatTextRows = textRows
+    // Set up doormatTextRows for your proper text algorithm (multi-line like doormat.js)
+    const textRows = text.split(' ').map(word => word.toUpperCase())
     
     // Use your actual thread spacing from the generator
-    const warpThickness = window.warpThickness || 2
-    const weftThickness = window.DOORMAT_CONFIG?.WEFT_THICKNESS || 8
-    const TEXT_SCALE = window.DOORMAT_CONFIG?.TEXT_SCALE || 2
+    const animWarpThickness = 2
+    const animWeftThickness = 8
+    const TEXT_SCALE = 2
     
     // Use your exact spacing calculations
-    const warpSpacing = warpThickness + 1
-    const weftSpacing = weftThickness + 1
-    const scaledWarp = warpSpacing * TEXT_SCALE
-    const scaledWeft = weftSpacing * TEXT_SCALE
+    const animWarpSpacing = animWarpThickness + 1
+    const animWeftSpacing = animWeftThickness + 1
+    const scaledWarp = animWarpSpacing * TEXT_SCALE
+    const scaledWeft = animWeftSpacing * TEXT_SCALE
     
     // Your exact character dimensions
     const charWidth = 7 * scaledWarp // width after rotation (7 columns)
@@ -540,7 +1382,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
     // Calculate starting X position to center all rows (your algorithm)
     const baseStartX = (doormatWidth - totalRowsWidth) / 2
     
-    const textData: Array<{x: number, y: number, width: number, height: number}> = []
+    const aniTextData: Array<{ x: number, y: number, width: number, height: number }> = []
     
     // Generate text data for each row (your exact algorithm)
     for (let rowIndex = 0; rowIndex < textRows.length; rowIndex++) {
@@ -560,29 +1402,29 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
         const char = doormatText.charAt(i)
         const charY = startY + (doormatText.length - 1 - i) * (charHeight + spacing)
         const charPixels = generateCharacterPixels(char, startX, charY, charWidth, charHeight)
-        textData.push(...charPixels)
+        aniTextData.push(...charPixels)
       }
     }
     
     
-    return textData
+    return aniTextData
   }
   
   // Your exact character pixel generation function
   const generateCharacterPixels = (char: string, x: number, y: number, width: number, height: number) => {
-    const pixels: Array<{x: number, y: number, width: number, height: number}> = []
+    const pixels: Array<{ x: number, y: number, width: number, height: number }> = []
     
     // Use your actual thread spacing
-    const warpThickness = window.warpThickness || 2
-    const weftThickness = window.DOORMAT_CONFIG?.WEFT_THICKNESS || 8
-    const TEXT_SCALE = window.DOORMAT_CONFIG?.TEXT_SCALE || 2
-    const warpSpacing = warpThickness + 1
-    const weftSpacing = weftThickness + 1
-    const scaledWarp = warpSpacing * TEXT_SCALE
-    const scaledWeft = weftSpacing * TEXT_SCALE
+    const animWarpThickness = 2
+    const animWeftThickness = 8
+    const TEXT_SCALE = 2
+    const animWarpSpacing = animWarpThickness + 1
+    const animWeftSpacing = animWeftThickness + 1
+    const scaledWarp = animWarpSpacing * TEXT_SCALE
+    const scaledWeft = animWeftSpacing * TEXT_SCALE
 
     // Character definitions from your character map
-    const charDef = window.characterMap[char] || window.characterMap[' ']
+    const charDef = aniCharacterMap[char] || aniCharacterMap[' ']
     if (!charDef) return pixels
 
     const numRows = charDef.length
@@ -607,8 +1449,68 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
     return pixels
   }
   
-  // Create rug texture using your P5.js generator logic
-  const rugTexture = useMemo(() => {
+  // --- P5.js-style Perlin noise implementation for overlays ---
+  // Adapted from https://github.com/processing/p5.js/blob/main/src/math/noise.js
+  function makePerlin(seed: number) {
+    // Perlin noise permutation table
+    let p = new Uint8Array(512)
+    let permutation = new Uint8Array(256)
+    // Deterministic shuffle
+    let rand = new AniSeededRandom(seed)
+    for (let i = 0; i < 256; i++) permutation[i] = i
+    for (let i = 255; i > 0; i--) {
+      let j = Math.floor(rand.next() * (i + 1))
+      let temp = permutation[i]; permutation[i] = permutation[j]; permutation[j] = temp
+    }
+    for (let i = 0; i < 512; i++) p[i] = permutation[i & 255]
+    function fade(t: number) { return t * t * t * (t * (t * 6 - 15) + 10) }
+    function lerp(a: number, b: number, t: number) { return a + t * (b - a) }
+    function grad(hash: number, x: number, y: number) {
+      // 2D gradients
+      const h = hash & 3
+      const u = h < 2 ? x : y
+      const v = h < 2 ? y : x
+      return ((h & 1) === 0 ? u : -u) + ((h & 2) === 0 ? v : -v)
+    }
+    // 2D Perlin noise
+    return function perlin2(x: number, y: number) {
+      let X = Math.floor(x) & 255
+      let Y = Math.floor(y) & 255
+      x -= Math.floor(x)
+      y -= Math.floor(y)
+      let u = fade(x)
+      let v = fade(y)
+      let aa = p[p[X] + Y]
+      let ab = p[p[X] + Y + 1]
+      let ba = p[p[X + 1] + Y]
+      let bb = p[p[X + 1] + Y + 1]
+      return lerp(
+        lerp(grad(aa, x, y), grad(ba, x - 1, y), u),
+        lerp(grad(ab, x, y - 1), grad(bb, x - 1, y - 1), u),
+        v
+      ) * 0.5 + 0.5
+    }
+  }
+
+  // P5.js-style lerpColor for text
+  function lerpColorHex(hexA: string, hexB: string, amt: number) {
+    // Accepts hex strings, amt in [0,1]
+    function hexToRgbObj(hex: string) {
+      const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+      return m
+        ? { r: parseInt(m[1], 16), g: parseInt(m[2], 16), b: parseInt(m[3], 16) }
+        : { r: 0, g: 0, b: 0 }
+    }
+    const a = hexToRgbObj(hexA)
+    const b = hexToRgbObj(hexB)
+    const r = Math.round(a.r + (b.r - a.r) * amt)
+    const g = Math.round(a.g + (b.g - a.g) * amt)
+    const b_ = Math.round(a.b + (b.b - a.b) * amt)
+    return `rgb(${r},${g},${b_})`
+  }
+
+  // Create rug texture using your P5.js generator logic, with P5.js-accurate overlays
+  const createRugTexture = (currentTime: number = 0) => {
     if (typeof window === 'undefined' || !dependenciesLoaded) {
       return null
     }
@@ -616,315 +1518,181 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
     // Create canvas with your generator dimensions
     const canvas = document.createElement('canvas')
     const ctx = canvas.getContext('2d', { willReadFrequently: true })!
-    
-    // Set canvas size to match your generator
-    const doormatWidth = window.DOORMAT_CONFIG?.DOORMAT_WIDTH || 800
-    const doormatHeight = window.DOORMAT_CONFIG?.DOORMAT_HEIGHT || 1200
-    const fringeLength = window.DOORMAT_CONFIG?.FRINGE_LENGTH || 30
-    
-    // Use the same canvas dimensions as your generator (NO swapping needed)
-    canvas.width = doormatWidth + (fringeLength * 4)
+    const doormatHeight = 1200
+    const fringeLength = 30
+    canvas.width = 800 + (fringeLength * 4)
     canvas.height = doormatHeight + (fringeLength * 4)
-    
-    // CRITICAL: Clear the entire canvas completely before drawing
     ctx.clearRect(0, 0, canvas.width, canvas.height)
     
-    // NO BACKGROUND FILL - Keep canvas transparent for animation
+    const aniRandom = new AniSeededRandom(seed)
+    const aniColorPalettes = localColorPalettes || [
+      { name: 'Default', colors: ['#8B4513', '#D2691E', '#A0522D', '#CD853F', '#DEB887'] }
+    ]
+    const aniSelectedPalette = aniColorPalettes[getUniquePaletteIndex(aniColorPalettes.length)]
+    const aniStripeData = generateAniStripeData(aniSelectedPalette, doormatHeight, () => aniRandom.next())
+      const offsetX = fringeLength * 2
+      const offsetY = fringeLength * 2
+    // Draw selvages first (with ragged edges)
+    drawAniSelvedgeEdges(ctx, aniStripeData, 800, doormatHeight, () => aniRandom.next(), offsetX, offsetY)
     
-                // CRITICAL: Use the ACTUAL P5.js generateDoormatCore function instead of manual recreation!
-      if (window.generateDoormatCore && typeof window.generateDoormatCore === 'function') {
-        // Set the text for this rug - First rug always gets WELCOME, others randomly from array
-        const selectedWord = isFirstRug ? 'WELCOME' : rugWords[Math.floor(Math.random() * rugWords.length)]
-        
-        // FIXED: Use proper multi-line text processing like your generator
-        const textRows = selectedWord.split(' ').map(word => word.toUpperCase())
-        window.doormatTextRows = textRows
-        
-        // FIXED: Call the proper text generation pipeline
-        if (window.generateTextDataInSketch && typeof window.generateTextDataInSketch === 'function') {
-          try {
-            window.generateTextDataInSketch()
-          } catch (error) {
-            console.error('❌ Error in text generation pipeline:', error)
-          }
-        }
-        
-        // Call the actual P5.js function to generate the rug
-        try {
-          window.generateDoormatCore(seed)
-        } catch (error) {
-          console.error('❌ Error calling generateDoormatCore:', error)
-        }
-        
-        // Get the palette that P5.js selected
-        const selectedPalette = window.selectedPalette || window.colorPalettes?.[seed % window.colorPalettes.length] || { name: 'Default', colors: ['#8B4513', '#D2691E', '#A0522D'] }
-        
-        // Use P5.js generated stripe data if available
-        const stripeData = window.stripeData || generateStripeDataForRug(selectedPalette, doormatHeight, () => Math.random())
-      
-      // Calculate center offset to position rug content in the middle of canvas
-      const offsetX = fringeLength * 2
-      const offsetY = fringeLength * 2
-      
-      // NO BASE BACKGROUND - Keep transparent for animation
-      
-      // CRITICAL: Handle P5.js stripe data structure vs manual structure
-      // Check if P5.js data is valid and properly populated
-      const hasValidP5Data = stripeData.length > 0 && 
-        stripeData[0].primaryColor && 
-        stripeData[0].primaryColor !== null &&
-        (typeof stripeData[0].primaryColor === 'string' || 
-         (typeof stripeData[0].primaryColor === 'object' && stripeData[0].primaryColor.r !== undefined))
-      
-      // DRAW SELVEDGES FIRST (BELOW THE RUG) to prevent edge glitches
-      if (hasValidP5Data) {
-        // Convert stripe data to compatible format for selvedge drawing
-        const compatibleStripeData = stripeData.map(stripe => {
-          if (stripe.primaryColor && typeof stripe.primaryColor === 'object' && stripe.primaryColor.r !== undefined) {
-            // P5.js generated data - convert color object to hex
-            const colorObj = stripe.primaryColor
-            const hexColor = `#${Math.round(colorObj.r).toString(16).padStart(2, '0')}${Math.round(colorObj.g).toString(16).padStart(2, '0')}${Math.round(colorObj.b).toString(16).padStart(2, '0')}`
-            
-            return {
-              ...stripe,
-              primaryColor: hexColor,
-              secondaryColor: stripe.secondaryColor ? 
-                `#${Math.round(stripe.secondaryColor.r).toString(16).padStart(2, '0')}${Math.round(stripe.secondaryColor.g).toString(16).padStart(2, '0')}${Math.round(stripe.secondaryColor.b).toString(16).padStart(2, '0')}` : null
-            }
-          } else {
-            // Manual data - use as is
-            return stripe
-          }
-        })
-        
-        drawFringeAndSelvedge(ctx, compatibleStripeData, doormatWidth, doormatHeight, fringeLength, () => Math.random(), offsetX, offsetY)
-      } else {
-        // Use manual stripe data for selvedge drawing
-        const manualStripeData = generateStripeDataForRug(selectedPalette, doormatHeight, () => Math.random())
-        drawFringeAndSelvedge(ctx, manualStripeData, doormatWidth, doormatHeight, fringeLength, () => Math.random(), offsetX, offsetY)
+    // Draw fringe (with ragged edges)
+    drawAniFringe(ctx, aniStripeData, 800, doormatHeight, fringeLength, () => aniRandom.next(), offsetX, offsetY)
+    
+    // Draw doormat texture on top (with clean edges that cover ragged selvages and fringe)
+    aniStripeData.forEach(stripe => {
+      drawAniStripe(ctx, stripe, 800, doormatHeight, () => aniRandom.next(), offsetX, offsetY)
+    })
+
+    // --- Accurate text color using P5.js palette lerpColor logic ---
+    // Determine darkest and lightest colors in the palette
+    let darkest = aniSelectedPalette.colors[0]
+    let lightest = aniSelectedPalette.colors[0]
+    let darkestVal = 999, lightestVal = -1
+
+    aniSelectedPalette.colors.forEach((hex: string) => {
+      const c = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+      if (c) {
+        const r = parseInt(c[1], 16)
+        const g = parseInt(c[2], 16)
+        const b = parseInt(c[3], 16)
+        const brightness = (r + g + b)/3
+        if (brightness < darkestVal) { darkestVal = brightness; darkest = hex }
+        if (brightness > lightestVal) { lightestVal = brightness; lightest = hex }
       }
-      
-      // NOW DRAW MAIN RUG CONTENT (stripes) ABOVE the selvedges
-      if (hasValidP5Data) {
-        stripeData.forEach(stripe => {
-          // Check if this is P5.js generated data or manual data
-          if (stripe.primaryColor && typeof stripe.primaryColor === 'object' && stripe.primaryColor.r !== undefined) {
-            // P5.js generated data - convert color object to hex
-            const colorObj = stripe.primaryColor
-            const hexColor = `#${Math.round(colorObj.r).toString(16).padStart(2, '0')}${Math.round(colorObj.g).toString(16).padStart(2, '0')}${Math.round(colorObj.b).toString(16).padStart(2, '0')}`
-            
-            // Create a compatible stripe object
-            const compatibleStripe = {
-              ...stripe,
-              primaryColor: hexColor,
-              secondaryColor: stripe.secondaryColor ? 
-                `#${Math.round(stripe.secondaryColor.r).toString(16).padStart(2, '0')}${Math.round(stripe.secondaryColor.g).toString(16).padStart(2, '0')}${Math.round(stripe.secondaryColor.b).toString(16).padStart(2, '0')}` : null
-            }
-            
-            drawStripeWithWeaving(ctx, compatibleStripe, doormatWidth, doormatHeight, () => Math.random(), offsetX, offsetY)
-          } else {
-            // Manual data - use as is
-            drawStripeWithWeaving(ctx, stripe, doormatWidth, doormatHeight, () => Math.random(), offsetX, offsetY)
-          }
-        })
-      } else {
-        // Fallback to manual stripe generation
-        const manualStripeData = generateStripeDataForRug(selectedPalette, doormatHeight, () => Math.random())
-        manualStripeData.forEach(stripe => {
-          drawStripeWithWeaving(ctx, stripe, doormatWidth, doormatHeight, () => Math.random(), offsetX, offsetY)
-        })
+    })
+
+    // Slightly adjust colors like doormat.js
+    function lerpColorP5(hexA: string, hexB: string, t: number) {
+      const hexToRgb = (h: string) => {
+        const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(h)
+        return m ? { r: parseInt(m[1],16), g: parseInt(m[2],16), b: parseInt(m[3],16) } : { r:0,g:0,b:0 }
       }
-      
-      // FIXED: Use your generator's text data EXACTLY as positioned (no manual rotation)
-      
-      // Get the text data that your generator created
-      const textData = window.textData || []
-      
-      // Draw the text pixels using your generator's EXACT positioning (no coordinate modifications)
-      if (textData.length > 0) {
-        textData.forEach(pixel => {
-          // FIXED: Use your generator's coordinates directly - it already handles rotation correctly
-          // Your generator's generateCharacterPixels() already calculates the correct rotated positions
-          // We just need to add the fringe offsets for canvas centering
-          
-          const finalX = pixel.x + offsetX  // Add fringe offset for canvas centering
-          const finalY = pixel.y + offsetY  // Add fringe offset for canvas centering
-          
-          // HYBRID APPROACH: Try P5.js colors first, then fallback to direct palette logic
-          let textColor = '#FFFFFF' // Default fallback
-          
-          if (window.lightTextColor && window.darkTextColor) {
-            // Calculate actual background brightness at this pixel position
-            const imageData = ctx.getImageData(finalX, finalY, 1, 1)
-            const r = imageData.data[0]
-            const g = imageData.data[1] 
-            const b = imageData.data[2]
-            const bgBrightness = (r + g + b) / 3
-            
-            // Try P5.js color objects first
-            if (typeof window.lightTextColor === 'object' && window.lightTextColor.toString) {
-              const lightHex = window.lightTextColor.toString()
-              const darkHex = window.darkTextColor.toString()
-              textColor = bgBrightness < 128 ? lightHex : darkHex
-            } else {
-              // P5.js colors not working, use direct palette logic
-              textColor = getDynamicTextColor(bgBrightness, selectedPalette)
-            }
-          } else {
-            // P5.js colors not available, use direct palette logic
-            const imageData = ctx.getImageData(finalX, finalY, 1, 1)
-            const r = imageData.data[0]
-            const g = imageData.data[1] 
-            const b = imageData.data[2]
-            const bgBrightness = (r + g + b) / 3
-            textColor = getDynamicTextColor(bgBrightness, selectedPalette)
-          }
-          
-          // Draw with your generator's exact positioning and colors
-          ctx.fillStyle = textColor
-          ctx.fillRect(finalX, finalY, pixel.width, pixel.height) // Use original dimensions
-        })
-        // Text pixels drawn successfully
-      } else {
-        // No text data from generator
-      }
-      
-    } else {
-      // P5.js generateDoormatCore not available, using manual fallback
-      
-      // Fallback to manual generation (keeping existing code)
-      const randomSeed = (seed: number) => {
-        let m = 0x80000000
-        let a = 1103515245
-        let c = 12345
-        let state = seed ? seed : Math.floor(Math.random() * (m - 1))
-        return () => {
-          state = (a * state + c) % m
-          return state / m
-        }
-      }
-      
-      const random = randomSeed(seed)
-      
-      // Get palette and generate colors
-      const colorPalettes = window.colorPalettes || [
-        { name: 'Default', colors: ['#8B4513', '#D2691E', '#A0522D', '#CD853F', '#DEB887'] }
-      ]
-      const selectedPalette = colorPalettes[seed % colorPalettes.length]
-      
-      // Generate stripe data EXACTLY like your generator
-      const stripeData = generateStripeDataForRug(selectedPalette, doormatHeight, random)
-      
-      // Calculate center offset to position rug content in the middle of canvas
-      const offsetX = fringeLength * 2
-      const offsetY = fringeLength * 2
-      
-      // NO BASE BACKGROUND - Keep transparent for animation
-      
-      // Draw stripes with proper weaving structure (centered)
-      stripeData.forEach(stripe => {
-        drawStripeWithWeaving(ctx, stripe, doormatWidth, doormatHeight, random, offsetX, offsetY)
-      })
-      
-      // FIXED: Use your generator's text data for manual fallback too
-      const selectedWord = isFirstRug ? 'WELCOME' : rugWords[Math.floor(Math.random() * rugWords.length)]
-      
-      // Set up text rows and call your generator's text pipeline
-      const textRows = selectedWord.split(' ').map(word => word.toUpperCase())
-      window.doormatTextRows = textRows
-      
-      if (window.generateTextDataInSketch && typeof window.generateTextDataInSketch === 'function') {
-        window.generateTextDataInSketch()
-      }
-      
-      // Get the text data that your generator created
-      const textData = window.textData || []
-      
-      // Draw the text pixels using your generator's EXACT positioning (no manual rotation)
-      if (textData.length > 0) {
-        let drawnPixels = 0
-        textData.forEach((pixel: any) => {
-          // FIXED: Use your generator's coordinates directly - it already handles rotation correctly
-          // Your generator's generateCharacterPixels() already calculates the correct rotated positions
-          // We just need to add the fringe offsets for canvas centering
-          
-          const finalX = pixel.x + offsetX  // Add fringe offset for canvas centering
-          const finalY = pixel.y + offsetY  // Add fringe offset for canvas centering
-          
-          // HYBRID APPROACH: Try P5.js colors first, then fallback to direct palette logic
-          let textColor = '#FFFFFF' // Default fallback
-          
-          if (window.lightTextColor && window.darkTextColor) {
-            // Calculate actual background brightness at this pixel position
-            const imageData = ctx.getImageData(finalX, finalY, 1, 1)
-            const r = imageData.data[0]
-            const g = imageData.data[1] 
-            const b = imageData.data[2]
-            const bgBrightness = (r + g + b) / 3
-            
-            // Try P5.js color objects first
-            if (typeof window.lightTextColor === 'object' && window.lightTextColor.toString) {
-              const lightHex = window.lightTextColor.toString()
-              const darkHex = window.darkTextColor.toString()
-              textColor = bgBrightness < 128 ? lightHex : darkHex
-            } else {
-              // P5.js colors not working, use direct palette logic
-              textColor = getDynamicTextColor(bgBrightness, selectedPalette)
-            }
-          } else {
-            // P5.js colors not available, use direct palette logic
-            const imageData = ctx.getImageData(finalX, finalY, 1, 1)
-            const r = imageData.data[0]
-            const g = imageData.data[1] 
-            const b = imageData.data[2]
-            const bgBrightness = (r + g + b) / 3
-            textColor = getDynamicTextColor(bgBrightness, selectedPalette)
-          }
-          
-          // Draw with your generator's exact positioning and colors
-          ctx.fillStyle = textColor
-          ctx.fillRect(finalX, finalY, pixel.width, pixel.height) // Use original dimensions
-          drawnPixels++
-        })
-        // Text pixels drawn successfully
-      } else {
-        // No text data from generator
-      }
-      
-      // Draw proper fringe and selvedge as part of the art (EXACTLY like your generator)
-      drawFringeAndSelvedge(ctx, stripeData, doormatWidth, doormatHeight, fringeLength, random, offsetX, offsetY)
+      const rgbToHex = (r: number, g: number, b: number) =>
+        `#${Math.round(r).toString(16).padStart(2,'0')}${Math.round(g).toString(16).padStart(2,'0')}${Math.round(b).toString(16).padStart(2,'0')}`
+      const c1 = hexToRgb(hexA)
+      const c2 = hexToRgb(hexB)
+      const r = c1.r + (c2.r - c1.r) * t
+      const g = c1.g + (c2.g - c1.g) * t
+      const b = c1.b + (c2.b - c1.b) * t
+      return rgbToHex(r, g, b)
     }
+
+    const lightTextColor = lerpColorP5(lightest, '#ffffff', 0.3)
+    const darkTextColor = lerpColorP5(darkest, '#000000', 0.4)
+
+    // Use deterministic word selection
+    const aniSelectedWord = isFirstRug
+      ? 'WELCOME'
+      : rugWords[aniRandom.nextInt(0, rugWords.length)]
+    const aniTextData = generateTextDataForRug(aniSelectedWord, 800, doormatHeight, fringeLength)
+
+    // --- Draw text with per-pixel coloring and shadow using doormat.js logic ---
+    // Use the already determined darkest and lightest colors from above
+    // Use the already declared lightTextColor and darkTextColor from above
+
+    aniTextData.forEach((pixel: any) => {
+      const finalX = pixel.x + offsetX;
+      const finalY = pixel.y + offsetY;
+      // Determine the stripe corresponding to this pixel
+      const stripe = aniStripeData.find(
+        str => finalY - offsetY >= str.y && finalY - offsetY < str.y + str.height
+      ) || aniStripeData[0];
+      // Get stripe base color
+      const stripeRgb = hexToRgb(stripe.primaryColor);
+      const bgBrightness = (stripeRgb.r + stripeRgb.g + stripeRgb.b) / 3;
+      // Per-pixel text color: blend with palette lightest/darkest and white/black as in doormat.js
+      let textColor: string;
+      if (bgBrightness < 128) {
+        textColor = lerpColorP5(lightest, '#ffffff', 0.3);
+            } else {
+        textColor = lerpColorP5(darkest, '#000000', 0.4);
+      }
+      // Draw shadow first (as in doormat.js)
+      ctx.fillStyle = 'rgba(0,0,0,0.47)';
+      ctx.fillRect(finalX - 1, finalY - 1, pixel.width + 2, pixel.height + 2);
+      // Draw text pixel
+      ctx.fillStyle = textColor;
+      ctx.fillRect(finalX, finalY, pixel.width, pixel.height);
+    });
+
+    // --- P5.js-accurate texture overlays using Perlin noise and multiply blend ---
+    // Simple on/off switch: no texture for 1 minute, then full texture appears
+    const textureDelay = 120000 // 60 seconds (1 minute) delay
+    const textureOpacity = currentTime >= textureDelay ? 1 : 0
     
-    // Add subtle fabric texture noise (much more subtle to avoid black bands)
+    if (textureOpacity > 0) {
+      // Perlin noise seeded by rug seed
+      const perlin = makePerlin(seed)
+      // Save state
+      ctx.save()
+      // Texture overlay with multiply blend, CLIPPED to doormat area only
+      ctx.save()
+      ctx.beginPath()
+      ctx.rect(offsetX, offsetY, 800, doormatHeight)
+      ctx.clip()
+      ctx.globalCompositeOperation = 'multiply'
+      for (let x = offsetX; x < offsetX + 800; x += 2) {
+        for (let y = offsetY; y < offsetY + doormatHeight; y += 2) {
+          // P5.js: noise(x*0.02, y*0.02), map to [0,50] alpha
+          const noiseVal = perlin(x * 0.02, y * 0.02)
+          const baseAlpha = Math.round(noiseVal * 50)
+          // Apply animated opacity to the base alpha
+          const animatedAlpha = (baseAlpha * textureOpacity) / 255
+          // Use black with animated alpha (as in P5.js)
+          ctx.fillStyle = `rgba(0,0,0,${animatedAlpha})`
+          ctx.fillRect(x, y, 2, 2)
+        }
+      }
+      // Relief overlay (P5.js logic), CLIPPED to doormat area only
+      for (let x = offsetX; x < offsetX + 800; x += 6) {
+        for (let y = offsetY; y < offsetY + doormatHeight; y += 6) {
+          const reliefNoise = perlin(x * 0.03, y * 0.03)
+          if (reliefNoise > 0.6) {
+            // Apply animated opacity to relief highlights
+            ctx.fillStyle = `rgba(255,255,255,${0.098 * textureOpacity})` // 25/255 ≈ 0.098
+            ctx.fillRect(x, y, 6, 6)
+          } else if (reliefNoise < 0.4) {
+            // Apply animated opacity to relief shadows
+            ctx.fillStyle = `rgba(0,0,0,${0.078 * textureOpacity})` // 20/255 ≈ 0.078
+            ctx.fillRect(x, y, 6, 6)
+          }
+        }
+      }
+      // Restore blend mode and clipping
+      ctx.globalCompositeOperation = 'source-over'
+      ctx.restore()
+      }
+      
+      // Fringe and selvages already drawn above before doormat texture
+    
+    // Subtle extra fabric noise (optional, can keep or remove)
     for (let x = 0; x < canvas.width; x += 8) {
       for (let y = 0; y < canvas.height; y += 8) {
-        const noise = Math.random() * 0.1 - 0.05  // Reduced intensity
-        if (Math.abs(noise) > 0.02) {  // Only add noise if it's significant
-          // Use a very light color instead of black
+        const noise = Math.random() * 0.1 - 0.05
+        if (Math.abs(noise) > 0.02) {
           ctx.fillStyle = `rgba(255, 255, 255, ${Math.abs(noise) * 0.3})`
-          ctx.fillRect(x, y, 1, 1)  // Smaller dots
+          ctx.fillRect(x, y, 1, 1)
         }
       }
     }
-    
-    // Store canvas reference for potential updates
+
+    // --- 180-degree rotation before creating the THREE.CanvasTexture ---
+    ctx.save()
+    ctx.translate(canvas.width / 2, canvas.height / 2)
+    ctx.rotate(Math.PI)
+    ctx.translate(-canvas.width / 2, -canvas.height / 2)
+    ctx.drawImage(canvas, 0, 0)
+    ctx.restore()
+
     canvasRef.current = canvas
-    
-    // Rug texture generated successfully
-    
-    // Dispose of old texture to prevent memory leaks and artifacts
     if (textureRef.current) {
       textureRef.current.dispose()
     }
-    
     const texture = new THREE.CanvasTexture(canvas)
     texture.wrapS = texture.wrapT = THREE.RepeatWrapping
-    
-    // Store reference to new texture
     textureRef.current = texture
-    
     return texture
-  }, [seed, dependenciesLoaded])
+  }
 
   // Cleanup textures on unmount
   useEffect(() => {
@@ -961,7 +1729,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
         const wave1 = Math.sin(y * 1.5 + time * 2) * 0.15        // Y-axis flow (length)
         const wave2 = Math.sin(x * 1.2 + time * 1.8) * 0.08     // X-axis flow (width) - secondary
         const wave3 = Math.sin((y + x) * 0.8 + time * 2.5) * 0.05 // Combined flow
-        const ripple = Math.sin(Math.sqrt(y*y + x*x) * 2 - time * 3) * 0.03 // Radial flow
+        const ripple = Math.sin(Math.sqrt(y * y + x * x) * 2 - time * 3) * 0.03 // Radial flow
         
         // Wind effect simulation - PRIMARY FLOW ALONG LENGTH
         const windY = Math.sin(time * 0.7 + y * 0.5) * 0.04      // Y-axis wind (length)
@@ -992,12 +1760,29 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
       groupRef.current.rotation.y = Math.sin(time * 0.3) * 0.15 + Math.cos(time * 0.5) * 0.05
       groupRef.current.rotation.x = Math.sin(time * 0.4) * 0.08 + Math.cos(time * 0.7) * 0.03
       groupRef.current.rotation.z = Math.sin(time * 0.2) * 0.05
+      
+      // Initialize start time on first frame
+      if (startTimeRef.current === null) {
+        startTimeRef.current = time * 1000 // Convert to milliseconds
+      }
+      
+      // Calculate elapsed time since start
+      const elapsedTime = (time * 1000) - startTimeRef.current
+      
+      // Texture will appear automatically when elapsedTime >= textureDelay
+      // No need for periodic updates - it happens naturally when condition is met
     }
   })
 
   // Don't render until dependencies are loaded
+  const rugTexture = createRugTexture(0) // Start with no texture overlay
   if (!dependenciesLoaded || !rugTexture) {
     return null
+  }
+  
+  // Store texture reference for updates
+  if (!textureRef.current) {
+    textureRef.current = rugTexture
   }
 
   return (
@@ -1006,7 +1791,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
         <mesh ref={rugRef} rotation={[-Math.PI / 2, 0, 0]} castShadow receiveShadow>
           <planeGeometry args={[5, 7, 48, 48]} />
           <meshStandardMaterial 
-            map={rugTexture} 
+            map={textureRef.current} 
             side={THREE.DoubleSide}
             transparent
             opacity={0.95}
@@ -1092,304 +1877,16 @@ function Scene() {
   const lightRef = useRef<THREE.DirectionalLight>(null)
   const [dependenciesLoaded, setDependenciesLoaded] = useState(false)
 
-  // Load P5.js dependencies
+// Global loading state to prevent multiple renders
+let globalDependenciesLoaded = false
   useEffect(() => {
-    const loadDependencies = async () => {
-      try {
-        // Prevent multiple simultaneous loading attempts
-        if (globalDependenciesLoading) {
-          // Wait for loading to complete
-          const checkLoaded = () => {
             if (globalDependenciesLoaded) {
               setDependenciesLoaded(true)
-            } else {
-              setTimeout(checkLoaded, 100)
-            }
-          }
-          checkLoaded()
           return
         }
-        
-        // If already loaded globally, just set local state
-        if (globalDependenciesLoaded) {
-          setDependenciesLoaded(true)
-          return
-        }
-        
-        globalDependenciesLoading = true
-        
-        // Load color palettes
-        if (!window.colorPalettes) {
-          const colorPalettesResponse = await fetch('/lib/doormat/color-palettes.js')
-          const colorPalettesText = await colorPalettesResponse.text()
-          // Extract the colorPalettes array from the JS file
-          const colorPalettesMatch = colorPalettesText.match(/const colorPalettes = (\[[\s\S]*?\]);/)
-          if (colorPalettesMatch) {
-            const colorPalettesCode = colorPalettesMatch[1]
-            // Use Function constructor to safely evaluate the array
-            window.colorPalettes = new Function(`return ${colorPalettesCode}`)()
-          }
-        }
-
-        // Load character map
-        if (!window.characterMap) {
-          const characterMapResponse = await fetch('/lib/doormat/character-map.js')
-          const characterMapText = await characterMapResponse.text()
-          const characterMapMatch = characterMapText.match(/const characterMap = (\{[\s\S]*?\});/)
-          if (characterMapMatch) {
-            const characterMapCode = characterMapMatch[1]
-            window.characterMap = new Function(`return ${characterMapCode}`)()
-          }
-        }
-
-        // Load doormat config
-        if (!window.DOORMAT_CONFIG) {
-          try {
-            // Since the config file is wrapped in an IIFE, we'll set default values
-            // and let the config file execute to override them
-            window.DOORMAT_CONFIG = {
-              DOORMAT_WIDTH: 800,
-              DOORMAT_HEIGHT: 1200,
-              FRINGE_LENGTH: 30,
-              WEFT_THICKNESS: 8,
-              WARP_THICKNESS: 2,
-              TEXT_SCALE: 2,
-              MAX_CHARS: 11,
-              MAX_TEXT_ROWS: 5
-            }
-            
-            // Load the config script to override our defaults
-            const script = document.createElement('script')
-            script.src = '/lib/doormat/doormat-config.js'
-            script.onload = () => {
-              // Config loaded silently
-            }
-            script.onerror = () => {
-              // Using defaults silently
-            }
-            document.head.appendChild(script)
-          } catch (error) {
-            // Using fallback config values silently
-          }
-        }
-
-                // CRITICAL: Load the main P5.js doormat.js file to get the actual drawing functions
-        if (!window.generateDoormatCore && !document.querySelector('script[src="/lib/doormat/doormat.js"]')) {
-          // CRITICAL: Mock P5.js functions before loading doormat.js
-          
-          // Mock P5.js randomSeed function
-          window.randomSeed = (seed: number) => {
-            // Return a seeded random function
-            let m = 0x80000000
-            let a = 1103515245
-            let c = 12345
-            let state = seed
-            return () => {
-              state = (a * state + c) % m
-              return state / m
-            }
-          }
-          
-          // Mock P5.js noise function
-          window.noise = (x: number) => {
-            // Simple noise implementation
-            return (Math.sin(x * 12.9898) + Math.sin(x * 78.233)) * 43758.5453 % 1
-          }
-          
-          // Mock P5.js noiseSeed function
-          window.noiseSeed = (seed: number) => {
-            // Silent implementation
-          }
-          
-          // Mock P5.js random function
-          window.random = (min?: number | any[], max?: number) => {
-            // Handle array input (random element selection)
-            if (Array.isArray(min)) {
-              const array = min
-              return array[Math.floor(Math.random() * array.length)]
-            }
-            // Handle number ranges
-            if (min !== undefined && max !== undefined) {
-              return Math.random() * (max - min) + min
-            } else if (min !== undefined && typeof min === 'number') {
-              return Math.random() * min
-            } else {
-              return Math.random()
-            }
-          }
-          
-          // Mock P5.js color function to return hex strings for compatibility
-          window.color = (r: number | string, g?: number, b?: number, a?: number) => {
-            if (typeof r === 'string') {
-              // Hex color - return as is for compatibility
-              return r
-            } else {
-              // RGB values - convert to hex
-              const hex = `#${Math.round(r).toString(16).padStart(2, '0')}${Math.round(g || 0).toString(16).padStart(2, '0')}${Math.round(b || 0).toString(16).padStart(2, '0')}`
-              return hex
-            }
-          }
-          
- 
-          
-          // Mock P5.js red, green, blue functions
-          window.red = (c: any) => {
-            if (typeof c === 'string' && c.startsWith('#')) {
-              return parseInt(c.slice(1, 3), 16)
-            }
-            return c.r || 0
-          }
-          window.green = (c: any) => {
-            if (typeof c === 'string' && c.startsWith('#')) {
-              return parseInt(c.slice(3, 5), 16)
-            }
-            return c.g || 0
-          }
-          window.blue = (c: any) => {
-            if (typeof c === 'string' && c.startsWith('#')) {
-              return parseInt(c.slice(5, 7), 16)
-            }
-            return c.b || 0
-          }
-          
-          // Mock P5.js lerpColor function
-          window.lerpColor = (c1: any, c2: any, amt: number) => {
-            // Convert hex colors to RGB if needed
-            const getRGB = (c: any) => {
-              if (typeof c === 'string' && c.startsWith('#')) {
-                return {
-                  r: parseInt(c.slice(1, 3), 16),
-                  g: parseInt(c.slice(3, 5), 16),
-                  b: parseInt(c.slice(5, 7), 16)
-                }
-              }
-              return c
-            }
-            
-            const rgb1 = getRGB(c1)
-            const rgb2 = getRGB(c2)
-            
-            return {
-              r: Math.round(rgb1.r + (rgb2.r - rgb1.r) * amt),
-              g: Math.round(rgb1.g + (rgb2.g - rgb1.g) * amt),
-              b: Math.round(rgb1.b + (rgb2.b - rgb1.b) * amt)
-            }
-          }
-          
-          // Mock P5.js constrain function
-          window.constrain = (n: number, low: number, high: number) => {
-            return Math.max(low, Math.min(high, n))
-          }
-          
-          // Mock P5.js max, min, floor functions
-          window.max = Math.max
-          window.min = Math.min
-          window.floor = Math.floor
-          
-          // Mock P5.js PI constant
-          window.PI = Math.PI
-          
-          // Mock P5.js cos, sin functions
-          window.cos = Math.cos
-          window.sin = Math.sin
-          
-          // Mock P5.js fill function
-          window.fill = (r: number, g?: number, b?: number, a?: number) => {
-            // This will be handled by the drawing context
-          }
-          
-          // Mock P5.js noStroke function
-          window.noStroke = () => {
-            // This will be handled by the drawing context
-          }
-          
-          // Mock P5.js noFill function
-          window.noFill = () => {
-            // This will be handled by the drawing context
-          }
-          
-          // Mock P5.js arc function
-          window.arc = (x: number, y: number, w: number, h: number, start: number, stop: number) => {
-            // This will be handled by the drawing context
-          }
-          
-          // Mock P5.js ellipse function
-          window.ellipse = (x: number, y: number, w: number, h: number) => {
-            // This will be handled by the drawing context
-          }
-          
-          // Mock P5.js beginShape, vertex, endShape functions
-          window.beginShape = () => {}
-          window.vertex = (x: number, y: number) => {}
-          window.endShape = () => {}
-          
-          // Mock P5.js strokeWeight function
-          window.strokeWeight = (weight: number) => {}
-          
-          // Mock P5.js noLoop function
-          window.noLoop = () => {}
-          
-          // Mock P5.js createCanvas function
-          window.createCanvas = (w: number, h: number) => {
-            const canvas = document.createElement('canvas')
-            canvas.width = w
-            canvas.height = h
-            return canvas
-          }
-          
-          // Mock P5.js canvas.parent function
-          const originalCreateCanvas = window.createCanvas
-          window.createCanvas = (w: number, h: number) => {
-            const canvas = originalCreateCanvas(w, h)
-            canvas.parent = (container: string) => {
-              // Silent implementation
-            }
-            return canvas
-          }
-          
-          // Mock P5.js background function
-          window.background = (r: number, g?: number, b?: number, a?: number) => {
-            // Silent implementation
-          }
-          
-          // Mock P5.js redraw function
-          window.redraw = () => {
-            // Silent implementation
-          }
-          
-          const script = document.createElement('script')
-          script.src = '/lib/doormat/doormat.js'
-          script.onload = () => {
-            // Ensure global variables are properly initialized
-            if (window.colorPalettes && window.colorPalettes.length > 0) {
-              window.selectedPalette = window.colorPalettes[0]
-            }
-            
-            // Small delay to ensure all functions are available
-            setTimeout(() => {
+    // Directly mark as loaded
               globalDependenciesLoaded = true
-              globalDependenciesLoading = false
               setDependenciesLoaded(true)
-            }, 100)
-          }
-          script.onerror = () => {
-            console.error('❌ Failed to load main P5.js doormat.js file')
-            globalDependenciesLoaded = false
-            globalDependenciesLoading = false
-            setDependenciesLoaded(true)
-          }
-          document.head.appendChild(script)
-        } else {
-          setDependenciesLoaded(true)
-        }
-      } catch (error) {
-        console.error('❌ Failed to load P5.js dependencies:', error)
-        // Fallback to default values
-        setDependenciesLoaded(true)
-      }
-    }
-
-    loadDependencies()
   }, [])
   
   useFrame((state) => {
@@ -1449,9 +1946,9 @@ function Scene() {
             <bufferAttribute
               attach="attributes-position"
               count={200}
-              array={new Float32Array(Array.from({length: 600}, () => (Math.random() - 0.5) * 100))}
+              array={new Float32Array(Array.from({ length: 600 }, () => (Math.random() - 0.5) * 100))}
               itemSize={3}
-              args={[new Float32Array(Array.from({length: 600}, () => (Math.random() - 0.5) * 100)), 3]}
+              args={[new Float32Array(Array.from({ length: 600 }, () => (Math.random() - 0.5) * 100)), 3]}
             />
           </bufferGeometry>
           <pointsMaterial size={0.05} color="#ffd700" transparent opacity={0.8} />
@@ -1487,4 +1984,199 @@ export default function AnimatedRugs() {
       </Canvas>
     </div>
   )
+}
+
+// Fallback generator helpers with ani prefix to avoid clashing with main generator
+function drawAniStripe(ctx: CanvasRenderingContext2D, stripe: any, doormatWidth: number, doormatHeight: number, random: () => number, offsetX: number, offsetY: number) {
+  // Direct copy of drawStripeWithWeaving, but with ani prefix
+  const animWarpThickness = 2
+  const animWeftThickness = 8
+
+  let animWarpSpacing = animWarpThickness + 1
+  let animWeftSpacing = animWeftThickness + 1
+
+  // Draw warp threads (vertical)
+  for (let x = 0; x < doormatWidth; x += animWarpSpacing) {
+    for (let y = stripe.y; y < stripe.y + stripe.height; y += animWeftSpacing) {
+      let r = parseInt(stripe.primaryColor.slice(1, 3), 16) + (random() * 30 - 15)
+      let g = parseInt(stripe.primaryColor.slice(3, 5), 16) + (random() * 30 - 15)
+      let b = parseInt(stripe.primaryColor.slice(5, 7), 16) + (random() * 30 - 15)
+      r = Math.max(0, Math.min(255, r))
+      g = Math.max(0, Math.min(255, g))
+      b = Math.max(0, Math.min(255, b))
+      ctx.fillStyle = `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`
+      ctx.fillRect(x + offsetX, y + offsetY, animWarpThickness, animWeftSpacing)
+    }
+  }
+  // Draw weft threads (horizontal)
+  for (let y = stripe.y; y < stripe.y + stripe.height; y += animWeftSpacing) {
+    for (let x = 0; x < doormatWidth; x += animWarpSpacing) {
+      let r = parseInt(stripe.primaryColor.slice(1, 3), 16) + (random() * 20 - 10)
+      let g = parseInt(stripe.primaryColor.slice(3, 5), 16) + (random() * 20 - 10)
+      let b = parseInt(stripe.primaryColor.slice(5, 7), 16) + (random() * 20 - 10)
+      if (stripe.weaveType === 'mixed' && stripe.secondaryColor) {
+        r = parseInt(stripe.secondaryColor.slice(1, 3), 16) + (random() * 20 - 10)
+        g = parseInt(stripe.secondaryColor.slice(3, 5), 16) + (random() * 20 - 10)
+        b = parseInt(stripe.secondaryColor.slice(5, 7), 16) + (random() * 20 - 10)
+      }
+      r = Math.max(0, Math.min(255, r))
+      g = Math.max(0, Math.min(255, g))
+      b = Math.max(0, Math.min(255, b))
+      ctx.fillStyle = `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`
+      ctx.fillRect(x + offsetX, y + offsetY, animWarpSpacing, animWeftThickness)
+    }
+  }
+}
+
+function drawAniFringe(ctx: CanvasRenderingContext2D, stripeData: any[], doormatWidth: number, doormatHeight: number, fringeLength: number, random: () => number, offsetX: number, offsetY: number) {
+  // Draw fringe and selvedge for fallback generator
+  drawAniFringeSection(ctx, offsetX, offsetY, doormatWidth, fringeLength, 'top', random, fringeLength, stripeData)
+  drawAniFringeSection(ctx, offsetX, offsetY + doormatHeight, doormatWidth, fringeLength, 'bottom', random, fringeLength, stripeData)
+  drawAniSelvedgeEdges(ctx, stripeData, doormatWidth, doormatHeight, fringeLength, random, offsetX, offsetY)
+}
+
+function drawAniFringeSection(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, side: string, random: () => number, fringeLength: number, stripeData: any[]) {
+  const fringeStrands = Math.floor(w / 12)
+  const strandWidth = w / fringeStrands
+  for (let i = 0; i < fringeStrands; i++) {
+    const strandX = x + i * strandWidth
+    const strandPosition = (strandX - x) / w
+    const stripeIndex = Math.floor(strandPosition * stripeData.length)
+    const stripe = stripeData[Math.min(stripeIndex, stripeData.length - 1)]
+    let strandColor = stripe?.primaryColor || '#8B4513'
+    if (typeof strandColor === 'object' && strandColor.r !== undefined) {
+      strandColor = `#${Math.round(strandColor.r).toString(16).padStart(2, '0')}${Math.round(strandColor.g).toString(16).padStart(2, '0')}${Math.round(strandColor.b).toString(16).padStart(2, '0')}`
+    }
+    for (let j = 0; j < 12; j++) {
+      const threadX = strandX + random() * strandWidth / 3 - strandWidth / 6
+      const startY = side === 'top' ? y : y
+      const endY = side === 'top' ? y - fringeLength : y + fringeLength
+      const waveAmplitude = random() * 3 + 1
+      const waveFreq = random() * 0.6 + 0.2
+      const direction = random() < 0.5 ? -1 : 1
+      const curlIntensity = random() * 1.5 + 0.5
+      const threadLength = random() * 0.4 + 0.8
+      const r = parseInt(strandColor.slice(1, 3), 16) * 0.7
+      const g = parseInt(strandColor.slice(3, 5), 16) * 0.7
+      const b = parseInt(strandColor.slice(5, 7), 16) * 0.7
+      ctx.strokeStyle = `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`
+      ctx.lineWidth = random() * 0.7 + 0.5
+      ctx.beginPath()
+      for (let t = 0; t <= 1; t += 0.1) {
+        const yPos = startY + (endY - startY) * t * threadLength
+        let xOffset = Math.sin(t * Math.PI * waveFreq) * waveAmplitude * t * direction * curlIntensity
+        xOffset += random() * 2 - 1
+        if (random() < 0.3) {
+          xOffset += random() * 4 - 2
+        }
+        if (t === 0) {
+          ctx.moveTo(threadX + xOffset, yPos)
+        } else {
+          ctx.lineTo(threadX + xOffset, yPos)
+        }
+      }
+      ctx.stroke()
+    }
+  }
+}
+
+function drawAniSelvedgeEdges(ctx: CanvasRenderingContext2D, stripeData: any[], doormatWidth: number, doormatHeight: number, fringeLength: number, random: () => number, offsetX: number, offsetY: number) {
+  const animWeftThickness = 8
+  const animWeftSpacing = animWeftThickness + 1
+  let isFirstWeft = true
+  for (let stripe of stripeData) {
+    for (let y = stripe.y; y < stripe.y + stripe.height; y += animWeftSpacing) {
+      if (isFirstWeft) {
+        isFirstWeft = false
+        continue
+      }
+      if (stripe === stripeData[stripeData.length - 1] && y + animWeftSpacing >= stripe.y + stripe.height) {
+        continue
+      }
+      let selvedgeColor = stripe.primaryColor
+      if (stripe.secondaryColor && stripe.weaveType === 'mixed') {
+        selvedgeColor = stripe.secondaryColor
+      }
+      const r = parseInt(selvedgeColor.slice(1, 3), 16) * 0.8
+      const g = parseInt(selvedgeColor.slice(3, 5), 16) * 0.8
+      const b = parseInt(selvedgeColor.slice(5, 7), 16) * 0.8
+      const radius = animWeftThickness * (random() * 0.6 + 1.2)
+      const centerX = offsetX + radius * 0.6 + (random() * 2 - 1)
+      const centerY = offsetY + y + animWeftThickness / 2 + (random() * 2 - 1)
+      const startAngle = (Math.PI / 2) + (random() * 0.4 - 0.2)
+      const endAngle = (-Math.PI / 2) + (random() * 0.4 - 0.2)
+      drawAniTextureOverlay(ctx, centerX, centerY, radius, startAngle, endAngle, r, g, b, 'left', random)
+    }
+  }
+  let isFirstWeftRight = true
+  for (let stripe of stripeData) {
+    for (let y = stripe.y; y < stripe.y + stripe.height; y += animWeftSpacing) {
+      if (isFirstWeftRight) {
+        isFirstWeftRight = false
+        continue
+      }
+      if (stripe === stripeData[stripeData.length - 1] && y + animWeftSpacing >= stripe.y + stripe.height) {
+        continue
+      }
+      let selvedgeColor = stripe.primaryColor
+      if (stripe.secondaryColor && stripe.weaveType === 'mixed') {
+        selvedgeColor = stripe.secondaryColor
+      }
+      const r = parseInt(selvedgeColor.slice(1, 3), 16) * 0.8
+      const g = parseInt(selvedgeColor.slice(3, 5), 16) * 0.8
+      const b = parseInt(selvedgeColor.slice(5, 7), 16) * 0.8
+      const radius = animWeftThickness * (random() * 0.6 + 1.2)
+      const centerX = offsetX + doormatWidth - radius * 0.6 + (random() * 2 - 1)
+      const centerY = offsetY + y + animWeftThickness / 2 + (random() * 2 - 1)
+      const startAngle = (-Math.PI / 2) + (random() * 0.4 - 0.2)
+      const endAngle = (Math.PI / 2) + (random() * 0.4 - 0.2)
+      drawAniTextureOverlay(ctx, centerX, centerY, radius, startAngle, endAngle, r, g, b, 'right', random)
+    }
+  }
+}
+
+function drawAniTextureOverlay(ctx: CanvasRenderingContext2D, centerX: number, centerY: number, radius: number, startAngle: number, endAngle: number, r: number, g: number, b: number, side: string, random: () => number) {
+  // Draw solid base arc first to eliminate gaps
+  ctx.fillStyle = `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`
+  ctx.beginPath()
+  ctx.arc(centerX, centerY, radius * 2, startAngle, endAngle)
+  ctx.fill()
+  const threadCount = Math.max(4, Math.floor(radius / 1.5))
+  const threadSpacing = radius / (threadCount + 1)
+  for (let i = 0; i < threadCount; i++) {
+    const threadRadius = radius - (i * threadSpacing)
+    let threadR, threadG, threadB
+    if (i % 2 === 0) {
+      threadR = Math.max(0, Math.min(255, r + 20))
+      threadG = Math.max(0, Math.min(255, g + 20))
+      threadB = Math.max(0, Math.min(255, b + 20))
+    } else {
+      threadR = Math.max(0, Math.min(255, r - 15))
+      threadG = Math.max(0, Math.min(255, g - 15))
+      threadB = Math.max(0, Math.min(255, b - 15))
+    }
+    ctx.fillStyle = `rgb(${Math.round(threadR)}, ${Math.round(threadG)}, ${Math.round(threadB)})`
+    const threadX = centerX + random() * 1 - 0.5
+    const threadY = centerY + random() * 1 - 0.5
+    ctx.beginPath()
+    ctx.arc(threadX, threadY, threadRadius * 2, startAngle, endAngle)
+    ctx.fill()
+  }
+  for (let i = 0; i < 2; i++) {
+    const detailRadius = radius * (0.4 + i * 0.3)
+    let detailR = Math.max(0, Math.min(255, r + (i % 2 === 0 ? 15 : -15)))
+    let detailG = Math.max(0, Math.min(255, g + (i % 2 === 0 ? 15 : -15)))
+    let detailB = Math.max(0, Math.min(255, b + (i % 2 === 0 ? 15 : -15)))
+    ctx.fillStyle = `rgb(${Math.round(detailR)}, ${Math.round(detailG)}, ${Math.round(detailB)})`
+    const detailX = centerX + random() * 1 - 0.5
+    const detailY = centerY + random() * 1 - 0.5
+    ctx.beginPath()
+    ctx.arc(detailX, detailY, detailRadius * 2, startAngle, endAngle)
+    ctx.fill()
+  }
+  ctx.fillStyle = `rgb(${Math.round(r * 0.7)}, ${Math.round(g * 0.7)}, ${Math.round(b * 0.7)})`
+  const shadowOffset = side === 'left' ? 1 : -1
+  ctx.beginPath()
+  ctx.arc(centerX + shadowOffset, centerY + 1, radius * 2, startAngle, endAngle)
+  ctx.fill()
 }
