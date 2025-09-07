@@ -1879,24 +1879,29 @@ let globalDependenciesLoading = false
 let globalDependenciesLoaded = false
 
 // Enhanced Magical Scene
-function Scene() {
+function Scene({ onLoaded }: { onLoaded?: () => void }) {
   const lightRef = useRef<THREE.DirectionalLight>(null)
   const [dependenciesLoaded, setDependenciesLoaded] = useState(false)
-
-// Global loading state to prevent multiple renders
-let globalDependenciesLoaded = false
   useEffect(() => {
     // Reset global state when component mounts
     resetGlobalState()
     
     if (globalDependenciesLoaded) {
       setDependenciesLoaded(true)
+      // Call onLoaded callback when dependencies are ready
+      if (onLoaded) {
+        setTimeout(onLoaded, 100) // Small delay to ensure everything is rendered
+      }
       return
     }
     // Directly mark as loaded
     globalDependenciesLoaded = true
     setDependenciesLoaded(true)
-  }, [])
+    // Call onLoaded callback when dependencies are ready
+    if (onLoaded) {
+      setTimeout(onLoaded, 100) // Small delay to ensure everything is rendered
+    }
+  }, [onLoaded])
   
   useFrame((state) => {
     const time = state.clock.getElapsedTime()
@@ -1981,6 +1986,8 @@ let globalDependenciesLoaded = false
 }
 
 export default function AnimatedRugs() {
+  const [isVisible, setIsVisible] = useState(false)
+
   useEffect(() => {
     // Reset global state when component mounts
     resetGlobalState()
@@ -1996,10 +2003,14 @@ export default function AnimatedRugs() {
     <div className="absolute inset-0 w-full h-full">
       <Canvas
         camera={{ position: [0, 5, 15], fov: 60 }}
-        style={{ background: 'transparent' }}
+        style={{ 
+          background: 'transparent',
+          opacity: isVisible ? 1 : 0,
+          transition: 'opacity 1.5s ease-in-out'
+        }}
       >
         <Suspense fallback={null}>
-          <Scene />
+          <Scene onLoaded={() => setIsVisible(true)} />
         </Suspense>
       </Canvas>
     </div>
