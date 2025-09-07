@@ -1535,7 +1535,10 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
     // Draw selvages first (with ragged edges)
     drawAniSelvedgeEdges(ctx, aniStripeData, 800, doormatHeight, () => aniRandom.next(), offsetX, offsetY)
     
-    // Draw doormat texture on top (with clean edges that cover ragged selvages)
+    // Draw fringe (with ragged edges)
+    drawAniFringe(ctx, aniStripeData, 800, doormatHeight, fringeLength, () => aniRandom.next(), offsetX, offsetY)
+    
+    // Draw doormat texture on top (with clean edges that cover ragged selvages and fringe)
     aniStripeData.forEach(stripe => {
       drawAniStripe(ctx, stripe, 800, doormatHeight, () => aniRandom.next(), offsetX, offsetY)
     })
@@ -1660,8 +1663,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
       ctx.restore()
       }
       
-      // Draw proper fringe and selvedge as part of the art (EXACTLY like your generator)
-    drawAniFringe(ctx, aniStripeData, 800, doormatHeight, fringeLength, () => aniRandom.next(), offsetX, offsetY)
+      // Fringe and selvages already drawn above before doormat texture
     
     // Subtle extra fabric noise (optional, can keep or remove)
     for (let x = 0; x < canvas.width; x += 8) {
