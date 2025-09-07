@@ -1532,10 +1532,13 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
     const aniStripeData = generateAniStripeData(aniSelectedPalette, doormatHeight, () => aniRandom.next())
       const offsetX = fringeLength * 2
       const offsetY = fringeLength * 2
-    drawAniSelvedgeEdges(ctx, aniStripeData, 800, doormatHeight, () => aniRandom.next(), offsetX, offsetY)
+    // Draw doormat texture first (base layer)
     aniStripeData.forEach(stripe => {
       drawAniStripe(ctx, stripe, 800, doormatHeight, () => aniRandom.next(), offsetX, offsetY)
     })
+    
+    // Draw selvages on top of the texture (neat edges)
+    drawAniSelvedgeEdges(ctx, aniStripeData, 800, doormatHeight, () => aniRandom.next(), offsetX, offsetY)
 
     // --- Accurate text color using P5.js palette lerpColor logic ---
     // Determine darkest and lightest colors in the palette
