@@ -17,237 +17,831 @@ export default function GeneratorPage() {
   const canvasContainerRef = useRef<HTMLDivElement>(null)
   const scriptsLoadedRef = useRef<Set<string>>(new Set())
 
-    // Load P5.js synchronously like the original HTML
+  // Clean P5.js loading - no global pollution
   const loadP5 = () => {
     return new Promise<void>((resolve) => {
       // Check if P5.js is already loaded
-      if ((window as any).p5 && typeof (window as any).randomSeed === 'function') {
+      if ((window as any).p5) {
         console.log('✅ P5.js already available')
         resolve()
         return
       }
       
-      // Create script element exactly like original HTML - synchronous loading
+      // Load P5.js from CDN
       const script = document.createElement('script')
       script.src = 'https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js'
-      script.async = false // Force synchronous loading like original HTML
       script.onload = () => {
-        // P5.js loads synchronously, but we need to create an instance to get functions
-        if ((window as any).randomSeed && typeof (window as any).randomSeed === 'function') {
-          console.log('✅ P5.js loaded synchronously - functions globally available')
-          resolve()
-        } else if ((window as any).p5 && typeof (window as any).p5.randomSeed === 'function') {
-          console.log('✅ P5.js loaded but functions not global, making them global')
-          // Make P5.js functions globally available
-          ;(window as any).randomSeed = (window as any).p5.randomSeed
-          ;(window as any).noiseSeed = (window as any).p5.noiseSeed
-          ;(window as any).saveCanvas = (window as any).p5.saveCanvas
-          ;(window as any).createCanvas = (window as any).p5.createCanvas
-          ;(window as any).background = (window as any).p5.background
-          ;(window as any).fill = (window as any).p5.fill
-          ;(window as any).noFill = (window as any).p5.noFill
-          ;(window as any).stroke = (window as any).p5.stroke
-          ;(window as any).noStroke = (window as any).p5.noStroke
-          ;(window as any).rect = (window as any).p5.rect
-          ;(window as any).ellipse = (window as any).p5.ellipse
-          ;(window as any).line = (window as any).p5.line
-          ;(window as any).text = (window as any).p5.text
-          ;(window as any).textSize = (window as any).p5.textSize
-          ;(window as any).textAlign = (window as any).p5.textAlign
-          ;(window as any).push = (window as any).p5.push
-          ;(window as any).pop = (window as any).p5.pop
-          ;(window as any).translate = (window as any).p5.translate
-          ;(window as any).rotate = (window as any).p5.rotate
-          ;(window as any).scale = (window as any).p5.scale
-          ;(window as any).random = (window as any).p5.random
-          ;(window as any).map = (window as any).p5.map
-          ;(window as any).constrain = (window as any).p5.constrain
-          ;(window as any).dist = (window as any).p5.dist
-          ;(window as any).sin = (window as any).p5.sin
-          ;(window as any).cos = (window as any).p5.cos
-          ;(window as any).PI = (window as any).p5.PI
-          ;(window as any).TWO_PI = (window as any).p5.TWO_PI
-          ;(window as any).HALF_PI = (window as any).p5.HALF_PI
-          // Add color utility functions
-          ;(window as any).color = (window as any).p5.color
-          ;(window as any).red = (window as any).p5.red
-          ;(window as any).green = (window as any).p5.green
-          ;(window as any).blue = (window as any).p5.blue
-          ;(window as any).lerpColor = (window as any).p5.lerpColor
-          // Add drawing control functions
-          ;(window as any).redraw = (window as any).p5.redraw
-          ;(window as any).loop = (window as any).p5.loop
-          ;(window as any).noLoop = (window as any).p5.noLoop
-          ;(window as any).frameRate = (window as any).p5.frameRate
-          // Add utility functions
-          ;(window as any).width = (window as any).p5.width
-          ;(window as any).height = (window as any).p5.height
-          ;(window as any).windowWidth = (window as any).p5.windowWidth
-          ;(window as any).windowHeight = (window as any).p5.windowHeight
-          console.log('✅ All P5.js functions made globally available')
-          resolve()
-        } else if ((window as any).p5) {
-          console.log('✅ P5.js loaded, creating instance to get functions')
-          // Create a P5.js instance to get access to functions
-          try {
-                      // Use the proper P5.js initialization - this will call setup() automatically
-          const p5Instance = new (window as any).p5((p: any) => {
-            // This is the setup function that gets called automatically
-                         p.setup = () => {
-               // Create canvas with proper dimensions
-               let canvas = p.createCanvas(1320, 900) // Exact canvas dimensions
-               canvas.parent('canvas-container')
-               
-               // Set canvas to fill container completely
-               canvas.style.width = '100%'
-               canvas.style.height = '100%'
-               
-               p.pixelDensity(1)
-               p.noLoop()
-               console.log('🎨 P5.js setup completed, canvas created with proper dimensions')
-             }
-            
-            // Bind the global draw function to this P5.js instance
-            p.draw = () => {
-              // Call the global draw function that's defined in doormat.js
-              if (typeof (window as any).draw === 'function') {
-                (window as any).draw()
-              } else {
-                console.log('⚠️ Global draw function not available yet, waiting...')
-              }
-            }
-          })
-            
-            // Now expose the instance functions globally
-            ;(window as any).randomSeed = p5Instance.randomSeed.bind(p5Instance)
-            ;(window as any).noiseSeed = p5Instance.noiseSeed.bind(p5Instance)
-            ;(window as any).noise = p5Instance.noise.bind(p5Instance) // Add missing noise function
-            ;(window as any).blendMode = p5Instance.blendMode.bind(p5Instance) // Add missing blendMode function
-            ;(window as any).saveCanvas = p5Instance.saveCanvas.bind(p5Instance)
-            ;(window as any).createCanvas = p5Instance.createCanvas.bind(p5Instance)
-            ;(window as any).pixelDensity = p5Instance.pixelDensity.bind(p5Instance) // Add missing pixelDensity function
-            ;(window as any).background = p5Instance.background.bind(p5Instance)
-            ;(window as any).fill = p5Instance.fill.bind(p5Instance)
-            ;(window as any).noFill = p5Instance.noFill.bind(p5Instance)
-            ;(window as any).stroke = p5Instance.stroke.bind(p5Instance)
-            ;(window as any).noStroke = p5Instance.noStroke.bind(p5Instance)
-            ;(window as any).strokeWeight = p5Instance.strokeWeight.bind(p5Instance) // Add missing strokeWeight
-            ;(window as any).rect = p5Instance.rect.bind(p5Instance)
-            ;(window as any).ellipse = p5Instance.ellipse.bind(p5Instance)
-            ;(window as any).line = p5Instance.line.bind(p5Instance)
-            ;(window as any).arc = p5Instance.arc.bind(p5Instance) // Add missing arc function
-            ;(window as any).beginShape = p5Instance.beginShape.bind(p5Instance) // Add missing beginShape
-            ;(window as any).vertex = p5Instance.vertex.bind(p5Instance) // Add missing vertex
-            ;(window as any).endShape = p5Instance.endShape.bind(p5Instance) // Add missing endShape
-            ;(window as any).text = p5Instance.text.bind(p5Instance)
-            ;(window as any).textSize = p5Instance.textSize.bind(p5Instance)
-            ;(window as any).textAlign = p5Instance.textAlign.bind(p5Instance)
-            ;(window as any).push = p5Instance.push.bind(p5Instance)
-            ;(window as any).pop = p5Instance.pop.bind(p5Instance)
-            ;(window as any).translate = p5Instance.translate.bind(p5Instance)
-            ;(window as any).rotate = p5Instance.rotate.bind(p5Instance)
-            ;(window as any).scale = p5Instance.scale.bind(p5Instance)
-            ;(window as any).random = p5Instance.random.bind(p5Instance)
-            ;(window as any).map = p5Instance.map.bind(p5Instance)
-            ;(window as any).constrain = p5Instance.constrain.bind(p5Instance)
-            ;(window as any).dist = p5Instance.dist.bind(p5Instance)
-            ;(window as any).sin = p5Instance.sin.bind(p5Instance)
-            ;(window as any).cos = p5Instance.cos.bind(p5Instance)
-            // Add missing utility functions
-            ;(window as any).max = p5Instance.max.bind(p5Instance)
-            ;(window as any).min = p5Instance.min.bind(p5Instance)
-            ;(window as any).abs = p5Instance.abs.bind(p5Instance)
-            ;(window as any).floor = p5Instance.floor.bind(p5Instance)
-            ;(window as any).ceil = p5Instance.ceil.bind(p5Instance)
-            ;(window as any).round = p5Instance.round.bind(p5Instance)
-            ;(window as any).PI = p5Instance.PI
-            ;(window as any).TWO_PI = p5Instance.TWO_PI
-            ;(window as any).HALF_PI = p5Instance.HALF_PI
-            // Add blend mode constants
-            ;(window as any).MULTIPLY = p5Instance.MULTIPLY
-            ;(window as any).ADD = p5Instance.ADD
-            ;(window as any).SUBTRACT = p5Instance.SUBTRACT
-            ;(window as any).DARKEST = p5Instance.DARKEST
-            ;(window as any).LIGHTEST = p5Instance.LIGHTEST
-            ;(window as any).DIFFERENCE = p5Instance.DIFFERENCE
-            ;(window as any).EXCLUSION = p5Instance.EXCLUSION
-            ;(window as any).OVERLAY = p5Instance.OVERLAY
-            ;(window as any).SOFT_LIGHT = p5Instance.SOFT_LIGHT
-            ;(window as any).HARD_LIGHT = p5Instance.HARD_LIGHT
-            ;(window as any).COLOR_DODGE = p5Instance.COLOR_DODGE
-            ;(window as any).COLOR_BURN = p5Instance.COLOR_BURN
-            ;(window as any).SCREEN = p5Instance.SCREEN
-            // Add color utility functions
-            ;(window as any).color = p5Instance.color.bind(p5Instance)
-            ;(window as any).red = p5Instance.red.bind(p5Instance)
-            ;(window as any).green = p5Instance.green.bind(p5Instance)
-            ;(window as any).blue = p5Instance.blue.bind(p5Instance)
-            ;(window as any).lerpColor = p5Instance.lerpColor.bind(p5Instance)
-            ;(window as any).lerp = p5Instance.lerp.bind(p5Instance) // Add missing lerp function
-            // Add drawing control functions
-            ;(window as any).redraw = p5Instance.redraw.bind(p5Instance)
-            ;(window as any).loop = p5Instance.loop.bind(p5Instance)
-            ;(window as any).noLoop = p5Instance.noLoop.bind(p5Instance)
-            ;(window as any).frameRate = p5Instance.frameRate.bind(p5Instance)
-            // Add utility functions
-            ;(window as any).width = p5Instance.width
-            ;(window as any).height = p5Instance.height
-            ;(window as any).windowWidth = p5Instance.windowWidth
-            ;(window as any).windowHeight = p5Instance.windowHeight
-            console.log('✅ All P5.js functions made globally available via instance')
-            resolve()
-          } catch (error) {
-            console.error('❌ Failed to create P5.js instance:', error)
-            resolve()
-          }
-        } else {
-          console.log('❌ P5.js loaded but functions not accessible')
-          resolve()
-        }
+        console.log('✅ P5.js loaded successfully')
+        resolve()
       }
       script.onerror = () => {
         console.error('❌ Failed to load P5.js from CDN')
         resolve() // Continue anyway
       }
       
-      // Append to head like original HTML
       document.head.appendChild(script)
     })
   }
 
-  // Load doormat scripts sequentially
-  const loadDoormatScripts = async () => {
-      const scripts = [
-      { src: '/lib/doormat/doormat-config.js', id: 'doormat-config' },
-      { src: '/lib/doormat/color-palettes.js', id: 'color-palettes' },
-      { src: '/lib/doormat/character-map.js', id: 'character-map' },
-      { src: '/lib/doormat/trait-calculator.js', id: 'trait-calculator' },
-      { src: '/lib/doormat/doormat.js', id: 'doormat' },
-      { src: '/lib/doormat/html-interface.js', id: 'html-interface' }
+  // Self-contained doormat generation (no external scripts needed)
+  const initializeDoormat = () => {
+    console.log('🎨 Initializing self-contained doormat generator...')
+    
+    // Configuration
+    const config = {
+      DOORMAT_WIDTH: 800,
+      DOORMAT_HEIGHT: 1200,
+      FRINGE_LENGTH: 30,
+      WEFT_THICKNESS: 8,
+      WARP_THICKNESS: 2,
+      TEXT_SCALE: 2,
+      MAX_CHARS: 11,
+      MAX_TEXT_ROWS: 5
+    }
+    
+    // Color palettes
+    const colorPalettes = [
+      {
+        name: 'Sunset',
+        colors: ['#FF6B35', '#F7931E', '#FFD23F', '#06FFA5', '#3A86FF']
+      },
+      {
+        name: 'Ocean',
+        colors: ['#006466', '#065A60', '#0B525B', '#144552', '#1B3A4B']
+      },
+      {
+        name: 'Forest',
+        colors: ['#2D5016', '#4A7C59', '#7BA05B', '#9ACD32', '#ADFF2F']
+      },
+      {
+        name: 'Desert',
+        colors: ['#8B4513', '#CD853F', '#DEB887', '#F4A460', '#FFE4B5']
+      }
     ]
+    
+    // Character map for text embedding
+    const characterMap = {
+      'A': ["01110","10001","10001","11111","10001","10001","10001"],
+      'B': ["11110","10001","10001","11110","10001","10001","11110"],
+      'C': ["01111","10000","10000","10000","10000","10000","01111"],
+      'D': ["11110","10001","10001","10001","10001","10001","11110"],
+      'E': ["11111","10000","10000","11110","10000","10000","11111"],
+      'F': ["11111","10000","10000","11110","10000","10000","10000"],
+      'G': ["01111","10000","10000","10011","10001","10001","01111"],
+      'H': ["10001","10001","10001","11111","10001","10001","10001"],
+      'I': ["11111","00100","00100","00100","00100","00100","11111"],
+      'J': ["11111","00001","00001","00001","00001","10001","01110"],
+      'K': ["10001","10010","10100","11000","10100","10010","10001"],
+      'L': ["10000","10000","10000","10000","10000","10000","11111"],
+      'M': ["10001","11011","10101","10001","10001","10001","10001"],
+      'N': ["10001","11001","10101","10011","10001","10001","10001"],
+      'O': ["01110","10001","10001","10001","10001","10001","01110"],
+      'P': ["11110","10001","10001","11110","10000","10000","10000"],
+      'Q': ["01110","10001","10001","10001","10101","10010","01101"],
+      'R': ["11110","10001","10001","11110","10100","10010","10001"],
+      'S': ["01111","10000","10000","01110","00001","00001","11110"],
+      'T': ["11111","00100","00100","00100","00100","00100","00100"],
+      'U': ["10001","10001","10001","10001","10001","10001","01110"],
+      'V': ["10001","10001","10001","10001","10001","01010","00100"],
+      'W': ["10001","10001","10001","10001","10101","11011","10001"],
+      'X': ["10001","10001","01010","00100","01010","10001","10001"],
+      'Y': ["10001","10001","01010","00100","00100","00100","00100"],
+      'Z': ["11111","00001","00010","00100","01000","10000","11111"],
+      ' ': ["00000","00000","00000","00000","00000","00000","00000"],
+      '0': ["01110","10001","10011","10101","11001","10001","01110"],
+      '1': ["00100","01100","00100","00100","00100","00100","01110"],
+      '2': ["01110","10001","00001","00010","00100","01000","11111"],
+      '3': ["11110","00001","00001","01110","00001","00001","11110"],
+      '4': ["00010","00110","01010","10010","11111","00010","00010"],
+      '5': ["11111","10000","10000","11110","00001","00001","11110"],
+      '6': ["01110","10000","10000","11110","10001","10001","01110"],
+      '7': ["11111","00001","00010","00100","01000","01000","01000"],
+      '8': ["01110","10001","10001","01110","10001","10001","01110"],
+      '9': ["01110","10001","10001","01111","00001","00001","01110"]
+    }
+    
+    // Global variables for NFTExporter
+    let selectedPalette = colorPalettes[0]
+    let stripeData: any[] = []
+    let textData: any[] = []
+    let doormatTextRows: string[] = []
+    let warpThickness = config.WARP_THICKNESS
+    
+    // Text colors (chosen from palette) - MISSING FROM ORIGINAL
+    let lightTextColor: any = null
+    let darkTextColor: any = null
+    
+    // Expose minimal globals for NFTExporter
+    ;(window as any).selectedPalette = selectedPalette
+    ;(window as any).stripeData = stripeData
+    ;(window as any).DOORMAT_CONFIG = config
+    ;(window as any).warpThickness = warpThickness
+    ;(window as any).textData = textData
+    ;(window as any).doormatTextRows = doormatTextRows
+    
+    console.log('✅ Self-contained doormat generator initialized')
+    return { config, colorPalettes, characterMap, selectedPalette, stripeData, textData, doormatTextRows, warpThickness }
+  }
 
-    for (const script of scripts) {
-      if (scriptsLoadedRef.current.has(script.id) || document.getElementById(script.id)) {
-        console.log(`📜 Script ${script.id} already loaded, skipping`)
-        continue
+  // Create P5.js instance using original doormat.js logic
+  const createP5Instance = (doormatData: any) => {
+    return new Promise<void>((resolve) => {
+      if (!(window as any).p5) {
+        console.error('❌ P5.js not available')
+        resolve()
+        return
       }
 
-      await new Promise<void>((resolve) => {
-        const scriptElement = document.createElement('script')
-        scriptElement.src = script.src
-        scriptElement.id = script.id
-        scriptElement.onload = () => {
-          scriptsLoadedRef.current.add(script.id)
-          console.log(`✅ Loaded script: ${script.id}`)
-          resolve()
-        }
-        scriptElement.onerror = () => {
-          console.error(`❌ Failed to load script: ${script.id}`)
-          resolve() // Continue with other scripts
-        }
-        document.head.appendChild(scriptElement)
-      })
+      try {
+        // Use original doormat.js setup and draw functions
+        const p5Instance = new (window as any).p5((p: any) => {
+          // Original setup function from doormat.js
+          p.setup = () => {
+            // Create canvas with swapped dimensions for 90-degree rotation (original logic)
+            let canvas = p.createCanvas(doormatData.config.DOORMAT_HEIGHT + (doormatData.config.FRINGE_LENGTH * 4), 
+                                       doormatData.config.DOORMAT_WIDTH + (doormatData.config.FRINGE_LENGTH * 4))
+            canvas.parent('canvas-container')
+            canvas.style.width = '100%'
+            canvas.style.height = '100%'
+            p.pixelDensity(1)
+            p.noLoop()
+            console.log('🎨 P5.js canvas created with original dimensions')
+          }
+
+          // Original draw function from doormat.js
+          p.draw = () => {
+            // Use original doormat.js draw logic
+            p.background(222, 222, 222)
+            
+            // Rotate canvas 90 degrees clockwise (original)
+            p.push()
+            p.translate(p.width/2, p.height/2)
+            p.rotate(p.PI/2)
+            p.translate(-p.height/2, -p.width/2)
+            
+            // Draw the main doormat area
+            p.push()
+            p.translate(doormatData.config.FRINGE_LENGTH * 2, doormatData.config.FRINGE_LENGTH * 2)
+            
+            // Draw stripes using original logic
+            for (const stripe of doormatData.stripeData) {
+              drawStripeOriginal(p, stripe, doormatData)
+            }
+            
+            // Add overall texture overlay
+            drawTextureOverlayOriginal(p, doormatData)
+            p.pop()
+            
+            // Draw fringe with adjusted positioning
+            drawFringeOriginal(p, doormatData)
+            drawSelvedgeEdgesOriginal(p, doormatData)
+            
+            p.pop() // End rotation
+          }
+        })
+
+        // Store instance for later use
+        ;(window as any).p5Instance = p5Instance
+        resolve()
+      } catch (error) {
+        console.error('❌ Failed to create P5.js instance:', error)
+        resolve()
+      }
+    })
+  }
+
+  // Generate doormat core logic (complete original logic)
+  const generateDoormatCore = (seed: number, doormatData: any) => {
+    console.log('🎨 Generating doormat with seed:', seed)
+    
+    // Set random warp thickness between 1 and 6 (like original)
+    const seededRandom = (seed: number) => {
+      const x = Math.sin(seed) * 10000
+      return x - Math.floor(x)
     }
+    
+    const warpThicknessOptions = [1, 2, 3, 4, 5, 6]
+    const warpThicknessIndex = Math.floor(seededRandom(seed * 100) * warpThicknessOptions.length)
+    doormatData.warpThickness = warpThicknessOptions[warpThicknessIndex]
+    
+    // Generate stripes with seeded randomness
+    doormatData.stripeData = generateStripes(doormatData, seed)
+    
+    // Update text colors and generate text data (MISSING FROM ORIGINAL)
+    if ((window as any).p5Instance) {
+      updateTextColors((window as any).p5Instance, doormatData)
+      generateTextData(doormatData)
+    }
+    
+    // Update global variables for NFTExporter
+    ;(window as any).selectedPalette = doormatData.selectedPalette
+    ;(window as any).stripeData = doormatData.stripeData
+    ;(window as any).DOORMAT_CONFIG = doormatData.config
+    ;(window as any).warpThickness = doormatData.warpThickness
+    ;(window as any).textData = doormatData.textData
+    ;(window as any).doormatTextRows = doormatData.doormatTextRows
+    
+    // Redraw
+    if ((window as any).p5Instance) {
+      (window as any).p5Instance.redraw()
+    }
+  }
+
+  // Generate stripes with seeded randomness (complete original logic)
+  const generateStripes = (doormatData: any, seed: number) => {
+    const stripes = []
+    const { config, colorPalettes } = doormatData
+    
+    // Simple seeded random function
+    const seededRandom = (seed: number) => {
+      const x = Math.sin(seed) * 10000
+      return x - Math.floor(x)
+    }
+    
+    // Select random palette based on seed
+    const paletteIndex = Math.floor(seededRandom(seed) * colorPalettes.length)
+    const palette = colorPalettes[paletteIndex]
+    doormatData.selectedPalette = palette
+    
+    // Original doormat.js stripe generation logic
+    let totalHeight = config.DOORMAT_HEIGHT
+    let currentY = 0
+    
+    // Decide stripe density pattern for this doormat
+    let densityType = seededRandom(seed * 2)
+    let minHeight, maxHeight
+    
+    if (densityType < 0.2) {
+      // 20% chance: High density (many thin stripes)
+      minHeight = 15
+      maxHeight = 35
+    } else if (densityType < 0.4) {
+      // 20% chance: Low density (fewer thick stripes) 
+      minHeight = 50
+      maxHeight = 90
+    } else {
+      // 60% chance: Mixed density (varied stripe sizes)
+      minHeight = 20
+      maxHeight = 80
+    }
+    
+    while (currentY < totalHeight) {
+      // Dynamic stripe height based on density type
+      let stripeHeight
+      if (densityType >= 0.4) {
+        // Mixed density: add more randomization within the range
+        let variationType = seededRandom(seed * 3 + currentY)
+        if (variationType < 0.3) {
+          // 30% thin stripes within mixed
+          stripeHeight = minHeight + (seededRandom(seed * 4 + currentY) * 20)
+        } else if (variationType < 0.6) {
+          // 30% medium stripes within mixed
+          stripeHeight = minHeight + 15 + (seededRandom(seed * 5 + currentY) * (maxHeight - minHeight - 30))
+        } else {
+          // 40% thick stripes within mixed
+          stripeHeight = maxHeight - 25 + (seededRandom(seed * 6 + currentY) * 25)
+        }
+      } else {
+        // High/Low density: more consistent sizing
+        stripeHeight = minHeight + (seededRandom(seed * 7 + currentY) * (maxHeight - minHeight))
+      }
+      
+      // Ensure we don't exceed the total height
+      if (currentY + stripeHeight > totalHeight) {
+        stripeHeight = totalHeight - currentY
+      }
+      
+      // Select colors for this stripe
+      let primaryColor = palette.colors[Math.floor(seededRandom(seed * 8 + currentY) * palette.colors.length)]
+      let hasSecondaryColor = seededRandom(seed * 9 + currentY) < 0.15 // 15% chance of blended colors
+      let secondaryColor = hasSecondaryColor ? palette.colors[Math.floor(seededRandom(seed * 10 + currentY) * palette.colors.length)] : null
+      
+      // Determine weave pattern type with weighted probabilities (original logic)
+      let weaveRand = seededRandom(seed * 11 + currentY)
+      let weaveType
+      if (weaveRand < 0.6) {          // 60% chance of solid (simple)
+        weaveType = 'solid'
+      } else if (weaveRand < 0.8) {   // 20% chance of textured 
+        weaveType = 'textured'
+      } else {                        // 20% chance of mixed (most complex)
+        weaveType = 'mixed'
+      }
+      
+      // Create stripe object (original structure)
+      const stripe = {
+        y: currentY,
+        height: stripeHeight,
+        primaryColor: primaryColor,
+        secondaryColor: secondaryColor,
+        weaveType: weaveType,
+        warpVariation: seededRandom(seed * 12 + currentY) * 0.4 + 0.1 // How much the weave varies
+      }
+      
+      stripes.push(stripe)
+      currentY += stripeHeight
+    }
+    
+    return stripes
+  }
+
+  // Original doormat.js drawStripe function
+  const drawStripeOriginal = (p: any, stripe: any, doormatData: any) => {
+    const config = doormatData.config
+    const warpSpacing = doormatData.warpThickness + 1
+    const weftSpacing = config.WEFT_THICKNESS + 1
+    
+    // First, draw the warp threads (vertical) as the foundation
+    for (let x = 0; x < config.DOORMAT_WIDTH; x += warpSpacing) {
+      for (let y = stripe.y; y < stripe.y + stripe.height; y += weftSpacing) {
+        let warpColor = p.color(stripe.primaryColor)
+        
+        // Check if this position should be modified for text
+        let isTextPixel = false
+        if (doormatData.textData && doormatData.textData.length > 0) {
+          for (let textPixel of doormatData.textData) {
+            if (x >= textPixel.x && x < textPixel.x + textPixel.width &&
+                y >= textPixel.y && y < textPixel.y + textPixel.height) {
+              isTextPixel = true
+              break
+            }
+          }
+        }
+        
+        // Add subtle variation to warp threads
+        let r = p.red(warpColor) + p.random(-15, 15)
+        let g = p.green(warpColor) + p.random(-15, 15)
+        let b = p.blue(warpColor) + p.random(-15, 15)
+        
+        // Modify color for text pixels (vertical lines use weft thickness)
+        if (isTextPixel) {
+          const bgBrightness = (r + g + b) / 3
+          let tc = bgBrightness < 128 ? doormatData.lightTextColor : doormatData.darkTextColor
+          r = p.red(tc); g = p.green(tc); b = p.blue(tc)
+        }
+        
+        r = p.constrain(r, 0, 255)
+        g = p.constrain(g, 0, 255)
+        b = p.constrain(b, 0, 255)
+        
+        p.fill(r, g, b)
+        p.noStroke()
+        
+        // Draw warp thread with slight curve for natural look
+        let warpCurve = p.sin(y * 0.05) * 0.5
+        p.rect(x + warpCurve, y, doormatData.warpThickness, weftSpacing)
+      }
+    }
+    
+    // Now draw the weft threads (horizontal) that interlace with warp
+    for (let y = stripe.y; y < stripe.y + stripe.height; y += weftSpacing) {
+      for (let x = 0; x < config.DOORMAT_WIDTH; x += warpSpacing) {
+        let weftColor = p.color(stripe.primaryColor)
+        
+        // Add variation based on weave type
+        if (stripe.weaveType === 'mixed' && stripe.secondaryColor) {
+          if (p.noise(x * 0.1, y * 0.1) > 0.5) {
+            weftColor = p.color(stripe.secondaryColor)
+          }
+        } else if (stripe.weaveType === 'textured') {
+          let noiseVal = p.noise(x * 0.05, y * 0.05)
+          weftColor = p.lerpColor(p.color(stripe.primaryColor), p.color(255), noiseVal * 0.15)
+        }
+        
+        // Check if this position should be modified for text
+        let isTextPixel = false
+        if (doormatData.textData && doormatData.textData.length > 0) {
+          for (let textPixel of doormatData.textData) {
+            if (x >= textPixel.x && x < textPixel.x + textPixel.width &&
+                y >= textPixel.y && y < textPixel.y + textPixel.height) {
+              isTextPixel = true
+              break
+            }
+          }
+        }
+        
+        // Add fabric irregularities
+        let r = p.red(weftColor) + p.random(-20, 20)
+        let g = p.green(weftColor) + p.random(-20, 20)
+        let b = p.blue(weftColor) + p.random(-20, 20)
+        
+        // Modify color for text pixels (horizontal lines use warp thickness)
+        if (isTextPixel) {
+          const bgBrightness = (r + g + b) / 3
+          let tc = bgBrightness < 128 ? doormatData.lightTextColor : doormatData.darkTextColor
+          r = p.red(tc); g = p.green(tc); b = p.blue(tc)
+        }
+        
+        r = p.constrain(r, 0, 255)
+        g = p.constrain(g, 0, 255)
+        b = p.constrain(b, 0, 255)
+        
+        p.fill(r, g, b)
+        p.noStroke()
+        
+        // Draw weft thread with slight curve
+        let weftCurve = p.cos(x * 0.05) * 0.5
+        p.rect(x, y + weftCurve, warpSpacing, config.WEFT_THICKNESS)
+      }
+    }
+    
+    // Add the interlacing effect - make some threads appear to go over/under
+    for (let y = stripe.y; y < stripe.y + stripe.height; y += weftSpacing * 2) {
+      for (let x = 0; x < config.DOORMAT_WIDTH; x += warpSpacing * 2) {
+        // Create shadow effect for threads that appear to go under
+        p.fill(0, 0, 0, 40)
+        p.noStroke()
+        p.rect(x + 1, y + 1, warpSpacing - 2, weftSpacing - 2)
+      }
+    }
+    
+    // Add subtle highlights for threads that appear to go over
+    for (let y = stripe.y + weftSpacing; y < stripe.y + stripe.height; y += weftSpacing * 2) {
+      for (let x = warpSpacing; x < config.DOORMAT_WIDTH; x += warpSpacing * 2) {
+        p.fill(255, 255, 255, 30)
+        p.noStroke()
+        p.rect(x, y, warpSpacing - 1, weftSpacing - 1)
+      }
+    }
+  }
+
+  // Original doormat.js drawTextureOverlay function
+  const drawTextureOverlayOriginal = (p: any, doormatData: any) => {
+    const config = doormatData.config
+    p.push()
+    p.blendMode(p.MULTIPLY)
+    
+    // Create subtle hatching effect like in the diagram
+    for (let x = 0; x < config.DOORMAT_WIDTH; x += 2) {
+      for (let y = 0; y < config.DOORMAT_HEIGHT; y += 2) {
+        let noiseVal = p.noise(x * 0.02, y * 0.02)
+        let hatchingIntensity = p.map(noiseVal, 0, 1, 0, 50)
+        
+        p.fill(0, 0, 0, hatchingIntensity)
+        p.noStroke()
+        p.rect(x, y, 2, 2)
+      }
+    }
+    
+    // Add subtle relief effect to show the bumpy, cloth-like surface
+    for (let x = 0; x < config.DOORMAT_WIDTH; x += 6) {
+      for (let y = 0; y < config.DOORMAT_HEIGHT; y += 6) {
+        let reliefNoise = p.noise(x * 0.03, y * 0.03)
+        if (reliefNoise > 0.6) {
+          p.fill(255, 255, 255, 25)
+          p.noStroke()
+          p.rect(x, y, 6, 6)
+        } else if (reliefNoise < 0.4) {
+          p.fill(0, 0, 0, 20)
+          p.noStroke()
+          p.rect(x, y, 6, 6)
+        }
+      }
+    }
+    
+    p.pop()
+  }
+
+  // Original doormat.js drawFringe function
+  const drawFringeOriginal = (p: any, doormatData: any) => {
+    const config = doormatData.config
+    // Top fringe (warp ends)
+    drawFringeSectionOriginal(p, config.FRINGE_LENGTH * 2, config.FRINGE_LENGTH, config.DOORMAT_WIDTH, config.FRINGE_LENGTH, 'top', doormatData)
+    
+    // Bottom fringe (warp ends)
+    drawFringeSectionOriginal(p, config.FRINGE_LENGTH * 2, config.FRINGE_LENGTH * 2 + config.DOORMAT_HEIGHT, config.DOORMAT_WIDTH, config.FRINGE_LENGTH, 'bottom', doormatData)
+  }
+
+  // Original doormat.js drawFringeSection function
+  const drawFringeSectionOriginal = (p: any, x: number, y: number, w: number, h: number, side: string, doormatData: any) => {
+    let fringeStrands = w / 12
+    let strandWidth = w / fringeStrands
+    
+    for (let i = 0; i < fringeStrands; i++) {
+      let strandX = x + i * strandWidth
+      
+      let strandColor = p.random(doormatData.selectedPalette.colors)
+      
+      // Draw individual fringe strand with thin threads
+      for (let j = 0; j < 12; j++) {
+        let threadX = strandX + p.random(-strandWidth/6, strandWidth/6)
+        let startY = side === 'top' ? y + h : y
+        let endY = side === 'top' ? y : y + h
+        
+        // Add natural curl/wave to the fringe with more variation
+        let waveAmplitude = p.random(1, 4)
+        let waveFreq = p.random(0.2, 0.8)
+        
+        // Randomize the direction and intensity for each thread
+        let direction = p.random([-1, 1])
+        let curlIntensity = p.random(0.5, 2.0)
+        let threadLength = p.random(0.8, 1.2)
+        
+        // Use darker version of strand color for fringe
+        let fringeColor = p.color(strandColor)
+        let r = p.red(fringeColor) * 0.7
+        let g = p.green(fringeColor) * 0.7
+        let b = p.blue(fringeColor) * 0.7
+        
+        p.stroke(r, g, b)
+        p.strokeWeight(p.random(0.5, 1.2))
+        
+        p.noFill()
+        p.beginShape()
+        for (let t = 0; t <= 1; t += 0.1) {
+          let yPos = p.lerp(startY, endY, t * threadLength)
+          let xOffset = p.sin(t * p.PI * waveFreq) * waveAmplitude * t * direction * curlIntensity
+          // Add more randomness and natural variation
+          xOffset += p.random(-1, 1)
+          // Add occasional kinks and bends
+          if (p.random() < 0.3) {
+            xOffset += p.random(-2, 2)
+          }
+          p.vertex(threadX + xOffset, yPos)
+        }
+        p.endShape()
+      }
+    }
+  }
+
+  // Original doormat.js drawSelvedgeEdges function
+  const drawSelvedgeEdgesOriginal = (p: any, doormatData: any) => {
+    const config = doormatData.config
+    let weftSpacing = config.WEFT_THICKNESS + 1
+    let isFirstWeft = true
+    
+    // Left selvedge edge - flowing semicircular weft threads
+    for (const stripe of doormatData.stripeData) {
+      for (let y = stripe.y; y < stripe.y + stripe.height; y += weftSpacing) {
+        // Skip the very first weft thread
+        if (isFirstWeft) {
+          isFirstWeft = false
+          continue
+        }
+        
+        // Get the color from the current stripe
+        let selvedgeColor = p.color(stripe.primaryColor)
+        
+        // Check if there's a secondary color for blending
+        if (stripe.secondaryColor && stripe.weaveType === 'mixed') {
+          let secondaryColor = p.color(stripe.secondaryColor)
+          let blendFactor = p.noise(y * 0.1) * 0.5 + 0.5
+          selvedgeColor = p.lerpColor(selvedgeColor, secondaryColor, blendFactor)
+        }
+        
+        let r = p.red(selvedgeColor) * 0.8
+        let g = p.green(selvedgeColor) * 0.8
+        let b = p.blue(selvedgeColor) * 0.8
+        
+        p.fill(r, g, b)
+        p.noStroke()
+        
+        let radius = config.WEFT_THICKNESS * p.random(1.2, 1.8)
+        let centerX = config.FRINGE_LENGTH * 2 + p.random(-2, 2)
+        let centerY = config.FRINGE_LENGTH * 2 + y + config.WEFT_THICKNESS/2 + p.random(-1, 1)
+        
+        // Vary the arc angles for more natural look
+        let startAngle = p.HALF_PI + p.random(-0.2, 0.2)
+        let endAngle = -p.HALF_PI + p.random(-0.2, 0.2)
+        
+        // Draw textured semicircle with individual thread details
+        drawTexturedSelvedgeArcOriginal(p, centerX, centerY, radius, startAngle, endAngle, r, g, b, 'left')
+      }
+    }
+    
+    // Right selvedge edge - flowing semicircular weft threads
+    let isFirstWeftRight = true
+    for (const stripe of doormatData.stripeData) {
+      for (let y = stripe.y; y < stripe.y + stripe.height; y += weftSpacing) {
+        // Skip the very first weft thread
+        if (isFirstWeftRight) {
+          isFirstWeftRight = false
+          continue
+        }
+        
+        // Get the color from the current stripe
+        let selvedgeColor = p.color(stripe.primaryColor)
+        
+        // Check if there's a secondary color for blending
+        if (stripe.secondaryColor && stripe.weaveType === 'mixed') {
+          let secondaryColor = p.color(stripe.secondaryColor)
+          let blendFactor = p.noise(y * 0.1) * 0.5 + 0.5
+          selvedgeColor = p.lerpColor(selvedgeColor, secondaryColor, blendFactor)
+        }
+        
+        let r = p.red(selvedgeColor) * 0.8
+        let g = p.green(selvedgeColor) * 0.8
+        let b = p.blue(selvedgeColor) * 0.8
+        
+        p.fill(r, g, b)
+        p.noStroke()
+        
+        let radius = config.WEFT_THICKNESS * p.random(1.2, 1.8)
+        let centerX = config.FRINGE_LENGTH * 2 + config.DOORMAT_WIDTH + p.random(-2, 2)
+        let centerY = config.FRINGE_LENGTH * 2 + y + config.WEFT_THICKNESS/2 + p.random(-1, 1)
+        
+        // Vary the arc angles for more natural look
+        let startAngle = -p.HALF_PI + p.random(-0.2, 0.2)
+        let endAngle = p.HALF_PI + p.random(-0.2, 0.2)
+        
+        // Draw textured semicircle with individual thread details
+        drawTexturedSelvedgeArcOriginal(p, centerX, centerY, radius, startAngle, endAngle, r, g, b, 'right')
+      }
+    }
+  }
+
+  // Original doormat.js drawTexturedSelvedgeArc function
+  const drawTexturedSelvedgeArcOriginal = (p: any, centerX: number, centerY: number, radius: number, startAngle: number, endAngle: number, r: number, g: number, b: number, side: string) => {
+    // Draw a realistic textured selvedge arc with visible woven texture
+    let threadCount = p.max(6, p.floor(radius / 1.2))
+    let threadSpacing = radius / threadCount
+    
+    // Draw individual thread arcs to create visible woven texture
+    for (let i = 0; i < threadCount; i++) {
+      let threadRadius = radius - (i * threadSpacing)
+      
+      // Create distinct thread colors for visible texture
+      let threadR, threadG, threadB
+      
+      if (i % 2 === 0) {
+        // Lighter threads
+        threadR = p.constrain(r + 25, 0, 255)
+        threadG = p.constrain(g + 25, 0, 255)
+        threadB = p.constrain(b + 25, 0, 255)
+      } else {
+        // Darker threads
+        threadR = p.constrain(r - 20, 0, 255)
+        threadG = p.constrain(g - 20, 0, 255)
+        threadB = p.constrain(b - 20, 0, 255)
+      }
+      
+      // Add some random variation for natural look
+      threadR = p.constrain(threadR + p.random(-10, 10), 0, 255)
+      threadG = p.constrain(threadG + p.random(-10, 10), 0, 255)
+      threadB = p.constrain(threadB + p.random(-10, 10), 0, 255)
+      
+      p.fill(threadR, threadG, threadB, 88)
+      
+      // Draw individual thread arc with slight position variation
+      let threadX = centerX + p.random(-1, 1)
+      let threadY = centerY + p.random(-1, 1)
+      let threadStartAngle = startAngle + p.random(-0.1, 0.1)
+      let threadEndAngle = endAngle + p.random(-0.1, 0.1)
+      
+      p.arc(threadX, threadY, threadRadius * 2, threadRadius * 2, threadStartAngle, threadEndAngle)
+    }
+    
+    // Add a few more detailed texture layers
+    for (let i = 0; i < 3; i++) {
+      let detailRadius = radius * (0.3 + i * 0.2)
+      let detailAlpha = 180 - (i * 40)
+      
+      // Create contrast for visibility
+      let detailR = p.constrain(r + (i % 2 === 0 ? 15 : -15), 0, 255)
+      let detailG = p.constrain(g + (i % 2 === 0 ? 15 : -15), 0, 255)
+      let detailB = p.constrain(b + (i % 2 === 0 ? 15 : -15), 0, 255)
+      
+      p.fill(detailR, detailG, detailB, detailAlpha * 0.7)
+      
+      let detailX = centerX + p.random(-0.5, 0.5)
+      let detailY = centerY + p.random(-0.5, 0.5)
+      let detailStartAngle = startAngle + p.random(-0.05, 0.05)
+      let detailEndAngle = endAngle + p.random(-0.05, 0.05)
+      
+      p.arc(detailX, detailY, detailRadius * 2, detailRadius * 2, detailStartAngle, detailEndAngle)
+    }
+    
+    // Add subtle shadow for depth
+    p.fill(r * 0.6, g * 0.6, b * 0.6, 70)
+    let shadowOffset = side === 'left' ? 1 : -1
+    p.arc(centerX + shadowOffset, centerY + 1, radius * 2, radius * 2, startAngle, endAngle)
+    
+    // Add small transparent hole in the center
+    p.noFill()
+    p.arc(centerX, centerY, radius * 0.5, radius * 0.5, startAngle, endAngle)
+    
+    // Add visible texture details - small bumps and knots
+    for (let i = 0; i < 8; i++) {
+      let detailAngle = p.random(startAngle, endAngle)
+      let detailRadius = radius * p.random(0.2, 0.7)
+      let detailX = centerX + p.cos(detailAngle) * detailRadius
+      let detailY = centerY + p.sin(detailAngle) * detailRadius
+      
+      // Alternate between light and dark for visible contrast
+      if (i % 2 === 0) {
+        p.fill(r + 20, g + 20, b + 20, 120)
+      } else {
+        p.fill(r - 15, g - 15, b - 15, 120)
+      }
+      
+      p.noStroke()
+      p.ellipse(detailX, detailY, p.random(1.5, 3.5), p.random(1.5, 3.5))
+    }
+  }
+
+  // MISSING TEXT FUNCTIONS FROM ORIGINAL DOORMAT.JS
+
+  // Update text colors based on palette (original function)
+  const updateTextColors = (p: any, doormatData: any) => {
+    if (!doormatData.selectedPalette || !doormatData.selectedPalette.colors) return
+    
+    let darkest = doormatData.selectedPalette.colors[0]
+    let lightest = doormatData.selectedPalette.colors[0]
+    let darkestVal = 999, lightestVal = -1
+    
+    for (let hex of doormatData.selectedPalette.colors) {
+      let c = p.color(hex)
+      let bright = (p.red(c) + p.green(c) + p.blue(c)) / 3
+      if (bright < darkestVal) { darkestVal = bright; darkest = hex }
+      if (bright > lightestVal) { lightestVal = bright; lightest = hex }
+    }
+    
+    doormatData.darkTextColor = p.color(darkest)
+    // Make colours more contrasted
+    doormatData.lightTextColor = p.lerpColor(p.color(lightest), p.color(255), 0.3)
+    doormatData.darkTextColor = p.lerpColor(p.color(darkest), p.color(0), 0.4)
+  }
+
+  // Generate text data (original function)
+  const generateTextData = (doormatData: any) => {
+    doormatData.textData = []
+    const textRows = doormatData.doormatTextRows || []
+    if (!textRows || textRows.length === 0) return
+    
+    // Use actual thread spacing for text
+    const warpSpacing = doormatData.warpThickness + 1
+    const weftSpacing = doormatData.config.WEFT_THICKNESS + 1
+    const scaledWarp = warpSpacing * doormatData.config.TEXT_SCALE
+    const scaledWeft = weftSpacing * doormatData.config.TEXT_SCALE
+    
+    // Character dimensions based on thread spacing
+    const charWidth = 7 * scaledWarp // width after rotation (7 columns)
+    const charHeight = 5 * scaledWeft // height after rotation (5 rows)
+    const spacing = scaledWeft // vertical gap between stacked characters
+    
+    // Calculate spacing between rows (horizontal spacing after rotation)
+    const rowSpacing = charWidth * 1.5 // Space between rows
+    
+    // Calculate total width needed for all rows
+    const totalRowsWidth = textRows.length * charWidth + (textRows.length - 1) * rowSpacing
+    
+    // Calculate starting X position to center all rows
+    const baseStartX = (doormatData.config.DOORMAT_WIDTH - totalRowsWidth) / 2
+    
+    // Generate text data for each row
+    for (let rowIndex = 0; rowIndex < textRows.length; rowIndex++) {
+      const doormatText = textRows[rowIndex]
+      if (!doormatText) continue
+      
+      // Calculate text dimensions for this row
+      const textWidth = charWidth
+      const textHeight = doormatText.length * (charHeight + spacing) - spacing
+      
+      // Position for this row (left to right becomes after rotation)
+      const startX = baseStartX + rowIndex * (charWidth + rowSpacing)
+      const startY = (doormatData.config.DOORMAT_HEIGHT - textHeight) / 2
+      
+      // Generate character data vertically bottom-to-top for this row
+      for (let i = 0; i < doormatText.length; i++) {
+        const char = doormatText.charAt(i)
+        const charY = startY + (doormatText.length - 1 - i) * (charHeight + spacing)
+        const charPixels = generateCharacterPixels(char, startX, charY, textWidth, charHeight, doormatData)
+        doormatData.textData.push(...charPixels)
+      }
+    }
+  }
+
+  // Generate character pixels (original function)
+  const generateCharacterPixels = (char: string, x: number, y: number, width: number, height: number, doormatData: any) => {
+    const pixels: any[] = []
+    // Use actual thread spacing
+    const warpSpacing = doormatData.warpThickness + 1
+    const weftSpacing = doormatData.config.WEFT_THICKNESS + 1
+    const scaledWarp = warpSpacing * doormatData.config.TEXT_SCALE
+    const scaledWeft = weftSpacing * doormatData.config.TEXT_SCALE
+
+    // Character definitions
+    const charDef = doormatData.characterMap[char] || doormatData.characterMap[' ']
+
+    const numRows = charDef.length
+    const numCols = charDef[0].length
+
+    // Rotate 90° CCW: newX = col, newY = numRows - 1 - row
+    for (let row = 0; row < numRows; row++) {
+      for (let col = 0; col < numCols; col++) {
+        if (charDef[row][col] === '1') {
+          // Rotate 180°: flip both axes
+          const newCol = row
+          const newRow = numCols - 1 - col
+          pixels.push({
+            x: x + newCol * scaledWarp,
+            y: y + newRow * scaledWeft,
+            width: scaledWarp,
+            height: scaledWeft
+          })
+        }
+      }
+    }
+    return pixels
   }
 
   // Initialize the generator
@@ -259,34 +853,20 @@ export default function GeneratorPage() {
       await loadP5()
       console.log('✅ P5.js loaded')
       
-      // Load doormat scripts
-      await loadDoormatScripts()
-      console.log('✅ Doormat scripts loaded')
+      // Initialize self-contained doormat generator
+      const doormatData = initializeDoormat()
+      ;(window as any).doormatData = doormatData // Store globally for access
+      console.log('✅ Doormat generator initialized')
       
-      // Wait a bit for scripts to initialize
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Create P5.js instance
+      await createP5Instance(doormatData)
+      console.log('✅ P5.js instance created')
       
-      // Check if key functions are available
-      if (typeof (window as any).generateDoormat === 'function' && typeof (window as any).draw === 'function') {
-        console.log('✅ generateDoormat function available')
-        
-        // Generate initial doormat
-        ;(window as any).generateDoormat(currentSeed)
-        
-        // Update UI after generation
-      setTimeout(() => {
-          updatePaletteDisplay()
-          updateTraitsDisplay()
-          setIsLoaded(true)
-      }, 500)
-        
-      } else {
-        console.error('❌ Required functions not available:')
-        console.error('  - generateDoormat:', typeof (window as any).generateDoormat)
-        console.error('  - draw:', typeof (window as any).draw)
-        console.error('  - Available global functions:', Object.keys(window).filter(key => typeof (window as any)[key] === 'function'))
-        setIsLoaded(true) // Show UI anyway
-      }
+      // Generate initial doormat
+      generateDoormatCore(currentSeed, doormatData)
+      
+      // Update UI
+      setIsLoaded(true)
       
     } catch (error) {
       console.error('❌ Initialization failed:', error)
@@ -296,24 +876,22 @@ export default function GeneratorPage() {
 
   // Update palette display
   const updatePaletteDisplay = () => {
-    if (typeof (window as any).getCurrentPalette === 'function') {
-      const currentPalette = (window as any).getCurrentPalette()
-      if (currentPalette) {
-        setPalette(currentPalette)
-        console.log('🎨 Palette updated:', currentPalette)
-      }
+    if ((window as any).selectedPalette) {
+      setPalette((window as any).selectedPalette)
+      console.log('🎨 Palette updated:', (window as any).selectedPalette)
     }
   }
 
   // Update traits display
   const updateTraitsDisplay = () => {
-    if (typeof (window as any).calculateTraits === 'function') {
-      const currentTraits = (window as any).calculateTraits()
-      if (currentTraits) {
-        setTraits(currentTraits)
-        console.log('🏷️ Traits updated:', currentTraits)
-      }
+    // Simple traits calculation
+    const traits = {
+      palette: (window as any).selectedPalette?.name || 'Unknown',
+      stripes: (window as any).stripeData?.length || 0,
+      seed: currentSeed
     }
+    setTraits(traits)
+    console.log('🏷️ Traits updated:', traits)
   }
 
   // Generate new doormat
@@ -321,44 +899,40 @@ export default function GeneratorPage() {
     const seed = Math.floor(Math.random() * 10000)
     setCurrentSeed(seed)
     
-    if (typeof (window as any).generateDoormat === 'function' && typeof (window as any).draw === 'function') {
+    if ((window as any).p5Instance) {
       console.log('🎨 Generating new doormat with seed:', seed)
-      ;(window as any).generateDoormat(seed)
+      generateDoormatCore(seed, (window as any).doormatData)
       
-      // Update UI after generation
+      // Update UI
       setTimeout(() => {
         updatePaletteDisplay()
         updateTraitsDisplay()
-      }, 500)
+      }, 100)
     } else {
-      console.error('❌ Cannot generate: required functions not available')
-      console.error('  - generateDoormat:', typeof (window as any).generateDoormat)
-      console.error('  - draw:', typeof (window as any).draw)
+      console.error('❌ Cannot generate: P5.js instance not available')
     }
   }
 
   // Generate from seed
   const generateFromSeed = () => {
-    if (typeof (window as any).generateDoormat === 'function' && typeof (window as any).draw === 'function') {
+    if ((window as any).p5Instance) {
       console.log('🎨 Generating doormat from seed:', currentSeed)
-      ;(window as any).generateDoormat(currentSeed)
+      generateDoormatCore(currentSeed, (window as any).doormatData)
       
-      // Update UI after generation
+      // Update UI
       setTimeout(() => {
         updatePaletteDisplay()
         updateTraitsDisplay()
-      }, 500)
+      }, 100)
     } else {
-      console.error('❌ Cannot generate: required functions not available')
-      console.error('  - generateDoormat:', typeof (window as any).generateDoormat)
-      console.error('  - draw:', typeof (window as any).draw)
+      console.error('❌ Cannot generate: P5.js instance not available')
     }
   }
 
   // Save doormat
   const saveDoormat = () => {
-    if (typeof (window as any).saveCanvas === 'function') {
-      ;(window as any).saveCanvas(`doormat-${Date.now()}`, 'png')
+    if ((window as any).p5Instance) {
+      (window as any).p5Instance.saveCanvas(`doormat-${Date.now()}`, 'png')
     } else {
       alert('Save function not available')
     }
@@ -391,9 +965,24 @@ export default function GeneratorPage() {
   const addTextToDoormat = () => {
     const validTexts = textInputs.filter(text => text.trim().length > 0)
     
-    if (validTexts.length > 0 && typeof (window as any).addTextToDoormatInSketch === 'function') {
-      ;(window as any).addTextToDoormatInSketch(validTexts)
+    if (validTexts.length > 0 && (window as any).doormatData) {
+      (window as any).doormatData.doormatTextRows = validTexts
       console.log('📝 Text added to doormat:', validTexts)
+      
+      // Update text colors and generate text data
+      if ((window as any).p5Instance) {
+        updateTextColors((window as any).p5Instance, (window as any).doormatData)
+        generateTextData((window as any).doormatData)
+      }
+      
+      // Update global text data
+      ;(window as any).textData = (window as any).doormatData.textData
+      ;(window as any).doormatTextRows = (window as any).doormatData.doormatTextRows
+      
+      // Redraw
+      if ((window as any).p5Instance) {
+        (window as any).p5Instance.redraw()
+      }
     }
   }
 
@@ -402,8 +991,18 @@ export default function GeneratorPage() {
     setTextInputs([''])
     setCurrentRowCount(1)
     
-    if (typeof (window as any).clearTextFromDoormat === 'function') {
-      ;(window as any).clearTextFromDoormat()
+    if ((window as any).doormatData) {
+      (window as any).doormatData.doormatTextRows = []
+      ;(window as any).doormatData.textData = []
+      
+      // Update global text data
+      ;(window as any).textData = []
+      ;(window as any).doormatTextRows = []
+      
+      // Redraw
+      if ((window as any).p5Instance) {
+        (window as any).p5Instance.redraw()
+      }
     }
   }
 
@@ -474,20 +1073,6 @@ export default function GeneratorPage() {
       <Navigation />
       <div className="max-w-[1800px] mx-auto px-4 pt-24">
       {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-8"
-        >
-          <h1 className="text-4xl font-bold text-amber-800 mb-4">
-            🎨 Generative Rug Generator
-          </h1>
-          <p className="text-lg text-amber-700 max-w-2xl mx-auto">
-            Create unique, on-chain generative art rugs with custom text embedding. 
-            Each generation creates unique patterns, colors, and textures.
-          </p>
-        </motion.div>
 
         {/* Old-School Terminal Layout - Art on Top, Terminal on Bottom */}
         <div className="space-y-0">
