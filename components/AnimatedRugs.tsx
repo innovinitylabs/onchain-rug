@@ -8,7 +8,6 @@ let shuffledPaletteIndices: number[] = []
 const resetGlobalState = () => {
   usedPaletteIndices.clear()
   shuffledPaletteIndices = []
-  globalDependenciesLoaded = false
 }
 
 // --- ani-seeded RNG utilities ---
@@ -1875,30 +1874,17 @@ function FloatingParticles() {
   )
 }
 
-// Global loading state to prevent multiple script loads
-let globalDependenciesLoading = false
-let globalDependenciesLoaded = false
-
 // Enhanced Magical Scene
 function Scene({ onLoaded }: { onLoaded?: () => void }) {
   const lightRef = useRef<THREE.DirectionalLight>(null)
   const [dependenciesLoaded, setDependenciesLoaded] = useState(false)
+  
   useEffect(() => {
     // Reset global state when component mounts
     resetGlobalState()
     
-    if (globalDependenciesLoaded) {
-      setDependenciesLoaded(true)
-      // Call onLoaded callback when dependencies are ready
-      if (onLoaded) {
-        setTimeout(onLoaded, 100) // Small delay to ensure everything is rendered
-      }
-      return
-    }
-    // Directly mark as loaded
-    globalDependenciesLoaded = true
+    // Always set as loaded and trigger callback
     setDependenciesLoaded(true)
-    // Call onLoaded callback when dependencies are ready
     if (onLoaded) {
       setTimeout(onLoaded, 100) // Small delay to ensure everything is rendered
     }
