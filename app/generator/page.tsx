@@ -2225,7 +2225,7 @@ export default function GeneratorPage() {
 
                 {/* NFT Traits Display */}
                 {traits && (
-                  <div className="mt-6 pt-4 border-t border-green-500/30">
+                  <div className="mt-6 pt-4 border-t border-green-500/30 hidden">
                     <div className="text-green-300 text-sm mb-3">NFT Traits & Rarity:</div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {Object.entries(traits).map(([key, trait]: [string, any]) => {
