@@ -10,6 +10,17 @@ const compat = new FlatCompat({
 });
 
 const eslintConfig = [
+  {
+    ignores: [
+      "node_modules/**",
+      ".next/**",
+      "out/**",
+      "build/**",
+      "next-env.d.ts",
+      "Doormat_original/**",
+      "public/lib/doormat/**",
+    ],
+  },
   ...compat.extends("next/core-web-vitals"),
   {
     rules: {
@@ -18,14 +29,6 @@ const eslintConfig = [
       "@next/next/no-img-element": "warn",
       "jsx-a11y/alt-text": "warn"
     },
-    ignores: [
-      "node_modules/**",
-      ".next/**",
-      "out/**",
-      "build/**",
-      "next-env.d.ts",
-      "Doormat_original/**",
-    ],
   },
 ];
 

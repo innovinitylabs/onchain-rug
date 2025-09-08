@@ -901,8 +901,7 @@ export default function GeneratorPage() {
             let canvas = p.createCanvas(doormatData.config.DOORMAT_HEIGHT + (doormatData.config.FRINGE_LENGTH * 4), 
                                        doormatData.config.DOORMAT_WIDTH + (doormatData.config.FRINGE_LENGTH * 4))
             canvas.parent('canvas-container')
-            canvas.style.width = '100%'
-            canvas.style.height = '100%'
+            // Let CSS handle positioning - don't set styles here
         p.pixelDensity(1)
         p.noLoop()
             console.log('🎨 P5.js canvas created with original dimensions')
@@ -961,19 +960,17 @@ export default function GeneratorPage() {
     }
     
     // RARITY-BASED WARP THICKNESS SELECTION
-    // Make extreme thicknesses rarer
+    // Limited to 1-4 to prevent text clipping with 5 lines
     const warpThicknessWeights = {
-      1: 0.05,  // 5% - Very thin (rare)
-      2: 0.15,  // 15% - Thin (uncommon)
-      3: 0.25,  // 25% - Medium-thin
-      4: 0.35,  // 35% - Medium (most common)
-      5: 0.15,  // 15% - Thick (uncommon)
-      6: 0.05   // 5% - Very thick (rare)
+      1: 0.10,  // 10% - Very thin
+      2: 0.25,  // 25% - Thin
+      3: 0.35,  // 35% - Medium-thin (most common)
+      4: 0.30   // 30% - Medium
     }
     
     const warpThicknessRoll = seededRandom(seed * 100)
     let cumulativeWeight = 0
-    let selectedWarpThickness = 4 // Default to most common
+    let selectedWarpThickness = 3 // Default to most common
     
     console.log(`🎲 Warp Thickness Roll: ${warpThicknessRoll.toFixed(4)} (seed: ${seed})`)
     
@@ -2088,32 +2085,25 @@ export default function GeneratorPage() {
   // Check if P5.js canvas is visible
   useEffect(() => {
     if (isLoaded) {
-      // Wait a bit for P5.js to create canvas, then check
-      const timer = setTimeout(() => {
-        const canvas = document.querySelector('canvas')
-        if (canvas) {
-          console.log('🎨 P5.js canvas found:', canvas)
-          console.log('Canvas dimensions:', canvas.width, 'x', canvas.height)
-          console.log('Canvas container:', canvasContainerRef.current)
-          
-          // Don't move canvas or call setup - let P5.js handle it
-          // This prevents double canvas issues
-          
-          // Ensure P5.js canvas fits container exactly
-          if (canvasContainerRef.current) {
-            canvas.style.width = '100%'
-            canvas.style.height = '100%'
-            canvas.style.maxWidth = '100%'
-            canvas.style.maxHeight = '100%'
-            canvas.style.objectFit = 'contain'
-            console.log('🎯 P5.js canvas resized to fit container')
-          }
-        } else {
-          console.log('❌ No P5.js canvas found in DOM')
+      // Apply positioning immediately when canvas is found
+      const canvas = document.querySelector('canvas')
+      if (canvas) {
+        console.log('🎨 P5.js canvas found:', canvas)
+        console.log('Canvas dimensions:', canvas.width, 'x', canvas.height)
+        console.log('Canvas container:', canvasContainerRef.current)
+        
+        // Apply perfect positioning immediately
+        if (canvasContainerRef.current) {
+          canvas.style.width = '100%'
+          canvas.style.height = '100%'
+          canvas.style.maxWidth = '100%'
+          canvas.style.maxHeight = '100%'
+          canvas.style.objectFit = 'fill'
+          console.log('🎯 P5.js canvas positioned immediately - perfect positioning')
         }
-      }, 1000)
-      
-      return () => clearTimeout(timer)
+      } else {
+        console.log('❌ No P5.js canvas found in DOM')
+      }
     }
   }, [isLoaded])
 
