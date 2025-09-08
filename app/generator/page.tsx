@@ -901,8 +901,7 @@ export default function GeneratorPage() {
             let canvas = p.createCanvas(doormatData.config.DOORMAT_HEIGHT + (doormatData.config.FRINGE_LENGTH * 4), 
                                        doormatData.config.DOORMAT_WIDTH + (doormatData.config.FRINGE_LENGTH * 4))
             canvas.parent('canvas-container')
-            canvas.style.width = '100%'
-            canvas.style.height = '100%'
+            // Let CSS handle positioning - don't set styles here
         p.pixelDensity(1)
         p.noLoop()
             console.log('🎨 P5.js canvas created with original dimensions')
@@ -2099,15 +2098,8 @@ export default function GeneratorPage() {
           // Don't move canvas or call setup - let P5.js handle it
           // This prevents double canvas issues
           
-          // Ensure P5.js canvas fits container exactly
-          if (canvasContainerRef.current) {
-            canvas.style.width = '100%'
-            canvas.style.height = '100%'
-            canvas.style.maxWidth = '100%'
-            canvas.style.maxHeight = '100%'
-            canvas.style.objectFit = 'contain'
-            console.log('🎯 P5.js canvas resized to fit container')
-          }
+          // CSS handles all positioning - no JavaScript styling needed
+          console.log('🎯 P5.js canvas positioned by CSS')
         } else {
           console.log('❌ No P5.js canvas found in DOM')
         }
@@ -2185,7 +2177,7 @@ export default function GeneratorPage() {
                             height: 100% !important;
                             max-width: 100% !important;
                             max-height: 100% !important;
-                            object-fit: fill !important;
+                            object-fit: contain !important;
                             position: absolute !important;
                             top: 0 !important;
                             left: 0 !important;
