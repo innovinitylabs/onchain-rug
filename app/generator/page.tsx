@@ -2201,8 +2201,8 @@ export default function GeneratorPage() {
                   {/* Monitor Base - Taller Frame with Logo */}
                   <div className="bg-amber-100 mt-4 pt-6 pb-8 rounded-b-xl border-t-6 border-amber-200">
                     {/* Rugpull Computer Logo and Text */}
-                    <div className="flex flex-col items-center space-y-3">
-                      <div className="w-20 h-20 bg-white rounded-full p-2 shadow-lg border-2 border-amber-300">
+                    <div className="flex flex-col items-center space-y-2 md:space-y-3">
+                      <div className="w-16 h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 bg-white rounded-full p-1 md:p-2 shadow-lg border-2 border-amber-300">
                         <img 
                           src="/rugpull_computer_logo.png" 
                           alt="Rugpull Computer Logo" 
@@ -2210,10 +2210,10 @@ export default function GeneratorPage() {
                         />
                       </div>
                       <div className="text-center">
-                        <h3 className="text-xl font-bold text-amber-800" style={{ fontFamily: 'Apple Garamond, Garamond, serif' }}>
+                        <h3 className="text-lg md:text-xl lg:text-2xl font-bold text-amber-800" style={{ fontFamily: 'Apple Garamond, Garamond, serif' }}>
                           Rugpull Computer
                         </h3>
-                        <p className="text-xs text-amber-700 mt-1" style={{ fontFamily: 'Apple Garamond, Garamond, serif' }}>
+                        <p className="text-xs md:text-sm lg:text-base text-amber-700 mt-1" style={{ fontFamily: 'Apple Garamond, Garamond, serif' }}>
                           Generative Art Terminal
                         </p>
                       </div>
@@ -2270,7 +2270,8 @@ export default function GeneratorPage() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="w-full"
           >
-            <div className="bg-black text-green-400 p-6 font-mono border-t-2 border-green-500">
+            <div className="bg-black text-green-400 p-4 md:p-6 font-mono border-t-2 border-green-500">
+              <div className="relative mx-auto w-full max-w-6xl">
               {/* Terminal Header */}
               <div className="flex items-center justify-between mb-4 pb-2 border-b border-green-500/30">
                 <div className="flex items-center space-x-2">
@@ -2369,6 +2370,7 @@ export default function GeneratorPage() {
                 </div>
               </div>
             </div>
+              </div>
           </motion.div>
         </div>
 
