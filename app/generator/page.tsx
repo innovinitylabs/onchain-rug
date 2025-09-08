@@ -1869,12 +1869,10 @@ export default function GeneratorPage() {
   // Get warp thickness rarity
   const getWarpThicknessRarity = (thickness: number) => {
     switch (thickness) {
-      case 1: return "Legendary" // 5% chance
-      case 2: return "Uncommon"  // 15% chance
-      case 3: return "Common"    // 25% chance
-      case 4: return "Common"    // 35% chance (most common)
-      case 5: return "Uncommon"  // 15% chance
-      case 6: return "Legendary" // 5% chance
+      case 1: return "Legendary" // 10% chance (rare)
+      case 2: return "Uncommon"  // 25% chance
+      case 3: return "Common"    // 35% chance (most common)
+      case 4: return "Common"    // 30% chance
       default: return "Common"
     }
   }
@@ -2001,7 +1999,8 @@ export default function GeneratorPage() {
   // Update text input
   const updateTextInput = (index: number, value: string) => {
     const newInputs = [...textInputs]
-    newInputs[index] = value.toUpperCase().replace(/[^A-Z0-9 ]/g, '').slice(0, 11)
+    // Allow A-Z, 0-9, space, and new expressive characters: ? _ ! @ # $ &
+    newInputs[index] = value.toUpperCase().replace(/[^A-Z0-9 ?_!@#$&]/g, '').slice(0, 11)
     setTextInputs(newInputs)
   }
 
@@ -2301,7 +2300,7 @@ export default function GeneratorPage() {
                 
                 {/* Text Input */}
                 <div className="space-y-3">
-                  <div className="text-green-300 text-sm">Add text to rug (max 11 chars per row):</div>
+                  <div className="text-green-300 text-sm">Add text to rug (max 11 chars per row): A-Z, 0-9, space, ? _ ! @ # $ &</div>
                   {textInputs.map((text, index) => (
                     <div key={index} className="flex gap-2">
                       <span className="text-green-400 font-mono">$</span>
