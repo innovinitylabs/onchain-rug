@@ -866,7 +866,9 @@ export default function GeneratorPage() {
       '[': ["01110","01000","01000","01000","01000","01000","01110"],
       ']': ["01110","00010","00010","00010","00010","00010","01110"],
       '*': ["00000","00100","10101","01110","10101","00100","00000"],
-      '=': ["00000","00000","11111","00000","11111","00000","00000"]
+      '=': ["00000","00000","11111","00000","11111","00000","00000"],
+      "'": ["00100","00100","00100","00000","00000","00000","00000"],
+      '"': ["01010","01010","01010","00000","00000","00000","00000"]
     }
     
     // Global variables for NFTExporter
@@ -2008,8 +2010,8 @@ export default function GeneratorPage() {
   // Update text input
   const updateTextInput = (index: number, value: string) => {
     const newInputs = [...textInputs]
-    // Allow A-Z, 0-9, space, and all expressive characters: ? _ ! @ # $ & % + - ( ) [ ] * =
-    newInputs[index] = value.toUpperCase().replace(/[^A-Z0-9 ?_!@#$&%+\-()[\]*=]/g, '').slice(0, 11)
+    // Allow A-Z, 0-9, space, and all expressive characters: ? _ ! @ # $ & % + - ( ) [ ] * = ' "
+    newInputs[index] = value.toUpperCase().replace(/[^A-Z0-9 ?_!@#$&%+\-()[\]*='"]/g, '').slice(0, 11)
     setTextInputs(newInputs)
   }
 
@@ -2309,7 +2311,7 @@ export default function GeneratorPage() {
                 
                 {/* Text Input */}
                 <div className="space-y-3">
-                  <div className="text-green-300 text-sm">Add text to rug (max 11 chars per row): A-Z, 0-9, space, ? _ ! @ # $ & % + - ( ) [ ] * =</div>
+                  <div className="text-green-300 text-sm">Add text to rug (max 11 chars per row): A-Z, 0-9, space, ? _ ! @ # $ & % + - ( ) [ ] * = ' "</div>
                   {textInputs.map((text, index) => (
                     <div key={index} className="flex gap-2">
                       <span className="text-green-400 font-mono">$</span>
