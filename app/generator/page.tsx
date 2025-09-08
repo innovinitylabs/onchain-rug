@@ -2099,30 +2099,45 @@ export default function GeneratorPage() {
     }
   }, [])
 
-  // Check if P5.js canvas is visible
+  // Check if P5.js canvas is visible - Event-based positioning
   useEffect(() => {
     if (isLoaded) {
-      // Apply positioning with 0.5-second delay to ensure P5.js is fully ready
-      const canvas = document.querySelector('canvas')
-      if (canvas) {
-        console.log('🎨 P5.js canvas found:', canvas)
-        console.log('Canvas dimensions:', canvas.width, 'x', canvas.height)
-        console.log('Canvas container:', canvasContainerRef.current)
-        
-        // Apply perfect positioning after 0.5-second delay for production stability
-        setTimeout(() => {
-          if (canvasContainerRef.current) {
-            canvas.style.width = '100%'
-            canvas.style.height = '100%'
-            canvas.style.maxWidth = '100%'
-            canvas.style.maxHeight = '100%'
-            canvas.style.objectFit = 'fill'
-            console.log('🎯 P5.js canvas positioned after 0.5s delay - perfect positioning')
+      const setupCanvasPositioning = () => {
+        // Wait for P5.js instance to be available
+        const p5Instance = (window as any).p5Instance
+        if (p5Instance) {
+          console.log('🎨 P5.js instance found, setting up canvas positioning')
+          
+          // Hook into P5.js setup completion for perfect timing
+          const originalSetup = p5Instance.setup
+          p5Instance.setup = function() {
+            // Call original setup first
+            originalSetup.call(this)
+            
+            // Position canvas after P5.js setup is complete
+            setTimeout(() => {
+              const canvas = document.querySelector('canvas')
+              if (canvas && canvasContainerRef.current) {
+                console.log('🎯 Positioning canvas after P5.js setup completion')
+                console.log('Canvas dimensions:', canvas.width, 'x', canvas.height)
+                
+                canvas.style.width = '100%'
+                canvas.style.height = '100%'
+                canvas.style.maxWidth = '100%'
+                canvas.style.maxHeight = '100%'
+                canvas.style.objectFit = 'fill'
+                console.log('✅ Canvas positioned perfectly - event-driven approach')
+              }
+            }, 10) // Minimal delay to ensure canvas is in DOM
           }
-        }, 500) // 0.5 second delay for production stability
-      } else {
-        console.log('❌ No P5.js canvas found in DOM')
+        } else {
+          // P5.js not ready yet, check again in 50ms
+          setTimeout(setupCanvasPositioning, 50)
+        }
       }
+      
+      // Start the canvas positioning setup
+      setupCanvasPositioning()
     }
   }, [isLoaded])
 
