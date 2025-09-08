@@ -2201,8 +2201,8 @@ export default function GeneratorPage() {
                   {/* Monitor Base - Taller Frame with Logo */}
                   <div className="bg-amber-100 mt-4 pt-6 pb-8 rounded-b-xl border-t-6 border-amber-200">
                     {/* Rugpull Computer Logo and Text */}
-                    <div className="flex flex-col items-center space-y-2 md:space-y-3">
-                      <div className="w-16 h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 xl:w-28 xl:h-28 bg-white rounded-full p-1 md:p-1.5 lg:p-2 xl:p-2.5 shadow-lg border-2 border-amber-300">
+                    <div className="flex flex-col items-center space-y-1 md:space-y-2">
+                      <div className="w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 xl:w-18 xl:h-18 bg-amber-200 rounded-full p-1 md:p-1.5 lg:p-2 xl:p-2.5 shadow-lg border-2 border-amber-400">
                         <img 
                           src="/rugpull_computer_logo.png" 
                           alt="Rugpull Computer Logo" 
@@ -2210,10 +2210,10 @@ export default function GeneratorPage() {
                         />
                       </div>
                       <div className="text-center">
-                        <h3 className="text-lg md:text-xl lg:text-2xl xl:text-3xl font-bold text-amber-800" style={{ fontFamily: 'Apple Garamond, Garamond, serif' }}>
+                        <h3 className="text-sm md:text-base lg:text-lg xl:text-xl font-medium text-amber-800" style={{ fontFamily: 'Apple Garamond, Garamond, serif' }}>
                           Rugpull Computer
                         </h3>
-                        <p className="text-xs md:text-sm lg:text-base xl:text-lg text-amber-700 mt-1" style={{ fontFamily: 'Apple Garamond, Garamond, serif' }}>
+                        <p className="text-xs md:text-xs lg:text-sm xl:text-sm text-amber-700 mt-1" style={{ fontFamily: 'Apple Garamond, Garamond, serif' }}>
                           Generative Art Terminal
                         </p>
                       </div>
