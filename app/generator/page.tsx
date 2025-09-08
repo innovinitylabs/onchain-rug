@@ -2107,10 +2107,11 @@ export default function GeneratorPage() {
         if (canvas && canvas.width > 0 && canvas.height > 0 && canvasContainerRef.current) {
           console.log('🎯 Positioning canvas - dimensions ready:', canvas.width, 'x', canvas.height)
           
+          canvas.style.position = 'absolute'
+          canvas.style.top = '0'
+          canvas.style.left = '0'
           canvas.style.width = '100%'
           canvas.style.height = '100%'
-          canvas.style.maxWidth = '100%'
-          canvas.style.maxHeight = '100%'
           canvas.style.objectFit = 'fill'
           console.log('✅ Canvas positioned perfectly - robust approach')
         } else {
@@ -2163,7 +2164,8 @@ export default function GeneratorPage() {
                            className="bg-gray-900 rounded-lg relative mx-auto border border-green-500/30"
                           style={{ 
                             width: '100%',     // Responsive width
-                            height: '600px',   // Fixed height for aspect ratio
+                            height: '0',       // Height will be set by padding-bottom
+                            paddingBottom: '69.7%', // 920/1320 * 100% = 69.7% (maintains 1320:920 aspect ratio)
                             maxWidth: '100%',  // Responsive constraint
                             overflow: 'hidden', // Prevent canvas overflow
                             boxShadow: '0 0 20px rgba(0, 255, 0, 0.1)',
