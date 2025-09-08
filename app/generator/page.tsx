@@ -2102,22 +2102,24 @@ export default function GeneratorPage() {
   // Check if P5.js canvas is visible
   useEffect(() => {
     if (isLoaded) {
-      // Apply positioning immediately when canvas is found
+      // Apply positioning with 0.5-second delay to ensure P5.js is fully ready
       const canvas = document.querySelector('canvas')
       if (canvas) {
         console.log('🎨 P5.js canvas found:', canvas)
         console.log('Canvas dimensions:', canvas.width, 'x', canvas.height)
         console.log('Canvas container:', canvasContainerRef.current)
         
-        // Apply perfect positioning immediately
-        if (canvasContainerRef.current) {
-          canvas.style.width = '100%'
-          canvas.style.height = '100%'
-          canvas.style.maxWidth = '100%'
-          canvas.style.maxHeight = '100%'
-          canvas.style.objectFit = 'fill'
-          console.log('🎯 P5.js canvas positioned immediately - perfect positioning')
-        }
+        // Apply perfect positioning after 0.5-second delay for production stability
+        setTimeout(() => {
+          if (canvasContainerRef.current) {
+            canvas.style.width = '100%'
+            canvas.style.height = '100%'
+            canvas.style.maxWidth = '100%'
+            canvas.style.maxHeight = '100%'
+            canvas.style.objectFit = 'fill'
+            console.log('🎯 P5.js canvas positioned after 0.5s delay - perfect positioning')
+          }
+        }, 500) // 0.5 second delay for production stability
       } else {
         console.log('❌ No P5.js canvas found in DOM')
       }
