@@ -2270,8 +2270,8 @@ export default function GeneratorPage() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="w-full"
           >
-            <div className="bg-black text-green-400 font-mono border-t-2 border-green-500">
-              <div className="relative mx-auto w-full max-w-6xl px-4 md:px-6 lg:px-8 py-4 md:py-6">
+            <div className="relative mx-auto w-full max-w-6xl px-4 md:px-6 lg:px-8">
+              <div className="bg-black text-green-400 font-mono border-t-2 border-green-500 py-4 md:py-6">
               {/* Terminal Header */}
               <div className="flex items-center justify-between mb-4 pb-2 border-b border-green-500/30">
                 <div className="flex items-center space-x-2">
