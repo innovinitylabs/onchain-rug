@@ -2202,7 +2202,7 @@ export default function GeneratorPage() {
                   <div className="bg-amber-100 mt-4 pt-6 pb-8 rounded-b-xl border-t-6 border-amber-200">
                     {/* Rugpull Computer Logo and Text */}
                     <div className="flex flex-col items-center space-y-1 md:space-y-2">
-                      <div className="w-8 h-8 md:w-10 md:h-10 lg:w-12 lg:h-12 xl:w-14 xl:h-14 bg-amber-200 rounded-full p-1 md:p-1.5 lg:p-2 xl:p-2.5 shadow-lg">
+                      <div className="w-4 h-4 md:w-5 md:h-5 lg:w-6 lg:h-6 xl:w-7 xl:h-7 bg-amber-200 rounded-full p-0.5 md:p-1 lg:p-1 xl:p-1">
                         <img 
                           src="/rugpull_computer_logo.png" 
                           alt="Rugpull Computer Logo" 
