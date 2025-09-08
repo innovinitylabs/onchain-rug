@@ -13,6 +13,8 @@ export default function GeneratorPage() {
   const [currentRowCount, setCurrentRowCount] = useState(1)
   const [palette, setPalette] = useState<any>(null)
   const [traits, setTraits] = useState<any>(null)
+  const [trayStates, setTrayStates] = useState<boolean[]>([true, false, false, false, false]) // First tray open by default
+  const [trayTexts, setTrayTexts] = useState<string[]>(['', '', '', '', ''])
 
   const canvasContainerRef = useRef<HTMLDivElement>(null)
   const scriptsLoadedRef = useRef<Set<string>>(new Set())
@@ -2015,6 +2017,26 @@ export default function GeneratorPage() {
     setTextInputs(newInputs)
   }
 
+  // Toggle CD drive tray
+  const toggleTray = (driveNum: number) => {
+    const index = driveNum - 1
+    setTrayStates(prev => {
+      const newStates = [...prev]
+      newStates[index] = !newStates[index]
+      return newStates
+    })
+  }
+
+  // Update tray text
+  const updateTrayText = (driveNum: number, value: string) => {
+    const index = driveNum - 1
+    setTrayTexts(prev => {
+      const newTexts = [...prev]
+      newTexts[index] = value.toUpperCase().replace(/[^A-Z0-9 ?_!@#$&%+\-()[\]*='"]/g, '').slice(0, 11)
+      return newTexts
+    })
+  }
+
   // Add text to doormat
   const addTextToDoormat = () => {
     const validTexts = textInputs.filter(text => text.trim().length > 0)
@@ -2128,10 +2150,10 @@ export default function GeneratorPage() {
     <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100">
       <Navigation />
       <div className="max-w-[1800px] mx-auto px-4 pt-24">
-      {/* Header */}
-
-        {/* Old-School Terminal Layout - Art on Top, Terminal on Bottom */}
-        <div className="space-y-0">
+        {/* Retro PC Layout - CRT Display + CPU Tower */}
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Left Column - CRT Display */}
+          <div className="flex-1">
           {/* Canvas Display - Full Width at Top */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -2196,6 +2218,172 @@ export default function GeneratorPage() {
                             position: absolute !important;
                             top: 0 !important;
                             left: 0 !important;
+                          }
+
+                          /* Retro PC Styling */
+                          .cpu-tower {
+                            background: linear-gradient(145deg, #d4c4a8, #c4b498);
+                            border: 3px solid #b8a488;
+                            border-radius: 8px;
+                            padding: 20px;
+                            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+                            display: flex;
+                            flex-direction: column;
+                            gap: 15px;
+                            min-height: 600px;
+                          }
+
+                          .mint-display {
+                            background: #000;
+                            color: #ff0000;
+                            padding: 15px;
+                            border-radius: 4px;
+                            text-align: center;
+                            font-family: 'Courier New', monospace;
+                            text-shadow: 0 0 5px #ff0000;
+                            border: 2px solid #333;
+                            box-shadow: inset 0 0 10px rgba(255, 0, 0, 0.3);
+                          }
+
+                          .cd-drive {
+                            background: #e0d0b0;
+                            border: 2px solid #c0b090;
+                            border-radius: 4px;
+                            padding: 8px;
+                            position: relative;
+                            display: flex;
+                            align-items: center;
+                            gap: 10px;
+                          }
+
+                          .tray {
+                            background: #f0e0c0;
+                            border: 1px solid #d0c0a0;
+                            border-radius: 2px;
+                            padding: 8px;
+                            flex: 1;
+                            transform: translateX(-100%);
+                            transition: transform 0.3s ease;
+                            position: relative;
+                            overflow: hidden;
+                          }
+
+                          .tray.open {
+                            transform: translateX(0);
+                          }
+
+                          .tray-input {
+                            width: 100%;
+                            background: transparent;
+                            border: none;
+                            outline: none;
+                            font-family: 'Courier New', monospace;
+                            font-size: 12px;
+                            color: #333;
+                          }
+
+                          .eject-btn {
+                            background: #a0a0a0;
+                            border: 1px solid #808080;
+                            border-radius: 50%;
+                            width: 24px;
+                            height: 24px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            cursor: pointer;
+                            font-size: 12px;
+                            transition: background 0.2s ease;
+                          }
+
+                          .eject-btn:hover {
+                            background: #b0b0b0;
+                          }
+
+                          .floppy-drive {
+                            background: #e0d0b0;
+                            border: 2px solid #c0b090;
+                            border-radius: 4px;
+                            padding: 15px;
+                            text-align: center;
+                          }
+
+                          .floppy-slot {
+                            background: #000;
+                            width: 60px;
+                            height: 40px;
+                            margin: 0 auto;
+                            border-radius: 2px;
+                            border: 1px solid #333;
+                          }
+
+                          .control-buttons {
+                            display: flex;
+                            gap: 15px;
+                            justify-content: center;
+                            margin-top: auto;
+                          }
+
+                          .power-btn {
+                            background: #00ff00;
+                            border: 2px solid #00cc00;
+                            border-radius: 50%;
+                            width: 50px;
+                            height: 50px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            cursor: pointer;
+                            font-size: 20px;
+                            transition: all 0.3s ease;
+                            box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+                          }
+
+                          .power-btn:hover {
+                            box-shadow: 0 0 20px rgba(0, 255, 0, 0.6);
+                            transform: scale(1.05);
+                          }
+
+                          .power-btn:disabled {
+                            background: #666;
+                            border-color: #444;
+                            box-shadow: none;
+                            cursor: not-allowed;
+                          }
+
+                          .reset-btn {
+                            background: #ff0000;
+                            border: 2px solid #cc0000;
+                            border-radius: 4px;
+                            width: 50px;
+                            height: 50px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            cursor: pointer;
+                            font-size: 20px;
+                            transition: all 0.3s ease;
+                            box-shadow: 0 0 10px rgba(255, 0, 0, 0.3);
+                          }
+
+                          .reset-btn:hover {
+                            box-shadow: 0 0 20px rgba(255, 0, 0, 0.6);
+                            transform: scale(1.05);
+                          }
+
+                          .reset-btn:disabled {
+                            background: #666;
+                            border-color: #444;
+                            box-shadow: none;
+                            cursor: not-allowed;
+                          }
+
+                          /* Responsive design */
+                          @media (max-width: 1024px) {
+                            .cpu-tower {
+                              width: 100%;
+                              min-height: 400px;
+                            }
                           }
                         `}</style>
                       </div>
@@ -2266,114 +2454,68 @@ export default function GeneratorPage() {
               </div>
             </div>
           </motion.div>
+          </div>
 
-          {/* Terminal Interface - Fixed at Bottom */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="w-full"
-          >
-            <div className="bg-black text-green-400 p-6 font-mono border-t-2 border-green-500">
-              {/* Terminal Header */}
-              <div className="flex items-center justify-between mb-4 pb-2 border-b border-green-500/30">
-                <div className="flex items-center space-x-2">
-                  <span className="text-green-400">$</span>
-                  <span className="text-green-300">rug-generator</span>
-                  <span className="text-green-500">&gt;</span>
-                </div>
-                <div className="text-sm text-green-500">
-                  {isLoaded ? 'READY' : 'LOADING...'}
-                  </div>
+          {/* Right Column - CPU Tower */}
+          <div className="w-full lg:w-80">
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="cpu-tower"
+            >
+              {/* Mint Display */}
+              <div className="mint-display">
+                <div className="text-2xl font-mono">$0.05</div>
+                <div className="text-sm opacity-75">MINT PRICE</div>
               </div>
-              
-              {/* Simple Terminal Commands */}
-              <div className="space-y-4">
-                {/* Generate and Save */}
-                <div className="flex gap-3">
-                  <button
-                    onClick={generateNew}
-                    disabled={!isLoaded}
-                    className="bg-green-600 hover:bg-green-700 disabled:bg-gray-700 text-black font-bold px-6 py-3 rounded font-mono transition-colors border border-green-400"
+
+              {/* CD Drives */}
+              {[1, 2, 3, 4, 5].map((driveNum) => (
+                <div key={driveNum} className="cd-drive">
+                  <div className={`tray ${trayStates[driveNum - 1] ? 'open' : ''}`}>
+                    <input
+                      type="text"
+                      value={trayTexts[driveNum - 1]}
+                      onChange={(e) => updateTrayText(driveNum, e.target.value)}
+                      placeholder={`Text ${driveNum}`}
+                      maxLength={11}
+                      className="tray-input"
+                    />
+                  </div>
+                  <button 
+                    className="eject-btn"
+                    onClick={() => toggleTray(driveNum)}
                   >
-                    <Shuffle className="w-5 h-5 mr-2" />
-                    GENERATE
-                  </button>
-                  <button
-                    onClick={saveDoormat}
-                    disabled={!isLoaded}
-                    className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 text-white px-6 py-3 rounded font-mono transition-colors border border-blue-400"
-                  >
-                    <Download className="w-5 h-5 mr-2" />
-                    SAVE
+                    ⏏
                   </button>
                 </div>
-                
-                {/* Text Input */}
-                <div className="space-y-3">
-                  <div className="text-green-300 text-sm">Add text to rug (max 11 chars per row): A-Z, 0-9, space, ? _ ! @ # $ & % + - ( ) [ ] * = &apos; &quot;</div>
-                  {textInputs.map((text, index) => (
-                    <div key={index} className="flex gap-2">
-                      <span className="text-green-400 font-mono">$</span>
-                      <input
-                        type="text"
-                        value={text}
-                        onChange={(e) => updateTextInput(index, e.target.value)}
-                        placeholder={`text_${index + 1}`}
-                        maxLength={11}
-                        className="flex-1 px-3 py-2 bg-gray-900 border border-green-500/50 text-green-400 rounded focus:ring-2 focus:ring-green-500 focus:border-transparent font-mono"
-                      />
-                      {index > 0 && (
-                        <button
-                          onClick={() => removeTextRow(index)}
-                          className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded font-mono transition-colors"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                  
-                  {/* Text Control Buttons */}
-                  <div className="flex gap-3 pt-2">
-                    {currentRowCount < 5 && (
-                      <button
-                        onClick={addTextRow}
-                        className="bg-green-600 hover:bg-green-700 text-black font-bold px-4 py-2 rounded font-mono transition-colors border border-green-400"
-                      >
-                        <Plus className="w-4 h-4 mr-2" />
-                        ADD ROW
-                      </button>
-                    )}
-                    <button
-                      onClick={addTextToDoormat}
-                      disabled={!isLoaded}
-                      className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-700 text-white px-4 py-2 rounded font-mono transition-colors border border-purple-400"
-                    >
-                      <FileText className="w-4 h-4 mr-2" />
-                      EMBED TEXT
-                    </button>
-                    <button
-                      onClick={clearText}
-                      className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded font-mono transition-colors border border-gray-400"
-                    >
-                      CLEAR
-                    </button>
-                  </div>
-                </div>
-                
-                {/* NFT Export Section */}
-                <div className="border-t border-green-500/30 pt-4">
-                  <NFTExporter 
-                    currentSeed={currentSeed}
-                    currentPalette={null}
-                    currentStripeData={[]}
-                    textRows={textInputs}
-                  />
-                </div>
+              ))}
+
+              {/* Floppy Drive */}
+              <div className="floppy-drive">
+                <div className="floppy-slot"></div>
               </div>
-            </div>
-          </motion.div>
+
+              {/* Control Buttons */}
+              <div className="control-buttons">
+                <button 
+                  className="power-btn"
+                  onClick={saveDoormat}
+                  disabled={!isLoaded}
+                >
+                  ⚡
+                </button>
+                <button 
+                  className="reset-btn"
+                  onClick={generateNew}
+                  disabled={!isLoaded}
+                >
+                  🔄
+                </button>
+              </div>
+            </motion.div>
+          </div>
         </div>
 
 
@@ -2386,6 +2528,7 @@ export default function GeneratorPage() {
           <button id="toggleRowsBtn"></button>
         </div>
       </div>
+
     </div>
   )
 }
