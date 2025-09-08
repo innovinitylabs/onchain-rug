@@ -2143,11 +2143,11 @@ export default function GeneratorPage() {
               <h2 className="text-lg font-bold text-green-400 text-center font-mono mb-6">🎨 RUG GENERATOR v1.0</h2>
               
                             {/* Old-School CRT Monitor Box */}
-              <div className="relative mx-auto" style={{ width: '1400px', maxWidth: '100%' }}>
+              <div className="relative mx-auto w-full max-w-6xl">
                 {/* Monitor Bezel - Yellowed Plastic */}
-                <div className="bg-amber-100 border-6 border-amber-200 rounded-t-2xl rounded-b-xl p-8 shadow-2xl">
+                <div className="bg-amber-100 border-6 border-amber-200 rounded-t-2xl rounded-b-xl p-4 md:p-6 lg:p-8 shadow-2xl">
                   {/* Monitor Screen Area */}
-                  <div className="bg-gray-800 rounded-lg px-4 py-2 border-3 border-gray-700 shadow-inner">
+                  <div className="bg-gray-800 rounded-lg px-2 md:px-4 py-2 border-3 border-gray-700 shadow-inner">
                     {/* CRT Screen with Scan Lines Effect */}
                     <div className="bg-black rounded-lg px-2 border-2 border-gray-600 relative overflow-hidden">
                       {/* Scan Lines Overlay */}
@@ -2162,8 +2162,8 @@ export default function GeneratorPage() {
                            id="canvas-container"
                            className="bg-gray-900 rounded-lg relative mx-auto border border-green-500/30"
                           style={{ 
-                            width: '1320px',   // Exact P5.js canvas width
-                            height: '900px',   // Exact P5.js canvas height
+                            width: '100%',     // Responsive width
+                            height: '600px',   // Fixed height for aspect ratio
                             maxWidth: '100%',  // Responsive constraint
                             overflow: 'hidden', // Prevent canvas overflow
                             boxShadow: '0 0 20px rgba(0, 255, 0, 0.1)',
