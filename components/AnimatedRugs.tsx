@@ -1891,12 +1891,13 @@ function Scene({ onLoaded }: { onLoaded?: () => void }) {
     
     // Smooth fade-in for all rugs together
     const timer = setTimeout(() => {
+      console.log('🎭 Setting rugs opacity to 1 and calling onLoaded')
       setRugsOpacity(1)
+      // Call onLoaded after rugs are ready to fade in
+      if (onLoaded) {
+        onLoaded()
+      }
     }, 800) // Wait for initial canvas fade-in to complete
-    
-    if (onLoaded) {
-      setTimeout(onLoaded, 100) // Small delay to ensure everything is rendered
-    }
     
     return () => clearTimeout(timer)
   }, [onLoaded])
@@ -2010,7 +2011,10 @@ export default function AnimatedRugs() {
         }}
       >
         <Suspense fallback={null}>
-          <Scene onLoaded={() => setIsVisible(true)} />
+          <Scene onLoaded={() => {
+            console.log('🎭 Scene loaded, setting isVisible to true')
+            setIsVisible(true)
+          }} />
         </Suspense>
       </Canvas>
     </div>
