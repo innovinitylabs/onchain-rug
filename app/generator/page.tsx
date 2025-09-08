@@ -2087,32 +2087,25 @@ export default function GeneratorPage() {
   // Check if P5.js canvas is visible
   useEffect(() => {
     if (isLoaded) {
-      // Wait a bit for P5.js to create canvas, then check
-      const timer = setTimeout(() => {
-        const canvas = document.querySelector('canvas')
-        if (canvas) {
-          console.log('🎨 P5.js canvas found:', canvas)
-          console.log('Canvas dimensions:', canvas.width, 'x', canvas.height)
-          console.log('Canvas container:', canvasContainerRef.current)
-          
-          // Don't move canvas or call setup - let P5.js handle it
-          // This prevents double canvas issues
-          
-          // Apply final positioning after P5.js has fully initialized
-          if (canvasContainerRef.current) {
-            canvas.style.width = '100%'
-            canvas.style.height = '100%'
-            canvas.style.maxWidth = '100%'
-            canvas.style.maxHeight = '100%'
-            canvas.style.objectFit = 'fill'
-            console.log('🎯 P5.js canvas positioned after 1s delay - perfect positioning')
-          }
-        } else {
-          console.log('❌ No P5.js canvas found in DOM')
+      // Apply positioning immediately when canvas is found
+      const canvas = document.querySelector('canvas')
+      if (canvas) {
+        console.log('🎨 P5.js canvas found:', canvas)
+        console.log('Canvas dimensions:', canvas.width, 'x', canvas.height)
+        console.log('Canvas container:', canvasContainerRef.current)
+        
+        // Apply perfect positioning immediately
+        if (canvasContainerRef.current) {
+          canvas.style.width = '100%'
+          canvas.style.height = '100%'
+          canvas.style.maxWidth = '100%'
+          canvas.style.maxHeight = '100%'
+          canvas.style.objectFit = 'fill'
+          console.log('🎯 P5.js canvas positioned immediately - perfect positioning')
         }
-      }, 1000)
-      
-      return () => clearTimeout(timer)
+      } else {
+        console.log('❌ No P5.js canvas found in DOM')
+      }
     }
   }, [isLoaded])
 
