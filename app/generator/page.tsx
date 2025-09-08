@@ -2140,17 +2140,15 @@ export default function GeneratorPage() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="w-full mb-0"
           >
-            <div className="border-b border-green-500/50 p-4">
-              <h2 className="text-lg font-bold text-green-400 text-center font-mono mb-6">🎨 RUG GENERATOR v1.0</h2>
-              
+            <div className="border-b border-green-500/50 p-2">
                             {/* Old-School CRT Monitor Box */}
               <div className="relative mx-auto w-full max-w-6xl px-4 md:px-6 lg:px-8">
                 {/* Monitor Bezel - Yellowed Plastic */}
-                <div className="bg-amber-100 border-6 border-amber-200 rounded-t-2xl rounded-b-xl p-4 md:p-6 lg:p-8 shadow-2xl">
+                <div className="bg-amber-100 border-6 border-amber-200 rounded-t-2xl rounded-b-xl p-2 md:p-3 lg:p-4 shadow-2xl">
                   {/* Monitor Screen Area */}
-                  <div className="rounded-lg px-2 md:px-4 py-2">
+                  <div className="rounded-lg px-1 md:px-2 py-1">
                     {/* Canvas Display Area */}
-                    <div className="rounded-lg px-2 relative overflow-hidden">
+                    <div className="rounded-lg px-1 relative overflow-hidden">
                       
                                                                     {/* Canvas Container - Match P5.js canvas dimensions exactly */}
                                                  <div 
@@ -2213,9 +2211,6 @@ export default function GeneratorPage() {
                         <h3 className="text-sm md:text-base lg:text-lg xl:text-xl font-medium text-amber-800" style={{ fontFamily: 'Apple Garamond, Garamond, serif' }}>
                           Rugpull Computer
                         </h3>
-                        <p className="text-xs md:text-xs lg:text-sm xl:text-sm text-amber-700 mt-1" style={{ fontFamily: 'Apple Garamond, Garamond, serif' }}>
-                          Generative Art Terminal
-                        </p>
                       </div>
                     </div>
 
