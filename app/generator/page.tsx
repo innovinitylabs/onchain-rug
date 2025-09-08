@@ -2177,7 +2177,7 @@ export default function GeneratorPage() {
                             height: 100% !important;
                             max-width: 100% !important;
                             max-height: 100% !important;
-                            object-fit: contain !important;
+                            object-fit: fill !important;
                             position: absolute !important;
                             top: 0 !important;
                             left: 0 !important;
