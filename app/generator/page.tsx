@@ -1679,7 +1679,19 @@ export default function GeneratorPage() {
       
       // Position for this row (left to right becomes after rotation)
       const startX = baseStartX + rowIndex * (charWidth + rowSpacing)
-      const startY = (doormatData.config.DOORMAT_HEIGHT - textHeight) / 2
+      
+      // Ensure text fits within canvas bounds - add padding for thick warp
+      const maxTextHeight = doormatData.config.DOORMAT_HEIGHT - (doormatData.warpThickness * 4) // Reserve space for thick warp
+      const availableHeight = Math.min(textHeight, maxTextHeight)
+      const startY = (doormatData.config.DOORMAT_HEIGHT - availableHeight) / 2
+      
+      // Debug logging for text positioning issues
+      if (doormatData.warpThickness >= 5 && textRows.length >= 5) {
+        console.log(`🔍 Text positioning debug (warp: ${doormatData.warpThickness}, rows: ${textRows.length}):`)
+        console.log(`  - Text height: ${textHeight}, Max height: ${maxTextHeight}`)
+        console.log(`  - Start Y: ${startY}, Canvas height: ${doormatData.config.DOORMAT_HEIGHT}`)
+        console.log(`  - Scaled weft: ${scaledWeft}, Char height: ${charHeight}`)
+      }
       
       // Generate character data vertically bottom-to-top for this row
       for (let i = 0; i < doormatText.length; i++) {
