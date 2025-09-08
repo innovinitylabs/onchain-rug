@@ -2098,8 +2098,15 @@ export default function GeneratorPage() {
           // Don't move canvas or call setup - let P5.js handle it
           // This prevents double canvas issues
           
-          // CSS handles all positioning - no JavaScript styling needed
-          console.log('🎯 P5.js canvas positioned by CSS')
+          // Apply final positioning after P5.js has fully initialized
+          if (canvasContainerRef.current) {
+            canvas.style.width = '100%'
+            canvas.style.height = '100%'
+            canvas.style.maxWidth = '100%'
+            canvas.style.maxHeight = '100%'
+            canvas.style.objectFit = 'fill'
+            console.log('🎯 P5.js canvas positioned after 1s delay - perfect positioning')
+          }
         } else {
           console.log('❌ No P5.js canvas found in DOM')
         }
