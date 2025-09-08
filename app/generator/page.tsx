@@ -1680,16 +1680,19 @@ export default function GeneratorPage() {
       // Position for this row (left to right becomes after rotation)
       const startX = baseStartX + rowIndex * (charWidth + rowSpacing)
       
-      // Ensure text fits within canvas bounds - add padding for thick warp
-      const maxTextHeight = doormatData.config.DOORMAT_HEIGHT - (doormatData.warpThickness * 4) // Reserve space for thick warp
+      // Ensure text fits within canvas bounds - account for 90-degree rotation
+      // Canvas is rotated, so actual canvas height is DOORMAT_WIDTH + FRINGE_LENGTH * 4
+      const actualCanvasHeight = doormatData.config.DOORMAT_WIDTH + (doormatData.config.FRINGE_LENGTH * 4)
+      const maxTextHeight = actualCanvasHeight - (doormatData.warpThickness * 4) // Reserve space for thick warp
       const availableHeight = Math.min(textHeight, maxTextHeight)
-      const startY = (doormatData.config.DOORMAT_HEIGHT - availableHeight) / 2
+      const startY = (actualCanvasHeight - availableHeight) / 2
       
       // Debug logging for text positioning issues
       if (doormatData.warpThickness >= 5 && textRows.length >= 5) {
         console.log(`🔍 Text positioning debug (warp: ${doormatData.warpThickness}, rows: ${textRows.length}):`)
         console.log(`  - Text height: ${textHeight}, Max height: ${maxTextHeight}`)
-        console.log(`  - Start Y: ${startY}, Canvas height: ${doormatData.config.DOORMAT_HEIGHT}`)
+        console.log(`  - Start Y: ${startY}, Actual canvas height: ${actualCanvasHeight}`)
+        console.log(`  - Canvas dimensions: ${doormatData.config.DOORMAT_HEIGHT + (doormatData.config.FRINGE_LENGTH * 4)} x ${actualCanvasHeight}`)
         console.log(`  - Scaled weft: ${scaledWeft}, Char height: ${charHeight}`)
       }
       
