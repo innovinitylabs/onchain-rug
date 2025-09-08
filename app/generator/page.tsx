@@ -2311,7 +2311,7 @@ export default function GeneratorPage() {
                 
                 {/* Text Input */}
                 <div className="space-y-3">
-                  <div className="text-green-300 text-sm">Add text to rug (max 11 chars per row): A-Z, 0-9, space, ? _ ! @ # $ & % + - ( ) [ ] * = ' "</div>
+                  <div className="text-green-300 text-sm">Add text to rug (max 11 chars per row): A-Z, 0-9, space, ? _ ! @ # $ & % + - ( ) [ ] * = &apos; &quot;</div>
                   {textInputs.map((text, index) => (
                     <div key={index} className="flex gap-2">
                       <span className="text-green-400 font-mono">$</span>
