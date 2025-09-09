@@ -120,7 +120,7 @@ export default function Hero() {
           className="fixed bottom-10 left-1/2 transform -translate-x-1/2 z-20"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 2, type: "tween" }}
+          transition={{ delay: 2000, type: "tween" }}
           style={{ willChange: 'opacity' }}
         >
           <motion.div
