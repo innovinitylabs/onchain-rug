@@ -21,6 +21,105 @@ const NFTExporter: React.FC<NFTExporterProps> = ({
   const safeStripeData = currentStripeData || [];
   const safeTextRows = textRows || [];
 
+  // Calculate traits in the generator (not in exported HTML)
+  const calculateTraitsInGenerator = (palette: any, stripeData: any[], textRows: string[]) => {
+    const textLines = textRows.filter(row => row && row.trim() !== '').length;
+    const totalCharacters = textRows.reduce((sum, row) => sum + row.length, 0);
+    const stripeCount = stripeData.length;
+    const paletteName = palette ? palette.name : "Unknown";
+    const currentWarpThickness = (window as any).warpThickness || 2;
+
+    // Calculate stripe complexity
+    let complexityScore = 0;
+    let solidCount = 0;
+    for (let stripe of stripeData) {
+      if (stripe.weaveType === 'mixed') complexityScore += 2;
+      else if (stripe.weaveType === 'textured') complexityScore += 1.5;
+      else solidCount++;
+      if (stripe.secondaryColor) complexityScore += 1;
+    }
+    const solidRatio = solidCount / stripeData.length;
+    const normalizedComplexity = complexityScore / (stripeData.length * 3);
+    let stripeComplexity = "Basic";
+    if (solidRatio > 0.9) stripeComplexity = "Basic";
+    else if (solidRatio > 0.75 && normalizedComplexity < 0.15) stripeComplexity = "Simple";
+    else if (solidRatio > 0.6 && normalizedComplexity < 0.3) stripeComplexity = "Moderate";
+    else if (normalizedComplexity < 0.5) stripeComplexity = "Complex";
+    else stripeComplexity = "Very Complex";
+
+    // Rarity calculations
+    const getPaletteRarity = (name: string) => {
+      const legendaryPalettes = ["Buddhist", "Maurya Empire", "Chola Dynasty", "Indigo Famine", "Bengal Famine", "Jamakalam"];
+      const epicPalettes = ["Indian Peacock", "Flamingo", "Toucan", "Madras Checks", "Kanchipuram Silk", "Natural Dyes", "Bleeding Vintage"];
+      const rarePalettes = ["Tamil Classical", "Sangam Era", "Pandya Dynasty", "Maratha Empire", "Rajasthani"];
+      const uncommonPalettes = ["Tamil Nadu Temple", "Kerala Onam", "Chettinad Spice", "Chennai Monsoon", "Bengal Indigo"];
+      
+      if (legendaryPalettes.includes(name)) return "Legendary";
+      if (epicPalettes.includes(name)) return "Epic";
+      if (rarePalettes.includes(name)) return "Rare";
+      if (uncommonPalettes.includes(name)) return "Uncommon";
+      return "Common";
+    };
+
+    const getTextLinesRarity = (lines: number) => {
+      if (lines === 0) return "Common";
+      if (lines === 1) return "Uncommon";
+      if (lines === 2) return "Rare";
+      if (lines === 3) return "Epic";
+      if (lines >= 4) return "Legendary";
+      return "Common";
+    };
+
+    const getCharacterRarity = (chars: number) => {
+      if (chars === 0) return "Common";
+      if (chars <= 5) return "Uncommon";
+      if (chars <= 15) return "Rare";
+      if (chars <= 30) return "Epic";
+      if (chars >= 31) return "Legendary";
+      return "Common";
+    };
+
+    const getStripeCountRarity = (count: number) => {
+      if (count < 20) return "Legendary";
+      if (count < 25) return "Epic";
+      if (count < 32) return "Rare";
+      if (count < 40) return "Uncommon";
+      return "Common";
+    };
+
+    const getStripeComplexityRarity = (complexity: string) => {
+      switch (complexity) {
+        case "Basic": return "Common";
+        case "Simple": return "Uncommon";
+        case "Moderate": return "Rare";
+        case "Complex": return "Epic";
+        case "Very Complex": return "Legendary";
+        default: return "Common";
+      }
+    };
+
+    const getWarpThicknessRarity = (thickness: number) => {
+      switch (thickness) {
+        case 1: return "Legendary";
+        case 2: return "Uncommon";
+        case 3: return "Common";
+        case 4: return "Common";
+        case 5: return "Uncommon";
+        case 6: return "Legendary";
+        default: return "Common";
+      }
+    };
+
+    return {
+      textLines: { value: textLines, rarity: getTextLinesRarity(textLines) },
+      totalCharacters: { value: totalCharacters, rarity: getCharacterRarity(totalCharacters) },
+      paletteName: { value: paletteName, rarity: getPaletteRarity(paletteName) },
+      stripeCount: { value: stripeCount, rarity: getStripeCountRarity(stripeCount) },
+      stripeComplexity: { value: stripeComplexity, rarity: getStripeComplexityRarity(stripeComplexity) },
+      warpThickness: { value: currentWarpThickness, rarity: getWarpThicknessRarity(currentWarpThickness) }
+    };
+  };
+
   const exportNFT = async () => {
     setIsExporting(true);
 
@@ -29,10 +128,11 @@ const NFTExporter: React.FC<NFTExporterProps> = ({
       const currentPalette = (window as any).selectedPalette;
       const currentStripeData = (window as any).stripeData || [];
       
+      // Calculate traits in the generator (not in exported HTML)
+      const calculatedTraits = calculateTraitsInGenerator(currentPalette, currentStripeData, safeTextRows);
       
-      
-      // Create the NFT HTML content with current live data
-      const nftHTML = createNFTHTML(safeSeed, currentPalette, currentStripeData, safeTextRows);
+      // Create the NFT HTML content with current live data and pre-calculated traits
+      const nftHTML = createNFTHTML(safeSeed, currentPalette, currentStripeData, safeTextRows, calculatedTraits);
       
       // Debug logging removed for production
       
@@ -54,7 +154,7 @@ const NFTExporter: React.FC<NFTExporterProps> = ({
     }
   };
 
-  const createNFTHTML = (seed: number, palette: any, stripeData: any[], textRows: string[]) => {
+  const createNFTHTML = (seed: number, palette: any, stripeData: any[], textRows: string[], preCalculatedTraits: any) => {
     // Get the current configuration from the live generator, with fallback
     const liveConfig = (window as any).DOORMAT_CONFIG || {};
     
@@ -201,128 +301,10 @@ let textData = [];
         // Colors
 let lightTextColor, darkTextColor;
 
-        // COMPREHENSIVE TRAIT CALCULATION SYSTEM
-        function getPaletteRarity(paletteName) {
-            const legendaryPalettes = ["Buddhist", "Maurya Empire", "Chola Dynasty", "Indigo Famine", "Bengal Famine", "Jamakalam"];
-            const epicPalettes = ["Indian Peacock", "Flamingo", "Toucan", "Madras Checks", "Kanchipuram Silk", "Natural Dyes", "Bleeding Vintage"];
-            const rarePalettes = ["Tamil Classical", "Sangam Era", "Pandya Dynasty", "Maratha Empire", "Rajasthani"];
-            const uncommonPalettes = ["Tamil Nadu Temple", "Kerala Onam", "Chettinad Spice", "Chennai Monsoon", "Bengal Indigo"];
-            
-            if (legendaryPalettes.includes(paletteName)) return "Legendary";
-            if (epicPalettes.includes(paletteName)) return "Epic";
-            if (rarePalettes.includes(paletteName)) return "Rare";
-            if (uncommonPalettes.includes(paletteName)) return "Uncommon";
-            return "Common";
-        }
+        // Pre-calculated traits metadata (calculated in generator)
+        const nftTraits = ${JSON.stringify(preCalculatedTraits)};
 
-        function calculateStripeComplexity(stripeData) {
-            if (!stripeData || stripeData.length === 0) return "Basic";
-            
-            let complexityScore = 0;
-            let mixedCount = 0;
-            let texturedCount = 0;
-            let solidCount = 0;
-            let secondaryColorCount = 0;
-            
-            for (let stripe of stripeData) {
-                if (stripe.weaveType === 'mixed') {
-                    mixedCount++;
-                    complexityScore += 2;
-                } else if (stripe.weaveType === 'textured') {
-                    texturedCount++;
-                    complexityScore += 1.5;
-                } else {
-                    solidCount++;
-                }
-                
-                if (stripe.secondaryColor) {
-                    secondaryColorCount++;
-                    complexityScore += 1;
-                }
-            }
-            
-            const solidRatio = solidCount / stripeData.length;
-            const normalizedComplexity = complexityScore / (stripeData.length * 3);
-            
-            if (solidRatio > 0.9) return "Basic";
-            if (solidRatio > 0.75 && normalizedComplexity < 0.15) return "Simple";
-            if (solidRatio > 0.6 && normalizedComplexity < 0.3) return "Moderate";
-            if (normalizedComplexity < 0.5) return "Complex";
-            return "Very Complex";
-        }
-
-        function getTextLinesRarity(textLines) {
-            if (textLines === 0) return "Common";
-            if (textLines === 1) return "Uncommon";
-            if (textLines === 2) return "Rare";
-            if (textLines === 3) return "Epic";
-            if (textLines >= 4) return "Legendary";
-            return "Common";
-        }
-
-        function getCharacterRarity(totalChars) {
-            if (totalChars === 0) return "Common";
-            if (totalChars <= 5) return "Uncommon";
-            if (totalChars <= 15) return "Rare";
-            if (totalChars <= 30) return "Epic";
-            if (totalChars >= 31) return "Legendary";
-            return "Common";
-        }
-
-        function getStripeCountRarity(count) {
-            if (count < 20) return "Legendary";
-            if (count < 25) return "Epic";
-            if (count < 32) return "Rare";
-            if (count < 40) return "Uncommon";
-            return "Common";
-        }
-
-        function getStripeComplexityRarity(complexity) {
-            switch (complexity) {
-                case "Basic": return "Common";
-                case "Simple": return "Uncommon";
-                case "Moderate": return "Rare";
-                case "Complex": return "Epic";
-                case "Very Complex": return "Legendary";
-                default: return "Common";
-            }
-        }
-
-        function calculateTraits() {
-            const textLines = doormatTextRows.length;
-            const totalCharacters = doormatTextRows.reduce((sum, row) => sum + row.length, 0);
-            const stripeCount = stripeData.length;
-            const stripeComplexity = calculateStripeComplexity(stripeData);
-            const paletteName = selectedPalette ? selectedPalette.name : "Unknown";
-            
-            return {
-                textLines: {
-                    value: textLines,
-                    rarity: getTextLinesRarity(textLines)
-                },
-                totalCharacters: {
-                    value: totalCharacters,
-                    rarity: getCharacterRarity(totalCharacters)
-                },
-                paletteName: {
-                    value: paletteName,
-                    rarity: getPaletteRarity(paletteName)
-                },
-                stripeCount: {
-                    value: stripeCount,
-                    rarity: getStripeCountRarity(stripeCount)
-                },
-                stripeComplexity: {
-                    value: stripeComplexity,
-                    rarity: getStripeComplexityRarity(stripeComplexity)
-                },
-                warpThickness: {
-                    value: warpThickness,
-                    rarity: getWarpThicknessRarity(warpThickness)
-                }
-            };
-        }
-
+        // Simple rarity color function
         function getRarityColor(rarity) {
             switch (rarity) {
                 case "Legendary": return "#ff6b35";
@@ -334,30 +316,13 @@ let lightTextColor, darkTextColor;
             }
         }
 
-        // Warp thickness rarity calculation (metadata only)
-        function getWarpThicknessRarity(thickness) {
-            switch (thickness) {
-                case 1: return "Legendary"; // Very thin
-                case 2: return "Uncommon";  // Thin
-                case 3: return "Common";    // Medium-thin
-                case 4: return "Common";    // Medium (most common)
-                case 5: return "Uncommon";  // Thick
-                case 6: return "Legendary"; // Very thick
-                default: return "Common";
-            }
-        }
-
-        // Calculate traits for this NFT
-        const nftTraits = calculateTraits();
-
-        // Populate traits display
+        // Populate traits display with pre-calculated data
         function populateTraitsDisplay() {
             const traitsContainer = document.getElementById('traits-container');
             if (!traitsContainer) return;
             
-            const traits = calculateTraits();
             let html = '';
-            Object.entries(traits).forEach(([key, trait]) => {
+            Object.entries(nftTraits).forEach(([key, trait]) => {
                 const rarity = trait.rarity || 'Common';
                 const value = trait.value;
                 const rarityColor = getRarityColor(rarity);
