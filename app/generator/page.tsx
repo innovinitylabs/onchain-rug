@@ -2140,7 +2140,7 @@ export default function GeneratorPage() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="w-full mb-0"
           >
-            <div className="border-b border-green-500/50 p-2">
+            <div className="p-2">
                             {/* Old-School CRT Monitor Box */}
               <div className="relative mx-auto w-full max-w-6xl px-4 md:px-6 lg:px-8">
                 {/* Monitor Bezel - Yellowed Plastic */}
@@ -2266,9 +2266,9 @@ export default function GeneratorPage() {
             className="w-full"
           >
             <div className="relative mx-auto w-full max-w-6xl px-4 md:px-6 lg:px-8">
-              <div className="bg-black text-green-400 font-mono border-t-2 border-green-500 py-4 md:py-6">
+              <div className="bg-black text-green-400 font-mono border-t-2 border-green-500 py-3 md:py-4 px-4 md:px-6">
               {/* Terminal Header */}
-              <div className="flex items-center justify-between mb-4 pb-2 border-b border-green-500/30">
+              <div className="flex items-center justify-between mb-3 pb-2 border-b border-green-500/30">
                 <div className="flex items-center space-x-2">
                   <span className="text-green-400">$</span>
                   <span className="text-green-300">rug-generator</span>
@@ -2280,7 +2280,7 @@ export default function GeneratorPage() {
               </div>
               
               {/* Simple Terminal Commands */}
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {/* Generate and Save */}
                 <div className="flex gap-3">
                   <button
@@ -2302,8 +2302,8 @@ export default function GeneratorPage() {
                 </div>
                 
                 {/* Text Input */}
-                <div className="space-y-3">
-                  <div className="text-green-300 text-sm">Add text to rug (max 11 chars per row): A-Z, 0-9, space, ? _ ! @ # $ & % + - ( ) [ ] * = &apos; &quot;</div>
+                <div className="space-y-2">
+                  <div className="text-green-300 text-xs">Add text to rug (max 11 chars per row): A-Z, 0-9, space, ? _ ! @ # $ & % + - ( ) [ ] * = &apos; &quot;</div>
                   {textInputs.map((text, index) => (
                     <div key={index} className="flex gap-2">
                       <span className="text-green-400 font-mono">$</span>
@@ -2327,7 +2327,7 @@ export default function GeneratorPage() {
                   ))}
                   
                   {/* Text Control Buttons */}
-                  <div className="flex gap-3 pt-2">
+                  <div className="flex gap-2 pt-1">
                     {currentRowCount < 5 && (
                       <button
                         onClick={addTextRow}
@@ -2355,7 +2355,7 @@ export default function GeneratorPage() {
                 </div>
                 
                 {/* NFT Export Section */}
-                <div className="border-t border-green-500/30 pt-4">
+                <div className="border-t border-green-500/30 pt-3">
                   <NFTExporter 
                     currentSeed={currentSeed}
                     currentPalette={null}
