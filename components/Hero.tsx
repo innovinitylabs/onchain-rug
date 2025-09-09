@@ -115,23 +115,6 @@ export default function Hero() {
           </motion.div>
         </motion.div>
 
-        {/* Scroll indicator - Optimized for performance */}
-        <motion.div 
-          className="fixed bottom-10 left-1/2 transform -translate-x-1/2 z-50"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1500, type: "tween" }}
-          style={{ willChange: 'opacity' }}
-        >
-          <motion.div
-            animate={{ y: [0, 10, 0] }}
-            transition={{ duration: 2, repeat: Infinity, type: "tween" }}
-            className="text-amber-600"
-            style={{ willChange: 'transform' }}
-          >
-            <ChevronDown className="w-8 h-8" />
-          </motion.div>
-        </motion.div>
       </div>
     </div>
   )
