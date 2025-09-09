@@ -7,10 +7,30 @@ import { useEffect, useState } from 'react'
 
 export default function ScrollIndicator() {
   const [mounted, setMounted] = useState(false)
+  const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  useEffect(() => {
+    if (!mounted) return
+
+    const handleScroll = () => {
+      const scrollY = window.scrollY
+      const windowHeight = window.innerHeight
+      
+      // Show only when in the hero section (first 80% of viewport height)
+      const shouldShow = scrollY < windowHeight * 0.8
+      setIsVisible(shouldShow)
+    }
+
+    // Initial check
+    handleScroll()
+
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [mounted])
 
   if (!mounted) return null
   
@@ -19,8 +39,8 @@ export default function ScrollIndicator() {
       key="scroll-indicator"
       className="fixed bottom-10 left-1/2 transform -translate-x-1/2 z-[9999] pointer-events-none"
       initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ delay: 1.5, duration: 0.5, ease: "easeOut" }}
+      animate={{ opacity: isVisible ? 1 : 0 }}
+      transition={{ delay: isVisible ? 1.5 : 0, duration: 0.5, ease: "easeOut" }}
     >
       <motion.div
         animate={{ y: [0, 10, 0] }}
