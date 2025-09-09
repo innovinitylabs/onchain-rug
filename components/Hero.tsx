@@ -7,18 +7,19 @@ export default function Hero() {
   return (
     <div className="relative z-10 h-screen flex items-center justify-center text-center px-6" style={{ willChange: 'transform' }}>
       <div className="max-w-4xl mx-auto" style={{ willChange: 'transform, opacity' }}>
-        {/* Floating elements - Optimized for performance */}
+        {/* Floating elements - Delayed for performance optimization */}
         <div className="absolute -top-10 -left-10 w-20 h-20 opacity-20" style={{ willChange: 'transform' }}>
           <motion.div
+            initial={{ opacity: 0 }}
             animate={{ 
+              opacity: 1,
               y: [0, -20, 0],
               rotate: [0, 360]
             }}
             transition={{ 
-              duration: 6,
-              repeat: Infinity,
-              ease: "easeInOut",
-              type: "tween"
+              opacity: { duration: 0.5, delay: 2.5 },
+              y: { duration: 6, repeat: Infinity, ease: "easeInOut", type: "tween", delay: 2.5 },
+              rotate: { duration: 6, repeat: Infinity, ease: "easeInOut", type: "tween", delay: 2.5 }
             }}
             style={{ willChange: 'transform' }}
           >
@@ -28,15 +29,16 @@ export default function Hero() {
         
         <div className="absolute -top-5 -right-5 w-16 h-16 opacity-30" style={{ willChange: 'transform' }}>
           <motion.div
+            initial={{ opacity: 0 }}
             animate={{ 
+              opacity: 1,
               y: [0, 15, 0],
               rotate: [0, -360]
             }}
             transition={{ 
-              duration: 8,
-              repeat: Infinity,
-              ease: "easeInOut",
-              type: "tween"
+              opacity: { duration: 0.5, delay: 2.8 },
+              y: { duration: 8, repeat: Infinity, ease: "easeInOut", type: "tween", delay: 2.8 },
+              rotate: { duration: 8, repeat: Infinity, ease: "easeInOut", type: "tween", delay: 2.8 }
             }}
             style={{ willChange: 'transform' }}
           >
