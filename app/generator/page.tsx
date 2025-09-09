@@ -14,6 +14,8 @@ export default function GeneratorPage() {
   const [currentRowCount, setCurrentRowCount] = useState(1)
   const [palette, setPalette] = useState<any>(null)
   const [traits, setTraits] = useState<any>(null)
+  const [showDirt, setShowDirt] = useState(false)
+  const [dirtLevel, setDirtLevel] = useState(0) // 0 = clean, 1 = 50% dirty, 2 = full dirty
 
   const canvasContainerRef = useRef<HTMLDivElement>(null)
   const scriptsLoadedRef = useRef<Set<string>>(new Set())
@@ -961,6 +963,13 @@ export default function GeneratorPage() {
             drawFringeOriginal(p, doormatData, drawingPRNG)
             drawSelvedgeEdgesOriginal(p, doormatData, drawingPRNG)
             
+            // Draw dirt overlay if enabled
+            const currentShowDirt = (window as any).showDirt || false
+            const currentDirtLevel = (window as any).dirtLevel || 0
+            if (currentShowDirt && currentDirtLevel > 0) {
+              drawDirtOverlay(p, doormatData, drawingPRNG, currentDirtLevel)
+            }
+            
             p.pop() // End rotation
           }
         })
@@ -1649,6 +1658,79 @@ export default function GeneratorPage() {
     }
   }
 
+  // DIRT OVERLAY SYSTEM - Dynamic dirt accumulation based on time and maintenance
+  const drawDirtOverlay = (p: any, doormatData: any, drawingPRNG: any, dirtLevel: number) => {
+    const config = doormatData.config
+    
+    // Dirt intensity based on level (0 = clean, 1 = 50% dirty, 2 = full dirty)
+    const dirtIntensity = dirtLevel === 1 ? 0.5 : 1.0
+    const dirtOpacity = dirtLevel === 1 ? 30 : 60
+    
+    // Create dirt pattern using PRNG for consistency
+    p.push()
+    p.translate(config.FRINGE_LENGTH * 2, config.FRINGE_LENGTH * 2)
+    
+    // Draw dirt spots and stains
+    for (let x = 0; x < config.DOORMAT_WIDTH; x += 3) {
+      for (let y = 0; y < config.DOORMAT_HEIGHT; y += 3) {
+        // Use PRNG for consistent dirt pattern
+        const dirtNoise = drawingPRNG.range(0, 1)
+        const dirtThreshold = 0.85 * dirtIntensity // Higher threshold = less dirt
+        
+        if (dirtNoise > dirtThreshold) {
+          // Create dirt spot
+          const dirtSize = drawingPRNG.range(1, 4)
+          const dirtAlpha = drawingPRNG.range(dirtOpacity * 0.5, dirtOpacity)
+          
+          // Brown/dark dirt color
+          const dirtR = drawingPRNG.range(60, 90)
+          const dirtG = drawingPRNG.range(40, 60)
+          const dirtB = drawingPRNG.range(20, 40)
+          
+          p.fill(dirtR, dirtG, dirtB, dirtAlpha)
+          p.noStroke()
+          p.ellipse(x, y, dirtSize, dirtSize)
+        }
+      }
+    }
+    
+    // Add larger dirt stains for more realistic effect
+    for (let i = 0; i < 15 * dirtIntensity; i++) {
+      const stainX = drawingPRNG.range(0, config.DOORMAT_WIDTH)
+      const stainY = drawingPRNG.range(0, config.DOORMAT_HEIGHT)
+      const stainSize = drawingPRNG.range(8, 20)
+      const stainAlpha = drawingPRNG.range(dirtOpacity * 0.3, dirtOpacity * 0.7)
+      
+      // Darker stain color
+      const stainR = drawingPRNG.range(40, 70)
+      const stainG = drawingPRNG.range(25, 45)
+      const stainB = drawingPRNG.range(15, 30)
+      
+      p.fill(stainR, stainG, stainB, stainAlpha)
+      p.noStroke()
+      p.ellipse(stainX, stainY, stainSize, stainSize)
+    }
+    
+    // Add edge wear and tear
+    for (let x = 0; x < config.DOORMAT_WIDTH; x += 2) {
+      for (let y = 0; y < config.DOORMAT_HEIGHT; y += 2) {
+        // Check if near edges
+        const edgeDistance = Math.min(x, y, config.DOORMAT_WIDTH - x, config.DOORMAT_HEIGHT - y)
+        if (edgeDistance < 10) {
+          const edgeDirt = drawingPRNG.range(0, 1)
+          if (edgeDirt > 0.7 * dirtIntensity) {
+            const edgeAlpha = drawingPRNG.range(dirtOpacity * 0.2, dirtOpacity * 0.5)
+            p.fill(80, 60, 40, edgeAlpha)
+            p.noStroke()
+            p.ellipse(x, y, 1, 1)
+          }
+        }
+      }
+    }
+    
+    p.pop()
+  }
+
   // MISSING TEXT FUNCTIONS FROM ORIGINAL DOORMAT.JS
 
   // Update text colors based on palette (original function)
@@ -1978,6 +2060,21 @@ export default function GeneratorPage() {
       }, 100)
     } else {
       console.error('❌ Cannot generate: P5.js instance not available')
+    }
+  }
+
+  // Update dirt state and redraw
+  const updateDirtState = (newShowDirt: boolean, newDirtLevel: number) => {
+    setShowDirt(newShowDirt)
+    setDirtLevel(newDirtLevel)
+    
+    // Store globally for P5.js access
+    ;(window as any).showDirt = newShowDirt
+    ;(window as any).dirtLevel = newDirtLevel
+    
+    // Redraw canvas if P5.js instance exists
+    if ((window as any).p5Instance) {
+      ;(window as any).p5Instance.redraw()
     }
   }
 
@@ -2408,6 +2505,59 @@ export default function GeneratorPage() {
                     >
                       CLEAR
                     </button>
+                  </div>
+                </div>
+
+                {/* Dirt System Controls */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-green-300 text-sm font-mono font-medium">DIRT SYSTEM</h4>
+                    <span className="text-green-500 text-xs font-mono">
+                      {showDirt ? `${dirtLevel === 1 ? '50%' : '100%'} dirty` : 'Clean'}
+                    </span>
+                  </div>
+                  
+                  <div className="text-green-400 text-xs font-mono bg-gray-900/50 p-2 rounded border border-green-500/30">
+                    Dynamic dirt accumulation: 50% after 3 days, 100% after 7 days. Clean with onchain transaction.
+                  </div>
+
+                  {/* Dirt Toggle */}
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => updateDirtState(!showDirt, dirtLevel)}
+                      className={`px-3 py-1.5 rounded font-mono text-xs transition-all duration-200 border ${
+                        showDirt 
+                          ? 'bg-orange-600/80 hover:bg-orange-600 text-white border-orange-400' 
+                          : 'bg-gray-600/80 hover:bg-gray-600 text-white border-gray-400'
+                      }`}
+                    >
+                      {showDirt ? 'HIDE DIRT' : 'SHOW DIRT'}
+                    </button>
+                    
+                    {showDirt && (
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => updateDirtState(showDirt, 1)}
+                          className={`px-2 py-1 rounded font-mono text-xs transition-all duration-200 border ${
+                            dirtLevel === 1 
+                              ? 'bg-yellow-600 text-white border-yellow-400' 
+                              : 'bg-gray-700 text-gray-300 border-gray-500 hover:bg-gray-600'
+                          }`}
+                        >
+                          50%
+                        </button>
+                        <button
+                          onClick={() => updateDirtState(showDirt, 2)}
+                          className={`px-2 py-1 rounded font-mono text-xs transition-all duration-200 border ${
+                            dirtLevel === 2 
+                              ? 'bg-red-600 text-white border-red-400' 
+                              : 'bg-gray-700 text-gray-300 border-gray-500 hover:bg-gray-600'
+                          }`}
+                        >
+                          100%
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
 
