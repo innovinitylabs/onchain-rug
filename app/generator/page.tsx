@@ -2208,7 +2208,7 @@ export default function GeneratorPage() {
                         />
                       </div>
                       <div className="text-center">
-                        <h3 className="text-xs md:text-xs lg:text-sm xl:text-sm font-medium text-amber-800" style={{ fontFamily: 'Apple Garamond, Garamond, serif' }}>
+                        <h3 className="text-xs md:text-xs lg:text-sm xl:text-sm font-medium text-amber-800" style={{ fontFamily: 'EB Garamond, Apple Garamond, Garamond, serif' }}>
                           Rugpull Computer
                         </h3>
                       </div>
