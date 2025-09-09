@@ -1887,7 +1887,7 @@ function Scene({ onLoaded }: { onLoaded?: () => void }) {
     resetGlobalState()
     
     // Always set as loaded and trigger callback
-    setDependenciesLoaded(true)
+          setDependenciesLoaded(true)
     
     // Smooth fade-in for all rugs together
     const timer = setTimeout(() => {
