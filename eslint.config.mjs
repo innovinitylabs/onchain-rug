@@ -18,7 +18,6 @@ const eslintConfig = [
       "build/**",
       "next-env.d.ts",
       "Doormat_original/**",
-      "public/lib/doormat/**",
     ],
   },
   ...compat.extends("next/core-web-vitals"),
