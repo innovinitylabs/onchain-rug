@@ -10,10 +10,20 @@ import PerformanceMonitor from '@/components/PerformanceMonitor'
 
 export default function Home() {
   const [animationKey, setAnimationKey] = useState(0)
+  const [showAnimatedRugs, setShowAnimatedRugs] = useState(false)
 
   // Force re-mount of AnimatedRugs when component mounts (navigation back)
   useEffect(() => {
     setAnimationKey(prev => prev + 1)
+  }, [])
+
+  // Delay AnimatedRugs to start after Hero content is animated
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowAnimatedRugs(true)
+    }, 1500) // Start after Hero text animations (1.2s) but before SVG animations (2.5s)
+
+    return () => clearTimeout(timer)
   }, [])
 
   return (
@@ -22,9 +32,11 @@ export default function Home() {
       <PerformanceMonitor />
       {/* Hero Section with 3D Flying Rugs - Performance Optimized */}
       <section className="relative h-screen overflow-hidden" style={{ willChange: 'auto' }}>
-        <Suspense fallback={<div className="h-screen bg-gradient-to-br from-amber-100 to-orange-100" />}>
-          <AnimatedRugs key={animationKey} />
-        </Suspense>
+        {showAnimatedRugs && (
+          <Suspense fallback={<div className="h-screen bg-gradient-to-br from-amber-100 to-orange-100" />}>
+            <AnimatedRugs key={animationKey} />
+          </Suspense>
+        )}
         <div style={{ willChange: 'auto' }}>
           <Hero />
         </div>
