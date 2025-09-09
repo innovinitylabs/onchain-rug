@@ -18,7 +18,7 @@ export default function Navigation() {
           <Link href="/" className="flex items-center gap-2">
             <span className="text-2xl">🧶</span>
             <span className="text-xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
-              ONCHAIN RUG
+              ONCHAIN RUGS
             </span>
           </Link>
 

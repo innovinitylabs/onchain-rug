@@ -194,7 +194,7 @@ export default function Gallery() {
             🎨 Gallery
           </h2>
           <p className="text-xl text-amber-700/70 max-w-3xl mx-auto mb-8">
-            Explore unique onchain rug designs showcasing the diversity of our generative art system.
+            Explore unique onchain rugs designs showcasing the diversity of our generative art system.
             Each piece tells a story woven into the fabric of tradition and innovation.
           </p>
           

@@ -80,7 +80,7 @@ export default function Features() {
           </h2>
           <p className="text-xl text-amber-700/70 max-w-3xl mx-auto">
             Revolutionary generative art meets traditional textile craftsmanship. 
-            Each onchain rug is a unique masterpiece with deep cultural roots.
+            Each onchain rugs is a unique masterpiece with deep cultural roots.
           </p>
         </motion.div>
 

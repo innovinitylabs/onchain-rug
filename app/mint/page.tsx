@@ -46,10 +46,10 @@ export default function MintPage() {
             className="text-center mb-12"
           >
             <h1 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent mb-6">
-              🚀 Mint Your Onchain Rug
+              🚀 Mint Your Onchain Rugs
             </h1>
             <p className="text-xl text-amber-700/70 max-w-2xl mx-auto">
-              Create a unique, generative onchain rug NFT with custom text and authentic weaving patterns.
+              Create a unique, generative onchain rugs NFT with custom text and authentic weaving patterns.
               Your rug will be one of only 1111 ever created.
             </p>
           </motion.div>
@@ -62,7 +62,7 @@ export default function MintPage() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="bg-white/60 backdrop-blur-sm rounded-2xl p-8 shadow-lg border border-amber-200/50"
             >
-              <h2 className="text-2xl font-bold text-amber-800 mb-6">🎨 Customize Your Onchain Rug</h2>
+              <h2 className="text-2xl font-bold text-amber-800 mb-6">🎨 Customize Your Onchain Rugs</h2>
               
               {/* Text Input */}
               <div className="mb-6">
@@ -165,7 +165,7 @@ export default function MintPage() {
                     ) : (
                       <>
                         <Zap className="w-6 h-6" />
-                        Mint Onchain Rug NFT
+                        Mint Onchain Rugs NFT
                       </>
                     )}
                   </motion.button>
@@ -194,7 +194,7 @@ export default function MintPage() {
                 <ul className="space-y-3 text-amber-700">
                   <li className="flex items-start gap-3">
                     <span className="text-green-500 mt-1">✓</span>
-                    <span>Unique generative onchain rug with authentic weaving patterns</span>
+                    <span>Unique generative onchain rugs with authentic weaving patterns</span>
                   </li>
                   <li className="flex items-start gap-3">
                     <span className="text-green-500 mt-1">✓</span>

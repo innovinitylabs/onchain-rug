@@ -62,7 +62,7 @@ export default function Hero() {
           >
             <span className="text-6xl md:text-8xl">🧶</span>
             <span className="bg-gradient-to-r from-amber-600 via-orange-600 to-red-600 bg-clip-text text-transparent">
-              ONCHAIN RUG
+              ONCHAIN RUGS
             </span>
           </motion.h1>
           
@@ -81,7 +81,8 @@ export default function Hero() {
             Generative Doormat Art on the Blockchain
           </motion.p>
           
-          <motion.p 
+          {/* Hidden description paragraph */}
+          {/* <motion.p 
             className="text-lg md:text-xl text-amber-700/70 mb-12 max-w-2xl mx-auto leading-relaxed"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -106,7 +107,7 @@ export default function Hero() {
             >
               Max supply: 1111 onchain rugs
             </span>
-          </motion.p>
+          </motion.p> */}
           
           <motion.div 
             className="flex flex-col sm:flex-row gap-6 justify-center items-center"
