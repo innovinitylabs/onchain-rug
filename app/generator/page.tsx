@@ -16,6 +16,8 @@ export default function GeneratorPage() {
   const [traits, setTraits] = useState<any>(null)
   const [showDirt, setShowDirt] = useState(false)
   const [dirtLevel, setDirtLevel] = useState(0) // 0 = clean, 1 = 50% dirty, 2 = full dirty
+  const [showTexture, setShowTexture] = useState(false)
+  const [textureLevel, setTextureLevel] = useState(0) // 0 = none, 1 = 7 days, 2 = 30 days
 
   const canvasContainerRef = useRef<HTMLDivElement>(null)
   const scriptsLoadedRef = useRef<Set<string>>(new Set())
@@ -955,8 +957,12 @@ export default function GeneratorPage() {
               drawStripeOriginal(p, stripe, doormatData, drawingPRNG)
             }
             
-            // Add overall texture overlay
-            drawTextureOverlayOriginal(p, doormatData)
+            // Add overall texture overlay if enabled
+            const currentShowTexture = (window as any).showTexture || false
+            const currentTextureLevel = (window as any).textureLevel || 0
+            if (currentShowTexture && currentTextureLevel > 0) {
+              drawTextureOverlayWithLevel(p, doormatData, currentTextureLevel)
+            }
             p.pop()
             
             // Draw fringe with adjusted positioning
@@ -1414,6 +1420,64 @@ export default function GeneratorPage() {
           p.fill(0, 0, 0, 20)
           p.noStroke()
           p.rect(x, y, 6, 6)
+        }
+      }
+    }
+    
+    p.pop()
+  }
+
+  // Enhanced texture overlay with time-based intensity levels
+  const drawTextureOverlayWithLevel = (p: any, doormatData: any, textureLevel: number) => {
+    const config = doormatData.config
+    
+    // Texture intensity based on level (1 = 7 days, 2 = 30 days)
+    const hatchingIntensity = textureLevel === 1 ? 30 : 80  // More intense after 30 days
+    const reliefIntensity = textureLevel === 1 ? 20 : 40    // More relief after 30 days
+    const reliefThreshold = textureLevel === 1 ? 0.6 : 0.5  // Lower threshold = more relief
+    
+    p.push()
+    p.blendMode(p.MULTIPLY)
+    
+    // Create hatching effect with variable intensity
+    for (let x = 0; x < config.DOORMAT_WIDTH; x += 2) {
+      for (let y = 0; y < config.DOORMAT_HEIGHT; y += 2) {
+        let noiseVal = p.noise(x * 0.02, y * 0.02)
+        let intensity = p.map(noiseVal, 0, 1, 0, hatchingIntensity)
+        
+        p.fill(0, 0, 0, intensity)
+        p.noStroke()
+        p.rect(x, y, 2, 2)
+      }
+    }
+    
+    // Add relief effect with variable intensity
+    for (let x = 0; x < config.DOORMAT_WIDTH; x += 6) {
+      for (let y = 0; y < config.DOORMAT_HEIGHT; y += 6) {
+        let reliefNoise = p.noise(x * 0.03, y * 0.03)
+        if (reliefNoise > reliefThreshold) {
+          p.fill(255, 255, 255, reliefIntensity)
+          p.noStroke()
+          p.rect(x, y, 6, 6)
+        } else if (reliefNoise < (1 - reliefThreshold)) {
+          p.fill(0, 0, 0, reliefIntensity * 0.8)
+          p.noStroke()
+          p.rect(x, y, 6, 6)
+        }
+      }
+    }
+    
+    // Add additional wear patterns for 30-day level
+    if (textureLevel === 2) {
+      // Add more pronounced wear lines
+      for (let x = 0; x < config.DOORMAT_WIDTH; x += 8) {
+        for (let y = 0; y < config.DOORMAT_HEIGHT; y += 8) {
+          let wearNoise = p.noise(x * 0.01, y * 0.01)
+          if (wearNoise > 0.7) {
+            p.fill(0, 0, 0, 15)
+            p.noStroke()
+            p.rect(x, y, 8, 2) // Horizontal wear lines
+          }
         }
       }
     }
@@ -2078,6 +2142,21 @@ export default function GeneratorPage() {
     }
   }
 
+  // Update texture state and redraw
+  const updateTextureState = (newShowTexture: boolean, newTextureLevel: number) => {
+    setShowTexture(newShowTexture)
+    setTextureLevel(newTextureLevel)
+    
+    // Store globally for P5.js access
+    ;(window as any).showTexture = newShowTexture
+    ;(window as any).textureLevel = newTextureLevel
+    
+    // Redraw canvas if P5.js instance exists
+    if ((window as any).p5Instance) {
+      ;(window as any).p5Instance.redraw()
+    }
+  }
+
   // Generate from seed
   const generateFromSeed = () => {
     if ((window as any).p5Instance) {
@@ -2555,6 +2634,59 @@ export default function GeneratorPage() {
                           }`}
                         >
                           100%
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Texture System Controls */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-green-300 text-sm font-mono font-medium">TEXTURE SYSTEM</h4>
+                    <span className="text-green-500 text-xs font-mono">
+                      {showTexture ? `${textureLevel === 1 ? '7 days' : '30 days'} wear` : 'Smooth'}
+                    </span>
+                  </div>
+                  
+                  <div className="text-green-400 text-xs font-mono bg-gray-900/50 p-2 rounded border border-green-500/30">
+                    Time-based texture wear: appears after 7 days, intensifies after 30 days. Creates realistic fabric aging.
+                  </div>
+
+                  {/* Texture Toggle */}
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => updateTextureState(!showTexture, textureLevel)}
+                      className={`px-3 py-1.5 rounded font-mono text-xs transition-all duration-200 border ${
+                        showTexture 
+                          ? 'bg-purple-600/80 hover:bg-purple-600 text-white border-purple-400' 
+                          : 'bg-gray-600/80 hover:bg-gray-600 text-white border-gray-400'
+                      }`}
+                    >
+                      {showTexture ? 'HIDE TEXTURE' : 'SHOW TEXTURE'}
+                    </button>
+                    
+                    {showTexture && (
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => updateTextureState(showTexture, 1)}
+                          className={`px-2 py-1 rounded font-mono text-xs transition-all duration-200 border ${
+                            textureLevel === 1 
+                              ? 'bg-blue-600 text-white border-blue-400' 
+                              : 'bg-gray-700 text-gray-300 border-gray-500 hover:bg-gray-600'
+                          }`}
+                        >
+                          7 DAYS
+                        </button>
+                        <button
+                          onClick={() => updateTextureState(showTexture, 2)}
+                          className={`px-2 py-1 rounded font-mono text-xs transition-all duration-200 border ${
+                            textureLevel === 2 
+                              ? 'bg-purple-600 text-white border-purple-400' 
+                              : 'bg-gray-700 text-gray-300 border-gray-500 hover:bg-gray-600'
+                          }`}
+                        >
+                          30 DAYS
                         </button>
                       </div>
                     )}
