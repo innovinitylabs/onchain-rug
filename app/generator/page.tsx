@@ -1963,8 +1963,9 @@ export default function GeneratorPage() {
 
   // Generate new doormat
   const generateNew = () => {
-    // Use the current seed from the input field
-    const seed = currentSeed
+    // Generate a random seed like before
+    const seed = Math.floor(Math.random() * 10000)
+    setCurrentSeed(seed)
     
     if ((window as any).p5Instance) {
       console.log('🎨 Generating new doormat with seed:', seed)
@@ -2295,7 +2296,8 @@ export default function GeneratorPage() {
               
               {/* Revamped Terminal Interface */}
               <div className="space-y-4">
-                {/* Seed Input Section */}
+                {/* Seed Input Section - Hidden but can be restored */}
+                {/* 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <h4 className="text-green-300 text-sm font-mono font-medium">SEED</h4>
@@ -2322,6 +2324,7 @@ export default function GeneratorPage() {
                     Same seed = identical doormat. Try: 4241, 1234, 9999
                   </div>
                 </div>
+                */}
 
                 {/* Primary Actions - Top Priority */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
