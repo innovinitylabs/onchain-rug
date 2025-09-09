@@ -70,7 +70,9 @@ export default function Hero() {
             transition={{ delay: 0.8, type: "tween" }}
             style={{ 
               willChange: 'opacity',
-              textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
+              textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
+              mixBlendMode: 'multiply',
+              filter: 'contrast(1.2) saturate(1.1)'
             }}
           >
             Generative Doormat Art on the Blockchain
@@ -83,7 +85,9 @@ export default function Hero() {
             transition={{ delay: 1, type: "tween" }}
             style={{ 
               willChange: 'transform, opacity',
-              textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)'
+              textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)',
+              mixBlendMode: 'multiply',
+              filter: 'contrast(1.1) saturate(1.05)'
             }}
           >
             Each NFT is a unique, woven masterpiece with 102 color palettes, and 
@@ -92,7 +96,9 @@ export default function Hero() {
             <span 
               className="font-semibold"
               style={{
-                textShadow: '0 1px 3px rgba(0, 0, 0, 0.4)'
+                textShadow: '0 1px 3px rgba(0, 0, 0, 0.4)',
+                mixBlendMode: 'multiply',
+                filter: 'contrast(1.3) saturate(1.15)'
               }}
             >
               Max supply: 1111 onchain rugs
