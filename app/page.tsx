@@ -21,7 +21,7 @@ export default function Home() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowAnimatedRugs(true)
-    }, 1500) // Start after Hero text animations (1.2s) but before SVG animations (2.5s)
+    }, 1000) // Start after Hero text animations (1.2s) but before SVG animations (2.5s)
 
     return () => clearTimeout(timer)
   }, [])
