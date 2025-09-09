@@ -2271,7 +2271,7 @@ export default function GeneratorPage() {
               <div className="flex items-center justify-between mb-3 pb-2 border-b border-green-500/30">
                 <div className="flex items-center space-x-2">
                   <span className="text-green-400">$</span>
-                  <span className="text-green-300">rug-generator</span>
+                  <span className="text-green-300">rug-terminal</span>
                   <span className="text-green-500">&gt;</span>
                 </div>
                 <div className="text-sm text-green-500">
@@ -2279,77 +2279,109 @@ export default function GeneratorPage() {
                   </div>
               </div>
               
-              {/* Simple Terminal Commands */}
-              <div className="space-y-3">
-                {/* Generate and Save */}
-                <div className="flex gap-3">
+              {/* Revamped Terminal Interface */}
+              <div className="space-y-4">
+                {/* Primary Actions - Top Priority */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <button
                     onClick={generateNew}
                     disabled={!isLoaded}
-                    className="bg-green-600 hover:bg-green-700 disabled:bg-gray-700 text-black font-bold px-6 py-3 rounded font-mono transition-colors border border-green-400"
+                    className="bg-green-600 hover:bg-green-700 disabled:bg-gray-700 text-black font-bold px-4 py-2.5 rounded font-mono transition-all duration-200 border border-green-400 flex items-center justify-center gap-2 text-sm"
                   >
-                    <Shuffle className="w-5 h-5 mr-2" />
+                    <Shuffle className="w-4 h-4" />
                     GENERATE
                   </button>
                   <button
                     onClick={saveDoormat}
                     disabled={!isLoaded}
-                    className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 text-white px-6 py-3 rounded font-mono transition-colors border border-blue-400"
+                    className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 text-white px-4 py-2.5 rounded font-mono transition-all duration-200 border border-blue-400 flex items-center justify-center gap-2 text-sm"
                   >
-                    <Download className="w-5 h-5 mr-2" />
+                    <Download className="w-4 h-4" />
                     SAVE
                   </button>
                 </div>
-                
-                {/* Text Input */}
-                <div className="space-y-2">
-                  <div className="text-green-300 text-xs">Add text to rug (max 11 chars per row): A-Z, 0-9, space, ? _ ! @ # $ & % + - ( ) [ ] * = &apos; &quot;</div>
-                  {textInputs.map((text, index) => (
-                    <div key={index} className="flex gap-2">
-                      <span className="text-green-400 font-mono">$</span>
-                      <input
-                        type="text"
-                        value={text}
-                        onChange={(e) => updateTextInput(index, e.target.value)}
-                        placeholder={`text_${index + 1}`}
-                        maxLength={11}
-                        className="flex-1 px-3 py-2 bg-gray-900 border border-green-500/50 text-green-400 rounded focus:ring-2 focus:ring-green-500 focus:border-transparent font-mono"
-                      />
-                      {index > 0 && (
-                        <button
-                          onClick={() => removeTextRow(index)}
-                          className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded font-mono transition-colors"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
-                  ))}
+
+                {/* Text Input Section */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-green-300 text-sm font-mono font-medium">TEXT EMBEDDING</h4>
+                    <span className="text-green-500 text-xs font-mono">{currentRowCount}/5 rows</span>
+                  </div>
                   
-                  {/* Text Control Buttons */}
-                  <div className="flex gap-2 pt-1">
+                  <div className="text-green-400 text-xs font-mono bg-gray-900/50 p-2 rounded border border-green-500/30">
+                    Allowed: A-Z, 0-9, space, ? _ ! @ # $ & % + - ( ) [ ] * = &apos; &quot;
+                  </div>
+
+                  {/* Compact Text Inputs */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                    {textInputs.map((text, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <span className="text-green-400 font-mono text-sm min-w-[20px]">{index + 1}.</span>
+                        <input
+                          type="text"
+                          value={text}
+                          onChange={(e) => updateTextInput(index, e.target.value)}
+                          placeholder={`Row ${index + 1}`}
+                          maxLength={11}
+                          className="flex-1 px-2 py-1.5 bg-gray-900 border border-green-500/50 text-green-400 rounded text-sm font-mono focus:ring-1 focus:ring-green-500 focus:border-transparent transition-all"
+                        />
+                        {index > 0 && (
+                          <button
+                            onClick={() => removeTextRow(index)}
+                            className="bg-red-600/80 hover:bg-red-600 text-white p-1 rounded transition-colors"
+                            title="Remove row"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Text Control Actions */}
+                  <div className="flex flex-wrap gap-2">
                     {currentRowCount < 5 && (
                       <button
                         onClick={addTextRow}
-                        className="bg-green-600 hover:bg-green-700 text-black font-bold px-4 py-2 rounded font-mono transition-colors border border-green-400"
+                        className="bg-green-600/80 hover:bg-green-600 text-black font-bold px-3 py-1.5 rounded font-mono transition-all duration-200 border border-green-400 flex items-center gap-1.5 text-xs"
                       >
-                        <Plus className="w-4 h-4 mr-2" />
+                        <Plus className="w-3 h-3" />
                         ADD ROW
                       </button>
                     )}
                     <button
                       onClick={addTextToDoormat}
                       disabled={!isLoaded}
-                      className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-700 text-white px-4 py-2 rounded font-mono transition-colors border border-purple-400"
+                      className="bg-purple-600/80 hover:bg-purple-600 disabled:bg-gray-700 text-white px-3 py-1.5 rounded font-mono transition-all duration-200 border border-purple-400 flex items-center gap-1.5 text-xs"
                     >
-                      <FileText className="w-4 h-4 mr-2" />
-                      EMBED TEXT
+                      <FileText className="w-3 h-3" />
+                      EMBED
                     </button>
                     <button
                       onClick={clearText}
-                      className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded font-mono transition-colors border border-gray-400"
+                      className="bg-gray-600/80 hover:bg-gray-600 text-white px-3 py-1.5 rounded font-mono transition-all duration-200 border border-gray-400 text-xs"
                     >
                       CLEAR
+                    </button>
+                  </div>
+                </div>
+
+                {/* Additional Controls Section */}
+                <div className="space-y-3">
+                  <h4 className="text-green-300 text-sm font-mono font-medium">CONTROLS</h4>
+                  
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <button className="bg-amber-600/80 hover:bg-amber-600 text-black px-3 py-2 rounded font-mono transition-all duration-200 border border-amber-400 text-xs">
+                      PALETTE
+                    </button>
+                    <button className="bg-cyan-600/80 hover:bg-cyan-600 text-white px-3 py-2 rounded font-mono transition-all duration-200 border border-cyan-400 text-xs">
+                      PATTERN
+                    </button>
+                    <button className="bg-pink-600/80 hover:bg-pink-600 text-white px-3 py-2 rounded font-mono transition-all duration-200 border border-pink-400 text-xs">
+                      STRIPES
+                    </button>
+                    <button className="bg-indigo-600/80 hover:bg-indigo-600 text-white px-3 py-2 rounded font-mono transition-all duration-200 border border-indigo-400 text-xs">
+                      WARP
                     </button>
                   </div>
                 </div>
