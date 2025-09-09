@@ -54,13 +54,16 @@ export default function Hero() {
           style={{ willChange: 'transform, opacity' }}
         >
           <motion.h1 
-            className="text-6xl md:text-8xl font-extrabold bg-gradient-to-r from-amber-600 via-orange-600 to-red-600 bg-clip-text text-transparent mb-6"
+            className="text-6xl md:text-8xl font-extrabold mb-6 flex items-center justify-center gap-4"
             initial={{ scale: 0.9 }}
             animate={{ scale: 1 }}
             transition={{ duration: 0.8, delay: 0.5, type: "tween" }}
             style={{ willChange: 'transform' }}
           >
-            🧶 ONCHAIN RUG
+            <span className="text-6xl md:text-8xl">🧶</span>
+            <span className="bg-gradient-to-r from-amber-600 via-orange-600 to-red-600 bg-clip-text text-transparent">
+              ONCHAIN RUG
+            </span>
           </motion.h1>
           
           <motion.p 
