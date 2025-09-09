@@ -985,6 +985,15 @@ export default function GeneratorPage() {
     initPRNG(seed)
     const prng = getPRNG()
     
+    // Test PRNG determinism - log first few values
+    console.log('🧪 PRNG Test - First 5 values:', [
+      prng.next().toFixed(6),
+      prng.next().toFixed(6), 
+      prng.next().toFixed(6),
+      prng.next().toFixed(6),
+      prng.next().toFixed(6)
+    ])
+    
     // RARITY-BASED WARP THICKNESS SELECTION
     // Limited to 1-4 to prevent text clipping with 5 lines
     const warpThicknessWeights = {
@@ -1954,6 +1963,7 @@ export default function GeneratorPage() {
 
   // Generate new doormat
   const generateNew = () => {
+    // Generate a random seed like before
     const seed = Math.floor(Math.random() * 10000)
     setCurrentSeed(seed)
     
@@ -2286,6 +2296,36 @@ export default function GeneratorPage() {
               
               {/* Revamped Terminal Interface */}
               <div className="space-y-4">
+                {/* Seed Input Section - Hidden but can be restored */}
+                {/* 
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-green-300 text-sm font-mono font-medium">SEED</h4>
+                    <span className="text-green-500 text-xs font-mono">Deterministic generation</span>
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      value={currentSeed}
+                      onChange={(e) => setCurrentSeed(parseInt(e.target.value) || 42)}
+                      placeholder="Enter seed number"
+                      className="flex-1 px-3 py-2 bg-gray-900 border border-green-500/50 text-green-400 rounded text-sm font-mono focus:ring-1 focus:ring-green-500 focus:border-transparent transition-all"
+                    />
+                    <button
+                      onClick={() => setCurrentSeed(Math.floor(Math.random() * 100000))}
+                      className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded font-mono text-sm transition-colors border border-purple-400"
+                    >
+                      RANDOM
+                    </button>
+                  </div>
+                  
+                  <div className="text-green-400 text-xs font-mono bg-gray-900/50 p-2 rounded border border-green-500/30">
+                    Same seed = identical doormat. Try: 4241, 1234, 9999
+                  </div>
+                </div>
+                */}
+
                 {/* Primary Actions - Top Priority */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <button
