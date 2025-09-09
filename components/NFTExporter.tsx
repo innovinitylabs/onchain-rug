@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { initPRNG, getPRNG, createDerivedPRNG } from '@/lib/DeterministicPRNG';
 
 interface NFTExporterProps {
   currentSeed: number;
@@ -338,9 +339,33 @@ let lightTextColor, darkTextColor;
         }
 
 function setup() {
-            // Set the random seed to recreate the exact same doormat
-    randomSeed(${seed});
+            // Initialize deterministic PRNG to recreate the exact same doormat
+    // Note: PRNG is initialized in the generation phase, not here
     noiseSeed(${seed});
+    
+    // Initialize deterministic PRNG for drawing operations
+    // This ensures the exported NFT uses the same deterministic system
+    window.initPRNG = function(seed) {
+        // Simple LCG implementation for exported HTML
+        window.prngSeed = seed % 2147483647;
+        if (window.prngSeed <= 0) window.prngSeed += 2147483646;
+    };
+    
+    window.prngNext = function() {
+        window.prngSeed = (window.prngSeed * 16807) % 2147483647;
+        return (window.prngSeed - 1) / 2147483646;
+    };
+    
+    window.prngRange = function(min, max) {
+        return min + window.prngNext() * (max - min);
+    };
+    
+    window.prngChoice = function(array) {
+        return array[Math.floor(window.prngNext() * array.length)];
+    };
+    
+    // Initialize with the seed
+    window.initPRNG(${seed});
     
             // Create canvas with swapped dimensions for 90-degree rotation
             let canvas = createCanvas(doormatHeight + (fringeLength * 4), doormatWidth + (fringeLength * 4));
@@ -436,9 +461,9 @@ function draw() {
                     }
                     
                     // Add subtle variation to warp threads
-                    let r = red(warpColor) + random(-15, 15);
-                    let g = green(warpColor) + random(-15, 15);
-                    let b = blue(warpColor) + random(-15, 15);
+                    let r = red(warpColor) + window.prngRange(-15, 15);
+                    let g = green(warpColor) + window.prngRange(-15, 15);
+                    let b = blue(warpColor) + window.prngRange(-15, 15);
                     
                     // Modify color for text pixels (vertical lines use weft thickness)
                     if (isTextPixel) {
@@ -488,9 +513,9 @@ function draw() {
                     }
                     
                     // Add fabric irregularities
-                    let r = red(weftColor) + random(-20, 20);
-                    let g = green(weftColor) + random(-20, 20);
-                    let b = blue(weftColor) + random(-20, 20);
+                    let r = red(weftColor) + window.prngRange(-20, 20);
+                    let g = green(weftColor) + window.prngRange(-20, 20);
+                    let b = blue(weftColor) + window.prngRange(-20, 20);
                     
                     // Modify color for text pixels (horizontal lines use warp thickness)
                     if (isTextPixel) {
@@ -616,13 +641,13 @@ function drawSelvedgeEdges() {
                     fill(r, g, b);
                     noStroke();
                     
-                    let radius = weftThickness * random(1.2, 1.8); // Vary size slightly
-                    let centerX = fringeLength * 2 + random(-2, 2); // Slight position variation
-                    let centerY = fringeLength * 2 + y + weftThickness/2 + random(-1, 1); // Slight vertical variation
+                    let radius = weftThickness * window.prngRange(1.2, 1.8); // Vary size slightly
+                    let centerX = fringeLength * 2 + window.prngRange(-2, 2); // Slight position variation
+                    let centerY = fringeLength * 2 + y + weftThickness/2 + window.prngRange(-1, 1); // Slight vertical variation
                     
                     // Vary the arc angles for more natural look
-                    let startAngle = HALF_PI + random(-0.2, 0.2);
-                    let endAngle = -HALF_PI + random(-0.2, 0.2);
+                    let startAngle = HALF_PI + window.prngRange(-0.2, 0.2);
+                    let endAngle = -HALF_PI + window.prngRange(-0.2, 0.2);
                     
                     // Draw textured semicircle with individual thread details
                     drawTexturedSelvedgeArc(centerX, centerY, radius, startAngle, endAngle, r, g, b, 'left');
@@ -665,13 +690,13 @@ function drawSelvedgeEdges() {
                     fill(r, g, b);
                     noStroke();
                     
-                    let radius = weftThickness * random(1.2, 1.8); // Vary size slightly
-                    let centerX = fringeLength * 2 + doormatWidth + random(-2, 2); // Slight position variation
-                    let centerY = fringeLength * 2 + y + weftThickness/2 + random(-1, 1); // Slight vertical variation
+                    let radius = weftThickness * window.prngRange(1.2, 1.8); // Vary size slightly
+                    let centerX = fringeLength * 2 + doormatWidth + window.prngRange(-2, 2); // Slight position variation
+                    let centerY = fringeLength * 2 + y + weftThickness/2 + window.prngRange(-1, 1); // Slight vertical variation
                     
                     // Vary the arc angles for more natural look
-                    let startAngle = -HALF_PI + random(-0.2, 0.2);
-                    let endAngle = HALF_PI + random(-0.2, 0.2);
+                    let startAngle = -HALF_PI + window.prngRange(-0.2, 0.2);
+                    let endAngle = HALF_PI + window.prngRange(-0.2, 0.2);
                     
                     // Draw textured semicircle with individual thread details
                     drawTexturedSelvedgeArc(centerX, centerY, radius, startAngle, endAngle, r, g, b, 'right');
@@ -704,17 +729,17 @@ function drawSelvedgeEdges() {
                 }
                 
                 // Add some random variation for natural look
-                threadR = constrain(threadR + random(-10, 10), 0, 255);
-                threadG = constrain(threadG + random(-10, 10), 0, 255);
-                threadB = constrain(threadB + random(-10, 10), 0, 255);
+                threadR = constrain(threadR + window.prngRange(-10, 10), 0, 255);
+                threadG = constrain(threadG + window.prngRange(-10, 10), 0, 255);
+                threadB = constrain(threadB + window.prngRange(-10, 10), 0, 255);
                 
                 fill(threadR, threadG, threadB, 88); // More transparent for better blending
                 
                 // Draw individual thread arc with slight position variation
-                let threadX = centerX + random(-1, 1);
-                let threadY = centerY + random(-1, 1);
-                let threadStartAngle = startAngle + random(-0.1, 0.1);
-                let threadEndAngle = endAngle + random(-0.1, 0.1);
+                let threadX = centerX + window.prngRange(-1, 1);
+                let threadY = centerY + window.prngRange(-1, 1);
+                let threadStartAngle = startAngle + window.prngRange(-0.1, 0.1);
+                let threadEndAngle = endAngle + window.prngRange(-0.1, 0.1);
                 
                 arc(threadX, threadY, threadRadius * 2, threadRadius * 2, threadStartAngle, threadEndAngle);
             }
@@ -731,10 +756,10 @@ function drawSelvedgeEdges() {
                 
                 fill(detailR, detailG, detailB, detailAlpha * 0.7); // More transparent detail layers
                 
-                let detailX = centerX + random(-0.5, 0.5);
-                let detailY = centerY + random(-0.5, 0.5);
-                let detailStartAngle = startAngle + random(-0.05, 0.05);
-                let detailEndAngle = endAngle + random(-0.05, 0.05);
+                let detailX = centerX + window.prngRange(-0.5, 0.5);
+                let detailY = centerY + window.prngRange(-0.5, 0.5);
+                let detailStartAngle = startAngle + window.prngRange(-0.05, 0.05);
+                let detailEndAngle = endAngle + window.prngRange(-0.05, 0.05);
                 
                 arc(detailX, detailY, detailRadius * 2, detailRadius * 2, detailStartAngle, detailEndAngle);
             }
@@ -750,8 +775,8 @@ function drawSelvedgeEdges() {
             
             // Add visible texture details - small bumps and knots
             for (let i = 0; i < 8; i++) {
-                let detailAngle = random(startAngle, endAngle);
-                let detailRadius = radius * random(0.2, 0.7);
+                let detailAngle = window.prngRange(startAngle, endAngle);
+                let detailRadius = radius * window.prngRange(0.2, 0.7);
                 let detailX = centerX + cos(detailAngle) * detailRadius;
                 let detailY = centerY + sin(detailAngle) * detailRadius;
                 
@@ -763,7 +788,7 @@ function drawSelvedgeEdges() {
                 }
                 
                 noStroke();
-                ellipse(detailX, detailY, random(1.5, 3.5), random(1.5, 3.5));
+                ellipse(detailX, detailY, window.prngRange(1.5, 3.5), window.prngRange(1.5, 3.5));
             }
         }
         
@@ -779,22 +804,22 @@ function drawSelvedgeEdges() {
                     return;
                 }
                 
-                let strandColor = random(selectedPalette.colors);
+                let strandColor = window.prngChoice(selectedPalette.colors);
                 
                 // Draw individual fringe strand with thin threads
                 for (let j = 0; j < 12; j++) { // More but thinner threads per strand
-                    let threadX = strandX + random(-strandWidth/6, strandWidth/6);
+                    let threadX = strandX + window.prngRange(-strandWidth/6, strandWidth/6);
                     let startY = side === 'top' ? y + h : y;
                     let endY = side === 'top' ? y : y + h;
                     
                     // Add natural curl/wave to the fringe with more variation
-                    let waveAmplitude = random(1, 4);
-                    let waveFreq = random(0.2, 0.8);
+                    let waveAmplitude = window.prngRange(1, 4);
+                    let waveFreq = window.prngRange(0.2, 0.8);
                     
                     // Randomize the direction and intensity for each thread
-                    let direction = random([-1, 1]); // Random left or right direction
-                    let curlIntensity = random(0.5, 2.0);
-                    let threadLength = random(0.8, 1.2); // Vary thread length
+                    let direction = window.prngChoice([-1, 1]); // Random left or right direction
+                    let curlIntensity = window.prngRange(0.5, 2.0);
+                    let threadLength = window.prngRange(0.8, 1.2); // Vary thread length
                     
                     // Use darker version of strand color for fringe
                     let fringeColor = color(strandColor);
@@ -803,7 +828,7 @@ function drawSelvedgeEdges() {
                     let b = blue(fringeColor) * 0.7;
                     
                     stroke(r, g, b);
-                    strokeWeight(random(0.5, 1.2)); // Vary thread thickness
+                    strokeWeight(window.prngRange(0.5, 1.2)); // Vary thread thickness
                     
                     noFill();
                     beginShape();
@@ -811,10 +836,10 @@ function drawSelvedgeEdges() {
                         let yPos = lerp(startY, endY, t * threadLength);
                         let xOffset = sin(t * PI * waveFreq) * waveAmplitude * t * direction * curlIntensity;
                         // Add more randomness and natural variation
-                        xOffset += random(-1, 1);
+                        xOffset += window.prngRange(-1, 1);
                         // Add occasional kinks and bends
-                        if (random() < 0.3) {
-                            xOffset += random(-2, 2);
+                        if (window.prngNext() < 0.3) {
+                            xOffset += window.prngRange(-2, 2);
                         }
                         vertex(threadX + xOffset, yPos);
                     }
