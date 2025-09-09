@@ -21,7 +21,7 @@ export default function ScrollIndicator() {
       const windowHeight = window.innerHeight
       
       // Show only when in the hero section (first 80% of viewport height)
-      const shouldShow = scrollY < windowHeight * 0.8
+      const shouldShow = scrollY < windowHeight * 0.69
       setIsVisible(shouldShow)
     }
 
@@ -40,7 +40,7 @@ export default function ScrollIndicator() {
       className="fixed bottom-10 left-1/2 transform -translate-x-1/2 z-[9999] pointer-events-none"
       initial={{ opacity: 0 }}
       animate={{ opacity: isVisible ? 1 : 0 }}
-      transition={{ delay: isVisible ? 1.5 : 0, duration: 0.5, ease: "easeOut" }}
+      transition={{ delay: isVisible ? 1 : 0, duration: 0.5, ease: "easeOut" }}
     >
       <motion.div
         animate={{ y: [0, 10, 0] }}
