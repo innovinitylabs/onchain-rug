@@ -13,6 +13,7 @@ import PerformanceMonitor from '@/components/PerformanceMonitor'
 export default function Home() {
   const [animationKey, setAnimationKey] = useState(0)
   const [showAnimatedRugs, setShowAnimatedRugs] = useState(false)
+  const [showScrollIndicator, setShowScrollIndicator] = useState(true)
 
   // Force re-mount of AnimatedRugs when component mounts (navigation back)
   useEffect(() => {
@@ -26,6 +27,19 @@ export default function Home() {
     }, 1000) // Start after Hero text animations (1.2s) but before SVG animations (2.5s)
 
     return () => clearTimeout(timer)
+  }, [])
+
+  // Hide scroll indicator when scrolling down
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollY = window.scrollY
+      const windowHeight = window.innerHeight
+      // Hide indicator when scrolled more than 50% of viewport height
+      setShowScrollIndicator(scrollY < windowHeight * 0.5)
+    }
+
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
   return (
@@ -44,17 +58,19 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Scroll indicator - Positioned outside Hero to avoid canvas conflicts */}
-      <div className="fixed bottom-10 left-1/2 transform -translate-x-1/2 z-[100] pointer-events-none">
-        <motion.div
-          animate={{ y: [0, 10, 0] }}
-          transition={{ duration: 2, repeat: Infinity, type: "tween" }}
-          className="text-amber-600 bg-white/20 backdrop-blur-sm rounded-full p-2 shadow-lg"
-          style={{ willChange: 'transform' }}
-        >
-          <ChevronDown className="w-8 h-8" />
-        </motion.div>
-      </div>
+      {/* Scroll indicator - Only visible on Hero section */}
+      {showScrollIndicator && (
+        <div className="fixed bottom-10 left-1/2 transform -translate-x-1/2 z-[100] pointer-events-none">
+          <motion.div
+            animate={{ y: [0, 10, 0] }}
+            transition={{ duration: 2, repeat: Infinity, type: "tween" }}
+            className="text-amber-600 bg-white/20 backdrop-blur-sm rounded-full p-2 shadow-lg"
+            style={{ willChange: 'transform' }}
+          >
+            <ChevronDown className="w-8 h-8" />
+          </motion.div>
+        </div>
+      )}
 
       {/* Features Section */}
       <Features />
