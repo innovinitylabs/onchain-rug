@@ -117,10 +117,10 @@ export default function Hero() {
 
         {/* Scroll indicator - Optimized for performance */}
         <motion.div 
-          className="fixed bottom-10 left-1/2 transform -translate-x-1/2 z-20"
+          className="fixed bottom-10 left-1/2 transform -translate-x-1/2 z-50"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 2000, type: "tween" }}
+          transition={{ delay: 1500, type: "tween" }}
           style={{ willChange: 'opacity' }}
         >
           <motion.div
