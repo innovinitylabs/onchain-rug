@@ -2300,7 +2300,7 @@ export default function GeneratorPage() {
                     SAVE
                   </button>
                 </div>
-
+                
                 {/* Text Input Section */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
@@ -2314,30 +2314,30 @@ export default function GeneratorPage() {
 
                   {/* Compact Text Inputs */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                    {textInputs.map((text, index) => (
+                  {textInputs.map((text, index) => (
                       <div key={index} className="flex items-center gap-2">
                         <span className="text-green-400 font-mono text-sm min-w-[20px]">{index + 1}.</span>
-                        <input
-                          type="text"
-                          value={text}
-                          onChange={(e) => updateTextInput(index, e.target.value)}
+                      <input
+                        type="text"
+                        value={text}
+                        onChange={(e) => updateTextInput(index, e.target.value)}
                           placeholder={`Row ${index + 1}`}
-                          maxLength={11}
+                        maxLength={11}
                           className="flex-1 px-2 py-1.5 bg-gray-900 border border-green-500/50 text-green-400 rounded text-sm font-mono focus:ring-1 focus:ring-green-500 focus:border-transparent transition-all"
-                        />
-                        {index > 0 && (
-                          <button
-                            onClick={() => removeTextRow(index)}
+                      />
+                      {index > 0 && (
+                        <button
+                          onClick={() => removeTextRow(index)}
                             className="bg-red-600/80 hover:bg-red-600 text-white p-1 rounded transition-colors"
                             title="Remove row"
-                          >
+                        >
                             <X className="w-3 h-3" />
-                          </button>
-                        )}
-                      </div>
-                    ))}
+                        </button>
+                      )}
+                    </div>
+                  ))}
                   </div>
-
+                  
                   {/* Text Control Actions */}
                   <div className="flex flex-wrap gap-2">
                     {currentRowCount < 5 && (
@@ -2366,25 +2366,6 @@ export default function GeneratorPage() {
                   </div>
                 </div>
 
-                {/* Additional Controls Section */}
-                <div className="space-y-3">
-                  <h4 className="text-green-300 text-sm font-mono font-medium">CONTROLS</h4>
-                  
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    <button className="bg-amber-600/80 hover:bg-amber-600 text-black px-3 py-2 rounded font-mono transition-all duration-200 border border-amber-400 text-xs">
-                      PALETTE
-                    </button>
-                    <button className="bg-cyan-600/80 hover:bg-cyan-600 text-white px-3 py-2 rounded font-mono transition-all duration-200 border border-cyan-400 text-xs">
-                      PATTERN
-                    </button>
-                    <button className="bg-pink-600/80 hover:bg-pink-600 text-white px-3 py-2 rounded font-mono transition-all duration-200 border border-pink-400 text-xs">
-                      STRIPES
-                    </button>
-                    <button className="bg-indigo-600/80 hover:bg-indigo-600 text-white px-3 py-2 rounded font-mono transition-all duration-200 border border-indigo-400 text-xs">
-                      WARP
-                    </button>
-                  </div>
-                </div>
                 
                 {/* NFT Export Section */}
                 <div className="border-t border-green-500/30 pt-3">
