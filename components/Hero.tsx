@@ -68,7 +68,10 @@ export default function Hero() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.8, type: "tween" }}
-            style={{ willChange: 'opacity' }}
+            style={{ 
+              willChange: 'opacity',
+              textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
+            }}
           >
             Generative Doormat Art on the Blockchain
           </motion.p>
@@ -78,12 +81,22 @@ export default function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1, type: "tween" }}
-            style={{ willChange: 'transform, opacity' }}
+            style={{ 
+              willChange: 'transform, opacity',
+              textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)'
+            }}
           >
             Each NFT is a unique, woven masterpiece with 102 color palettes, and 
             custom text embedding. 
             <br />
-            <span className="font-semibold">Max supply: 1111 onchain rugs</span>
+            <span 
+              className="font-semibold"
+              style={{
+                textShadow: '0 1px 3px rgba(0, 0, 0, 0.4)'
+              }}
+            >
+              Max supply: 1111 onchain rugs
+            </span>
           </motion.p>
           
           <motion.div 
