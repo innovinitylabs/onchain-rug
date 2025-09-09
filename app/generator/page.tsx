@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { Shuffle, Download, FileText, Plus, X } from 'lucide-react'
 import Navigation from '@/components/Navigation'
 import NFTExporter from '@/components/NFTExporter'
+import { initPRNG, getPRNG, createDerivedPRNG } from '@/lib/DeterministicPRNG'
 
 export default function GeneratorPage() {
   const [isLoaded, setIsLoaded] = useState(false)
@@ -930,6 +931,13 @@ export default function GeneratorPage() {
             // Use original doormat.js draw logic
             p.background(222, 222, 222)
             
+            // Ensure PRNG is initialized with current seed before drawing
+            const currentSeed = (window as any).currentSeed || 42
+            initPRNG(currentSeed)
+            
+            // Create derived PRNG for drawing operations
+            const drawingPRNG = createDerivedPRNG(2000)
+            
             // Rotate canvas 90 degrees clockwise (original)
             p.push()
             p.translate(p.width/2, p.height/2)
@@ -942,7 +950,7 @@ export default function GeneratorPage() {
             
             // Draw stripes using original logic
             for (const stripe of doormatData.stripeData) {
-              drawStripeOriginal(p, stripe, doormatData)
+              drawStripeOriginal(p, stripe, doormatData, drawingPRNG)
             }
             
             // Add overall texture overlay
@@ -950,8 +958,8 @@ export default function GeneratorPage() {
             p.pop()
             
             // Draw fringe with adjusted positioning
-            drawFringeOriginal(p, doormatData)
-            drawSelvedgeEdgesOriginal(p, doormatData)
+            drawFringeOriginal(p, doormatData, drawingPRNG)
+            drawSelvedgeEdgesOriginal(p, doormatData, drawingPRNG)
             
             p.pop() // End rotation
           }
@@ -971,11 +979,11 @@ export default function GeneratorPage() {
   const generateDoormatCore = (seed: number, doormatData: any) => {
     console.log('🎨 Generating doormat with seed:', seed)
     
-    // Set random warp thickness between 1 and 6 (like original)
-    const seededRandom = (seed: number) => {
-      const x = Math.sin(seed) * 10000
-      return x - Math.floor(x)
-    }
+    // Store seed globally for drawing function access
+    ;(window as any).currentSeed = seed
+    // Initialize deterministic PRNG for this generation
+    initPRNG(seed)
+    const prng = getPRNG()
     
     // RARITY-BASED WARP THICKNESS SELECTION
     // Limited to 1-4 to prevent text clipping with 5 lines
@@ -986,7 +994,7 @@ export default function GeneratorPage() {
       4: 0.30   // 30% - Medium
     }
     
-    const warpThicknessRoll = seededRandom(seed * 100)
+    const warpThicknessRoll = prng.next()
     let cumulativeWeight = 0
     let selectedWarpThickness = 3 // Default to most common
     
@@ -1032,11 +1040,8 @@ export default function GeneratorPage() {
     const stripes = []
     const { config, colorPalettes } = doormatData
     
-    // Simple seeded random function
-    const seededRandom = (seed: number) => {
-      const x = Math.sin(seed) * 10000
-      return x - Math.floor(x)
-    }
+    // Use derived PRNG for stripe generation
+    const stripePRNG = createDerivedPRNG(1000)
     
     // RARITY-BASED PALETTE SELECTION
     // Weighted generation for true rarity distribution
@@ -1049,7 +1054,7 @@ export default function GeneratorPage() {
     }
     
     // Roll for rarity tier first
-    const rarityRoll = seededRandom(seed * 2)
+    const rarityRoll = stripePRNG.next()
     let selectedRarity = 'Common'
     let cumulativeWeight = 0
     
@@ -1096,7 +1101,7 @@ export default function GeneratorPage() {
     }
     
     // Select random palette from the rarity tier
-    const tierPaletteIndex = Math.floor(seededRandom(seed * 3) * tierPalettes.length)
+    const tierPaletteIndex = Math.floor(stripePRNG.next() * tierPalettes.length)
     const selectedPaletteName = tierPalettes[tierPaletteIndex]
     const palette = colorPalettes.find(p => p.name === selectedPaletteName) || colorPalettes[0]
     
@@ -1110,7 +1115,7 @@ export default function GeneratorPage() {
     let currentY = 0
     
     // Decide stripe density pattern for this doormat
-    let densityType = seededRandom(seed * 2)
+    let densityType = stripePRNG.next()
     let minHeight, maxHeight
     
     if (densityType < 0.2) {
@@ -1132,20 +1137,20 @@ export default function GeneratorPage() {
       let stripeHeight
       if (densityType >= 0.4) {
         // Mixed density: add more randomization within the range
-        let variationType = seededRandom(seed * 3 + currentY)
+        let variationType = stripePRNG.next()
         if (variationType < 0.3) {
           // 30% thin stripes within mixed
-          stripeHeight = minHeight + (seededRandom(seed * 4 + currentY) * 20)
+          stripeHeight = minHeight + (stripePRNG.next() * 20)
         } else if (variationType < 0.6) {
           // 30% medium stripes within mixed
-          stripeHeight = minHeight + 15 + (seededRandom(seed * 5 + currentY) * (maxHeight - minHeight - 30))
+          stripeHeight = minHeight + 15 + (stripePRNG.next() * (maxHeight - minHeight - 30))
         } else {
           // 40% thick stripes within mixed
-          stripeHeight = maxHeight - 25 + (seededRandom(seed * 6 + currentY) * 25)
+          stripeHeight = maxHeight - 25 + (stripePRNG.next() * 25)
         }
       } else {
         // High/Low density: more consistent sizing
-        stripeHeight = minHeight + (seededRandom(seed * 7 + currentY) * (maxHeight - minHeight))
+        stripeHeight = minHeight + (stripePRNG.next() * (maxHeight - minHeight))
       }
       
       // Ensure we don't exceed the total height
@@ -1154,7 +1159,7 @@ export default function GeneratorPage() {
       }
       
       // Select colors for this stripe
-      let primaryColor = palette.colors[Math.floor(seededRandom(seed * 8 + currentY) * palette.colors.length)]
+      let primaryColor = palette.colors[Math.floor(stripePRNG.next() * palette.colors.length)]
       
       // RARITY-BASED SECONDARY COLOR GENERATION
       // Make blended colors rarer based on overall rarity
@@ -1176,12 +1181,12 @@ export default function GeneratorPage() {
         console.log(`🎨 ${selectedRarity} Secondary Color Chance: ${(secondaryColorChance * 100).toFixed(1)}%`)
       }
       
-      let hasSecondaryColor = seededRandom(seed * 9 + currentY) < secondaryColorChance
-      let secondaryColor = hasSecondaryColor ? palette.colors[Math.floor(seededRandom(seed * 10 + currentY) * palette.colors.length)] : null
+      let hasSecondaryColor = stripePRNG.next() < secondaryColorChance
+      let secondaryColor = hasSecondaryColor ? palette.colors[Math.floor(stripePRNG.next() * palette.colors.length)] : null
       
       // RARITY-BASED WEAVE PATTERN SELECTION
       // Make complex patterns rarer based on overall rarity
-      let weaveRand = seededRandom(seed * 11 + currentY)
+      let weaveRand = stripePRNG.next()
       let weaveType
       
       // Adjust probabilities based on palette rarity
@@ -1231,7 +1236,7 @@ export default function GeneratorPage() {
         primaryColor: primaryColor,
         secondaryColor: secondaryColor,
         weaveType: weaveType,
-        warpVariation: seededRandom(seed * 12 + currentY) * 0.4 + 0.1 // How much the weave varies
+        warpVariation: stripePRNG.next() * 0.4 + 0.1 // How much the weave varies
       }
       
       stripes.push(stripe)
@@ -1242,7 +1247,7 @@ export default function GeneratorPage() {
   }
 
   // Original doormat.js drawStripe function
-  const drawStripeOriginal = (p: any, stripe: any, doormatData: any) => {
+  const drawStripeOriginal = (p: any, stripe: any, doormatData: any, drawingPRNG: any) => {
     const config = doormatData.config
     const warpSpacing = doormatData.warpThickness + 1
     const weftSpacing = config.WEFT_THICKNESS + 1
@@ -1265,9 +1270,9 @@ export default function GeneratorPage() {
         }
         
         // Add subtle variation to warp threads
-        let r = p.red(warpColor) + p.random(-15, 15)
-        let g = p.green(warpColor) + p.random(-15, 15)
-        let b = p.blue(warpColor) + p.random(-15, 15)
+        let r = p.red(warpColor) + drawingPRNG.range(-15, 15)
+        let g = p.green(warpColor) + drawingPRNG.range(-15, 15)
+        let b = p.blue(warpColor) + drawingPRNG.range(-15, 15)
         
         // Modify color for text pixels (vertical lines use weft thickness)
         if (isTextPixel) {
@@ -1317,9 +1322,9 @@ export default function GeneratorPage() {
         }
         
         // Add fabric irregularities
-        let r = p.red(weftColor) + p.random(-20, 20)
-        let g = p.green(weftColor) + p.random(-20, 20)
-        let b = p.blue(weftColor) + p.random(-20, 20)
+        let r = p.red(weftColor) + drawingPRNG.range(-20, 20)
+        let g = p.green(weftColor) + drawingPRNG.range(-20, 20)
+        let b = p.blue(weftColor) + drawingPRNG.range(-20, 20)
         
         // Modify color for text pixels (horizontal lines use warp thickness)
         if (isTextPixel) {
@@ -1399,39 +1404,39 @@ export default function GeneratorPage() {
   }
 
   // Original doormat.js drawFringe function
-  const drawFringeOriginal = (p: any, doormatData: any) => {
+  const drawFringeOriginal = (p: any, doormatData: any, drawingPRNG: any) => {
     const config = doormatData.config
     // Top fringe (warp ends)
-    drawFringeSectionOriginal(p, config.FRINGE_LENGTH * 2, config.FRINGE_LENGTH, config.DOORMAT_WIDTH, config.FRINGE_LENGTH, 'top', doormatData)
+    drawFringeSectionOriginal(p, config.FRINGE_LENGTH * 2, config.FRINGE_LENGTH, config.DOORMAT_WIDTH, config.FRINGE_LENGTH, 'top', doormatData, drawingPRNG)
     
     // Bottom fringe (warp ends)
-    drawFringeSectionOriginal(p, config.FRINGE_LENGTH * 2, config.FRINGE_LENGTH * 2 + config.DOORMAT_HEIGHT, config.DOORMAT_WIDTH, config.FRINGE_LENGTH, 'bottom', doormatData)
+    drawFringeSectionOriginal(p, config.FRINGE_LENGTH * 2, config.FRINGE_LENGTH * 2 + config.DOORMAT_HEIGHT, config.DOORMAT_WIDTH, config.FRINGE_LENGTH, 'bottom', doormatData, drawingPRNG)
   }
 
   // Original doormat.js drawFringeSection function
-  const drawFringeSectionOriginal = (p: any, x: number, y: number, w: number, h: number, side: string, doormatData: any) => {
+  const drawFringeSectionOriginal = (p: any, x: number, y: number, w: number, h: number, side: string, doormatData: any, drawingPRNG: any) => {
     let fringeStrands = w / 12
     let strandWidth = w / fringeStrands
     
     for (let i = 0; i < fringeStrands; i++) {
       let strandX = x + i * strandWidth
       
-      let strandColor = p.random(doormatData.selectedPalette.colors)
+      let strandColor = drawingPRNG.choice(doormatData.selectedPalette.colors)
       
       // Draw individual fringe strand with thin threads
       for (let j = 0; j < 12; j++) {
-        let threadX = strandX + p.random(-strandWidth/6, strandWidth/6)
+        let threadX = strandX + drawingPRNG.range(-strandWidth/6, strandWidth/6)
         let startY = side === 'top' ? y + h : y
         let endY = side === 'top' ? y : y + h
         
         // Add natural curl/wave to the fringe with more variation
-        let waveAmplitude = p.random(1, 4)
-        let waveFreq = p.random(0.2, 0.8)
+        let waveAmplitude = drawingPRNG.range(1, 4)
+        let waveFreq = drawingPRNG.range(0.2, 0.8)
         
         // Randomize the direction and intensity for each thread
-        let direction = p.random([-1, 1])
-        let curlIntensity = p.random(0.5, 2.0)
-        let threadLength = p.random(0.8, 1.2)
+        let direction = drawingPRNG.choice([-1, 1])
+        let curlIntensity = drawingPRNG.range(0.5, 2.0)
+        let threadLength = drawingPRNG.range(0.8, 1.2)
         
         // Use darker version of strand color for fringe
         let fringeColor = p.color(strandColor)
@@ -1440,7 +1445,7 @@ export default function GeneratorPage() {
         let b = p.blue(fringeColor) * 0.7
         
         p.stroke(r, g, b)
-        p.strokeWeight(p.random(0.5, 1.2))
+        p.strokeWeight(drawingPRNG.range(0.5, 1.2))
         
         p.noFill()
         p.beginShape()
@@ -1448,10 +1453,10 @@ export default function GeneratorPage() {
           let yPos = p.lerp(startY, endY, t * threadLength)
           let xOffset = p.sin(t * p.PI * waveFreq) * waveAmplitude * t * direction * curlIntensity
           // Add more randomness and natural variation
-          xOffset += p.random(-1, 1)
+          xOffset += drawingPRNG.range(-1, 1)
           // Add occasional kinks and bends
-          if (p.random() < 0.3) {
-            xOffset += p.random(-2, 2)
+          if (drawingPRNG.next() < 0.3) {
+            xOffset += drawingPRNG.range(-2, 2)
           }
           p.vertex(threadX + xOffset, yPos)
         }
@@ -1461,7 +1466,7 @@ export default function GeneratorPage() {
   }
 
   // Original doormat.js drawSelvedgeEdges function
-  const drawSelvedgeEdgesOriginal = (p: any, doormatData: any) => {
+  const drawSelvedgeEdgesOriginal = (p: any, doormatData: any, drawingPRNG: any) => {
     const config = doormatData.config
     let weftSpacing = config.WEFT_THICKNESS + 1
     let isFirstWeft = true
@@ -1492,16 +1497,16 @@ export default function GeneratorPage() {
         p.fill(r, g, b)
         p.noStroke()
         
-        let radius = config.WEFT_THICKNESS * p.random(1.2, 1.8)
-        let centerX = config.FRINGE_LENGTH * 2 + p.random(-2, 2)
-        let centerY = config.FRINGE_LENGTH * 2 + y + config.WEFT_THICKNESS/2 + p.random(-1, 1)
+        let radius = config.WEFT_THICKNESS * drawingPRNG.range(1.2, 1.8)
+        let centerX = config.FRINGE_LENGTH * 2 + drawingPRNG.range(-2, 2)
+        let centerY = config.FRINGE_LENGTH * 2 + y + config.WEFT_THICKNESS/2 + drawingPRNG.range(-1, 1)
         
         // Vary the arc angles for more natural look
-        let startAngle = p.HALF_PI + p.random(-0.2, 0.2)
-        let endAngle = -p.HALF_PI + p.random(-0.2, 0.2)
+        let startAngle = p.HALF_PI + drawingPRNG.range(-0.2, 0.2)
+        let endAngle = -p.HALF_PI + drawingPRNG.range(-0.2, 0.2)
         
         // Draw textured semicircle with individual thread details
-        drawTexturedSelvedgeArcOriginal(p, centerX, centerY, radius, startAngle, endAngle, r, g, b, 'left')
+        drawTexturedSelvedgeArcOriginal(p, centerX, centerY, radius, startAngle, endAngle, r, g, b, 'left', drawingPRNG)
       }
     }
     
@@ -1532,22 +1537,22 @@ export default function GeneratorPage() {
         p.fill(r, g, b)
         p.noStroke()
         
-        let radius = config.WEFT_THICKNESS * p.random(1.2, 1.8)
-        let centerX = config.FRINGE_LENGTH * 2 + config.DOORMAT_WIDTH + p.random(-2, 2)
-        let centerY = config.FRINGE_LENGTH * 2 + y + config.WEFT_THICKNESS/2 + p.random(-1, 1)
+        let radius = config.WEFT_THICKNESS * drawingPRNG.range(1.2, 1.8)
+        let centerX = config.FRINGE_LENGTH * 2 + config.DOORMAT_WIDTH + drawingPRNG.range(-2, 2)
+        let centerY = config.FRINGE_LENGTH * 2 + y + config.WEFT_THICKNESS/2 + drawingPRNG.range(-1, 1)
         
         // Vary the arc angles for more natural look
-        let startAngle = -p.HALF_PI + p.random(-0.2, 0.2)
-        let endAngle = p.HALF_PI + p.random(-0.2, 0.2)
+        let startAngle = -p.HALF_PI + drawingPRNG.range(-0.2, 0.2)
+        let endAngle = p.HALF_PI + drawingPRNG.range(-0.2, 0.2)
         
         // Draw textured semicircle with individual thread details
-        drawTexturedSelvedgeArcOriginal(p, centerX, centerY, radius, startAngle, endAngle, r, g, b, 'right')
+        drawTexturedSelvedgeArcOriginal(p, centerX, centerY, radius, startAngle, endAngle, r, g, b, 'right', drawingPRNG)
       }
     }
   }
 
   // Original doormat.js drawTexturedSelvedgeArc function
-  const drawTexturedSelvedgeArcOriginal = (p: any, centerX: number, centerY: number, radius: number, startAngle: number, endAngle: number, r: number, g: number, b: number, side: string) => {
+  const drawTexturedSelvedgeArcOriginal = (p: any, centerX: number, centerY: number, radius: number, startAngle: number, endAngle: number, r: number, g: number, b: number, side: string, drawingPRNG: any) => {
     // Draw a realistic textured selvedge arc with visible woven texture
     let threadCount = p.max(6, p.floor(radius / 1.2))
     let threadSpacing = radius / threadCount
@@ -1572,17 +1577,17 @@ export default function GeneratorPage() {
       }
       
       // Add some random variation for natural look
-      threadR = p.constrain(threadR + p.random(-10, 10), 0, 255)
-      threadG = p.constrain(threadG + p.random(-10, 10), 0, 255)
-      threadB = p.constrain(threadB + p.random(-10, 10), 0, 255)
+      threadR = p.constrain(threadR + drawingPRNG.range(-10, 10), 0, 255)
+      threadG = p.constrain(threadG + drawingPRNG.range(-10, 10), 0, 255)
+      threadB = p.constrain(threadB + drawingPRNG.range(-10, 10), 0, 255)
       
       p.fill(threadR, threadG, threadB, 88)
       
       // Draw individual thread arc with slight position variation
-      let threadX = centerX + p.random(-1, 1)
-      let threadY = centerY + p.random(-1, 1)
-      let threadStartAngle = startAngle + p.random(-0.1, 0.1)
-      let threadEndAngle = endAngle + p.random(-0.1, 0.1)
+      let threadX = centerX + drawingPRNG.range(-1, 1)
+      let threadY = centerY + drawingPRNG.range(-1, 1)
+      let threadStartAngle = startAngle + drawingPRNG.range(-0.1, 0.1)
+      let threadEndAngle = endAngle + drawingPRNG.range(-0.1, 0.1)
       
       p.arc(threadX, threadY, threadRadius * 2, threadRadius * 2, threadStartAngle, threadEndAngle)
     }
@@ -1599,10 +1604,10 @@ export default function GeneratorPage() {
       
       p.fill(detailR, detailG, detailB, detailAlpha * 0.7)
       
-      let detailX = centerX + p.random(-0.5, 0.5)
-      let detailY = centerY + p.random(-0.5, 0.5)
-      let detailStartAngle = startAngle + p.random(-0.05, 0.05)
-      let detailEndAngle = endAngle + p.random(-0.05, 0.05)
+      let detailX = centerX + drawingPRNG.range(-0.5, 0.5)
+      let detailY = centerY + drawingPRNG.range(-0.5, 0.5)
+      let detailStartAngle = startAngle + drawingPRNG.range(-0.05, 0.05)
+      let detailEndAngle = endAngle + drawingPRNG.range(-0.05, 0.05)
       
       p.arc(detailX, detailY, detailRadius * 2, detailRadius * 2, detailStartAngle, detailEndAngle)
     }
@@ -1618,8 +1623,8 @@ export default function GeneratorPage() {
     
     // Add visible texture details - small bumps and knots
     for (let i = 0; i < 8; i++) {
-      let detailAngle = p.random(startAngle, endAngle)
-      let detailRadius = radius * p.random(0.2, 0.7)
+      let detailAngle = drawingPRNG.range(startAngle, endAngle)
+      let detailRadius = radius * drawingPRNG.range(0.2, 0.7)
       let detailX = centerX + p.cos(detailAngle) * detailRadius
       let detailY = centerY + p.sin(detailAngle) * detailRadius
       
@@ -1631,7 +1636,7 @@ export default function GeneratorPage() {
       }
       
       p.noStroke()
-      p.ellipse(detailX, detailY, p.random(1.5, 3.5), p.random(1.5, 3.5))
+      p.ellipse(detailX, detailY, drawingPRNG.range(1.5, 3.5), drawingPRNG.range(1.5, 3.5))
     }
   }
 
