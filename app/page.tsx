@@ -45,13 +45,7 @@ export default function Home() {
       </section>
 
       {/* Scroll indicator - Positioned outside Hero to avoid canvas conflicts */}
-      <motion.div 
-        className="fixed bottom-10 left-1/2 transform -translate-x-1/2 z-[100] pointer-events-none"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1000, type: "tween" }}
-        style={{ willChange: 'opacity' }}
-      >
+      <div className="fixed bottom-10 left-1/2 transform -translate-x-1/2 z-[100] pointer-events-none">
         <motion.div
           animate={{ y: [0, 10, 0] }}
           transition={{ duration: 2, repeat: Infinity, type: "tween" }}
@@ -60,7 +54,7 @@ export default function Home() {
         >
           <ChevronDown className="w-8 h-8" />
         </motion.div>
-      </motion.div>
+      </div>
 
       {/* Features Section */}
       <Features />
