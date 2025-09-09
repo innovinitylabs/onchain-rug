@@ -3,9 +3,16 @@
 import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
 import { ChevronDown } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 export default function ScrollIndicator() {
-  if (typeof window === 'undefined') return null
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) return null
   
   return createPortal(
     <motion.div 
