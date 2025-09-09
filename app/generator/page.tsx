@@ -2197,7 +2197,7 @@ export default function GeneratorPage() {
               </div>
 
                   {/* Monitor Base - Taller Frame with Logo */}
-                  <div className="bg-amber-100 mt-2 pt-3 pb-4 rounded-b-xl border-t-3 border-amber-200">
+                  <div className="bg-amber-100 mt-1 pt-2 pb-2 rounded-b-xl border-t-2 border-amber-200">
                     {/* Rugpull Computer Logo and Text */}
                     <div className="flex flex-col items-center space-y-1 md:space-y-2">
                       <div className="w-4 h-4 md:w-5 md:h-5 lg:w-6 lg:h-6 xl:w-7 xl:h-7 bg-amber-200 rounded-full p-0.5 md:p-1 lg:p-1 xl:p-1">
@@ -2208,7 +2208,7 @@ export default function GeneratorPage() {
                         />
                       </div>
                       <div className="text-center">
-                        <h3 className="text-xs md:text-sm lg:text-base xl:text-lg font-medium text-amber-800" style={{ fontFamily: 'Apple Garamond, Garamond, serif' }}>
+                        <h3 className="text-xs md:text-xs lg:text-sm xl:text-sm font-medium text-amber-800" style={{ fontFamily: 'Apple Garamond, Garamond, serif' }}>
                           Rugpull Computer
                         </h3>
                       </div>
