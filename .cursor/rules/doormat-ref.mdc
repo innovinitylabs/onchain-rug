@@ -1,0 +1,5 @@
+---
+description: Doormat folder is the osurce of turth for art made with p5JS dont modify it 
+globs: doormat/*
+alwaysApply: true
+---
