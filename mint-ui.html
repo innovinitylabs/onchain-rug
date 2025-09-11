@@ -203,20 +203,93 @@
             background: #f8f9fa;
             border: 2px dashed #dee2e6;
             border-radius: 8px;
-            padding: 20px;
+            padding: 0;
             text-align: center;
-            min-height: 200px;
+            width: 396px;
+            height: 276px;
             display: flex;
             align-items: center;
             justify-content: center;
             flex-direction: column;
+            overflow: hidden;
+            margin: 0 auto;
+            position: relative;
         }
 
         .nft-display iframe {
-            width: 100%;
-            height: 300px;
+            width: 1320px;
+            height: 920px;
             border: none;
             border-radius: 8px;
+            transform: scale(0.3);
+            transform-origin: top left;
+            overflow: hidden;
+            pointer-events: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .metadata-info {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            max-width: 100%;
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+
+        .metadata-section {
+            margin: 15px 0;
+        }
+
+        .metadata-json {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            max-width: 100%;
+            overflow: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            word-break: break-all;
+            margin: 10px 0;
+            box-sizing: border-box;
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+
+        .traits-display {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .trait-item {
+            background: #e2e8f0;
+            padding: 10px;
+            border-radius: 6px;
+            border-left: 4px solid #4facfe;
+        }
+
+        .trait-name {
+            font-weight: bold;
+            color: #2d3748;
+            font-size: 14px;
+        }
+
+        .trait-value {
+            color: #4a5568;
+            font-size: 13px;
+            margin-top: 2px;
         }
 
         .contract-info {
@@ -355,6 +428,21 @@
                 <div id="tokenInfo" class="token-info hidden">
                     <h3>Token Information</h3>
                     <div id="tokenDetails"></div>
+                </div>
+
+                <div id="metadataInfo" class="metadata-info hidden">
+                    <h3>📋 OpenSea Metadata</h3>
+                    
+                    <div class="metadata-section">
+                        <h4>🎨 Traits & Attributes</h4>
+                        <div id="traitsDisplay" class="traits-display"></div>
+                    </div>
+                    
+                    <div class="metadata-section">
+                        <h4>📄 JSON Metadata (for indexers like OpenSea)</h4>
+                        <div id="metadataJson" class="metadata-json"></div>
+                        <button class="btn btn-small" onclick="copyMetadata()">📋 Copy Metadata</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -627,9 +715,14 @@
                 const base64Html = animationUrl.split('data:text/html;base64,')[1];
                 const decodedHtml = atob(base64Html);
                 
-                // Display the NFT
+                // Display the NFT - modify HTML to remove scrollbars
+                const modifiedHtml = decodedHtml.replace(
+                    /<style>body\{[^}]*\}/g, 
+                    '<style>body{margin:0;padding:0;background:#f0f0f0;display:flex;justify-content:center;align-items:center;min-height:100vh;overflow:hidden}</style>'
+                );
+                
                 const nftDisplay = document.getElementById('nftDisplay');
-                nftDisplay.innerHTML = `<iframe srcdoc="${decodedHtml.replace(/"/g, '&quot;')}"></iframe>`;
+                nftDisplay.innerHTML = `<iframe srcdoc="${modifiedHtml.replace(/"/g, '&quot;')}" scrolling="no"></iframe>`;
                 
                 // Show token info
                 const tokenInfo = document.getElementById('tokenInfo');
@@ -653,9 +746,42 @@
                 
                 tokenInfo.classList.remove('hidden');
                 
+                // Show metadata info
+                const metadataInfo = document.getElementById('metadataInfo');
+                const metadataJson = document.getElementById('metadataJson');
+                const traitsDisplay = document.getElementById('traitsDisplay');
+                
+                // Display traits
+                if (metadata.attributes && metadata.attributes.length > 0) {
+                    traitsDisplay.innerHTML = metadata.attributes.map(trait => `
+                        <div class="trait-item">
+                            <div class="trait-name">${trait.trait_type}</div>
+                            <div class="trait-value">${trait.value}</div>
+                        </div>
+                    `).join('');
+                } else {
+                    traitsDisplay.innerHTML = '<p>No traits available</p>';
+                }
+                
+                // Display raw JSON
+                metadataJson.textContent = JSON.stringify(metadata, null, 2);
+                metadataInfo.classList.remove('hidden');
+                
             } catch (error) {
                 document.getElementById('nftDisplay').innerHTML = `<p style="color: red;">Error loading NFT: ${error.message}</p>`;
             }
+        }
+
+        // Copy metadata to clipboard
+        function copyMetadata() {
+            const metadataJson = document.getElementById('metadataJson');
+            const text = metadataJson.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                showStatus('mintStatus', '✅ Metadata copied to clipboard!', 'success');
+            }).catch(err => {
+                showStatus('mintStatus', '❌ Failed to copy metadata', 'error');
+            });
         }
 
         // Load the latest minted NFT
