@@ -77,8 +77,11 @@ const NFTExporter: React.FC<NFTExporterProps> = ({
       const currentPalette = safePalette;
       const currentStripeData = safeStripeData;
       
+      // Get the full character map from global doormatData (since it's now stored globally in contract)
+      const fullCharacterMap = (typeof window !== 'undefined' && (window as any).doormatData?.characterMap) || {};
+      
       // Create the NFT HTML content with current live data (no traits display)
-        const nftHTML = createNFTHTML(safeSeed, currentPalette, currentStripeData, safeTextRows, characterMap, showDirt, dirtLevel, showTexture, textureLevel);
+        const nftHTML = createNFTHTML(safeSeed, currentPalette, currentStripeData, safeTextRows, fullCharacterMap, showDirt, dirtLevel, showTexture, textureLevel);
       
       // Debug logging removed for production
       
@@ -101,26 +104,8 @@ const NFTExporter: React.FC<NFTExporterProps> = ({
   };
 
   const createNFTHTML = (seed: number, palette: any, stripeData: any[], textRows: string[], characterMap: any, showDirt: boolean, dirtLevel: number, showTexture: boolean, textureLevel: number) => {
-    // Get only the characters actually used in text (following original pattern)
-    const getUsedCharacters = (textRows: string[]) => {
-      const used = new Set<string>();
-      textRows.forEach(row => {
-        for (let char of row.toUpperCase()) {
-          used.add(char);
-        }
-      });
-      used.add(' '); // Always include space
-      
-      const usedCharMap: any = {};
-      used.forEach((char: string) => {
-        if (characterMap[char]) {
-          usedCharMap[char] = characterMap[char];
-        }
-      });
-      return usedCharMap;
-    };
-
-    const usedChars = getUsedCharacters(textRows);
+    // Character map is now passed directly from the global doormatData (stored globally in contract)
+    const fullCharacterMap = characterMap;
     
     // Get the actual current warpThickness from the live generator
     const currentWarpThickness = (window as any).warpThickness || 2;
@@ -929,7 +914,8 @@ const NFTExporter: React.FC<NFTExporterProps> = ({
     //   </body>
     //   </html>`;
     //     };
-    return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Doormat NFT #${seed}</title><script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script><style>body{margin:0;padding:0;background:#f0f0f0;display:flex;justify-content:center;align-items:center;min-height:100vh}</style></head><body><div id="canvas-container"></div><script>let w=800,h=1200,f=30,wt=8,wp=${currentWarpThickness},ts=2,mc=11,lt,dt,p=${JSON.stringify(palette)},sd=${JSON.stringify(stripeData)},tr=${JSON.stringify(textRows)},td=[],sdirt=${showDirt},dl=${dirtLevel},stex=${showTexture},tl=${textureLevel},cm=${JSON.stringify(usedChars)};
+    return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Doormat NFT #${seed}</title><script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script><style>body{margin:0;padding:0;background:#f0f0f0;display:flex;justify-content:center;align-items:center;min-height:100vh}</style></head><body><div id="canvas-container"></div><script>let w=800,h=1200,f=30,wt=8,wp=${currentWarpThickness},ts=2,mc=11,lt,dt,p=${JSON.stringify(palette)},sd=${JSON.stringify(stripeData)},tr=${JSON.stringify(textRows)},td=[],sdirt=${showDirt},dl=${dirtLevel},stex=${showTexture},tl=${textureLevel},seed=${seed};
+    window.characterMap=${JSON.stringify(fullCharacterMap)};let cm=window.characterMap;
 function setup(){noiseSeed(${seed});window.initPRNG=function(seed){window.prngSeed=seed%2147483647;if(window.prngSeed<=0)window.prngSeed+=2147483646};window.prngNext=function(){window.prngSeed=(window.prngSeed*16807)%2147483647;return(window.prngSeed-1)/2147483646};window.prngRange=function(min,max){return min+window.prngNext()*(max-min)};window.prngChoice=function(array){return array[Math.floor(window.prngNext()*array.length)]};window.initPRNG(${seed});let canvas=createCanvas(h+(f*4),w+(f*4));canvas.parent('canvas-container');pixelDensity(2.5);updateTextColors();generateTextData();noLoop()}
 function updateTextColors(){if(!p||!p.colors)return;let d=p.colors[0],l=p.colors[0],dv=999,lv=-1;for(let hex of p.colors){let c=color(hex),b=(red(c)+green(c)+blue(c))/3;if(b<dv){dv=b;d=hex}if(b>lv){lv=b;l=hex}}dt=lerpColor(color(d),color(0),0.4);lt=lerpColor(color(l),color(255),0.3)}
 function draw(){background(222,222,222);push();translate(width/2,height/2);rotate(PI/2);translate(-height/2,-width/2);push();translate(f*2,f*2);for(let stripe of sd)drawStripe(stripe);if(stex&&tl>0)drawTextureOverlayWithLevel(Math.floor(tl));pop();drawFringe();if(sdirt&&dl>0)drawDirtOverlay(Math.floor(dl));pop()} 

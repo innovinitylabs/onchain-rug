@@ -10,7 +10,7 @@ contract TestMintingScript is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         // Use deployed contract address (update this after deployment)
-        address contractAddress = 0x46270eB2bB5CE81ea29106514679e67d9Fa9ad27; // Updated with new contract
+        address contractAddress = 0xa43eBb099aA98Bdf4d2E3c0172Cafd600e113249; // Updated with new contract
         OnchainRugs onchainRugs = OnchainRugs(contractAddress);
         
         // Test data (from doormat-nft-9667.html)
@@ -46,12 +46,7 @@ contract TestMintingScript is Script {
                 seed,
                 palette,
                 stripeData,
-                characterMap,
-                warpThickness,
-                false, // showDirt
-                0,     // dirtLevel
-                false, // showTexture
-                0      // textureLevel
+                warpThickness
             );
             
             console.log("NFT minted successfully!");

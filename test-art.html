@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Test Onchain Rug Art</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    <script>
+        // Test data from our minted rug
+        let seed = 12345;
+        let p = {"colors":["#FF0000","#00FF00","#0000FF"]};
+        let sd = [{"y":0,"height":100,"primaryColor":"#FF0000","secondaryColor":"#00FF00","weaveType":"mixed"}];
+        let tr = ["Hello","World"];
+        let cm = {"H":[[1,1,1],[1,0,1],[1,1,1]],"e":[[1,1,1],[1,0,0],[1,1,1]],"l":[[1,0,0],[1,0,0],[1,1,1]],"o":[[1,1,1],[1,0,1],[1,1,1]],"W":[[1,0,1],[1,0,1],[1,1,1]],"r":[[1,1,1],[1,0,0],[1,0,0]],"d":[[1,1,1],[1,0,1],[1,1,1]]};
+        let wp = 2;
+        let sdirt = false;
+        let dl = 0;
+        let stex = false;
+        let tl = 0;
+        
+        // Initialize PRNG
+        window.initPRNG = function(seed) {
+            window.prngSeed = seed % 2147483647;
+            if (window.prngSeed <= 0) window.prngSeed += 2147483646;
+        };
+        
+        window.prngNext = function() {
+            window.prngSeed = (window.prngSeed * 16807) % 2147483647;
+            return (window.prngSeed - 1) / 2147483646;
+        };
+        
+        window.prngRange = function(min, max) {
+            return min + window.prngNext() * (max - min);
+        };
+        
+        window.prngChoice = function(array) {
+            return array[Math.floor(window.prngNext() * array.length)];
+        };
+        
+        // Initialize
+        noiseSeed(seed);
+        window.initPRNG(seed);
+        
+        // Create canvas
+        let canvas = createCanvas(400, 400);
+        canvas.parent("canvas-container");
+        pixelDensity(2.5);
+        
+        // Simple test rendering
+        function setup() {
+            background(222, 222, 222);
+            fill(255, 0, 0);
+            rect(50, 50, 300, 300);
+            fill(0, 255, 0);
+            text("Hello World", 150, 200);
+            console.log("Art rendered successfully!");
+        }
+        
+        function draw() {
+            // Simple animation
+            if (frameCount % 60 === 0) {
+                console.log("Frame:", frameCount);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -28,7 +28,7 @@ contract OnchainRugsTest is Test, IERC721Receiver {
         
         // Calculate price
         uint256 price = onchainRugs.calculateMintingPrice(textRows);
-        assertEq(price, 0); // First line is free
+        assertEq(price, 0.0000001 ether); // Base price for any mint
         
         // Mint NFT
         onchainRugs.mintWithText{value: price}(
@@ -36,12 +36,7 @@ contract OnchainRugsTest is Test, IERC721Receiver {
             seed,
             palette,
             stripeData,
-            characterMap,
-            warpThickness,
-            false, // showDirt
-            0,     // dirtLevel
-            false, // showTexture
-            0      // textureLevel
+            warpThickness
         );
         
         // Verify minting
@@ -57,24 +52,19 @@ contract OnchainRugsTest is Test, IERC721Receiver {
         string[] memory textRows = new string[](1);
         textRows[0] = "TEST";
         
-        onchainRugs.mintWithText{value: 0}(
+        onchainRugs.mintWithText{value: 0.0000001 ether}(
             textRows,
             12345, // seed
             '{"name":"Test","colors":["#FF0000"]}',
             '[{"y":0,"height":100,"primaryColor":"#FF0000"}]',
-            '{"T":["11111","00100"]}',
-            3,
-            false, // showDirt
-            0,     // dirtLevel
-            false, // showTexture
-            0      // textureLevel
+            3
         );
         
         // Get token URI
         string memory tokenURI = onchainRugs.tokenURI(0);
         
-        // Verify it's a data URI
-        assertTrue(_startsWith(tokenURI, "data:text/html;base64,"));
+        // Verify it's a JSON data URI
+        assertTrue(_startsWith(tokenURI, "data:application/json;base64,"));
         
         // Just verify it's not empty and has reasonable length
         assertTrue(bytes(tokenURI).length > 1000);
@@ -87,17 +77,12 @@ contract OnchainRugsTest is Test, IERC721Receiver {
         string[] memory textRows = new string[](1);
         textRows[0] = "TEST";
         
-        onchainRugs.mintWithText{value: 0}(
+        onchainRugs.mintWithText{value: 0.0000001 ether}(
             textRows,
             12345, // seed
             '{"name":"Test","colors":["#FF0000"]}',
             '[{"y":0,"height":100,"primaryColor":"#FF0000"}]',
-            '{"T":["11111","00100"]}',
-            3,
-            false, // showDirt
-            0,     // dirtLevel
-            false, // showTexture
-            0      // textureLevel
+            3
         );
         
         // Check initial aging state (should be clean)
@@ -116,19 +101,19 @@ contract OnchainRugsTest is Test, IERC721Receiver {
         // Test different text line counts
         string[] memory oneLine = new string[](1);
         oneLine[0] = "ONE";
-        assertEq(onchainRugs.calculateMintingPrice(oneLine), 0);
+        assertEq(onchainRugs.calculateMintingPrice(oneLine), 0.0000001 ether);
         
         string[] memory twoLines = new string[](2);
         twoLines[0] = "TWO";
         twoLines[1] = "LINES";
-        assertEq(onchainRugs.calculateMintingPrice(twoLines), 0.00111 ether);
+        assertEq(onchainRugs.calculateMintingPrice(twoLines), 0.0000001 ether + 0.0000001 ether);
         
         string[] memory fourLines = new string[](4);
         fourLines[0] = "FOUR";
         fourLines[1] = "LINES";
         fourLines[2] = "OF";
         fourLines[3] = "TEXT";
-        assertEq(onchainRugs.calculateMintingPrice(fourLines), 0.00111 ether + 0.00111 ether + 0.00222 ether);
+        assertEq(onchainRugs.calculateMintingPrice(fourLines), 0.0000001 ether + 0.0000001 ether + 0.0000001 ether + 0.0000001 ether);
     }
     
     // Helper functions

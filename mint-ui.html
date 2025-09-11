@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Onchain Rugs - Minting Interface</title>
+    <!-- Include ethers.js with multiple fallbacks -->
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <script>
+        // Fallback system for ethers.js
+        function loadEthersFallback() {
+            if (typeof ethers !== 'undefined') {
+                console.log('Ethers.js loaded successfully from primary CDN');
+                return;
+            }
+            
+            console.log('Primary CDN failed, trying fallback CDN...');
+            const script = document.createElement('script');
+            script.src = 'https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js';
+            script.onload = function() {
+                console.log('Fallback CDN loaded successfully');
+            };
+            script.onerror = function() {
+                console.log('CDN fallback failed, trying local version...');
+                const localScript = document.createElement('script');
+                localScript.src = './public/ethers.min.js';
+                localScript.onload = function() {
+                    console.log('Local ethers.js loaded successfully');
+                };
+                localScript.onerror = function() {
+                    console.error('All ethers.js sources failed');
+                    document.body.innerHTML += '<div style="position: fixed; top: 0; left: 0; width: 100%; background: red; color: white; padding: 10px; text-align: center; z-index: 9999;">⚠️ Failed to load ethers.js. Please check your internet connection or run a local server.</div>';
+                };
+                document.head.appendChild(localScript);
+            };
+            document.head.appendChild(script);
+        }
+        
+        // Check after a short delay
+        setTimeout(loadEthersFallback, 100);
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: 500;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            max-width: 100%;
+            white-space: pre-wrap;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .nft-display {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .nft-display iframe {
+            width: 100%;
+            height: 300px;
+            border: none;
+            border-radius: 8px;
+        }
+
+        .contract-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .token-info {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .token-info h3 {
+            color: #495057;
+            margin-bottom: 10px;
+        }
+
+        .token-info p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎨 Onchain Rugs</h1>
+            <p>Mint and interact with your dynamic NFT rugs</p>
+        </div>
+
+        <div class="contract-info">
+            <strong>Contract Address:</strong> <span id="contractAddress">0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0</span><br>
+            <strong>Network:</strong> Local Anvil (Chain ID: 31337)<br>
+            <strong>RPC URL:</strong> http://localhost:8545
+        </div>
+
+        <div class="main-content">
+            <!-- Minting Section -->
+            <div class="card">
+                <h2>🎯 Mint New Rug</h2>
+                
+                <div class="form-group">
+                    <label for="textRows">Text Lines (one per line):</label>
+                    <textarea id="textRows" placeholder="HELLO&#10;WORLD&#10;NFT"></textarea>
+                    <small style="color: #666; font-size: 12px;">💡 Each text combination can only be minted once. Try "MAT", "WELCOME", "HELLO", etc.</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="seed">Seed (number):</label>
+                    <input type="number" id="seed" value="12345" placeholder="12345">
+                </div>
+
+                <div class="form-group">
+                    <label for="palette">Color Palette (JSON):</label>
+                    <textarea id="palette" placeholder='{"name":"Test","colors":["#FF0000","#00FF00","#0000FF"]}'></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="stripeData">Stripe Data (JSON):</label>
+                    <textarea id="stripeData" placeholder='[{"y":0,"height":100,"primaryColor":"#FF0000","secondaryColor":"#00FF00","weaveType":"mixed"}]'></textarea>
+                </div>
+
+                <!-- Character Map removed - now stored globally in contract -->
+
+                <div class="form-group">
+                    <label for="warpThickness">Warp Thickness:</label>
+                    <input type="number" id="warpThickness" value="3" min="1" max="10">
+                </div>
+
+                <button class="btn" onclick="calculatePrice()">💰 Calculate Price</button>
+                <div id="priceDisplay" class="status hidden"></div>
+                
+                <button class="btn btn-success" onclick="mintRug()" id="mintBtn">
+                    🎨 Mint Rug
+                </button>
+                <div id="mintStatus" class="status hidden"></div>
+            </div>
+
+            <!-- NFT Display Section -->
+            <div class="card">
+                <h2>🖼️ View NFT</h2>
+                
+                <div class="form-group">
+                    <label for="tokenId">Token ID:</label>
+                    <input type="number" id="tokenId" value="0" min="0">
+                </div>
+
+                <button class="btn" onclick="loadNFT()">🔍 Load NFT</button>
+                <button class="btn btn-secondary" onclick="loadLatestNFT()">📈 Load Latest</button>
+
+                <div id="nftDisplay" class="nft-display">
+                    <p>Enter a Token ID and click "Load NFT" to view</p>
+                </div>
+
+                <div id="tokenInfo" class="token-info hidden">
+                    <h3>Token Information</h3>
+                    <div id="tokenDetails"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contract Interaction Section -->
+        <div class="card">
+            <h2>⚙️ Contract Interactions</h2>
+            
+            <div class="grid-2">
+                <div>
+                    <h3>🧹 Clean Rug</h3>
+                    <div class="form-group">
+                        <label for="cleanTokenId">Token ID to Clean:</label>
+                        <input type="number" id="cleanTokenId" value="0" min="0">
+                    </div>
+                    <button class="btn btn-secondary" onclick="cleanRug()">Clean Rug</button>
+                    <div id="cleanStatus" class="status hidden"></div>
+                </div>
+
+                <div>
+                    <h3>📊 Contract Info</h3>
+                    <button class="btn" onclick="getContractInfo()">Get Contract Info</button>
+                    <div id="contractStatus" class="status hidden"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Contract configuration
+        const CONTRACT_ADDRESS = '0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9';
+        const RPC_URL = 'http://localhost:8545';
+        const PRIVATE_KEY = '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
+        
+        // Contract ABI (simplified for key functions)
+        const CONTRACT_ABI = [
+            {
+                "inputs": [
+                    {"internalType": "string[]", "name": "textRows", "type": "string[]"},
+                    {"internalType": "uint256", "name": "seed", "type": "uint256"},
+                    {"internalType": "string", "name": "palette", "type": "string"},
+                    {"internalType": "string", "name": "stripeData", "type": "string"},
+                    {"internalType": "uint256", "name": "warpThickness", "type": "uint256"}
+                ],
+                "name": "mintWithText",
+                "outputs": [],
+                "stateMutability": "payable",
+                "type": "function"
+            },
+            {
+                "inputs": [{"internalType": "string[]", "name": "textRows", "type": "string[]"}],
+                "name": "calculateMintingPrice",
+                "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [{"internalType": "uint256", "name": "tokenId", "type": "uint256"}],
+                "name": "tokenURI",
+                "outputs": [{"internalType": "string", "name": "", "type": "string"}],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [{"internalType": "uint256", "name": "tokenId", "type": "uint256"}],
+                "name": "ownerOf",
+                "outputs": [{"internalType": "address", "name": "", "type": "address"}],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "totalSupply",
+                "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [{"internalType": "uint256", "name": "tokenId", "type": "uint256"}],
+                "name": "cleanRug",
+                "outputs": [],
+                "stateMutability": "payable",
+                "type": "function"
+            },
+            {
+                "inputs": [{"internalType": "uint256", "name": "tokenId", "type": "uint256"}],
+                "name": "getCleaningCost",
+                "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "basePrice",
+                "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+                "stateMutability": "view",
+                "type": "function"
+            }
+        ];
+
+        // Utility functions
+        function showStatus(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `status ${type}`;
+            element.classList.remove('hidden');
+        }
+
+        function hideStatus(elementId) {
+            document.getElementById(elementId).classList.add('hidden');
+        }
+
+        function showLoading(buttonId) {
+            const btn = document.getElementById(buttonId);
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> Processing...';
+        }
+
+        function hideLoading(buttonId, originalText) {
+            const btn = document.getElementById(buttonId);
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+
+        // Calculate minting price
+        async function calculatePrice() {
+            try {
+                // Check if ethers is loaded
+                if (typeof ethers === 'undefined') {
+                    showStatus('priceDisplay', 'Ethers.js not loaded. Please refresh the page.', 'error');
+                    return;
+                }
+
+                const textRows = document.getElementById('textRows').value.split('\n').filter(line => line.trim());
+                
+                if (textRows.length === 0) {
+                    showStatus('priceDisplay', 'Please enter at least one text line', 'error');
+                    return;
+                }
+
+                showLoading('mintBtn');
+                
+                // Create contract instance
+                const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, new ethers.JsonRpcProvider(RPC_URL));
+                
+                // Calculate price
+                const price = await contract.calculateMintingPrice(textRows);
+                const priceEth = ethers.utils.formatEther(price);
+                
+                showStatus('priceDisplay', `Minting Price: ${priceEth} ETH`, 'success');
+                hideLoading('mintBtn', '🎨 Mint Rug');
+                
+            } catch (error) {
+                showStatus('priceDisplay', `Error: ${error.message}`, 'error');
+                hideLoading('mintBtn', '🎨 Mint Rug');
+            }
+        }
+
+        // Mint a new rug
+        async function mintRug() {
+            try {
+                // Check if ethers is loaded
+                if (typeof ethers === 'undefined') {
+                    showStatus('mintStatus', 'Ethers.js not loaded. Please refresh the page.', 'error');
+                    return;
+                }
+
+                const textRows = document.getElementById('textRows').value.split('\n').filter(line => line.trim());
+                const seed = document.getElementById('seed').value;
+                const palette = document.getElementById('palette').value;
+                const stripeData = document.getElementById('stripeData').value;
+                // Character map no longer needed - stored globally in contract
+                const warpThickness = document.getElementById('warpThickness').value;
+
+                // Validate inputs
+                if (textRows.length === 0) {
+                    showStatus('mintStatus', 'Please enter at least one text line', 'error');
+                    return;
+                }
+
+                if (!seed || !palette || !stripeData || !warpThickness) {
+                    showStatus('mintStatus', 'Please fill in all fields', 'error');
+                    return;
+                }
+
+                showLoading('mintBtn');
+                showStatus('mintStatus', 'Minting rug...', 'info');
+
+                // Create wallet and contract instance
+                const wallet = new ethers.Wallet(PRIVATE_KEY, new ethers.providers.JsonRpcProvider(RPC_URL));
+                const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, wallet);
+
+                // Calculate price
+                const price = await contract.calculateMintingPrice(textRows);
+                
+                // Mint the rug
+                const tx = await contract.mintWithText(
+                    textRows,
+                    seed,
+                    palette,
+                    stripeData,
+                    warpThickness,
+                    { value: price }
+                );
+
+                showStatus('mintStatus', `Transaction sent: ${tx.hash}`, 'info');
+                
+                // Wait for confirmation
+                const receipt = await tx.wait();
+                
+                if (receipt.status === 1) {
+                    // Get the token ID (it's the total supply - 1)
+                    const totalSupply = await contract.totalSupply();
+                    const tokenId = totalSupply.sub(1); // Use BigInt subtraction
+                    
+                    showStatus('mintStatus', `✅ Rug minted successfully! Token ID: ${tokenId.toString()}`, 'success');
+                    
+                    // Auto-load the new NFT
+                    document.getElementById('tokenId').value = tokenId.toString();
+                    setTimeout(() => loadNFT(), 1000);
+                } else {
+                    showStatus('mintStatus', '❌ Transaction failed', 'error');
+                }
+                
+                hideLoading('mintBtn', '🎨 Mint Rug');
+                
+            } catch (error) {
+                let errorMessage = error.message;
+                
+                // Make error messages more user-friendly
+                if (errorMessage.includes('Text already used')) {
+                    errorMessage = '❌ This text has already been minted! Try a different text like "MAT", "WELCOME", or "HELLO".';
+                } else if (errorMessage.includes('UNPREDICTABLE_GAS_LIMIT')) {
+                    errorMessage = '❌ Transaction failed. This might be due to insufficient funds, duplicate text, or contract paused.';
+                }
+                
+                showStatus('mintStatus', errorMessage, 'error');
+                hideLoading('mintBtn', '🎨 Mint Rug');
+            }
+        }
+
+        // Load NFT by token ID
+        async function loadNFT() {
+            try {
+                // Check if ethers is loaded
+                if (typeof ethers === 'undefined') {
+                    showStatus('mintStatus', 'Ethers.js not loaded. Please refresh the page.', 'error');
+                    return;
+                }
+
+                const tokenId = document.getElementById('tokenId').value;
+                
+                if (!tokenId) {
+                    showStatus('mintStatus', 'Please enter a token ID', 'error');
+                    return;
+                }
+
+                const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, new ethers.providers.JsonRpcProvider(RPC_URL));
+                
+                // Get token URI
+                const tokenURI = await contract.tokenURI(tokenId);
+                
+                // Decode the base64 JSON
+                const base64Json = tokenURI.split('data:application/json;base64,')[1];
+                const decodedJson = atob(base64Json);
+                const metadata = JSON.parse(decodedJson);
+                
+                // Extract HTML from animation_url
+                const animationUrl = metadata.animation_url;
+                const base64Html = animationUrl.split('data:text/html;base64,')[1];
+                const decodedHtml = atob(base64Html);
+                
+                // Display the NFT
+                const nftDisplay = document.getElementById('nftDisplay');
+                nftDisplay.innerHTML = `<iframe srcdoc="${decodedHtml.replace(/"/g, '&quot;')}"></iframe>`;
+                
+                // Show token info
+                const tokenInfo = document.getElementById('tokenInfo');
+                const tokenDetails = document.getElementById('tokenDetails');
+                
+                try {
+                    const owner = await contract.ownerOf(tokenId);
+                    tokenDetails.innerHTML = `
+                        <p><strong>Name:</strong> ${metadata.name}</p>
+                        <p><strong>Description:</strong> ${metadata.description}</p>
+                        <p><strong>Owner:</strong> ${owner}</p>
+                        <p><strong>Attributes:</strong> ${metadata.attributes.length} traits</p>
+                    `;
+                } catch (error) {
+                    tokenDetails.innerHTML = `
+                        <p><strong>Name:</strong> ${metadata.name}</p>
+                        <p><strong>Description:</strong> ${metadata.description}</p>
+                        <p><strong>Error:</strong> Could not fetch owner info</p>
+                    `;
+                }
+                
+                tokenInfo.classList.remove('hidden');
+                
+            } catch (error) {
+                document.getElementById('nftDisplay').innerHTML = `<p style="color: red;">Error loading NFT: ${error.message}</p>`;
+            }
+        }
+
+        // Load the latest minted NFT
+        async function loadLatestNFT() {
+            try {
+                // Check if ethers is loaded
+                if (typeof ethers === 'undefined') {
+                    return; // Silently fail if ethers not loaded
+                }
+
+                // Check if contract address is set
+                if (!CONTRACT_ADDRESS || CONTRACT_ADDRESS === '0x0000000000000000000000000000000000000000') {
+                    console.log('Contract address not set, skipping latest NFT load');
+                    return;
+                }
+
+                const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, new ethers.providers.JsonRpcProvider(RPC_URL));
+                const totalSupply = await contract.totalSupply();
+                
+                if (totalSupply.eq(0)) {
+                    console.log('No NFTs minted yet');
+                    return;
+                }
+                
+                const latestTokenId = totalSupply.sub(1);
+                document.getElementById('tokenId').value = latestTokenId.toString();
+                loadNFT();
+                
+            } catch (error) {
+                console.log('Could not load latest NFT:', error.message);
+                // Don't show error to user as this is just a convenience feature
+            }
+        }
+
+        // Clean a rug
+        async function cleanRug() {
+            try {
+                // Check if ethers is loaded
+                if (typeof ethers === 'undefined') {
+                    showStatus('cleanStatus', 'Ethers.js not loaded. Please refresh the page.', 'error');
+                    return;
+                }
+
+                const tokenId = document.getElementById('cleanTokenId').value;
+                
+                if (!tokenId) {
+                    showStatus('cleanStatus', 'Please enter a token ID', 'error');
+                    return;
+                }
+
+                const wallet = new ethers.Wallet(PRIVATE_KEY, new ethers.providers.JsonRpcProvider(RPC_URL));
+                const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, wallet);
+                
+                // Get cleaning cost
+                const cleaningCost = await contract.getCleaningCost(tokenId);
+                
+                showStatus('cleanStatus', `Cleaning cost: ${ethers.utils.formatEther(cleaningCost)} ETH`, 'info');
+                
+                // Clean the rug
+                const tx = await contract.cleanRug(tokenId, { value: cleaningCost });
+                
+                showStatus('cleanStatus', `Cleaning transaction sent: ${tx.hash}`, 'info');
+                
+                const receipt = await tx.wait();
+                
+                if (receipt.status === 1) {
+                    showStatus('cleanStatus', '✅ Rug cleaned successfully!', 'success');
+                } else {
+                    showStatus('cleanStatus', '❌ Cleaning failed', 'error');
+                }
+                
+            } catch (error) {
+                showStatus('cleanStatus', `Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Get contract information
+        async function getContractInfo() {
+            try {
+                // Check if ethers is loaded
+                if (typeof ethers === 'undefined') {
+                    showStatus('contractStatus', 'Ethers.js not loaded. Please refresh the page.', 'error');
+                    return;
+                }
+
+                const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, new ethers.providers.JsonRpcProvider(RPC_URL));
+                
+                const totalSupply = await contract.totalSupply();
+                const basePrice = await contract.basePrice();
+                
+                showStatus('contractStatus', 
+                    `Total Supply: ${totalSupply.toString()}/1111\nBase Price: ${ethers.utils.formatEther(basePrice)} ETH`, 
+                    'success'
+                );
+                
+            } catch (error) {
+                showStatus('contractStatus', `Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Initialize the page
+        window.onload = function() {
+            // Wait a bit for ethers to load (in case of fallback)
+            setTimeout(function() {
+                // Check if ethers is loaded
+                if (typeof ethers === 'undefined') {
+                    console.error('Ethers.js failed to load after timeout');
+                    document.body.innerHTML += '<div style="position: fixed; top: 0; left: 0; width: 100%; background: red; color: white; padding: 10px; text-align: center; z-index: 9999;">⚠️ Ethers.js failed to load. Please refresh the page or check your internet connection.</div>';
+                    return;
+                }
+                
+                console.log('Ethers.js loaded successfully');
+                
+                // Set default values
+                document.getElementById('palette').value = '{"name":"Test","colors":["#FF0000","#00FF00","#0000FF"]}';
+                document.getElementById('stripeData').value = '[{"y":0,"height":100,"primaryColor":"#FF0000","secondaryColor":"#00FF00","weaveType":"mixed"}]';
+                
+                // Load latest NFT if available (with error handling)
+                try {
+                    loadLatestNFT();
+                } catch (error) {
+                    console.log('Could not load latest NFT (contract not deployed or no connection):', error.message);
+                }
+            }, 1000); // Wait 1 second for ethers to load
+        };
+    </script>
+    
+</body>
+</html>

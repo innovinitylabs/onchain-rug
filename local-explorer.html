@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local Blockchain Explorer</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #1a1a1a;
+            color: #00ff00;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #00ff00;
+            padding-bottom: 20px;
+        }
+        .section {
+            background: #2a2a2a;
+            border: 1px solid #00ff00;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        .input-group {
+            margin: 10px 0;
+        }
+        input, button {
+            background: #1a1a1a;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 10px;
+            margin: 5px;
+            border-radius: 3px;
+        }
+        button:hover {
+            background: #00ff00;
+            color: #1a1a1a;
+        }
+        .result {
+            background: #0a0a0a;
+            border: 1px solid #00ff00;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 3px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+        }
+        .error {
+            color: #ff0000;
+        }
+        .success {
+            color: #00ff00;
+        }
+        .warning {
+            color: #ffff00;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Local Blockchain Explorer</h1>
+            <p>RPC URL: http://localhost:8545</p>
+        </div>
+
+        <div class="section">
+            <h2>📊 Network Info</h2>
+            <button onclick="getNetworkInfo()">Get Network Info</button>
+            <div id="networkInfo" class="result"></div>
+        </div>
+
+        <div class="section">
+            <h2>💰 Account Balance</h2>
+            <div class="input-group">
+                <input type="text" id="balanceAddress" placeholder="0x..." value="0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266">
+                <button onclick="getBalance()">Get Balance</button>
+            </div>
+            <div id="balanceResult" class="result"></div>
+        </div>
+
+        <div class="section">
+            <h2>📝 Transaction Details</h2>
+            <div class="input-group">
+                <input type="text" id="txHash" placeholder="Transaction Hash">
+                <button onclick="getTransaction()">Get Transaction</button>
+            </div>
+            <div id="txResult" class="result"></div>
+        </div>
+
+        <div class="section">
+            <h2>🏗️ Contract Info</h2>
+            <div class="input-group">
+                <input type="text" id="contractAddress" placeholder="Contract Address">
+                <button onclick="getContractInfo()">Get Contract Info</button>
+            </div>
+            <div id="contractResult" class="result"></div>
+        </div>
+
+        <div class="section">
+            <h2>📦 Latest Blocks</h2>
+            <button onclick="getLatestBlocks()">Get Latest 5 Blocks</button>
+            <div id="blocksResult" class="result"></div>
+        </div>
+
+        <div class="section">
+            <h2>🔧 Deploy Contract</h2>
+            <div class="input-group">
+                <input type="text" id="deployBytecode" placeholder="Contract Bytecode">
+                <button onclick="deployContract()">Deploy Contract</button>
+            </div>
+            <div id="deployResult" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        const RPC_URL = 'http://localhost:8545';
+        
+        async function makeRpcCall(method, params = []) {
+            try {
+                const response = await fetch(RPC_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        jsonrpc: '2.0',
+                        method: method,
+                        params: params,
+                        id: 1
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.error) {
+                    throw new Error(data.error.message);
+                }
+                return data.result;
+            } catch (error) {
+                throw error;
+            }
+        }
+
+        async function getNetworkInfo() {
+            try {
+                const result = document.getElementById('networkInfo');
+                result.innerHTML = 'Loading...';
+                
+                const chainId = await makeRpcCall('eth_chainId');
+                const blockNumber = await makeRpcCall('eth_blockNumber');
+                const gasPrice = await makeRpcCall('eth_gasPrice');
+                
+                result.innerHTML = `Chain ID: ${parseInt(chainId, 16)}
+Block Number: ${parseInt(blockNumber, 16)}
+Gas Price: ${parseInt(gasPrice, 16)} wei (${parseInt(gasPrice, 16) / 1e9} gwei)`;
+                result.className = 'result success';
+            } catch (error) {
+                document.getElementById('networkInfo').innerHTML = `Error: ${error.message}`;
+                document.getElementById('networkInfo').className = 'result error';
+            }
+        }
+
+        async function getBalance() {
+            try {
+                const address = document.getElementById('balanceAddress').value;
+                const result = document.getElementById('balanceResult');
+                result.innerHTML = 'Loading...';
+                
+                const balance = await makeRpcCall('eth_getBalance', [address, 'latest']);
+                const balanceEth = parseInt(balance, 16) / 1e18;
+                
+                result.innerHTML = `Address: ${address}
+Balance: ${balance} wei
+Balance: ${balanceEth.toFixed(6)} ETH`;
+                result.className = 'result success';
+            } catch (error) {
+                document.getElementById('balanceResult').innerHTML = `Error: ${error.message}`;
+                document.getElementById('balanceResult').className = 'result error';
+            }
+        }
+
+        async function getTransaction() {
+            try {
+                const txHash = document.getElementById('txHash').value;
+                const result = document.getElementById('txResult');
+                result.innerHTML = 'Loading...';
+                
+                const tx = await makeRpcCall('eth_getTransactionByHash', [txHash]);
+                if (!tx) {
+                    throw new Error('Transaction not found');
+                }
+                
+                result.innerHTML = `Hash: ${tx.hash}
+From: ${tx.from}
+To: ${tx.to || 'Contract Creation'}
+Value: ${parseInt(tx.value, 16) / 1e18} ETH
+Gas: ${parseInt(tx.gas, 16)}
+Gas Price: ${parseInt(tx.gasPrice, 16)} wei
+Nonce: ${parseInt(tx.nonce, 16)}
+Block: ${tx.blockNumber ? parseInt(tx.blockNumber, 16) : 'Pending'}`;
+                result.className = 'result success';
+            } catch (error) {
+                document.getElementById('txResult').innerHTML = `Error: ${error.message}`;
+                document.getElementById('txResult').className = 'result error';
+            }
+        }
+
+        async function getContractInfo() {
+            try {
+                const address = document.getElementById('contractAddress').value;
+                const result = document.getElementById('contractResult');
+                result.innerHTML = 'Loading...';
+                
+                const code = await makeRpcCall('eth_getCode', [address, 'latest']);
+                const balance = await makeRpcCall('eth_getBalance', [address, 'latest']);
+                
+                result.innerHTML = `Address: ${address}
+Balance: ${parseInt(balance, 16) / 1e18} ETH
+Code Length: ${code.length} characters
+Is Contract: ${code === '0x' ? 'No' : 'Yes'}`;
+                result.className = 'result success';
+            } catch (error) {
+                document.getElementById('contractResult').innerHTML = `Error: ${error.message}`;
+                document.getElementById('contractResult').className = 'result error';
+            }
+        }
+
+        async function getLatestBlocks() {
+            try {
+                const result = document.getElementById('blocksResult');
+                result.innerHTML = 'Loading...';
+                
+                const latestBlock = await makeRpcCall('eth_blockNumber');
+                const blockNumber = parseInt(latestBlock, 16);
+                
+                let blocksInfo = '';
+                for (let i = 0; i < 5; i++) {
+                    const block = await makeRpcCall('eth_getBlockByNumber', [`0x${(blockNumber - i).toString(16)}`, false]);
+                    blocksInfo += `Block ${blockNumber - i}:
+  Hash: ${block.hash}
+  Timestamp: ${new Date(parseInt(block.timestamp, 16) * 1000).toLocaleString()}
+  Transactions: ${block.transactions.length}
+  Gas Used: ${parseInt(block.gasUsed, 16)}
+  Gas Limit: ${parseInt(block.gasLimit, 16)}
+
+`;
+                }
+                
+                result.innerHTML = blocksInfo;
+                result.className = 'result success';
+            } catch (error) {
+                document.getElementById('blocksResult').innerHTML = `Error: ${error.message}`;
+                document.getElementById('blocksResult').className = 'result error';
+            }
+        }
+
+        async function deployContract() {
+            try {
+                const bytecode = document.getElementById('deployBytecode').value;
+                const result = document.getElementById('deployResult');
+                result.innerHTML = 'Loading...';
+                
+                const accounts = await makeRpcCall('eth_accounts');
+                const txHash = await makeRpcCall('eth_sendTransaction', [{
+                    from: accounts[0],
+                    data: bytecode,
+                    gas: '0x100000'
+                }]);
+                
+                result.innerHTML = `Transaction Hash: ${txHash}
+Deploying contract... Check transaction details above.`;
+                result.className = 'result success';
+            } catch (error) {
+                document.getElementById('deployResult').innerHTML = `Error: ${error.message}`;
+                document.getElementById('deployResult').className = 'result error';
+            }
+        }
+
+        // Auto-load network info on page load
+        window.onload = function() {
+            getNetworkInfo();
+        };
+    </script>
+</body>
+</html>

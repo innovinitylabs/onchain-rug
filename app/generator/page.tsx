@@ -21,6 +21,17 @@ export default function GeneratorPage() {
   const [showTexture, setShowTexture] = useState(false)
   const [textureLevel, setTextureLevel] = useState(0) // 0 = none, 1 = 7 days, 2 = 30 days
 
+  // Copy to clipboard function
+  const copyToClipboard = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      // You could add a toast notification here
+      console.log(`${label} copied to clipboard`)
+    } catch (err) {
+      console.error('Failed to copy: ', err)
+    }
+  }
+
   const canvasContainerRef = useRef<HTMLDivElement>(null)
   const scriptsLoadedRef = useRef<Set<string>>(new Set())
 
@@ -2718,6 +2729,79 @@ export default function GeneratorPage() {
                 <div className="border-t border-green-500/30 pt-3">
                   <div className="text-green-300 text-sm mb-3 font-mono">Mint Onchain Rug</div>
                   
+                  {/* Contract Data Sharing */}
+                  <div className="bg-blue-900/20 border border-blue-500/30 rounded p-3 mb-3">
+                    <div className="text-blue-400 text-xs font-mono mb-2 flex items-center gap-2">
+                      <FileText className="w-3 h-3" />
+                      Data Shared with Contract
+                    </div>
+                    <div className="space-y-2 text-xs">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="bg-gray-800/50 p-2 rounded">
+                          <div className="text-gray-400 mb-1">Text Rows:</div>
+                          <div className="text-white font-mono">
+                            {textInputs.filter(row => row.trim() !== '').length > 0 
+                              ? textInputs.filter(row => row.trim() !== '').map((row, i) => (
+                                  <div key={i} className="truncate">"{row}"</div>
+                                ))
+                              : <span className="text-gray-500">No text</span>
+                            }
+                          </div>
+                        </div>
+                        <div className="bg-gray-800/50 p-2 rounded">
+                          <div className="text-gray-400 mb-1">Seed:</div>
+                          <div className="text-white font-mono">{currentSeed}</div>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="bg-gray-800/50 p-2 rounded">
+                          <div className="text-gray-400 mb-1">Palette:</div>
+                          <div className="text-white font-mono truncate">
+                            {palette?.name || 'Default'}
+                          </div>
+                        </div>
+                        <div className="bg-gray-800/50 p-2 rounded">
+                          <div className="text-gray-400 mb-1">Warp Thickness:</div>
+                          <div className="text-white font-mono">3</div>
+                        </div>
+                      </div>
+                      <div className="bg-gray-800/50 p-2 rounded">
+                        <div className="text-gray-400 mb-1">Stripe Data:</div>
+                        <div className="text-white font-mono text-xs">
+                          {typeof window !== 'undefined' && (window as any).stripeData 
+                            ? `${(window as any).stripeData.length} stripes`
+                            : '0 stripes'
+                          }
+                        </div>
+                      </div>
+                      <div className="bg-gray-800/50 p-2 rounded">
+                        <div className="text-gray-400 mb-1">Character Map:</div>
+                        <div className="text-white font-mono text-xs">
+                          {(() => {
+                            if (typeof window === 'undefined' || !(window as any).doormatData?.characterMap) return '0 characters';
+                            
+                            // Get only the characters actually used in text (optimization)
+                            const used = new Set<string>();
+                            textInputs.forEach(row => {
+                              for (let char of row.toUpperCase()) {
+                                used.add(char);
+                              }
+                            });
+                            used.add(' '); // Always include space
+                            
+                            const usedCharMap: any = {};
+                            used.forEach((char) => {
+                              if ((window as any).doormatData.characterMap[char]) {
+                                usedCharMap[char] = (window as any).doormatData.characterMap[char];
+                              }
+                            });
+                            return `${Object.keys(usedCharMap).length} characters`;
+                          })()}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
                   {/* Pricing Information */}
                   <div className="bg-gray-900/50 border border-green-500/30 rounded p-3 mb-3">
                     <div className="text-green-400 text-xs font-mono mb-2">Pricing:</div>
@@ -2744,7 +2828,7 @@ export default function GeneratorPage() {
                     textRows={textInputs}
                     currentPalette={palette}
                     currentStripeData={typeof window !== 'undefined' ? (window as any).stripeData || [] : []}
-                    characterMap={typeof window !== 'undefined' ? (window as any).doormatData?.characterMap || {} : {}}
+                    characterMap={null}
                     warpThickness={3}
                     showDirt={showDirt}
                     dirtLevel={dirtLevel}
@@ -2757,24 +2841,417 @@ export default function GeneratorPage() {
                     textRows={textInputs}
                     currentPalette={palette}
                     currentStripeData={typeof window !== 'undefined' ? (window as any).stripeData || [] : []}
-                    characterMap={typeof window !== 'undefined' ? (window as any).doormatData?.characterMap || {} : {}}
+                    characterMap={null}
                     warpThickness={3}
                   />
                 </div>
 
                 {/* NFT Export Section */}
                 <div className="border-t border-green-500/30 pt-3">
+                  <div className="text-green-300 text-sm mb-3 font-mono">NFT Export</div>
+                  
+                  {/* NFT Export Data Sharing */}
+                  <div className="bg-purple-900/20 border border-purple-500/30 rounded p-3 mb-3">
+                    <div className="text-purple-400 text-xs font-mono mb-2 flex items-center gap-2">
+                      <Download className="w-3 h-3" />
+                      Data Shared with NFT Exporter
+                    </div>
+                    <div className="space-y-2 text-xs">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="bg-gray-800/50 p-2 rounded">
+                          <div className="text-gray-400 mb-1">Seed:</div>
+                          <div className="text-white font-mono">{currentSeed}</div>
+                        </div>
+                        <div className="bg-gray-800/50 p-2 rounded">
+                          <div className="text-gray-400 mb-1">Palette:</div>
+                          <div className="text-white font-mono truncate">
+                            {palette?.name || 'Default'}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="bg-gray-800/50 p-2 rounded">
+                          <div className="text-gray-400 mb-1">Text Rows:</div>
+                          <div className="text-white font-mono">
+                            {textInputs.filter(row => row.trim() !== '').length} lines
+                          </div>
+                        </div>
+                        <div className="bg-gray-800/50 p-2 rounded">
+                          <div className="text-gray-400 mb-1">Stripe Data:</div>
+                          <div className="text-white font-mono text-xs">
+                            {typeof window !== 'undefined' && (window as any).stripeData 
+                              ? `${(window as any).stripeData.length} stripes`
+                              : '0 stripes'
+                            }
+                          </div>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="bg-gray-800/50 p-2 rounded">
+                          <div className="text-gray-400 mb-1">Character Map:</div>
+                          <div className="text-white font-mono text-xs">
+                          {(() => {
+                            if (typeof window === 'undefined' || !(window as any).doormatData?.characterMap) return '0 chars';
+                            
+                            // Get only the characters actually used in text (optimization)
+                            const used = new Set<string>();
+                            textInputs.forEach(row => {
+                              for (let char of row.toUpperCase()) {
+                                used.add(char);
+                              }
+                            });
+                            used.add(' '); // Always include space
+                            
+                            const usedCharMap: any = {};
+                            used.forEach((char) => {
+                              if ((window as any).doormatData.characterMap[char]) {
+                                usedCharMap[char] = (window as any).doormatData.characterMap[char];
+                              }
+                            });
+                            return `${Object.keys(usedCharMap).length} chars`;
+                          })()}
+                          </div>
+                        </div>
+                        <div className="bg-gray-800/50 p-2 rounded">
+                          <div className="text-gray-400 mb-1">Aging State:</div>
+                          <div className="text-white font-mono text-xs">
+                            {showDirt ? `Dirt: ${dirtLevel}` : 'Clean'} | {showTexture ? `Texture: ${textureLevel}` : 'Smooth'}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="bg-gray-800/50 p-2 rounded">
+                        <div className="text-gray-400 mb-1">Generated Traits:</div>
+                        <div className="text-white font-mono text-xs space-y-1">
+                          <div>• Text Lines: {textInputs.filter(row => row.trim() !== '').length}</div>
+                          <div>• Total Characters: {textInputs.reduce((sum, row) => sum + row.length, 0)}</div>
+                          <div>• Palette: {palette?.name || 'Default'}</div>
+                          <div>• Complexity: {(() => {
+                            const stripeData = typeof window !== 'undefined' ? (window as any).stripeData || [] : []
+                            let complexity = 0
+                            stripeData.forEach((stripe: any) => {
+                              if (stripe.weaveType === 'mixed') complexity += 2
+                              else if (stripe.weaveType === 'textured') complexity += 1.5
+                              else complexity += 1
+                              if (stripe.secondaryColor) complexity += 1
+                            })
+                            return complexity.toFixed(1)
+                          })()}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
                   <NFTExporter 
                     currentSeed={currentSeed}
                     currentPalette={palette}
                     currentStripeData={typeof window !== 'undefined' ? (window as any).stripeData || [] : []}
                     textRows={textInputs}
-                    characterMap={typeof window !== 'undefined' ? (window as any).doormatData?.characterMap || {} : {}}
+                    characterMap={null}
                     showDirt={showDirt}
                     dirtLevel={dirtLevel}
                     showTexture={showTexture}
                     textureLevel={textureLevel}
                   />
+                </div>
+
+                {/* Data Comparison Section */}
+                <div className="border-t border-yellow-500/30 pt-3">
+                  <div className="text-yellow-300 text-sm mb-3 font-mono">Data Flow Comparison</div>
+                  
+                  <div className="bg-yellow-900/10 border border-yellow-500/30 rounded p-3 mb-3">
+                    <div className="text-yellow-400 text-xs font-mono mb-2">Contract vs NFT Export Differences:</div>
+                    <div className="space-y-2 text-xs">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="bg-blue-900/20 p-2 rounded border border-blue-500/30">
+                          <div className="text-blue-400 mb-1">Contract Minting:</div>
+                          <div className="text-white space-y-1">
+                            <div>• Text rows (for uniqueness)</div>
+                            <div>• Seed (for generation)</div>
+                            <div>• Palette (JSON string)</div>
+                            <div>• Stripe data (JSON string)</div>
+                            <div>• Character map (JSON string)</div>
+                            <div>• Warp thickness (number)</div>
+                            <div>• <span className="text-gray-400">No aging state</span></div>
+                          </div>
+                        </div>
+                        <div className="bg-purple-900/20 p-2 rounded border border-purple-500/30">
+                          <div className="text-purple-400 mb-1">NFT Export:</div>
+                          <div className="text-white space-y-1">
+                            <div>• All contract data +</div>
+                            <div>• Current seed</div>
+                            <div>• Aging state (dirt/texture)</div>
+                            <div>• Generated traits</div>
+                            <div>• Complexity score</div>
+                            <div>• Character count</div>
+                            <div>• <span className="text-green-400">Full metadata</span></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Mint Data Dashboard */}
+                <div className="border-t border-gray-500/30 pt-3">
+                  <div className="text-gray-300 text-sm mb-3 font-mono">📊 Mint Data Dashboard</div>
+                  
+                  <div className="bg-gray-900/30 border border-gray-500/30 rounded p-4">
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      {/* Text Data */}
+                      <div className="bg-gradient-to-br from-blue-900/30 to-blue-800/20 p-3 rounded-lg border border-blue-500/20">
+                        <div className="flex items-center mb-2">
+                          <div className="w-2 h-2 bg-blue-400 rounded-full mr-2"></div>
+                          <div className="text-blue-300 text-xs font-semibold">Text Content</div>
+                        </div>
+                        <div className="text-white text-sm">
+                          {textInputs.filter(row => row.trim() !== '').length} lines
+                        </div>
+                        <div className="text-gray-400 text-xs mt-1">
+                          {textInputs.filter(row => row.trim() !== '').slice(0, 2).join(', ')}
+                          {textInputs.filter(row => row.trim() !== '').length > 2 && '...'}
+                        </div>
+                      </div>
+
+                      {/* Palette Data */}
+                      <div className="bg-gradient-to-br from-purple-900/30 to-purple-800/20 p-3 rounded-lg border border-purple-500/20">
+                        <div className="flex items-center mb-2">
+                          <div className="w-2 h-2 bg-purple-400 rounded-full mr-2"></div>
+                          <div className="text-purple-300 text-xs font-semibold">Color Palette</div>
+                        </div>
+                        <div className="text-white text-sm">
+                          {palette?.name || 'Default'}
+                        </div>
+                        <div className="flex gap-1 mt-2">
+                          {palette?.colors?.slice(0, 4).map((color: string, index: number) => (
+                            <div
+                              key={index}
+                              className="w-3 h-3 rounded-full border border-gray-600"
+                              style={{ backgroundColor: color }}
+                            />
+                          ))}
+                          {palette?.colors?.length > 4 && (
+                            <div className="text-gray-400 text-xs ml-1">+{palette.colors.length - 4}</div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-3 mb-4">
+                      {/* Stripe Data */}
+                      <div className="bg-gradient-to-br from-green-900/30 to-green-800/20 p-3 rounded-lg border border-green-500/20">
+                        <div className="flex items-center mb-2">
+                          <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
+                          <div className="text-green-300 text-xs font-semibold">Stripes</div>
+                        </div>
+                        <div className="text-white text-sm">
+                          {typeof window !== 'undefined' && (window as any).stripeData 
+                            ? `${(window as any).stripeData.length}`
+                            : '0'
+                          }
+                        </div>
+                        <div className="text-gray-400 text-xs">patterns</div>
+                      </div>
+
+                      {/* Character Map */}
+                      <div className="bg-gradient-to-br from-orange-900/30 to-orange-800/20 p-3 rounded-lg border border-orange-500/20">
+                        <div className="flex items-center mb-2">
+                          <div className="w-2 h-2 bg-orange-400 rounded-full mr-2"></div>
+                          <div className="text-orange-300 text-xs font-semibold">Characters</div>
+                        </div>
+                        <div className="text-white text-sm">
+                          {(() => {
+                            if (typeof window === 'undefined' || !(window as any).doormatData?.characterMap) return '0';
+                            
+                            // Get only the characters actually used in text (optimization)
+                            const used = new Set<string>();
+                            textInputs.forEach(row => {
+                              for (let char of row.toUpperCase()) {
+                                used.add(char);
+                              }
+                            });
+                            used.add(' '); // Always include space
+                            
+                            const usedCharMap: any = {};
+                            used.forEach((char) => {
+                              if ((window as any).doormatData.characterMap[char]) {
+                                usedCharMap[char] = (window as any).doormatData.characterMap[char];
+                              }
+                            });
+                            return Object.keys(usedCharMap).length;
+                          })()}
+                        </div>
+                        <div className="text-gray-400 text-xs">mapped</div>
+                      </div>
+
+                      {/* Warp Thickness */}
+                      <div className="bg-gradient-to-br from-pink-900/30 to-pink-800/20 p-3 rounded-lg border border-pink-500/20">
+                        <div className="flex items-center mb-2">
+                          <div className="w-2 h-2 bg-pink-400 rounded-full mr-2"></div>
+                          <div className="text-pink-300 text-xs font-semibold">Warp</div>
+                        </div>
+                        <div className="text-white text-sm">3</div>
+                        <div className="text-gray-400 text-xs">thickness</div>
+                      </div>
+                    </div>
+
+                    {/* Seed & Status */}
+                    <div className="bg-gradient-to-r from-gray-800/40 to-gray-700/40 p-3 rounded-lg border border-gray-600/30">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <div className="w-2 h-2 bg-yellow-400 rounded-full mr-2"></div>
+                          <div className="text-yellow-300 text-xs font-semibold">Seed</div>
+                        </div>
+                        <div className="text-white text-sm font-mono">{currentSeed}</div>
+                      </div>
+                      <div className="flex items-center justify-between mt-2">
+                        <div className="flex items-center">
+                          <div className="w-2 h-2 bg-emerald-400 rounded-full mr-2"></div>
+                          <div className="text-emerald-300 text-xs font-semibold">Status</div>
+                        </div>
+                        <div className="text-emerald-400 text-xs">Ready to Mint</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Raw JSON Data Section */}
+                <div className="border-t border-gray-500/30 pt-3 mt-4">
+                  <div className="text-gray-300 text-sm mb-3 font-mono">🔧 Raw JSON Data</div>
+                  
+                  <div className="bg-gray-900/30 border border-gray-500/30 rounded p-3">
+                    <div className="text-gray-400 text-xs font-mono mb-2">Complete Data for Contract:</div>
+                    <div className="space-y-2 text-xs">
+                      <div className="bg-gray-800/50 p-2 rounded">
+                        <div className="flex justify-between items-center mb-1">
+                          <div className="text-gray-400">Text Rows Array:</div>
+                          <button
+                            onClick={() => copyToClipboard(JSON.stringify(textInputs.filter(row => row.trim() !== ''), null, 2), 'Text Rows Array')}
+                            className="text-blue-400 hover:text-blue-300 text-xs px-2 py-1 rounded border border-blue-400/30 hover:border-blue-300/50 transition-colors"
+                          >
+                            📋 Copy
+                          </button>
+                        </div>
+                        <div className="text-white font-mono text-xs">
+                          {JSON.stringify(textInputs.filter(row => row.trim() !== ''), null, 2)}
+                        </div>
+                      </div>
+                      <div className="bg-gray-800/50 p-2 rounded">
+                        <div className="flex justify-between items-center mb-1">
+                          <div className="text-gray-400">Palette Object:</div>
+                          <button
+                            onClick={() => copyToClipboard(JSON.stringify(palette, null, 2), 'Palette Object')}
+                            className="text-blue-400 hover:text-blue-300 text-xs px-2 py-1 rounded border border-blue-400/30 hover:border-blue-300/50 transition-colors"
+                          >
+                            📋 Copy
+                          </button>
+                        </div>
+                        <div className="text-white font-mono text-xs max-h-20 overflow-y-auto">
+                          {JSON.stringify(palette, null, 2)}
+                        </div>
+                      </div>
+                      <div className="bg-gray-800/50 p-2 rounded">
+                        <div className="flex justify-between items-center mb-1">
+                          <div className="text-gray-400">Stripe Data:</div>
+                          <button
+                            onClick={() => copyToClipboard(
+                              typeof window !== 'undefined' && (window as any).stripeData 
+                                ? JSON.stringify((window as any).stripeData, null, 2)
+                                : '[]',
+                              'Stripe Data'
+                            )}
+                            className="text-blue-400 hover:text-blue-300 text-xs px-2 py-1 rounded border border-blue-400/30 hover:border-blue-300/50 transition-colors"
+                          >
+                            📋 Copy
+                          </button>
+                        </div>
+                        <div className="text-white font-mono text-xs max-h-20 overflow-y-auto">
+                          {typeof window !== 'undefined' && (window as any).stripeData 
+                            ? JSON.stringify((window as any).stripeData, null, 2)
+                            : '[]'
+                          }
+                        </div>
+                      </div>
+                      <div className="bg-gray-800/50 p-2 rounded">
+                        <div className="flex justify-between items-center mb-1">
+                          <div className="text-gray-400">Character Map (Optimized):</div>
+                          <button
+                            onClick={() => {
+                              const usedCharMap = (() => {
+                                if (typeof window === 'undefined' || !(window as any).doormatData?.characterMap) return {};
+                                
+                                // Get only the characters actually used in text (optimization)
+                                const used = new Set<string>();
+                                textInputs.forEach(row => {
+                                  for (let char of row.toUpperCase()) {
+                                    used.add(char);
+                                  }
+                                });
+                                used.add(' '); // Always include space
+                                
+                                const usedCharMap: any = {};
+                                used.forEach((char) => {
+                                  if ((window as any).doormatData.characterMap[char]) {
+                                    usedCharMap[char] = (window as any).doormatData.characterMap[char];
+                                  }
+                                });
+                                return usedCharMap;
+                              })();
+                              copyToClipboard(JSON.stringify(usedCharMap, null, 2), 'Character Map');
+                            }}
+                            className="text-blue-400 hover:text-blue-300 text-xs px-2 py-1 rounded border border-blue-400/30 hover:border-blue-300/50 transition-colors"
+                          >
+                            📋 Copy
+                          </button>
+                        </div>
+                        <div className="text-white font-mono text-xs max-h-20 overflow-y-auto">
+                          {(() => {
+                            if (typeof window === 'undefined' || !(window as any).doormatData?.characterMap) return '{}';
+                            
+                            // Get only the characters actually used in text (optimization)
+                            const used = new Set<string>();
+                            textInputs.forEach(row => {
+                              for (let char of row.toUpperCase()) {
+                                used.add(char);
+                              }
+                            });
+                            used.add(' '); // Always include space
+                            
+                            const usedCharMap: any = {};
+                            used.forEach((char) => {
+                              if ((window as any).doormatData.characterMap[char]) {
+                                usedCharMap[char] = (window as any).doormatData.characterMap[char];
+                              }
+                            });
+                            return JSON.stringify(usedCharMap, null, 2);
+                          })()}
+                        </div>
+                      </div>
+                      <div className="bg-gray-800/50 p-2 rounded">
+                        <div className="flex justify-between items-center mb-1">
+                          <div className="text-gray-400">Warp Thickness:</div>
+                          <button
+                            onClick={() => copyToClipboard('3', 'Warp Thickness')}
+                            className="text-blue-400 hover:text-blue-300 text-xs px-2 py-1 rounded border border-blue-400/30 hover:border-blue-300/50 transition-colors"
+                          >
+                            📋 Copy
+                          </button>
+                        </div>
+                        <div className="text-white font-mono text-xs">3</div>
+                      </div>
+                      <div className="bg-gray-800/50 p-2 rounded">
+                        <div className="flex justify-between items-center mb-1">
+                          <div className="text-gray-400">Seed:</div>
+                          <button
+                            onClick={() => copyToClipboard(currentSeed.toString(), 'Seed')}
+                            className="text-blue-400 hover:text-blue-300 text-xs px-2 py-1 rounded border border-blue-400/30 hover:border-blue-300/50 transition-colors"
+                          >
+                            📋 Copy
+                          </button>
+                        </div>
+                        <div className="text-white font-mono text-xs">{currentSeed}</div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 </div>
