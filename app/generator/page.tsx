@@ -5,6 +5,8 @@ import { motion } from 'framer-motion'
 import { Shuffle, Download, FileText, Plus, X } from 'lucide-react'
 import Navigation from '@/components/Navigation'
 import NFTExporter from '@/components/NFTExporter'
+import Web3Minting from '@/components/Web3Minting'
+import SimpleMinting from '@/components/SimpleMinting'
 import { initPRNG, getPRNG, createDerivedPRNG } from '@/lib/DeterministicPRNG'
 
 export default function GeneratorPage() {
@@ -1511,7 +1513,7 @@ export default function GeneratorPage() {
     for (let i = 0; i < fringeStrands; i++) {
       let strandX = x + i * strandWidth
       
-      let strandColor = drawingPRNG.choice(doormatData.selectedPalette.colors)
+      let strandColor = drawingPRNG.randomChoice(doormatData.selectedPalette.colors)
       
       // Draw individual fringe strand with thin threads
       for (let j = 0; j < 12; j++) {
@@ -1524,7 +1526,7 @@ export default function GeneratorPage() {
         let waveFreq = drawingPRNG.range(0.2, 0.8)
         
         // Randomize the direction and intensity for each thread
-        let direction = drawingPRNG.choice([-1, 1])
+        let direction = drawingPRNG.randomChoice([-1, 1])
         let curlIntensity = drawingPRNG.range(0.5, 2.0)
         let threadLength = drawingPRNG.range(0.8, 1.2)
         
@@ -2712,6 +2714,54 @@ export default function GeneratorPage() {
                 </div>
 
                 
+                {/* Minting Section */}
+                <div className="border-t border-green-500/30 pt-3">
+                  <div className="text-green-300 text-sm mb-3 font-mono">Mint Onchain Rug</div>
+                  
+                  {/* Pricing Information */}
+                  <div className="bg-gray-900/50 border border-green-500/30 rounded p-3 mb-3">
+                    <div className="text-green-400 text-xs font-mono mb-2">Pricing:</div>
+                    <div className="space-y-1 text-xs text-gray-300">
+                      <div>• Base price: <span className="text-yellow-400">0.0001 ETH</span></div>
+                      <div>• Lines 2-3: <span className="text-yellow-400">+0.00111 ETH each</span></div>
+                      <div>• Lines 4-5: <span className="text-yellow-400">+0.00222 ETH each</span></div>
+                    </div>
+                    <div className="mt-2 text-xs text-gray-400">
+                      Current cost: <span className="text-white font-mono">
+                        {(() => {
+                          const nonEmptyRows = textInputs.filter(row => row.trim() !== '').length
+                          if (nonEmptyRows === 0) return '0.0001 ETH'
+                          if (nonEmptyRows === 1) return '0.0001 ETH'
+                          if (nonEmptyRows <= 3) return `${(0.0001 + (nonEmptyRows - 1) * 0.00111).toFixed(4)} ETH`
+                          return `${(0.0001 + 2 * 0.00111 + (nonEmptyRows - 3) * 0.00222).toFixed(4)} ETH`
+                        })()}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Simple Minting Debug Tool */}
+                  <SimpleMinting 
+                    textRows={textInputs}
+                    currentPalette={palette}
+                    currentStripeData={typeof window !== 'undefined' ? (window as any).stripeData || [] : []}
+                    characterMap={typeof window !== 'undefined' ? (window as any).doormatData?.characterMap || {} : {}}
+                    warpThickness={3}
+                    showDirt={showDirt}
+                    dirtLevel={dirtLevel}
+                    showTexture={showTexture}
+                    textureLevel={textureLevel}
+                  />
+
+                  {/* Mint Button */}
+                  <Web3Minting 
+                    textRows={textInputs}
+                    currentPalette={palette}
+                    currentStripeData={typeof window !== 'undefined' ? (window as any).stripeData || [] : []}
+                    characterMap={typeof window !== 'undefined' ? (window as any).doormatData?.characterMap || {} : {}}
+                    warpThickness={3}
+                  />
+                </div>
+
                 {/* NFT Export Section */}
                 <div className="border-t border-green-500/30 pt-3">
                   <NFTExporter 

@@ -23,12 +23,12 @@ export const config = {
     shapeSepolia: {
       chainId: 11011,
       name: 'Shape Sepolia',
-      rpcUrl: 'https://rpc-shape-sepolia.alt.technology',
+      rpcUrl: 'https://sepolia.shape.network',
     },
     shapeMainnet: {
-      chainId: 11011,
+      chainId: 360,
       name: 'Shape Mainnet', 
-      rpcUrl: 'https://rpc-shape.alt.technology',
+      rpcUrl: 'https://mainnet.shape.network',
     },
   },
   
@@ -38,11 +38,10 @@ export const config = {
   // Minting configuration
   minting: {
     maxSupply: 1111,
-    freeMintLines: 1,
-    basePrice: '0', // Free minting
+    basePrice: '100000000000000', // 0.0001 ETH in wei (base price for any mint)
     additionalLinePrices: {
-      lines2to3: 0.00111, // ETH
-      lines4to5: 0.00222, // ETH
+      lines2to3: 0.00111, // ETH (additional for lines 2-3)
+      lines4to5: 0.00222, // ETH (additional for lines 4-5)
     },
     textPricing: {
       line2: '1110000000000000', // 0.00111 ETH in wei

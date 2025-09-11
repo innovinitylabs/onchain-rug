@@ -13,8 +13,8 @@ shape-sepolia = "https://sepolia.shape.network"
 shape-mainnet = "https://mainnet.shape.network"
 
 [etherscan]
-shape-sepolia = { key = "your-api-key", url = "https://sepolia-explorer.shape.xyz/api" }
-shape-mainnet = { key = "your-api-key", url = "https://explorer.shape.xyz/api" }
+shape-sepolia = { key = "your-api-key", url = "https://explorer-sepolia.shape.network/api" }
+shape-mainnet = { key = "your-api-key", url = "https://shapescan.xyz/api" }
 
 # Gas settings for Shape L2
 [profile.default.gas]

@@ -38,6 +38,11 @@ class DeterministicPRNG {
     return array[this.randomInt(0, array.length - 1)]
   }
 
+  // Generate random number in range (alias for random)
+  range(min: number, max: number): number {
+    return this.random(min, max)
+  }
+
   // Shuffle array in place
   shuffle<T>(array: T[]): T[] {
     for (let i = array.length - 1; i > 0; i--) {

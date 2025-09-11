@@ -21,6 +21,7 @@ contract OnchainRugsTest is Test, IERC721Receiver {
         string memory stripeData = '[{"y":0,"height":100,"primaryColor":"#FF0000"}]';
         string memory characterMap = '{"T":["11111","00100"],"E":["11111","10000"],"S":["01111","10001"]}';
         uint256 warpThickness = 3;
+        uint256 seed = 12345;
         
         // Check text availability
         assertTrue(onchainRugs.isTextAvailable(textRows));
@@ -32,10 +33,15 @@ contract OnchainRugsTest is Test, IERC721Receiver {
         // Mint NFT
         onchainRugs.mintWithText{value: price}(
             textRows,
+            seed,
             palette,
             stripeData,
             characterMap,
-            warpThickness
+            warpThickness,
+            false, // showDirt
+            0,     // dirtLevel
+            false, // showTexture
+            0      // textureLevel
         );
         
         // Verify minting
@@ -53,10 +59,15 @@ contract OnchainRugsTest is Test, IERC721Receiver {
         
         onchainRugs.mintWithText{value: 0}(
             textRows,
+            12345, // seed
             '{"name":"Test","colors":["#FF0000"]}',
             '[{"y":0,"height":100,"primaryColor":"#FF0000"}]',
             '{"T":["11111","00100"]}',
-            3
+            3,
+            false, // showDirt
+            0,     // dirtLevel
+            false, // showTexture
+            0      // textureLevel
         );
         
         // Get token URI
@@ -78,10 +89,15 @@ contract OnchainRugsTest is Test, IERC721Receiver {
         
         onchainRugs.mintWithText{value: 0}(
             textRows,
+            12345, // seed
             '{"name":"Test","colors":["#FF0000"]}',
             '[{"y":0,"height":100,"primaryColor":"#FF0000"}]',
             '{"T":["11111","00100"]}',
-            3
+            3,
+            false, // showDirt
+            0,     // dirtLevel
+            false, // showTexture
+            0      // textureLevel
         );
         
         // Check initial aging state (should be clean)

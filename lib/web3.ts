@@ -7,7 +7,7 @@ import { config as appConfig } from './config'
 
 // Chain configurations
 export const shapeSepolia = {
-  id: 11011,
+  id: 11011, // Shape Sepolia testnet chain ID
   name: 'Shape Sepolia',
   nativeCurrency: {
     decimals: 18,
@@ -16,23 +16,23 @@ export const shapeSepolia = {
   },
   rpcUrls: {
     default: {
-      http: ['https://rpc-shape-sepolia.alt.technology'],
+      http: ['https://sepolia.shape.network'],
     },
     public: {
-      http: ['https://rpc-shape-sepolia.alt.technology'],
+      http: ['https://sepolia.shape.network'],
     },
   },
   blockExplorers: {
     default: {
       name: 'Shape Sepolia Explorer',
-      url: 'https://sepolia-explorer.shape.alt.technology',
+      url: 'https://explorer-sepolia.shape.network',
     },
   },
   testnet: true,
 }
 
 export const shapeMainnet = {
-  id: 11011,
+  id: 360, // Shape mainnet chain ID
   name: 'Shape Mainnet',
   nativeCurrency: {
     decimals: 18,
@@ -41,16 +41,16 @@ export const shapeMainnet = {
   },
   rpcUrls: {
     default: {
-      http: ['https://rpc-shape.alt.technology'],
+      http: ['https://mainnet.shape.network'],
     },
     public: {
-      http: ['https://rpc-shape.alt.technology'],
+      http: ['https://mainnet.shape.network'],
     },
   },
   blockExplorers: {
     default: {
       name: 'Shape Explorer',
-      url: 'https://explorer.shape.alt.technology',
+      url: 'https://shapescan.xyz',
     },
   },
   testnet: false,
