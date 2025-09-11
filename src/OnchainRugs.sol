@@ -394,6 +394,70 @@ contract OnchainRugs is ERC721, ERC721URIStorage, Ownable {
             )
         );
         
+        // Add total character count attribute
+        uint256 totalChars = 0;
+        for (uint256 i = 0; i < rug.textRows.length; i++) {
+            totalChars += bytes(rug.textRows[i]).length;
+        }
+        attributes = string.concat(
+            attributes,
+            string(
+                abi.encodePacked(
+                    '{"trait_type": "Total Characters", "value": ',
+                    Strings.toString(totalChars),
+                    '},'
+                )
+            )
+        );
+        
+        // Add palette name attribute (extract from palette JSON)
+        attributes = string.concat(
+            attributes,
+            string(
+                abi.encodePacked(
+                    '{"trait_type": "Palette Name", "value": "',
+                    _extractPaletteName(rug.palette),
+                    '"},'
+                )
+            )
+        );
+        
+        // Add stripe count attribute (count from stripeData JSON)
+        attributes = string.concat(
+            attributes,
+            string(
+                abi.encodePacked(
+                    '{"trait_type": "Stripe Count", "value": ',
+                    Strings.toString(_countStripes(rug.stripeData)),
+                    '},'
+                )
+            )
+        );
+        
+        // Add stripe complexity attribute
+        attributes = string.concat(
+            attributes,
+            string(
+                abi.encodePacked(
+                    '{"trait_type": "Stripe Complexity", "value": "',
+                    _getStripeComplexity(rug.stripeData),
+                    '"},'
+                )
+            )
+        );
+        
+        // Add warp thickness attribute
+        attributes = string.concat(
+            attributes,
+            string(
+                abi.encodePacked(
+                    '{"trait_type": "Warp Thickness", "value": ',
+                    Strings.toString(rug.warpThickness),
+                    '},'
+                )
+            )
+        );
+        
         // Add dirt level attribute
         if (showDirt) {
             attributes = string.concat(
@@ -436,6 +500,90 @@ contract OnchainRugs is ERC721, ERC721URIStorage, Ownable {
         );
         
         return attributes;
+    }
+    
+    /**
+     * @dev Extract palette name from palette JSON
+     * @param paletteJson JSON string of palette data
+     * @return Palette name
+     */
+    function _extractPaletteName(string memory paletteJson) internal pure returns (string memory) {
+        // Simple extraction - look for "name" field in JSON
+        // This is a basic implementation - in production you might want more robust JSON parsing
+        bytes memory data = bytes(paletteJson);
+        bytes memory name = new bytes(0);
+        bool inName = false;
+        bool inValue = false;
+        uint256 nameStart = 0;
+        
+        for (uint256 i = 0; i < data.length - 4; i++) {
+            // Look for "name"
+            if (data[i] == '"' && data[i+1] == 'n' && data[i+2] == 'a' && data[i+3] == 'm' && data[i+4] == 'e') {
+                inName = true;
+                i += 4;
+                continue;
+            }
+            
+            if (inName && data[i] == '"' && data[i+1] == ':') {
+                inValue = true;
+                i += 1;
+                continue;
+            }
+            
+            if (inValue && data[i] == '"') {
+                nameStart = i + 1;
+                continue;
+            }
+            
+            if (inValue && data[i] == '"' && i > nameStart) {
+                // Extract the name
+                bytes memory extracted = new bytes(i - nameStart);
+                for (uint256 j = 0; j < i - nameStart; j++) {
+                    extracted[j] = data[nameStart + j];
+                }
+                return string(extracted);
+            }
+        }
+        
+        return "Unknown";
+    }
+    
+    /**
+     * @dev Count stripes from stripeData JSON
+     * @param stripeDataJson JSON string of stripe data
+     * @return Number of stripes
+     */
+    function _countStripes(string memory stripeDataJson) internal pure returns (uint256) {
+        // Count opening braces to determine stripe count
+        bytes memory data = bytes(stripeDataJson);
+        uint256 count = 0;
+        
+        for (uint256 i = 0; i < data.length; i++) {
+            if (data[i] == '{') {
+                count++;
+            }
+        }
+        
+        return count;
+    }
+    
+    /**
+     * @dev Determine stripe complexity from stripeData JSON
+     * @param stripeDataJson JSON string of stripe data
+     * @return Complexity level
+     */
+    function _getStripeComplexity(string memory stripeDataJson) internal pure returns (string memory) {
+        uint256 stripeCount = _countStripes(stripeDataJson);
+        
+        if (stripeCount <= 5) {
+            return "Simple";
+        } else if (stripeCount <= 10) {
+            return "Moderate";
+        } else if (stripeCount <= 15) {
+            return "Complex";
+        } else {
+            return "Very Complex";
+        }
     }
     
     

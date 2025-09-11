@@ -2436,9 +2436,9 @@ export default function GeneratorPage() {
                       </div>
                     </div>
 
-                {/* NFT Traits Display - Commented out to reduce bottom thickness */}
-                {/* {traits && (
-                  <div className="mt-2 pt-2 border-t border-green-500/30 hidden">
+                {/* NFT Traits Display */}
+                {traits && (
+                  <div className="mt-2 pt-2 border-t border-green-500/30">
                     <div className="text-green-300 text-sm mb-3">NFT Traits & Rarity:</div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {Object.entries(traits).map(([key, trait]: [string, any]) => {
@@ -2473,7 +2473,7 @@ export default function GeneratorPage() {
                       })}
                     </div>
                   </div>
-                )} */}
+                )}
               </div>
                 </div>
               </div>
