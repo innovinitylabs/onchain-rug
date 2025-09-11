@@ -2742,7 +2742,7 @@ export default function GeneratorPage() {
                           <div className="text-white font-mono">
                             {textInputs.filter(row => row.trim() !== '').length > 0 
                               ? textInputs.filter(row => row.trim() !== '').map((row, i) => (
-                                  <div key={i} className="truncate">"{row}"</div>
+                                  <div key={i} className="truncate">&quot;{row}&quot;</div>
                                 ))
                               : <span className="text-gray-500">No text</span>
                             }
