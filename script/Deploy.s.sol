@@ -6,8 +6,8 @@ import "../src/OnchainRugs.sol";
 
 contract DeployScript is Script {
     function run() external {
-        // Use the default Anvil private key for local testing
-        uint256 deployerPrivateKey = 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80;
+        // Use environment variable for private key, fallback to Anvil default for local testing
+        uint256 deployerPrivateKey = vm.envOr("PRIVATE_KEY", uint256(0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80));
         vm.startBroadcast(deployerPrivateKey);
 
         // Deploy OnchainRugs contract
