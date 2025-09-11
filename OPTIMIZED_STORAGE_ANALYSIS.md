@@ -66,9 +66,9 @@ struct AgingData {
 {
   "name": "Onchain Rug #123",
   "description": "A unique generative rug NFT with dynamic aging mechanics.",
-  "image": "https://onchainrugs.com/thumbnails/123.png",
+  "image": "https://onchainrugs.xyz/thumbnails/123.png",
   "animation_url": "data:text/html;base64,<base64-encoded-html>",
-  "external_url": "https://onchainrugs.com/rug/123",
+  "external_url": "https://onchainrugs.xyz/rug/123",
   "attributes": [
     {
       "trait_type": "Text Lines",

@@ -328,15 +328,12 @@ contract OnchainRugs is ERC721, ERC721URIStorage, Ownable {
                     abi.encodePacked(
                         '{"name": "Onchain Rug #',
                         tokenId.toString(),
-                        '", "description": "A unique generative rug NFT with dynamic aging mechanics.", "external_url": "https://onchainrugs.com/rug/',
+                        '", "description": "A unique generative rug NFT with dynamic aging mechanics.", "external_url": "https://onchainrugs.xyz/rug/',
                         tokenId.toString(),
-                        '", "image": "https://onchainrugs.com/thumbnails/',
+                        '", "image": "https://onchainrugs.xyz/thumbnails/',
                         tokenId.toString(),
-                        '.png", "animation_url": "',
-                        string.concat(
-                            'data:text/html;base64,',
-                            Base64.encode(bytes(html))
-                        ),
+                        '.png", "animation_url": "https://onchainrugs.xyz/animated/',
+                        tokenId.toString(),
                         '", "attributes": [',
                         _getRugAttributes(tokenId),
                         "]}"
