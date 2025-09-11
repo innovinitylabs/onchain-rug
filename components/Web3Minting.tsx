@@ -1,141 +1,400 @@
-'use client'
+"use client"
 
-import { useState } from 'react'
-import { useAccount, useChainId } from 'wagmi'
-import { useRugMinting } from '@/hooks/use-rug-minting'
-import { mintingConfig } from '@/lib/config'
+import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Shuffle, Download, AlertCircle, CheckCircle } from 'lucide-react'
-import { config } from '@/lib/config'
-import { formatEther } from 'viem'
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useChainId, useEstimateGas } from 'wagmi'
+import { parseEther } from 'viem'
+import { shapeSepolia, shapeMainnet } from '@/lib/web3'
 
 interface Web3MintingProps {
-  currentSeed: number
-  onMintSuccess?: (tokenId: bigint) => void
+  textRows: string[]
+  currentPalette: any
+  currentStripeData: any[]
+  characterMap: any
+  warpThickness: number
 }
 
-export function Web3Minting({ currentSeed, onMintSuccess }: Web3MintingProps) {
+export default function Web3Minting({ 
+  textRows, 
+  currentPalette, 
+  currentStripeData, 
+  characterMap, 
+  warpThickness 
+}: Web3MintingProps) {
+  const [isMinting, setIsMinting] = useState(false)
   const { address, isConnected } = useAccount()
   const chainId = useChainId()
-  const { 
-    mintRug, 
-    mintPrice, 
-    currentSupply, 
-    maxSupply, 
-    calculateMintingPrice,
-    isPending, 
-    isConfirming, 
-    isSuccess, 
-    error 
-  } = useRugMinting()
+  const { writeContract, data: hash, error, isPending } = useWriteContract()
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
+    hash,
+  })
 
-  const [customSeed, setCustomSeed] = useState('')
+  // Calculate minting cost - NO TEXT IS FREE TO MINT
+  const calculateCost = () => {
+    const nonEmptyRows = textRows.filter(row => row.trim() !== '').length
+    
+    // Base price for ANY mint (even no text) = 0.0001 ETH
+    const basePrice = 0.0001
+    
+    if (nonEmptyRows <= 1) return basePrice // Base price for 0 or 1 line
+    
+    // Additional costs for extra lines
+    if (nonEmptyRows <= 3) {
+      return basePrice + (nonEmptyRows - 1) * 0.00111 // Lines 2-3: +0.00111 ETH each
+    }
+    
+    // Lines 4-5: +0.00222 ETH each
+    return basePrice + 2 * 0.00111 + (nonEmptyRows - 3) * 0.00222
+  }
 
-  const isCorrectChain = chainId === config.chainId
-  const isSoldOut = currentSupply && maxSupply ? currentSupply >= maxSupply : false
+  const mintCost = calculateCost()
+
+  // Optimize data before sending
+  const optimizeData = () => {
+    const nonEmptyTextRows = textRows.filter(row => row.trim() !== '')
+    const finalTextRows = nonEmptyTextRows.length > 0 ? nonEmptyTextRows : ['']
+    
+    // Filter character map to only include used characters
+    const usedChars = new Set<string>()
+    finalTextRows.forEach(row => {
+      for (const char of row.toUpperCase()) {
+        usedChars.add(char)
+      }
+    })
+    
+    const filteredCharacterMap: any = {}
+    usedChars.forEach((char: string) => {
+      if (characterMap && characterMap[char]) {
+        filteredCharacterMap[char] = characterMap[char]
+      }
+    })
+    
+    // Compress palette data with null checks
+    const compressedPalette = {
+      n: currentPalette?.name || 'Default', // 'name' -> 'n'
+      c: currentPalette?.colors || ['#FF0000'] // 'colors' -> 'c'
+    }
+    
+    // Compress stripe data with null checks
+    const compressedStripeData = (currentStripeData || []).map(stripe => ({
+      y: stripe.y,
+      h: stripe.height, // 'height' -> 'h'
+      pc: stripe.primaryColor, // 'primaryColor' -> 'pc'
+      sc: stripe.secondaryColor, // 'secondaryColor' -> 'sc'
+      wt: stripe.weaveType, // 'weaveType' -> 'wt'
+      wv: stripe.warpVariation // 'warpVariation' -> 'wv'
+    }))
+    
+    return {
+      textRows: finalTextRows,
+      palette: compressedPalette,
+      stripeData: compressedStripeData,
+      characterMap: filteredCharacterMap
+    }
+  }
+
+  // Skip gas estimation - use fixed high gas limit to avoid wallet issues
+  const gasEstimate = null
+  const gasError = null
+  const gasLoading = false
 
   const handleMint = async () => {
-    if (!isConnected || !isCorrectChain || isSoldOut) return
+    if (!isConnected) {
+      alert('Please connect your wallet first!')
+      return
+    }
 
-    const seed = customSeed ? parseInt(customSeed) : currentSeed
-    // For now, mint without text (free)
-    await mintRug(seed, [])
+    if (!process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT) {
+      alert('Contract not deployed yet!')
+      return
+    }
+
+    try {
+      const optimized = optimizeData()
+      const seed = Math.floor(Math.random() * 4294967296) // Generate random seed
+      
+      // Use a very high fixed gas limit to avoid wallet simulation issues
+      const gasLimit = BigInt(5000000) // 5M gas - very high limit for Shape L2
+      
+      console.log('Minting with optimized data:', {
+        contract: process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT,
+        textRows: optimized.textRows,
+        seed,
+        palette: optimized.palette,
+        stripeData: optimized.stripeData,
+        characterMap: optimized.characterMap,
+        warpThickness,
+        mintCost,
+        gasLimit: gasLimit.toString(),
+        chainId,
+        address,
+        originalSize: JSON.stringify(currentPalette || {}).length + JSON.stringify(currentStripeData || []).length + JSON.stringify(characterMap || {}).length,
+        optimizedSize: JSON.stringify(optimized.palette).length + JSON.stringify(optimized.stripeData).length + JSON.stringify(optimized.characterMap).length
+      })
+      
+      await writeContract({
+        address: process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT as `0x${string}`,
+        abi: [
+          {
+            "inputs": [
+              {"internalType": "string[]", "name": "textRows", "type": "string[]"},
+              {"internalType": "uint256", "name": "seed", "type": "uint256"},
+              {"internalType": "string", "name": "palette", "type": "string"},
+              {"internalType": "string", "name": "stripeData", "type": "string"},
+              {"internalType": "string", "name": "characterMap", "type": "string"},
+              {"internalType": "uint256", "name": "warpThickness", "type": "uint256"},
+              {"internalType": "bool", "name": "showDirt", "type": "bool"},
+              {"internalType": "uint8", "name": "dirtLevel", "type": "uint8"},
+              {"internalType": "bool", "name": "showTexture", "type": "bool"},
+              {"internalType": "uint8", "name": "textureLevel", "type": "uint8"}
+            ],
+            "name": "mintWithText",
+            "outputs": [],
+            "stateMutability": "payable",
+            "type": "function"
+          }
+        ] as const,
+        functionName: 'mintWithText',
+        args: [
+          optimized.textRows,
+          BigInt(seed),
+          JSON.stringify(optimized.palette),
+          JSON.stringify(optimized.stripeData),
+          JSON.stringify(optimized.characterMap),
+          BigInt(warpThickness),
+          false, // showDirt
+          0,     // dirtLevel
+          false, // showTexture
+          0      // textureLevel
+        ],
+        value: parseEther(mintCost.toString()),
+        gas: gasLimit,
+        chain: chainId === 11011 ? shapeSepolia : shapeMainnet,
+        account: address
+      })
+    } catch (err) {
+      console.error('Minting error:', err)
+      console.error('Error details:', {
+        message: err instanceof Error ? err.message : 'Unknown error',
+        stack: err instanceof Error ? err.stack : undefined,
+        gasEstimate,
+        gasError
+      })
+      alert(`Minting failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    }
   }
 
-  const getMintButtonText = () => {
+  const getButtonText = () => {
     if (!isConnected) return 'Connect Wallet to Mint'
-    if (!isCorrectChain) return `Switch to ${config.chainId === 360 ? 'Shape Mainnet' : 'Shape Sepolia'}`
-    if (isSoldOut) return 'Sold Out'
-    if (isPending) return 'Minting...'
-    if (isConfirming) return 'Confirming...'
-    return 'Mint Rug'
+    if (isPending || isConfirming) return 'Minting...'
+    if (isSuccess) return 'Minted Successfully!'
+    return `Mint Rug (${mintCost} ETH) - 5M Gas`
   }
 
-  const getMintButtonClass = () => {
-    if (!isConnected || !isCorrectChain || isSoldOut) {
-      return 'bg-gray-400 text-gray-200 cursor-not-allowed'
-    }
-    if (isPending || isConfirming) {
-      return 'bg-blue-500 text-white hover:bg-blue-600'
-    }
-    return 'bg-green-600 text-white hover:bg-green-700'
-  }
+  const isButtonDisabled = !isConnected || isPending || isConfirming || isSuccess
 
   return (
-    <div className="space-y-4">
-      {/* Mint Status */}
-      <div className="bg-gray-900/50 border border-green-500/30 rounded p-3">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-green-300 text-sm font-mono">MINT STATUS</span>
-          {isSuccess && (
-            <CheckCircle className="w-4 h-4 text-green-400" />
-          )}
+    <div className="space-y-3">
+      {/* Contract Status */}
+      {!process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT || process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT === '0x0000000000000000000000000000000000000000' ? (
+        <div className="bg-orange-900/30 border border-orange-500/30 rounded p-2">
+          <div className="text-orange-400 text-xs font-mono">
+            ⚠️ Contract not deployed yet - This is a preview
+          </div>
         </div>
-        
-        <div className="text-green-400 text-xs font-mono space-y-1">
-          <div>Supply: {currentSupply?.toString() || '0'} / {maxSupply?.toString() || '1111'}</div>
-          <div>Base Price: FREE</div>
-          <div>Text Lines: +0.00111 ETH (lines 2-3), +0.00222 ETH (lines 4-5)</div>
-          <div>Network: {chainId === 360 ? 'Shape Mainnet' : 'Shape Sepolia'}</div>
-        </div>
-      </div>
-
-      {/* Custom Seed Input */}
-      <div className="space-y-2">
-        <label className="text-green-300 text-sm font-mono">CUSTOM SEED (Optional)</label>
-        <input
-          type="number"
-          value={customSeed}
-          onChange={(e) => setCustomSeed(e.target.value)}
-          placeholder="Enter custom seed or use current"
-          className="w-full px-3 py-2 bg-gray-900 border border-green-500/50 text-green-400 rounded text-sm font-mono focus:ring-1 focus:ring-green-500 focus:border-transparent transition-all"
-        />
-        <div className="text-green-500 text-xs font-mono">
-          Current seed: {currentSeed} | Custom seed: {customSeed || 'None'}
-        </div>
-      </div>
-
-      {/* Error Display */}
-      {error && (
-        <div className="bg-red-900/50 border border-red-500/30 rounded p-3">
-          <div className="flex items-center gap-2 text-red-400 text-sm font-mono">
-            <AlertCircle className="w-4 h-4" />
-            Error: {error.message}
+      ) : (
+        <div className="bg-green-900/30 border border-green-500/30 rounded p-2">
+          <div className="text-green-400 text-xs font-mono">
+            ✅ Contract deployed: {process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT?.slice(0, 6)}...{process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT?.slice(-4)}
           </div>
         </div>
       )}
 
-      {/* Success Display */}
+      {/* Wallet Connection Status */}
+      {!isConnected && (
+        <div className="bg-yellow-900/30 border border-yellow-500/30 rounded p-2">
+          <div className="text-yellow-400 text-xs font-mono">
+            🔗 Please connect your wallet to mint
+          </div>
+        </div>
+      )}
+
+      {/* Gas Estimation Status */}
+      {isConnected && !gasEstimate && !gasError && (
+        <div className="bg-blue-900/30 border border-blue-500/30 rounded p-2">
+          <div className="text-blue-400 text-xs font-mono">
+            ⏳ Estimating gas costs...
+          </div>
+        </div>
+      )}
+
+      {gasError && (
+        <div className="bg-yellow-900/30 border border-yellow-500/30 rounded p-2">
+          <div className="text-yellow-400 text-xs font-mono">
+            ⚠️ Gas estimation failed, using default gas limit (200,000)
+          </div>
+        </div>
+      )}
+
+      {gasEstimate && (
+        <div className="bg-green-900/30 border border-green-500/30 rounded p-2">
+          <div className="text-green-400 text-xs font-mono">
+            ✅ Gas estimated: {gasEstimate.toString()} units
+          </div>
+        </div>
+      )}
+
+      {/* Transaction Status */}
+      {hash && (
+        <div className="bg-blue-900/30 border border-blue-500/30 rounded p-2">
+          <div className="text-blue-400 text-xs font-mono">
+            📝 Transaction: {hash.slice(0, 10)}...{hash.slice(-8)}
+          </div>
+        </div>
+      )}
+
       {isSuccess && (
-        <div className="bg-green-900/50 border border-green-500/30 rounded p-3">
-          <div className="flex items-center gap-2 text-green-400 text-sm font-mono">
-            <CheckCircle className="w-4 h-4" />
-            Rug minted successfully! Check your wallet.
+        <div className="bg-green-900/30 border border-green-500/30 rounded p-2">
+          <div className="text-green-400 text-xs font-mono">
+            ✅ NFT minted successfully!
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <div className="bg-red-900/30 border border-red-500/30 rounded p-2">
+          <div className="text-red-400 text-xs font-mono">
+            ❌ Error: {error.message}
           </div>
         </div>
       )}
 
       {/* Mint Button */}
       <motion.button
+        whileHover={{ scale: isButtonDisabled ? 1 : 1.02 }}
+        whileTap={{ scale: isButtonDisabled ? 1 : 0.98 }}
         onClick={handleMint}
-        disabled={!isConnected || !isCorrectChain || isSoldOut || isPending || isConfirming}
-        className={`w-full px-4 py-3 rounded font-mono transition-all duration-200 border flex items-center justify-center gap-2 text-sm ${getMintButtonClass()}`}
-        whileHover={{ scale: isConnected && isCorrectChain && !isSoldOut ? 1.02 : 1 }}
-        whileTap={{ scale: isConnected && isCorrectChain && !isSoldOut ? 0.98 : 1 }}
+        disabled={isButtonDisabled}
+        className={`w-full py-3 px-4 rounded font-mono text-sm font-bold transition-all duration-200 ${
+          isButtonDisabled 
+            ? 'bg-gray-600 text-gray-300 cursor-not-allowed' 
+            : 'bg-green-600 hover:bg-green-700 text-white'
+        }`}
       >
-        <Shuffle className="w-4 h-4" />
-        {getMintButtonText()}
+        {getButtonText()}
       </motion.button>
 
-      {/* Network Warning */}
-      {isConnected && !isCorrectChain && (
-        <div className="bg-yellow-900/50 border border-yellow-500/30 rounded p-3">
-          <div className="flex items-center gap-2 text-yellow-400 text-sm font-mono">
-            <AlertCircle className="w-4 h-4" />
-            Please switch to {config.chainId === 360 ? 'Shape Mainnet' : 'Shape Sepolia'} to mint
-          </div>
+      {/* Debug Info */}
+      <div className="bg-gray-900/50 border border-gray-500/30 rounded p-2">
+        <div className="text-gray-400 text-xs font-mono">
+          Ready to mint: {textRows.filter(row => row.trim() !== '').length} text line(s)
         </div>
-      )}
+        <div className="text-gray-400 text-xs font-mono mt-1">
+          Contract: {process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT ? '✅ Set' : '❌ Missing'}
+        </div>
+        <div className="text-gray-400 text-xs font-mono">
+          Wallet: {isConnected ? '✅ Connected' : '❌ Not connected'}
+        </div>
+        <div className="text-gray-400 text-xs font-mono">
+          Gas: {gasEstimate ? `✅ ${gasEstimate.toString()}` : gasError ? '❌ Failed' : '⏳ Estimating'}
+        </div>
+      </div>
+
+      {/* Test Button */}
+      <button
+        onClick={() => {
+          console.log('=== DEBUG INFO ===');
+          console.log('Contract:', process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT);
+          console.log('Connected:', isConnected);
+          console.log('Address:', address);
+          console.log('Chain ID:', chainId);
+          console.log('Gas Estimate:', gasEstimate);
+          console.log('Gas Error:', gasError);
+          console.log('Text Rows:', textRows);
+          console.log('Palette:', currentPalette);
+          console.log('Stripe Data:', currentStripeData);
+          console.log('Character Map:', characterMap);
+          console.log('Warp Thickness:', warpThickness);
+          console.log('Mint Cost:', mintCost);
+          console.log('==================');
+        }}
+        className="w-full py-2 px-3 rounded font-mono text-xs bg-blue-600 hover:bg-blue-700 text-white"
+      >
+        🔍 Debug Info (Check Console)
+      </button>
+
+      {/* Manual Gas Override Button */}
+      <button
+        onClick={async () => {
+          if (!isConnected) {
+            alert('Please connect your wallet first!')
+            return
+          }
+
+          if (!process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT) {
+            alert('Contract not deployed yet!')
+            return
+          }
+
+          try {
+            const nonEmptyTextRows = textRows.filter(row => row.trim() !== '')
+            const finalTextRows = nonEmptyTextRows.length > 0 ? nonEmptyTextRows : ['']
+            const seed = Math.floor(Math.random() * 4294967296)
+            
+            // Use maximum gas limit for Shape L2
+            const maxGasLimit = BigInt(2000000) // 2 million gas
+            
+            console.log('🚀 Attempting mint with MAX GAS:', maxGasLimit.toString())
+            
+            await writeContract({
+              address: process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT as `0x${string}`,
+              abi: [
+                {
+                  "inputs": [
+                    {"internalType": "string[]", "name": "textRows", "type": "string[]"},
+                    {"internalType": "uint256", "name": "seed", "type": "uint256"},
+                    {"internalType": "string", "name": "palette", "type": "string"},
+                    {"internalType": "string", "name": "stripeData", "type": "string"},
+                    {"internalType": "string", "name": "characterMap", "type": "string"},
+                    {"internalType": "uint256", "name": "warpThickness", "type": "uint256"},
+                    {"internalType": "bool", "name": "showDirt", "type": "bool"},
+                    {"internalType": "uint8", "name": "dirtLevel", "type": "uint8"},
+                    {"internalType": "bool", "name": "showTexture", "type": "bool"},
+                    {"internalType": "uint8", "name": "textureLevel", "type": "uint8"}
+                  ],
+                  "name": "mintWithText",
+                  "outputs": [],
+                  "stateMutability": "payable",
+                  "type": "function"
+                }
+              ] as const,
+              functionName: 'mintWithText',
+              args: [
+                finalTextRows,
+                BigInt(seed),
+                JSON.stringify(currentPalette),
+                JSON.stringify(currentStripeData),
+                JSON.stringify(characterMap),
+                BigInt(warpThickness),
+                false, // showDirt
+                0,     // dirtLevel
+                false, // showTexture
+                0      // textureLevel
+              ],
+              value: parseEther(mintCost.toString()),
+              gas: maxGasLimit,
+              chain: chainId === 11011 ? shapeSepolia : shapeMainnet,
+              account: address
+            })
+          } catch (err) {
+            console.error('Max gas minting error:', err)
+            alert(`Minting failed even with max gas: ${err instanceof Error ? err.message : 'Unknown error'}`)
+          }
+        }}
+        className="w-full py-2 px-3 rounded font-mono text-xs bg-red-600 hover:bg-red-700 text-white"
+      >
+        🚀 Force Mint (Max Gas: 2M)
+      </button>
     </div>
   )
 }
