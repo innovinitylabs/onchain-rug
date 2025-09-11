@@ -584,9 +584,19 @@
                 }
 
                 showLoading('mintBtn');
+                showStatus('priceDisplay', 'Calculating price...', 'info');
                 
-                // Create contract instance
-                const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, new ethers.JsonRpcProvider(RPC_URL));
+                // Create provider and contract instance
+                const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
+                const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
+                
+                // Test connection first
+                try {
+                    const network = await provider.getNetwork();
+                    console.log('Connected to network:', network.chainId.toString());
+                } catch (networkError) {
+                    throw new Error(`Network connection failed: ${networkError.message}`);
+                }
                 
                 // Calculate price
                 const price = await contract.calculateMintingPrice(textRows);
@@ -596,6 +606,7 @@
                 hideLoading('mintBtn', '🎨 Mint Rug');
                 
             } catch (error) {
+                console.error('Calculate price error:', error);
                 showStatus('priceDisplay', `Error: ${error.message}`, 'error');
                 hideLoading('mintBtn', '🎨 Mint Rug');
             }
