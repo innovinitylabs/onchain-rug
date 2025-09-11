@@ -31,6 +31,7 @@ contract OnchainRugs is ERC721, ERC721URIStorage, Ownable {
     struct RugData {
         uint256 seed;
         string palette;
+        string stripeData;
         string[] textRows;
         string characterMap;
         uint256 mintTime;
@@ -76,6 +77,7 @@ contract OnchainRugs is ERC721, ERC721URIStorage, Ownable {
         string[] memory textRows,
         uint256 seed,
         string memory palette,
+        string memory stripeData,
         string memory characterMap,
         uint256 warpThickness,
         bool showDirt,
@@ -105,6 +107,7 @@ contract OnchainRugs is ERC721, ERC721URIStorage, Ownable {
         rugs[tokenId] = RugData({
             seed: seed,
             palette: palette,
+            stripeData: stripeData,
             textRows: textRows,
             characterMap: characterMap,
             mintTime: block.timestamp,
@@ -274,7 +277,7 @@ contract OnchainRugs is ERC721, ERC721URIStorage, Ownable {
         string memory textArray = encodeTextRows(rug.textRows);
         
         // Generate complete HTML
-        string memory html = string(abi.encodePacked(
+        string memory html = string.concat(
             '<!DOCTYPE html><html><head>',
             '<meta charset="UTF-8">',
             '<meta name="viewport" content="width=device-width,initial-scale=1">',
@@ -301,13 +304,13 @@ contract OnchainRugs is ERC721, ERC721URIStorage, Ownable {
             // Initialize with this NFT's data
             'noiseSeed(seed); window.initPRNG(seed);',
             '</script></body></html>'
-        ));
+        );
         
-        // Return as data URI
-        return string(abi.encodePacked(
+        // Return as data URI (simplified for contract size)
+        return string.concat(
             'data:text/html;base64,',
             Base64.encode(bytes(html))
-        ));
+        );
     }
     
     /**
@@ -327,14 +330,15 @@ contract OnchainRugs is ERC721, ERC721URIStorage, Ownable {
         string memory result = "[";
         for (uint256 i = 0; i < textRows.length; i++) {
             if (i > 0) {
-                result = string(abi.encodePacked(result, ","));
+                result = string.concat(result, ",");
             }
-            result = string(abi.encodePacked(result, '"', textRows[i], '"'));
+            result = string.concat(result, '"', textRows[i], '"');
         }
-        result = string(abi.encodePacked(result, "]"));
+        result = string.concat(result, "]");
         
         return result;
     }
+    
     
     /**
      * @dev Clean a rug (reset dirt level)
@@ -405,7 +409,8 @@ contract OnchainRugs is ERC721, ERC721URIStorage, Ownable {
      * @dev Withdraw contract balance
      */
     function withdraw() external onlyOwner {
-        payable(owner()).transfer(address(this).balance);
+        (bool success, ) = payable(owner()).call{value: address(this).balance}("");
+        require(success, "Withdrawal failed");
     }
     
     // Required overrides
