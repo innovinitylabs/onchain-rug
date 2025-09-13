@@ -28,14 +28,14 @@ export default function Home() {
   }, [])
 
   return (
-    <main className="bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 min-h-screen">
+    <main className="bg-gradient-to-br from-amber-50/70 via-orange-50/70 to-red-50/70 min-h-screen">
       <Navigation />
       <PerformanceMonitor />
       <ScrollIndicator />
       {/* Hero Section with 3D Flying Rugs - Performance Optimized */}
       <section className="relative h-screen overflow-hidden" style={{ willChange: 'auto' }}>
         {showAnimatedRugs && (
-          <Suspense fallback={<div className="h-screen bg-gradient-to-br from-amber-100 to-orange-100" />}>
+          <Suspense fallback={<div className="h-screen bg-gradient-to-br from-amber-100/70 to-orange-100/70" />}>
             <AnimatedRugs key={animationKey} />
           </Suspense>
         )}
