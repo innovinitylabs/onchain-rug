@@ -33,13 +33,14 @@ export default function BackgroundRotator() {
   if (!isHydrated || !currentBg) {
     return (
       <div
-        className="fixed inset-0 -z-10"
+        className="fixed inset-0 z-0"
         style={{
           backgroundImage: `url(${backgrounds[0]})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
-          backgroundAttachment: 'fixed'
+          backgroundAttachment: 'fixed',
+          opacity: 0.8
         }}
       />
     );
@@ -47,13 +48,14 @@ export default function BackgroundRotator() {
 
   return (
     <div
-      className="fixed inset-0 -z-10"
+      className="fixed inset-0 z-0"
       style={{
         backgroundImage: `url(${currentBg})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
-        backgroundAttachment: 'fixed'
+        backgroundAttachment: 'fixed',
+        opacity: 0.8 // More visible now that gradients are semi-transparent
       }}
     />
   );
