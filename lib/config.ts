@@ -3,8 +3,8 @@
  */
 
 export const config = {
-  // Wallet Connect Project ID - Get from https://cloud.walletconnect.com/
-  walletConnectProjectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID || 'your-walletconnect-project-id-here',
+  // Wallet Connect Project ID - REQUIRED: Get from https://cloud.walletconnect.com/
+  walletConnectProjectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID || '',
   
   // Alchemy API Key
   alchemyApiKey: process.env.NEXT_PUBLIC_ALCHEMY_API_KEY || '',
