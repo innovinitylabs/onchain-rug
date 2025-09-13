@@ -129,7 +129,7 @@ const NFTExporter: React.FC<NFTExporterProps> = ({
     };
 
     const shortenedStripeData = stripeData.map(stripe => ({
-      y: stripe.y,                        // Usually integer, no truncation needed
+      y: truncateTo3Decimals(stripe.y),               // Truncate y values for consistency (potential chars saved)
       h: truncateTo3Decimals(stripe.height),           // 17 digits → 3 digits (14 chars saved)
       pc: stripe.primaryColor,            // primaryColor → pc (10 chars saved)
       sc: stripe.secondaryColor,          // secondaryColor → sc (12 chars saved)
