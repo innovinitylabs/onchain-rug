@@ -228,13 +228,6 @@ export default function GeneratorPage() {
               '#FFB6C1', '#FFC0CB', '#FFE4E1', '#F0E68C', '#98FB98', '#90EE90', '#87CEEB', '#E6E6FA'
           ]
       },
-      // Earth Tones - natural, organic colors
-      {
-          name: "Earth Tones",
-          colors: [
-              '#8B4513', '#A0522D', '#CD853F', '#D2691E', '#F4A460', '#DEB887', '#D2B48C', '#BC8F8F'
-          ]
-      },
       // Ocean Depths - deep, marine colors
       {
           name: "Ocean Depths",
@@ -302,20 +295,6 @@ export default function GeneratorPage() {
               '#87CEEB', '#B0E0E6', '#E0FFFF', '#F0F8FF', '#E6E6FA', '#B0C4DE', '#4682B4', '#000080'
           ]
       },
-      // Maharashtra - earthy, warm colors
-      {
-          name: "Maharashtra",
-          colors: [
-              '#8B4513', '#A0522D', '#CD853F', '#D2691E', '#F4A460', '#DEB887', '#D2B48C', '#BC8F8F'
-          ]
-      },
-      // Tamil Nadu - traditional, cultural colors
-      {
-          name: "Tamil Nadu",
-          colors: [
-              '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#FF1493', '#8B0000', '#4B0082', '#000080'
-          ]
-      },
       // Karnataka - forest, nature colors
       {
           name: "Karnataka",
@@ -330,46 +309,11 @@ export default function GeneratorPage() {
               '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#00CED1', '#87CEEB', '#4682B4', '#000080'
           ]
       },
-      // Telangana - modern, urban colors
-      {
-          name: "Telangana",
-          colors: [
-              '#2F4F4F', '#696969', '#808080', '#A9A9A9', '#C0C0C0', '#D3D3D3', '#F5F5F5', '#FFFFFF'
-          ]
-      },
-      // Odisha - tribal, earthy colors
-      {
-          name: "Odisha",
-          colors: [
-              '#8B4513', '#A0522D', '#CD853F', '#D2691E', '#F4A460', '#DEB887', '#D2B48C', '#BC8F8F'
-          ]
-      },
       // Madhya Pradesh - central, balanced colors
       {
           name: "Madhya Pradesh",
           colors: [
               '#228B22', '#32CD32', '#90EE90', '#98FB98', '#8B4513', '#A0522D', '#CD853F', '#D2691E'
-          ]
-      },
-      // Uttar Pradesh - northern, traditional colors
-      {
-          name: "Uttar Pradesh",
-          colors: [
-              '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#FF1493', '#8B0000', '#4B0082', '#000080'
-          ]
-      },
-      // Bihar - eastern, cultural colors
-      {
-          name: "Bihar",
-          colors: [
-              '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#FF1493', '#8B0000', '#4B0082', '#000080'
-          ]
-      },
-      // West Bengal - eastern, artistic colors
-      {
-          name: "West Bengal",
-          colors: [
-              '#228B22', '#32CD32', '#90EE90', '#98FB98', '#00CED1', '#87CEEB', '#4682B4', '#000080'
           ]
       },
       // Assam - northeastern, natural colors
@@ -389,23 +333,9 @@ export default function GeneratorPage() {
       
       // ===== TAMIL CULTURAL PALETTES (11) =====
       
-      // Tamil Classical - traditional, ancient colors
+      // Chola Empire - royal, imperial colors
       {
-          name: "Tamil Classical",
-          colors: [
-              '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#FF1493', '#8B0000', '#4B0082', '#000080'
-          ]
-      },
-      // Sangam Era - literary, cultural colors
-      {
-          name: "Sangam Era",
-          colors: [
-              '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#FF1493', '#8B0000', '#4B0082', '#000080'
-          ]
-      },
-      // Chola Dynasty - royal, imperial colors
-      {
-          name: "Chola Dynasty",
+          name: "Chola Empire",
           colors: [
               '#8B0000', '#DC143C', '#B22222', '#FF4500', '#FF8C00', '#FFD700', '#228B22', '#006400'
           ]
@@ -424,46 +354,11 @@ export default function GeneratorPage() {
               '#228B22', '#32CD32', '#90EE90', '#8B4513', '#A0522D', '#FFD700', '#00CED1', '#000080'
           ]
       },
-      // Pallava Empire - architectural, stone colors
-      {
-          name: "Pallava Empire",
-          colors: [
-              '#8B4513', '#A0522D', '#CD853F', '#D2691E', '#F4A460', '#DEB887', '#D2B48C', '#BC8F8F'
-          ]
-      },
       // Vijayanagara - golden, prosperous colors
       {
           name: "Vijayanagara",
           colors: [
               '#FFD700', '#FFA500', '#FF8C00', '#FF6347', '#FF4500', '#8B0000', '#228B22', '#006400'
-          ]
-      },
-      // Nayak Dynasty - artistic, temple colors
-      {
-          name: "Nayak Dynasty",
-          colors: [
-              '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#FF1493', '#8B0000', '#4B0082', '#000080'
-          ]
-      },
-      // Maratha Rule - warrior, strong colors
-      {
-          name: "Maratha Rule",
-          colors: [
-              '#8B0000', '#DC143C', '#B22222', '#FF4500', '#FF8C00', '#FFD700', '#228B22', '#006400'
-          ]
-      },
-      // British Colonial - mixed, hybrid colors
-      {
-          name: "British Colonial",
-          colors: [
-              '#2F4F4F', '#696969', '#808080', '#A9A9A9', '#C0C0C0', '#D3D3D3', '#F5F5F5', '#FFFFFF'
-          ]
-      },
-      // Modern Tamil - contemporary, urban colors
-      {
-          name: "Modern Tamil",
-          colors: [
-              '#2F4F4F', '#696969', '#808080', '#A9A9A9', '#C0C0C0', '#D3D3D3', '#F5F5F5', '#FFFFFF'
           ]
       },
       // Jamakalam - traditional Tamil floor mat colors
@@ -473,16 +368,9 @@ export default function GeneratorPage() {
               '#8B0000', '#DC143C', '#FFD700', '#FFA500', '#228B22', '#32CD32', '#4B0082', '#000000'
           ]
       },
-      
+
       // ===== NATURAL DYE PALETTES (8) =====
-      
-      // Indigo Dye - deep blue, natural colors
-      {
-          name: "Indigo Dye",
-          colors: [
-              '#000080', '#191970', '#4169E1', '#4682B4', '#5F9EA0', '#87CEEB', '#B0E0E6', '#E0FFFF'
-          ]
-      },
+
       // Madder Root - red, earthy colors
       {
           name: "Madder Root",
@@ -495,13 +383,6 @@ export default function GeneratorPage() {
           name: "Turmeric",
           colors: [
               '#FFD700', '#FFA500', '#FF8C00', '#FF6347', '#FF4500', '#DAA520', '#B8860B', '#CD853F'
-          ]
-      },
-      // Henna - reddish-brown, natural colors
-      {
-          name: "Henna",
-          colors: [
-              '#8B4513', '#A0522D', '#CD853F', '#D2691E', '#F4A460', '#DEB887', '#D2B48C', '#BC8F8F'
           ]
       },
       // Pomegranate - deep red, rich colors
@@ -542,53 +423,11 @@ export default function GeneratorPage() {
               '#8B0000', '#DC143C', '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#228B22', '#006400'
           ]
       },
-      // Tamil Nadu Temple - sacred, vibrant colors
-      {
-          name: "Tamil Nadu Temple",
-          colors: [
-              '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#FF1493', '#8B0000', '#4B0082', '#000080'
-          ]
-      },
-      // Kanchipuram Silk - luxurious, traditional colors
-      {
-          name: "Kanchipuram Silk",
-          colors: [
-              '#8B0000', '#DC143C', '#B22222', '#FF4500', '#FF8C00', '#FFD700', '#228B22', '#006400'
-          ]
-      },
       // Thanjavur Art - classical, artistic colors
       {
           name: "Thanjavur Art",
           colors: [
               '#FFD700', '#FFA500', '#FF8C00', '#FF6347', '#FF4500', '#8B0000', '#228B22', '#006400'
-          ]
-      },
-      // Chettinad Architecture - heritage, warm colors
-      {
-          name: "Chettinad Architecture",
-          colors: [
-              '#8B4513', '#A0522D', '#CD853F', '#D2691E', '#F4A460', '#DEB887', '#D2B48C', '#BC8F8F'
-          ]
-      },
-      // Madurai Meenakshi - divine, colorful palette
-      {
-          name: "Madurai Meenakshi",
-          colors: [
-              '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#FF1493', '#8B0000', '#4B0082', '#000080'
-          ]
-      },
-      // Coimbatore Cotton - natural, earthy colors
-      {
-          name: "Coimbatore Cotton",
-          colors: [
-              '#F5DEB3', '#DEB887', '#D2B48C', '#BC8F8F', '#8B7355', '#A0522D', '#654321', '#2F2F2F'
-          ]
-      },
-      // Salem Silk - traditional, refined colors
-      {
-          name: "Salem Silk",
-          colors: [
-              '#8B0000', '#DC143C', '#B22222', '#FF4500', '#FF8C00', '#FFD700', '#228B22', '#006400'
           ]
       },
       
@@ -646,13 +485,6 @@ export default function GeneratorPage() {
               '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#00CED1', '#87CEEB', '#4682B4', '#000080'
           ]
       },
-      // Maratha Empire - warrior, strong colors
-      {
-          name: "Maratha Empire",
-          colors: [
-              '#8B0000', '#DC143C', '#B22222', '#FF4500', '#FF8C00', '#FFD700', '#228B22', '#006400'
-          ]
-      },
       // Maurya Empire - imperial, ancient colors
       {
           name: "Maurya Empire",
@@ -692,13 +524,6 @@ export default function GeneratorPage() {
           name: "Natural Dyes",
           colors: [
               '#405BAA', '#B33A3A', '#D9A43B', '#1F1E1D', '#5A7A5A', '#8C5832', '#A48E7F', '#FAF1E3'
-          ]
-      },
-      // Expanded Traditional - extended Madras palette
-      {
-          name: "Expanded Traditional",
-          colors: [
-              '#405BAA', '#B33A3A', '#D9A43B', '#5A7A5A', '#8C5832', '#A48E7F', '#1F1E1D', '#FAF1E3'
           ]
       },
       // Bleeding Vintage - aged, worn Madras colors
@@ -825,6 +650,121 @@ export default function GeneratorPage() {
           name: "Ivy League",
           colors: [
               '#002147', '#a6192e', '#f4f4f4', '#ffd700', '#005a9c', '#00356b', '#ffffff', '#8c1515'
+          ]
+      },
+
+      // ===== ADDITIONAL UNIQUE PALETTES =====
+
+      // Expanded Traditional - extended natural dye palette
+      {
+          name: "Expanded Traditional",
+          colors: [
+              '#405BAA', '#B33A3A', '#D9A43B', '#5A7A5A', '#8C5832', '#A48E7F', '#1F1E1D', '#FAF1E3'
+          ]
+      },
+      // Vintage Tamil 04 - classic Tamil heritage colors
+      {
+          name: "Vintage Tamil 04",
+          colors: [
+              '#e63946', '#f1faee', '#a8dadc', '#457b9d'
+          ]
+      },
+      // Yale Blue - prestigious university colors
+      {
+          name: "Yale Blue",
+          colors: [
+              '#00356b', '#ffffff', '#c4d8e2', '#8c1515'
+          ]
+      },
+      // Harvard Crimson - legendary academic colors
+      {
+          name: "Harvard Crimson",
+          colors: [
+              '#a51c30', '#ffffff', '#000000', '#b7a57a'
+          ]
+      },
+      // Cornell Red - Ivy League heritage colors
+      {
+          name: "Cornell Red",
+          colors: [
+              '#b31b1b', '#ffffff', '#222222', '#e5e5e5'
+          ]
+      },
+      // Princeton Orange - tiger colors
+      {
+          name: "Princeton Orange",
+          colors: [
+              '#ff8f1c', '#000000', '#ffffff', '#e5e5e5'
+          ]
+      },
+      // Dartmouth Green - verdant academic colors
+      {
+          name: "Dartmouth Green",
+          colors: [
+              '#00693e', '#ffffff', '#000000', '#a3c1ad'
+          ]
+      },
+      // Indian Flag - national pride colors
+      {
+          name: "Indian Flag",
+          colors: [
+              '#ff9933', '#ffffff', '#138808', '#000080'
+          ]
+      },
+      // Oxford Tartan - British academic heritage
+      {
+          name: "Oxford Tartan",
+          colors: [
+              '#002147', '#c8102e', '#ffd700', '#ffffff', '#008272'
+          ]
+      },
+      // Black Watch - Scottish military heritage
+      {
+          name: "Black Watch",
+          colors: [
+              '#1c2a3a', '#2e4a62', '#1e2d24', '#3a5f0b'
+          ]
+      },
+      // Royal Stewart - Scottish royal colors
+      {
+          name: "Royal Stewart",
+          colors: [
+              '#e10600', '#ffffff', '#000000', '#ffd700', '#007a3d'
+          ]
+      },
+      // Scottish Highland - rugged highland colors
+      {
+          name: "Scottish Highland",
+          colors: [
+              '#005eb8', '#ffd700', '#e10600', '#ffffff', '#000000'
+          ]
+      },
+      // French Riviera - Mediterranean elegance
+      {
+          name: "French Riviera",
+          colors: [
+              '#0055a4', '#ffffff', '#ef4135', '#f7c873'
+          ]
+      },
+      // Tokyo Metro - urban Japanese colors
+      {
+          name: "Tokyo Metro",
+          colors: [
+              '#e60012', '#0089a7', '#f6aa00', '#ffffff'
+          ]
+      },
+      // Cape Town Pastel - South African coastal colors
+      {
+          name: "Cape Town Pastel",
+          colors: [
+              '#f7cac9', '#92a8d1', '#034f84', '#f7786b'
+          ]
+      },
+      // Black & Red - bold minimalist palette
+      {
+          name: "Black & Red",
+          colors: [
+              '#000000', '#cc0033'
           ]
       }
   
@@ -1085,8 +1025,8 @@ export default function GeneratorPage() {
     const stripes = []
     const { config, colorPalettes } = doormatData
     
-    // Use derived PRNG for stripe generation
-    const stripePRNG = createDerivedPRNG(1000)
+    // Use derived PRNG for stripe generation (based on actual seed)
+    const stripePRNG = createDerivedPRNG(seed)
     
     // RARITY-BASED PALETTE SELECTION
     // Weighted generation for true rarity distribution
@@ -1098,12 +1038,12 @@ export default function GeneratorPage() {
       Common: 0.54        // 54% chance
     }
     
-    // Roll for rarity tier first using Math.random() instead of PRNG
-    const rarityRoll = Math.random()
+    // Roll for rarity tier using PRNG for deterministic results
+    const rarityRoll = stripePRNG.next()
     let selectedRarity = 'Common'
     let cumulativeWeight = 0
-    
-    console.log(`🎲 Rarity Roll: ${rarityRoll.toFixed(4)} (Math.random)`)
+
+    console.log(`🎲 Rarity Roll: ${rarityRoll.toFixed(4)} (PRNG - deterministic)`)
     
     for (const [rarity, weight] of Object.entries(rarityWeights)) {
       cumulativeWeight += weight
@@ -1116,7 +1056,7 @@ export default function GeneratorPage() {
     }
     
     // Get palettes for the selected rarity tier
-    const legendaryPalettes = ["Buddhist", "Maurya Empire", "Chola Dynasty", "Indigo Famine", "Bengal Famine", "Jamakalam"]
+    const legendaryPalettes = ["Buddhist", "Maurya Empire", "Chola Empire", "Indigo Famine", "Bengal Famine", "Jamakalam"]
     const epicPalettes = ["Indian Peacock", "Flamingo", "Toucan", "Madras Checks", "Kanchipuram Silk", "Natural Dyes", "Bleeding Vintage"]
     const rarePalettes = ["Tamil Classical", "Sangam Era", "Pandya Dynasty", "Maratha Empire", "Rajasthani"]
     const uncommonPalettes = ["Tamil Nadu Temple", "Kerala Onam", "Chettinad Spice", "Chennai Monsoon", "Bengal Indigo"]
@@ -1145,8 +1085,8 @@ export default function GeneratorPage() {
           .map(p => p.name)
     }
     
-    // Select random palette from the rarity tier using Math.random()
-    const tierPaletteIndex = Math.floor(Math.random() * tierPalettes.length)
+    // Select random palette from the rarity tier using PRNG
+    const tierPaletteIndex = Math.floor(stripePRNG.next() * tierPalettes.length)
     const selectedPaletteName = tierPalettes[tierPaletteIndex]
     const palette = colorPalettes.find(p => p.name === selectedPaletteName) || colorPalettes[0]
     
@@ -1966,7 +1906,7 @@ export default function GeneratorPage() {
 
   // Get palette rarity classification
   const getPaletteRarity = (paletteName: string) => {
-    const legendaryPalettes = ["Buddhist", "Maurya Empire", "Chola Dynasty", "Indigo Famine", "Bengal Famine", "Jamakalam"]
+    const legendaryPalettes = ["Buddhist", "Maurya Empire", "Chola Empire", "Indigo Famine", "Bengal Famine", "Jamakalam"]
     const epicPalettes = ["Indian Peacock", "Flamingo", "Toucan", "Madras Checks", "Kanchipuram Silk", "Natural Dyes", "Bleeding Vintage"]
     const rarePalettes = ["Tamil Classical", "Sangam Era", "Pandya Dynasty", "Maratha Empire", "Rajasthani"]
     const uncommonPalettes = ["Tamil Nadu Temple", "Kerala Onam", "Chettinad Spice", "Chennai Monsoon", "Bengal Indigo"]

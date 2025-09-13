@@ -223,27 +223,27 @@ const NFTExporter: React.FC<NFTExporterProps> = ({
           
     //       // Initialize deterministic PRNG for drawing operations
     //       // This ensures the exported NFT uses the same deterministic system
-    //       window.initPRNG = function(seed) {
+    //       window.d = function(seed) {
     //           // Simple LCG implementation for exported HTML
     //           window.prngSeed = seed % 2147483647;
     //           if (window.prngSeed <= 0) window.prngSeed += 2147483646;
     //       };
           
-    //       window.prngNext = function() {
+    //       window.b = function() {
     //           window.prngSeed = (window.prngSeed * 16807) % 2147483647;
     //           return (window.prngSeed - 1) / 2147483646;
     //       };
           
-    //       window.prngRange = function(min, max) {
-    //           return min + window.prngNext() * (max - min);
+    //       window.a = function(min, max) {
+    //           return min + window.b() * (max - min);
     //       };
           
-    //       window.prngChoice = function(array) {
-    //           return array[Math.floor(window.prngNext() * array.length)];
+    //       window.c = function(array) {
+    //           return array[Math.floor(window.b() * array.length)];
     //       };
           
     //       // Initialize with the seed
-    //       window.initPRNG(${seed});
+    //       window.d(${seed});
           
     //               // Create canvas with swapped dimensions for 90-degree rotation
     //               let canvas = createCanvas(doormatHeight + (fringeLength * 4), doormatWidth + (fringeLength * 4));
@@ -342,9 +342,9 @@ const NFTExporter: React.FC<NFTExporterProps> = ({
     //                       }
                           
     //                       // Add subtle variation to warp threads
-    //                       let r = red(warpColor) + window.prngRange(-15, 15);
-    //                       let g = green(warpColor) + window.prngRange(-15, 15);
-    //                       let b = blue(warpColor) + window.prngRange(-15, 15);
+    //                       let r = red(warpColor) + window.a(-15, 15);
+    //                       let g = green(warpColor) + window.a(-15, 15);
+    //                       let b = blue(warpColor) + window.a(-15, 15);
                           
     //                       // Modify color for text pixels (vertical lines use weft thickness)
     //                       if (isTextPixel) {
@@ -394,9 +394,9 @@ const NFTExporter: React.FC<NFTExporterProps> = ({
     //                       }
                           
     //                       // Add fabric irregularities
-    //                       let r = red(weftColor) + window.prngRange(-20, 20);
-    //                       let g = green(weftColor) + window.prngRange(-20, 20);
-    //                       let b = blue(weftColor) + window.prngRange(-20, 20);
+    //                       let r = red(weftColor) + window.a(-20, 20);
+    //                       let g = green(weftColor) + window.a(-20, 20);
+    //                       let b = blue(weftColor) + window.a(-20, 20);
                           
     //                       // Modify color for text pixels (horizontal lines use warp thickness)
     //                       if (isTextPixel) {
@@ -541,18 +541,18 @@ const NFTExporter: React.FC<NFTExporterProps> = ({
     //       for (let x = 0; x < doormatWidth; x += 3) {
     //           for (let y = 0; y < doormatHeight; y += 3) {
     //               // Use PRNG for consistent dirt pattern
-    //               const dirtNoise = window.prngRange(0, 1);
+    //               const dirtNoise = window.a(0, 1);
     //               const dirtThreshold = 0.85 * dirtIntensity; // Higher threshold = less dirt
                   
     //               if (dirtNoise > dirtThreshold) {
     //                   // Create dirt spot
-    //                   const dirtSize = window.prngRange(1, 4);
-    //                   const dirtAlpha = window.prngRange(dirtOpacity * 0.5, dirtOpacity);
+    //                   const dirtSize = window.a(1, 4);
+    //                   const dirtAlpha = window.a(dirtOpacity * 0.5, dirtOpacity);
                       
     //                   // Brown/dark dirt color
-    //                   const dirtR = window.prngRange(60, 90);
-    //                   const dirtG = window.prngRange(40, 60);
-    //                   const dirtB = window.prngRange(20, 40);
+    //                   const dirtR = window.a(60, 90);
+    //                   const dirtG = window.a(40, 60);
+    //                   const dirtB = window.a(20, 40);
                       
     //                   fill(dirtR, dirtG, dirtB, dirtAlpha);
     //                   noStroke();
@@ -563,15 +563,15 @@ const NFTExporter: React.FC<NFTExporterProps> = ({
           
     //       // Add larger dirt stains for more realistic effect
     //       for (let i = 0; i < 15 * dirtIntensity; i++) {
-    //           const stainX = window.prngRange(0, doormatWidth);
-    //           const stainY = window.prngRange(0, doormatHeight);
-    //           const stainSize = window.prngRange(8, 20);
-    //           const stainAlpha = window.prngRange(dirtOpacity * 0.3, dirtOpacity * 0.7);
+    //           const stainX = window.a(0, doormatWidth);
+    //           const stainY = window.a(0, doormatHeight);
+    //           const stainSize = window.a(8, 20);
+    //           const stainAlpha = window.a(dirtOpacity * 0.3, dirtOpacity * 0.7);
               
     //           // Darker stain color
-    //           const stainR = window.prngRange(40, 70);
-    //           const stainG = window.prngRange(25, 45);
-    //           const stainB = window.prngRange(15, 30);
+    //           const stainR = window.a(40, 70);
+    //           const stainG = window.a(25, 45);
+    //           const stainB = window.a(15, 30);
               
     //           fill(stainR, stainG, stainB, stainAlpha);
     //           noStroke();
@@ -584,9 +584,9 @@ const NFTExporter: React.FC<NFTExporterProps> = ({
     //               // Check if near edges
     //               const edgeDistance = Math.min(x, y, doormatWidth - x, doormatHeight - y);
     //               if (edgeDistance < 10) {
-    //                   const edgeDirt = window.prngRange(0, 1);
+    //                   const edgeDirt = window.a(0, 1);
     //                   if (edgeDirt > 0.7 * dirtIntensity) {
-    //                       const edgeAlpha = window.prngRange(10, 25);
+    //                       const edgeAlpha = window.a(10, 25);
     //                       fill(80, 50, 20, edgeAlpha);
     //                       noStroke();
     //                       rect(x, y, 2, 2);
@@ -648,13 +648,13 @@ const NFTExporter: React.FC<NFTExporterProps> = ({
     //                       fill(r, g, b);
     //                       noStroke();
                           
-    //                       let radius = weftThickness * window.prngRange(1.2, 1.8); // Vary size slightly
-    //                       let centerX = fringeLength * 2 + window.prngRange(-2, 2); // Slight position variation
-    //                       let centerY = fringeLength * 2 + y + weftThickness/2 + window.prngRange(-1, 1); // Slight vertical variation
+    //                       let radius = weftThickness * window.a(1.2, 1.8); // Vary size slightly
+    //                       let centerX = fringeLength * 2 + window.a(-2, 2); // Slight position variation
+    //                       let centerY = fringeLength * 2 + y + weftThickness/2 + window.a(-1, 1); // Slight vertical variation
                           
     //                       // Vary the arc angles for more natural look
-    //                       let startAngle = HALF_PI + window.prngRange(-0.2, 0.2);
-    //                       let endAngle = -HALF_PI + window.prngRange(-0.2, 0.2);
+    //                       let startAngle = HALF_PI + window.a(-0.2, 0.2);
+    //                       let endAngle = -HALF_PI + window.a(-0.2, 0.2);
                           
     //                       // Draw textured semicircle with individual thread details
     //                       drawTexturedSelvedgeArc(centerX, centerY, radius, startAngle, endAngle, r, g, b, 'left');
@@ -697,13 +697,13 @@ const NFTExporter: React.FC<NFTExporterProps> = ({
     //                       fill(r, g, b);
     //                       noStroke();
                           
-    //                       let radius = weftThickness * window.prngRange(1.2, 1.8); // Vary size slightly
-    //                       let centerX = fringeLength * 2 + doormatWidth + window.prngRange(-2, 2); // Slight position variation
-    //                       let centerY = fringeLength * 2 + y + weftThickness/2 + window.prngRange(-1, 1); // Slight vertical variation
+    //                       let radius = weftThickness * window.a(1.2, 1.8); // Vary size slightly
+    //                       let centerX = fringeLength * 2 + doormatWidth + window.a(-2, 2); // Slight position variation
+    //                       let centerY = fringeLength * 2 + y + weftThickness/2 + window.a(-1, 1); // Slight vertical variation
                           
     //                       // Vary the arc angles for more natural look
-    //                       let startAngle = -HALF_PI + window.prngRange(-0.2, 0.2);
-    //                       let endAngle = HALF_PI + window.prngRange(-0.2, 0.2);
+    //                       let startAngle = -HALF_PI + window.a(-0.2, 0.2);
+    //                       let endAngle = HALF_PI + window.a(-0.2, 0.2);
                           
     //                       // Draw textured semicircle with individual thread details
     //                       drawTexturedSelvedgeArc(centerX, centerY, radius, startAngle, endAngle, r, g, b, 'right');
@@ -736,17 +736,17 @@ const NFTExporter: React.FC<NFTExporterProps> = ({
     //                   }
                       
     //                   // Add some random variation for natural look
-    //                   threadR = constrain(threadR + window.prngRange(-10, 10), 0, 255);
-    //                   threadG = constrain(threadG + window.prngRange(-10, 10), 0, 255);
-    //                   threadB = constrain(threadB + window.prngRange(-10, 10), 0, 255);
+    //                   threadR = constrain(threadR + window.a(-10, 10), 0, 255);
+    //                   threadG = constrain(threadG + window.a(-10, 10), 0, 255);
+    //                   threadB = constrain(threadB + window.a(-10, 10), 0, 255);
                       
     //                   fill(threadR, threadG, threadB, 88); // More transparent for better blending
                       
     //                   // Draw individual thread arc with slight position variation
-    //                   let threadX = centerX + window.prngRange(-1, 1);
-    //                   let threadY = centerY + window.prngRange(-1, 1);
-    //                   let threadStartAngle = startAngle + window.prngRange(-0.1, 0.1);
-    //                   let threadEndAngle = endAngle + window.prngRange(-0.1, 0.1);
+    //                   let threadX = centerX + window.a(-1, 1);
+    //                   let threadY = centerY + window.a(-1, 1);
+    //                   let threadStartAngle = startAngle + window.a(-0.1, 0.1);
+    //                   let threadEndAngle = endAngle + window.a(-0.1, 0.1);
                       
     //                   arc(threadX, threadY, threadRadius * 2, threadRadius * 2, threadStartAngle, threadEndAngle);
     //               }
@@ -763,10 +763,10 @@ const NFTExporter: React.FC<NFTExporterProps> = ({
                       
     //                   fill(detailR, detailG, detailB, detailAlpha * 0.7); // More transparent detail layers
                       
-    //                   let detailX = centerX + window.prngRange(-0.5, 0.5);
-    //                   let detailY = centerY + window.prngRange(-0.5, 0.5);
-    //                   let detailStartAngle = startAngle + window.prngRange(-0.05, 0.05);
-    //                   let detailEndAngle = endAngle + window.prngRange(-0.05, 0.05);
+    //                   let detailX = centerX + window.a(-0.5, 0.5);
+    //                   let detailY = centerY + window.a(-0.5, 0.5);
+    //                   let detailStartAngle = startAngle + window.a(-0.05, 0.05);
+    //                   let detailEndAngle = endAngle + window.a(-0.05, 0.05);
                       
     //                   arc(detailX, detailY, detailRadius * 2, detailRadius * 2, detailStartAngle, detailEndAngle);
     //               }
@@ -782,8 +782,8 @@ const NFTExporter: React.FC<NFTExporterProps> = ({
                   
     //               // Add visible texture details - small bumps and knots
     //               for (let i = 0; i < 8; i++) {
-    //                   let detailAngle = window.prngRange(startAngle, endAngle);
-    //                   let detailRadius = radius * window.prngRange(0.2, 0.7);
+    //                   let detailAngle = window.a(startAngle, endAngle);
+    //                   let detailRadius = radius * window.a(0.2, 0.7);
     //                   let detailX = centerX + cos(detailAngle) * detailRadius;
     //                   let detailY = centerY + sin(detailAngle) * detailRadius;
                       
@@ -795,7 +795,7 @@ const NFTExporter: React.FC<NFTExporterProps> = ({
     //                   }
                       
     //                   noStroke();
-    //                   ellipse(detailX, detailY, window.prngRange(1.5, 3.5), window.prngRange(1.5, 3.5));
+    //                   ellipse(detailX, detailY, window.a(1.5, 3.5), window.a(1.5, 3.5));
     //               }
     //           }
               
@@ -811,22 +811,22 @@ const NFTExporter: React.FC<NFTExporterProps> = ({
     //                       return;
     //                   }
                       
-    //                   let strandColor = window.prngChoice(selectedPalette.colors);
+    //                   let strandColor = window.c(selectedPalette.colors);
                       
     //                   // Draw individual fringe strand with thin threads
     //                   for (let j = 0; j < 12; j++) { // More but thinner threads per strand
-    //                       let threadX = strandX + window.prngRange(-strandWidth/6, strandWidth/6);
+    //                       let threadX = strandX + window.a(-strandWidth/6, strandWidth/6);
     //                       let startY = side === 'top' ? y + h : y;
     //                       let endY = side === 'top' ? y : y + h;
                           
     //                       // Add natural curl/wave to the fringe with more variation
-    //                       let waveAmplitude = window.prngRange(1, 4);
-    //                       let waveFreq = window.prngRange(0.2, 0.8);
+    //                       let waveAmplitude = window.a(1, 4);
+    //                       let waveFreq = window.a(0.2, 0.8);
                           
     //                       // Randomize the direction and intensity for each thread
-    //                       let direction = window.prngChoice([-1, 1]); // Random left or right direction
-    //                       let curlIntensity = window.prngRange(0.5, 2.0);
-    //                       let threadLength = window.prngRange(0.8, 1.2); // Vary thread length
+    //                       let direction = window.c([-1, 1]); // Random left or right direction
+    //                       let curlIntensity = window.a(0.5, 2.0);
+    //                       let threadLength = window.a(0.8, 1.2); // Vary thread length
                           
     //                       // Use darker version of strand color for fringe
     //                       let fringeColor = color(strandColor);
@@ -835,7 +835,7 @@ const NFTExporter: React.FC<NFTExporterProps> = ({
     //                       let b = blue(fringeColor) * 0.7;
                           
     //                       stroke(r, g, b);
-    //                       strokeWeight(window.prngRange(0.5, 1.2)); // Vary thread thickness
+    //                       strokeWeight(window.a(0.5, 1.2)); // Vary thread thickness
                           
     //                       noFill();
     //                       beginShape();
@@ -843,10 +843,10 @@ const NFTExporter: React.FC<NFTExporterProps> = ({
     //                           let yPos = lerp(startY, endY, t * threadLength);
     //                           let xOffset = sin(t * PI * waveFreq) * waveAmplitude * t * direction * curlIntensity;
     //                           // Add more randomness and natural variation
-    //                           xOffset += window.prngRange(-1, 1);
+    //                           xOffset += window.a(-1, 1);
     //                           // Add occasional kinks and bends
-    //                           if (window.prngNext() < 0.3) {
-    //                               xOffset += window.prngRange(-2, 2);
+    //                           if (window.b() < 0.3) {
+    //                               xOffset += window.a(-2, 2);
     //                           }
     //                           vertex(threadX + xOffset, yPos);
     //                       }
@@ -945,19 +945,19 @@ const NFTExporter: React.FC<NFTExporterProps> = ({
     //   </body>
     //   </html>`;
     //     };
-    return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Doormat NFT #${seed}</title><script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script><style>body{margin:0;padding:1;display:flex;justify-content:center;align-items:center}</style></head><body><div id="canvas-container"></div><script>let w=800,h=1200,f=30,wt=8,wp=${currentWarpThickness},ts=2,mc=11,lt,dt,p=${JSON.stringify(palette)},sd=${JSON.stringify(shortenedStripeData)},tr=${JSON.stringify(textRows)},td=[],sdirt=false,dl=0,stex=false,tl=0,seed=${seed};
+    return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Onchain Rug #${seed}</title><script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script><style>body{margin:0;padding:1;display:flex;justify-content:center;align-items:center}</style></head><body><div id="canvas-container"></div><script>let w=800,h=1200,f=30,wt=8,wp=${currentWarpThickness},ts=2,lt,dt,p=${JSON.stringify(palette)},sd=${JSON.stringify(shortenedStripeData)},tr=${JSON.stringify(textRows)},td=[],sdirt=false,dl=0,stex=false,tl=0,s=${seed};
     window.characterMap=${JSON.stringify(fullCharacterMap)};let cm=window.characterMap;
-function setup(){noiseSeed(${seed});window.initPRNG=function(seed){window.prngSeed=seed%2147483647;if(window.prngSeed<=0)window.prngSeed+=2147483646};window.prngNext=function(){window.prngSeed=(window.prngSeed*16807)%2147483647;return(window.prngSeed-1)/2147483646};window.prngRange=function(min,max){return min+window.prngNext()*(max-min)};window.prngChoice=function(array){return array[Math.floor(window.prngNext()*array.length)]};window.initPRNG(${seed});let canvas=createCanvas(h+(f*4),w+(f*4));canvas.parent('canvas-container');pixelDensity(2.5);u();gtd();noLoop()}
+function setup(){noiseSeed(${seed});window.d=function(seed){window.prngSeed=seed%2147483647;if(window.prngSeed<=0)window.prngSeed+=2147483646};window.b=function(){window.prngSeed=(window.prngSeed*16807)%2147483647;return(window.prngSeed-1)/2147483646};window.a=function(min,max){return min+window.b()*(max-min)};window.c=function(array){return array[Math.floor(window.b()*array.length)]};window.d(${seed});let canvas=createCanvas(h+(f*4),w+(f*4));canvas.parent('canvas-container');pixelDensity(2.5);u();gtd();noLoop()}
 function u(){if(!p||!p.colors)return;let d=p.colors[0],l=p.colors[0],dv=999,lv=-1;for(let hex of p.colors){let c=color(hex),b=(red(c)+green(c)+blue(c))/3;if(b<dv){dv=b;d=hex}if(b>lv){lv=b;l=hex}}dt=lerpColor(color(d),color(0),0.4);lt=lerpColor(color(l),color(255),0.3)}
 function draw(){background(222,222,222);push();translate(width/2,height/2);rotate(PI/2);translate(-height/2,-width/2);push();translate(f*2,f*2);for(let stripe of sd)ds(stripe);if(stex&&tl>0)dtol(Math.floor(tl));pop();df();if(sdirt&&dl>0)ddo(Math.floor(dl));pop()} 
-function ds(s){let ws=wp+1,we=wt+1;for(let x=0;x<w;x+=ws){for(let y=s.y;y<s.y+s.h;y+=we){let wc=color(s.pc),itp=false;if(td.length>0){for(let tp of td){if(x>=tp.x&&x<tp.x+tp.width&&y>=tp.y&&y<tp.y+tp.height){itp=true;break}}}let r=red(wc)+window.prngRange(-15,15),g=green(wc)+window.prngRange(-15,15),b=blue(wc)+window.prngRange(-15,15);if(itp){const bb=(r+g+b)/3;let tc=bb<128?lt:dt;r=red(tc);g=green(tc);b=blue(tc)}r=constrain(r,0,255);g=constrain(g,0,255);b=constrain(b,0,255);fill(r,g,b);noStroke();let wcv=sin(y*0.05)*0.5;rect(x+wcv,y,wp,we)}}for(let y=s.y;y<s.y+s.h;y+=we){for(let x=0;x<w;x+=ws){let wc=color(s.pc),itp=false;if(td.length>0){for(let tp of td){if(x>=tp.x&&x<tp.x+tp.width&&y>=tp.y&&y<tp.y+tp.height){itp=true;break}}}if(s.wt==='m'&&s.sc){if(noise(x*0.1,y*0.1)>0.5)wc=color(s.sc)}else if(s.wt==='t'){let nv=noise(x*0.05,y*0.05);wc=lerpColor(color(s.pc),color(255),nv*0.15)}let r=red(wc)+window.prngRange(-20,20),g=green(wc)+window.prngRange(-20,20),b=blue(wc)+window.prngRange(-20,20);if(itp){const bb=(r+g+b)/3;let tc=bb<128?lt:dt;r=red(tc);g=green(tc);b=blue(tc)}r=constrain(r,0,255);g=constrain(g,0,255);b=constrain(b,0,255);fill(r,g,b);noStroke();let wcv=cos(x*0.05)*0.5;rect(x,y+wcv,ws,wt)}}for(let y=s.y;y<s.y+s.h;y+=we*2){for(let x=0;x<w;x+=ws*2){fill(0,0,0,40);noStroke();rect(x+1,y+1,ws-2,we-2)}}for(let y=s.y+we;y<s.y+s.h;y+=we*2){for(let x=ws;x<w;x+=ws*2){fill(255,255,255,30);noStroke();rect(x,y,ws-1,we-1)}}}
+function ds(s){let ws=wp+1,we=wt+1;for(let x=0;x<w;x+=ws){for(let y=s.y;y<s.y+s.h;y+=we){let wc=color(s.pc),itp=false;if(td.length>0){for(let tp of td){if(x>=tp.x&&x<tp.x+tp.width&&y>=tp.y&&y<tp.y+tp.height){itp=true;break}}}let r=red(wc)+window.a(-15,15),g=green(wc)+window.a(-15,15),b=blue(wc)+window.a(-15,15);if(itp){const bb=(r+g+b)/3;let tc=bb<128?lt:dt;r=red(tc);g=green(tc);b=blue(tc)}r=constrain(r,0,255);g=constrain(g,0,255);b=constrain(b,0,255);fill(r,g,b);noStroke();let wcv=sin(y*0.05)*0.5;rect(x+wcv,y,wp,we)}}for(let y=s.y;y<s.y+s.h;y+=we){for(let x=0;x<w;x+=ws){let wc=color(s.pc),itp=false;if(td.length>0){for(let tp of td){if(x>=tp.x&&x<tp.x+tp.width&&y>=tp.y&&y<tp.y+tp.height){itp=true;break}}}if(s.wt==='m'&&s.sc){if(noise(x*0.1,y*0.1)>0.5)wc=color(s.sc)}else if(s.wt==='t'){let nv=noise(x*0.05,y*0.05);wc=lerpColor(color(s.pc),color(255),nv*0.15)}let r=red(wc)+window.a(-20,20),g=green(wc)+window.a(-20,20),b=blue(wc)+window.a(-20,20);if(itp){const bb=(r+g+b)/3;let tc=bb<128?lt:dt;r=red(tc);g=green(tc);b=blue(tc)}r=constrain(r,0,255);g=constrain(g,0,255);b=constrain(b,0,255);fill(r,g,b);noStroke();let wcv=cos(x*0.05)*0.5;rect(x,y+wcv,ws,wt)}}for(let y=s.y;y<s.y+s.h;y+=we*2){for(let x=0;x<w;x+=ws*2){fill(0,0,0,40);noStroke();rect(x+1,y+1,ws-2,we-2)}}for(let y=s.y+we;y<s.y+s.h;y+=we*2){for(let x=ws;x<w;x+=ws*2){fill(255,255,255,30);noStroke();rect(x,y,ws-1,we-1)}}}
 function dto(){push();blendMode(MULTIPLY);for(let x=0;x<w;x+=2){for(let y=0;y<h;y+=2){let nv=noise(x*0.02,y*0.02),a=map(nv,0,1,0,50);fill(0,0,0,a);noStroke();rect(x,y,2,2)}}for(let x=0;x<w;x+=6){for(let y=0;y<h;y+=6){let nv=noise(x*0.03,y*0.03);if(nv>0.6){fill(255,255,255,25);noStroke();rect(x,y,6,6)}else if(nv<0.4){fill(0,0,0,20);noStroke();rect(x,y,6,6)}}}pop()}
 function dtol(tl){const hi=tl===1?30:80,ri=tl===1?20:40,rt=tl===1?0.6:0.5;push();blendMode(MULTIPLY);for(let x=0;x<w;x+=2){for(let y=0;y<h;y+=2){let nv=noise(x*0.02,y*0.02),i=map(nv,0,1,0,hi);fill(0,0,0,i);noStroke();rect(x,y,2,2)}}for(let x=0;x<w;x+=6){for(let y=0;y<h;y+=6){let rn=noise(x*0.03,y*0.03);if(rn>rt){fill(255,255,255,ri);noStroke();rect(x,y,6,6)}else if(rn<(1-rt)){fill(0,0,0,ri*0.8);noStroke();rect(x,y,6,6)}}}if(tl===2){for(let x=0;x<w;x+=8){for(let y=0;y<h;y+=8){let wn=noise(x*0.01,y*0.01);if(wn>0.7){fill(0,0,0,15);noStroke();rect(x,y,8,2)}}}}pop()}
-function ddo(dl){const di=dl===1?0.5:1.0,doo=dl===1?30:60;push();translate(f*2,f*2);for(let x=0;x<w;x+=3){for(let y=0;y<h;y+=3){const dn=window.prngRange(0,1),dt=0.85*di;if(dn>dt){const ds=window.prngRange(1,4),da=window.prngRange(doo*0.5,doo),dr=window.prngRange(60,90),dg=window.prngRange(40,60),db=window.prngRange(20,40);fill(dr,dg,db,da);noStroke();ellipse(x,y,ds,ds)}}}for(let i=0;i<15*di;i++){const sx=window.prngRange(0,w),sy=window.prngRange(0,h),ss=window.prngRange(8,20),sa=window.prngRange(doo*0.3,doo*0.7),sr=window.prngRange(40,70),sg=window.prngRange(25,45),sb=window.prngRange(15,30);fill(sr,sg,sb,sa);noStroke();ellipse(sx,sy,ss,ss)}for(let x=0;x<w;x+=2){for(let y=0;y<h;y+=2){const ed=Math.min(x,y,w-x,h-y);if(ed<10){const edirt=window.prngRange(0,1);if(edirt>0.7*di){const ea=window.prngRange(10,25);fill(80,50,20,ea);noStroke();rect(x,y,2,2)}}}}pop()}
+function ddo(dl){const di=dl===1?0.5:1.0,doo=dl===1?30:60;push();translate(f*2,f*2);for(let x=0;x<w;x+=3){for(let y=0;y<h;y+=3){const dn=window.a(0,1),dt=0.85*di;if(dn>dt){const ds=window.a(1,4),da=window.a(doo*0.5,doo),dr=window.a(60,90),dg=window.a(40,60),db=window.a(20,40);fill(dr,dg,db,da);noStroke();ellipse(x,y,ds,ds)}}}for(let i=0;i<15*di;i++){const sx=window.a(0,w),sy=window.a(0,h),ss=window.a(8,20),sa=window.a(doo*0.3,doo*0.7),sr=window.a(40,70),sg=window.a(25,45),sb=window.a(15,30);fill(sr,sg,sb,sa);noStroke();ellipse(sx,sy,ss,ss)}for(let x=0;x<w;x+=2){for(let y=0;y<h;y+=2){const ed=Math.min(x,y,w-x,h-y);if(ed<10){const edirt=window.a(0,1);if(edirt>0.7*di){const ea=window.a(10,25);fill(80,50,20,ea);noStroke();rect(x,y,2,2)}}}}pop()}
 function df(){dfs(f*2,f,w,f,'top');dfs(f*2,f*2+h,w,f,'bottom');dse()}
-function dfs(x,y,w,h,side){let fs=w/12,sw=w/fs;for(let i=0;i<fs;i++){let sx=x+i*sw;if(!p||!p.colors)return;let sc=window.prngChoice(p.colors);for(let j=0;j<12;j++){let tx=sx+window.prngRange(-sw/6,sw/6),sy=side==='top'?y+h:y,ey=side==='top'?y:y+h,wa=window.prngRange(1,4),wf=window.prngRange(0.2,0.8),d=window.prngChoice([-1,1]),ci=window.prngRange(0.5,2.0),tl=window.prngRange(0.8,1.2),fc=color(sc),r=red(fc)*0.7,g=green(fc)*0.7,b=blue(fc)*0.7;stroke(r,g,b);strokeWeight(window.prngRange(0.5,1.2));noFill();beginShape();for(let t=0;t<=1;t+=0.1){let yp=lerp(sy,ey,t*tl),xo=sin(t*PI*wf)*wa*t*d*ci;xo+=window.prngRange(-1,1);if(window.prngNext()<0.3)xo+=window.prngRange(-2,2);vertex(tx+xo,yp)}endShape()}}}
-function dse(){let ws=wt+1,iff=true,il=false;for(let s of sd){for(let y=s.y;y<s.y+s.h;y+=ws){if(iff){iff=false;continue}if(s===sd[sd.length-1]&&y+ws>=s.y+s.h){il=true;continue}let sc=color(s.pc);if(s.sc&&s.wt==='m'){let sc2=color(s.sc),bf=noise(y*0.1)*0.5+0.5;sc=lerpColor(sc,sc2,bf)}let r=red(sc)*0.8,g=green(sc)*0.8,b=blue(sc)*0.8;fill(r,g,b);noStroke();let rad=wt*window.prngRange(1.2,1.8),cx=f*2+window.prngRange(-2,2),cy=f*2+y+wt/2+window.prngRange(-1,1),sa=HALF_PI+window.prngRange(-0.2,0.2),ea=-HALF_PI+window.prngRange(-0.2,0.2);dtsa(cx,cy,rad,sa,ea,r,g,b,'left')}}let ifwr=true,ilwr=false;for(let s of sd){for(let y=s.y;y<s.y+s.h;y+=ws){if(ifwr){ifwr=false;continue}if(s===sd[sd.length-1]&&y+ws>=s.y+s.h){ilwr=true;continue}let sc=color(s.pc);if(s.sc&&s.wt==='m'){let sc2=color(s.sc),bf=noise(y*0.1)*0.5+0.5;sc=lerpColor(sc,sc2,bf)}let r=red(sc)*0.8,g=green(sc)*0.8,b=blue(sc)*0.8;fill(r,g,b);noStroke();let rad=wt*window.prngRange(1.2,1.8),cx=f*2+w+window.prngRange(-2,2),cy=f*2+y+wt/2+window.prngRange(-1,1),sa=-HALF_PI+window.prngRange(-0.2,0.2),ea=HALF_PI+window.prngRange(-0.2,0.2);dtsa(cx,cy,rad,sa,ea,r,g,b,'right')}}}
-function dtsa(cx,cy,rad,sa,ea,r,g,b,s){let tc=max(6,floor(rad/1.2)),ts=rad/tc;for(let i=0;i<tc;i++){let tr=rad-(i*ts),trr,trg,tb;if(i%2===0){trr=constrain(r+25,0,255);trg=constrain(g+25,0,255);tb=constrain(b+25,0,255)}else{trr=constrain(r-20,0,255);trg=constrain(g-20,0,255);tb=constrain(b-20,0,255)}trr=constrain(trr+window.prngRange(-10,10),0,255);trg=constrain(trg+window.prngRange(-10,10),0,255);tb=constrain(tb+window.prngRange(-10,10),0,255);fill(trr,trg,tb,88);let tx=cx+window.prngRange(-1,1),ty=cy+window.prngRange(-1,1),tsa=sa+window.prngRange(-0.1,0.1),tea=ea+window.prngRange(-0.1,0.1);arc(tx,ty,tr*2,tr*2,tsa,tea)}for(let i=0;i<3;i++){let dr=rad*(0.3+i*0.2),da=180-(i*40),drr=constrain(r+(i%2===0?15:-15),0,255),dg=constrain(g+(i%2===0?15:-15),0,255),db=constrain(b+(i%2===0?15:-15),0,255);fill(drr,dg,db,da*0.7);let dx=cx+window.prngRange(-0.5,0.5),dy=cy+window.prngRange(-0.5,0.5),dsa=sa+window.prngRange(-0.05,0.05),dea=ea+window.prngRange(-0.05,0.05);arc(dx,dy,dr*2,dr*2,dsa,dea)}fill(r*0.6,g*0.6,b*0.6,70);let so=s==='left'?1:-1;arc(cx+so,cy+1,rad*2,rad*2,sa,ea);noFill();arc(cx,cy,rad*0.5,rad*0.5,sa,ea);for(let i=0;i<8;i++){let da=window.prngRange(sa,ea),dr=rad*window.prngRange(0.2,0.7),dx=cx+cos(da)*dr,dy=cy+sin(da)*dr;if(i%2===0){fill(r+20,g+20,b+20,120)}else{fill(r-15,g-15,b-15,120)}noStroke();ellipse(dx,dy,window.prngRange(1.5,3.5),window.prngRange(1.5,3.5))}}
+function dfs(x,y,w,h,side){let fs=w/12,sw=w/fs;for(let i=0;i<fs;i++){let sx=x+i*sw;if(!p||!p.colors)return;let sc=window.c(p.colors);for(let j=0;j<12;j++){let tx=sx+window.a(-sw/6,sw/6),sy=side==='top'?y+h:y,ey=side==='top'?y:y+h,wa=window.a(1,4),wf=window.a(0.2,0.8),d=window.c([-1,1]),ci=window.a(0.5,2.0),tl=window.a(0.8,1.2),fc=color(sc),r=red(fc)*0.7,g=green(fc)*0.7,b=blue(fc)*0.7;stroke(r,g,b);strokeWeight(window.a(0.5,1.2));noFill();beginShape();for(let t=0;t<=1;t+=0.1){let yp=lerp(sy,ey,t*tl),xo=sin(t*PI*wf)*wa*t*d*ci;xo+=window.a(-1,1);if(window.b()<0.3)xo+=window.a(-2,2);vertex(tx+xo,yp)}endShape()}}}
+function dse(){let ws=wt+1,iff=true,il=false;for(let s of sd){for(let y=s.y;y<s.y+s.h;y+=ws){if(iff){iff=false;continue}if(s===sd[sd.length-1]&&y+ws>=s.y+s.h){il=true;continue}let sc=color(s.pc);if(s.sc&&s.wt==='m'){let sc2=color(s.sc),bf=noise(y*0.1)*0.5+0.5;sc=lerpColor(sc,sc2,bf)}let r=red(sc)*0.8,g=green(sc)*0.8,b=blue(sc)*0.8;fill(r,g,b);noStroke();let rad=wt*window.a(1.2,1.8),cx=f*2+window.a(-2,2),cy=f*2+y+wt/2+window.a(-1,1),sa=HALF_PI+window.a(-0.2,0.2),ea=-HALF_PI+window.a(-0.2,0.2);dtsa(cx,cy,rad,sa,ea,r,g,b,'left')}}let ifwr=true,ilwr=false;for(let s of sd){for(let y=s.y;y<s.y+s.h;y+=ws){if(ifwr){ifwr=false;continue}if(s===sd[sd.length-1]&&y+ws>=s.y+s.h){ilwr=true;continue}let sc=color(s.pc);if(s.sc&&s.wt==='m'){let sc2=color(s.sc),bf=noise(y*0.1)*0.5+0.5;sc=lerpColor(sc,sc2,bf)}let r=red(sc)*0.8,g=green(sc)*0.8,b=blue(sc)*0.8;fill(r,g,b);noStroke();let rad=wt*window.a(1.2,1.8),cx=f*2+w+window.a(-2,2),cy=f*2+y+wt/2+window.a(-1,1),sa=-HALF_PI+window.a(-0.2,0.2),ea=HALF_PI+window.a(-0.2,0.2);dtsa(cx,cy,rad,sa,ea,r,g,b,'right')}}}
+function dtsa(cx,cy,rad,sa,ea,r,g,b,s){let tc=max(6,floor(rad/1.2)),ts=rad/tc;for(let i=0;i<tc;i++){let tr=rad-(i*ts),trr,trg,tb;if(i%2===0){trr=constrain(r+25,0,255);trg=constrain(g+25,0,255);tb=constrain(b+25,0,255)}else{trr=constrain(r-20,0,255);trg=constrain(g-20,0,255);tb=constrain(b-20,0,255)}trr=constrain(trr+window.a(-10,10),0,255);trg=constrain(trg+window.a(-10,10),0,255);tb=constrain(tb+window.a(-10,10),0,255);fill(trr,trg,tb,88);let tx=cx+window.a(-1,1),ty=cy+window.a(-1,1),tsa=sa+window.a(-0.1,0.1),tea=ea+window.a(-0.1,0.1);arc(tx,ty,tr*2,tr*2,tsa,tea)}for(let i=0;i<3;i++){let dr=rad*(0.3+i*0.2),da=180-(i*40),drr=constrain(r+(i%2===0?15:-15),0,255),dg=constrain(g+(i%2===0?15:-15),0,255),db=constrain(b+(i%2===0?15:-15),0,255);fill(drr,dg,db,da*0.7);let dx=cx+window.a(-0.5,0.5),dy=cy+window.a(-0.5,0.5),dsa=sa+window.a(-0.05,0.05),dea=ea+window.a(-0.05,0.05);arc(dx,dy,dr*2,dr*2,dsa,dea)}fill(r*0.6,g*0.6,b*0.6,70);let so=s==='left'?1:-1;arc(cx+so,cy+1,rad*2,rad*2,sa,ea);noFill();arc(cx,cy,rad*0.5,rad*0.5,sa,ea);for(let i=0;i<8;i++){let da=window.a(sa,ea),dr=rad*window.a(0.2,0.7),dx=cx+cos(da)*dr,dy=cy+sin(da)*dr;if(i%2===0){fill(r+20,g+20,b+20,120)}else{fill(r-15,g-15,b-15,120)}noStroke();ellipse(dx,dy,window.a(1.5,3.5),window.a(1.5,3.5))}}
 function gtd(){td=[];const trr=tr||[];if(!trr||trr.length===0)return;const netr=trr.filter(row=>row&&row.trim()!=='');if(netr.length===0)return;const ws=wp+1,we=wt+1,sw=ws*ts,se=we*ts,cw=7*sw,ch=5*se,s=se,rs=cw*1.5,trw=netr.length*cw+(netr.length-1)*rs,bsx=(w-trw)/2;let cri=0;for(let ri=0;ri<trr.length;ri++){const rt=trr[ri];if(!rt||rt.trim()==='')continue;const tw=cw,th=rt.length*(ch+s)-s,sx=bsx+cri*(cw+rs),sy=(h-th)/2;for(let i=0;i<rt.length;i++){const c=rt.charAt(i),cy=sy+(rt.length-1-i)*(ch+s),cp=gcp(c,sx,cy,tw,ch);td.push(...cp)}cri++}}
 function gcp(c,x,y,w,h){const p=[];const ws=wp+1,we=wt+1,sw=ws*ts,se=we*ts,cd=cm[c.toUpperCase()]||cm[' '],nr=cd.length,nc=cd[0].length;for(let r=0;r<nr;r++){for(let col=0;col<nc;col++){if(cd[r][col]==='1'){const ncol=r,nrow=nc-1-col;p.push({x:x+ncol*sw,y:y+nrow*se,width:sw,height:se})}}}return p}
     </script>
