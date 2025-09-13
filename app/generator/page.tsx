@@ -20,9 +20,30 @@ export default function GeneratorPage() {
   const [dirtLevel, setDirtLevel] = useState(0) // 0 = clean, 1 = 50% dirty, 2 = full dirty
   const [showTexture, setShowTexture] = useState(false)
   const [textureLevel, setTextureLevel] = useState(0) // 0 = none, 1 = 7 days, 2 = 30 days
-  const [complexity, setComplexity] = useState(3) // Default complexity level
   const [currentStripeData, setCurrentStripeData] = useState<any[]>([])
   const [currentCharacterMap, setCurrentCharacterMap] = useState<any>(null)
+  const [calculatedComplexity, setCalculatedComplexity] = useState<number>(3)
+
+  // Map frontend complexity strings to contract uint8 values
+  const mapComplexityToUint8 = (complexityString: string): number => {
+    switch (complexityString) {
+      case "Basic": return 1;      // Simple
+      case "Simple": return 2;     // Simple/Moderate boundary
+      case "Moderate": return 3;   // Moderate
+      case "Complex": return 4;    // Complex
+      case "Very Complex": return 5; // High
+      default: return 3;           // Default to Moderate
+    }
+  }
+
+  // Calculate complexity when stripeData changes
+  const updateCalculatedComplexity = (stripeData: any[]) => {
+    if (stripeData && stripeData.length > 0) {
+      const complexityString = calculateStripeComplexity(stripeData)
+      const complexityUint8 = mapComplexityToUint8(complexityString)
+      setCalculatedComplexity(complexityUint8)
+    }
+  }
 
   // Copy to clipboard function
   const copyToClipboard = async (text: string, label: string) => {
@@ -758,6 +779,7 @@ export default function GeneratorPage() {
     // Update React state
     setCurrentStripeData(stripeData)
     setCurrentCharacterMap(characterMap)
+    updateCalculatedComplexity(stripeData)
     
     console.log('✅ Self-contained doormat generator initialized')
     return { config, colorPalettes, characterMap, selectedPalette, stripeData, textData, doormatTextRows, warpThickness }
@@ -926,6 +948,7 @@ export default function GeneratorPage() {
     // Update React state for Web3Minting
     setCurrentStripeData(doormatData.stripeData)
     setCurrentCharacterMap(doormatData.characterMap)
+    updateCalculatedComplexity(doormatData.stripeData)
     
     // Redraw
     if (typeof window !== 'undefined' && (window as any).p5Instance) {
@@ -2406,33 +2429,17 @@ export default function GeneratorPage() {
                   </button>
                 </div>
 
-                {/* Complexity Selector */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-purple-300 text-sm font-mono font-medium">COMPLEXITY</h4>
-                    <span className="text-purple-500 text-xs font-mono">Affects NFT traits</span>
-                  </div>
-
-                  <div className="grid grid-cols-5 gap-2">
-                    {[1, 2, 3, 4, 5].map((level) => (
-                      <button
-                        key={level}
-                        onClick={() => setComplexity(level)}
-                        className={`px-3 py-2 rounded font-mono text-sm transition-all border ${
-                          complexity === level
-                            ? 'bg-purple-600 text-white border-purple-400 shadow-lg'
-                            : 'bg-gray-800 text-gray-400 border-purple-500/30 hover:bg-purple-900/30'
-                        }`}
-                      >
-                        {level}
-                      </button>
-                    ))}
-                  </div>
-
+                {/* Complexity Display */}
+                {currentStripeData.length > 0 && (
                   <div className="text-purple-400 text-xs font-mono bg-gray-900/50 p-2 rounded border border-purple-500/30">
-                    Level {complexity}: {complexity === 1 ? 'Simple' : complexity === 2 ? 'Basic' : complexity === 3 ? 'Moderate' : complexity === 4 ? 'Complex' : 'High'}
+                    Current Complexity: Level {calculatedComplexity} ({
+                      calculatedComplexity === 1 ? 'Simple' :
+                      calculatedComplexity === 2 ? 'Basic' :
+                      calculatedComplexity === 3 ? 'Moderate' :
+                      calculatedComplexity === 4 ? 'Complex' : 'High'
+                    })
                   </div>
-                </div>
+                )}
 
                 {/* Text Input Section */}
                 <div className="space-y-3">
@@ -2720,7 +2727,7 @@ export default function GeneratorPage() {
                     currentStripeData={currentStripeData}
                     characterMap={currentCharacterMap}
                     warpThickness={3}
-                    complexity={complexity}
+                    calculatedComplexity={calculatedComplexity}
                   />
                 </div>
 

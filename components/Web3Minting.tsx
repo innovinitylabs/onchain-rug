@@ -12,7 +12,7 @@ interface Web3MintingProps {
   currentStripeData: any[]
   characterMap: any
   warpThickness: number
-  complexity?: number
+  calculatedComplexity?: number // Auto-calculated from traits
 }
 
 export default function Web3Minting({
@@ -21,7 +21,7 @@ export default function Web3Minting({
   currentStripeData,
   characterMap,
   warpThickness,
-  complexity = 3 // Default complexity level
+  calculatedComplexity = 3 // Auto-calculated complexity
 }: Web3MintingProps) {
   const [isMinting, setIsMinting] = useState(false)
   const { address, isConnected } = useAccount()
@@ -92,7 +92,7 @@ export default function Web3Minting({
       minifiedPalette: JSON.stringify(fullPalette),
       minifiedStripeData: JSON.stringify(minifiedStripeData),
       minifiedCharacterMap: JSON.stringify(filteredCharacterMap),
-      complexity: complexity
+      complexity: calculatedComplexity
     }
   }
 
