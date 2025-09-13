@@ -9,16 +9,41 @@ const backgrounds = [
   '/backgrounds/anime-style-clouds (2).jpg'
 ];
 
+// Use a simple hash of the current timestamp for consistent SSR
+function getBackgroundIndex(): number {
+  const timestamp = Date.now();
+  // Simple hash function for consistent randomization
+  return Math.abs(timestamp % backgrounds.length);
+}
+
 export default function BackgroundRotator() {
   const [currentBg, setCurrentBg] = useState<string>('');
+  const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
-    // Randomly select a background on component mount (page load)
-    const randomIndex = Math.floor(Math.random() * backgrounds.length);
-    setCurrentBg(backgrounds[randomIndex]);
+    // Mark as hydrated on client
+    setIsHydrated(true);
+
+    // Use consistent randomization based on timestamp for SSR compatibility
+    const index = getBackgroundIndex();
+    setCurrentBg(backgrounds[index]);
   }, []);
 
-  if (!currentBg) return null;
+  // Don't render anything during SSR to avoid hydration mismatch
+  if (!isHydrated || !currentBg) {
+    return (
+      <div
+        className="fixed inset-0 -z-10"
+        style={{
+          backgroundImage: `url(${backgrounds[0]})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          backgroundAttachment: 'fixed'
+        }}
+      />
+    );
+  }
 
   return (
     <div
