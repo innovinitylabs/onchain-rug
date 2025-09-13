@@ -96,8 +96,29 @@ const NFTExporter: React.FC<NFTExporterProps> = ({
   };
 
   const createNFTHTML = (seed: number, palette: any, stripeData: any[], textRows: string[], characterMap: any) => {
-    // Character map is now passed directly from the global doormatData (stored globally in contract)
-    const fullCharacterMap = characterMap;
+    // 🔥 ULTRA-OPTIMIZATION: Extract only used characters from textRows
+    const usedChars = new Set<string>();
+    textRows.forEach(row => {
+      if (row && row.trim()) {
+        row.toUpperCase().split('').forEach(char => {
+          usedChars.add(char);
+        });
+      }
+    });
+
+    // Create minimal character map with only used characters
+    const optimizedCharacterMap: any = {};
+    usedChars.forEach(char => {
+      if (characterMap[char]) {
+        optimizedCharacterMap[char] = characterMap[char];
+      }
+    });
+    // Always include space as fallback
+    if (characterMap[' ']) {
+      optimizedCharacterMap[' '] = characterMap[' '];
+    }
+
+    const fullCharacterMap = optimizedCharacterMap;
     
     // Get the actual current warpThickness from the live generator
     const currentWarpThickness = (window as any).warpThickness || 2;
