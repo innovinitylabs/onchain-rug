@@ -9,11 +9,15 @@ const backgrounds = [
   '/backgrounds/anime-style-clouds (2).jpg'
 ];
 
-// Use a simple hash of the current timestamp for consistent SSR
-function getBackgroundIndex(): number {
+// Generate truly random background index for each page load
+function getRandomBackgroundIndex(): number {
+  // Use multiple entropy sources for better randomization
   const timestamp = Date.now();
-  // Simple hash function for consistent randomization
-  return Math.abs(timestamp % backgrounds.length);
+  const randomSeed = Math.random();
+  const combined = timestamp * randomSeed * 1000000;
+
+  // Convert to integer and ensure it's within bounds
+  return Math.floor(Math.abs(combined)) % backgrounds.length;
 }
 
 export default function BackgroundRotator() {
@@ -24,8 +28,9 @@ export default function BackgroundRotator() {
     // Mark as hydrated on client
     setIsHydrated(true);
 
-    // Use consistent randomization based on timestamp for SSR compatibility
-    const index = getBackgroundIndex();
+    // Generate random background for this page load
+    const index = getRandomBackgroundIndex();
+    console.log('🎨 Background Rotator: Selected background', index, backgrounds[index]);
     setCurrentBg(backgrounds[index]);
   }, []);
 
