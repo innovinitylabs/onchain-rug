@@ -11,13 +11,8 @@ const backgrounds = [
 
 // Generate truly random background index for each page load
 function getRandomBackgroundIndex(): number {
-  // Use multiple entropy sources for better randomization
-  const timestamp = Date.now();
-  const randomSeed = Math.random();
-  const combined = timestamp * randomSeed * 1000000;
-
-  // Convert to integer and ensure it's within bounds
-  return Math.floor(Math.abs(combined)) % backgrounds.length;
+  // Simple and reliable randomization using Math.random()
+  return Math.floor(Math.random() * backgrounds.length);
 }
 
 export default function BackgroundRotator() {
@@ -29,9 +24,11 @@ export default function BackgroundRotator() {
     setIsHydrated(true);
 
     // Generate random background for this page load
+    const timestamp = new Date().toISOString();
     const index = getRandomBackgroundIndex();
-    console.log('🎨 Background Rotator: Selected background', index, backgrounds[index]);
-    setCurrentBg(backgrounds[index]);
+    const selectedBg = backgrounds[index];
+    console.log('🎨 Background Rotator [' + timestamp + ']: Random index =', index, 'Selected =', selectedBg);
+    setCurrentBg(selectedBg);
   }, []);
 
   // Don't render anything during SSR to avoid hydration mismatch
