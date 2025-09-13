@@ -2736,7 +2736,7 @@ export default function GeneratorPage() {
                             📋 Copy
                           </button>
                         </div>
-                        <div className="text-white font-mono text-xs">"{palette?.name || 'Unknown'}"</div>
+                        <div className="text-white font-mono text-xs">&ldquo;{palette?.name || 'Unknown'}&rdquo;</div>
                       </div>
 
                       <div className="bg-gray-800/50 p-2 rounded">
