@@ -9,10 +9,11 @@ const backgrounds = [
   '/backgrounds/anime-style-clouds-2.jpg'
 ];
 
-// Generate truly random background index for each page load
-function getRandomBackgroundIndex(): number {
-  // Simple and reliable randomization using Math.random()
-  return Math.floor(Math.random() * backgrounds.length);
+// Generate time-based background index (42-second rotation)
+function get42SecondBackgroundIndex(): number {
+  // Change background every 42 seconds
+  const fortyTwoSecondWindow = Math.floor(Date.now() / (1000 * 42));
+  return fortyTwoSecondWindow % backgrounds.length;
 }
 
 export default function BackgroundRotator() {
@@ -24,12 +25,16 @@ export default function BackgroundRotator() {
     });
   }, []);
 
-  // Generate random background immediately (no useEffect delay)
-  const randomIndex = getRandomBackgroundIndex();
-  const selectedBg = backgrounds[randomIndex];
+  // Generate time-based background immediately (42-second rotation)
+  const timeBasedIndex = get42SecondBackgroundIndex();
+  const selectedBg = backgrounds[timeBasedIndex];
 
-  // Log for debugging
-  console.log('🎨 Background Rotator: Selected background', randomIndex, selectedBg);
+  // Detailed logging for debugging time-based rotation
+  const timestamp = new Date().toISOString();
+  const currentWindow = Math.floor(Date.now() / (1000 * 42));
+  console.log(`🎨 Background Rotator [${timestamp}] - Window ${currentWindow}:`);
+  console.log(`   Index: ${timeBasedIndex}, Background: ${selectedBg}`);
+  console.log(`   Changes every 42 seconds: [${backgrounds.join(', ')}]`);
 
   return (
     <div
