@@ -11,12 +11,12 @@ export const config = {
   
   // Contract addresses
   contracts: {
-    onchainRugs: process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT || '0xa43eBb099aA98Bdf4d2E3c0172Cafd600e113249',
+    onchainRugs: process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT || '0x869bd5D4d6267A65872E907AF46a4346e5a20534',
   },
   
   // Legacy contract address references
-  rugContractAddress: process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT || '0xa43eBb099aA98Bdf4d2E3c0172Cafd600e113249',
-  cleaningContractAddress: process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT || '0xa43eBb099aA98Bdf4d2E3c0172Cafd600e113249',
+  rugContractAddress: process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT || '0x869bd5D4d6267A65872E907AF46a4346e5a20534',
+  cleaningContractAddress: process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT || '0x869bd5D4d6267A65872E907AF46a4346e5a20534',
   
   // Network configuration
   networks: {

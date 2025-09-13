@@ -2824,16 +2824,12 @@ export default function GeneratorPage() {
                   </div>
 
                   {/* Simple Minting Debug Tool */}
-                  <SimpleMinting 
+                  <SimpleMinting
                     textRows={textInputs}
                     currentPalette={palette}
                     currentStripeData={typeof window !== 'undefined' ? (window as any).stripeData || [] : []}
                     characterMap={null}
                     warpThickness={3}
-                    showDirt={showDirt}
-                    dirtLevel={dirtLevel}
-                    showTexture={showTexture}
-                    textureLevel={textureLevel}
                   />
 
                   {/* Mint Button */}
@@ -2947,10 +2943,6 @@ export default function GeneratorPage() {
                     currentStripeData={typeof window !== 'undefined' ? (window as any).stripeData || [] : []}
                     textRows={textInputs}
                     characterMap={null}
-                    showDirt={showDirt}
-                    dirtLevel={dirtLevel}
-                    showTexture={showTexture}
-                    textureLevel={textureLevel}
                   />
                 </div>
 

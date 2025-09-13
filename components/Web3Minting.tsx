@@ -69,10 +69,10 @@ export default function Web3Minting({
       }
     })
     
-    // Compress palette data with null checks
-    const compressedPalette = {
-      n: currentPalette?.name || 'Default', // 'name' -> 'n'
-      c: currentPalette?.colors || ['#FF0000'] // 'colors' -> 'c'
+    // Use full palette data for proper rarity calculation
+    const fullPalette = {
+      name: currentPalette?.name || 'Default',
+      colors: currentPalette?.colors || ['#FF0000']
     }
     
     // Compress stripe data with null checks
@@ -87,7 +87,7 @@ export default function Web3Minting({
     
     return {
       textRows: finalTextRows,
-      palette: compressedPalette,
+      palette: fullPalette,
       stripeData: compressedStripeData,
       characterMap: filteredCharacterMap
     }
@@ -142,30 +142,22 @@ export default function Web3Minting({
               {"internalType": "string", "name": "palette", "type": "string"},
               {"internalType": "string", "name": "stripeData", "type": "string"},
               {"internalType": "string", "name": "characterMap", "type": "string"},
-              {"internalType": "uint256", "name": "warpThickness", "type": "uint256"},
-              {"internalType": "bool", "name": "showDirt", "type": "bool"},
-              {"internalType": "uint8", "name": "dirtLevel", "type": "uint8"},
-              {"internalType": "bool", "name": "showTexture", "type": "bool"},
-              {"internalType": "uint8", "name": "textureLevel", "type": "uint8"}
+              {"internalType": "uint256", "name": "warpThickness", "type": "uint256"}
             ],
-            "name": "mintWithText",
+            "name": "mintRugWithParams",
             "outputs": [],
             "stateMutability": "payable",
             "type": "function"
           }
         ] as const,
-        functionName: 'mintWithText',
+        functionName: 'mintRugWithParams',
         args: [
           optimized.textRows,
           BigInt(seed),
           JSON.stringify(optimized.palette),
           JSON.stringify(optimized.stripeData),
           JSON.stringify(optimized.characterMap),
-          BigInt(warpThickness),
-          false, // showDirt
-          0,     // dirtLevel
-          false, // showTexture
-          0      // textureLevel
+          BigInt(warpThickness)
         ],
         value: parseEther(mintCost.toString()),
         gas: gasLimit,
@@ -356,30 +348,22 @@ export default function Web3Minting({
                     {"internalType": "string", "name": "palette", "type": "string"},
                     {"internalType": "string", "name": "stripeData", "type": "string"},
                     {"internalType": "string", "name": "characterMap", "type": "string"},
-                    {"internalType": "uint256", "name": "warpThickness", "type": "uint256"},
-                    {"internalType": "bool", "name": "showDirt", "type": "bool"},
-                    {"internalType": "uint8", "name": "dirtLevel", "type": "uint8"},
-                    {"internalType": "bool", "name": "showTexture", "type": "bool"},
-                    {"internalType": "uint8", "name": "textureLevel", "type": "uint8"}
+                    {"internalType": "uint256", "name": "warpThickness", "type": "uint256"}
                   ],
-                  "name": "mintWithText",
+                  "name": "mintRugWithParams",
                   "outputs": [],
                   "stateMutability": "payable",
                   "type": "function"
                 }
               ] as const,
-              functionName: 'mintWithText',
+              functionName: 'mintRugWithParams',
               args: [
                 finalTextRows,
                 BigInt(seed),
                 JSON.stringify(currentPalette),
                 JSON.stringify(currentStripeData),
-                JSON.stringify(characterMap),
-                BigInt(warpThickness),
-                false, // showDirt
-                0,     // dirtLevel
-                false, // showTexture
-                0      // textureLevel
+                JSON.stringify(characterMap || {}),
+                BigInt(warpThickness)
               ],
               value: parseEther(mintCost.toString()),
               gas: maxGasLimit,

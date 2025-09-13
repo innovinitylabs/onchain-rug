@@ -11,10 +11,6 @@ interface SimpleMintingProps {
   currentStripeData: any[]
   characterMap: any
   warpThickness: number
-  showDirt: boolean
-  dirtLevel: number
-  showTexture: boolean
-  textureLevel: number
 }
 
 export default function SimpleMinting({
@@ -22,11 +18,7 @@ export default function SimpleMinting({
   currentPalette,
   currentStripeData,
   characterMap,
-  warpThickness,
-  showDirt,
-  dirtLevel,
-  showTexture,
-  textureLevel
+  warpThickness
 }: SimpleMintingProps) {
   const { address, isConnected } = useAccount()
   const chainId = useChainId()
@@ -69,7 +61,7 @@ export default function SimpleMinting({
       // Minimal data for testing
       const testTextRows = ['A'] // Simple test text
       const testSeed = 42 // Fixed seed for testing
-      const testPalette = { n: 'S', c: ['#F00'] } // Ultra-compressed palette
+      const testPalette = { name: 'Classic Red & Black', colors: ['#8B0000', '#DC143C', '#B22222', '#000000', '#2F2F2F'] } // Full palette data
       const testStripeData = [] // Empty stripe data
       const testCharacterMap = { 'A': ['01110','10001','10001','11111','10001','10001','10001'] } // Minimal character map
       const testWarpThickness = 1
@@ -99,12 +91,7 @@ export default function SimpleMinting({
               {"internalType": "uint256", "name": "seed", "type": "uint256"},
               {"internalType": "string", "name": "palette", "type": "string"},
               {"internalType": "string", "name": "stripeData", "type": "string"},
-              {"internalType": "string", "name": "characterMap", "type": "string"},
-              {"internalType": "uint256", "name": "warpThickness", "type": "uint256"},
-              {"internalType": "bool", "name": "showDirt", "type": "bool"},
-              {"internalType": "uint8", "name": "dirtLevel", "type": "uint8"},
-              {"internalType": "bool", "name": "showTexture", "type": "bool"},
-              {"internalType": "uint8", "name": "textureLevel", "type": "uint8"}
+              {"internalType": "uint256", "name": "warpThickness", "type": "uint256"}
             ],
             "name": "mintWithText",
             "outputs": [],
@@ -118,12 +105,7 @@ export default function SimpleMinting({
           BigInt(testSeed),
           JSON.stringify(testPalette),
           JSON.stringify(testStripeData),
-          JSON.stringify(testCharacterMap),
-          BigInt(testWarpThickness),
-          false, // showDirt
-          0,     // dirtLevel
-          false, // showTexture
-          0      // textureLevel
+          BigInt(testWarpThickness)
         ],
         value: parseEther(testMintCost),
         gas: maxGas,
