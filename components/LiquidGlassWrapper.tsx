@@ -51,10 +51,12 @@ export default function LiquidGlassWrapper({
         elasticity={elasticity}
         cornerRadius={cornerRadius}
         mode={mode}
+        overLight={true} // Prevents dark backgrounds on light themes
         style={{
           display: 'inline-block',
           width: '100%',
-          height: 'auto'
+          height: 'auto',
+          background: 'transparent' // Ensure transparent background
         }}
       >
         {children}
