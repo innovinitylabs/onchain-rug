@@ -9,18 +9,11 @@ const backgrounds = [
   '/backgrounds/anime-style-clouds-2.jpg'
 ];
 
-// Generate truly random background index for each page load
-function getRandomBackgroundIndex(): number {
-  // Add multiple sources of entropy for better randomization
-  const entropy1 = Math.random();
-  const entropy2 = performance.now() % 1000; // Sub-millisecond timing
-  const entropy3 = Math.random() * Date.now(); // Timestamp + random
-
-  // Combine entropies and ensure good distribution
-  const combined = entropy1 + (entropy2 / 1000) + (entropy3 / 1000000);
-  const normalized = combined % 1; // Get fractional part
-
-  return Math.floor(normalized * backgrounds.length);
+// Generate time-based background index (42-second rotation)
+function get42SecondBackgroundIndex(): number {
+  // Change background every 42 seconds
+  const fortyTwoSecondWindow = Math.floor(Date.now() / (1000 * 42));
+  return fortyTwoSecondWindow % backgrounds.length;
 }
 
 export default function BackgroundRotator() {
@@ -32,15 +25,16 @@ export default function BackgroundRotator() {
     });
   }, []);
 
-  // Generate random background immediately (no useEffect delay)
-  const randomIndex = getRandomBackgroundIndex();
-  const selectedBg = backgrounds[randomIndex];
+  // Generate time-based background immediately (42-second rotation)
+  const timeBasedIndex = get42SecondBackgroundIndex();
+  const selectedBg = backgrounds[timeBasedIndex];
 
-  // Detailed logging for debugging randomization
+  // Detailed logging for debugging time-based rotation
   const timestamp = new Date().toISOString();
-  console.log(`🎨 Background Rotator [${timestamp}]:`);
-  console.log(`   Index: ${randomIndex}, Background: ${selectedBg}`);
-  console.log(`   Available: [${backgrounds.join(', ')}]`);
+  const currentWindow = Math.floor(Date.now() / (1000 * 42));
+  console.log(`🎨 Background Rotator [${timestamp}] - Window ${currentWindow}:`);
+  console.log(`   Index: ${timeBasedIndex}, Background: ${selectedBg}`);
+  console.log(`   Changes every 42 seconds: [${backgrounds.join(', ')}]`);
 
   return (
     <div
