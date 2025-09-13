@@ -4,16 +4,25 @@
 
 export const config = {
   // 🔓 SAFE TO EXPOSE - WalletConnect Project ID (public identifier)
-  walletConnectProjectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID || '',
+  // Supports both NEXT_PUBLIC_ prefix and direct naming for Vercel compatibility
+  walletConnectProjectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID ||
+                         process.env.WALLET_CONNECT_PROJECT_ID || '',
+
+  // 🔓 SAFE TO EXPOSE - Alchemy API Key (for enhanced RPC functionality)
+  alchemyApiKey: process.env.NEXT_PUBLIC_ALCHEMY_API_KEY ||
+                 process.env.ALCHEMY_API_KEY || '',
 
   // 🔓 SAFE TO EXPOSE - Contract addresses (public blockchain data)
   contracts: {
-    onchainRugs: process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT || '0x869bd5D4d6267A65872E907AF46a4346e5a20534',
+    onchainRugs: process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT ||
+                process.env.ONCHAIN_RUGS_CONTRACT || '0x869bd5D4d6267A65872E907AF46a4346e5a20534',
   },
 
   // 🔓 SAFE TO EXPOSE - Legacy contract address references (public blockchain data)
-  rugContractAddress: process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT || '0x869bd5D4d6267A65872E907AF46a4346e5a20534',
-  cleaningContractAddress: process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT || '0x869bd5D4d6267A65872E907AF46a4346e5a20534',
+  rugContractAddress: process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT ||
+                     process.env.ONCHAIN_RUGS_CONTRACT || '0x869bd5D4d6267A65872E907AF46a4346e5a20534',
+  cleaningContractAddress: process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT ||
+                          process.env.ONCHAIN_RUGS_CONTRACT || '0x869bd5D4d6267A65872E907AF46a4346e5a20534',
   
   // Network configuration
   networks: {
@@ -79,7 +88,8 @@ export const config = {
   // 🔓 SAFE TO EXPOSE - Royalties (public wallet address)
   royalties: {
     percentage: 10, // 10%
-    recipient: process.env.NEXT_PUBLIC_ROYALTY_RECIPIENT || '',
+    recipient: process.env.NEXT_PUBLIC_ROYALTY_RECIPIENT ||
+              process.env.ROYALTY_RECIPIENT || '',
   },
 }
 
