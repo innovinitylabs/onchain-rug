@@ -6,9 +6,6 @@ export const config = {
   // Wallet Connect Project ID - REQUIRED: Get from https://cloud.walletconnect.com/
   walletConnectProjectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID || '',
   
-  // Alchemy API Key
-  alchemyApiKey: process.env.NEXT_PUBLIC_ALCHEMY_API_KEY || '',
-  
   // Contract addresses
   contracts: {
     onchainRugs: process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT || '0x869bd5D4d6267A65872E907AF46a4346e5a20534',
