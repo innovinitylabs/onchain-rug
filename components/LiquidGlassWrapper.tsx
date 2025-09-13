@@ -42,7 +42,7 @@ export default function LiquidGlassWrapper({
   }
 
   return (
-    <div className={className}>
+    <div className={`liquid-glass-container ${className}`} style={{ position: 'relative', display: 'inline-block', width: '100%' }}>
       <LiquidGlass
         displacementScale={displacementScale}
         blurAmount={blurAmount}
@@ -51,12 +51,12 @@ export default function LiquidGlassWrapper({
         elasticity={elasticity}
         cornerRadius={cornerRadius}
         mode={mode}
-        overLight={true} // Prevents dark backgrounds on light themes
+        overLight={true}
         style={{
           display: 'inline-block',
           width: '100%',
           height: 'auto',
-          background: 'transparent' // Ensure transparent background
+          background: 'transparent'
         }}
       >
         {children}

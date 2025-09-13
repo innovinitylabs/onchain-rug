@@ -25,3 +25,12 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Override LiquidGlass black overlays for light theme */
+.liquid-glass-container .bg-black {
+  background-color: transparent !important;
+}
+
+.liquid-glass-container .mix-blend-overlay {
+  mix-blend-mode: normal !important;
+}
