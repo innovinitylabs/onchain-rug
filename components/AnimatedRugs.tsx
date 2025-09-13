@@ -94,7 +94,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
   const rugWords = [
     'WELCOME',
     'HODL ZONE',
-    'SOFT RUG',
+    'SOFT RUGS',
     'FLOOR IS LAVA',
     'HOME SWEET HOME',
     'GOOD VIBES ONLY',

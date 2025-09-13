@@ -5,6 +5,8 @@ import { motion } from 'framer-motion'
 import { Shuffle, Download, FileText, Plus, X } from 'lucide-react'
 import Navigation from '@/components/Navigation'
 import NFTExporter from '@/components/NFTExporter'
+import Web3Minting from '@/components/Web3Minting'
+import SimpleMinting from '@/components/SimpleMinting'
 import { initPRNG, getPRNG, createDerivedPRNG } from '@/lib/DeterministicPRNG'
 
 export default function GeneratorPage() {
@@ -19,6 +21,17 @@ export default function GeneratorPage() {
   const [showTexture, setShowTexture] = useState(false)
   const [textureLevel, setTextureLevel] = useState(0) // 0 = none, 1 = 7 days, 2 = 30 days
 
+  // Copy to clipboard function
+  const copyToClipboard = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      // You could add a toast notification here
+      console.log(`${label} copied to clipboard`)
+    } catch (err) {
+      console.error('Failed to copy: ', err)
+    }
+  }
+
   const canvasContainerRef = useRef<HTMLDivElement>(null)
   const scriptsLoadedRef = useRef<Set<string>>(new Set())
 
@@ -26,7 +39,7 @@ export default function GeneratorPage() {
   const loadP5 = () => {
     return new Promise<void>((resolve) => {
       // Check if P5.js is already loaded
-      if ((window as any).p5) {
+      if (typeof window !== 'undefined' && (window as any).p5) {
         console.log('✅ P5.js already available')
         resolve()
         return
@@ -215,13 +228,6 @@ export default function GeneratorPage() {
               '#FFB6C1', '#FFC0CB', '#FFE4E1', '#F0E68C', '#98FB98', '#90EE90', '#87CEEB', '#E6E6FA'
           ]
       },
-      // Earth Tones - natural, organic colors
-      {
-          name: "Earth Tones",
-          colors: [
-              '#8B4513', '#A0522D', '#CD853F', '#D2691E', '#F4A460', '#DEB887', '#D2B48C', '#BC8F8F'
-          ]
-      },
       // Ocean Depths - deep, marine colors
       {
           name: "Ocean Depths",
@@ -268,13 +274,6 @@ export default function GeneratorPage() {
               '#FF4500', '#FF6347', '#FFD700', '#FFA500', '#DC143C', '#4B0082', '#32CD32', '#FFFFFF'
           ]
       },
-      // Punjab - warm, harvest colors
-      {
-          name: "Punjab",
-          colors: [
-              '#FFD700', '#FFA500', '#FF8C00', '#FF6347', '#FF4500', '#8B0000', '#228B22', '#006400'
-          ]
-      },
       // Bengal - monsoon, lush colors
       {
           name: "Bengal",
@@ -289,119 +288,14 @@ export default function GeneratorPage() {
               '#87CEEB', '#B0E0E6', '#E0FFFF', '#F0F8FF', '#E6E6FA', '#B0C4DE', '#4682B4', '#000080'
           ]
       },
-      // Maharashtra - earthy, warm colors
-      {
-          name: "Maharashtra",
-          colors: [
-              '#8B4513', '#A0522D', '#CD853F', '#D2691E', '#F4A460', '#DEB887', '#D2B48C', '#BC8F8F'
-          ]
-      },
-      // Tamil Nadu - traditional, cultural colors
-      {
-          name: "Tamil Nadu",
-          colors: [
-              '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#FF1493', '#8B0000', '#4B0082', '#000080'
-          ]
-      },
-      // Karnataka - forest, nature colors
-      {
-          name: "Karnataka",
-          colors: [
-              '#228B22', '#32CD32', '#90EE90', '#98FB98', '#8B4513', '#A0522D', '#CD853F', '#D2691E'
-          ]
-      },
-      // Andhra Pradesh - coastal, vibrant colors
-      {
-          name: "Andhra Pradesh",
-          colors: [
-              '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#00CED1', '#87CEEB', '#4682B4', '#000080'
-          ]
-      },
-      // Telangana - modern, urban colors
-      {
-          name: "Telangana",
-          colors: [
-              '#2F4F4F', '#696969', '#808080', '#A9A9A9', '#C0C0C0', '#D3D3D3', '#F5F5F5', '#FFFFFF'
-          ]
-      },
-      // Odisha - tribal, earthy colors
-      {
-          name: "Odisha",
-          colors: [
-              '#8B4513', '#A0522D', '#CD853F', '#D2691E', '#F4A460', '#DEB887', '#D2B48C', '#BC8F8F'
-          ]
-      },
-      // Madhya Pradesh - central, balanced colors
-      {
-          name: "Madhya Pradesh",
-          colors: [
-              '#228B22', '#32CD32', '#90EE90', '#98FB98', '#8B4513', '#A0522D', '#CD853F', '#D2691E'
-          ]
-      },
-      // Uttar Pradesh - northern, traditional colors
-      {
-          name: "Uttar Pradesh",
-          colors: [
-              '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#FF1493', '#8B0000', '#4B0082', '#000080'
-          ]
-      },
-      // Bihar - eastern, cultural colors
-      {
-          name: "Bihar",
-          colors: [
-              '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#FF1493', '#8B0000', '#4B0082', '#000080'
-          ]
-      },
-      // West Bengal - eastern, artistic colors
-      {
-          name: "West Bengal",
-          colors: [
-              '#228B22', '#32CD32', '#90EE90', '#98FB98', '#00CED1', '#87CEEB', '#4682B4', '#000080'
-          ]
-      },
-      // Assam - northeastern, natural colors
-      {
-          name: "Assam",
-          colors: [
-              '#228B22', '#32CD32', '#90EE90', '#98FB98', '#8B4513', '#A0522D', '#CD853F', '#D2691E'
-          ]
-      },
-      // Himachal Pradesh - mountain, cool colors
-      {
-          name: "Himachal Pradesh",
-          colors: [
-              '#87CEEB', '#B0E0E6', '#E0FFFF', '#F0F8FF', '#E6E6FA', '#B0C4DE', '#4682B4', '#000080'
-          ]
-      },
       
       // ===== TAMIL CULTURAL PALETTES (11) =====
       
-      // Tamil Classical - traditional, ancient colors
+      // Chola Empire - royal, imperial colors
       {
-          name: "Tamil Classical",
-          colors: [
-              '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#FF1493', '#8B0000', '#4B0082', '#000080'
-          ]
-      },
-      // Sangam Era - literary, cultural colors
-      {
-          name: "Sangam Era",
-          colors: [
-              '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#FF1493', '#8B0000', '#4B0082', '#000080'
-          ]
-      },
-      // Chola Dynasty - royal, imperial colors
-      {
-          name: "Chola Dynasty",
+          name: "Chola Empire",
           colors: [
               '#8B0000', '#DC143C', '#B22222', '#FF4500', '#FF8C00', '#FFD700', '#228B22', '#006400'
-          ]
-      },
-      // Pandya Kingdom - southern, coastal colors
-      {
-          name: "Pandya Kingdom",
-          colors: [
-              '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#00CED1', '#87CEEB', '#4682B4', '#000080'
           ]
       },
       // Chera Dynasty - western coast, spice trade colors
@@ -411,48 +305,6 @@ export default function GeneratorPage() {
               '#228B22', '#32CD32', '#90EE90', '#8B4513', '#A0522D', '#FFD700', '#00CED1', '#000080'
           ]
       },
-      // Pallava Empire - architectural, stone colors
-      {
-          name: "Pallava Empire",
-          colors: [
-              '#8B4513', '#A0522D', '#CD853F', '#D2691E', '#F4A460', '#DEB887', '#D2B48C', '#BC8F8F'
-          ]
-      },
-      // Vijayanagara - golden, prosperous colors
-      {
-          name: "Vijayanagara",
-          colors: [
-              '#FFD700', '#FFA500', '#FF8C00', '#FF6347', '#FF4500', '#8B0000', '#228B22', '#006400'
-          ]
-      },
-      // Nayak Dynasty - artistic, temple colors
-      {
-          name: "Nayak Dynasty",
-          colors: [
-              '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#FF1493', '#8B0000', '#4B0082', '#000080'
-          ]
-      },
-      // Maratha Rule - warrior, strong colors
-      {
-          name: "Maratha Rule",
-          colors: [
-              '#8B0000', '#DC143C', '#B22222', '#FF4500', '#FF8C00', '#FFD700', '#228B22', '#006400'
-          ]
-      },
-      // British Colonial - mixed, hybrid colors
-      {
-          name: "British Colonial",
-          colors: [
-              '#2F4F4F', '#696969', '#808080', '#A9A9A9', '#C0C0C0', '#D3D3D3', '#F5F5F5', '#FFFFFF'
-          ]
-      },
-      // Modern Tamil - contemporary, urban colors
-      {
-          name: "Modern Tamil",
-          colors: [
-              '#2F4F4F', '#696969', '#808080', '#A9A9A9', '#C0C0C0', '#D3D3D3', '#F5F5F5', '#FFFFFF'
-          ]
-      },
       // Jamakalam - traditional Tamil floor mat colors
       {
           name: "Jamakalam",
@@ -460,16 +312,9 @@ export default function GeneratorPage() {
               '#8B0000', '#DC143C', '#FFD700', '#FFA500', '#228B22', '#32CD32', '#4B0082', '#000000'
           ]
       },
-      
+
       // ===== NATURAL DYE PALETTES (8) =====
-      
-      // Indigo Dye - deep blue, natural colors
-      {
-          name: "Indigo Dye",
-          colors: [
-              '#000080', '#191970', '#4169E1', '#4682B4', '#5F9EA0', '#87CEEB', '#B0E0E6', '#E0FFFF'
-          ]
-      },
+
       // Madder Root - red, earthy colors
       {
           name: "Madder Root",
@@ -484,32 +329,11 @@ export default function GeneratorPage() {
               '#FFD700', '#FFA500', '#FF8C00', '#FF6347', '#FF4500', '#DAA520', '#B8860B', '#CD853F'
           ]
       },
-      // Henna - reddish-brown, natural colors
-      {
-          name: "Henna",
-          colors: [
-              '#8B4513', '#A0522D', '#CD853F', '#D2691E', '#F4A460', '#DEB887', '#D2B48C', '#BC8F8F'
-          ]
-      },
-      // Pomegranate - deep red, rich colors
-      {
-          name: "Pomegranate",
-          colors: [
-              '#8B0000', '#DC143C', '#B22222', '#FF4500', '#FF6347', '#CD5C5C', '#F08080', '#FA8072'
-          ]
-      },
       // Neem - green, natural colors
       {
           name: "Neem",
           colors: [
               '#228B22', '#32CD32', '#90EE90', '#98FB98', '#8B4513', '#A0522D', '#CD853F', '#D2691E'
-          ]
-      },
-      // Saffron - golden, precious colors
-      {
-          name: "Saffron",
-          colors: [
-              '#FFD700', '#FFA500', '#FF8C00', '#FF6347', '#FF4500', '#DAA520', '#B8860B', '#CD853F'
           ]
       },
       // Marigold - bright, cheerful colors
@@ -529,53 +353,11 @@ export default function GeneratorPage() {
               '#8B0000', '#DC143C', '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#228B22', '#006400'
           ]
       },
-      // Tamil Nadu Temple - sacred, vibrant colors
+      // Thanjavur Fresco - classical, artistic colors
       {
-          name: "Tamil Nadu Temple",
-          colors: [
-              '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#FF1493', '#8B0000', '#4B0082', '#000080'
-          ]
-      },
-      // Kanchipuram Silk - luxurious, traditional colors
-      {
-          name: "Kanchipuram Silk",
-          colors: [
-              '#8B0000', '#DC143C', '#B22222', '#FF4500', '#FF8C00', '#FFD700', '#228B22', '#006400'
-          ]
-      },
-      // Thanjavur Art - classical, artistic colors
-      {
-          name: "Thanjavur Art",
+          name: "Thanjavur Fresco",
           colors: [
               '#FFD700', '#FFA500', '#FF8C00', '#FF6347', '#FF4500', '#8B0000', '#228B22', '#006400'
-          ]
-      },
-      // Chettinad Architecture - heritage, warm colors
-      {
-          name: "Chettinad Architecture",
-          colors: [
-              '#8B4513', '#A0522D', '#CD853F', '#D2691E', '#F4A460', '#DEB887', '#D2B48C', '#BC8F8F'
-          ]
-      },
-      // Madurai Meenakshi - divine, colorful palette
-      {
-          name: "Madurai Meenakshi",
-          colors: [
-              '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#FF1493', '#8B0000', '#4B0082', '#000080'
-          ]
-      },
-      // Coimbatore Cotton - natural, earthy colors
-      {
-          name: "Coimbatore Cotton",
-          colors: [
-              '#F5DEB3', '#DEB887', '#D2B48C', '#BC8F8F', '#8B7355', '#A0522D', '#654321', '#2F2F2F'
-          ]
-      },
-      // Salem Silk - traditional, refined colors
-      {
-          name: "Salem Silk",
-          colors: [
-              '#8B0000', '#DC143C', '#B22222', '#FF4500', '#FF8C00', '#FFD700', '#228B22', '#006400'
           ]
       },
       
@@ -609,35 +391,14 @@ export default function GeneratorPage() {
               '#8B0000', '#DC143C', '#FFD700', '#FFA500', '#228B22', '#32CD32', '#000000', '#FFFFFF'
           ]
       },
-      // Nilgiri Flycatcher - mountain, cool colors
-      {
-          name: "Nilgiri Flycatcher",
-          colors: [
-              '#87CEEB', '#B0E0E6', '#E0FFFF', '#F0F8FF', '#E6E6FA', '#B0C4DE', '#4682B4', '#000080'
-          ]
-      },
-      // Malabar Parakeet - forest, green colors
-      {
-          name: "Malabar Parakeet",
-          colors: [
-              '#228B22', '#32CD32', '#90EE90', '#98FB98', '#8B4513', '#A0522D', '#CD853F', '#D2691E'
-          ]
-      },
       
       // ===== HISTORICAL DYNASTY & CULTURAL PALETTES (6) =====
       
-      // Pandya Dynasty - southern, maritime colors
+      // Pandyas - southern, maritime colors
       {
-          name: "Pandya Dynasty",
+          name: "Pandyas",
           colors: [
               '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#00CED1', '#87CEEB', '#4682B4', '#000080'
-          ]
-      },
-      // Maratha Empire - warrior, strong colors
-      {
-          name: "Maratha Empire",
-          colors: [
-              '#8B0000', '#DC143C', '#B22222', '#FF4500', '#FF8C00', '#FFD700', '#228B22', '#006400'
           ]
       },
       // Maurya Empire - imperial, ancient colors
@@ -681,13 +442,6 @@ export default function GeneratorPage() {
               '#405BAA', '#B33A3A', '#D9A43B', '#1F1E1D', '#5A7A5A', '#8C5832', '#A48E7F', '#FAF1E3'
           ]
       },
-      // Expanded Traditional - extended Madras palette
-      {
-          name: "Expanded Traditional",
-          colors: [
-              '#405BAA', '#B33A3A', '#D9A43B', '#5A7A5A', '#8C5832', '#A48E7F', '#1F1E1D', '#FAF1E3'
-          ]
-      },
       // Bleeding Vintage - aged, worn Madras colors
       {
           name: "Bleeding Vintage",
@@ -723,9 +477,9 @@ export default function GeneratorPage() {
               '#ffb347', '#ff6961', '#6a0572', '#fff8e7', '#1d3557', '#e63946', '#f7cac9', '#92a8d1'
           ]
       },
-      // Chennai Monsoon - rainy season palette
+      // Madras Monsoon - rainy season palette
       {
-          name: "Chennai Monsoon",
+          name: "Madras Monsoon",
           colors: [
               '#1d3557', '#457b9d', '#a8dadc', '#f1faee', '#ffd700', '#e94f37', '#393e41', '#3f88c5'
           ]
@@ -800,18 +554,119 @@ export default function GeneratorPage() {
               '#ffb347', '#e94f37', '#393e41', '#3f88c5', '#ffd700', '#f7c873', '#ff6961', '#1d3557'
           ]
       },
-      // Mumbai Monsoon - western coastal rains
-      {
-          name: "Mumbai Monsoon",
-          colors: [
-              '#1d3557', '#457b9d', '#a8dadc', '#f1faee', '#ffd700', '#e94f37', '#393e41', '#3f88c5'
-          ]
-      },
       // Ivy League - academic prestige colors
       {
           name: "Ivy League",
           colors: [
               '#002147', '#a6192e', '#f4f4f4', '#ffd700', '#005a9c', '#00356b', '#ffffff', '#8c1515'
+          ]
+      },
+
+      // ===== ADDITIONAL UNIQUE PALETTES =====
+
+      // Vintage Tamil - classic Tamil heritage colors
+      {
+          name: "Vintage Tamil",
+          colors: [
+              '#e63946', '#f1faee', '#a8dadc', '#457b9d'
+          ]
+      },
+      // Yale Blue - prestigious university colors
+      {
+          name: "Yale Blue",
+          colors: [
+              '#00356b', '#ffffff', '#c4d8e2', '#8c1515'
+          ]
+      },
+      // Harvard Crimson - legendary academic colors
+      {
+          name: "Harvard Crimson",
+          colors: [
+              '#a51c30', '#ffffff', '#000000', '#b7a57a'
+          ]
+      },
+      // Cornell Red - Ivy League heritage colors
+      {
+          name: "Cornell Red",
+          colors: [
+              '#b31b1b', '#ffffff', '#222222', '#e5e5e5'
+          ]
+      },
+      // Princeton Orange - tiger colors
+      {
+          name: "Princeton Orange",
+          colors: [
+              '#ff8f1c', '#000000', '#ffffff', '#e5e5e5'
+          ]
+      },
+      // Dartmouth Green - verdant academic colors
+      {
+          name: "Dartmouth Green",
+          colors: [
+              '#00693e', '#ffffff', '#000000', '#a3c1ad'
+          ]
+      },
+      // Indian Flag - national pride colors
+      {
+          name: "Indian Flag",
+          colors: [
+              '#ff9933', '#ffffff', '#138808', '#000080'
+          ]
+      },
+      // Oxford Tartan - British academic heritage
+      {
+          name: "Oxford Tartan",
+          colors: [
+              '#002147', '#c8102e', '#ffd700', '#ffffff', '#008272'
+          ]
+      },
+      // Black Watch - Scottish military heritage
+      {
+          name: "Black Watch",
+          colors: [
+              '#1c2a3a', '#2e4a62', '#1e2d24', '#3a5f0b'
+          ]
+      },
+      // Royal Stewart - Scottish royal colors
+      {
+          name: "Royal Stewart",
+          colors: [
+              '#e10600', '#ffffff', '#000000', '#ffd700', '#007a3d'
+          ]
+      },
+      // Scottish Highland - rugged highland colors
+      {
+          name: "Scottish Highland",
+          colors: [
+              '#005eb8', '#ffd700', '#e10600', '#ffffff', '#000000'
+          ]
+      },
+      // French Riviera - Mediterranean elegance
+      {
+          name: "French Riviera",
+          colors: [
+              '#0055a4', '#ffffff', '#ef4135', '#f7c873'
+          ]
+      },
+      // Tokyo Metro - urban Japanese colors
+      {
+          name: "Tokyo Metro",
+          colors: [
+              '#e60012', '#0089a7', '#f6aa00', '#ffffff'
+          ]
+      },
+      // Cape Town Pastel - South African coastal colors
+      {
+          name: "Cape Town Pastel",
+          colors: [
+              '#f7cac9', '#92a8d1', '#034f84', '#f7786b'
+          ]
+      },
+      // Black & Red - bold minimalist palette
+      {
+          name: "Black & Red",
+          colors: [
+              '#000000', '#cc0033'
           ]
       }
   
@@ -888,12 +743,14 @@ export default function GeneratorPage() {
     let darkTextColor: any = null
     
     // Expose minimal globals for NFTExporter
-    ;(window as any).selectedPalette = selectedPalette
-    ;(window as any).stripeData = stripeData
-    ;(window as any).DOORMAT_CONFIG = config
-    ;(window as any).warpThickness = warpThickness
-    ;(window as any).textData = textData
-    ;(window as any).doormatTextRows = doormatTextRows
+    if (typeof window !== 'undefined') {
+      ;(window as any).selectedPalette = selectedPalette
+      ;(window as any).stripeData = stripeData
+      ;(window as any).DOORMAT_CONFIG = config
+      ;(window as any).warpThickness = warpThickness
+      ;(window as any).textData = textData
+      ;(window as any).doormatTextRows = doormatTextRows
+    }
     
     console.log('✅ Self-contained doormat generator initialized')
     return { config, colorPalettes, characterMap, selectedPalette, stripeData, textData, doormatTextRows, warpThickness }
@@ -902,14 +759,14 @@ export default function GeneratorPage() {
   // Create P5.js instance using original doormat.js logic
   const createP5Instance = (doormatData: any) => {
     return new Promise<void>((resolve) => {
-      if (!(window as any).p5) {
+      if (typeof window !== 'undefined' && !(window as any).p5) {
         console.error('❌ P5.js not available')
         resolve()
         return
       }
 
       // Prevent multiple instances
-      if ((window as any).p5Instance) {
+      if (typeof window !== 'undefined' && (window as any).p5Instance) {
         console.log('⚠️ P5.js instance already exists, removing old one')
         ;(window as any).p5Instance.remove()
         delete (window as any).p5Instance
@@ -917,7 +774,7 @@ export default function GeneratorPage() {
 
       try {
         // Use original doormat.js setup and draw functions
-        const p5Instance = new (window as any).p5((p: any) => {
+        const p5Instance = typeof window !== 'undefined' ? new (window as any).p5((p: any) => {
           // Original setup function from doormat.js
       p.setup = () => {
             // Create canvas with swapped dimensions for 90-degree rotation (original logic)
@@ -978,10 +835,12 @@ export default function GeneratorPage() {
             
             p.pop() // End rotation
           }
-        })
+        }) : null
 
         // Store instance for later use
-        ;(window as any).p5Instance = p5Instance
+        if (typeof window !== 'undefined') {
+          ;(window as any).p5Instance = p5Instance
+        }
         resolve()
       } catch (error) {
         console.error('❌ Failed to create P5.js instance:', error)
@@ -995,7 +854,9 @@ export default function GeneratorPage() {
     console.log('🎨 Generating doormat with seed:', seed)
     
     // Store seed globally for drawing function access
-    ;(window as any).currentSeed = seed
+    if (typeof window !== 'undefined') {
+      ;(window as any).currentSeed = seed
+    }
     // Initialize deterministic PRNG for this generation
     initPRNG(seed)
     const prng = getPRNG()
@@ -1040,21 +901,23 @@ export default function GeneratorPage() {
     doormatData.stripeData = generateStripes(doormatData, seed)
     
     // Update text colors and generate text data (MISSING FROM ORIGINAL)
-    if ((window as any).p5Instance) {
+    if (typeof window !== 'undefined' && (window as any).p5Instance) {
       updateTextColors((window as any).p5Instance, doormatData)
       generateTextData(doormatData)
     }
     
     // Update global variables for NFTExporter
-    ;(window as any).selectedPalette = doormatData.selectedPalette
-    ;(window as any).stripeData = doormatData.stripeData
-    ;(window as any).DOORMAT_CONFIG = doormatData.config
-    ;(window as any).warpThickness = doormatData.warpThickness
-    ;(window as any).textData = doormatData.textData
-    ;(window as any).doormatTextRows = doormatData.doormatTextRows
+    if (typeof window !== 'undefined') {
+      ;(window as any).selectedPalette = doormatData.selectedPalette
+      ;(window as any).stripeData = doormatData.stripeData
+      ;(window as any).DOORMAT_CONFIG = doormatData.config
+      ;(window as any).warpThickness = doormatData.warpThickness
+      ;(window as any).textData = doormatData.textData
+      ;(window as any).doormatTextRows = doormatData.doormatTextRows
+    }
     
     // Redraw
-    if ((window as any).p5Instance) {
+    if (typeof window !== 'undefined' && (window as any).p5Instance) {
       (window as any).p5Instance.redraw()
     }
   }
@@ -1064,8 +927,8 @@ export default function GeneratorPage() {
     const stripes = []
     const { config, colorPalettes } = doormatData
     
-    // Use derived PRNG for stripe generation
-    const stripePRNG = createDerivedPRNG(1000)
+    // Use derived PRNG for stripe generation (based on actual seed)
+    const stripePRNG = createDerivedPRNG(seed)
     
     // RARITY-BASED PALETTE SELECTION
     // Weighted generation for true rarity distribution
@@ -1077,12 +940,12 @@ export default function GeneratorPage() {
       Common: 0.54        // 54% chance
     }
     
-    // Roll for rarity tier first
+    // Roll for rarity tier using PRNG for deterministic results
     const rarityRoll = stripePRNG.next()
     let selectedRarity = 'Common'
     let cumulativeWeight = 0
-    
-    console.log(`🎲 Rarity Roll: ${rarityRoll.toFixed(4)} (seed: ${seed})`)
+
+    console.log(`🎲 Rarity Roll: ${rarityRoll.toFixed(4)} (PRNG - deterministic)`)
     
     for (const [rarity, weight] of Object.entries(rarityWeights)) {
       cumulativeWeight += weight
@@ -1095,10 +958,10 @@ export default function GeneratorPage() {
     }
     
     // Get palettes for the selected rarity tier
-    const legendaryPalettes = ["Buddhist", "Maurya Empire", "Chola Dynasty", "Indigo Famine", "Bengal Famine", "Jamakalam"]
+    const legendaryPalettes = ["Buddhist", "Maurya Empire", "Chola Empire", "Indigo Famine", "Bengal Famine", "Jamakalam"]
     const epicPalettes = ["Indian Peacock", "Flamingo", "Toucan", "Madras Checks", "Kanchipuram Silk", "Natural Dyes", "Bleeding Vintage"]
-    const rarePalettes = ["Tamil Classical", "Sangam Era", "Pandya Dynasty", "Maratha Empire", "Rajasthani"]
-    const uncommonPalettes = ["Tamil Nadu Temple", "Kerala Onam", "Chettinad Spice", "Chennai Monsoon", "Bengal Indigo"]
+    const rarePalettes = ["Tamil Classical", "Sangam Era", "Pandyas", "Maratha Empire", "Rajasthani"]
+    const uncommonPalettes = ["Tamil Nadu Temple", "Kerala Onam", "Chettinad Spice", "Madras Monsoon", "Bengal Indigo"]
     
     let tierPalettes: string[] = []
     switch (selectedRarity) {
@@ -1124,7 +987,7 @@ export default function GeneratorPage() {
           .map(p => p.name)
     }
     
-    // Select random palette from the rarity tier
+    // Select random palette from the rarity tier using PRNG
     const tierPaletteIndex = Math.floor(stripePRNG.next() * tierPalettes.length)
     const selectedPaletteName = tierPalettes[tierPaletteIndex]
     const palette = colorPalettes.find(p => p.name === selectedPaletteName) || colorPalettes[0]
@@ -1503,7 +1366,7 @@ export default function GeneratorPage() {
     for (let i = 0; i < fringeStrands; i++) {
       let strandX = x + i * strandWidth
       
-      let strandColor = drawingPRNG.choice(doormatData.selectedPalette.colors)
+      let strandColor = drawingPRNG.randomChoice(doormatData.selectedPalette.colors)
       
       // Draw individual fringe strand with thin threads
       for (let j = 0; j < 12; j++) {
@@ -1516,7 +1379,7 @@ export default function GeneratorPage() {
         let waveFreq = drawingPRNG.range(0.2, 0.8)
         
         // Randomize the direction and intensity for each thread
-        let direction = drawingPRNG.choice([-1, 1])
+        let direction = drawingPRNG.randomChoice([-1, 1])
         let curlIntensity = drawingPRNG.range(0.5, 2.0)
         let threadLength = drawingPRNG.range(0.8, 1.2)
         
@@ -1912,7 +1775,9 @@ export default function GeneratorPage() {
       
       // Initialize self-contained doormat generator
       const doormatData = initializeDoormat()
-      ;(window as any).doormatData = doormatData // Store globally for access
+      if (typeof window !== 'undefined') {
+        ;(window as any).doormatData = doormatData // Store globally for access
+      }
       console.log('✅ Doormat generator initialized')
       
       // Create P5.js instance
@@ -1933,7 +1798,7 @@ export default function GeneratorPage() {
 
   // Update palette display
   const updatePaletteDisplay = () => {
-    if ((window as any).selectedPalette) {
+    if (typeof window !== 'undefined' && (window as any).selectedPalette) {
       setPalette((window as any).selectedPalette)
       console.log('🎨 Palette updated:', (window as any).selectedPalette)
     }
@@ -1943,10 +1808,10 @@ export default function GeneratorPage() {
 
   // Get palette rarity classification
   const getPaletteRarity = (paletteName: string) => {
-    const legendaryPalettes = ["Buddhist", "Maurya Empire", "Chola Dynasty", "Indigo Famine", "Bengal Famine", "Jamakalam"]
+    const legendaryPalettes = ["Buddhist", "Maurya Empire", "Chola Empire", "Indigo Famine", "Bengal Famine", "Jamakalam"]
     const epicPalettes = ["Indian Peacock", "Flamingo", "Toucan", "Madras Checks", "Kanchipuram Silk", "Natural Dyes", "Bleeding Vintage"]
-    const rarePalettes = ["Tamil Classical", "Sangam Era", "Pandya Dynasty", "Maratha Empire", "Rajasthani"]
-    const uncommonPalettes = ["Tamil Nadu Temple", "Kerala Onam", "Chettinad Spice", "Chennai Monsoon", "Bengal Indigo"]
+    const rarePalettes = ["Tamil Classical", "Sangam Era", "Pandyas", "Maratha Empire", "Rajasthani"]
+    const uncommonPalettes = ["Tamil Nadu Temple", "Kerala Onam", "Chettinad Spice", "Madras Monsoon", "Bengal Indigo"]
     
     if (legendaryPalettes.includes(paletteName)) return "Legendary"
     if (epicPalettes.includes(paletteName)) return "Epic"
@@ -2051,9 +1916,9 @@ export default function GeneratorPage() {
   // Calculate comprehensive traits
   const calculateTraits = () => {
     const data = {
-      doormatTextRows: (window as any).doormatTextRows || [],
-      selectedPalette: (window as any).selectedPalette || null,
-      stripeData: (window as any).stripeData || []
+      doormatTextRows: typeof window !== 'undefined' ? (window as any).doormatTextRows || [] : [],
+      selectedPalette: typeof window !== 'undefined' ? (window as any).selectedPalette || null : null,
+      stripeData: typeof window !== 'undefined' ? (window as any).stripeData || [] : []
     }
     
     const textLines = data.doormatTextRows.length
@@ -2091,8 +1956,8 @@ export default function GeneratorPage() {
       
       // Additional traits
       warpThickness: {
-        value: (window as any).warpThickness || 2,
-        rarity: getWarpThicknessRarity((window as any).warpThickness || 2)
+        value: typeof window !== 'undefined' ? (window as any).warpThickness || 2 : 2,
+        rarity: getWarpThicknessRarity(typeof window !== 'undefined' ? (window as any).warpThickness || 2 : 2)
       },
       seed: currentSeed
     }
@@ -2113,7 +1978,7 @@ export default function GeneratorPage() {
     const seed = Math.floor(Math.random() * 10000)
     setCurrentSeed(seed)
     
-    if ((window as any).p5Instance) {
+    if (typeof window !== 'undefined' && (window as any).p5Instance) {
       console.log('🎨 Generating new doormat with seed:', seed)
       generateDoormatCore(seed, (window as any).doormatData)
       
@@ -2133,11 +1998,13 @@ export default function GeneratorPage() {
     setDirtLevel(newDirtLevel)
     
     // Store globally for P5.js access
-    ;(window as any).showDirt = newShowDirt
-    ;(window as any).dirtLevel = newDirtLevel
+    if (typeof window !== 'undefined') {
+      ;(window as any).showDirt = newShowDirt
+      ;(window as any).dirtLevel = newDirtLevel
+    }
     
     // Redraw canvas if P5.js instance exists
-    if ((window as any).p5Instance) {
+    if (typeof window !== 'undefined' && (window as any).p5Instance) {
       ;(window as any).p5Instance.redraw()
     }
   }
@@ -2148,18 +2015,20 @@ export default function GeneratorPage() {
     setTextureLevel(newTextureLevel)
     
     // Store globally for P5.js access
-    ;(window as any).showTexture = newShowTexture
-    ;(window as any).textureLevel = newTextureLevel
+    if (typeof window !== 'undefined') {
+      ;(window as any).showTexture = newShowTexture
+      ;(window as any).textureLevel = newTextureLevel
+    }
     
     // Redraw canvas if P5.js instance exists
-    if ((window as any).p5Instance) {
+    if (typeof window !== 'undefined' && (window as any).p5Instance) {
       ;(window as any).p5Instance.redraw()
     }
   }
 
   // Generate from seed
   const generateFromSeed = () => {
-    if ((window as any).p5Instance) {
+    if (typeof window !== 'undefined' && (window as any).p5Instance) {
       console.log('🎨 Generating doormat from seed:', currentSeed)
       generateDoormatCore(currentSeed, (window as any).doormatData)
       
@@ -2175,7 +2044,7 @@ export default function GeneratorPage() {
 
   // Save doormat
   const saveDoormat = () => {
-    if ((window as any).p5Instance) {
+    if (typeof window !== 'undefined' && (window as any).p5Instance) {
       (window as any).p5Instance.saveCanvas(`doormat-${Date.now()}`, 'png')
     } else {
       alert('Save function not available')
@@ -2210,19 +2079,21 @@ export default function GeneratorPage() {
   const addTextToDoormat = () => {
     const validTexts = textInputs.filter(text => text.trim().length > 0)
     
-    if (validTexts.length > 0 && (window as any).doormatData) {
+    if (validTexts.length > 0 && typeof window !== 'undefined' && (window as any).doormatData) {
       (window as any).doormatData.doormatTextRows = validTexts
       console.log('📝 Text added to doormat:', validTexts)
       
       // Update text colors and generate text data
-      if ((window as any).p5Instance) {
+      if (typeof window !== 'undefined' && (window as any).p5Instance) {
         updateTextColors((window as any).p5Instance, (window as any).doormatData)
         generateTextData((window as any).doormatData)
       }
       
       // Update global text data
-      ;(window as any).textData = (window as any).doormatData.textData
-      ;(window as any).doormatTextRows = (window as any).doormatData.doormatTextRows
+      if (typeof window !== 'undefined') {
+        ;(window as any).textData = (window as any).doormatData.textData
+        ;(window as any).doormatTextRows = (window as any).doormatData.doormatTextRows
+      }
       
       // Redraw
       if ((window as any).p5Instance) {
@@ -2236,13 +2107,15 @@ export default function GeneratorPage() {
     setTextInputs([''])
     setCurrentRowCount(1)
     
-    if ((window as any).doormatData) {
+    if (typeof window !== 'undefined' && (window as any).doormatData) {
       (window as any).doormatData.doormatTextRows = []
       ;(window as any).doormatData.textData = []
       
       // Update global text data
-      ;(window as any).textData = []
-      ;(window as any).doormatTextRows = []
+      if (typeof window !== 'undefined') {
+        ;(window as any).textData = []
+        ;(window as any).doormatTextRows = []
+      }
       
       // Redraw
       if ((window as any).p5Instance) {
@@ -2283,7 +2156,7 @@ export default function GeneratorPage() {
         existingCanvas.remove()
       }
       // Clear global P5.js instance
-      if ((window as any).p5Instance) {
+      if (typeof window !== 'undefined' && (window as any).p5Instance) {
         (window as any).p5Instance.remove()
         delete (window as any).p5Instance
       }
@@ -2405,9 +2278,9 @@ export default function GeneratorPage() {
                       </div>
                     </div>
 
-                {/* NFT Traits Display - Commented out to reduce bottom thickness */}
-                {/* {traits && (
-                  <div className="mt-2 pt-2 border-t border-green-500/30 hidden">
+                {/* NFT Traits Display */}
+                {traits && (
+                  <div className="mt-2 pt-2 border-t border-green-500/30">
                     <div className="text-green-300 text-sm mb-3">NFT Traits & Rarity:</div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {Object.entries(traits).map(([key, trait]: [string, any]) => {
@@ -2442,7 +2315,7 @@ export default function GeneratorPage() {
                       })}
                     </div>
                   </div>
-                )} */}
+                )}
               </div>
                 </div>
               </div>
@@ -2693,16 +2566,381 @@ export default function GeneratorPage() {
                   </div>
                 </div>
 
-                
-                {/* NFT Export Section */}
-                <div className="border-t border-green-500/30 pt-3">
-                  <NFTExporter 
-                    currentSeed={currentSeed}
-                    currentPalette={null}
-                    currentStripeData={[]}
-                    textRows={textInputs}
-                  />
+
+
+                {/* Mint Data Dashboard */}
+                <div className="border-t border-gray-500/30 pt-3">
+                  <div className="text-gray-300 text-sm mb-3 font-mono">📊 Mint Data Dashboard</div>
+                  
+                  <div className="bg-gray-900/30 border border-gray-500/30 rounded p-4">
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      {/* Text Data */}
+                      <div className="bg-gradient-to-br from-blue-900/30 to-blue-800/20 p-3 rounded-lg border border-blue-500/20">
+                        <div className="flex items-center mb-2">
+                          <div className="w-2 h-2 bg-blue-400 rounded-full mr-2"></div>
+                          <div className="text-blue-300 text-xs font-semibold">Text Content</div>
+                        </div>
+                        <div className="text-white text-sm">
+                          {textInputs.filter(row => row.trim() !== '').length} lines
+                        </div>
+                        <div className="text-gray-400 text-xs mt-1">
+                          {textInputs.filter(row => row.trim() !== '').slice(0, 2).join(', ')}
+                          {textInputs.filter(row => row.trim() !== '').length > 2 && '...'}
+                        </div>
+                      </div>
+
+                      {/* Palette Data */}
+                      <div className="bg-gradient-to-br from-purple-900/30 to-purple-800/20 p-3 rounded-lg border border-purple-500/20">
+                        <div className="flex items-center mb-2">
+                          <div className="w-2 h-2 bg-purple-400 rounded-full mr-2"></div>
+                          <div className="text-purple-300 text-xs font-semibold">Color Palette</div>
+                        </div>
+                        <div className="text-white text-sm">
+                          {palette?.name || 'Default'}
+                        </div>
+                        <div className="flex gap-1 mt-2">
+                          {palette?.colors?.slice(0, 4).map((color: string, index: number) => (
+                            <div
+                              key={index}
+                              className="w-3 h-3 rounded-full border border-gray-600"
+                              style={{ backgroundColor: color }}
+                            />
+                          ))}
+                          {palette?.colors?.length > 4 && (
+                            <div className="text-gray-400 text-xs ml-1">+{palette.colors.length - 4}</div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-3 mb-4">
+                      {/* Stripe Data */}
+                      <div className="bg-gradient-to-br from-green-900/30 to-green-800/20 p-3 rounded-lg border border-green-500/20">
+                        <div className="flex items-center mb-2">
+                          <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
+                          <div className="text-green-300 text-xs font-semibold">Stripes</div>
+                        </div>
+                        <div className="text-white text-sm">
+                          {typeof window !== 'undefined' && (window as any).stripeData 
+                            ? `${(window as any).stripeData.length}`
+                            : '0'
+                          }
+                        </div>
+                        <div className="text-gray-400 text-xs">patterns</div>
+                      </div>
+
+                      {/* Character Map */}
+                      <div className="bg-gradient-to-br from-orange-900/30 to-orange-800/20 p-3 rounded-lg border border-orange-500/20">
+                        <div className="flex items-center mb-2">
+                          <div className="w-2 h-2 bg-orange-400 rounded-full mr-2"></div>
+                          <div className="text-orange-300 text-xs font-semibold">Characters</div>
+                        </div>
+                        <div className="text-white text-sm">
+                          {(() => {
+                            if (typeof window === 'undefined' || !(window as any).doormatData?.characterMap) return '0';
+                            
+                            // Get only the characters actually used in text (optimization)
+                            const used = new Set<string>();
+                            textInputs.forEach(row => {
+                              for (let char of row.toUpperCase()) {
+                                used.add(char);
+                              }
+                            });
+                            used.add(' '); // Always include space
+                            
+                            const usedCharMap: any = {};
+                            used.forEach((char) => {
+                              if ((window as any).doormatData.characterMap[char]) {
+                                usedCharMap[char] = (window as any).doormatData.characterMap[char];
+                              }
+                            });
+                            return Object.keys(usedCharMap).length;
+                          })()}
+                        </div>
+                        <div className="text-gray-400 text-xs">mapped</div>
+                      </div>
+
+                      {/* Warp Thickness */}
+                      <div className="bg-gradient-to-br from-pink-900/30 to-pink-800/20 p-3 rounded-lg border border-pink-500/20">
+                        <div className="flex items-center mb-2">
+                          <div className="w-2 h-2 bg-pink-400 rounded-full mr-2"></div>
+                          <div className="text-pink-300 text-xs font-semibold">Warp</div>
+                        </div>
+                        <div className="text-white text-sm">3</div>
+                        <div className="text-gray-400 text-xs">thickness</div>
+                      </div>
+                    </div>
+
+                    {/* Seed & Status */}
+                    <div className="bg-gradient-to-r from-gray-800/40 to-gray-700/40 p-3 rounded-lg border border-gray-600/30">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <div className="w-2 h-2 bg-yellow-400 rounded-full mr-2"></div>
+                          <div className="text-yellow-300 text-xs font-semibold">Seed</div>
+                        </div>
+                        <div className="text-white text-sm font-mono">{currentSeed}</div>
+                      </div>
+                      <div className="flex items-center justify-between mt-2">
+                        <div className="flex items-center">
+                          <div className="w-2 h-2 bg-emerald-400 rounded-full mr-2"></div>
+                          <div className="text-emerald-300 text-xs font-semibold">Status</div>
+                        </div>
+                        <div className="text-emerald-400 text-xs">Ready to Mint</div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
+
+                {/* Contract Minting Data */}
+                <div className="border-t border-gray-500/30 pt-3 mt-4">
+                  <div className="text-gray-300 text-sm mb-3 font-mono">🔧 Contract Minting Data</div>
+
+                  <div className="bg-gray-900/30 border border-gray-500/30 rounded p-3">
+                    <div className="text-gray-400 text-xs font-mono mb-2">Exact Data Sent to Contract:</div>
+                    <div className="space-y-2 text-xs">
+                      <div className="bg-gray-800/50 p-2 rounded">
+                        <div className="flex justify-between items-center mb-1">
+                          <div className="text-gray-400">textRows:</div>
+                          <button
+                            onClick={() => copyToClipboard(JSON.stringify(textInputs.filter(row => row.trim() !== '')), 'textRows')}
+                            className="text-blue-400 hover:text-blue-300 text-xs px-2 py-1 rounded border border-blue-400/30 hover:border-blue-300/50 transition-colors"
+                          >
+                            📋 Copy
+                          </button>
+                        </div>
+                        <div className="text-white font-mono text-xs">
+                          {JSON.stringify(textInputs.filter(row => row.trim() !== ''))}
+                        </div>
+                      </div>
+
+                      <div className="bg-gray-800/50 p-2 rounded">
+                        <div className="flex justify-between items-center mb-1">
+                          <div className="text-gray-400">seed:</div>
+                          <button
+                            onClick={() => copyToClipboard(currentSeed.toString(), 'seed')}
+                            className="text-blue-400 hover:text-blue-300 text-xs px-2 py-1 rounded border border-blue-400/30 hover:border-blue-300/50 transition-colors"
+                          >
+                            📋 Copy
+                          </button>
+                        </div>
+                        <div className="text-white font-mono text-xs">{currentSeed}</div>
+                      </div>
+
+                      <div className="bg-gray-800/50 p-2 rounded">
+                        <div className="flex justify-between items-center mb-1">
+                          <div className="text-gray-400">paletteName:</div>
+                          <button
+                            onClick={() => copyToClipboard(palette?.name || 'Unknown', 'paletteName')}
+                            className="text-blue-400 hover:text-blue-300 text-xs px-2 py-1 rounded border border-blue-400/30 hover:border-blue-300/50 transition-colors"
+                          >
+                            📋 Copy
+                          </button>
+                        </div>
+                        <div className="text-white font-mono text-xs">&ldquo;{palette?.name || 'Unknown'}&rdquo;</div>
+                      </div>
+
+                      <div className="bg-gray-800/50 p-2 rounded">
+                        <div className="flex justify-between items-center mb-1">
+                          <div className="text-gray-400">minifiedPalette:</div>
+                          <button
+                            onClick={() => copyToClipboard(JSON.stringify(palette), 'minifiedPalette')}
+                            className="text-blue-400 hover:text-blue-300 text-xs px-2 py-1 rounded border border-blue-400/30 hover:border-blue-300/50 transition-colors"
+                          >
+                            📋 Copy
+                          </button>
+                        </div>
+                        <div className="text-white font-mono text-xs max-h-16 overflow-y-auto">
+                          {JSON.stringify(palette)}
+                        </div>
+                      </div>
+
+                      <div className="bg-gray-800/50 p-2 rounded">
+                        <div className="flex justify-between items-center mb-1">
+                          <div className="text-gray-400">minifiedStripeData:</div>
+                          <button
+                            onClick={() => copyToClipboard(
+                              typeof window !== 'undefined' && (window as any).stripeData
+                                ? JSON.stringify((window as any).stripeData)
+                                : '[]',
+                              'minifiedStripeData'
+                            )}
+                            className="text-blue-400 hover:text-blue-300 text-xs px-2 py-1 rounded border border-blue-400/30 hover:border-blue-300/50 transition-colors"
+                          >
+                            📋 Copy
+                          </button>
+                        </div>
+                        <div className="text-white font-mono text-xs max-h-16 overflow-y-auto">
+                          {typeof window !== 'undefined' && (window as any).stripeData
+                            ? JSON.stringify((window as any).stripeData)
+                            : '[]'
+                          }
+                        </div>
+                      </div>
+
+                      <div className="bg-gray-800/50 p-2 rounded">
+                        <div className="flex justify-between items-center mb-1">
+                          <div className="text-gray-400">filteredCharacterMap:</div>
+                          <button
+                            onClick={() => {
+                              const usedCharMap = (() => {
+                                if (typeof window === 'undefined' || !(window as any).doormatData?.characterMap) return {};
+
+                                const used = new Set<string>();
+                                textInputs.forEach(row => {
+                                  for (let char of row.toUpperCase()) {
+                                    used.add(char);
+                                  }
+                                });
+                                used.add(' ');
+
+                                const usedCharMap: any = {};
+                                used.forEach((char) => {
+                                  if ((window as any).doormatData.characterMap[char]) {
+                                    usedCharMap[char] = (window as any).doormatData.characterMap[char];
+                                  }
+                                });
+                                return usedCharMap;
+                              })();
+                              copyToClipboard(JSON.stringify(usedCharMap), 'filteredCharacterMap');
+                            }}
+                            className="text-blue-400 hover:text-blue-300 text-xs px-2 py-1 rounded border border-blue-400/30 hover:border-blue-300/50 transition-colors"
+                          >
+                            📋 Copy
+                          </button>
+                        </div>
+                        <div className="text-white font-mono text-xs max-h-16 overflow-y-auto">
+                          {(() => {
+                            if (typeof window === 'undefined' || !(window as any).doormatData?.characterMap) return '{}';
+
+                            const used = new Set<string>();
+                            textInputs.forEach(row => {
+                              for (let char of row.toUpperCase()) {
+                                used.add(char);
+                              }
+                            });
+                            used.add(' ');
+
+                            const usedCharMap: any = {};
+                            used.forEach((char) => {
+                              if ((window as any).doormatData.characterMap[char]) {
+                                usedCharMap[char] = (window as any).doormatData.characterMap[char];
+                              }
+                            });
+                            return JSON.stringify(usedCharMap);
+                          })()}
+                        </div>
+                      </div>
+
+                      <div className="bg-gray-800/50 p-2 rounded">
+                        <div className="flex justify-between items-center mb-1">
+                          <div className="text-gray-400">warpThickness:</div>
+                          <button
+                            onClick={() => copyToClipboard('3', 'warpThickness')}
+                            className="text-blue-400 hover:text-blue-300 text-xs px-2 py-1 rounded border border-blue-400/30 hover:border-blue-300/50 transition-colors"
+                          >
+                            📋 Copy
+                          </button>
+                        </div>
+                        <div className="text-white font-mono text-xs">3</div>
+                      </div>
+
+                      <div className="bg-gray-800/50 p-2 rounded">
+                        <div className="flex justify-between items-center mb-1">
+                          <div className="text-gray-400">complexity:</div>
+                          <button
+                            onClick={() => copyToClipboard('2', 'complexity')}
+                            className="text-blue-400 hover:text-blue-300 text-xs px-2 py-1 rounded border border-blue-400/30 hover:border-blue-300/50 transition-colors"
+                          >
+                            📋 Copy
+                          </button>
+                        </div>
+                        <div className="text-white font-mono text-xs">2</div>
+                      </div>
+
+                      <div className="bg-gray-800/50 p-2 rounded">
+                        <div className="flex justify-between items-center mb-1">
+                          <div className="text-gray-400">characterCount:</div>
+                          <button
+                            onClick={() => copyToClipboard(textInputs.filter(row => row.trim() !== '').join('').length.toString(), 'characterCount')}
+                            className="text-blue-400 hover:text-blue-300 text-xs px-2 py-1 rounded border border-blue-400/30 hover:border-blue-300/50 transition-colors"
+                          >
+                            📋 Copy
+                          </button>
+                        </div>
+                        <div className="text-white font-mono text-xs">{textInputs.filter(row => row.trim() !== '').join('').length}</div>
+                      </div>
+
+                      <div className="bg-gray-800/50 p-2 rounded">
+                        <div className="flex justify-between items-center mb-1">
+                          <div className="text-gray-400">stripeCount:</div>
+                          <button
+                            onClick={() => copyToClipboard(
+                              typeof window !== 'undefined' && (window as any).stripeData
+                                ? (window as any).stripeData.length.toString()
+                                : '0',
+                              'stripeCount'
+                            )}
+                            className="text-blue-400 hover:text-blue-300 text-xs px-2 py-1 rounded border border-blue-400/30 hover:border-blue-300/50 transition-colors"
+                          >
+                            📋 Copy
+                          </button>
+                        </div>
+                        <div className="text-white font-mono text-xs">
+                          {typeof window !== 'undefined' && (window as any).stripeData
+                            ? (window as any).stripeData.length
+                            : 0
+                          }
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Mint Button Section */}
+                <div className="border-t border-green-500/30 pt-3 mt-4">
+                  <div className="text-green-300 text-sm mb-3 font-mono">🚀 Mint Your Onchain Rug</div>
+
+                  {/* Minting Status */}
+                  <div className="bg-green-900/20 border border-green-500/30 rounded p-3 mb-3">
+                    <div className="text-green-400 text-xs font-mono mb-2">Minting Status:</div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
+                        <div className="text-green-300 text-xs">Ready to Mint</div>
+                      </div>
+                      <div className="text-green-400 text-xs font-mono">
+                        {(() => {
+                          const nonEmptyRows = textInputs.filter(row => row.trim() !== '').length
+                          if (nonEmptyRows === 0) return '0.0001 ETH'
+                          if (nonEmptyRows === 1) return '0.0001 ETH'
+                          if (nonEmptyRows <= 3) return `${(0.0001 + (nonEmptyRows - 1) * 0.00111).toFixed(4)} ETH`
+                          return `${(0.0001 + 2 * 0.00111 + (nonEmptyRows - 3) * 0.00222).toFixed(4)} ETH`
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Web3 Minting Component */}
+                  <Web3Minting
+                    textRows={textInputs}
+                    currentPalette={palette}
+                    currentStripeData={typeof window !== 'undefined' ? (window as any).stripeData || [] : []}
+                    characterMap={typeof window !== 'undefined' ? (window as any).doormatData?.characterMap || {} : {}}
+                    warpThickness={3}
+                  />
+
+                  {/* Minting Tips */}
+                  <div className="bg-blue-900/10 border border-blue-500/30 rounded p-3 mt-3">
+                    <div className="text-blue-400 text-xs font-mono mb-2">💡 Minting Tips:</div>
+                    <div className="text-blue-300 text-xs space-y-1">
+                      <div>• Connect your wallet first</div>
+                      <div>• Ensure you have enough ETH for gas</div>
+                      <div>• Transaction will create your unique onchain rug NFT</div>
+                      <div>• Gas is optimized with character map reduction</div>
+                    </div>
+                  </div>
+                </div>
+
                 </div>
               </div>
             </div>

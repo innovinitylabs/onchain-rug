@@ -1,147 +1,113 @@
 /**
  * Deterministic Pseudo-Random Number Generator
- * Ensures complete reproducibility of doormat generation
+ * Provides consistent random number generation for reproducible art
  */
-export class DeterministicPRNG {
-  private seed: number;
-  private state: number;
+
+class DeterministicPRNG {
+  private seed: number
+  private state: number
 
   constructor(seed: number) {
-    this.seed = seed;
-    this.state = this.hashSeed(seed);
+    this.seed = seed
+    this.state = seed
   }
 
-  /**
-   * Hash function to convert seed to initial state
-   */
-  private hashSeed(seed: number): number {
-    let hash = seed;
-    hash = ((hash << 5) - hash) & 0xffffffff;
-    hash ^= hash >>> 16;
-    hash = ((hash << 5) - hash) & 0xffffffff;
-    hash ^= hash >>> 16;
-    return Math.abs(hash) / 0xffffffff;
-  }
-
-  /**
-   * Generate next random number (0 to 1)
-   */
+  // Linear Congruential Generator (LCG)
   next(): number {
-    // Linear Congruential Generator (LCG)
-    this.state = (this.state * 1664525 + 1013904223) % 0x100000000;
-    return this.state / 0x100000000;
+    this.state = (this.state * 1664525 + 1013904223) % 4294967296
+    return this.state / 4294967296
   }
 
-  /**
-   * Generate random number between min and max (inclusive)
-   */
+  // Generate random number between min and max (inclusive)
+  random(min: number = 0, max: number = 1): number {
+    return min + this.next() * (max - min)
+  }
+
+  // Generate random integer between min and max (inclusive)
+  randomInt(min: number, max: number): number {
+    return Math.floor(this.random(min, max + 1))
+  }
+
+  // Generate random boolean
+  randomBool(): boolean {
+    return this.next() < 0.5
+  }
+
+  // Pick random element from array
+  randomChoice<T>(array: T[]): T {
+    return array[this.randomInt(0, array.length - 1)]
+  }
+
+  // Generate random number in range (alias for random)
   range(min: number, max: number): number {
-    return min + this.next() * (max - min);
+    return this.random(min, max)
   }
 
-  /**
-   * Generate random integer between min and max (inclusive)
-   */
-  int(min: number, max: number): number {
-    return Math.floor(this.range(min, max + 1));
-  }
-
-  /**
-   * Pick random element from array
-   */
-  choice<T>(array: T[]): T {
-    if (array.length === 0) throw new Error('Cannot choose from empty array');
-    return array[this.int(0, array.length - 1)];
-  }
-
-  /**
-   * Shuffle array in place (Fisher-Yates)
-   */
+  // Shuffle array in place
   shuffle<T>(array: T[]): T[] {
-    const result = [...array];
-    for (let i = result.length - 1; i > 0; i--) {
-      const j = this.int(0, i);
-      [result[i], result[j]] = [result[j], result[i]];
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = this.randomInt(0, i)
+      ;[array[i], array[j]] = [array[j], array[i]]
     }
-    return result;
+    return array
   }
 
-  /**
-   * Generate random boolean
-   */
-  boolean(): boolean {
-    return this.next() < 0.5;
-  }
-
-  /**
-   * Generate random number with normal distribution (Box-Muller transform)
-   */
-  normal(mean: number = 0, stdDev: number = 1): number {
-    if (this._spare !== null) {
-      const value = this._spare;
-      this._spare = null;
-      return value * stdDev + mean;
-    }
-
-    const u1 = this.next();
-    const u2 = this.next();
-    const mag = stdDev * Math.sqrt(-2.0 * Math.log(u1));
-    this._spare = mag * Math.cos(2.0 * Math.PI * u2);
-    return mag * Math.sin(2.0 * Math.PI * u2) + mean;
-  }
-
-  private _spare: number | null = null;
-
-  /**
-   * Create a new PRNG instance with a derived seed
-   */
-  derive(additionalSeed: number): DeterministicPRNG {
-    const newSeed = this.hashSeed(this.seed + additionalSeed) * 0xffffffff;
-    return new DeterministicPRNG(newSeed);
-  }
-
-  /**
-   * Get current seed
-   */
-  getSeed(): number {
-    return this.seed;
-  }
-
-  /**
-   * Reset to original seed
-   */
+  // Reset to original seed
   reset(): void {
-    this.state = this.hashSeed(this.seed);
-    this._spare = null;
+    this.state = this.seed
+  }
+
+  // Get current seed
+  getSeed(): number {
+    return this.seed
   }
 }
 
-/**
- * Global PRNG instance for the current generation
- */
-let globalPRNG: DeterministicPRNG | null = null;
+// Global PRNG instance
+let globalPRNG: DeterministicPRNG | null = null
 
 /**
- * Initialize global PRNG with seed
+ * Initialize the global PRNG with a seed
  */
-export function initPRNG(seed: number): DeterministicPRNG {
-  globalPRNG = new DeterministicPRNG(seed);
-  return globalPRNG;
+export function initPRNG(seed: number): void {
+  globalPRNG = new DeterministicPRNG(seed)
 }
 
 /**
- * Get current global PRNG instance
+ * Get the global PRNG instance
  */
 export function getPRNG(): DeterministicPRNG {
   if (!globalPRNG) {
-    throw new Error('PRNG not initialized. Call initPRNG(seed) first.');
+    throw new Error('PRNG not initialized. Call initPRNG(seed) first.')
   }
-  return globalPRNG;
+  return globalPRNG
 }
 
 /**
- * Create a derived PRNG for specific purposes
+ * Create a new PRNG instance with a derived seed
  */
-export function createDerivedPRNG(additionalSeed: number): DeterministicPRNG {
-  return getPRNG().derive(additionalSeed);
+export function createDerivedPRNG(baseSeed: number, offset: number = 0): DeterministicPRNG {
+  return new DeterministicPRNG(baseSeed + offset)
 }
+
+/**
+ * Generate a random seed
+ */
+export function generateRandomSeed(): number {
+  return Math.floor(Math.random() * 4294967296)
+}
+
+/**
+ * Hash a string to a number (for deterministic seeds from text)
+ */
+export function hashString(str: string): number {
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i)
+    hash = ((hash << 5) - hash) + char
+    hash = hash & hash // Convert to 32-bit integer
+  }
+  return Math.abs(hash)
+}
+
+export default DeterministicPRNG

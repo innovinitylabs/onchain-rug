@@ -2,7 +2,8 @@
 
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { Home, Palette, Image, Wallet } from 'lucide-react'
+import { Home, Palette, Image } from 'lucide-react'
+import { WalletConnect } from './wallet-connect'
 
 export default function Navigation() {
   return (
@@ -47,15 +48,8 @@ export default function Navigation() {
             </Link>
           </div>
 
-          {/* Connect Wallet Button */}
-          <motion.button
-            className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-6 py-2 rounded-full font-medium hover:from-amber-600 hover:to-orange-600 transition-all duration-200 flex items-center gap-2"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <Wallet className="w-4 h-4" />
-            Connect Wallet
-          </motion.button>
+          {/* Wallet Connection */}
+          <WalletConnect />
         </div>
       </div>
     </motion.nav>

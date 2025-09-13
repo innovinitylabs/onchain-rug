@@ -93,3 +93,5 @@ jspm_packages/
 
 # TernJS port file
 .tern-port
+mint-ui-config.js
+mint-ui-config-template.js
