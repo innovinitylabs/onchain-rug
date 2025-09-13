@@ -16,48 +16,31 @@ function getRandomBackgroundIndex(): number {
 }
 
 export default function BackgroundRotator() {
-  const [currentBg, setCurrentBg] = useState<string>('');
-  const [isHydrated, setIsHydrated] = useState(false);
-
+  // Preload all background images for instant loading
   useEffect(() => {
-    // Mark as hydrated on client
-    setIsHydrated(true);
-
-    // Generate random background for this page load
-    const timestamp = new Date().toISOString();
-    const index = getRandomBackgroundIndex();
-    const selectedBg = backgrounds[index];
-    console.log('🎨 Background Rotator [' + timestamp + ']: Random index =', index, 'Selected =', selectedBg);
-    setCurrentBg(selectedBg);
+    backgrounds.forEach(bg => {
+      const img = new Image();
+      img.src = bg;
+    });
   }, []);
 
-  // Don't render anything during SSR to avoid hydration mismatch
-  if (!isHydrated || !currentBg) {
-    return (
-      <div
-        className="fixed inset-0 z-0"
-        style={{
-          backgroundImage: `url(${backgrounds[0]})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-          backgroundAttachment: 'fixed',
-          opacity: 0.8
-        }}
-      />
-    );
-  }
+  // Generate random background immediately (no useEffect delay)
+  const randomIndex = getRandomBackgroundIndex();
+  const selectedBg = backgrounds[randomIndex];
+
+  // Log for debugging
+  console.log('🎨 Background Rotator: Selected background', randomIndex, selectedBg);
 
   return (
     <div
       className="fixed inset-0 z-0"
       style={{
-        backgroundImage: `url(${currentBg})`,
+        backgroundImage: `url(${selectedBg})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
         backgroundAttachment: 'fixed',
-        opacity: 0.8 // More visible now that gradients are semi-transparent
+        opacity: 0.8
       }}
     />
   );
