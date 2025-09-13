@@ -2,7 +2,7 @@
 pragma solidity ^0.8.22;
 
 import "forge-std/Script.sol";
-import "../src/OnchainRugsV2Shape.sol";
+import "../src/OnchainRugs.sol";
 
 /**
  * @title DeployShapeL2Testnet
@@ -21,7 +21,7 @@ contract DeployShapeL2Testnet is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         // Deploy the contract
-        OnchainRugsV2Shape onchainRugs = new OnchainRugsV2Shape();
+        OnchainRugs onchainRugs = new OnchainRugs();
 
         console.log("OnchainRugsV2Shape deployed at:", address(onchainRugs));
         console.log("Contract name:", onchainRugs.name());
@@ -39,25 +39,16 @@ contract DeployShapeL2Testnet is Script {
             "RPC URL: https://sepolia.shape.network\n",
             "Block Explorer: https://explorer-sepolia.shape.network\n",
             "Max Supply: 1111\n",
-            "Base Price: 0.00069 ETH\n",
-            "Line 1 Price: 0.00042 ETH\n",
-            "Line 2 Price: 0.00069 ETH\n",
-            "Line 3 Price: 0.00111 ETH\n",
-            "Line 4 Price: 0.00142 ETH\n",
-            "Line 5 Price: 0.00169 ETH\n",
-            "Level 1 Cleaning: Free\n",
-            "Level 2 Cleaning: 0.00084 ETH\n",
-            "Texture Reduction: 0.0042 ETH\n",
-            "Full Laundering: 0.0069 ETH\n",
-            "Dirt Level 1: 3 days\n",
-            "Dirt Level 2: 7 days\n",
-            "Texture Increment: 14 days\n"
+            "Base Price: 0.0001 ETH\n",
+            "Text Line Price: 0.00111 ETH\n",
+            "Cleaning Cost: 0.0001 ETH\n",
+            "Laundering Cost: 0.0005 ETH\n"
         ));
 
         console.log(deploymentInfo);
 
-        // Write to file for easy reference (commented out to avoid issues)
-        // vm.writeFile("shape-l2-testnet-deployment.txt", deploymentInfo);
-        // console.log("Deployment info saved to shape-l2-testnet-deployment.txt");
+        // Write to file for easy reference
+        vm.writeFile("shape-l2-testnet-deployment.txt", deploymentInfo);
+        console.log("Deployment info saved to shape-l2-testnet-deployment.txt");
     }
 }

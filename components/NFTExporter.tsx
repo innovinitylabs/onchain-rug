@@ -106,6 +106,11 @@ const NFTExporter: React.FC<NFTExporterProps> = ({
       }
     });
 
+    // Debug: Log extracted characters
+    console.log('Text rows:', textRows);
+    console.log('Extracted characters:', Array.from(usedChars));
+    console.log('Character map keys:', Object.keys(characterMap));
+
     // Create minimal character map with only used characters
     const optimizedCharacterMap: any = {};
     usedChars.forEach(char => {
@@ -118,8 +123,14 @@ const NFTExporter: React.FC<NFTExporterProps> = ({
       optimizedCharacterMap[' '] = characterMap[' '];
     }
 
-    const fullCharacterMap = optimizedCharacterMap;
-    
+    const optimizedCharacterMapFinal = optimizedCharacterMap;
+
+    // Debug: Log final optimized character map
+    console.log('Optimized character map keys:', Object.keys(optimizedCharacterMapFinal));
+    console.log('Optimized character map size:', JSON.stringify(optimizedCharacterMapFinal).length);
+    console.log('Full character map size:', JSON.stringify(characterMap).length);
+    console.log('Space saved:', JSON.stringify(characterMap).length - JSON.stringify(optimizedCharacterMapFinal).length, 'characters');
+
     // Get the actual current warpThickness from the live generator
     const currentWarpThickness = (window as any).warpThickness || 2;
 
@@ -946,7 +957,7 @@ const NFTExporter: React.FC<NFTExporterProps> = ({
     //   </html>`;
     //     };
     return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Onchain Rug #${seed}</title><script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script><style>body{margin:0;padding:1;display:flex;justify-content:center;align-items:center}</style></head><body><div id="canvas-container"></div><script>let w=800,h=1200,f=30,wt=8,wp=${currentWarpThickness},ts=2,lt,dt,p=${JSON.stringify(palette)},sd=${JSON.stringify(shortenedStripeData)},tr=${JSON.stringify(textRows)},td=[],dl=0,tl=0,s=${seed};
-    window.characterMap=${JSON.stringify(fullCharacterMap)};let cm=window.characterMap;
+    window.characterMap=${JSON.stringify(optimizedCharacterMapFinal)};let cm=window.characterMap;
 function setup(){noiseSeed(${seed});window.d=function(seed){window.prngSeed=seed%2147483647;if(window.prngSeed<=0)window.prngSeed+=2147483646};window.b=function(){window.prngSeed=(window.prngSeed*16807)%2147483647;return(window.prngSeed-1)/2147483646};window.a=function(min,max){return min+window.b()*(max-min)};window.c=function(array){return array[Math.floor(window.b()*array.length)]};window.d(${seed});let canvas=createCanvas(h+(f*4),w+(f*4));canvas.parent('canvas-container');pixelDensity(2.5);u();gtd();noLoop()}
 function u(){if(!p||!p.colors)return;let d=p.colors[0],l=p.colors[0],dv=999,lv=-1;for(let hex of p.colors){let c=color(hex),b=(red(c)+green(c)+blue(c))/3;if(b<dv){dv=b;d=hex}if(b>lv){lv=b;l=hex}}dt=lerpColor(color(d),color(0),0.4);lt=lerpColor(color(l),color(255),0.3)}
 function draw(){background(222,222,222);push();translate(width/2,height/2);rotate(PI/2);translate(-height/2,-width/2);push();translate(f*2,f*2);for(let stripe of sd)ds(stripe);if(tl>0)dtol(Math.floor(tl));pop();df();if(dl>0)ddo(Math.floor(dl));pop()} 

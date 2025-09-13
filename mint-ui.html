@@ -809,7 +809,8 @@
             </div>
 
             <div class="contract-info" id="contractInfo">
-                <strong>Status:</strong> <span style="color: blue;">Scanning for contracts...</span>
+                <strong>Status:</strong> <span style="color: blue;">Scanning for contracts...</span><br>
+                <strong>Contracts Found:</strong> <span id="contractCount">0</span>
             </div>
         </div>
 
@@ -851,8 +852,64 @@
                     <input type="number" id="warpThickness" value="3" min="1" max="5" step="1">
                 </div>
 
+                <div class="form-group">
+                    <label for="complexity">Complexity (1-5):</label>
+                    <input type="number" id="complexity" value="2" min="1" max="5" step="1">
+                    <small style="color: #666; font-size: 12px;">💡 Determines the algorithmic complexity of your rug pattern</small>
+                </div>
+
+                <!-- Hidden fields for contract requirements -->
+                <div class="form-group" style="display: none;">
+                    <label for="paletteName">Palette Name:</label>
+                    <input type="text" id="paletteName" value="Natural Dyes" readonly>
+                </div>
+
+                <div class="form-group" style="display: none;">
+                    <label for="minifiedPalette">Minified Palette:</label>
+                    <textarea id="minifiedPalette" readonly></textarea>
+                </div>
+
+                <div class="form-group" style="display: none;">
+                    <label for="minifiedStripeData">Minified Stripe Data:</label>
+                    <textarea id="minifiedStripeData" readonly></textarea>
+                </div>
+
+                <div class="form-group" style="display: none;">
+                    <label for="filteredCharacterMap">Filtered Character Map:</label>
+                    <textarea id="filteredCharacterMap" readonly></textarea>
+                </div>
+
+                <div class="form-group" style="display: none;">
+                    <label for="characterCount">Character Count:</label>
+                    <input type="number" id="characterCount" value="0" readonly>
+                </div>
+
+                <div class="form-group" style="display: none;">
+                    <label for="stripeCount">Stripe Count:</label>
+                    <input type="number" id="stripeCount" value="0" readonly>
+                </div>
+
+                <button class="btn" onclick="prepareMintData()">🔧 Prepare Mint Data</button>
                 <button class="btn" onclick="calculatePrice()">💰 Calculate Price</button>
+                <button class="btn btn-secondary" onclick="showMintDebugInfo()">🔍 Show Mint Parameters</button>
                 <div id="priceDisplay" class="status hidden"></div>
+
+                <!-- Mint Debug Info -->
+                <div id="mintDebugInfo" class="status hidden">
+                    <div class="error-technical-header">🔍 Mint Parameters Debug</div>
+                    <div class="error-technical-content">
+                        <div><strong>textRows:</strong> <span id="debugTextRows">[]</span></div>
+                        <div><strong>seed:</strong> <span id="debugSeed">0</span></div>
+                        <div><strong>paletteName:</strong> <span id="debugPaletteName">N/A</span></div>
+                        <div><strong>minifiedPalette:</strong> <span id="debugMinifiedPalette">N/A</span></div>
+                        <div><strong>minifiedStripeData:</strong> <span id="debugMinifiedStripeData">N/A</span></div>
+                        <div><strong>filteredCharacterMap:</strong> <span id="debugFilteredCharacterMap">N/A</span></div>
+                        <div><strong>warpThickness:</strong> <span id="debugWarpThickness">3</span></div>
+                        <div><strong>complexity:</strong> <span id="debugComplexity">2</span></div>
+                        <div><strong>characterCount:</strong> <span id="debugCharacterCount">0</span></div>
+                        <div><strong>stripeCount:</strong> <span id="debugStripeCount">0</span></div>
+                    </div>
+                </div>
                 
                 <!-- Config Status -->
                 <div id="configStatus" class="status" style="margin-bottom: 10px; font-weight: bold;">
@@ -1125,60 +1182,54 @@
                 console.log('Scanning for deployed contracts...');
                 availableContracts = [];
 
-                // For local development, try to fetch contract info from a simple endpoint
-                // In a real deployment, you'd have an API endpoint that serves this data
-                const mockContracts = [
-                    {
-                        address: window.MINT_UI_CONFIG?.CONTRACTS?.local || '0x5FbDB2315678afecb367f032d93F642f64180aa3',
-                        name: 'OnchainRugsV2Shape',
-                        deployedAt: new Date(Date.now() - 30000), // 30 seconds ago
-                        network: 'local',
-                        hasCustomMinting: true,
-                        description: 'Fresh deployment with fixed algorithm and proper on-chain aging'
-                    },
-                    {
+                // Scan for deployed contracts dynamically
+                const mockContracts = [];
+
+                // For local network, use the configured contract address
+                if (currentNetwork === 'local') {
+                    const localContract = window.MINT_UI_CONFIG?.CONTRACTS?.local;
+                    if (localContract) {
+                        mockContracts.push({
+                            address: localContract,
+                            name: 'OnchainRugs',
+                            deployedAt: new Date(Date.now() - 30000), // 30 seconds ago
+                            network: 'local',
+                            hasCustomMinting: true,
+                            description: 'Latest local deployment with full algorithm'
+                        });
+                    }
+                    // Add fallback local address
+                    mockContracts.push({
                         address: '0x5FbDB2315678afecb367f032d93F642f64180aa3',
-                        name: 'OnchainRugsV2Shape',
+                        name: 'OnchainRugs',
                         deployedAt: new Date(Date.now() - 180000), // 3 minutes ago
                         network: 'local',
                         hasCustomMinting: true,
-                        description: 'Fresh deployment with ultra-minimal PRNG algorithm'
-                    },
-                    {
-                        address: '0x0165878a594ca255338adfa4d48449f69242eb8f',
-                        name: 'OnchainRugsV2Shape',
-                        deployedAt: new Date(Date.now() - 3600000), // 1 hour ago
-                        network: 'local',
-                        hasCustomMinting: true,
-                        description: 'Previous deployment with custom parameters'
-                    },
-                    {
-                        address: '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0',
-                        name: 'OnchainRugsV2Shape',
-                        deployedAt: new Date(Date.now() - 86400000), // 1 day ago
-                        network: 'local',
-                        hasCustomMinting: false,
-                        description: 'Previous deployment (auto-generated params)'
-                    }
-                ];
-
-                // For testnet, add some example contracts
-                if (currentNetwork === 'testnet') {
-                    mockContracts.push({
-                        address: window.MINT_UI_CONFIG?.CONTRACTS?.testnet || '0x38b7F32Bfb88f0c513E0e52257277057F2375010',
-                        name: 'OnchainRugsV2Shape',
-                        deployedAt: new Date(Date.now() - 300000), // 5 minutes ago
-                        network: 'testnet',
-                        hasCustomMinting: true,
-                        description: 'Latest Shape Sepolia deployment with dynamic aging'
+                        description: 'Fallback local deployment'
                     });
+                }
+
+                // For testnet, use the configured contract address
+                if (currentNetwork === 'testnet') {
+                    const testnetContract = window.MINT_UI_CONFIG?.CONTRACTS?.testnet;
+                    if (testnetContract) {
+                        mockContracts.push({
+                            address: testnetContract,
+                            name: 'OnchainRugs',
+                            deployedAt: new Date(Date.now() - 300000), // 5 minutes ago
+                            network: 'testnet',
+                            hasCustomMinting: true,
+                            description: 'Latest Shape Sepolia deployment'
+                        });
+                    }
+                    // Add fallback testnet address
                     mockContracts.push({
-                        address: '0x7e14011EEA66848C208cddDd9bE76EA80D3522Fb',
-                        name: 'OnchainRugsV2Shape',
+                        address: '0x38b7F32Bfb88f0c513E0e52257277057F2375010',
+                        name: 'OnchainRugs',
                         deployedAt: new Date(Date.now() - 7200000), // 2 hours ago
                         network: 'testnet',
                         hasCustomMinting: true,
-                        description: 'Previous Shape Sepolia deployment'
+                        description: 'Fallback Shape Sepolia deployment'
                     });
                 }
 
@@ -1188,7 +1239,7 @@
                 availableContracts = mockContracts.filter(c => c.network === currentNetwork);
                 availableContracts.sort((a, b) => b.deployedAt - a.deployedAt); // Latest first
 
-                console.log('Found contracts:', availableContracts);
+                console.log(`Found ${availableContracts.length} contracts for ${currentNetwork} network:`, availableContracts);
                 return availableContracts;
 
             } catch (error) {
@@ -1201,10 +1252,12 @@
         function updateContractSelector() {
             const selector = document.getElementById('contractSelector');
             const contractInfo = document.getElementById('contractInfo');
+            const contractCount = document.getElementById('contractCount');
 
             if (availableContracts.length === 0) {
                 selector.innerHTML = '<option value="">No contracts found</option>';
                 contractInfo.innerHTML = '<strong>Status:</strong> <span style="color: red;">No contracts available</span>';
+                if (contractCount) contractCount.textContent = '0';
                 return;
             }
 
@@ -1219,10 +1272,14 @@
 
             selector.innerHTML = optionsHtml;
 
+            // Update contract count
+            if (contractCount) contractCount.textContent = availableContracts.length.toString();
+
             // Auto-select latest contract
             if (availableContracts.length > 0) {
                 CONTRACT_ADDRESS = availableContracts[0].address;
                 updateContractDisplay();
+                console.log(`✅ Auto-selected contract: ${CONTRACT_ADDRESS}`);
             }
         }
 
@@ -1258,26 +1315,20 @@
             }
         }
 
-        // Contract ABI for OnchainRugsV2Shape
+        // Contract ABI for OnchainRugs
         const CONTRACT_ABI = [
             {
                 "inputs": [
                     {"internalType": "string[]", "name": "textRows", "type": "string[]"},
                     {"internalType": "uint256", "name": "seed", "type": "uint256"},
-                    {"internalType": "string", "name": "palette", "type": "string"},
-                    {"internalType": "string", "name": "stripeData", "type": "string"},
-                    {"internalType": "string", "name": "characterMap", "type": "string"},
-                    {"internalType": "uint256", "name": "warpThickness", "type": "uint256"}
-                ],
-                "name": "mintRugWithParams",
-                "outputs": [],
-                "stateMutability": "payable",
-                "type": "function"
-            },
-            {
-                "inputs": [
-                    {"internalType": "string[]", "name": "textRows", "type": "string[]"},
-                    {"internalType": "uint256", "name": "seed", "type": "uint256"}
+                    {"internalType": "string", "name": "paletteName", "type": "string"},
+                    {"internalType": "string", "name": "minifiedStripeData", "type": "string"},
+                    {"internalType": "string", "name": "minifiedPalette", "type": "string"},
+                    {"internalType": "string", "name": "filteredCharacterMap", "type": "string"},
+                    {"internalType": "uint8", "name": "warpThickness", "type": "uint8"},
+                    {"internalType": "uint8", "name": "complexity", "type": "uint8"},
+                    {"internalType": "uint256", "name": "characterCount", "type": "uint256"},
+                    {"internalType": "uint256", "name": "stripeCount", "type": "uint256"}
                 ],
                 "name": "mintRug",
                 "outputs": [],
@@ -1313,9 +1364,40 @@
                 "type": "function"
             },
             {
-                "inputs": [{"internalType": "uint256", "name": "tokenId", "type": "uint256"}],
+                "inputs": [{"internalType": "uint8", "name": "dl", "type": "uint8"}],
                 "name": "getCleaningCost",
                 "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [{"internalType": "uint256", "name": "tokenId", "type": "uint256"}],
+                "name": "launderRug",
+                "outputs": [],
+                "stateMutability": "payable",
+                "type": "function"
+            },
+            {
+                "inputs": [{"internalType": "uint256", "name": "tokenId", "type": "uint256"}],
+                "name": "reduceTextureLevel",
+                "outputs": [],
+                "stateMutability": "payable",
+                "type": "function"
+            },
+            {
+                "inputs": [{"internalType": "uint256", "name": "tokenId", "type": "uint256"}],
+                "name": "launderOnSale",
+                "outputs": [],
+                "stateMutability": "payable",
+                "type": "function"
+            },
+            {
+                "inputs": [{"internalType": "uint256", "name": "tokenId", "type": "uint256"}],
+                "name": "calculateAgingState",
+                "outputs": [
+                    {"internalType": "uint8", "name": "", "type": "uint8"},
+                    {"internalType": "uint8", "name": "", "type": "uint8"}
+                ],
                 "stateMutability": "view",
                 "type": "function"
             },
@@ -1356,35 +1438,29 @@
             },
             {
                 "inputs": [],
-                "name": "textLinePrice",
+                "name": "level1CleaningCost",
                 "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
                 "stateMutability": "view",
                 "type": "function"
             },
             {
                 "inputs": [],
-                "name": "cleaningCost",
+                "name": "level2CleaningCost",
                 "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
                 "stateMutability": "view",
                 "type": "function"
             },
             {
                 "inputs": [],
-                "name": "launderingCost",
+                "name": "textureReductionCost",
                 "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
                 "stateMutability": "view",
                 "type": "function"
             },
             {
-                "inputs": [{"internalType": "uint256", "name": "tokenId", "type": "uint256"}],
-                "name": "rugs",
-                "outputs": [
-                    {"internalType": "uint256", "name": "seed", "type": "uint256"},
-                    {"internalType": "string", "name": "palette", "type": "string"},
-                    {"internalType": "string", "name": "stripeData", "type": "string"},
-                    {"internalType": "uint8", "name": "warpThickness", "type": "uint8"},
-                    {"internalType": "uint256", "name": "mintTime", "type": "uint256"}
-                ],
+                "inputs": [],
+                "name": "fullLaunderingCost",
+                "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
                 "stateMutability": "view",
                 "type": "function"
             },
@@ -1393,30 +1469,6 @@
                 "name": "royaltyPercentage",
                 "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
                 "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [{"internalType": "uint256", "name": "tokenId", "type": "uint256"}],
-                "name": "calculateAgingState",
-                "outputs": [
-                    {"internalType": "uint8", "name": "dirtLevel", "type": "uint8"},
-                    {"internalType": "uint8", "name": "textureLevel", "type": "uint8"}
-                ],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [{"internalType": "uint256", "name": "tokenId", "type": "uint256"}],
-                "name": "launderRug",
-                "outputs": [],
-                "stateMutability": "payable",
-                "type": "function"
-            },
-            {
-                "inputs": [{"internalType": "uint256", "name": "tokenId", "type": "uint256"}, {"internalType": "uint256", "name": "price", "type": "uint256"}],
-                "name": "updateLastSalePrice",
-                "outputs": [],
-                "stateMutability": "nonpayable",
                 "type": "function"
             }
         ];
@@ -1691,6 +1743,118 @@
             // Update character count display
             const charCount = textRows.join('').length;
             document.getElementById('charCount').textContent = `${textRows.length} lines, ${charCount} characters`;
+
+            // Update hidden fields
+            updateHiddenFields();
+        }
+
+        // Prepare all mint data for the contract
+        function prepareMintData() {
+            try {
+                const textRows = document.getElementById('textRows').value
+                    .split('\n')
+                    .filter(line => line.trim())
+                    .map(line => line.toUpperCase());
+
+                if (textRows.length === 0) {
+                    showStatus('mintStatus', 'Please enter at least one text line', 'error');
+                    return;
+                }
+
+                // Parse palette data
+                const paletteJson = JSON.parse(document.getElementById('palette').value);
+                const paletteName = paletteJson.name || 'Custom Palette';
+
+                // Parse stripe data
+                const stripeData = JSON.parse(document.getElementById('stripeData').value);
+
+                // Generate filtered character map
+                const filteredCharacterMap = generateCharacterMap(textRows);
+
+                // Update all hidden fields
+                document.getElementById('paletteName').value = paletteName;
+                document.getElementById('minifiedPalette').value = JSON.stringify(paletteJson);
+                document.getElementById('minifiedStripeData').value = JSON.stringify(stripeData);
+                document.getElementById('filteredCharacterMap').value = filteredCharacterMap;
+                document.getElementById('characterCount').value = textRows.join('').length;
+                document.getElementById('stripeCount').value = stripeData.length;
+
+                showStatus('mintStatus', '✅ Mint data prepared successfully! You can now mint your rug.', 'success');
+
+            } catch (error) {
+                console.error('Error preparing mint data:', error);
+                showStatus('mintStatus', `❌ Error preparing mint data: ${error.message}`, 'error');
+            }
+        }
+
+        // Update hidden fields automatically
+        function updateHiddenFields() {
+            try {
+                const textRows = document.getElementById('textRows').value
+                    .split('\n')
+                    .filter(line => line.trim())
+                    .map(line => line.toUpperCase());
+
+                if (textRows.length === 0) return;
+
+                // Parse palette data
+                const paletteJson = JSON.parse(document.getElementById('palette').value || '{}');
+                const paletteName = paletteJson.name || 'Custom Palette';
+
+                // Parse stripe data
+                const stripeData = JSON.parse(document.getElementById('stripeData').value || '[]');
+
+                // Generate filtered character map
+                const filteredCharacterMap = generateCharacterMap(textRows);
+
+                // Update hidden fields
+                document.getElementById('paletteName').value = paletteName;
+                document.getElementById('minifiedPalette').value = JSON.stringify(paletteJson);
+                document.getElementById('minifiedStripeData').value = JSON.stringify(stripeData);
+                document.getElementById('filteredCharacterMap').value = filteredCharacterMap;
+                document.getElementById('characterCount').value = textRows.join('').length;
+                document.getElementById('stripeCount').value = stripeData.length;
+
+            } catch (error) {
+                console.error('Error updating hidden fields:', error);
+            }
+        }
+
+        // Show mint parameters for debugging
+        function showMintDebugInfo() {
+            try {
+                const textRows = document.getElementById('textRows').value
+                    .split('\n')
+                    .filter(line => line.trim())
+                    .map(line => line.toUpperCase());
+
+                if (textRows.length === 0) {
+                    showStatus('mintStatus', 'Please enter at least one text line first', 'error');
+                    return;
+                }
+
+                // Prepare data first
+                prepareMintData();
+
+                // Update debug display
+                document.getElementById('debugTextRows').textContent = JSON.stringify(textRows);
+                document.getElementById('debugSeed').textContent = document.getElementById('seed').value;
+                document.getElementById('debugPaletteName').textContent = document.getElementById('paletteName').value;
+                document.getElementById('debugMinifiedPalette').textContent = document.getElementById('minifiedPalette').value.substring(0, 50) + '...';
+                document.getElementById('debugMinifiedStripeData').textContent = document.getElementById('minifiedStripeData').value.substring(0, 50) + '...';
+                document.getElementById('debugFilteredCharacterMap').textContent = document.getElementById('filteredCharacterMap').value.substring(0, 50) + '...';
+                document.getElementById('debugWarpThickness').textContent = document.getElementById('warpThickness').value;
+                document.getElementById('debugComplexity').textContent = document.getElementById('complexity').value;
+                document.getElementById('debugCharacterCount').textContent = document.getElementById('characterCount').value;
+                document.getElementById('debugStripeCount').textContent = document.getElementById('stripeCount').value;
+
+                // Show the debug info
+                document.getElementById('mintDebugInfo').classList.remove('hidden');
+
+            } catch (error) {
+                console.error('Error showing debug info:', error);
+                showStatus('mintStatus', `❌ Error showing debug info: ${error.message}`, 'error');
+            }
         }
 
         // Calculate minting price
@@ -1763,15 +1927,19 @@
                     return;
                 }
 
-                // Ensure character map is up to date
-                updateCharacterMap();
+                // Prepare mint data first
+                prepareMintData();
 
                 const textRows = document.getElementById('textRows').value.split('\n').filter(line => line.trim()).map(line => line.toUpperCase());
                 const seed = document.getElementById('seed').value;
-                const palette = document.getElementById('palette').value;
-                const stripeData = document.getElementById('stripeData').value;
-                const characterMap = document.getElementById('characterMap').value || "";
+                const paletteName = document.getElementById('paletteName').value;
+                const minifiedPalette = document.getElementById('minifiedPalette').value;
+                const minifiedStripeData = document.getElementById('minifiedStripeData').value;
+                const filteredCharacterMap = document.getElementById('filteredCharacterMap').value;
                 const warpThickness = document.getElementById('warpThickness').value;
+                const complexity = document.getElementById('complexity').value;
+                const characterCount = document.getElementById('characterCount').value;
+                const stripeCount = document.getElementById('stripeCount').value;
 
                 // Validate inputs
                 if (textRows.length === 0) {
@@ -1827,32 +1995,40 @@
                 console.log('Contract address:', CONTRACT_ADDRESS);
                 
                 // Estimate gas for the transaction
-                const gasEstimate = await contract.estimateGas.mintRugWithParams(
+                const gasEstimate = await contract.estimateGas.mintRug(
                     textRows,
                     seed === '' ? 0 : parseInt(seed),
-                    palette,
-                    stripeData,
-                    characterMap,
+                    paletteName,
+                    minifiedStripeData,
+                    minifiedPalette,
+                    filteredCharacterMap,
                     parseInt(warpThickness),
+                    parseInt(complexity),
+                    parseInt(characterCount),
+                    parseInt(stripeCount),
                     { value: price }
                 );
-                
+
                 // Add 20% buffer to gas estimate
                 const gasLimit = gasEstimate.mul(120).div(100);
-                
+
                 console.log('Gas estimate:', gasEstimate.toString());
                 console.log('Gas limit with buffer:', gasLimit.toString());
                 console.log('Minting price:', ethers.utils.formatEther(price), 'ETH');
-                
-                // Mint the rug with custom parameters
-                const tx = await contract.mintRugWithParams(
+
+                // Mint the rug with correct parameters
+                const tx = await contract.mintRug(
                     textRows,
                     seed === '' ? 0 : parseInt(seed),
-                    palette,
-                    stripeData,
-                    characterMap,
+                    paletteName,
+                    minifiedStripeData,
+                    minifiedPalette,
+                    filteredCharacterMap,
                     parseInt(warpThickness),
-                    { 
+                    parseInt(complexity),
+                    parseInt(characterCount),
+                    parseInt(stripeCount),
+                    {
                         value: price,
                         gasLimit: gasLimit
                     }
@@ -2165,6 +2341,9 @@
 
                 // Load contracts for the new network
                 await refreshContracts();
+
+                // Update wallet info for the new network
+                await updateWalletInfo();
             }
         }
 
@@ -2191,53 +2370,62 @@
 
         // Initialize the page
         window.onload = function() {
-            // Wait a bit for ethers to load (in case of fallback)
-            setTimeout(function() {
-                // Check if ethers is loaded
-                if (typeof ethers === 'undefined') {
-                    console.error('Ethers.js failed to load after timeout');
-                    document.body.innerHTML += '<div style="position: fixed; top: 0; left: 0; width: 100%; background: red; color: white; padding: 10px; text-align: center; z-index: 9999;">⚠️ Ethers.js failed to load. Please refresh the page or check your internet connection.</div>';
-                    return;
-                }
-
-                console.log('Ethers.js loaded successfully');
-
-                // Load config from API (with fallback)
-                async function initializeConfig() {
-                    console.log('🚀 Initializing config...');
-                    updateConfigStatus(false); // Show loading state
-
-                    // Try to load from API first
-                    const apiSuccess = await loadConfigFromAPI();
-
-                    if (apiSuccess && checkConfigLoaded()) {
-                        console.log('✅ Config loaded from API, proceeding...');
-                        // Initialize network and scan for contracts
-                        switchNetwork();
+                // Wait a bit for ethers to load (in case of fallback)
+                setTimeout(function() {
+                    // Check if ethers is loaded
+                    if (typeof ethers === 'undefined') {
+                        console.error('Ethers.js failed to load after timeout');
+                        document.body.innerHTML += '<div style="position: fixed; top: 0; left: 0; width: 100%; background: red; color: white; padding: 10px; text-align: center; z-index: 9999;">⚠️ Ethers.js failed to load. Please refresh the page or check your internet connection.</div>';
                         return;
                     }
 
-                    // If API fails, use fallback
-                    console.log('❌ API config failed, using fallback...');
-                    loadFallbackConfig();
-                    if (checkConfigLoaded()) {
-                        console.log('✅ Fallback config worked, proceeding...');
-                        // Initialize network and scan for contracts
-                        switchNetwork();
-                        return;
+                    console.log('Ethers.js loaded successfully');
+
+                    // Load config from API (with fallback)
+                    async function initializeConfig() {
+                        console.log('🚀 Initializing config...');
+                        updateConfigStatus(false); // Show loading state
+
+                        // Update contract info status
+                        const contractInfo = document.getElementById('contractInfo');
+                        if (contractInfo) {
+                            contractInfo.innerHTML = '<strong>Status:</strong> <span style="color: blue;">Loading configuration...</span><br><strong>Contracts Found:</strong> <span id="contractCount">0</span>';
+                        }
+
+                        // Try to load from API first
+                        const apiSuccess = await loadConfigFromAPI();
+
+                        if (apiSuccess && checkConfigLoaded()) {
+                            console.log('✅ Config loaded from API, proceeding...');
+                            // Initialize network and scan for contracts
+                            await switchNetwork();
+                            return;
+                        }
+
+                        // If API fails, use fallback
+                        console.log('❌ API config failed, using fallback...');
+                        loadFallbackConfig();
+                        if (checkConfigLoaded()) {
+                            console.log('✅ Fallback config worked, proceeding...');
+                            // Initialize network and scan for contracts
+                            await switchNetwork();
+                            return;
+                        }
+
+                        // If everything fails
+                        document.body.innerHTML += '<div style="position: fixed; top: 0; left: 0; width: 100%; background: orange; color: white; padding: 10px; text-align: center; z-index: 9999;">⚠️ Config loading failed! Start config server with: npm run config-server<br><button onclick="location.reload()" style="margin-top: 5px; padding: 5px 10px;">Reload Page</button></div>';
                     }
 
-                    // If everything fails
-                    document.body.innerHTML += '<div style="position: fixed; top: 0; left: 0; width: 100%; background: orange; color: white; padding: 10px; text-align: center; z-index: 9999;">⚠️ Config loading failed! Start config server with: npm run config-server<br><button onclick="location.reload()" style="margin-top: 5px; padding: 5px 10px;">Reload Page</button></div>';
-                }
+                    initializeConfig();
 
-                initializeConfig();
-
-                // Update wallet information
-                updateWalletInfo();
+                    // Update wallet information
+                    updateWalletInfo();
 
                 // Initialize character map display
                 initializeCharacterMap();
+
+                // Initialize hidden fields
+                updateHiddenFields();
 
                 // Show a helpful message for testing
                 console.log('🚀 Mint UI loaded! Features:');

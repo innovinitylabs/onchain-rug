@@ -2,7 +2,7 @@
 pragma solidity ^0.8.22;
 
 import "forge-std/Script.sol";
-import "../src/OnchainRugsV2Shape.sol";
+import "../src/OnchainRugs.sol";
 
 /**
  * @title DeployShapeL2
@@ -21,7 +21,7 @@ contract DeployShapeL2 is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         // Deploy the contract
-        OnchainRugsV2Shape onchainRugs = new OnchainRugsV2Shape();
+        OnchainRugs onchainRugs = new OnchainRugs();
 
         console.log("OnchainRugsV2Shape deployed at:", address(onchainRugs));
         console.log("Contract name:", onchainRugs.name());
