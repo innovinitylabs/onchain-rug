@@ -5,8 +5,8 @@ import { useEffect, useState } from 'react';
 // Available background images
 const backgrounds = [
   '/backgrounds/anime-style-clouds.jpg',
-  '/backgrounds/anime-style-clouds (1).jpg',
-  '/backgrounds/anime-style-clouds (2).jpg'
+  '/backgrounds/anime-style-clouds-1.jpg',
+  '/backgrounds/anime-style-clouds-2.jpg'
 ];
 
 // Generate truly random background index for each page load
