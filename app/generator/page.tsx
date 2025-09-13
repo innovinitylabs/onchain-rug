@@ -274,13 +274,6 @@ export default function GeneratorPage() {
               '#FF4500', '#FF6347', '#FFD700', '#FFA500', '#DC143C', '#4B0082', '#32CD32', '#FFFFFF'
           ]
       },
-      // Punjab - warm, harvest colors
-      {
-          name: "Punjab",
-          colors: [
-              '#FFD700', '#FFA500', '#FF8C00', '#FF6347', '#FF4500', '#8B0000', '#228B22', '#006400'
-          ]
-      },
       // Bengal - monsoon, lush colors
       {
           name: "Bengal",
@@ -295,41 +288,6 @@ export default function GeneratorPage() {
               '#87CEEB', '#B0E0E6', '#E0FFFF', '#F0F8FF', '#E6E6FA', '#B0C4DE', '#4682B4', '#000080'
           ]
       },
-      // Karnataka - forest, nature colors
-      {
-          name: "Karnataka",
-          colors: [
-              '#228B22', '#32CD32', '#90EE90', '#98FB98', '#8B4513', '#A0522D', '#CD853F', '#D2691E'
-          ]
-      },
-      // Andhra Pradesh - coastal, vibrant colors
-      {
-          name: "Andhra Pradesh",
-          colors: [
-              '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#00CED1', '#87CEEB', '#4682B4', '#000080'
-          ]
-      },
-      // Madhya Pradesh - central, balanced colors
-      {
-          name: "Madhya Pradesh",
-          colors: [
-              '#228B22', '#32CD32', '#90EE90', '#98FB98', '#8B4513', '#A0522D', '#CD853F', '#D2691E'
-          ]
-      },
-      // Assam - northeastern, natural colors
-      {
-          name: "Assam",
-          colors: [
-              '#228B22', '#32CD32', '#90EE90', '#98FB98', '#8B4513', '#A0522D', '#CD853F', '#D2691E'
-          ]
-      },
-      // Himachal Pradesh - mountain, cool colors
-      {
-          name: "Himachal Pradesh",
-          colors: [
-              '#87CEEB', '#B0E0E6', '#E0FFFF', '#F0F8FF', '#E6E6FA', '#B0C4DE', '#4682B4', '#000080'
-          ]
-      },
       
       // ===== TAMIL CULTURAL PALETTES (11) =====
       
@@ -340,25 +298,11 @@ export default function GeneratorPage() {
               '#8B0000', '#DC143C', '#B22222', '#FF4500', '#FF8C00', '#FFD700', '#228B22', '#006400'
           ]
       },
-      // Pandya Kingdom - southern, coastal colors
-      {
-          name: "Pandya Kingdom",
-          colors: [
-              '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#00CED1', '#87CEEB', '#4682B4', '#000080'
-          ]
-      },
       // Chera Dynasty - western coast, spice trade colors
       {
           name: "Chera Dynasty",
           colors: [
               '#228B22', '#32CD32', '#90EE90', '#8B4513', '#A0522D', '#FFD700', '#00CED1', '#000080'
-          ]
-      },
-      // Vijayanagara - golden, prosperous colors
-      {
-          name: "Vijayanagara",
-          colors: [
-              '#FFD700', '#FFA500', '#FF8C00', '#FF6347', '#FF4500', '#8B0000', '#228B22', '#006400'
           ]
       },
       // Jamakalam - traditional Tamil floor mat colors
@@ -385,25 +329,11 @@ export default function GeneratorPage() {
               '#FFD700', '#FFA500', '#FF8C00', '#FF6347', '#FF4500', '#DAA520', '#B8860B', '#CD853F'
           ]
       },
-      // Pomegranate - deep red, rich colors
-      {
-          name: "Pomegranate",
-          colors: [
-              '#8B0000', '#DC143C', '#B22222', '#FF4500', '#FF6347', '#CD5C5C', '#F08080', '#FA8072'
-          ]
-      },
       // Neem - green, natural colors
       {
           name: "Neem",
           colors: [
               '#228B22', '#32CD32', '#90EE90', '#98FB98', '#8B4513', '#A0522D', '#CD853F', '#D2691E'
-          ]
-      },
-      // Saffron - golden, precious colors
-      {
-          name: "Saffron",
-          colors: [
-              '#FFD700', '#FFA500', '#FF8C00', '#FF6347', '#FF4500', '#DAA520', '#B8860B', '#CD853F'
           ]
       },
       // Marigold - bright, cheerful colors
@@ -423,9 +353,9 @@ export default function GeneratorPage() {
               '#8B0000', '#DC143C', '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#228B22', '#006400'
           ]
       },
-      // Thanjavur Art - classical, artistic colors
+      // Thanjavur Fresco - classical, artistic colors
       {
-          name: "Thanjavur Art",
+          name: "Thanjavur Fresco",
           colors: [
               '#FFD700', '#FFA500', '#FF8C00', '#FF6347', '#FF4500', '#8B0000', '#228B22', '#006400'
           ]
@@ -461,26 +391,12 @@ export default function GeneratorPage() {
               '#8B0000', '#DC143C', '#FFD700', '#FFA500', '#228B22', '#32CD32', '#000000', '#FFFFFF'
           ]
       },
-      // Nilgiri Flycatcher - mountain, cool colors
-      {
-          name: "Nilgiri Flycatcher",
-          colors: [
-              '#87CEEB', '#B0E0E6', '#E0FFFF', '#F0F8FF', '#E6E6FA', '#B0C4DE', '#4682B4', '#000080'
-          ]
-      },
-      // Malabar Parakeet - forest, green colors
-      {
-          name: "Malabar Parakeet",
-          colors: [
-              '#228B22', '#32CD32', '#90EE90', '#98FB98', '#8B4513', '#A0522D', '#CD853F', '#D2691E'
-          ]
-      },
       
       // ===== HISTORICAL DYNASTY & CULTURAL PALETTES (6) =====
       
-      // Pandya Dynasty - southern, maritime colors
+      // Pandyas - southern, maritime colors
       {
-          name: "Pandya Dynasty",
+          name: "Pandyas",
           colors: [
               '#FF4500', '#FF6347', '#FF8C00', '#FFD700', '#00CED1', '#87CEEB', '#4682B4', '#000080'
           ]
@@ -561,9 +477,9 @@ export default function GeneratorPage() {
               '#ffb347', '#ff6961', '#6a0572', '#fff8e7', '#1d3557', '#e63946', '#f7cac9', '#92a8d1'
           ]
       },
-      // Chennai Monsoon - rainy season palette
+      // Madras Monsoon - rainy season palette
       {
-          name: "Chennai Monsoon",
+          name: "Madras Monsoon",
           colors: [
               '#1d3557', '#457b9d', '#a8dadc', '#f1faee', '#ffd700', '#e94f37', '#393e41', '#3f88c5'
           ]
@@ -638,13 +554,6 @@ export default function GeneratorPage() {
               '#ffb347', '#e94f37', '#393e41', '#3f88c5', '#ffd700', '#f7c873', '#ff6961', '#1d3557'
           ]
       },
-      // Mumbai Monsoon - western coastal rains
-      {
-          name: "Mumbai Monsoon",
-          colors: [
-              '#1d3557', '#457b9d', '#a8dadc', '#f1faee', '#ffd700', '#e94f37', '#393e41', '#3f88c5'
-          ]
-      },
       // Ivy League - academic prestige colors
       {
           name: "Ivy League",
@@ -655,16 +564,9 @@ export default function GeneratorPage() {
 
       // ===== ADDITIONAL UNIQUE PALETTES =====
 
-      // Expanded Traditional - extended natural dye palette
+      // Vintage Tamil - classic Tamil heritage colors
       {
-          name: "Expanded Traditional",
-          colors: [
-              '#405BAA', '#B33A3A', '#D9A43B', '#5A7A5A', '#8C5832', '#A48E7F', '#1F1E1D', '#FAF1E3'
-          ]
-      },
-      // Vintage Tamil 04 - classic Tamil heritage colors
-      {
-          name: "Vintage Tamil 04",
+          name: "Vintage Tamil",
           colors: [
               '#e63946', '#f1faee', '#a8dadc', '#457b9d'
           ]
@@ -1058,8 +960,8 @@ export default function GeneratorPage() {
     // Get palettes for the selected rarity tier
     const legendaryPalettes = ["Buddhist", "Maurya Empire", "Chola Empire", "Indigo Famine", "Bengal Famine", "Jamakalam"]
     const epicPalettes = ["Indian Peacock", "Flamingo", "Toucan", "Madras Checks", "Kanchipuram Silk", "Natural Dyes", "Bleeding Vintage"]
-    const rarePalettes = ["Tamil Classical", "Sangam Era", "Pandya Dynasty", "Maratha Empire", "Rajasthani"]
-    const uncommonPalettes = ["Tamil Nadu Temple", "Kerala Onam", "Chettinad Spice", "Chennai Monsoon", "Bengal Indigo"]
+    const rarePalettes = ["Tamil Classical", "Sangam Era", "Pandyas", "Maratha Empire", "Rajasthani"]
+    const uncommonPalettes = ["Tamil Nadu Temple", "Kerala Onam", "Chettinad Spice", "Madras Monsoon", "Bengal Indigo"]
     
     let tierPalettes: string[] = []
     switch (selectedRarity) {
@@ -1908,8 +1810,8 @@ export default function GeneratorPage() {
   const getPaletteRarity = (paletteName: string) => {
     const legendaryPalettes = ["Buddhist", "Maurya Empire", "Chola Empire", "Indigo Famine", "Bengal Famine", "Jamakalam"]
     const epicPalettes = ["Indian Peacock", "Flamingo", "Toucan", "Madras Checks", "Kanchipuram Silk", "Natural Dyes", "Bleeding Vintage"]
-    const rarePalettes = ["Tamil Classical", "Sangam Era", "Pandya Dynasty", "Maratha Empire", "Rajasthani"]
-    const uncommonPalettes = ["Tamil Nadu Temple", "Kerala Onam", "Chettinad Spice", "Chennai Monsoon", "Bengal Indigo"]
+    const rarePalettes = ["Tamil Classical", "Sangam Era", "Pandyas", "Maratha Empire", "Rajasthani"]
+    const uncommonPalettes = ["Tamil Nadu Temple", "Kerala Onam", "Chettinad Spice", "Madras Monsoon", "Bengal Indigo"]
     
     if (legendaryPalettes.includes(paletteName)) return "Legendary"
     if (epicPalettes.includes(paletteName)) return "Epic"
