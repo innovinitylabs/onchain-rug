@@ -123,14 +123,18 @@ const NFTExporter: React.FC<NFTExporterProps> = ({
     // Get the actual current warpThickness from the live generator
     const currentWarpThickness = (window as any).warpThickness || 2;
 
-    // 🔥 ULTRA-OPTIMIZATION: Shorten stripe data property names for massive size reduction
+    // 🔥 ULTRA-OPTIMIZATION: Truncate decimals and shorten property names
+    const truncateTo3Decimals = (value) => {
+      return Math.round(value * 1000) / 1000;
+    };
+
     const shortenedStripeData = stripeData.map(stripe => ({
-      y: stripe.y,
-      h: stripe.height,           // height → h (5 chars saved)
-      pc: stripe.primaryColor,    // primaryColor → pc (10 chars saved)
-      sc: stripe.secondaryColor,  // secondaryColor → sc (12 chars saved)
-      wt: stripe.weaveType,       // weaveType → wt (7 chars saved)
-      wv: stripe.warpVariation    // warpVariation → wv (11 chars saved)
+      y: stripe.y,                        // Usually integer, no truncation needed
+      h: truncateTo3Decimals(stripe.height),           // 17 digits → 3 digits (14 chars saved)
+      pc: stripe.primaryColor,            // primaryColor → pc (10 chars saved)
+      sc: stripe.secondaryColor,          // secondaryColor → sc (12 chars saved)
+      wt: stripe.weaveType,               // weaveType → wt (7 chars saved)
+      wv: truncateTo3Decimals(stripe.warpVariation)    // 16 digits → 3 digits (13 chars saved)
     }));
 
     // Debug: Log what we're actually passing to the template
