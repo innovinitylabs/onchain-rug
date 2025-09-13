@@ -25,33 +25,3 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
-
-/* Override LiquidGlass black overlays for light theme - AGGRESSIVE HIDING */
-.liquid-glass-container .bg-black,
-.liquid-glass-container [class*="bg-black"],
-.liquid-glass-container div[style*="background-color"][style*="rgb(0, 0, 0)"],
-.liquid-glass-container div[style*="background"][style*="rgb(0, 0, 0)"] {
-  background-color: transparent !important;
-  background: transparent !important;
-  display: none !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-}
-
-.liquid-glass-container .mix-blend-overlay,
-.liquid-glass-container [class*="mix-blend-overlay"],
-.liquid-glass-container [style*="mix-blend-mode: overlay"],
-.liquid-glass-container [style*="mix-blend-mode: screen"] {
-  mix-blend-mode: normal !important;
-  display: none !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-}
-
-/* Target LiquidGlass generated elements by their inline styles */
-.liquid-glass-container div[style*="position: relative"][style*="top: 50%"][style*="left: 50%"] {
-  display: none !important;
-  visibility: hidden !important;
-}

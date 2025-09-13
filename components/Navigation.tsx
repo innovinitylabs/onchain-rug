@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { Home, Palette, Image } from 'lucide-react'
+import { Home, Palette, Image, Sparkles } from 'lucide-react'
 import { WalletConnect } from './wallet-connect'
 
 export default function Navigation() {
@@ -39,12 +39,19 @@ export default function Navigation() {
               <Palette className="w-4 h-4" />
               Generator
             </Link>
-            <Link 
-              href="/gallery" 
+            <Link
+              href="/gallery"
               className="flex items-center gap-2 text-amber-700 hover:text-amber-800 transition-colors"
             >
               <Image className="w-4 h-4" />
               Gallery
+            </Link>
+            <Link
+              href="/liquid-glass"
+              className="flex items-center gap-2 text-amber-700 hover:text-amber-800 transition-colors"
+            >
+              <Sparkles className="w-4 h-4" />
+              Liquid Glass
             </Link>
           </div>
 

@@ -893,7 +893,7 @@
                 <button class="btn" onclick="calculatePrice()">💰 Calculate Price</button>
                 <button class="btn btn-secondary" onclick="showMintDebugInfo()">🔍 Show Mint Parameters</button>
                 <div id="priceDisplay" class="status hidden"></div>
-
+                
                 <!-- Mint Debug Info -->
                 <div id="mintDebugInfo" class="status hidden">
                     <div class="error-technical-header">🔍 Mint Parameters Debug</div>
@@ -1213,7 +1213,7 @@
                 if (currentNetwork === 'testnet') {
                     const testnetContract = window.MINT_UI_CONFIG?.CONTRACTS?.testnet;
                     if (testnetContract) {
-                        mockContracts.push({
+                    mockContracts.push({
                             address: testnetContract,
                             name: 'OnchainRugs',
                             deployedAt: new Date(Date.now() - 300000), // 5 minutes ago
@@ -2008,14 +2008,14 @@
                     parseInt(stripeCount),
                     { value: price }
                 );
-
+                
                 // Add 20% buffer to gas estimate
                 const gasLimit = gasEstimate.mul(120).div(100);
-
+                
                 console.log('Gas estimate:', gasEstimate.toString());
                 console.log('Gas limit with buffer:', gasLimit.toString());
                 console.log('Minting price:', ethers.utils.formatEther(price), 'ETH');
-
+                
                 // Mint the rug with correct parameters
                 const tx = await contract.mintRug(
                     textRows,
@@ -2028,7 +2028,7 @@
                     parseInt(complexity),
                     parseInt(characterCount),
                     parseInt(stripeCount),
-                    {
+                    { 
                         value: price,
                         gasLimit: gasLimit
                     }
@@ -2263,7 +2263,7 @@
                 return;
             }
             const text = metadataJson.textContent;
-
+            
             navigator.clipboard.writeText(text).then(() => {
                 showStatus('mintStatus', '✅ Metadata copied to clipboard!', 'success');
             }).catch(err => {
@@ -2304,7 +2304,7 @@
                     console.log('No NFTs minted yet');
                     return;
                 }
-
+                
                 document.getElementById('tokenId').value = latestTokenId.toString();
                 loadNFT();
             } catch (error) {
@@ -2370,17 +2370,17 @@
 
         // Initialize the page
         window.onload = function() {
-                // Wait a bit for ethers to load (in case of fallback)
-                setTimeout(function() {
-                    // Check if ethers is loaded
-                    if (typeof ethers === 'undefined') {
-                        console.error('Ethers.js failed to load after timeout');
-                        document.body.innerHTML += '<div style="position: fixed; top: 0; left: 0; width: 100%; background: red; color: white; padding: 10px; text-align: center; z-index: 9999;">⚠️ Ethers.js failed to load. Please refresh the page or check your internet connection.</div>';
-                        return;
-                    }
-
-                    console.log('Ethers.js loaded successfully');
-
+            // Wait a bit for ethers to load (in case of fallback)
+            setTimeout(function() {
+                // Check if ethers is loaded
+                if (typeof ethers === 'undefined') {
+                    console.error('Ethers.js failed to load after timeout');
+                    document.body.innerHTML += '<div style="position: fixed; top: 0; left: 0; width: 100%; background: red; color: white; padding: 10px; text-align: center; z-index: 9999;">⚠️ Ethers.js failed to load. Please refresh the page or check your internet connection.</div>';
+                    return;
+                }
+                
+                console.log('Ethers.js loaded successfully');
+                
                     // Load config from API (with fallback)
                     async function initializeConfig() {
                         console.log('🚀 Initializing config...');
@@ -2397,7 +2397,7 @@
 
                         if (apiSuccess && checkConfigLoaded()) {
                             console.log('✅ Config loaded from API, proceeding...');
-                            // Initialize network and scan for contracts
+                // Initialize network and scan for contracts
                             await switchNetwork();
                             return;
                         }
@@ -2417,10 +2417,10 @@
                     }
 
                     initializeConfig();
-
-                    // Update wallet information
-                    updateWalletInfo();
-
+                
+                // Update wallet information
+                updateWalletInfo();
+                
                 // Initialize character map display
                 initializeCharacterMap();
 
@@ -2444,20 +2444,20 @@
                 console.log('   loadNFT() - Load NFT by token ID');
                 console.log('   getContractInfo() - Check contract status');
                 console.log('   calculatePrice() - Calculate mint price');
-
+                
                 // Load latest NFT if available (with error handling)
                 setTimeout(async () => {
-                    try {
+                try {
                         if (CONTRACT_ADDRESS) {
-                            loadLatestNFT();
+                    loadLatestNFT();
                         }
-                    } catch (error) {
+                } catch (error) {
                         console.log('Could not load latest NFT:', error.message);
-                    }
+                }
                 }, 2000); // Wait for contract scanning to complete
             }, 1000); // Wait 1 second for ethers to load
         };
     </script>
-
+    
 </body>
 </html>

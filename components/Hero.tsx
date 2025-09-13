@@ -2,7 +2,6 @@
 
 import { motion } from 'framer-motion'
 import { ChevronDown, Sparkles, Star } from 'lucide-react'
-import LiquidGlassWrapper from './LiquidGlassWrapper'
 
 export default function Hero() {
   return (
@@ -129,23 +128,12 @@ export default function Hero() {
             
             <motion.a
               href="/mint"
-              className="border-2 border-amber-500 text-amber-700 px-8 py-4 rounded-full text-lg font-bold hover:bg-amber-50 transition-all duration-300 inline-block relative overflow-hidden"
+              className="border-2 border-amber-500 text-amber-700 px-8 py-4 rounded-full text-lg font-bold hover:bg-amber-50 transition-all duration-300 inline-block"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               style={{ willChange: 'transform' }}
             >
-              <LiquidGlassWrapper
-                displacementScale={35}
-                blurAmount={0.04}
-                saturation={125}
-                aberrationIntensity={1.2}
-                elasticity={0.1}
-                cornerRadius={50}
-                className="absolute inset-0 w-full h-full"
-              >
-                <div className="w-full h-full bg-transparent" />
-              </LiquidGlassWrapper>
-              <span className="relative z-10">🚀 Mint Now</span>
+              🚀 Mint Now
             </motion.a>
           </motion.div>
         </motion.div>
