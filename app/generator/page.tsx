@@ -20,6 +20,9 @@ export default function GeneratorPage() {
   const [dirtLevel, setDirtLevel] = useState(0) // 0 = clean, 1 = 50% dirty, 2 = full dirty
   const [showTexture, setShowTexture] = useState(false)
   const [textureLevel, setTextureLevel] = useState(0) // 0 = none, 1 = 7 days, 2 = 30 days
+  const [complexity, setComplexity] = useState(3) // Default complexity level
+  const [currentStripeData, setCurrentStripeData] = useState<any[]>([])
+  const [currentCharacterMap, setCurrentCharacterMap] = useState<any>(null)
 
   // Copy to clipboard function
   const copyToClipboard = async (text: string, label: string) => {
@@ -751,6 +754,10 @@ export default function GeneratorPage() {
       ;(window as any).textData = textData
       ;(window as any).doormatTextRows = doormatTextRows
     }
+
+    // Update React state
+    setCurrentStripeData(stripeData)
+    setCurrentCharacterMap(characterMap)
     
     console.log('✅ Self-contained doormat generator initialized')
     return { config, colorPalettes, characterMap, selectedPalette, stripeData, textData, doormatTextRows, warpThickness }
@@ -915,6 +922,10 @@ export default function GeneratorPage() {
       ;(window as any).textData = doormatData.textData
       ;(window as any).doormatTextRows = doormatData.doormatTextRows
     }
+
+    // Update React state for Web3Minting
+    setCurrentStripeData(doormatData.stripeData)
+    setCurrentCharacterMap(doormatData.characterMap)
     
     // Redraw
     if (typeof window !== 'undefined' && (window as any).p5Instance) {
@@ -2394,7 +2405,35 @@ export default function GeneratorPage() {
                     SAVE
                   </button>
                 </div>
-                
+
+                {/* Complexity Selector */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-purple-300 text-sm font-mono font-medium">COMPLEXITY</h4>
+                    <span className="text-purple-500 text-xs font-mono">Affects NFT traits</span>
+                  </div>
+
+                  <div className="grid grid-cols-5 gap-2">
+                    {[1, 2, 3, 4, 5].map((level) => (
+                      <button
+                        key={level}
+                        onClick={() => setComplexity(level)}
+                        className={`px-3 py-2 rounded font-mono text-sm transition-all border ${
+                          complexity === level
+                            ? 'bg-purple-600 text-white border-purple-400 shadow-lg'
+                            : 'bg-gray-800 text-gray-400 border-purple-500/30 hover:bg-purple-900/30'
+                        }`}
+                      >
+                        {level}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="text-purple-400 text-xs font-mono bg-gray-900/50 p-2 rounded border border-purple-500/30">
+                    Level {complexity}: {complexity === 1 ? 'Simple' : complexity === 2 ? 'Basic' : complexity === 3 ? 'Moderate' : complexity === 4 ? 'Complex' : 'High'}
+                  </div>
+                </div>
+
                 {/* Text Input Section */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
@@ -2675,12 +2714,13 @@ export default function GeneratorPage() {
                   />
 
                   {/* Mint Button */}
-                  <Web3Minting 
+                  <Web3Minting
                     textRows={textInputs}
                     currentPalette={palette}
-                    currentStripeData={typeof window !== 'undefined' ? (window as any).stripeData || [] : []}
-                    characterMap={null}
+                    currentStripeData={currentStripeData}
+                    characterMap={currentCharacterMap}
                     warpThickness={3}
+                    complexity={complexity}
                   />
                 </div>
 

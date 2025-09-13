@@ -12,14 +12,16 @@ interface Web3MintingProps {
   currentStripeData: any[]
   characterMap: any
   warpThickness: number
+  complexity?: number
 }
 
-export default function Web3Minting({ 
-  textRows, 
-  currentPalette, 
-  currentStripeData, 
-  characterMap, 
-  warpThickness 
+export default function Web3Minting({
+  textRows,
+  currentPalette,
+  currentStripeData,
+  characterMap,
+  warpThickness,
+  complexity = 3 // Default complexity level
 }: Web3MintingProps) {
   const [isMinting, setIsMinting] = useState(false)
   const { address, isConnected } = useAccount()
@@ -29,67 +31,68 @@ export default function Web3Minting({
     hash,
   })
 
-  // Calculate minting cost - NO TEXT IS FREE TO MINT
+  // Calculate minting cost - Updated to match smart contract pricing
   const calculateCost = () => {
     const nonEmptyRows = textRows.filter(row => row.trim() !== '').length
-    
-    // Base price for ANY mint (even no text) = 0.0001 ETH
-    const basePrice = 0.0001
-    
-    if (nonEmptyRows <= 1) return basePrice // Base price for 0 or 1 line
-    
-    // Additional costs for extra lines
-    if (nonEmptyRows <= 3) {
-      return basePrice + (nonEmptyRows - 1) * 0.00111 // Lines 2-3: +0.00111 ETH each
+
+    // Base price: 0.00069 ETH
+    let totalCost = 0.00069
+
+    // Add individual line prices (up to 5 lines)
+    for (let i = 0; i < nonEmptyRows && i < 5; i++) {
+      // Default line prices (can be updated via contract)
+      const linePrices = [0.00042, 0.00069, 0.00111, 0.00142, 0.00169]
+      totalCost += linePrices[i]
     }
-    
-    // Lines 4-5: +0.00222 ETH each
-    return basePrice + 2 * 0.00111 + (nonEmptyRows - 3) * 0.00222
+
+    return totalCost
   }
 
   const mintCost = calculateCost()
 
-  // Optimize data before sending
+  // Optimize and minify data for smart contract
   const optimizeData = () => {
     const nonEmptyTextRows = textRows.filter(row => row.trim() !== '')
     const finalTextRows = nonEmptyTextRows.length > 0 ? nonEmptyTextRows : ['']
-    
+
     // Filter character map to only include used characters
     const usedChars = new Set<string>()
     finalTextRows.forEach(row => {
       for (const char of row.toUpperCase()) {
-        usedChars.add(char)
+        if (char !== ' ') usedChars.add(char)
       }
     })
-    
+
     const filteredCharacterMap: any = {}
     usedChars.forEach((char: string) => {
       if (characterMap && characterMap[char]) {
         filteredCharacterMap[char] = characterMap[char]
       }
     })
-    
-    // Use full palette data for proper rarity calculation
+
+    // Full palette data
     const fullPalette = {
       name: currentPalette?.name || 'Default',
       colors: currentPalette?.colors || ['#FF0000']
     }
-    
-    // Compress stripe data with null checks
-    const compressedStripeData = (currentStripeData || []).map(stripe => ({
-      y: stripe.y,
-      h: stripe.height, // 'height' -> 'h'
-      pc: stripe.primaryColor, // 'primaryColor' -> 'pc'
-      sc: stripe.secondaryColor, // 'secondaryColor' -> 'sc'
-      wt: stripe.weaveType, // 'weaveType' -> 'wt'
-      wv: stripe.warpVariation // 'warpVariation' -> 'wv'
+
+    // Minified stripe data for contract
+    const minifiedStripeData = (currentStripeData || []).map(stripe => ({
+      y: Math.round(stripe.y * 100) / 100, // Truncate to 3 decimals
+      h: Math.round(stripe.height * 100) / 100,
+      pc: stripe.primaryColor,
+      sc: stripe.secondaryColor,
+      wt: stripe.weaveType === 'solid' ? 's' : stripe.weaveType === 'mixed' ? 'm' : 't',
+      wv: Math.round(stripe.warpVariation * 100) / 100
     }))
-    
+
     return {
       textRows: finalTextRows,
-      palette: fullPalette,
-      stripeData: compressedStripeData,
-      characterMap: filteredCharacterMap
+      paletteName: currentPalette?.name || 'Default',
+      minifiedPalette: JSON.stringify(fullPalette),
+      minifiedStripeData: JSON.stringify(minifiedStripeData),
+      minifiedCharacterMap: JSON.stringify(filteredCharacterMap),
+      complexity: complexity
     }
   }
 
@@ -120,16 +123,18 @@ export default function Web3Minting({
         contract: process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT,
         textRows: optimized.textRows,
         seed,
-        palette: optimized.palette,
-        stripeData: optimized.stripeData,
-        characterMap: optimized.characterMap,
+        paletteName: optimized.paletteName,
+        minifiedPalette: optimized.minifiedPalette,
+        minifiedStripeData: optimized.minifiedStripeData,
+        minifiedCharacterMap: optimized.minifiedCharacterMap,
         warpThickness,
+        complexity: optimized.complexity,
         mintCost,
         gasLimit: gasLimit.toString(),
         chainId,
         address,
         originalSize: JSON.stringify(currentPalette || {}).length + JSON.stringify(currentStripeData || []).length + JSON.stringify(characterMap || {}).length,
-        optimizedSize: JSON.stringify(optimized.palette).length + JSON.stringify(optimized.stripeData).length + JSON.stringify(optimized.characterMap).length
+        minifiedSize: optimized.minifiedPalette.length + optimized.minifiedStripeData.length + optimized.minifiedCharacterMap.length
       })
       
       await writeContract({
@@ -139,10 +144,12 @@ export default function Web3Minting({
             "inputs": [
               {"internalType": "string[]", "name": "textRows", "type": "string[]"},
               {"internalType": "uint256", "name": "seed", "type": "uint256"},
-              {"internalType": "string", "name": "palette", "type": "string"},
-              {"internalType": "string", "name": "stripeData", "type": "string"},
-              {"internalType": "string", "name": "characterMap", "type": "string"},
-              {"internalType": "uint256", "name": "warpThickness", "type": "uint256"}
+              {"internalType": "string", "name": "paletteName", "type": "string"},
+              {"internalType": "string", "name": "minifiedPalette", "type": "string"},
+              {"internalType": "string", "name": "minifiedStripeData", "type": "string"},
+              {"internalType": "string", "name": "minifiedCharacterMap", "type": "string"},
+              {"internalType": "uint256", "name": "warpThickness", "type": "uint256"},
+              {"internalType": "uint8", "name": "complexity", "type": "uint8"}
             ],
             "name": "mintRugWithParams",
             "outputs": [],
@@ -154,10 +161,12 @@ export default function Web3Minting({
         args: [
           optimized.textRows,
           BigInt(seed),
-          JSON.stringify(optimized.palette),
-          JSON.stringify(optimized.stripeData),
-          JSON.stringify(optimized.characterMap),
-          BigInt(warpThickness)
+          optimized.paletteName,
+          optimized.minifiedPalette,
+          optimized.minifiedStripeData,
+          optimized.minifiedCharacterMap,
+          BigInt(warpThickness),
+          optimized.complexity
         ],
         value: parseEther(mintCost.toString()),
         gas: gasLimit,
