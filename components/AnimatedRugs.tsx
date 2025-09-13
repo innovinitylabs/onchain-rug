@@ -1838,17 +1838,17 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
   )
 }
 
-// Floating particles
+// Studio Ghibli-style floating particles (circular, bluish-white)
 function FloatingParticles() {
   const particlesRef = useRef<THREE.Points>(null)
-  
+
   const particles = useMemo(() => {
     const temp = []
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < 150; i++) { // Increased count for more magical feel
       temp.push([
-        (Math.random() - 0.5) * 50,
-        (Math.random() - 0.5) * 30,
-        (Math.random() - 0.5) * 50
+        (Math.random() - 0.5) * 60, // Wider spread
+        (Math.random() - 0.5) * 40, // Taller spread
+        (Math.random() - 0.5) * 60  // Deeper spread
       ])
     }
     return temp
@@ -1856,7 +1856,8 @@ function FloatingParticles() {
 
   useFrame((state) => {
     if (particlesRef.current) {
-      particlesRef.current.rotation.y = state.clock.getElapsedTime() * 0.1
+      particlesRef.current.rotation.y = state.clock.getElapsedTime() * 0.05 // Slower, more gentle rotation
+      particlesRef.current.rotation.x = Math.sin(state.clock.getElapsedTime() * 0.03) * 0.1 // Gentle wobble
     }
   })
 
@@ -1871,7 +1872,14 @@ function FloatingParticles() {
           args={[new Float32Array(particles.flat()), 3]}
         />
       </bufferGeometry>
-      <pointsMaterial size={0.1} color="#f59e0b" transparent opacity={0.6} />
+      <pointsMaterial
+        size={0.08} // Slightly smaller for delicacy
+        color="#e6f3ff" // Studio Ghibli bluish-white
+        transparent
+        opacity={0.4} // More subtle
+        sizeAttenuation={true} // Makes distant particles smaller
+        alphaTest={0.01} // Helps with circular appearance
+      />
     </points>
   )
 }
@@ -1952,19 +1960,26 @@ function Scene({ onLoaded }: { onLoaded?: () => void }) {
       {/* Enhanced Floating Particles */}
       <FloatingParticles />
       
-      {/* Magical Dust Effect */}
-      <Float speed={2} rotationIntensity={0.5} floatIntensity={1}>
+      {/* Studio Ghibli Magical Dust Effect */}
+      <Float speed={1.5} rotationIntensity={0.3} floatIntensity={0.8}>
         <points>
           <bufferGeometry>
             <bufferAttribute
               attach="attributes-position"
-              count={200}
-              array={new Float32Array(Array.from({ length: 600 }, () => (Math.random() - 0.5) * 100))}
+              count={120}
+              array={new Float32Array(Array.from({ length: 360 }, () => (Math.random() - 0.5) * 80))}
               itemSize={3}
-              args={[new Float32Array(Array.from({ length: 600 }, () => (Math.random() - 0.5) * 100)), 3]}
+              args={[new Float32Array(Array.from({ length: 360 }, () => (Math.random() - 0.5) * 80)), 3]}
             />
           </bufferGeometry>
-          <pointsMaterial size={0.05} color="#ffd700" transparent opacity={0.8} />
+          <pointsMaterial
+            size={0.06}
+            color="#f0f8ff" // Soft bluish-white for magical dust
+            transparent
+            opacity={0.3}
+            sizeAttenuation={true}
+            alphaTest={0.01}
+          />
         </points>
       </Float>
       
