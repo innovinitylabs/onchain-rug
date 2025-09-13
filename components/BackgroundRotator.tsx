@@ -11,8 +11,16 @@ const backgrounds = [
 
 // Generate truly random background index for each page load
 function getRandomBackgroundIndex(): number {
-  // Simple and reliable randomization using Math.random()
-  return Math.floor(Math.random() * backgrounds.length);
+  // Add multiple sources of entropy for better randomization
+  const entropy1 = Math.random();
+  const entropy2 = performance.now() % 1000; // Sub-millisecond timing
+  const entropy3 = Math.random() * Date.now(); // Timestamp + random
+
+  // Combine entropies and ensure good distribution
+  const combined = entropy1 + (entropy2 / 1000) + (entropy3 / 1000000);
+  const normalized = combined % 1; // Get fractional part
+
+  return Math.floor(normalized * backgrounds.length);
 }
 
 export default function BackgroundRotator() {
@@ -28,8 +36,11 @@ export default function BackgroundRotator() {
   const randomIndex = getRandomBackgroundIndex();
   const selectedBg = backgrounds[randomIndex];
 
-  // Log for debugging
-  console.log('🎨 Background Rotator: Selected background', randomIndex, selectedBg);
+  // Detailed logging for debugging randomization
+  const timestamp = new Date().toISOString();
+  console.log(`🎨 Background Rotator [${timestamp}]:`);
+  console.log(`   Index: ${randomIndex}, Background: ${selectedBg}`);
+  console.log(`   Available: [${backgrounds.join(', ')}]`);
 
   return (
     <div
