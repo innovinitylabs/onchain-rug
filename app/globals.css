@@ -29,8 +29,10 @@ body {
 /* Override LiquidGlass black overlays for light theme */
 .liquid-glass-container .bg-black {
   background-color: transparent !important;
+  display: none !important; /* Completely hide the black overlay divs */
 }
 
 .liquid-glass-container .mix-blend-overlay {
   mix-blend-mode: normal !important;
+  display: none !important; /* Completely hide the mix-blend overlay divs */
 }
