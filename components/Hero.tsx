@@ -7,7 +7,7 @@ import LiquidGlass from '@/components/LiquidGlass'
 export default function Hero() {
   return (
     <div className="relative z-10 h-screen flex items-center justify-center text-center px-6" style={{ willChange: 'transform' }}>
-      <div className="max-w-4xl mx-auto" style={{ willChange: 'transform, opacity' }}>
+      <div className="max-w-7xl mx-auto overflow-visible" style={{ willChange: 'transform, opacity' }}>
         {/* Floating elements - Delayed for performance optimization */}
         <div className="absolute -top-10 -left-10 w-20 h-20 opacity-20" style={{ willChange: 'transform' }}>
           <motion.div
@@ -61,10 +61,190 @@ export default function Hero() {
             transition={{ duration: 0.8, delay: 0.5, type: "tween" }}
             style={{ willChange: 'transform' }}
           >
-            <span className="text-6xl md:text-8xl">🧶</span>
-            <span className="bg-gradient-to-r from-amber-600 via-orange-600 to-red-600 bg-clip-text text-transparent">
+            <svg
+                width="100%"
+                height="auto"
+                viewBox="0 0 1600 250"
+                style={{
+                  display: 'block',
+                  flex: '1',
+                  maxWidth: 'none',
+                  height: 'auto',
+                  filter: 'drop-shadow(0 0 30px rgba(255, 255, 255, 0.5))',
+                  overflow: 'visible'
+                }}
+                aria-label="ONCHAIN RUGS"
+                preserveAspectRatio="xMidYMid meet"
+              >
+              <defs>
+                {/* Liquid Glass Material - Multiple Layers for Depth */}
+                <filter id="logo-glass-depth" x="-100%" y="-100%" width="300%" height="300%" colorInterpolationFilters="sRGB">
+                  {/* Base turbulence for liquid flow */}
+                  <feTurbulence
+                    baseFrequency="0.005"
+                    numOctaves="6"
+                    seed="42"
+                    type="fractalNoise"
+                    result="LOGO_BASE"
+                  />
+
+                  {/* Displacement for refraction */}
+                  <feDisplacementMap
+                    in="SourceGraphic"
+                    in2="LOGO_BASE"
+                    scale="35"
+                    xChannelSelector="R"
+                    yChannelSelector="G"
+                    result="LOGO_DISPLACED"
+                  />
+
+                  {/* Chromatic aberration for glass effect */}
+                  <feColorMatrix
+                    in="LOGO_DISPLACED"
+                    type="matrix"
+                    values="1.2 0.08 0 0 0
+                           0 1.15 0.03 0 0
+                           0 0 1.1 0 0
+                           0 0 0 1 0"
+                    result="LOGO_COLORS"
+                  />
+
+                  {/* Blur for liquid softness */}
+                  <feGaussianBlur
+                    in="LOGO_COLORS"
+                    stdDeviation="3.5"
+                    result="LOGO_BLUR"
+                  />
+                </filter>
+
+                {/* Liquid Glass Surface */}
+                <filter id="logo-glass-surface" x="-100%" y="-100%" width="300%" height="300%" colorInterpolationFilters="sRGB">
+                  <feTurbulence
+                    baseFrequency="0.02"
+                    numOctaves="4"
+                    seed="123"
+                    type="fractalNoise"
+                    result="LOGO_SURFACE"
+                  />
+                  <feDisplacementMap
+                    in="SourceGraphic"
+                    in2="LOGO_SURFACE"
+                    scale="22"
+                    xChannelSelector="R"
+                    yChannelSelector="G"
+                    result="LOGO_SURFACE_DISPLACED"
+                  />
+                  <feGaussianBlur
+                    in="LOGO_SURFACE_DISPLACED"
+                    stdDeviation="2.5"
+                    result="LOGO_SURFACE_BLUR"
+                  />
+                </filter>
+
+                {/* Liquid Glass Gradient - Multi-stop for depth */}
+                <linearGradient id="logo-glass-fill" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" style={{ stopColor: 'rgba(255, 255, 255, 0.98)', stopOpacity: 1 }} />
+                  <stop offset="20%" style={{ stopColor: 'rgba(255, 255, 255, 0.95)', stopOpacity: 1 }} />
+                  <stop offset="40%" style={{ stopColor: 'rgba(255, 255, 255, 0.92)', stopOpacity: 1 }} />
+                  <stop offset="60%" style={{ stopColor: 'rgba(255, 255, 255, 0.95)', stopOpacity: 1 }} />
+                  <stop offset="80%" style={{ stopColor: 'rgba(255, 255, 255, 0.97)', stopOpacity: 1 }} />
+                  <stop offset="100%" style={{ stopColor: 'rgba(255, 255, 255, 0.99)', stopOpacity: 1 }} />
+                </linearGradient>
+
+                {/* Liquid Glass Highlight */}
+                <linearGradient id="logo-glass-highlight" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" style={{ stopColor: 'rgba(255, 255, 255, 0.8)', stopOpacity: 1 }} />
+                  <stop offset="25%" style={{ stopColor: 'rgba(255, 255, 255, 0.6)', stopOpacity: 1 }} />
+                  <stop offset="50%" style={{ stopColor: 'rgba(255, 255, 255, 0.4)', stopOpacity: 1 }} />
+                  <stop offset="75%" style={{ stopColor: 'rgba(255, 255, 255, 0.5)', stopOpacity: 1 }} />
+                  <stop offset="100%" style={{ stopColor: 'rgba(255, 255, 255, 0.7)', stopOpacity: 1 }} />
+                </linearGradient>
+
+                {/* Liquid Glass Shadow */}
+                <linearGradient id="logo-glass-shadow" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" style={{ stopColor: 'rgba(0, 0, 0, 0.15)', stopOpacity: 1 }} />
+                  <stop offset="50%" style={{ stopColor: 'rgba(0, 0, 0, 0.08)', stopOpacity: 1 }} />
+                  <stop offset="100%" style={{ stopColor: 'rgba(0, 0, 0, 0.12)', stopOpacity: 1 }} />
+                </linearGradient>
+              </defs>
+
+              {/* Liquid Glass Shadow Layer */}
+              <text
+                x="50%"
+                y="130"
+                textAnchor="middle"
+                dominantBaseline="middle"
+                className="text-6xl md:text-8xl font-extrabold"
+                style={{
+                  fill: 'url(#logo-glass-shadow)',
+                  filter: 'url(#logo-glass-depth)',
+                  fontSize: '270px',
+                  fontWeight: '800',
+                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                  opacity: 0.4
+                }}
+              >
+                ONCHAIN RUGS
+              </text>
+
+              {/* Liquid Glass Main Fill */}
+              <text
+                x="50%"
+                y="125"
+                textAnchor="middle"
+                dominantBaseline="middle"
+                className="text-6xl md:text-8xl font-extrabold"
+                style={{
+                  fill: 'url(#logo-glass-fill)',
+                  filter: 'url(#logo-glass-depth)',
+                  fontSize: '270px',
+                  fontWeight: '800',
+                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                }}
+              >
+                ONCHAIN RUGS
+              </text>
+
+              {/* Liquid Glass Surface Highlight */}
+              <text
+                x="50%"
+                y="120"
+                textAnchor="middle"
+                dominantBaseline="middle"
+                className="text-6xl md:text-8xl font-extrabold"
+                style={{
+                  fill: 'url(#logo-glass-highlight)',
+                  filter: 'url(#logo-glass-surface)',
+                  fontSize: '270px',
+                  fontWeight: '800',
+                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                  mixBlendMode: 'screen'
+                }}
+              >
+                ONCHAIN RUGS
+              </text>
+
+              {/* Liquid Glass Rim Light */}
+              <text
+                x="50%"
+                y="125"
+                textAnchor="middle"
+                dominantBaseline="middle"
+                className="text-6xl md:text-8xl font-extrabold"
+                style={{
+                  fill: 'none',
+                  stroke: 'rgba(255, 255, 255, 0.9)',
+                  strokeWidth: '0.4',
+                  filter: 'url(#logo-glass-surface)',
+                  fontSize: '270px',
+                  fontWeight: '800',
+                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                  mixBlendMode: 'overlay'
+                }}
+              >
               ONCHAIN RUGS
-            </span>
+              </text>
+            </svg>
           </motion.h1>
           
           <motion.div
@@ -77,7 +257,7 @@ export default function Hero() {
             <svg
               width="100%"
               height="auto"
-              viewBox="0 0 800 60"
+              viewBox="0 0 1000 90"
               style={{
                 display: 'block',
                 maxWidth: '100%',
@@ -102,7 +282,7 @@ export default function Hero() {
                   <feDisplacementMap
                     in="SourceGraphic"
                     in2="LIQUID_BASE"
-                    scale="12"
+                    scale="24"
                     xChannelSelector="R"
                     yChannelSelector="G"
                     result="DISPLACED_LIQUID"
@@ -122,7 +302,7 @@ export default function Hero() {
                   {/* Blur for liquid softness */}
                   <feGaussianBlur
                     in="GLASS_COLORS"
-                    stdDeviation="1.2"
+                    stdDeviation="2.4"
                     result="GLASS_BLUR"
                   />
                 </filter>
@@ -139,14 +319,14 @@ export default function Hero() {
                   <feDisplacementMap
                     in="SourceGraphic"
                     in2="SURFACE_NOISE"
-                    scale="6"
+                    scale="12"
                     xChannelSelector="R"
                     yChannelSelector="G"
                     result="SURFACE_DISPLACED"
                   />
                   <feGaussianBlur
                     in="SURFACE_DISPLACED"
-                    stdDeviation="0.8"
+                    stdDeviation="1.6"
                     result="SURFACE_BLUR"
                   />
                 </filter>
@@ -179,14 +359,14 @@ export default function Hero() {
               {/* Liquid Glass Shadow Layer */}
               <text
                 x="50%"
-                y="37"
+                y="47"
                 textAnchor="middle"
                 dominantBaseline="middle"
                 className="text-2xl md:text-3xl font-semibold"
                 style={{
                   fill: 'url(#liquid-glass-shadow)',
                   filter: 'url(#liquid-glass-depth)',
-                  fontSize: '24px',
+                   fontSize: '48px',
                   fontWeight: '600',
                   fontFamily: 'system-ui, -apple-system, sans-serif',
                   opacity: 0.6
@@ -198,14 +378,14 @@ export default function Hero() {
               {/* Liquid Glass Main Fill */}
               <text
                 x="50%"
-                y="35"
+                y="45"
                 textAnchor="middle"
                 dominantBaseline="middle"
                 className="text-2xl md:text-3xl font-semibold"
                 style={{
                   fill: 'url(#liquid-glass-fill)',
                   filter: 'url(#liquid-glass-depth)',
-                  fontSize: '24px',
+                   fontSize: '48px',
                   fontWeight: '600',
                   fontFamily: 'system-ui, -apple-system, sans-serif',
                 }}
@@ -216,14 +396,14 @@ export default function Hero() {
               {/* Liquid Glass Surface Highlight */}
               <text
                 x="50%"
-                y="33"
+                y="43"
                 textAnchor="middle"
                 dominantBaseline="middle"
                 className="text-2xl md:text-3xl font-semibold"
                 style={{
                   fill: 'url(#liquid-glass-highlight)',
                   filter: 'url(#liquid-glass-surface)',
-                  fontSize: '24px',
+                   fontSize: '48px',
                   fontWeight: '600',
                   fontFamily: 'system-ui, -apple-system, sans-serif',
                   mixBlendMode: 'screen'
@@ -235,22 +415,22 @@ export default function Hero() {
               {/* Liquid Glass Rim Light */}
               <text
                 x="50%"
-                y="35"
+                y="45"
                 textAnchor="middle"
                 dominantBaseline="middle"
                 className="text-2xl md:text-3xl font-semibold"
-                style={{
+            style={{ 
                   fill: 'none',
                   stroke: 'rgba(255, 255, 255, 0.8)',
                   strokeWidth: '0.3',
                   filter: 'url(#liquid-glass-surface)',
-                  fontSize: '24px',
+                   fontSize: '48px',
                   fontWeight: '600',
                   fontFamily: 'system-ui, -apple-system, sans-serif',
                   mixBlendMode: 'overlay'
-                }}
-              >
-                Generative Doormat Art on the Blockchain
+            }}
+          >
+            Generative Doormat Art on the Blockchain
               </text>
             </svg>
           </motion.div>
@@ -316,8 +496,8 @@ export default function Hero() {
                   boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
                   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
                 }}
-              >
-                🚀 Start Creating
+            >
+              🚀 Start Creating
               </LiquidGlass>
             </motion.div>
             
