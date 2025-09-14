@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useContractRead, useWatchContractEvent, useAccount, useChainId } from 'wagmi'
-import { ExternalLink, Filter, SortAsc, Grid, List, RefreshCw } from 'lucide-react'
+import { ExternalLink, Filter, SortAsc, Grid, List, RefreshCw, ChevronDown, ChevronUp, Code } from 'lucide-react'
 import { onchainRugsABI, contractAddresses } from '@/lib/web3'
 import { config } from '@/lib/config'
 import Navigation from '@/components/Navigation'
@@ -29,6 +29,10 @@ interface NFTData {
   owner: string
   metadata?: any
   rarityScore?: number
+  name?: string
+  description?: string
+  image?: string
+  animation_url?: string
 }
 
 type SortOption = 'tokenId' | 'mintTime' | 'rarity' | 'complexity' | 'stripeCount' | 'characterCount'
@@ -48,6 +52,7 @@ export default function GalleryPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [refreshing, setRefreshing] = useState(false)
   const [initialLoad, setInitialLoad] = useState(true)
+  const [showRawData, setShowRawData] = useState(false)
 
   const itemsPerPage = 24
   const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
@@ -105,17 +110,49 @@ export default function GalleryPage() {
           throw new Error('Alchemy API key not configured')
         }
 
-        // Fetch collection data from Alchemy
+        // Fetch collection data from Alchemy (basic info only)
+        console.log('🔄 Step 1: Fetching NFT collection list...')
         const response = await fetch(
-          `https://shape-sepolia.g.alchemy.com/nft/v3/${alchemyApiKey}/getNFTsForCollection?contractAddress=${resolvedContractAddress}&withMetadata=true&limit=5`
+          `https://shape-sepolia.g.alchemy.com/nft/v3/${alchemyApiKey}/getNFTsForCollection?contractAddress=${resolvedContractAddress}&withMetadata=false&limit=20`
         )
 
         if (!response.ok) {
           throw new Error(`Alchemy API error: ${response.status}`)
         }
 
-        const data = await response.json()
-        setAlchemyData(data)
+        const collectionData = await response.json()
+        console.log('✅ Got collection data:', collectionData.nfts?.length || 0, 'NFTs')
+
+        // Now fetch individual metadata for each NFT
+        console.log('🔄 Step 2: Fetching individual metadata...')
+        const enrichedNfts = []
+
+        for (const nft of collectionData.nfts || []) {
+          try {
+            console.log(`📋 Fetching metadata for NFT #${nft.tokenId}...`)
+            const metadataResponse = await fetch(
+              `https://shape-sepolia.g.alchemy.com/nft/v3/${alchemyApiKey}/getNFTMetadata?contractAddress=${resolvedContractAddress}&tokenId=${nft.tokenId}`
+            )
+
+            if (metadataResponse.ok) {
+              const metadata = await metadataResponse.json()
+              // Merge collection data with metadata
+              enrichedNfts.push({
+                ...nft,
+                ...metadata // This includes animation_url, name, description, etc.
+              })
+              console.log(`✅ NFT #${nft.tokenId}: animation_url = ${!!metadata.animation_url}`)
+            } else {
+              console.log(`⚠️ Failed to get metadata for NFT #${nft.tokenId}`)
+              enrichedNfts.push(nft)
+            }
+          } catch (error) {
+            console.warn(`❌ Error fetching metadata for NFT ${nft.tokenId}:`, error)
+            enrichedNfts.push(nft)
+          }
+        }
+
+        setAlchemyData({ nfts: enrichedNfts, pageKey: collectionData.pageKey })
 
       } catch (error) {
         console.error('Alchemy fetch error:', error)
@@ -138,7 +175,28 @@ export default function GalleryPage() {
 
   // Process Alchemy NFT data - much simpler!
   useEffect(() => {
+    console.log('🔄 Processing useEffect triggered:', {
+      hasAlchemyData: !!alchemyData,
+      hasAlchemyError: !!alchemyError,
+      loadingAlchemy,
+      loading,
+      initialLoad,
+      nftsLength: nfts.length,
+      alchemyDataLength: alchemyData?.nfts?.length || 0
+    })
+
     if (!alchemyData || alchemyError) {
+      console.log('⏸️ Skipping processing - no data or error:', {
+        alchemyData: !!alchemyData,
+        alchemyError: alchemyError
+      })
+      // Make sure loading stops even if there's an error
+      if (loadingAlchemy) {
+        console.log('🔄 Stopping loading due to error')
+        setLoadingAlchemy(false)
+        setLoading(false)
+        setInitialLoad(false)
+      }
       return
     }
 
@@ -147,21 +205,31 @@ export default function GalleryPage() {
 
       // Process Alchemy NFT data
       if (alchemyData.nfts && Array.isArray(alchemyData.nfts)) {
-        alchemyData.nfts.forEach((nft: any) => {
+        console.log('🎯 Processing', alchemyData.nfts.length, 'NFTs from Alchemy')
+        alchemyData.nfts.forEach((nft: any, index: number) => {
+          console.log(`🆔 NFT #${nft.tokenId} (index ${index}):`, {
+            name: nft.name,
+            description: nft.description,
+            animation_url: !!nft.animation_url,
+            attributes: nft.metadata?.attributes?.length || 0,
+            hasMetadata: !!nft.metadata,
+            owners: nft.owners
+          })
           try {
             // Extract traits from metadata attributes
-            const attributes = nft.metadata?.attributes || []
+            const attributes = nft.attributes || nft.metadata?.attributes || []
+
             const traits: RugTraits = {
               seed: BigInt(nft.tokenId || 0),
-              paletteName: attributes.find((a: any) => a.trait_type === 'Palette Name')?.value || '',
+              paletteName: attributes.find((a: any) => a.trait_type === 'Palette Name')?.value || 'Default Palette',
               minifiedPalette: '', // Not available from Alchemy
               minifiedStripeData: '', // Not available from Alchemy
               textRows: [], // Not available from Alchemy
-              warpThickness: Number(attributes.find((a: any) => a.trait_type === 'Warp Thickness')?.value || 0),
-              mintTime: BigInt(nft.mint?.timestamp || 0),
+              warpThickness: Number(attributes.find((a: any) => a.trait_type === 'Warp Thickness')?.value || 3),
+              mintTime: nft.mint?.timestamp ? BigInt(new Date(nft.mint.timestamp).getTime()) : BigInt(Date.now()),
               filteredCharacterMap: '', // Not available from Alchemy
-              complexity: Number(attributes.find((a: any) => a.trait_type === 'Complexity')?.value || 0),
-              characterCount: BigInt(attributes.find((a: any) => a.trait_type === 'Character Count')?.value || 0),
+              complexity: Number(attributes.find((a: any) => a.trait_type === 'Complexity')?.value || 2),
+              characterCount: BigInt(attributes.find((a: any) => a.trait_type === 'Character Count')?.value || 1),
               stripeCount: BigInt(attributes.find((a: any) => a.trait_type === 'Stripe Count')?.value || 0),
             }
 
@@ -170,14 +238,29 @@ export default function GalleryPage() {
               traits,
               owner: nft.owners ? nft.owners[0] : '', // Primary owner
               rarityScore: calculateRarityScore(traits),
+              // Use the metadata we already set up
+              name: nft.name,
+              description: nft.description,
+              image: nft.image?.cachedUrl || nft.image?.originalUrl || nft.image || '/logo.png',
+              animation_url: nft.animation_url || nft.animation?.cachedUrl || nft.animation?.originalUrl
             }
 
             nftData.push(nftItem)
+            console.log(`✅ Successfully added NFT #${nft.tokenId} to gallery`)
           } catch (error) {
-            console.warn(`Error processing Alchemy NFT ${nft.tokenId}:`, error)
+            console.warn(`❌ Error processing Alchemy NFT ${nft.tokenId}:`, error)
           }
         })
+
+        console.log('📊 NFT processing complete:', {
+          totalProcessed: alchemyData.nfts.length,
+          successfullyAdded: nftData.length,
+          failed: alchemyData.nfts.length - nftData.length
+        })
       }
+
+      console.log('✅ Final NFT data array:', nftData)
+      console.log('📊 Total NFTs processed:', nftData.length)
 
       setNfts(nftData)
 
@@ -381,6 +464,42 @@ export default function GalleryPage() {
               </div>
             </div>
           </div>
+
+          {/* Raw Data Collapsible Section */}
+          <div className="mt-6">
+            <button
+              onClick={() => setShowRawData(!showRawData)}
+              className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg px-4 py-2 text-blue-700 transition-colors w-full justify-center"
+            >
+              <Code className="w-4 h-4" />
+              <span className="text-sm font-medium">
+                {showRawData ? 'Hide' : 'Show'} Raw JSON Data
+              </span>
+              {showRawData ? (
+                <ChevronUp className="w-4 h-4" />
+              ) : (
+                <ChevronDown className="w-4 h-4" />
+              )}
+            </button>
+
+            <AnimatePresence>
+              {showRawData && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="mt-4 bg-gray-900 rounded-lg border border-gray-700 overflow-hidden"
+                >
+                  <div className="p-4">
+                    <h4 className="text-white font-medium mb-3">Raw Alchemy Data</h4>
+                    <pre className="text-green-400 text-xs overflow-x-auto max-h-96 overflow-y-auto">
+                      {JSON.stringify(alchemyData, null, 2)}
+                    </pre>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
 
         {/* Stats */}
@@ -513,39 +632,53 @@ export default function GalleryPage() {
 
       {/* NFT Grid/List */}
       <div className="max-w-7xl mx-auto px-6 pb-20">
-        {(loading || loadingAlchemy || initialLoad) ? (
-          <LoadingSpinner />
-        ) : (loading || loadingAlchemy) && nfts.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">🎨</div>
-            <h3 className="text-2xl font-bold text-blue-800 mb-4">No NFTs Available</h3>
-            <p className="text-blue-700/70 mb-6 max-w-md mx-auto">
-              {alchemyError || "Unable to load NFT data. This could be due to:"}
-            </p>
-            <ul className="text-left text-blue-700/70 mb-6 max-w-md mx-auto list-disc list-inside space-y-2">
-              <li>Alchemy API key not configured</li>
-              <li>Contract not indexed by Alchemy yet</li>
-              <li>No NFTs minted in the collection</li>
-              <li>Network connectivity issues</li>
-              <li>Contract not deployed on Shape Sepolia</li>
-            </ul>
-            <div className="flex gap-3 justify-center">
-              <button
-                onClick={() => window.location.reload()}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold transition-colors"
-              >
-                🔄 Refresh Page
-              </button>
-              <button
-                onClick={handleRefresh}
-                disabled={refreshing}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-semibold transition-colors disabled:opacity-50"
-              >
-                {refreshing ? '🔄 Refreshing...' : '🔄 Retry Load'}
-              </button>
-            </div>
-          </div>
-        ) : (
+        {(() => {
+          const shouldShowLoading = loading || loadingAlchemy || initialLoad
+          console.log('🎯 Render decision:', {
+            shouldShowLoading,
+            loading,
+            loadingAlchemy,
+            initialLoad,
+            nftsLength: nfts.length,
+            hasAlchemyData: !!alchemyData,
+            hasAlchemyError: !!alchemyError
+          })
+          if (shouldShowLoading) {
+            return <LoadingSpinner />
+          } else if (nfts.length === 0) {
+            return (
+              <div className="text-center py-12">
+                <div className="text-6xl mb-4">🎨</div>
+                <h3 className="text-2xl font-bold text-blue-800 mb-4">No NFTs Available</h3>
+                <p className="text-blue-700/70 mb-6 max-w-md mx-auto">
+                  {alchemyError || "Unable to load NFT data. This could be due to:"}
+                </p>
+                <ul className="text-left text-blue-700/70 mb-6 max-w-md mx-auto list-disc list-inside space-y-2">
+                  <li>Alchemy API key not configured</li>
+                  <li>Contract not indexed by Alchemy yet</li>
+                  <li>No NFTs minted in the collection</li>
+                  <li>Network connectivity issues</li>
+                  <li>Contract not deployed on Shape Sepolia</li>
+                </ul>
+                <div className="flex gap-3 justify-center">
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold transition-colors"
+                  >
+                    🔄 Refresh Page
+                  </button>
+                  <button
+                    onClick={handleRefresh}
+                    disabled={refreshing}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-semibold transition-colors disabled:opacity-50"
+                  >
+                    {refreshing ? '🔄 Refreshing...' : '🔄 Retry Load'}
+                  </button>
+                </div>
+              </div>
+            )
+          } else {
+            return (
           <>
             {/* Results count */}
             <div className="text-center mb-8">
@@ -563,7 +696,7 @@ export default function GalleryPage() {
             {/* NFT Display */}
             <div className={`grid gap-6 ${
               viewMode === 'grid'
-                ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+                ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
                 : 'grid-cols-1'
             }`}>
               <AnimatePresence>
@@ -579,29 +712,38 @@ export default function GalleryPage() {
                     }`}
                   >
                     {/* Artwork Iframe */}
-                    <div className={`relative ${viewMode === 'grid' ? 'aspect-square' : 'w-48 h-48 flex-shrink-0'}`}>
-                      <iframe
-                        src={`data:text/html,${encodeURIComponent(`
-                          <html>
-                            <head>
-                              <style>
-                                body { margin: 0; background: transparent; }
-                                canvas { max-width: 100%; max-height: 100%; }
-                              </style>
-                            </head>
-                            <body>
-                              <div id="nft-${nft.tokenId}">Loading artwork...</div>
-                              <script>
-                                // NFT artwork will be rendered here
-                                console.log('NFT ${nft.tokenId} artwork');
-                              </script>
-                            </body>
-                          </html>
-                        `)}`}
-                        className="w-full h-full border-0"
-                        title={`Onchain Rug #${nft.tokenId}`}
-                        sandbox="allow-scripts"
-                      />
+                    <div className={`relative ${viewMode === 'grid' ? 'aspect-[4/3]' : 'w-64 flex-shrink-0'}`}>
+                      {nft.animation_url ? (
+                        <div className={`w-full ${viewMode === 'list' ? 'h-48' : 'h-full'} overflow-hidden rounded-lg relative`}>
+                          {/* Responsive iframe container that matches canvas aspect ratio */}
+                          <div
+                            className="w-full relative"
+                            style={{
+                              paddingBottom: viewMode === 'list' ? '69.7%' : '69.7%', // 920/1320 * 100% = 69.7% (maintains 1320:920 aspect ratio)
+                              overflow: 'hidden',
+                              maxHeight: viewMode === 'list' ? '192px' : 'none' // 48 * 4px (Tailwind h-48)
+                            }}
+                          >
+                            <iframe
+                              src={nft.animation_url}
+                              className="absolute inset-0 border-0 w-full h-full"
+                              style={{
+                                width: '100%',
+                                height: '100%'
+                              }}
+                              title={`Onchain Rug #${nft.tokenId}`}
+                              sandbox="allow-scripts"
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-blue-100 to-indigo-100 rounded-lg flex items-center justify-center">
+                          <div className="text-center">
+                            <div className="text-4xl mb-2">🎨</div>
+                            <div className="text-sm text-blue-600 font-medium">No artwork available</div>
+                          </div>
+                        </div>
+                      )}
                       <div className="absolute top-2 right-2 bg-blue-600 text-white px-2 py-1 rounded-full text-xs font-bold">
                         #{nft.tokenId}
                       </div>
@@ -610,7 +752,9 @@ export default function GalleryPage() {
                     {/* NFT Info */}
                     <div className={`p-4 ${viewMode === 'list' ? 'flex-1' : ''}`}>
                       <div className="flex items-center justify-between mb-2">
-                        <h3 className="text-lg font-bold text-blue-800">Doormat #{nft.tokenId}</h3>
+                        <h3 className="text-lg font-bold text-blue-800">
+                          {nft.name || `OnchainRug #${nft.tokenId}`}
+                        </h3>
                         <span className={`px-2 py-1 rounded-full text-xs font-bold ${
                           nft.rarityScore && nft.rarityScore > 80 ? 'text-purple-600 bg-purple-100' :
                           nft.rarityScore && nft.rarityScore > 60 ? 'text-blue-600 bg-blue-100' :
@@ -621,15 +765,29 @@ export default function GalleryPage() {
                         </span>
                       </div>
 
-                      {/* Dynamic Traits Display */}
+                      {/* Description */}
+                      {nft.description && (
+                        <p className="text-sm text-blue-700/70 mb-3 line-clamp-2">
+                          {nft.description}
+                        </p>
+                      )}
+
+                      {/* Traits Display */}
                       <div className="grid grid-cols-2 gap-2 text-sm mb-4">
-                        {Object.entries(nft.traits).slice(0, 8).map(([key, value]) => (
+                        {Object.entries(nft.traits).filter(([key]) =>
+                          ['paletteName', 'complexity', 'characterCount', 'stripeCount', 'textRows', 'warpThickness'].includes(key)
+                        ).slice(0, 6).map(([key, value]) => (
                           <div key={key} className="bg-blue-50 rounded-lg p-2">
                             <div className="text-xs text-blue-600 font-medium capitalize">
-                              {key.replace(/([A-Z])/g, ' $1').trim()}
+                              {key === 'paletteName' ? 'Palette' :
+                               key === 'characterCount' ? 'Characters' :
+                               key === 'stripeCount' ? 'Stripes' :
+                               key === 'textRows' ? 'Text Lines' :
+                               key === 'warpThickness' ? 'Warp' :
+                               key.replace(/([A-Z])/g, ' $1').trim()}
                             </div>
                             <div className="text-blue-800 font-semibold">
-                              {String(value).length > 15 ? String(value).substring(0, 15) + '...' : String(value)}
+                              {String(value).length > 18 ? String(value).substring(0, 18) + '...' : String(value)}
                             </div>
                           </div>
                         ))}
@@ -637,13 +795,18 @@ export default function GalleryPage() {
 
                       {/* Mint Time */}
                       <div className="text-xs text-blue-700/70 mb-4">
-                        Minted: {new Date(Number(nft.traits.mintTime) * 1000).toLocaleDateString()}
+                        Minted: {nft.traits.mintTime ?
+                          new Date(typeof nft.traits.mintTime === 'string' ?
+                            nft.traits.mintTime : Number(nft.traits.mintTime) * 1000
+                          ).toLocaleDateString() :
+                          'Unknown'
+                        }
                       </div>
 
                       {/* Actions */}
                       <div className="flex gap-2">
                         <a
-                          href={`https://shapescan.xyz/token/${contractAddress}?a=${nft.tokenId}`}
+                          href={`https://sepolia.shapescan.xyz/token/${contractAddress}/instance/${nft.tokenId}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="flex-1 flex items-center justify-center gap-2 bg-blue-100 hover:bg-blue-200 border border-blue-200 rounded-lg py-2 px-4 text-blue-700 transition-colors"
@@ -688,7 +851,9 @@ export default function GalleryPage() {
               </div>
             )}
           </>
-        )}
+            )
+          }
+        })()}
       </div>
     </div>
   )

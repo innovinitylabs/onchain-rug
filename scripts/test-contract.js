@@ -1,5 +1,5 @@
 const { createPublicClient, http, parseAbi } = require('viem')
-const { shapeSepolia } = require('../lib/web3')
+const { shapeSepolia, contractAddresses, appConfig } = require('../lib/web3.ts')
 
 // Contract ABI for basic functions
 const contractABI = parseAbi([
@@ -13,13 +13,14 @@ const contractABI = parseAbi([
 async function testContract() {
   console.log('🔍 Testing contract accessibility...')
   
-  const contractAddress = process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT
+  const contractAddress = contractAddresses[shapeSepolia.id] || appConfig.contracts.onchainRugs
   if (!contractAddress) {
-    console.error('❌ Contract address not set in environment variables')
+    console.error('❌ Contract address not found in configuration')
     return
   }
-  
+
   console.log(`📋 Contract address: ${contractAddress}`)
+  console.log(`🌐 RPC URL: ${shapeSepolia.rpcUrls.default.http[0]}`)
   
   // Create public client for Shape Sepolia
   const publicClient = createPublicClient({

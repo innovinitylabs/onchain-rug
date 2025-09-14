@@ -25,7 +25,7 @@ export const shapeSepolia = {
   blockExplorers: {
     default: {
       name: 'Shape Sepolia Explorer',
-      url: 'https://explorer-sepolia.shape.network',
+      url: 'https://sepolia.shapescan.xyz',
     },
   },
   testnet: true,
