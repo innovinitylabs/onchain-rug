@@ -28,14 +28,14 @@ export default function Navigation() {
             {/* Liquid Glass Material for Navigation */}
             <filter id="nav-glass-depth" x="-100%" y="-100%" width="300%" height="300%" colorInterpolationFilters="sRGB">
               <feTurbulence baseFrequency="0.008" numOctaves="4" seed="123" type="fractalNoise" result="NAV_BASE" />
-              <feDisplacementMap in="SourceGraphic" in2="NAV_BASE" scale="15" xChannelSelector="R" yChannelSelector="G" result="NAV_DISPLACED" />
-              <feColorMatrix in="NAV_DISPLACED" type="matrix" values="1.1 0.05 0 0 0 0 1.05 0.02 0 0 0 0 1.0 0 0 0 0 0 1 0" result="NAV_COLORS" />
+              <feDisplacementMap in="SourceGraphic" in2="NAV_BASE" scale="111" xChannelSelector="R" yChannelSelector="G" result="NAV_DISPLACED" />
+              <feColorMatrix in="NAV_DISPLACED" type="matrix" values="1.42 8 0 0 0 0 1.42 8 0 0 0 0 1.42 0 0 0 0 0 1 0" result="NAV_COLORS" />
               <feGaussianBlur in="NAV_COLORS" stdDeviation="1.8" result="NAV_BLUR" />
             </filter>
 
             <filter id="nav-glass-surface" x="-100%" y="-100%" width="300%" height="300%" colorInterpolationFilters="sRGB">
               <feTurbulence baseFrequency="0.025" numOctaves="3" seed="456" type="fractalNoise" result="NAV_SURFACE" />
-              <feDisplacementMap in="SourceGraphic" in2="NAV_SURFACE" scale="12" xChannelSelector="R" yChannelSelector="G" result="NAV_SURFACE_DISPLACED" />
+              <feDisplacementMap in="SourceGraphic" in2="NAV_SURFACE" scale="111" xChannelSelector="R" yChannelSelector="G" result="NAV_SURFACE_DISPLACED" />
               <feGaussianBlur in="NAV_SURFACE_DISPLACED" stdDeviation="1.2" result="NAV_SURFACE_BLUR" />
             </filter>
 
