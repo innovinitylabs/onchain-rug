@@ -25,7 +25,7 @@ export const shapeSepolia = {
   blockExplorers: {
     default: {
       name: 'Shape Sepolia Explorer',
-      url: 'https://explorer-sepolia.shape.network',
+      url: 'https://sepolia.shapescan.xyz',
     },
   },
   testnet: true,
@@ -148,6 +148,13 @@ export const contractAddresses = {
   [shapeMainnet.id]: appConfig.contracts.onchainRugs,
 }
 
+// Alchemy NFT API Configuration
+export const alchemyConfig = {
+  apiKey: appConfig.alchemyApiKey,
+  network: 'shape-sepolia', // Shape Sepolia testnet
+  baseUrl: 'https://shape-sepolia.g.alchemy.com/nft/v3'
+}
+
 // Utility functions
 export function getContractAddress(chainId: number): string {
   return contractAddresses[chainId] || ''
@@ -166,6 +173,56 @@ export function getChainName(chainId: number): string {
     default:
       return 'Unknown'
   }
+}
+
+// Alchemy NFT API functions
+export async function getNftsForCollection(contractAddress: string, options?: {
+  pageKey?: string
+  limit?: number
+  withMetadata?: boolean
+}) {
+  const { pageKey, limit = 100, withMetadata = true } = options || {}
+
+  const params = new URLSearchParams({
+    withMetadata: withMetadata.toString(),
+    ...(limit && { limit: limit.toString() }),
+    ...(pageKey && { pageKey })
+  })
+
+  const url = `${alchemyConfig.baseUrl}/${alchemyConfig.apiKey}/getNFTsForCollection?contractAddress=${contractAddress}&${params}`
+
+  const response = await fetch(url)
+  if (!response.ok) {
+    throw new Error(`Alchemy API error: ${response.status}`)
+  }
+
+  return response.json()
+}
+
+export async function getNftMetadata(contractAddress: string, tokenId: string, refreshCache = false) {
+  const params = new URLSearchParams({
+    ...(refreshCache && { refreshCache: 'true' })
+  })
+
+  const url = `${alchemyConfig.baseUrl}/${alchemyConfig.apiKey}/getNFTMetadata?contractAddress=${contractAddress}&tokenId=${tokenId}&${params}`
+
+  const response = await fetch(url)
+  if (!response.ok) {
+    throw new Error(`Alchemy API error: ${response.status}`)
+  }
+
+  return response.json()
+}
+
+export async function getContractMetadata(contractAddress: string) {
+  const url = `${alchemyConfig.baseUrl}/${alchemyConfig.apiKey}/getContractMetadata?contractAddress=${contractAddress}`
+
+  const response = await fetch(url)
+  if (!response.ok) {
+    throw new Error(`Alchemy API error: ${response.status}`)
+  }
+
+  return response.json()
 }
 
 export default wagmiConfig
