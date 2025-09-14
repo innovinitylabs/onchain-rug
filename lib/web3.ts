@@ -65,19 +65,14 @@ export const wagmiConfig = createConfig({
   },
 })
 
-// Contract ABI (minimal for now)
+// Enhanced Contract ABI for Gallery functionality
 export const onchainRugsABI = [
+  // ERC721 Standard functions
   {
-    inputs: [
-      { name: 'textRows', type: 'string[]' },
-      { name: 'palette', type: 'string' },
-      { name: 'stripeData', type: 'string' },
-      { name: 'characterMap', type: 'string' },
-      { name: 'warpThickness', type: 'uint256' }
-    ],
-    name: 'mintWithText',
-    outputs: [],
-    stateMutability: 'payable',
+    inputs: [{ name: 'tokenId', type: 'uint256' }],
+    name: 'ownerOf',
+    outputs: [{ name: '', type: 'address' }],
+    stateMutability: 'view',
     type: 'function',
   },
   {
@@ -100,6 +95,50 @@ export const onchainRugsABI = [
     outputs: [{ name: '', type: 'uint256' }],
     stateMutability: 'view',
     type: 'function',
+  },
+  // Custom functions for rug data
+  {
+    inputs: [{ name: '', type: 'uint256' }],
+    name: 'rugs',
+    outputs: [
+      { name: 'seed', type: 'uint256' },
+      { name: 'paletteName', type: 'string' },
+      { name: 'minifiedPalette', type: 'string' },
+      { name: 'minifiedStripeData', type: 'string' },
+      { name: 'textRows', type: 'string[]' },
+      { name: 'warpThickness', type: 'uint8' },
+      { name: 'mintTime', type: 'uint256' },
+      { name: 'filteredCharacterMap', type: 'string' },
+      { name: 'complexity', type: 'uint8' },
+      { name: 'characterCount', type: 'uint256' },
+      { name: 'stripeCount', type: 'uint256' }
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  // Minting function
+  {
+    inputs: [
+      { name: 'textRows', type: 'string[]' },
+      { name: 'palette', type: 'string' },
+      { name: 'stripeData', type: 'string' },
+      { name: 'characterMap', type: 'string' },
+      { name: 'warpThickness', type: 'uint256' }
+    ],
+    name: 'mintWithText',
+    outputs: [],
+    stateMutability: 'payable',
+    type: 'function',
+  },
+  // Events for listening to new mints
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, name: 'to', type: 'address' },
+      { indexed: true, name: 'tokenId', type: 'uint256' }
+    ],
+    name: 'Transfer',
+    type: 'event',
   },
 ] as const
 

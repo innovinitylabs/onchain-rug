@@ -60,7 +60,7 @@ export default function GalleryPage() {
   const { data: maxSupply } = useContractRead({
     address: contractAddress as `0x${string}`,
     abi: onchainRugsABI,
-    functionName: 'MAX_SUPPLY',
+    functionName: 'maxSupply',
   })
 
   // For now, let's create a simple demo with sample data
