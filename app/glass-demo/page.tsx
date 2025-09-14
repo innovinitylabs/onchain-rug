@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import LiquidGlass from '@/components/LiquidGlass';
 
 export default function GlassDemoPage() {
@@ -253,12 +254,12 @@ export default function GlassDemoPage() {
               This Liquid Glass component is production-ready and fully compatible with modern React applications.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
-              <a href="/liquid-glass" className="bg-cyan-500 hover:bg-cyan-600 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+              <Link href="/liquid-glass" className="bg-cyan-500 hover:bg-cyan-600 text-white px-6 py-3 rounded-lg font-medium transition-colors">
                 View Original Demo
-              </a>
-              <a href="/" className="bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+              </Link>
+              <Link href="/" className="bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-lg font-medium transition-colors">
                 Back to Home
-              </a>
+              </Link>
             </div>
           </div>
         </section>
