@@ -4,6 +4,24 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Ghibli-inspired theme colors */
+  --color-primary: #2563eb;      /* blue-600 */
+  --color-secondary: #4f46e5;    /* indigo-600 */
+  --color-accent: #7c3aed;       /* purple-700 */
+  --color-highlight: #0891b2;    /* cyan-600 */
+
+  /* Theme surface colors */
+  --color-surface: #ffffff;
+  --color-surface-secondary: #f8fafc;
+
+  /* Text colors */
+  --color-text: #1e40af;         /* blue-800 */
+  --color-text-secondary: #64748b; /* slate-500 */
+
+  /* Background gradients */
+  --gradient-primary: linear-gradient(135deg, #eff6ff 0%, #dbeafe 25%, #bfdbfe 50%, #a5b4fc 75%, #818cf8 100%);
+  --gradient-secondary: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 25%, #c7d2fe 50%, #a5b4fc 75%, #818cf8 100%);
 }
 
 @theme inline {
