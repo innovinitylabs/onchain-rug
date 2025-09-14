@@ -84,73 +84,49 @@ export default function GalleryPage() {
     }
   }, [chainId, resolvedContractAddress, totalSupply, maxSupply])
 
-  // Individual NFT data reads (first 5 NFTs for performance)
-  const nft1 = useContractRead({
-    address: resolvedContractAddress as `0x${string}`,
-    abi: onchainRugsABI,
-    functionName: 'rugs',
-    args: [BigInt(1)],
-  })
-  const nft1Owner = useContractRead({
-    address: resolvedContractAddress as `0x${string}`,
-    abi: onchainRugsABI,
-    functionName: 'ownerOf',
-    args: [BigInt(1)],
-  })
+  // Alchemy NFT data fetching - much simpler and more reliable!
+  const [alchemyData, setAlchemyData] = useState<any>(null)
+  const [loadingAlchemy, setLoadingAlchemy] = useState(true)
+  const [alchemyError, setAlchemyError] = useState<string | null>(null)
 
-  // NFT hook declarations will be used in useEffect
+  // Fetch NFT data from Alchemy
+  useEffect(() => {
+    const fetchAlchemyData = async () => {
+      if (!resolvedContractAddress || resolvedContractAddress === '0x0000000000000000000000000000000000000000') {
+        return
+      }
 
-  const nft2 = useContractRead({
-    address: resolvedContractAddress as `0x${string}`,
-    abi: onchainRugsABI,
-    functionName: 'rugs',
-    args: [BigInt(2)],
-  })
-  const nft2Owner = useContractRead({
-    address: resolvedContractAddress as `0x${string}`,
-    abi: onchainRugsABI,
-    functionName: 'ownerOf',
-    args: [BigInt(2)],
-  })
+      try {
+        setLoadingAlchemy(true)
+        setAlchemyError(null)
 
-  const nft3 = useContractRead({
-    address: resolvedContractAddress as `0x${string}`,
-    abi: onchainRugsABI,
-    functionName: 'rugs',
-    args: [BigInt(3)],
-  })
-  const nft3Owner = useContractRead({
-    address: resolvedContractAddress as `0x${string}`,
-    abi: onchainRugsABI,
-    functionName: 'ownerOf',
-    args: [BigInt(3)],
-  })
+        const alchemyApiKey = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY || process.env.ALCHEMY_API_KEY
+        if (!alchemyApiKey) {
+          throw new Error('Alchemy API key not configured')
+        }
 
-  const nft4 = useContractRead({
-    address: resolvedContractAddress as `0x${string}`,
-    abi: onchainRugsABI,
-    functionName: 'rugs',
-    args: [BigInt(4)],
-  })
-  const nft4Owner = useContractRead({
-    address: resolvedContractAddress as `0x${string}`,
-    abi: onchainRugsABI,
-    functionName: 'ownerOf',
-    args: [BigInt(4)],
-  })
+        // Fetch collection data from Alchemy
+        const response = await fetch(
+          `https://shape-sepolia.g.alchemy.com/nft/v3/${alchemyApiKey}/getNFTsForCollection?contractAddress=${resolvedContractAddress}&withMetadata=true&limit=5`
+        )
 
-  const nft5 = useContractRead({
-    address: resolvedContractAddress as `0x${string}`,
-    abi: onchainRugsABI,
-    functionName: 'rugs',
-    args: [BigInt(5)],
-  })
-  const nft5Owner = useContractRead({
-    address: resolvedContractAddress as `0x${string}`,
-    abi: onchainRugsABI,
-    functionName: 'ownerOf',
-    args: [BigInt(5)],
-  })
+        if (!response.ok) {
+          throw new Error(`Alchemy API error: ${response.status}`)
+        }
+
+        const data = await response.json()
+        setAlchemyData(data)
+
+      } catch (error) {
+        console.error('Alchemy fetch error:', error)
+        setAlchemyError(error instanceof Error ? error.message : 'Failed to fetch NFT data')
+      } finally {
+        setLoadingAlchemy(false)
+      }
+    }
+
+    fetchAlchemyData()
+  }, [resolvedContractAddress])
 
   // Initialize loading state
   useEffect(() => {
@@ -160,78 +136,62 @@ export default function GalleryPage() {
     }
   }, [resolvedContractAddress])
 
-  // Process NFT data when available
+  // Process Alchemy NFT data - much simpler!
   useEffect(() => {
-    // Don't process if contract address is not resolved
-    if (!resolvedContractAddress || resolvedContractAddress === '0x0000000000000000000000000000000000000000') {
+    if (!alchemyData || alchemyError) {
       return
     }
 
-    // Use hardcoded total supply for now as requested
-    const hardcodedTotalSupply = 1111
-    const total = hardcodedTotalSupply
+    try {
+      const nftData: NFTData[] = []
 
-    const nftData: NFTData[] = []
+      // Process Alchemy NFT data
+      if (alchemyData.nfts && Array.isArray(alchemyData.nfts)) {
+        alchemyData.nfts.forEach((nft: any) => {
+          try {
+            // Extract traits from metadata attributes
+            const attributes = nft.metadata?.attributes || []
+            const traits: RugTraits = {
+              seed: BigInt(nft.tokenId || 0),
+              paletteName: attributes.find((a: any) => a.trait_type === 'Palette Name')?.value || '',
+              minifiedPalette: '', // Not available from Alchemy
+              minifiedStripeData: '', // Not available from Alchemy
+              textRows: [], // Not available from Alchemy
+              warpThickness: Number(attributes.find((a: any) => a.trait_type === 'Warp Thickness')?.value || 0),
+              mintTime: BigInt(nft.mint?.timestamp || 0),
+              filteredCharacterMap: '', // Not available from Alchemy
+              complexity: Number(attributes.find((a: any) => a.trait_type === 'Complexity')?.value || 0),
+              characterCount: BigInt(attributes.find((a: any) => a.trait_type === 'Character Count')?.value || 0),
+              stripeCount: BigInt(attributes.find((a: any) => a.trait_type === 'Stripe Count')?.value || 0),
+            }
 
-    // Helper function to process NFT data
-    const processNFT = (nftHook: any, ownerHook: any, tokenId: number) => {
-      if (nftHook.data && !nftHook.error && total >= tokenId) {
-        try {
-          const rugData = nftHook.data as any[]
+            const nftItem: NFTData = {
+              tokenId: Number(nft.tokenId),
+              traits,
+              owner: nft.owners ? nft.owners[0] : '', // Primary owner
+              rarityScore: calculateRarityScore(traits),
+            }
 
-          // Validate rug data structure
-          if (!Array.isArray(rugData) || rugData.length < 11) {
-            console.warn(`Invalid rug data for NFT ${tokenId}:`, rugData)
-            return
+            nftData.push(nftItem)
+          } catch (error) {
+            console.warn(`Error processing Alchemy NFT ${nft.tokenId}:`, error)
           }
-
-          const traits: RugTraits = {
-            seed: rugData[0] || BigInt(0),
-            paletteName: String(rugData[1] || ''),
-            minifiedPalette: String(rugData[2] || ''),
-            minifiedStripeData: String(rugData[3] || ''),
-            textRows: Array.isArray(rugData[4]) ? rugData[4] : [],
-            warpThickness: Number(rugData[5] || 0),
-            mintTime: rugData[6] || BigInt(0),
-            filteredCharacterMap: String(rugData[7] || ''),
-            complexity: Number(rugData[8] || 0),
-            characterCount: rugData[9] || BigInt(0),
-            stripeCount: rugData[10] || BigInt(0),
-          }
-
-          const nftItem: NFTData = {
-            tokenId,
-            traits,
-            owner: ownerHook.data ? String(ownerHook.data) : '',
-            rarityScore: calculateRarityScore(traits),
-          }
-
-          nftData.push(nftItem)
-        } catch (error) {
-          console.error(`Error processing NFT ${tokenId}:`, error)
-        }
+        })
       }
+
+      setNfts(nftData)
+
+      // Set loading to false once we have data or have finished loading
+      if (nftData.length > 0 || !loadingAlchemy) {
+        setLoading(false)
+        setInitialLoad(false)
+      }
+
+    } catch (error) {
+      console.error('Error processing Alchemy data:', error)
+      setAlchemyError('Failed to process NFT data')
     }
-
-    // Process all NFTs
-    processNFT(nft1, nft1Owner, 1)
-    processNFT(nft2, nft2Owner, 2)
-    processNFT(nft3, nft3Owner, 3)
-    processNFT(nft4, nft4Owner, 4)
-    processNFT(nft5, nft5Owner, 5)
-
-    setNfts(nftData)
-
-    // Set loading states based on data availability
-    const expectedCount = Math.min(total, 5)
-    const hasAllExpectedNFTs = nftData.length === expectedCount
-
-    // Set loading to false when we have some data or when we've waited long enough
-    if (hasAllExpectedNFTs || (nftData.length > 0 && !nft1.isLoading && !nft2.isLoading && !nft3.isLoading && !nft4.isLoading && !nft5.isLoading)) {
-      setLoading(false)
-      setInitialLoad(false)
-    }
-  }, [resolvedContractAddress, nft1.data, nft1.error, nft1.isLoading, nft1Owner.data, nft2.data, nft2.error, nft2.isLoading, nft2Owner.data, nft3.data, nft3.error, nft3.isLoading, nft3Owner.data, nft4.data, nft4.error, nft4.isLoading, nft4Owner.data, nft5.data, nft5.error, nft5.isLoading, nft5Owner.data])
+  }, [alchemyData, alchemyError, loadingAlchemy])
 
   // Handle loading timeout and fallback
   useEffect(() => {
@@ -239,17 +199,18 @@ export default function GalleryPage() {
       return
     }
 
-    // Timeout after 15 seconds to prevent infinite loading
+    // Timeout after 10 seconds to prevent infinite loading
     const timeout = setTimeout(() => {
-      if (loading) {
+      if (loading || loadingAlchemy) {
         console.warn('Gallery loading timeout - showing empty state')
         setLoading(false)
         setInitialLoad(false)
+        setLoadingAlchemy(false)
       }
-    }, 15000)
+    }, 10000)
 
     return () => clearTimeout(timeout)
-  }, [resolvedContractAddress, loading])
+  }, [resolvedContractAddress, loading, loadingAlchemy])
 
   // Update loading state when NFTs are loaded
   useEffect(() => {
@@ -552,20 +513,21 @@ export default function GalleryPage() {
 
       {/* NFT Grid/List */}
       <div className="max-w-7xl mx-auto px-6 pb-20">
-        {(loading || initialLoad) ? (
+        {(loading || loadingAlchemy || initialLoad) ? (
           <LoadingSpinner />
-        ) : nfts.length === 0 ? (
+        ) : (loading || loadingAlchemy) && nfts.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-6xl mb-4">🎨</div>
             <h3 className="text-2xl font-bold text-blue-800 mb-4">No NFTs Available</h3>
             <p className="text-blue-700/70 mb-6 max-w-md mx-auto">
-              Unable to load NFT data from the contract. This could be due to:
+              {alchemyError || "Unable to load NFT data. This could be due to:"}
             </p>
             <ul className="text-left text-blue-700/70 mb-6 max-w-md mx-auto list-disc list-inside space-y-2">
-              <li>Contract not yet deployed at this address</li>
-              <li>No NFTs minted in the collection yet</li>
+              <li>Alchemy API key not configured</li>
+              <li>Contract not indexed by Alchemy yet</li>
+              <li>No NFTs minted in the collection</li>
               <li>Network connectivity issues</li>
-              <li>Contract ABI mismatch</li>
+              <li>Contract not deployed on Shape Sepolia</li>
             </ul>
             <div className="flex gap-3 justify-center">
               <button
