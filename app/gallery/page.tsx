@@ -65,46 +65,151 @@ export default function GalleryPage() {
     functionName: 'maxSupply',
   })
 
-  // For now, let's create a simple demo with sample data
-  // In production, you would implement proper contract reading
+  // Individual NFT data reads (first 5 NFTs for performance)
+  const nft1 = useContractRead({
+    address: contractAddress as `0x${string}`,
+    abi: onchainRugsABI,
+    functionName: 'rugs',
+    args: [BigInt(1)],
+  })
+  const nft1Owner = useContractRead({
+    address: contractAddress as `0x${string}`,
+    abi: onchainRugsABI,
+    functionName: 'ownerOf',
+    args: [BigInt(1)],
+  })
+
+  const nft2 = useContractRead({
+    address: contractAddress as `0x${string}`,
+    abi: onchainRugsABI,
+    functionName: 'rugs',
+    args: [BigInt(2)],
+  })
+  const nft2Owner = useContractRead({
+    address: contractAddress as `0x${string}`,
+    abi: onchainRugsABI,
+    functionName: 'ownerOf',
+    args: [BigInt(2)],
+  })
+
+  const nft3 = useContractRead({
+    address: contractAddress as `0x${string}`,
+    abi: onchainRugsABI,
+    functionName: 'rugs',
+    args: [BigInt(3)],
+  })
+  const nft3Owner = useContractRead({
+    address: contractAddress as `0x${string}`,
+    abi: onchainRugsABI,
+    functionName: 'ownerOf',
+    args: [BigInt(3)],
+  })
+
+  const nft4 = useContractRead({
+    address: contractAddress as `0x${string}`,
+    abi: onchainRugsABI,
+    functionName: 'rugs',
+    args: [BigInt(4)],
+  })
+  const nft4Owner = useContractRead({
+    address: contractAddress as `0x${string}`,
+    abi: onchainRugsABI,
+    functionName: 'ownerOf',
+    args: [BigInt(4)],
+  })
+
+  const nft5 = useContractRead({
+    address: contractAddress as `0x${string}`,
+    abi: onchainRugsABI,
+    functionName: 'rugs',
+    args: [BigInt(5)],
+  })
+  const nft5Owner = useContractRead({
+    address: contractAddress as `0x${string}`,
+    abi: onchainRugsABI,
+    functionName: 'ownerOf',
+    args: [BigInt(5)],
+  })
+
+  // Process NFT data when available
   useEffect(() => {
-    if (!totalSupply) return
+    if (!totalSupply || !contractAddress) return
 
-    // Add a small delay to simulate loading
-    const loadData = async () => {
-      setLoading(true)
-      setInitialLoad(true)
+    const nftData: NFTData[] = []
+    const total = Number(totalSupply)
 
-      // Small delay to show loading state
-      await new Promise(resolve => setTimeout(resolve, 800))
+    // Helper function to process NFT data
+    const processNFT = (nftHook: any, ownerHook: any, tokenId: number) => {
+      if (nftHook.data && total >= tokenId) {
+        try {
+          const rugData = nftHook.data as any[]
+          const traits: RugTraits = {
+            seed: rugData[0],
+            paletteName: rugData[1],
+            minifiedPalette: rugData[2],
+            minifiedStripeData: rugData[3],
+            textRows: Array.isArray(rugData[4]) ? rugData[4] : [],
+            warpThickness: rugData[5],
+            mintTime: rugData[6],
+            filteredCharacterMap: rugData[7],
+            complexity: rugData[8],
+            characterCount: rugData[9],
+            stripeCount: rugData[10],
+          }
+          nftData.push({
+            tokenId,
+            traits,
+            owner: ownerHook.data || '',
+            rarityScore: calculateRarityScore(traits),
+          })
+        } catch (error) {
+          console.error(`Error processing NFT ${tokenId}:`, error)
+        }
+      }
+    }
 
-      // Demo data - replace with actual contract calls
-      const demoNFTs: NFTData[] = Array.from({ length: Math.min(Number(totalSupply), 20) }, (_, i) => ({
-        tokenId: i + 1,
-        traits: {
-          seed: BigInt(i + 1),
-          paletteName: `Palette ${i + 1}`,
-          minifiedPalette: `#${(i * 12345).toString(16).slice(0, 6)}`,
-          minifiedStripeData: `stripes-${i}`,
-          textRows: [`Row ${i + 1}`, `Text ${i + 1}`],
-          warpThickness: 8 + i,
-          mintTime: BigInt(Date.now() - (i * 86400000)), // Days ago
-          filteredCharacterMap: `chars-${i}`,
-          complexity: 1 + (i % 10),
-          characterCount: BigInt(100 + i * 10),
-          stripeCount: BigInt(5 + (i % 15)),
-        },
-        owner: '',
-        rarityScore: 50 + (i % 50), // Mock rarity
-      }))
+    // Process all NFTs
+    processNFT(nft1, nft1Owner, 1)
+    processNFT(nft2, nft2Owner, 2)
+    processNFT(nft3, nft3Owner, 3)
+    processNFT(nft4, nft4Owner, 4)
+    processNFT(nft5, nft5Owner, 5)
 
-      setNfts(demoNFTs)
+    setNfts(nftData)
+
+    // Set loading to false when we have data or when we've checked all available NFTs
+    const expectedCount = Math.min(total, 5)
+    if (nftData.length === expectedCount) {
       setLoading(false)
       setInitialLoad(false)
     }
+  }, [totalSupply, contractAddress, nft1.data, nft1Owner.data, nft2.data, nft2Owner.data, nft3.data, nft3Owner.data, nft4.data, nft4Owner.data, nft5.data, nft5Owner.data])
 
-    loadData()
-  }, [totalSupply])
+  // Set initial loading state and timeout
+  useEffect(() => {
+    if (totalSupply && Number(totalSupply) > 0) {
+      setLoading(true)
+      setInitialLoad(true)
+
+      // Timeout after 10 seconds to prevent infinite loading
+      const timeout = setTimeout(() => {
+        if (nfts.length === 0) {
+          setLoading(false)
+          setInitialLoad(false)
+        }
+      }, 10000)
+
+      return () => clearTimeout(timeout)
+    }
+  }, [totalSupply, nfts.length])
+
+  // Update loading state when NFTs are loaded
+  useEffect(() => {
+    if (nfts.length > 0) {
+      setLoading(false)
+      setInitialLoad(false)
+    }
+  }, [nfts.length])
 
   // Calculate rarity score based on trait frequency
   const calculateRarityScore = (traits: RugTraits): number => {
@@ -249,23 +354,23 @@ export default function GalleryPage() {
           🖼️ Gallery
         </h1>
         <p className="text-xl text-blue-700/70 max-w-3xl mx-auto mb-8">
-          Explore the complete collection of {totalSupply ? Number(totalSupply) : 0} unique Onchain Rugs.
-          Each piece is algorithmically generated and stored entirely on-chain.
+          Explore {nfts.length > 0 ? `${nfts.length} loaded` : 'the'} Onchain Rugs from our collection of {totalSupply ? Number(totalSupply) : 0} unique pieces.
+          Each NFT is algorithmically generated and stored entirely on-chain.
         </p>
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-2xl mx-auto">
           <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 border border-blue-200/50">
             <div className="text-2xl font-bold text-blue-600">{totalSupply ? Number(totalSupply) : 0}</div>
-            <div className="text-sm text-blue-700/70">Minted</div>
+            <div className="text-sm text-blue-700/70">Total Minted</div>
           </div>
           <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 border border-indigo-200/50">
-            <div className="text-2xl font-bold text-indigo-600">{maxSupply ? Number(maxSupply) : 1111}</div>
-            <div className="text-sm text-blue-700/70">Max Supply</div>
+            <div className="text-2xl font-bold text-indigo-600">{nfts.length}</div>
+            <div className="text-sm text-blue-700/70">Loaded NFTs</div>
           </div>
           <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 border border-purple-200/50">
             <div className="text-2xl font-bold text-purple-600">{availableTraits.paletteName?.size || 0}</div>
-            <div className="text-sm text-blue-700/70">Palettes</div>
+            <div className="text-sm text-blue-700/70">Unique Palettes</div>
           </div>
           <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 border border-cyan-200/50">
             <div className="text-2xl font-bold text-cyan-600">{availableTraits.complexity?.size || 0}</div>
@@ -385,13 +490,37 @@ export default function GalleryPage() {
       <div className="max-w-7xl mx-auto px-6 pb-20">
         {(loading || initialLoad) ? (
           <LoadingSpinner />
+        ) : nfts.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="text-6xl mb-4">🎨</div>
+            <h3 className="text-2xl font-bold text-blue-800 mb-4">No NFTs Available</h3>
+            <p className="text-blue-700/70 mb-6 max-w-md mx-auto">
+              {totalSupply && Number(totalSupply) > 0
+                ? "Unable to load NFT data from the contract. Please try refreshing the page."
+                : "No NFTs have been minted yet. Check back later!"
+              }
+            </p>
+            {totalSupply && Number(totalSupply) > 0 && (
+              <button
+                onClick={() => window.location.reload()}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold transition-colors"
+              >
+                🔄 Refresh Page
+              </button>
+            )}
+          </div>
         ) : (
           <>
             {/* Results count */}
             <div className="text-center mb-8">
               <p className="text-blue-700/70">
-                Showing {paginatedNFTs.length} of {filteredAndSortedNFTs.length} NFTs
+                Showing {paginatedNFTs.length} of {filteredAndSortedNFTs.length} loaded NFTs
                 {Object.keys(selectedTraits).length > 0 && ' (filtered)'}
+                {totalSupply && Number(totalSupply) > nfts.length && (
+                  <span className="block text-sm mt-1 text-blue-600/60">
+                    ({Number(totalSupply) - nfts.length} more NFTs available - loading first {Math.min(Number(totalSupply), 5)})
+                  </span>
+                )}
               </p>
             </div>
 
