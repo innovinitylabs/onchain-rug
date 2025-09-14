@@ -24,7 +24,7 @@ export default function Hero() {
             }}
             style={{ willChange: 'transform' }}
           >
-            <Sparkles className="w-full h-full text-amber-600" />
+            <Sparkles className="w-full h-full text-blue-400" />
           </motion.div>
         </div>
         
@@ -43,7 +43,7 @@ export default function Hero() {
             }}
             style={{ willChange: 'transform' }}
           >
-            <Star className="w-full h-full text-orange-500" />
+            <Star className="w-full h-full text-sky-400" />
           </motion.div>
         </div>
 
