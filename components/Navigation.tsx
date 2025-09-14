@@ -13,7 +13,6 @@ export default function Navigation() {
       transition={{ duration: 0.6 }}
       className="fixed top-0 left-0 right-0 z-50"
       style={{
-        backdropFilter: 'blur(12px)',
         background: 'rgba(255, 255, 255, 0.1)',
         borderBottom: '1px solid rgba(59, 130, 246, 0.2)',
       }}
