@@ -51,117 +51,162 @@ export default function GalleryPage() {
 
   const itemsPerPage = 24
   const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
+  const resolvedContractAddress = contractAddress || '0x0000000000000000000000000000000000000000'
 
   // Contract reads
-  const { data: totalSupply } = useContractRead({
-    address: contractAddress as `0x${string}`,
+  const { data: totalSupply, error: totalSupplyError, isLoading: totalSupplyLoading } = useContractRead({
+    address: resolvedContractAddress as `0x${string}`,
     abi: onchainRugsABI,
     functionName: 'totalSupply',
   })
 
-  const { data: maxSupply } = useContractRead({
-    address: contractAddress as `0x${string}`,
+  const { data: maxSupply, error: maxSupplyError } = useContractRead({
+    address: resolvedContractAddress as `0x${string}`,
     abi: onchainRugsABI,
     functionName: 'maxSupply',
   })
 
+  // Contract read status for error handling
+  const contractReadStatus = {
+    totalSupply: { data: totalSupply, error: totalSupplyError, loading: totalSupplyLoading },
+    maxSupply: { data: maxSupply, error: maxSupplyError }
+  }
+
+  // Log contract info for debugging (remove in production)
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔗 Contract Address Resolution:', {
+        chainId,
+        resolvedAddress: resolvedContractAddress,
+        totalSupply,
+        maxSupply
+      })
+    }
+  }, [chainId, resolvedContractAddress, totalSupply, maxSupply])
+
   // Individual NFT data reads (first 5 NFTs for performance)
   const nft1 = useContractRead({
-    address: contractAddress as `0x${string}`,
+    address: resolvedContractAddress as `0x${string}`,
     abi: onchainRugsABI,
     functionName: 'rugs',
     args: [BigInt(1)],
   })
   const nft1Owner = useContractRead({
-    address: contractAddress as `0x${string}`,
+    address: resolvedContractAddress as `0x${string}`,
     abi: onchainRugsABI,
     functionName: 'ownerOf',
     args: [BigInt(1)],
   })
 
+  // NFT hook declarations will be used in useEffect
+
   const nft2 = useContractRead({
-    address: contractAddress as `0x${string}`,
+    address: resolvedContractAddress as `0x${string}`,
     abi: onchainRugsABI,
     functionName: 'rugs',
     args: [BigInt(2)],
   })
   const nft2Owner = useContractRead({
-    address: contractAddress as `0x${string}`,
+    address: resolvedContractAddress as `0x${string}`,
     abi: onchainRugsABI,
     functionName: 'ownerOf',
     args: [BigInt(2)],
   })
 
   const nft3 = useContractRead({
-    address: contractAddress as `0x${string}`,
+    address: resolvedContractAddress as `0x${string}`,
     abi: onchainRugsABI,
     functionName: 'rugs',
     args: [BigInt(3)],
   })
   const nft3Owner = useContractRead({
-    address: contractAddress as `0x${string}`,
+    address: resolvedContractAddress as `0x${string}`,
     abi: onchainRugsABI,
     functionName: 'ownerOf',
     args: [BigInt(3)],
   })
 
   const nft4 = useContractRead({
-    address: contractAddress as `0x${string}`,
+    address: resolvedContractAddress as `0x${string}`,
     abi: onchainRugsABI,
     functionName: 'rugs',
     args: [BigInt(4)],
   })
   const nft4Owner = useContractRead({
-    address: contractAddress as `0x${string}`,
+    address: resolvedContractAddress as `0x${string}`,
     abi: onchainRugsABI,
     functionName: 'ownerOf',
     args: [BigInt(4)],
   })
 
   const nft5 = useContractRead({
-    address: contractAddress as `0x${string}`,
+    address: resolvedContractAddress as `0x${string}`,
     abi: onchainRugsABI,
     functionName: 'rugs',
     args: [BigInt(5)],
   })
   const nft5Owner = useContractRead({
-    address: contractAddress as `0x${string}`,
+    address: resolvedContractAddress as `0x${string}`,
     abi: onchainRugsABI,
     functionName: 'ownerOf',
     args: [BigInt(5)],
   })
 
+  // Initialize loading state
+  useEffect(() => {
+    if (resolvedContractAddress && resolvedContractAddress !== '0x0000000000000000000000000000000000000000') {
+      setLoading(true)
+      setInitialLoad(true)
+    }
+  }, [resolvedContractAddress])
+
   // Process NFT data when available
   useEffect(() => {
-    if (!totalSupply || !contractAddress) return
+    // Don't process if contract address is not resolved
+    if (!resolvedContractAddress || resolvedContractAddress === '0x0000000000000000000000000000000000000000') {
+      return
+    }
+
+    // Use hardcoded total supply for now as requested
+    const hardcodedTotalSupply = 1111
+    const total = hardcodedTotalSupply
 
     const nftData: NFTData[] = []
-    const total = Number(totalSupply)
 
     // Helper function to process NFT data
     const processNFT = (nftHook: any, ownerHook: any, tokenId: number) => {
-      if (nftHook.data && total >= tokenId) {
+      if (nftHook.data && !nftHook.error && total >= tokenId) {
         try {
           const rugData = nftHook.data as any[]
-          const traits: RugTraits = {
-            seed: rugData[0],
-            paletteName: rugData[1],
-            minifiedPalette: rugData[2],
-            minifiedStripeData: rugData[3],
-            textRows: Array.isArray(rugData[4]) ? rugData[4] : [],
-            warpThickness: rugData[5],
-            mintTime: rugData[6],
-            filteredCharacterMap: rugData[7],
-            complexity: rugData[8],
-            characterCount: rugData[9],
-            stripeCount: rugData[10],
+
+          // Validate rug data structure
+          if (!Array.isArray(rugData) || rugData.length < 11) {
+            console.warn(`Invalid rug data for NFT ${tokenId}:`, rugData)
+            return
           }
-          nftData.push({
+
+          const traits: RugTraits = {
+            seed: rugData[0] || BigInt(0),
+            paletteName: String(rugData[1] || ''),
+            minifiedPalette: String(rugData[2] || ''),
+            minifiedStripeData: String(rugData[3] || ''),
+            textRows: Array.isArray(rugData[4]) ? rugData[4] : [],
+            warpThickness: Number(rugData[5] || 0),
+            mintTime: rugData[6] || BigInt(0),
+            filteredCharacterMap: String(rugData[7] || ''),
+            complexity: Number(rugData[8] || 0),
+            characterCount: rugData[9] || BigInt(0),
+            stripeCount: rugData[10] || BigInt(0),
+          }
+
+          const nftItem: NFTData = {
             tokenId,
             traits,
-            owner: ownerHook.data || '',
+            owner: ownerHook.data ? String(ownerHook.data) : '',
             rarityScore: calculateRarityScore(traits),
-          })
+          }
+
+          nftData.push(nftItem)
         } catch (error) {
           console.error(`Error processing NFT ${tokenId}:`, error)
         }
@@ -177,31 +222,34 @@ export default function GalleryPage() {
 
     setNfts(nftData)
 
-    // Set loading to false when we have data or when we've checked all available NFTs
+    // Set loading states based on data availability
     const expectedCount = Math.min(total, 5)
-    if (nftData.length === expectedCount) {
+    const hasAllExpectedNFTs = nftData.length === expectedCount
+
+    // Set loading to false when we have some data or when we've waited long enough
+    if (hasAllExpectedNFTs || (nftData.length > 0 && !nft1.isLoading && !nft2.isLoading && !nft3.isLoading && !nft4.isLoading && !nft5.isLoading)) {
       setLoading(false)
       setInitialLoad(false)
     }
-  }, [totalSupply, contractAddress, nft1.data, nft1Owner.data, nft2.data, nft2Owner.data, nft3.data, nft3Owner.data, nft4.data, nft4Owner.data, nft5.data, nft5Owner.data])
+  }, [resolvedContractAddress, nft1.data, nft1.error, nft1.isLoading, nft1Owner.data, nft2.data, nft2.error, nft2.isLoading, nft2Owner.data, nft3.data, nft3.error, nft3.isLoading, nft3Owner.data, nft4.data, nft4.error, nft4.isLoading, nft4Owner.data, nft5.data, nft5.error, nft5.isLoading, nft5Owner.data])
 
-  // Set initial loading state and timeout
+  // Handle loading timeout and fallback
   useEffect(() => {
-    if (totalSupply && Number(totalSupply) > 0) {
-      setLoading(true)
-      setInitialLoad(true)
-
-      // Timeout after 10 seconds to prevent infinite loading
-      const timeout = setTimeout(() => {
-        if (nfts.length === 0) {
-          setLoading(false)
-          setInitialLoad(false)
-        }
-      }, 10000)
-
-      return () => clearTimeout(timeout)
+    if (!resolvedContractAddress || resolvedContractAddress === '0x0000000000000000000000000000000000000000') {
+      return
     }
-  }, [totalSupply, nfts.length])
+
+    // Timeout after 15 seconds to prevent infinite loading
+    const timeout = setTimeout(() => {
+      if (loading) {
+        console.warn('Gallery loading timeout - showing empty state')
+        setLoading(false)
+        setInitialLoad(false)
+      }
+    }, 15000)
+
+    return () => clearTimeout(timeout)
+  }, [resolvedContractAddress, loading])
 
   // Update loading state when NFTs are loaded
   useEffect(() => {
@@ -354,15 +402,31 @@ export default function GalleryPage() {
           🖼️ Gallery
         </h1>
         <p className="text-xl text-blue-700/70 max-w-3xl mx-auto mb-8">
-          Explore {nfts.length > 0 ? `${nfts.length} loaded` : 'the'} Onchain Rugs from our collection of {totalSupply ? Number(totalSupply) : 0} unique pieces.
-          Each NFT is algorithmically generated and stored entirely on-chain.
+          Explore our collection of 1,111 unique Onchain Rugs, algorithmically generated and stored entirely on-chain.
+          {nfts.length > 0 ? ` Currently displaying ${nfts.length} loaded NFTs.` : ' Loading NFT data from the blockchain...'}
         </p>
+
+        {/* Contract Info */}
+        <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-blue-200/50 max-w-4xl mx-auto mb-8">
+          <div className="text-center mb-4">
+            <h3 className="text-lg font-semibold text-blue-800 mb-2">Contract Information</h3>
+            <div className="bg-blue-50 rounded-lg p-3 border border-blue-200/50">
+              <div className="text-sm text-blue-700/70 mb-1">Contract Address</div>
+              <div className="font-mono text-sm text-blue-800 break-all">
+                {resolvedContractAddress}
+              </div>
+              <div className="text-xs text-blue-600/70 mt-2">
+                Shape Sepolia Testnet • Chain ID: {chainId}
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-2xl mx-auto">
           <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 border border-blue-200/50">
-            <div className="text-2xl font-bold text-blue-600">{totalSupply ? Number(totalSupply) : 0}</div>
-            <div className="text-sm text-blue-700/70">Total Minted</div>
+            <div className="text-2xl font-bold text-blue-600">{totalSupply ? Number(totalSupply) : 1111}</div>
+            <div className="text-sm text-blue-700/70">Total Supply</div>
           </div>
           <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 border border-indigo-200/50">
             <div className="text-2xl font-bold text-indigo-600">{nfts.length}</div>
@@ -495,19 +559,29 @@ export default function GalleryPage() {
             <div className="text-6xl mb-4">🎨</div>
             <h3 className="text-2xl font-bold text-blue-800 mb-4">No NFTs Available</h3>
             <p className="text-blue-700/70 mb-6 max-w-md mx-auto">
-              {totalSupply && Number(totalSupply) > 0
-                ? "Unable to load NFT data from the contract. Please try refreshing the page."
-                : "No NFTs have been minted yet. Check back later!"
-              }
+              Unable to load NFT data from the contract. This could be due to:
             </p>
-            {totalSupply && Number(totalSupply) > 0 && (
+            <ul className="text-left text-blue-700/70 mb-6 max-w-md mx-auto list-disc list-inside space-y-2">
+              <li>Contract not yet deployed at this address</li>
+              <li>No NFTs minted in the collection yet</li>
+              <li>Network connectivity issues</li>
+              <li>Contract ABI mismatch</li>
+            </ul>
+            <div className="flex gap-3 justify-center">
               <button
                 onClick={() => window.location.reload()}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold transition-colors"
               >
                 🔄 Refresh Page
               </button>
-            )}
+              <button
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-semibold transition-colors disabled:opacity-50"
+              >
+                {refreshing ? '🔄 Refreshing...' : '🔄 Retry Load'}
+              </button>
+            </div>
           </div>
         ) : (
           <>
