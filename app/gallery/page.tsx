@@ -6,6 +6,7 @@ import { useContractRead, useWatchContractEvent, useAccount, useChainId } from '
 import { ExternalLink, Filter, SortAsc, Grid, List, RefreshCw } from 'lucide-react'
 import { onchainRugsABI, contractAddresses } from '@/lib/web3'
 import { config } from '@/lib/config'
+import Navigation from '@/components/Navigation'
 
 // Types for our NFT data
 interface RugTraits {
@@ -46,6 +47,7 @@ export default function GalleryPage() {
   const [selectedTraits, setSelectedTraits] = useState<Record<string, any>>({})
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [refreshing, setRefreshing] = useState(false)
+  const [initialLoad, setInitialLoad] = useState(true)
 
   const itemsPerPage = 24
   const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
@@ -68,28 +70,40 @@ export default function GalleryPage() {
   useEffect(() => {
     if (!totalSupply) return
 
-    // Demo data - replace with actual contract calls
-    const demoNFTs: NFTData[] = Array.from({ length: Math.min(Number(totalSupply), 20) }, (_, i) => ({
-      tokenId: i + 1,
-      traits: {
-        seed: BigInt(i + 1),
-        paletteName: `Palette ${i + 1}`,
-        minifiedPalette: `#${(i * 12345).toString(16).slice(0, 6)}`,
-        minifiedStripeData: `stripes-${i}`,
-        textRows: [`Row ${i + 1}`, `Text ${i + 1}`],
-        warpThickness: 8 + i,
-        mintTime: BigInt(Date.now() - (i * 86400000)), // Days ago
-        filteredCharacterMap: `chars-${i}`,
-        complexity: 1 + (i % 10),
-        characterCount: BigInt(100 + i * 10),
-        stripeCount: BigInt(5 + (i % 15)),
-      },
-      owner: '',
-      rarityScore: 50 + (i % 50), // Mock rarity
-    }))
+    // Add a small delay to simulate loading
+    const loadData = async () => {
+      setLoading(true)
+      setInitialLoad(true)
 
-    setNfts(demoNFTs)
-    setLoading(false)
+      // Small delay to show loading state
+      await new Promise(resolve => setTimeout(resolve, 800))
+
+      // Demo data - replace with actual contract calls
+      const demoNFTs: NFTData[] = Array.from({ length: Math.min(Number(totalSupply), 20) }, (_, i) => ({
+        tokenId: i + 1,
+        traits: {
+          seed: BigInt(i + 1),
+          paletteName: `Palette ${i + 1}`,
+          minifiedPalette: `#${(i * 12345).toString(16).slice(0, 6)}`,
+          minifiedStripeData: `stripes-${i}`,
+          textRows: [`Row ${i + 1}`, `Text ${i + 1}`],
+          warpThickness: 8 + i,
+          mintTime: BigInt(Date.now() - (i * 86400000)), // Days ago
+          filteredCharacterMap: `chars-${i}`,
+          complexity: 1 + (i % 10),
+          characterCount: BigInt(100 + i * 10),
+          stripeCount: BigInt(5 + (i % 15)),
+        },
+        owner: '',
+        rarityScore: 50 + (i % 50), // Mock rarity
+      }))
+
+      setNfts(demoNFTs)
+      setLoading(false)
+      setInitialLoad(false)
+    }
+
+    loadData()
   }, [totalSupply])
 
   // Calculate rarity score based on trait frequency
@@ -223,6 +237,7 @@ export default function GalleryPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-indigo-50">
+      <Navigation />
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 30 }}
@@ -368,7 +383,7 @@ export default function GalleryPage() {
 
       {/* NFT Grid/List */}
       <div className="max-w-7xl mx-auto px-6 pb-20">
-        {loading ? (
+        {(loading || initialLoad) ? (
           <LoadingSpinner />
         ) : (
           <>
