@@ -46,13 +46,6 @@ export default function Navigation() {
               <Image className="w-4 h-4" />
               Gallery
             </Link>
-            <Link
-              href="/liquid-glass"
-              className="flex items-center gap-2 text-amber-700 hover:text-amber-800 transition-colors"
-            >
-              <Sparkles className="w-4 h-4" />
-              Liquid Glass
-            </Link>
           </div>
 
           {/* Wallet Connection */}

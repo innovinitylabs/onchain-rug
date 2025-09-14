@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { ChevronDown, Sparkles, Star } from 'lucide-react'
+import LiquidGlass from '@/components/LiquidGlass'
 
 export default function Hero() {
   return (
@@ -66,20 +67,193 @@ export default function Hero() {
             </span>
           </motion.h1>
           
-          <motion.p 
-            className="text-2xl md:text-3xl text-amber-800/80 font-semibold mb-8"
+          <motion.div
+            className="mb-8"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.8, type: "tween" }}
-            style={{ 
-              willChange: 'opacity',
-              textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
-              mixBlendMode: 'multiply',
-              filter: 'contrast(1.2) saturate(1.1)'
-            }}
+            style={{ willChange: 'opacity' }}
           >
-            Generative Doormat Art on the Blockchain
-          </motion.p>
+            <svg
+              width="100%"
+              height="auto"
+              viewBox="0 0 800 60"
+              style={{
+                display: 'block',
+                maxWidth: '100%',
+                height: 'auto',
+                filter: 'drop-shadow(0 0 20px rgba(255, 255, 255, 0.3))'
+              }}
+              aria-label="Generative Doormat Art on the Blockchain"
+            >
+              <defs>
+                {/* Liquid Glass Material - Multiple Layers for Depth */}
+                <filter id="liquid-glass-depth" x="-100%" y="-100%" width="300%" height="300%" colorInterpolationFilters="sRGB">
+                  {/* Base turbulence for liquid flow */}
+                  <feTurbulence
+                    baseFrequency="0.01"
+                    numOctaves="4"
+                    seed="42"
+                    type="fractalNoise"
+                    result="LIQUID_BASE"
+                  />
+
+                  {/* Displacement for refraction */}
+                  <feDisplacementMap
+                    in="SourceGraphic"
+                    in2="LIQUID_BASE"
+                    scale="12"
+                    xChannelSelector="R"
+                    yChannelSelector="G"
+                    result="DISPLACED_LIQUID"
+                  />
+
+                  {/* Chromatic aberration for glass effect */}
+                  <feColorMatrix
+                    in="DISPLACED_LIQUID"
+                    type="matrix"
+                    values="1.15 0.02 0 0 0
+                           0 1.1 0.01 0 0
+                           0 0 1.05 0 0
+                           0 0 0 1 0"
+                    result="GLASS_COLORS"
+                  />
+
+                  {/* Blur for liquid softness */}
+                  <feGaussianBlur
+                    in="GLASS_COLORS"
+                    stdDeviation="1.2"
+                    result="GLASS_BLUR"
+                  />
+                </filter>
+
+                {/* Liquid Glass Surface */}
+                <filter id="liquid-glass-surface" x="-100%" y="-100%" width="300%" height="300%" colorInterpolationFilters="sRGB">
+                  <feTurbulence
+                    baseFrequency="0.05"
+                    numOctaves="2"
+                    seed="123"
+                    type="fractalNoise"
+                    result="SURFACE_NOISE"
+                  />
+                  <feDisplacementMap
+                    in="SourceGraphic"
+                    in2="SURFACE_NOISE"
+                    scale="6"
+                    xChannelSelector="R"
+                    yChannelSelector="G"
+                    result="SURFACE_DISPLACED"
+                  />
+                  <feGaussianBlur
+                    in="SURFACE_DISPLACED"
+                    stdDeviation="0.8"
+                    result="SURFACE_BLUR"
+                  />
+                </filter>
+
+                {/* Liquid Glass Gradient - Multi-stop for depth */}
+                <linearGradient id="liquid-glass-fill" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" style={{ stopColor: 'rgba(255, 255, 255, 0.95)', stopOpacity: 1 }} />
+                  <stop offset="25%" style={{ stopColor: 'rgba(255, 255, 255, 0.9)', stopOpacity: 1 }} />
+                  <stop offset="50%" style={{ stopColor: 'rgba(255, 255, 255, 0.85)', stopOpacity: 1 }} />
+                  <stop offset="75%" style={{ stopColor: 'rgba(255, 255, 255, 0.9)', stopOpacity: 1 }} />
+                  <stop offset="100%" style={{ stopColor: 'rgba(255, 255, 255, 0.95)', stopOpacity: 1 }} />
+                </linearGradient>
+
+                {/* Liquid Glass Highlight */}
+                <linearGradient id="liquid-glass-highlight" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" style={{ stopColor: 'rgba(255, 255, 255, 0.6)', stopOpacity: 1 }} />
+                  <stop offset="30%" style={{ stopColor: 'rgba(255, 255, 255, 0.4)', stopOpacity: 1 }} />
+                  <stop offset="70%" style={{ stopColor: 'rgba(255, 255, 255, 0.2)', stopOpacity: 1 }} />
+                  <stop offset="100%" style={{ stopColor: 'rgba(255, 255, 255, 0.5)', stopOpacity: 1 }} />
+                </linearGradient>
+
+                {/* Liquid Glass Shadow */}
+                <linearGradient id="liquid-glass-shadow" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" style={{ stopColor: 'rgba(0, 0, 0, 0.2)', stopOpacity: 1 }} />
+                  <stop offset="50%" style={{ stopColor: 'rgba(0, 0, 0, 0.1)', stopOpacity: 1 }} />
+                  <stop offset="100%" style={{ stopColor: 'rgba(0, 0, 0, 0.15)', stopOpacity: 1 }} />
+                </linearGradient>
+              </defs>
+
+              {/* Liquid Glass Shadow Layer */}
+              <text
+                x="50%"
+                y="37"
+                textAnchor="middle"
+                dominantBaseline="middle"
+                className="text-2xl md:text-3xl font-semibold"
+                style={{
+                  fill: 'url(#liquid-glass-shadow)',
+                  filter: 'url(#liquid-glass-depth)',
+                  fontSize: '24px',
+                  fontWeight: '600',
+                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                  opacity: 0.6
+                }}
+              >
+                Generative Doormat Art on the Blockchain
+              </text>
+
+              {/* Liquid Glass Main Fill */}
+              <text
+                x="50%"
+                y="35"
+                textAnchor="middle"
+                dominantBaseline="middle"
+                className="text-2xl md:text-3xl font-semibold"
+                style={{
+                  fill: 'url(#liquid-glass-fill)',
+                  filter: 'url(#liquid-glass-depth)',
+                  fontSize: '24px',
+                  fontWeight: '600',
+                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                }}
+              >
+                Generative Doormat Art on the Blockchain
+              </text>
+
+              {/* Liquid Glass Surface Highlight */}
+              <text
+                x="50%"
+                y="33"
+                textAnchor="middle"
+                dominantBaseline="middle"
+                className="text-2xl md:text-3xl font-semibold"
+                style={{
+                  fill: 'url(#liquid-glass-highlight)',
+                  filter: 'url(#liquid-glass-surface)',
+                  fontSize: '24px',
+                  fontWeight: '600',
+                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                  mixBlendMode: 'screen'
+                }}
+              >
+                Generative Doormat Art on the Blockchain
+              </text>
+
+              {/* Liquid Glass Rim Light */}
+              <text
+                x="50%"
+                y="35"
+                textAnchor="middle"
+                dominantBaseline="middle"
+                className="text-2xl md:text-3xl font-semibold"
+                style={{
+                  fill: 'none',
+                  stroke: 'rgba(255, 255, 255, 0.8)',
+                  strokeWidth: '0.3',
+                  filter: 'url(#liquid-glass-surface)',
+                  fontSize: '24px',
+                  fontWeight: '600',
+                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                  mixBlendMode: 'overlay'
+                }}
+              >
+                Generative Doormat Art on the Blockchain
+              </text>
+            </svg>
+          </motion.div>
           
           {/* Hidden description paragraph */}
           {/* <motion.p 
@@ -116,25 +290,65 @@ export default function Hero() {
             transition={{ delay: 1.2, type: "tween" }}
             style={{ willChange: 'transform, opacity' }}
           >
-            <motion.a
-              href="/generator"
-              className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white px-8 py-4 rounded-full text-lg font-bold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 inline-block"
+            <motion.div
+              className="inline-block"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               style={{ willChange: 'transform' }}
             >
-              🚀 Start Creating
-            </motion.a>
+              <LiquidGlass
+                blurAmount={0.2}
+                aberrationIntensity={3}
+                saturation={200}
+                className="text-lg font-bold px-6 py-3"
+                onClick={() => window.location.href = '/generator'}
+                style={{
+                  border: '2px solid #f59e0b',
+                  borderRadius: '9999px',
+                  background: 'linear-gradient(to right, #f59e0b, #ea580c)',
+                  color: '#ffffff',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  padding: '1rem 2rem',
+                  boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                }}
+              >
+                🚀 Start Creating
+              </LiquidGlass>
+            </motion.div>
             
-            <motion.a
-              href="/mint"
-              className="border-2 border-amber-500 text-amber-700 px-8 py-4 rounded-full text-lg font-bold hover:bg-amber-50 transition-all duration-300 inline-block"
+            <motion.div
+              className="inline-block"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               style={{ willChange: 'transform' }}
             >
-              🚀 Mint Now
-            </motion.a>
+              <LiquidGlass
+                blurAmount={0.2}
+                aberrationIntensity={3}
+                saturation={200}
+                className="text-lg font-bold px-6 py-3"
+                onClick={() => window.location.href = '/gallery'}
+                style={{
+                  border: '2px solid #f59e0b',
+                  borderRadius: '9999px',
+                  background: 'transparent',
+                  color: '#92400e',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  padding: '1rem 2rem'
+                }}
+              >
+                🎨 Gallery
+              </LiquidGlass>
+            </motion.div>
           </motion.div>
         </motion.div>
 
