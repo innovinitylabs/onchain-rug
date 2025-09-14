@@ -85,7 +85,7 @@ const rarityColors = {
   Uncommon: "text-green-600 bg-green-100",
   Rare: "text-blue-600 bg-blue-100",
   Epic: "text-purple-600 bg-purple-100",
-  Legendary: "text-orange-600 bg-orange-100"
+  Legendary: "text-indigo-600 bg-indigo-100"
 }
 
 function DoormatCard({ doormat, index }: { doormat: typeof sampleDoormats[0], index: number }) {
@@ -100,13 +100,13 @@ function DoormatCard({ doormat, index }: { doormat: typeof sampleDoormats[0], in
       className="group"
     >
       <motion.div
-        className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-amber-200/50"
+        className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-blue-200/50"
         whileHover={{ scale: 1.02, y: -5 }}
       >
         {/* Doormat Preview */}
-        <div className="aspect-[4/3] bg-gradient-to-br from-amber-100 to-orange-100 relative overflow-hidden">
+        <div className="aspect-[4/3] bg-gradient-to-br from-blue-100 to-indigo-100 relative overflow-hidden">
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-48 h-32 bg-gradient-to-r from-amber-600 to-orange-600 rounded-lg shadow-lg transform rotate-3 group-hover:rotate-6 transition-transform duration-300">
+            <div className="w-48 h-32 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow-lg transform rotate-3 group-hover:rotate-6 transition-transform duration-300">
               <div className="p-4 text-white text-center">
                 <div className="text-xs font-bold mb-2">Seed: {doormat.seed}</div>
                 <div className="space-y-1">
@@ -130,43 +130,43 @@ function DoormatCard({ doormat, index }: { doormat: typeof sampleDoormats[0], in
         {/* Card Content */}
         <div className="p-6">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-xl font-bold text-amber-800">Doormat #{doormat.id}</h3>
+            <h3 className="text-xl font-bold text-blue-800">Doormat #{doormat.id}</h3>
             <span className={`px-3 py-1 rounded-full text-xs font-bold ${rarityColors[doormat.rarity as keyof typeof rarityColors]}`}>
               {doormat.rarity}
             </span>
           </div>
           
-          <p className="text-amber-700/70 mb-4">
+          <p className="text-blue-700/70 mb-4">
             {doormat.palette} palette with {doormat.traits.textLines} text {doormat.traits.textLines === 1 ? 'line' : 'lines'}
           </p>
           
           {/* Traits */}
           <div className="grid grid-cols-3 gap-3 mb-6">
-            <div className="text-center bg-amber-50 rounded-lg p-2">
-              <div className="text-lg font-bold text-amber-600">{doormat.traits.stripeCount}</div>
-              <div className="text-xs text-amber-700/70">Stripes</div>
+            <div className="text-center bg-blue-50 rounded-lg p-2">
+              <div className="text-lg font-bold text-blue-600">{doormat.traits.stripeCount}</div>
+              <div className="text-xs text-blue-700/70">Stripes</div>
             </div>
-            <div className="text-center bg-orange-50 rounded-lg p-2">
-              <div className="text-lg font-bold text-orange-600">{doormat.traits.textLines}</div>
-              <div className="text-xs text-orange-700/70">Text Lines</div>
+            <div className="text-center bg-indigo-50 rounded-lg p-2">
+              <div className="text-lg font-bold text-indigo-600">{doormat.traits.textLines}</div>
+              <div className="text-xs text-indigo-700/70">Text Lines</div>
             </div>
-            <div className="text-center bg-red-50 rounded-lg p-2">
-              <div className="text-sm font-bold text-red-600">{doormat.traits.complexity}</div>
-              <div className="text-xs text-red-700/70">Complexity</div>
+            <div className="text-center bg-purple-50 rounded-lg p-2">
+              <div className="text-sm font-bold text-purple-600">{doormat.traits.complexity}</div>
+              <div className="text-xs text-purple-700/70">Complexity</div>
             </div>
           </div>
           
           {/* Actions */}
           <div className="flex gap-3">
             <motion.button
-              className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white py-2 px-4 rounded-lg font-medium hover:from-amber-600 hover:to-orange-600 transition-all duration-200"
+              className="flex-1 bg-gradient-to-r from-blue-500 to-indigo-500 text-white py-2 px-4 rounded-lg font-medium hover:from-blue-600 hover:to-indigo-600 transition-all duration-200"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
               View Details
             </motion.button>
             <motion.button
-              className="p-2 border border-amber-300 text-amber-600 rounded-lg hover:bg-amber-50 transition-colors duration-200"
+              className="p-2 border border-blue-300 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors duration-200"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
@@ -181,7 +181,7 @@ function DoormatCard({ doormat, index }: { doormat: typeof sampleDoormats[0], in
 
 export default function Gallery() {
   return (
-    <section className="py-20 px-6 bg-gradient-to-b from-orange-50 to-amber-50">
+    <section className="py-20 px-6 bg-gradient-to-b from-indigo-50 to-blue-50">
       <div className="max-w-7xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -190,16 +190,16 @@ export default function Gallery() {
           viewport={{ once: true }}
           className="text-center mb-16"
         >
-          <h2 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent mb-6">
+          <h2 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-6">
             🎨 Gallery
           </h2>
-          <p className="text-xl text-amber-700/70 max-w-3xl mx-auto mb-8">
+          <p className="text-xl text-blue-700/70 max-w-3xl mx-auto mb-8">
             Explore unique onchain rugs designs showcasing the diversity of our generative art system.
             Each piece tells a story woven into the fabric of tradition and innovation.
           </p>
           
           <motion.button
-            className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-3 rounded-full font-medium hover:from-orange-600 hover:to-red-600 transition-all duration-200"
+            className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-6 py-3 rounded-full font-medium hover:from-indigo-600 hover:to-purple-600 transition-all duration-200"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
@@ -223,7 +223,7 @@ export default function Gallery() {
           className="text-center mt-12"
         >
                       <motion.button
-              className="bg-white/60 backdrop-blur-sm border-2 border-amber-300 text-amber-700 px-8 py-4 rounded-full font-medium hover:bg-amber-50 transition-all duration-200"
+              className="bg-white/60 backdrop-blur-sm border-2 border-blue-300 text-blue-700 px-8 py-4 rounded-full font-medium hover:bg-blue-50 transition-all duration-200"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >

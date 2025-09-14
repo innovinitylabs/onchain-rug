@@ -32,7 +32,7 @@ const features = [
     icon: Sparkles,
     title: "Generative Traits",
     description: "Complex trait system with stripe patterns, palette rarity, text complexity, and weave authenticity.",
-    color: "from-orange-500 to-amber-500"
+    color: "from-cyan-500 to-blue-500"
   },
   {
     icon: Globe,
@@ -66,7 +66,7 @@ const itemVariants = {
 
 export default function Features() {
   return (
-    <section className="py-20 px-6 bg-gradient-to-b from-amber-50 to-orange-50">
+    <section className="py-20 px-6 bg-gradient-to-b from-blue-50 to-indigo-50">
       <div className="max-w-7xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -75,10 +75,10 @@ export default function Features() {
           viewport={{ once: true }}
           className="text-center mb-16"
         >
-          <h2 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent mb-6">
+          <h2 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-6">
             ✨ Features
           </h2>
-          <p className="text-xl text-amber-700/70 max-w-3xl mx-auto">
+          <p className="text-xl text-blue-700/70 max-w-3xl mx-auto">
             Revolutionary generative art meets traditional textile craftsmanship. 
             Each onchain rugs is a unique masterpiece with deep cultural roots.
           </p>
@@ -98,7 +98,7 @@ export default function Features() {
               className="group"
             >
               <motion.div
-                className="bg-white/60 backdrop-blur-sm rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 border border-amber-200/50 h-full"
+                className="bg-white/60 backdrop-blur-sm rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 border border-blue-200/50 h-full"
                 whileHover={{ 
                   scale: 1.05,
                   y: -5,
@@ -109,11 +109,11 @@ export default function Features() {
                   <feature.icon className="w-full h-full text-white" />
                 </div>
                 
-                <h3 className="text-2xl font-bold text-amber-800 mb-4">
+                <h3 className="text-2xl font-bold text-blue-800 mb-4">
                   {feature.title}
                 </h3>
                 
-                <p className="text-amber-700/80 leading-relaxed">
+                <p className="text-blue-700/80 leading-relaxed">
                   {feature.description}
                 </p>
               </motion.div>
@@ -127,24 +127,24 @@ export default function Features() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.3 }}
           viewport={{ once: true }}
-          className="mt-20 bg-gradient-to-r from-amber-500/10 to-orange-500/10 rounded-3xl p-8 md:p-12"
+          className="mt-20 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 rounded-3xl p-8 md:p-12"
         >
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             <div>
-              <div className="text-4xl md:text-5xl font-bold text-amber-600 mb-2">1111</div>
-              <div className="text-amber-700/70 font-medium">Max Supply</div>
+              <div className="text-4xl md:text-5xl font-bold text-blue-600 mb-2">1111</div>
+              <div className="text-blue-700/70 font-medium">Max Supply</div>
             </div>
             <div>
-              <div className="text-4xl md:text-5xl font-bold text-orange-600 mb-2">102</div>
-              <div className="text-amber-700/70 font-medium">Color Palettes</div>
+              <div className="text-4xl md:text-5xl font-bold text-indigo-600 mb-2">102</div>
+              <div className="text-blue-700/70 font-medium">Color Palettes</div>
             </div>
             <div>
-              <div className="text-4xl md:text-5xl font-bold text-red-600 mb-2">5</div>
-              <div className="text-amber-700/70 font-medium">Text Rows</div>
+              <div className="text-4xl md:text-5xl font-bold text-purple-600 mb-2">5</div>
+              <div className="text-blue-700/70 font-medium">Text Rows</div>
             </div>
             <div>
-              <div className="text-4xl md:text-5xl font-bold text-amber-600 mb-2">∞</div>
-              <div className="text-amber-700/70 font-medium">Unique Combinations</div>
+              <div className="text-4xl md:text-5xl font-bold text-cyan-600 mb-2">∞</div>
+              <div className="text-blue-700/70 font-medium">Unique Combinations</div>
             </div>
           </div>
         </motion.div>
