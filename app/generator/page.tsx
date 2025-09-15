@@ -19,7 +19,7 @@ export default function GeneratorPage() {
   const [showDirt, setShowDirt] = useState(false)
   const [dirtLevel, setDirtLevel] = useState(0) // 0 = clean, 1 = 50% dirty, 2 = full dirty
   const [showTexture, setShowTexture] = useState(false)
-  const [textureLevel, setTextureLevel] = useState(0) // 0 = none, 1 = 7 days, 2 = 30 days
+  const [textureLevel, setTextureLevel] = useState(0) // 0 = none, 1 = 7 days, 2 = 30 days, 3 = 90 days
 
   // Copy to clipboard function
   const copyToClipboard = async (text: string, label: string) => {
@@ -728,19 +728,20 @@ export default function GeneratorPage() {
       '*': ["00000","00100","10101","01110","10101","00100","00000"],
       '=': ["00000","00000","11111","00000","11111","00000","00000"],
       "'": ["00100","00100","00100","00000","00000","00000","00000"],
-      '"': ["01010","01010","01010","00000","00000","00000","00000"]
+      '"': ["01010","01010","01010","00000","00000","00000","00000"],
+      '.': ["00000","00000","00000","00000","00000","00000","00100"]
     }
     
     // Global variables for NFTExporter
-    let selectedPalette = colorPalettes[0]
-    let stripeData: any[] = []
-    let textData: any[] = []
-    let doormatTextRows: string[] = []
-    let warpThickness = config.WARP_THICKNESS
+    const selectedPalette = colorPalettes[0]
+    const stripeData: any[] = []
+    const textData: any[] = []
+    const doormatTextRows: string[] = []
+    const warpThickness = config.WARP_THICKNESS
     
     // Text colors (chosen from palette) - MISSING FROM ORIGINAL
-    let lightTextColor: any = null
-    let darkTextColor: any = null
+    const lightTextColor: any = null
+    const darkTextColor: any = null
     
     // Expose minimal globals for NFTExporter
     if (typeof window !== 'undefined') {
@@ -778,7 +779,7 @@ export default function GeneratorPage() {
           // Original setup function from doormat.js
       p.setup = () => {
             // Create canvas with swapped dimensions for 90-degree rotation (original logic)
-            let canvas = p.createCanvas(doormatData.config.DOORMAT_HEIGHT + (doormatData.config.FRINGE_LENGTH * 4), 
+            const canvas = p.createCanvas(doormatData.config.DOORMAT_HEIGHT + (doormatData.config.FRINGE_LENGTH * 4), 
                                        doormatData.config.DOORMAT_WIDTH + (doormatData.config.FRINGE_LENGTH * 4))
             canvas.parent('canvas-container')
             // Let CSS handle positioning - don't set styles here
@@ -998,11 +999,11 @@ export default function GeneratorPage() {
     console.log(`🎨 Selected palette index: ${tierPaletteIndex}/${tierPalettes.length - 1}`)
     
     // Original doormat.js stripe generation logic
-    let totalHeight = config.DOORMAT_HEIGHT
+    const totalHeight = config.DOORMAT_HEIGHT
     let currentY = 0
     
     // Decide stripe density pattern for this doormat
-    let densityType = stripePRNG.next()
+    const densityType = stripePRNG.next()
     let minHeight, maxHeight
     
     if (densityType < 0.2) {
@@ -1024,7 +1025,7 @@ export default function GeneratorPage() {
       let stripeHeight
       if (densityType >= 0.4) {
         // Mixed density: add more randomization within the range
-        let variationType = stripePRNG.next()
+        const variationType = stripePRNG.next()
         if (variationType < 0.3) {
           // 30% thin stripes within mixed
           stripeHeight = minHeight + (stripePRNG.next() * 20)
@@ -1046,7 +1047,7 @@ export default function GeneratorPage() {
       }
       
       // Select colors for this stripe
-      let primaryColor = palette.colors[Math.floor(stripePRNG.next() * palette.colors.length)]
+      const primaryColor = palette.colors[Math.floor(stripePRNG.next() * palette.colors.length)]
       
       // RARITY-BASED SECONDARY COLOR GENERATION
       // Make blended colors rarer based on overall rarity
@@ -1068,12 +1069,12 @@ export default function GeneratorPage() {
         console.log(`🎨 ${selectedRarity} Secondary Color Chance: ${(secondaryColorChance * 100).toFixed(1)}%`)
       }
       
-      let hasSecondaryColor = stripePRNG.next() < secondaryColorChance
-      let secondaryColor = hasSecondaryColor ? palette.colors[Math.floor(stripePRNG.next() * palette.colors.length)] : null
+      const hasSecondaryColor = stripePRNG.next() < secondaryColorChance
+      const secondaryColor = hasSecondaryColor ? palette.colors[Math.floor(stripePRNG.next() * palette.colors.length)] : null
       
       // RARITY-BASED WEAVE PATTERN SELECTION
       // Make complex patterns rarer based on overall rarity
-      let weaveRand = stripePRNG.next()
+      const weaveRand = stripePRNG.next()
       let weaveType
       
       // Adjust probabilities based on palette rarity
@@ -1142,12 +1143,12 @@ export default function GeneratorPage() {
     // First, draw the warp threads (vertical) as the foundation
     for (let x = 0; x < config.DOORMAT_WIDTH; x += warpSpacing) {
       for (let y = stripe.y; y < stripe.y + stripe.height; y += weftSpacing) {
-        let warpColor = p.color(stripe.primaryColor)
+        const warpColor = p.color(stripe.primaryColor)
         
         // Check if this position should be modified for text
         let isTextPixel = false
         if (doormatData.textData && doormatData.textData.length > 0) {
-          for (let textPixel of doormatData.textData) {
+          for (const textPixel of doormatData.textData) {
             if (x >= textPixel.x && x < textPixel.x + textPixel.width &&
                 y >= textPixel.y && y < textPixel.y + textPixel.height) {
               isTextPixel = true
@@ -1164,7 +1165,7 @@ export default function GeneratorPage() {
         // Modify color for text pixels (vertical lines use weft thickness)
         if (isTextPixel) {
           const bgBrightness = (r + g + b) / 3
-          let tc = bgBrightness < 128 ? doormatData.lightTextColor : doormatData.darkTextColor
+          const tc = bgBrightness < 128 ? doormatData.lightTextColor : doormatData.darkTextColor
           r = p.red(tc); g = p.green(tc); b = p.blue(tc)
         }
         
@@ -1176,7 +1177,7 @@ export default function GeneratorPage() {
         p.noStroke()
         
         // Draw warp thread with slight curve for natural look
-        let warpCurve = p.sin(y * 0.05) * 0.5
+        const warpCurve = p.sin(y * 0.05) * 0.5
         p.rect(x + warpCurve, y, doormatData.warpThickness, weftSpacing)
       }
     }
@@ -1192,14 +1193,14 @@ export default function GeneratorPage() {
             weftColor = p.color(stripe.secondaryColor)
           }
         } else if (stripe.weaveType === 'textured') {
-          let noiseVal = p.noise(x * 0.05, y * 0.05)
+          const noiseVal = p.noise(x * 0.05, y * 0.05)
           weftColor = p.lerpColor(p.color(stripe.primaryColor), p.color(255), noiseVal * 0.15)
         }
         
         // Check if this position should be modified for text
         let isTextPixel = false
         if (doormatData.textData && doormatData.textData.length > 0) {
-          for (let textPixel of doormatData.textData) {
+          for (const textPixel of doormatData.textData) {
             if (x >= textPixel.x && x < textPixel.x + textPixel.width &&
                 y >= textPixel.y && y < textPixel.y + textPixel.height) {
               isTextPixel = true
@@ -1216,7 +1217,7 @@ export default function GeneratorPage() {
         // Modify color for text pixels (horizontal lines use warp thickness)
         if (isTextPixel) {
           const bgBrightness = (r + g + b) / 3
-          let tc = bgBrightness < 128 ? doormatData.lightTextColor : doormatData.darkTextColor
+          const tc = bgBrightness < 128 ? doormatData.lightTextColor : doormatData.darkTextColor
           r = p.red(tc); g = p.green(tc); b = p.blue(tc)
         }
         
@@ -1228,7 +1229,7 @@ export default function GeneratorPage() {
         p.noStroke()
         
         // Draw weft thread with slight curve
-        let weftCurve = p.cos(x * 0.05) * 0.5
+        const weftCurve = p.cos(x * 0.05) * 0.5
         p.rect(x, y + weftCurve, warpSpacing, config.WEFT_THICKNESS)
       }
     }
@@ -1262,8 +1263,8 @@ export default function GeneratorPage() {
     // Create subtle hatching effect like in the diagram
     for (let x = 0; x < config.DOORMAT_WIDTH; x += 2) {
       for (let y = 0; y < config.DOORMAT_HEIGHT; y += 2) {
-        let noiseVal = p.noise(x * 0.02, y * 0.02)
-        let hatchingIntensity = p.map(noiseVal, 0, 1, 0, 50)
+        const noiseVal = p.noise(x * 0.02, y * 0.02)
+        const hatchingIntensity = p.map(noiseVal, 0, 1, 0, 50)
         
         p.fill(0, 0, 0, hatchingIntensity)
         p.noStroke()
@@ -1274,7 +1275,7 @@ export default function GeneratorPage() {
     // Add subtle relief effect to show the bumpy, cloth-like surface
     for (let x = 0; x < config.DOORMAT_WIDTH; x += 6) {
       for (let y = 0; y < config.DOORMAT_HEIGHT; y += 6) {
-        let reliefNoise = p.noise(x * 0.03, y * 0.03)
+        const reliefNoise = p.noise(x * 0.03, y * 0.03)
         if (reliefNoise > 0.6) {
           p.fill(255, 255, 255, 25)
           p.noStroke()
@@ -1294,10 +1295,10 @@ export default function GeneratorPage() {
   const drawTextureOverlayWithLevel = (p: any, doormatData: any, textureLevel: number) => {
     const config = doormatData.config
     
-    // Texture intensity based on level (1 = 7 days, 2 = 30 days)
-    const hatchingIntensity = textureLevel === 1 ? 30 : 80  // More intense after 30 days
-    const reliefIntensity = textureLevel === 1 ? 20 : 40    // More relief after 30 days
-    const reliefThreshold = textureLevel === 1 ? 0.6 : 0.5  // Lower threshold = more relief
+    // Texture intensity based on level (1 = 7 days, 2 = 30 days, 3 = 90 days)
+    const hatchingIntensity = textureLevel === 1 ? 30 : textureLevel === 2 ? 80 : 120  // More intense after 90 days
+    const reliefIntensity = textureLevel === 1 ? 20 : textureLevel === 2 ? 40 : 60    // More relief after 90 days
+    const reliefThreshold = textureLevel === 1 ? 0.6 : textureLevel === 2 ? 0.5 : 0.4  // Lower threshold = more relief
     
     p.push()
     p.blendMode(p.MULTIPLY)
@@ -1305,8 +1306,8 @@ export default function GeneratorPage() {
     // Create hatching effect with variable intensity
     for (let x = 0; x < config.DOORMAT_WIDTH; x += 2) {
       for (let y = 0; y < config.DOORMAT_HEIGHT; y += 2) {
-        let noiseVal = p.noise(x * 0.02, y * 0.02)
-        let intensity = p.map(noiseVal, 0, 1, 0, hatchingIntensity)
+        const noiseVal = p.noise(x * 0.02, y * 0.02)
+        const intensity = p.map(noiseVal, 0, 1, 0, hatchingIntensity)
         
         p.fill(0, 0, 0, intensity)
         p.noStroke()
@@ -1317,7 +1318,7 @@ export default function GeneratorPage() {
     // Add relief effect with variable intensity
     for (let x = 0; x < config.DOORMAT_WIDTH; x += 6) {
       for (let y = 0; y < config.DOORMAT_HEIGHT; y += 6) {
-        let reliefNoise = p.noise(x * 0.03, y * 0.03)
+        const reliefNoise = p.noise(x * 0.03, y * 0.03)
         if (reliefNoise > reliefThreshold) {
           p.fill(255, 255, 255, reliefIntensity)
           p.noStroke()
@@ -1335,11 +1336,26 @@ export default function GeneratorPage() {
       // Add more pronounced wear lines
       for (let x = 0; x < config.DOORMAT_WIDTH; x += 8) {
         for (let y = 0; y < config.DOORMAT_HEIGHT; y += 8) {
-          let wearNoise = p.noise(x * 0.01, y * 0.01)
+          const wearNoise = p.noise(x * 0.01, y * 0.01)
           if (wearNoise > 0.7) {
             p.fill(0, 0, 0, 15)
             p.noStroke()
             p.rect(x, y, 8, 2) // Horizontal wear lines
+          }
+        }
+      }
+    }
+
+    // Add even more wear patterns for 90-day level
+    if (textureLevel === 3) {
+      // Add finer, more extensive wear lines
+      for (let x = 0; x < config.DOORMAT_WIDTH; x += 4) {
+        for (let y = 0; y < config.DOORMAT_HEIGHT; y += 4) {
+          const wearNoise = p.noise(x * 0.005, y * 0.005)
+          if (wearNoise > 0.8) {
+            p.fill(0, 0, 0, 25)
+            p.noStroke()
+            p.rect(x, y, 4, 1) // Finer horizontal wear lines
           }
         }
       }
@@ -1360,34 +1376,34 @@ export default function GeneratorPage() {
 
   // Original doormat.js drawFringeSection function
   const drawFringeSectionOriginal = (p: any, x: number, y: number, w: number, h: number, side: string, doormatData: any, drawingPRNG: any) => {
-    let fringeStrands = w / 12
-    let strandWidth = w / fringeStrands
+    const fringeStrands = w / 12
+    const strandWidth = w / fringeStrands
     
     for (let i = 0; i < fringeStrands; i++) {
-      let strandX = x + i * strandWidth
+      const strandX = x + i * strandWidth
       
-      let strandColor = drawingPRNG.randomChoice(doormatData.selectedPalette.colors)
+      const strandColor = drawingPRNG.randomChoice(doormatData.selectedPalette.colors)
       
       // Draw individual fringe strand with thin threads
       for (let j = 0; j < 12; j++) {
-        let threadX = strandX + drawingPRNG.range(-strandWidth/6, strandWidth/6)
-        let startY = side === 'top' ? y + h : y
-        let endY = side === 'top' ? y : y + h
+        const threadX = strandX + drawingPRNG.range(-strandWidth/6, strandWidth/6)
+        const startY = side === 'top' ? y + h : y
+        const endY = side === 'top' ? y : y + h
         
         // Add natural curl/wave to the fringe with more variation
-        let waveAmplitude = drawingPRNG.range(1, 4)
-        let waveFreq = drawingPRNG.range(0.2, 0.8)
+        const waveAmplitude = drawingPRNG.range(1, 4)
+        const waveFreq = drawingPRNG.range(0.2, 0.8)
         
         // Randomize the direction and intensity for each thread
-        let direction = drawingPRNG.randomChoice([-1, 1])
-        let curlIntensity = drawingPRNG.range(0.5, 2.0)
-        let threadLength = drawingPRNG.range(0.8, 1.2)
+        const direction = drawingPRNG.randomChoice([-1, 1])
+        const curlIntensity = drawingPRNG.range(0.5, 2.0)
+        const threadLength = drawingPRNG.range(0.8, 1.2)
         
         // Use darker version of strand color for fringe
-        let fringeColor = p.color(strandColor)
-        let r = p.red(fringeColor) * 0.7
-        let g = p.green(fringeColor) * 0.7
-        let b = p.blue(fringeColor) * 0.7
+        const fringeColor = p.color(strandColor)
+        const r = p.red(fringeColor) * 0.7
+        const g = p.green(fringeColor) * 0.7
+        const b = p.blue(fringeColor) * 0.7
         
         p.stroke(r, g, b)
         p.strokeWeight(drawingPRNG.range(0.5, 1.2))
@@ -1395,7 +1411,7 @@ export default function GeneratorPage() {
         p.noFill()
         p.beginShape()
         for (let t = 0; t <= 1; t += 0.1) {
-          let yPos = p.lerp(startY, endY, t * threadLength)
+          const yPos = p.lerp(startY, endY, t * threadLength)
           let xOffset = p.sin(t * p.PI * waveFreq) * waveAmplitude * t * direction * curlIntensity
           // Add more randomness and natural variation
           xOffset += drawingPRNG.range(-1, 1)
@@ -1413,7 +1429,7 @@ export default function GeneratorPage() {
   // Original doormat.js drawSelvedgeEdges function
   const drawSelvedgeEdgesOriginal = (p: any, doormatData: any, drawingPRNG: any) => {
     const config = doormatData.config
-    let weftSpacing = config.WEFT_THICKNESS + 1
+    const weftSpacing = config.WEFT_THICKNESS + 1
     let isFirstWeft = true
     
     // Left selvedge edge - flowing semicircular weft threads
@@ -1430,25 +1446,25 @@ export default function GeneratorPage() {
         
         // Check if there's a secondary color for blending
         if (stripe.secondaryColor && stripe.weaveType === 'mixed') {
-          let secondaryColor = p.color(stripe.secondaryColor)
-          let blendFactor = p.noise(y * 0.1) * 0.5 + 0.5
+          const secondaryColor = p.color(stripe.secondaryColor)
+          const blendFactor = p.noise(y * 0.1) * 0.5 + 0.5
           selvedgeColor = p.lerpColor(selvedgeColor, secondaryColor, blendFactor)
         }
         
-        let r = p.red(selvedgeColor) * 0.8
-        let g = p.green(selvedgeColor) * 0.8
-        let b = p.blue(selvedgeColor) * 0.8
+        const r = p.red(selvedgeColor) * 0.8
+        const g = p.green(selvedgeColor) * 0.8
+        const b = p.blue(selvedgeColor) * 0.8
         
         p.fill(r, g, b)
         p.noStroke()
         
-        let radius = config.WEFT_THICKNESS * drawingPRNG.range(1.2, 1.8)
-        let centerX = config.FRINGE_LENGTH * 2 + drawingPRNG.range(-2, 2)
-        let centerY = config.FRINGE_LENGTH * 2 + y + config.WEFT_THICKNESS/2 + drawingPRNG.range(-1, 1)
+        const radius = config.WEFT_THICKNESS * drawingPRNG.range(1.2, 1.8)
+        const centerX = config.FRINGE_LENGTH * 2 + drawingPRNG.range(-2, 2)
+        const centerY = config.FRINGE_LENGTH * 2 + y + config.WEFT_THICKNESS/2 + drawingPRNG.range(-1, 1)
         
         // Vary the arc angles for more natural look
-        let startAngle = p.HALF_PI + drawingPRNG.range(-0.2, 0.2)
-        let endAngle = -p.HALF_PI + drawingPRNG.range(-0.2, 0.2)
+        const startAngle = p.HALF_PI + drawingPRNG.range(-0.2, 0.2)
+        const endAngle = -p.HALF_PI + drawingPRNG.range(-0.2, 0.2)
         
         // Draw textured semicircle with individual thread details
         drawTexturedSelvedgeArcOriginal(p, centerX, centerY, radius, startAngle, endAngle, r, g, b, 'left', drawingPRNG)
@@ -1470,25 +1486,25 @@ export default function GeneratorPage() {
         
         // Check if there's a secondary color for blending
         if (stripe.secondaryColor && stripe.weaveType === 'mixed') {
-          let secondaryColor = p.color(stripe.secondaryColor)
-          let blendFactor = p.noise(y * 0.1) * 0.5 + 0.5
+          const secondaryColor = p.color(stripe.secondaryColor)
+          const blendFactor = p.noise(y * 0.1) * 0.5 + 0.5
           selvedgeColor = p.lerpColor(selvedgeColor, secondaryColor, blendFactor)
         }
         
-        let r = p.red(selvedgeColor) * 0.8
-        let g = p.green(selvedgeColor) * 0.8
-        let b = p.blue(selvedgeColor) * 0.8
+        const r = p.red(selvedgeColor) * 0.8
+        const g = p.green(selvedgeColor) * 0.8
+        const b = p.blue(selvedgeColor) * 0.8
         
         p.fill(r, g, b)
         p.noStroke()
         
-        let radius = config.WEFT_THICKNESS * drawingPRNG.range(1.2, 1.8)
-        let centerX = config.FRINGE_LENGTH * 2 + config.DOORMAT_WIDTH + drawingPRNG.range(-2, 2)
-        let centerY = config.FRINGE_LENGTH * 2 + y + config.WEFT_THICKNESS/2 + drawingPRNG.range(-1, 1)
+        const radius = config.WEFT_THICKNESS * drawingPRNG.range(1.2, 1.8)
+        const centerX = config.FRINGE_LENGTH * 2 + config.DOORMAT_WIDTH + drawingPRNG.range(-2, 2)
+        const centerY = config.FRINGE_LENGTH * 2 + y + config.WEFT_THICKNESS/2 + drawingPRNG.range(-1, 1)
         
         // Vary the arc angles for more natural look
-        let startAngle = -p.HALF_PI + drawingPRNG.range(-0.2, 0.2)
-        let endAngle = p.HALF_PI + drawingPRNG.range(-0.2, 0.2)
+        const startAngle = -p.HALF_PI + drawingPRNG.range(-0.2, 0.2)
+        const endAngle = p.HALF_PI + drawingPRNG.range(-0.2, 0.2)
         
         // Draw textured semicircle with individual thread details
         drawTexturedSelvedgeArcOriginal(p, centerX, centerY, radius, startAngle, endAngle, r, g, b, 'right', drawingPRNG)
@@ -1499,12 +1515,12 @@ export default function GeneratorPage() {
   // Original doormat.js drawTexturedSelvedgeArc function
   const drawTexturedSelvedgeArcOriginal = (p: any, centerX: number, centerY: number, radius: number, startAngle: number, endAngle: number, r: number, g: number, b: number, side: string, drawingPRNG: any) => {
     // Draw a realistic textured selvedge arc with visible woven texture
-    let threadCount = p.max(6, p.floor(radius / 1.2))
-    let threadSpacing = radius / threadCount
+    const threadCount = p.max(6, p.floor(radius / 1.2))
+    const threadSpacing = radius / threadCount
     
     // Draw individual thread arcs to create visible woven texture
     for (let i = 0; i < threadCount; i++) {
-      let threadRadius = radius - (i * threadSpacing)
+      const threadRadius = radius - (i * threadSpacing)
       
       // Create distinct thread colors for visible texture
       let threadR, threadG, threadB
@@ -1529,37 +1545,37 @@ export default function GeneratorPage() {
       p.fill(threadR, threadG, threadB, 88)
       
       // Draw individual thread arc with slight position variation
-      let threadX = centerX + drawingPRNG.range(-1, 1)
-      let threadY = centerY + drawingPRNG.range(-1, 1)
-      let threadStartAngle = startAngle + drawingPRNG.range(-0.1, 0.1)
-      let threadEndAngle = endAngle + drawingPRNG.range(-0.1, 0.1)
+      const threadX = centerX + drawingPRNG.range(-1, 1)
+      const threadY = centerY + drawingPRNG.range(-1, 1)
+      const threadStartAngle = startAngle + drawingPRNG.range(-0.1, 0.1)
+      const threadEndAngle = endAngle + drawingPRNG.range(-0.1, 0.1)
       
       p.arc(threadX, threadY, threadRadius * 2, threadRadius * 2, threadStartAngle, threadEndAngle)
     }
     
     // Add a few more detailed texture layers
     for (let i = 0; i < 3; i++) {
-      let detailRadius = radius * (0.3 + i * 0.2)
-      let detailAlpha = 180 - (i * 40)
+      const detailRadius = radius * (0.3 + i * 0.2)
+      const detailAlpha = 180 - (i * 40)
       
       // Create contrast for visibility
-      let detailR = p.constrain(r + (i % 2 === 0 ? 15 : -15), 0, 255)
-      let detailG = p.constrain(g + (i % 2 === 0 ? 15 : -15), 0, 255)
-      let detailB = p.constrain(b + (i % 2 === 0 ? 15 : -15), 0, 255)
+      const detailR = p.constrain(r + (i % 2 === 0 ? 15 : -15), 0, 255)
+      const detailG = p.constrain(g + (i % 2 === 0 ? 15 : -15), 0, 255)
+      const detailB = p.constrain(b + (i % 2 === 0 ? 15 : -15), 0, 255)
       
       p.fill(detailR, detailG, detailB, detailAlpha * 0.7)
       
-      let detailX = centerX + drawingPRNG.range(-0.5, 0.5)
-      let detailY = centerY + drawingPRNG.range(-0.5, 0.5)
-      let detailStartAngle = startAngle + drawingPRNG.range(-0.05, 0.05)
-      let detailEndAngle = endAngle + drawingPRNG.range(-0.05, 0.05)
+      const detailX = centerX + drawingPRNG.range(-0.5, 0.5)
+      const detailY = centerY + drawingPRNG.range(-0.5, 0.5)
+      const detailStartAngle = startAngle + drawingPRNG.range(-0.05, 0.05)
+      const detailEndAngle = endAngle + drawingPRNG.range(-0.05, 0.05)
       
       p.arc(detailX, detailY, detailRadius * 2, detailRadius * 2, detailStartAngle, detailEndAngle)
     }
     
     // Add subtle shadow for depth
     p.fill(r * 0.6, g * 0.6, b * 0.6, 70)
-    let shadowOffset = side === 'left' ? 1 : -1
+    const shadowOffset = side === 'left' ? 1 : -1
     p.arc(centerX + shadowOffset, centerY + 1, radius * 2, radius * 2, startAngle, endAngle)
     
     // Add small transparent hole in the center
@@ -1568,10 +1584,10 @@ export default function GeneratorPage() {
     
     // Add visible texture details - small bumps and knots
     for (let i = 0; i < 8; i++) {
-      let detailAngle = drawingPRNG.range(startAngle, endAngle)
-      let detailRadius = radius * drawingPRNG.range(0.2, 0.7)
-      let detailX = centerX + p.cos(detailAngle) * detailRadius
-      let detailY = centerY + p.sin(detailAngle) * detailRadius
+      const detailAngle = drawingPRNG.range(startAngle, endAngle)
+      const detailRadius = radius * drawingPRNG.range(0.2, 0.7)
+      const detailX = centerX + p.cos(detailAngle) * detailRadius
+      const detailY = centerY + p.sin(detailAngle) * detailRadius
       
       // Alternate between light and dark for visible contrast
       if (i % 2 === 0) {
@@ -1668,9 +1684,9 @@ export default function GeneratorPage() {
     let lightest = doormatData.selectedPalette.colors[0]
     let darkestVal = 999, lightestVal = -1
     
-    for (let hex of doormatData.selectedPalette.colors) {
-      let c = p.color(hex)
-      let bright = (p.red(c) + p.green(c) + p.blue(c)) / 3
+    for (const hex of doormatData.selectedPalette.colors) {
+      const c = p.color(hex)
+      const bright = (p.red(c) + p.green(c) + p.blue(c)) / 3
       if (bright < darkestVal) { darkestVal = bright; darkest = hex }
       if (bright > lightestVal) { lightestVal = bright; lightest = hex }
     }
@@ -1831,7 +1847,7 @@ export default function GeneratorPage() {
     let secondaryColorCount = 0
     
     // Count different pattern types
-    for (let stripe of stripeData) {
+    for (const stripe of stripeData) {
       if (stripe.weaveType === 'mixed') {
         mixedCount++
         complexityScore += 2 // Mixed weave adds more complexity
@@ -2070,8 +2086,8 @@ export default function GeneratorPage() {
   // Update text input
   const updateTextInput = (index: number, value: string) => {
     const newInputs = [...textInputs]
-    // Allow A-Z, 0-9, space, and all expressive characters: ? _ ! @ # $ & % + - ( ) [ ] * = ' "
-    newInputs[index] = value.toUpperCase().replace(/[^A-Z0-9 ?_!@#$&%+\-()[\]*='"]/g, '').slice(0, 11)
+    // Allow A-Z, 0-9, space, period, and all expressive characters: ? _ ! @ # $ & % + - ( ) [ ] * = ' "
+    newInputs[index] = value.toUpperCase().replace(/[^A-Z0-9 .?_!@#$&%+\-()[\]*='"]/g, '').slice(0, 11)
     setTextInputs(newInputs)
   }
 
@@ -2278,27 +2294,28 @@ export default function GeneratorPage() {
                       </div>
                     </div>
 
-                {/* NFT Traits Display */}
+                {/* NFT Traits Display - Hidden */}
+                {/*
                 {traits && (
                   <div className="mt-2 pt-2 border-t border-green-500/30">
                     <div className="text-green-300 text-sm mb-3">NFT Traits & Rarity:</div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {Object.entries(traits).map(([key, trait]: [string, any]) => {
                         if (key === 'seed') return null // Skip seed display
-                        
+
                         const rarity = trait.rarity || 'Common'
                         const value = trait.value
                         const rarityColor = getRarityColor(rarity)
-                        
+
                         return (
                           <div key={key} className="bg-gray-900/50 border border-green-500/30 rounded p-3">
                             <div className="flex justify-between items-center">
                               <span className="text-green-400 text-sm font-mono capitalize">
                                 {key.replace(/([A-Z])/g, ' $1').trim()}
                               </span>
-                              <span 
+                              <span
                                 className="text-xs px-2 py-1 rounded font-mono font-bold"
-                                style={{ 
+                                style={{
                                   backgroundColor: rarityColor + '20',
                                   color: rarityColor,
                                   border: `1px solid ${rarityColor}40`
@@ -2316,6 +2333,7 @@ export default function GeneratorPage() {
                     </div>
                   </div>
                 )}
+                */}
               </div>
                 </div>
               </div>
@@ -2403,7 +2421,7 @@ export default function GeneratorPage() {
                   </div>
                   
                   <div className="text-green-400 text-xs font-mono bg-gray-900/50 p-2 rounded border border-green-500/30">
-                    Allowed: A-Z, 0-9, space, ? _ ! @ # $ & % + - ( ) [ ] * = &apos; &quot;
+                    Allowed: A-Z, 0-9, space, period, ? _ ! @ # $ & % + - ( ) [ ] * = &apos; &quot;
                   </div>
 
                   {/* Compact Text Inputs */}
@@ -2518,7 +2536,7 @@ export default function GeneratorPage() {
                   <div className="flex items-center justify-between">
                     <h4 className="text-green-300 text-sm font-mono font-medium">TEXTURE SYSTEM</h4>
                     <span className="text-green-500 text-xs font-mono">
-                      {showTexture ? `${textureLevel === 1 ? '7 days' : '30 days'} wear` : 'Smooth'}
+                      {showTexture ? `${textureLevel === 1 ? '7 days' : textureLevel === 2 ? '30 days' : '90 days'} wear` : 'Smooth'}
                     </span>
                   </div>
                   
@@ -2554,12 +2572,23 @@ export default function GeneratorPage() {
                         <button
                           onClick={() => updateTextureState(showTexture, 2)}
                           className={`px-2 py-1 rounded font-mono text-xs transition-all duration-200 border ${
-                            textureLevel === 2 
-                              ? 'bg-purple-600 text-white border-purple-400' 
+                            textureLevel === 2
+                              ? 'bg-purple-600 text-white border-purple-400'
                               : 'bg-gray-700 text-gray-300 border-gray-500 hover:bg-gray-600'
                           }`}
                         >
                           30 DAYS
+                        </button>
+
+                        <button
+                          onClick={() => updateTextureState(showTexture, 3)}
+                          className={`px-2 py-1 rounded font-mono text-xs transition-all duration-200 border ${
+                            textureLevel === 3
+                              ? 'bg-red-600 text-white border-red-400'
+                              : 'bg-gray-700 text-gray-300 border-gray-500 hover:bg-gray-600'
+                          }`}
+                        >
+                          90 DAYS
                         </button>
                       </div>
                     )}
@@ -2568,13 +2597,12 @@ export default function GeneratorPage() {
 
 
 
-                {/* Mint Data Dashboard */}
+                {/*
                 <div className="border-t border-gray-500/30 pt-3">
                   <div className="text-gray-300 text-sm mb-3 font-mono">📊 Mint Data Dashboard</div>
-                  
+
                   <div className="bg-gray-900/30 border border-gray-500/30 rounded p-4">
                     <div className="grid grid-cols-2 gap-4 mb-4">
-                      {/* Text Data */}
                       <div className="bg-gradient-to-br from-blue-900/30 to-blue-800/20 p-3 rounded-lg border border-blue-500/20">
                         <div className="flex items-center mb-2">
                           <div className="w-2 h-2 bg-blue-400 rounded-full mr-2"></div>
@@ -2589,7 +2617,6 @@ export default function GeneratorPage() {
                         </div>
                       </div>
 
-                      {/* Palette Data */}
                       <div className="bg-gradient-to-br from-purple-900/30 to-purple-800/20 p-3 rounded-lg border border-purple-500/20">
                         <div className="flex items-center mb-2">
                           <div className="w-2 h-2 bg-purple-400 rounded-full mr-2"></div>
@@ -2614,14 +2641,13 @@ export default function GeneratorPage() {
                     </div>
 
                     <div className="grid grid-cols-3 gap-3 mb-4">
-                      {/* Stripe Data */}
                       <div className="bg-gradient-to-br from-green-900/30 to-green-800/20 p-3 rounded-lg border border-green-500/20">
                         <div className="flex items-center mb-2">
                           <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
                           <div className="text-green-300 text-xs font-semibold">Stripes</div>
                         </div>
                         <div className="text-white text-sm">
-                          {typeof window !== 'undefined' && (window as any).stripeData 
+                          {typeof window !== 'undefined' && (window as any).stripeData
                             ? `${(window as any).stripeData.length}`
                             : '0'
                           }
@@ -2629,7 +2655,6 @@ export default function GeneratorPage() {
                         <div className="text-gray-400 text-xs">patterns</div>
                       </div>
 
-                      {/* Character Map */}
                       <div className="bg-gradient-to-br from-orange-900/30 to-orange-800/20 p-3 rounded-lg border border-orange-500/20">
                         <div className="flex items-center mb-2">
                           <div className="w-2 h-2 bg-orange-400 rounded-full mr-2"></div>
@@ -2638,16 +2663,15 @@ export default function GeneratorPage() {
                         <div className="text-white text-sm">
                           {(() => {
                             if (typeof window === 'undefined' || !(window as any).doormatData?.characterMap) return '0';
-                            
-                            // Get only the characters actually used in text (optimization)
+
                             const used = new Set<string>();
                             textInputs.forEach(row => {
                               for (let char of row.toUpperCase()) {
                                 used.add(char);
                               }
                             });
-                            used.add(' '); // Always include space
-                            
+                            used.add(' ');
+
                             const usedCharMap: any = {};
                             used.forEach((char) => {
                               if ((window as any).doormatData.characterMap[char]) {
@@ -2660,7 +2684,6 @@ export default function GeneratorPage() {
                         <div className="text-gray-400 text-xs">mapped</div>
                       </div>
 
-                      {/* Warp Thickness */}
                       <div className="bg-gradient-to-br from-pink-900/30 to-pink-800/20 p-3 rounded-lg border border-pink-500/20">
                         <div className="flex items-center mb-2">
                           <div className="w-2 h-2 bg-pink-400 rounded-full mr-2"></div>
@@ -2671,7 +2694,6 @@ export default function GeneratorPage() {
                       </div>
                     </div>
 
-                    {/* Seed & Status */}
                     <div className="bg-gradient-to-r from-gray-800/40 to-gray-700/40 p-3 rounded-lg border border-gray-600/30">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center">
@@ -2690,8 +2712,9 @@ export default function GeneratorPage() {
                     </div>
                   </div>
                 </div>
+                */}
 
-                {/* Contract Minting Data */}
+                {/*
                 <div className="border-t border-gray-500/30 pt-3 mt-4">
                   <div className="text-gray-300 text-sm mb-3 font-mono">🔧 Contract Minting Data</div>
 
@@ -2894,6 +2917,20 @@ export default function GeneratorPage() {
                       </div>
                     </div>
                   </div>
+
+                </div>
+                */}
+
+                {/* NFT HTML Export */}
+                <div className="mt-4 pt-4 border-t border-gray-500/30">
+                  <div className="text-gray-300 text-sm mb-3 font-mono">📄 NFT HTML Export</div>
+                  <NFTExporter
+                    currentSeed={currentSeed}
+                    currentPalette={palette}
+                    currentStripeData={typeof window !== 'undefined' ? (window as any).stripeData || [] : []}
+                    textRows={textInputs}
+                    characterMap={typeof window !== 'undefined' ? (window as any).doormatData?.characterMap || {} : {}}
+                  />
                 </div>
 
                 {/* Mint Button Section */}

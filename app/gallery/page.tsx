@@ -38,6 +38,7 @@ interface NFTData {
 type SortOption = 'tokenId' | 'mintTime' | 'rarity' | 'complexity' | 'stripeCount' | 'characterCount'
 type SortDirection = 'asc' | 'desc'
 
+
 export default function GalleryPage() {
   const { address: userAddress } = useAccount()
   const chainId = useChainId()
@@ -333,7 +334,7 @@ export default function GalleryPage() {
 
   // Filtered and sorted NFTs
   const filteredAndSortedNFTs = useMemo(() => {
-    let filtered = nfts.filter(nft => {
+    const filtered = nfts.filter(nft => {
       return Object.entries(selectedTraits).every(([trait, value]) => {
         if (value === null || value === undefined || value === '') return true
         return nft.traits[trait as keyof RugTraits] === value
@@ -712,37 +713,36 @@ export default function GalleryPage() {
                     }`}
                   >
                     {/* Artwork Iframe */}
-                    <div className={`relative ${viewMode === 'grid' ? 'aspect-[4/3]' : 'w-64 flex-shrink-0'}`}>
+                    <div className={`relative overflow-hidden rounded-lg ${
+                      viewMode === 'grid'
+                        ? 'aspect-[4/3]' // 4:3 aspect ratio for grid view
+                        : 'w-64 h-48' // Fixed size for list view
+                    }`}>
                       {nft.animation_url ? (
-                        <div className={`w-full ${viewMode === 'list' ? 'h-48' : 'h-full'} overflow-hidden rounded-lg relative`}>
-                          {/* Responsive iframe container that matches canvas aspect ratio */}
-                          <div
-                            className="w-full relative"
+                          <iframe
+                            src={nft.animation_url}
+                            className="absolute border-0 rounded-lg"
                             style={{
-                              paddingBottom: viewMode === 'list' ? '69.7%' : '69.7%', // 920/1320 * 100% = 69.7% (maintains 1320:920 aspect ratio)
-                              overflow: 'hidden',
-                              maxHeight: viewMode === 'list' ? '192px' : 'none' // 48 * 4px (Tailwind h-48)
+                              width: '330px', // Fixed width to match canvas aspect
+                              height: '248px', // Fixed height (330 * 3/4 = 247.5)
+                              position: 'absolute',
+                              top: '50%',
+                              left: '50%',
+                              transform: 'translate(-50%, -50%)',
+                              objectFit: 'cover', // Scale content to fit
+                              overflow: 'hidden'
                             }}
-                          >
-                            <iframe
-                              src={nft.animation_url}
-                              className="absolute inset-0 border-0 w-full h-full"
-                              style={{
-                                width: '100%',
-                                height: '100%'
-                              }}
-                              title={`Onchain Rug #${nft.tokenId}`}
-                              sandbox="allow-scripts"
-                            />
-                          </div>
-                        </div>
+                            title={`Onchain Rug #${nft.tokenId}`}
+                            sandbox="allow-scripts"
+                            loading="lazy"
+                          />
                       ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-blue-100 to-indigo-100 rounded-lg flex items-center justify-center">
-                          <div className="text-center">
-                            <div className="text-4xl mb-2">🎨</div>
-                            <div className="text-sm text-blue-600 font-medium">No artwork available</div>
+                          <div className="w-full h-full bg-gradient-to-br from-blue-100 to-indigo-100 rounded-lg flex items-center justify-center">
+                            <div className="text-center">
+                              <div className="text-4xl mb-2">🎨</div>
+                              <div className="text-sm text-blue-600 font-medium">No artwork available</div>
+                            </div>
                           </div>
-                        </div>
                       )}
                       <div className="absolute top-2 right-2 bg-blue-600 text-white px-2 py-1 rounded-full text-xs font-bold">
                         #{nft.tokenId}

@@ -1,19 +1,22 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.22;
 
-import "lib/openzeppelin-contracts/contracts/token/ERC721/ERC721.sol";
-import "lib/openzeppelin-contracts/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
-import "lib/openzeppelin-contracts/contracts/access/Ownable.sol";
+import "lib/openzeppelin-contracts-upgradeable/contracts/token/ERC721/ERC721Upgradeable.sol";
+import "lib/openzeppelin-contracts-upgradeable/contracts/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
+import "lib/openzeppelin-contracts-upgradeable/contracts/token/ERC721/extensions/ERC721RoyaltyUpgradeable.sol";
+import "lib/openzeppelin-contracts-upgradeable/contracts/access/OwnableUpgradeable.sol";
+import "lib/openzeppelin-contracts-upgradeable/contracts/proxy/utils/Initializable.sol";
+import "lib/openzeppelin-contracts-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "lib/openzeppelin-contracts/contracts/utils/Strings.sol";
 import "lib/openzeppelin-contracts/contracts/utils/Base64.sol";
 import "./HTMLGenerator.sol";
 
 /**
- * @title OnchainRugs
+ * @title OnchainRugs by Valipokkann
  * @dev Fully on-chain NFT rug collection with complete p5.js algorithm
- * @notice Features: Dynamic aging, text uniqueness, filtered character maps, minified HTML generation
+ * @notice Features: Dynamic aging, text uniqueness, filtered character maps, minified HTML generation, ERC-2981 royalties
  */
-contract OnchainRugs is ERC721, ERC721URIStorage, Ownable {
+contract OnchainRugs is Initializable, ERC721Upgradeable, ERC721URIStorageUpgradeable, ERC721RoyaltyUpgradeable, OwnableUpgradeable, UUPSUpgradeable {
     using Strings for uint256;
 
     // ============ CONSTANTS ============
@@ -73,11 +76,31 @@ contract OnchainRugs is ERC721, ERC721URIStorage, Ownable {
     event PricingUpdated(string parameter, uint256 oldValue, uint256 newValue);
     event AgingThresholdsUpdated();
 
-    constructor() ERC721("Onchain Rugs", "RUGS") Ownable(msg.sender) {
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize() external initializer {
+        __ERC721_init("Onchain Rugs", "RUGS");
+        __ERC721URIStorage_init();
+        __ERC721Royalty_init();
+        __Ownable_init(msg.sender);
+
         // Initialize all line prices to 0.000001 ETH for testing
         for (uint256 i = 0; i < 5; i++) {
             linePrices[i] = 0.000001 ether;
         }
+
+        // Set default royalty to contract owner (10% = 1000 basis points)
+        _setDefaultRoyalty(msg.sender, uint96(royaltyPercentage));
+    }
+
+    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
+
+    // Upgrade function for UUPS proxy
+    function upgradeTo(address newImplementation) external onlyOwner {
+        upgradeToAndCall(newImplementation, "");
     }
 
     function updateBasePrice(uint256 p) external onlyOwner {emit PricingUpdated("basePrice",basePrice,p);basePrice=p;}
@@ -88,6 +111,20 @@ contract OnchainRugs is ERC721, ERC721URIStorage, Ownable {
     function updateRoyaltyPercentage(uint256 p) external onlyOwner {emit PricingUpdated("royaltyPercentage",royaltyPercentage,p);royaltyPercentage=p;}
 
     function updateAgingThresholds(uint256 d1,uint256 d2,uint256 t) external onlyOwner {dirtLevel1Days=d1;dirtLevel2Days=d2;textureIncrementDays=t;emit AgingThresholdsUpdated();}
+
+    // ============ ROYALTY MANAGEMENT ============
+    function setDefaultRoyalty(address receiver, uint96 feeNumerator) external onlyOwner {
+        _setDefaultRoyalty(receiver, feeNumerator);
+    }
+
+    function setTokenRoyalty(uint256 tokenId, address receiver, uint96 feeNumerator) external onlyOwner {
+        _setTokenRoyalty(tokenId, receiver, feeNumerator);
+    }
+
+    function resetTokenRoyalty(uint256 tokenId) external onlyOwner {
+        _resetTokenRoyalty(tokenId);
+    }
+
     function setPaused(bool p) external onlyOwner {paused=p;}
 
     // ============ MINTING FUNCTIONS ============
@@ -171,7 +208,7 @@ contract OnchainRugs is ERC721, ERC721URIStorage, Ownable {
     function tokenURI(uint256 tokenId)
         public
         view
-        override(ERC721, ERC721URIStorage)
+        override(ERC721Upgradeable, ERC721URIStorageUpgradeable)
         returns (string memory)
     {
         require(ownerOf(tokenId) != address(0), "Token does not exist");
@@ -219,5 +256,9 @@ contract OnchainRugs is ERC721, ERC721URIStorage, Ownable {
     function totalSupply() external view returns(uint256){return _totalSupply();}
     function maxSupply() external pure returns(uint256){return MAX_SUPPLY;}
     function burn(uint256 t) external {require(ownerOf(t)==msg.sender,"Not owner");delete rugs[t];delete agingData[t];_burn(t);}
-    function supportsInterface(bytes4 i) public view override(ERC721, ERC721URIStorage) returns(bool){return super.supportsInterface(i);}
+    function supportsInterface(bytes4 i) public view override(ERC721Upgradeable, ERC721URIStorageUpgradeable, ERC721RoyaltyUpgradeable) returns(bool){return super.supportsInterface(i);}
+
+    // ============ STORAGE GAPS ============
+    // Reserve storage slots for future upgrades
+    uint256[50] private __gap;
 }

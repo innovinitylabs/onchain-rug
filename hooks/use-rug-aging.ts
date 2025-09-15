@@ -130,3 +130,52 @@ export function useCleanRug() {
     hash,
   }
 }
+
+// Hook for updating aging thresholds (owner only)
+export function useUpdateAgingThresholds() {
+  const { address } = useAccount()
+  const chainId = useChainId()
+  const { writeContract, data: hash, isPending, error } = useWriteContract()
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
+    hash,
+  })
+
+  const updateAgingThresholds = async (dirtLevel1Days: number, dirtLevel2Days: number, textureIncrementDays: number) => {
+    if (!writeContract) return
+
+    try {
+      const chain = chainId === 360 ? shapeMainnet : shapeSepolia
+      await writeContract({
+        address: config.rugContractAddress as `0x${string}`,
+        abi: [
+          {
+            inputs: [
+              { name: 'd1', type: 'uint256' },
+              { name: 'd2', type: 'uint256' },
+              { name: 't', type: 'uint256' }
+            ],
+            name: 'updateAgingThresholds',
+            outputs: [],
+            stateMutability: 'nonpayable',
+            type: 'function',
+          },
+        ] as const,
+        functionName: 'updateAgingThresholds',
+        args: [BigInt(dirtLevel1Days), BigInt(dirtLevel2Days), BigInt(textureIncrementDays)],
+        chain,
+        account: address,
+      })
+    } catch (err) {
+      console.error('Failed to update aging thresholds:', err)
+    }
+  }
+
+  return {
+    updateAgingThresholds,
+    isPending,
+    isConfirming,
+    isSuccess,
+    error,
+    hash,
+  }
+}

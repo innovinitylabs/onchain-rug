@@ -20,7 +20,7 @@
       const MULTIPLY = 'MULTIPLY';
       
       // Transform stack
-      let transformStack = [];
+      const transformStack = [];
       let currentTransform = { x: 0, y: 0, rotation: 0 };
       
       // Setup function

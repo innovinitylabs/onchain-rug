@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useChainId } from 'wagmi'
 import { parseEther } from 'viem'
 import { shapeSepolia, shapeMainnet } from '@/lib/web3'
+// import { useUpdateAgingThresholds } from '@/hooks/use-rug-aging'
 
 interface SimpleMintingProps {
   textRows: string[]
@@ -212,6 +213,14 @@ export default function SimpleMinting({
         </div>
       )}
 
+      {/* Aging Threshold Testing - Owner Only - Temporarily disabled */}
+      {/* {address === '0x7Bc9427C8730b87Ab3faD10DA63F0C4b9e9E0A5F' && (
+        <div className="border-t border-gray-600 pt-4 mt-6">
+          <div className="text-green-400 text-sm font-mono mb-3">🧪 Aging Threshold Testing (Owner Only)</div>
+          <AgingThresholdTester />
+        </div>
+      )} */}
+
       {/* Error Display */}
       {error && (
         <div className="bg-red-900 p-3 rounded">
@@ -223,3 +232,82 @@ export default function SimpleMinting({
     </div>
   )
 }
+
+// Aging Threshold Tester Component - Temporarily disabled due to TypeScript issue
+// function AgingThresholdTester() {
+//   const { updateAgingThresholds, isPending, isConfirming, isSuccess, error } = useUpdateAgingThresholds()
+//   const [dirtLevel1Days, setDirtLevel1Days] = useState(300) // 5 minutes for testing
+//   const [dirtLevel2Days, setDirtLevel2Days] = useState(900) // 15 minutes for testing
+//   const [textureIncrementDays, setTextureIncrementDays] = useState(1800) // 30 minutes for testing
+//
+//   const handleSetTestThresholds = async () => {
+//     await updateAgingThresholds(dirtLevel1Days, dirtLevel2Days, textureIncrementDays)
+//   }
+//
+//   const handleSetDefaultThresholds = async () => {
+//     await updateAgingThresholds(3 * 24 * 60 * 60, 7 * 24 * 60 * 60, 14 * 24 * 60 * 60) // 3, 7, 14 days
+//   }
+//
+//   return (
+//     <div className="space-y-3">
+//       <div className="text-xs text-gray-400">
+//         <div>⚠️ Only visible to contract owner. Updates aging thresholds on-chain.</div>
+//         <div>Current: Dirt Level 1 at {Math.round((3 * 24 * 60 * 60) / 60)}min, Level 2 at {Math.round((7 * 24 * 60 * 60) / 60)}min, Texture at {Math.round((14 * 24 * 60 * 60) / 60)}min</div>
+//       </div>
+//
+//       <div className="grid grid-cols-3 gap-2">
+//         <div>
+//           <label className="block text-xs text-gray-300 mb-1">Dirt Level 1 (seconds)</label>
+//           <input
+//             type="number"
+//             value={dirtLevel1Days}
+//             onChange={(e) => setDirtLevel1Days(Number(e.target.value))}
+//             className="w-full px-2 py-1 bg-gray-800 border border-gray-600 text-green-400 text-xs rounded"
+//             placeholder="300 (5min)"
+//           />
+//         </div>
+//         <div>
+//           <label className="block text-xs text-gray-300 mb-1">Dirt Level 2 (seconds)</label>
+//           <input
+//             type="number"
+//             value={dirtLevel2Days}
+//             onChange={(e) => setDirtLevel2Days(Number(e.target.value))}
+//             className="w-full px-2 py-1 bg-gray-800 border border-gray-600 text-green-400 text-xs rounded"
+//             placeholder="900 (15min)"
+//           />
+//         </div>
+//         <div>
+//           <label className="block text-xs text-gray-300 mb-1">Texture Increment (seconds)</label>
+//           <input
+//             type="number"
+//             value={textureIncrementDays}
+//             onChange={(e) => setTextureIncrementDays(Number(e.target.value))}
+//             className="w-full px-2 py-1 bg-gray-800 border border-gray-600 text-green-400 text-xs rounded"
+//             placeholder="1800 (30min)"
+//           />
+//         </div>
+//       </div>
+//
+//       <div className="flex gap-2">
+//         <button
+//           onClick={handleSetTestThresholds}
+//           disabled={isPending}
+//           className="bg-orange-600 hover:bg-orange-700 disabled:bg-gray-600 text-white px-3 py-1.5 rounded text-xs font-mono transition-colors"
+//         >
+//           {isPending ? '⏳ Setting...' : '🧪 Set Test Thresholds'}
+//         </button>
+//         <button
+//           onClick={handleSetDefaultThresholds}
+//           disabled={isPending}
+//           className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white px-3 py-1.5 rounded text-xs font-mono transition-colors"
+//         >
+//           {isPending ? '⏳ Setting...' : '🔄 Reset to Default'}
+//         </button>
+//       </div>
+//
+//       {isConfirming && <div className="text-yellow-400 text-xs">⏳ Confirming transaction...</div>}
+//       {isSuccess && <div className="text-green-400 text-xs">✅ Aging thresholds updated!</div>}
+//       {error && <div className="text-red-400 text-xs">❌ Error: {error.message}</div>}
+//     </div>
+//   )
+// }

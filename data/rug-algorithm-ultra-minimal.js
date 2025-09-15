@@ -6,7 +6,7 @@ function generateRugHTML(seed, palette, stripeData, textRows, characterMap, show
   const getUsedCharacters = (textRows) => {
     const used = new Set();
     textRows.forEach(row => {
-      for (let char of row.toUpperCase()) {
+      for (const char of row.toUpperCase()) {
         used.add(char);
       }
     });
