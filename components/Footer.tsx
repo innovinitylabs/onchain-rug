@@ -55,6 +55,24 @@ export default function Footer() {
       description: "Beautiful & consistent icon toolkit",
       license: "ISC",
       link: "https://lucide.dev/"
+    },
+    {
+      name: "Liquid Glass React",
+      description: "Apple's Liquid Glass effect for React",
+      license: "MIT",
+      link: "https://github.com/rdev/liquid-glass-react"
+    },
+    {
+      name: "Scripty.sol",
+      description: "Gas efficient, storage agnostic, on-chain HTML builder",
+      license: "MIT",
+      link: "https://github.com/intartnft/scripty.sol"
+    },
+    {
+      name: "Diamond-2",
+      description: "Diamond pattern implementation for smart contracts",
+      license: "MIT",
+      link: "https://github.com/mudgen/diamond-2"
     }
   ]
 
