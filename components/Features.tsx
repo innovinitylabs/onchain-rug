@@ -43,27 +43,7 @@ const features = [
   }
 ]
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1
-    }
-  }
-}
-
-const itemVariants = {
-  hidden: { y: 20, opacity: 0 },
-  visible: {
-    y: 0,
-    opacity: 1,
-    transition: {
-      duration: 0.6,
-      ease: "easeOut" as const
-    }
-  }
-}
+// Animation variants removed - using LiquidGlass components instead
 
 export default function Features() {
   return (
@@ -85,52 +65,35 @@ export default function Features() {
           </p>
         </motion.div>
 
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
-        >
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {features.map((feature, index) => (
-            <motion.div
+            <LiquidGlass
               key={index}
-              variants={itemVariants}
-              className="group"
+              className="h-full group"
+              blurAmount={0.1}
+              aberrationIntensity={1}
+              mode="prominent"
+              cornerRadius={24}
             >
-              <LiquidGlass
-                className="h-full"
-                blurAmount={0.1}
-                aberrationIntensity={1}
-                mode="prominent"
-                cornerRadius={24}
-              >
-                <div className="p-8 h-full flex flex-col">
-                  <div className={`w-16 h-16 rounded-full bg-gradient-to-r ${feature.color} p-4 mb-6 group-hover:scale-110 transition-transform duration-300 mx-auto`}>
-                    <feature.icon className="w-full h-full text-white" />
-                  </div>
-
-                  <h3 className="text-2xl font-bold text-white mb-4 text-center">
-                    {feature.title}
-                  </h3>
-
-                  <p className="text-gray-300 leading-relaxed text-center flex-1">
-                    {feature.description}
-                  </p>
+              <div className="p-8 h-full flex flex-col">
+                <div className={`w-16 h-16 rounded-full bg-gradient-to-r ${feature.color} p-4 mb-6 group-hover:scale-110 transition-transform duration-300 mx-auto`}>
+                  <feature.icon className="w-full h-full text-white" />
                 </div>
-              </LiquidGlass>
-            </motion.div>
+
+                <h3 className="text-2xl font-bold text-white mb-4 text-center">
+                  {feature.title}
+                </h3>
+
+                <p className="text-gray-300 leading-relaxed text-center flex-1">
+                  {feature.description}
+                </p>
+              </div>
+            </LiquidGlass>
           ))}
-        </motion.div>
+        </div>
 
         {/* Stats Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.3 }}
-          viewport={{ once: true }}
-          className="mt-20"
-        >
+        <div className="mt-20">
           <LiquidGlass
             className="rounded-3xl"
             blurAmount={0.1}
@@ -159,7 +122,7 @@ export default function Features() {
               </div>
             </div>
           </LiquidGlass>
-        </motion.div>
+        </div>
       </div>
     </section>
   )
