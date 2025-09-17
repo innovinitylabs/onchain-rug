@@ -59,28 +59,36 @@ body {
   --rk-fonts-body: 'system-ui, -apple-system, sans-serif' !important;
 }
 
-/* Specific font overrides for wallet components ONLY */
+/* Specific font overrides for wallet components ONLY - MAX SPECIFICITY */
 [data-rk] [data-testid="rk-connect-button"],
 [data-rk] [data-testid="rk-wallet-option"],
 [data-rk] [data-testid="rk-chain-option"],
 [data-rk] [data-testid="rk-account-modal"] {
-  font-family: 'system-ui, -apple-system, sans-serif' !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+  font-variant: normal !important;
+  font-feature-settings: normal !important;
 }
 
 [data-rk] [data-testid="rk-connect-button"] *,
 [data-rk] [data-testid="rk-wallet-option"] *,
 [data-rk] [data-testid="rk-chain-option"] *,
 [data-rk] [data-testid="rk-account-modal"] * {
-  font-family: 'system-ui, -apple-system, sans-serif' !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+  font-variant: normal !important;
+  font-feature-settings: normal !important;
 }
 
 /* Override any monospace fonts specifically in wallet dropdowns */
-[data-rk] [class*="font-mono"] {
-  font-family: 'system-ui, -apple-system, sans-serif' !important;
+[data-rk] [class*="font-mono"],
+[data-rk] [class*="font-mono"] * {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+  font-variant: normal !important;
+  font-feature-settings: normal !important;
 }
 
-[data-rk] [class*="font-mono"] * {
-  font-family: 'system-ui, -apple-system, sans-serif' !important;
+/* Force override any existing font declarations */
+[data-rk] * {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Toast notifications glass theme */
@@ -92,11 +100,15 @@ body {
   --error-bg: rgba(239, 68, 68, 0.2) !important;
   --warning-bg: rgba(245, 158, 11, 0.2) !important;
   backdrop-filter: blur(20px) !important;
-  font-family: 'system-ui, -apple-system, sans-serif' !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+  font-variant: normal !important;
+  font-feature-settings: normal !important;
 }
 
 [data-sonner-toaster] * {
-  font-family: 'system-ui, -apple-system, sans-serif' !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+  font-variant: normal !important;
+  font-feature-settings: normal !important;
 }
 
 /* Glass morphism effects for wallet components */
@@ -109,7 +121,9 @@ body {
   padding: 8px 12px !important;
   font-size: 14px !important;
   font-weight: 600 !important;
-  font-family: 'system-ui, -apple-system, sans-serif' !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+  font-variant: normal !important;
+  font-feature-settings: normal !important;
   transition: all 0.2s ease !important;
 }
 
@@ -129,5 +143,7 @@ body {
   border-radius: 8px !important;
   font-size: 14px !important;
   font-weight: 600 !important;
-  font-family: 'system-ui, -apple-system, sans-serif' !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+  font-variant: normal !important;
+  font-feature-settings: normal !important;
 }

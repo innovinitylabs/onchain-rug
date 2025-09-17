@@ -15,10 +15,10 @@ export function WalletConnect() {
     <div className="flex items-center gap-4">
       {isConnected && (
         <div className="flex flex-col items-end gap-0 text-xs text-white/80 bg-white/10 backdrop-blur-md px-3 py-2 rounded-lg border border-white/10">
-          <span className="leading-tight" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: '500' }}>
+          <span className="leading-tight" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, \'Helvetica Neue\', Arial, sans-serif', fontWeight: '500', fontVariant: 'normal', fontFeatureSettings: 'normal' }}>
             {balance ? `${parseFloat(formatEther(balance.value)).toFixed(4)} ETH` : '0 ETH'}
           </span>
-          <span className="text-[10px] leading-tight opacity-60" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: '400' }}>
+          <span className="text-[10px] leading-tight opacity-60" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, \'Helvetica Neue\', Arial, sans-serif', fontWeight: '400', fontVariant: 'normal', fontFeatureSettings: 'normal' }}>
             {chainId === 360 ? 'Shape' : 'Sepolia'}
           </span>
         </div>
