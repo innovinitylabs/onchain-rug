@@ -59,55 +59,27 @@ body {
   --rk-fonts-body: 'system-ui, -apple-system, sans-serif' !important;
 }
 
-/* Force system font on all RainbowKit text elements */
-[data-rk] * {
+/* Specific font overrides for wallet components ONLY */
+[data-rk] [data-testid="rk-connect-button"],
+[data-rk] [data-testid="rk-wallet-option"],
+[data-rk] [data-testid="rk-chain-option"],
+[data-rk] [data-testid="rk-account-modal"] {
   font-family: 'system-ui, -apple-system, sans-serif' !important;
 }
 
-[data-rk] button,
-[data-rk] span,
-[data-rk] div,
-[data-rk] p,
-[data-rk] h1,
-[data-rk] h2,
-[data-rk] h3,
-[data-rk] h4,
-[data-rk] h5,
-[data-rk] h6 {
-  font-family: 'system-ui, -apple-system, sans-serif' !important;
-}
-
-/* Specific overrides for wallet dropdown and modal text */
-[data-rk] [data-testid="rk-wallet-option"] * {
-  font-family: 'system-ui, -apple-system, sans-serif' !important;
-}
-
-[data-rk] [data-testid="rk-chain-option"] * {
-  font-family: 'system-ui, -apple-system, sans-serif' !important;
-}
-
+[data-rk] [data-testid="rk-connect-button"] *,
+[data-rk] [data-testid="rk-wallet-option"] *,
+[data-rk] [data-testid="rk-chain-option"] *,
 [data-rk] [data-testid="rk-account-modal"] * {
   font-family: 'system-ui, -apple-system, sans-serif' !important;
 }
 
-/* Override any remaining monospace fonts in wallet components */
-[data-rk] [class*="font-mono"],
+/* Override any monospace fonts specifically in wallet dropdowns */
+[data-rk] [class*="font-mono"] {
+  font-family: 'system-ui, -apple-system, sans-serif' !important;
+}
+
 [data-rk] [class*="font-mono"] * {
-  font-family: 'system-ui, -apple-system, sans-serif' !important;
-}
-
-/* Force system font on all text within wallet-related elements */
-[data-rk] [data-testid*="wallet"],
-[data-rk] [data-testid*="chain"],
-[data-rk] [data-testid*="account"],
-[data-rk] [data-testid*="modal"] {
-  font-family: 'system-ui, -apple-system, sans-serif' !important;
-}
-
-[data-rk] [data-testid*="wallet"] *,
-[data-rk] [data-testid*="chain"] *,
-[data-rk] [data-testid*="account"] *,
-[data-rk] [data-testid*="modal"] * {
   font-family: 'system-ui, -apple-system, sans-serif' !important;
 }
 
@@ -120,9 +92,9 @@ body {
   --error-bg: rgba(239, 68, 68, 0.2) !important;
   --warning-bg: rgba(245, 158, 11, 0.2) !important;
   backdrop-filter: blur(20px) !important;
+  font-family: 'system-ui, -apple-system, sans-serif' !important;
 }
 
-/* Force system font on toast notifications */
 [data-sonner-toaster] * {
   font-family: 'system-ui, -apple-system, sans-serif' !important;
 }
@@ -136,7 +108,7 @@ body {
   border-radius: 8px !important;
   padding: 8px 12px !important;
   font-size: 14px !important;
-  font-weight: 500 !important;
+  font-weight: 600 !important;
   font-family: 'system-ui, -apple-system, sans-serif' !important;
   transition: all 0.2s ease !important;
 }
@@ -156,6 +128,6 @@ body {
   color: #ffffff !important;
   border-radius: 8px !important;
   font-size: 14px !important;
-  font-weight: 500 !important;
+  font-weight: 600 !important;
   font-family: 'system-ui, -apple-system, sans-serif' !important;
 }
