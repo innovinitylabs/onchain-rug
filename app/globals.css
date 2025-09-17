@@ -86,9 +86,21 @@ body {
   font-feature-settings: normal !important;
 }
 
-/* Force override any existing font declarations */
-[data-rk] * {
+/* Force override any existing font declarations - MAXIMUM SPECIFICITY */
+[data-rk] *,
+[data-rk] *::before,
+[data-rk] *::after {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+  font-variant: normal !important;
+  font-feature-settings: normal !important;
+  text-rendering: optimizeLegibility !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+}
+
+/* Override RainbowKit's font variable directly */
+:root {
+  --rk-fonts-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
 }
 
 /* Toast notifications glass theme */
@@ -117,9 +129,9 @@ body {
   background: rgba(255, 255, 255, 0.08) !important;
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
   color: #ffffff !important;
-  border-radius: 8px !important;
-  padding: 8px 12px !important;
-  font-size: 14px !important;
+  border-radius: 6px !important;
+  padding: 6px 10px !important;
+  font-size: 13px !important;
   font-weight: 600 !important;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
   font-variant: normal !important;
@@ -140,10 +152,52 @@ body {
   background: rgba(255, 255, 255, 0.08) !important;
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
   color: #ffffff !important;
-  border-radius: 8px !important;
-  font-size: 14px !important;
+  border-radius: 6px !important;
+  padding: 6px 10px !important;
+  font-size: 13px !important;
   font-weight: 600 !important;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
   font-variant: normal !important;
   font-feature-settings: normal !important;
+  text-rendering: optimizeLegibility !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+}
+
+/* ABSOLUTE LAST RESORT - Override everything including Tailwind classes */
+[data-rk] [data-testid="rk-connect-button"],
+[data-rk] [data-testid="rk-wallet-option"],
+[data-rk] [data-testid="rk-chain-option"],
+[data-rk] [data-testid="rk-account-modal"],
+[data-rk] button,
+[data-rk] span,
+[data-rk] div,
+[data-rk] p,
+[data-rk] [class*="font-"],
+[data-rk] [class*="font-mono"],
+[data-rk] [class*="font-sans"],
+[data-rk] [class*="font-serif"] {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+  font-variant: normal !important;
+  font-feature-settings: normal !important;
+  text-rendering: optimizeLegibility !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+}
+
+/* Override any Tailwind font utilities specifically */
+[data-rk] .font-mono,
+[data-rk] .font-sans,
+[data-rk] .font-serif {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+}
+
+/* JAVASCRIPT-INJECTED OVERRIDE - This will be applied via JS */
+.force-wallet-font {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+  font-variant: normal !important;
+  font-feature-settings: normal !important;
+  text-rendering: optimizeLegibility !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
 }
