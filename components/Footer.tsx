@@ -130,17 +130,15 @@ export default function Footer() {
           <div className="text-center md:text-right">
             <button
               onClick={() => setIsCreditsOpen(!isCreditsOpen)}
-              className="text-xs text-gray-500 hover:text-cyan-400 transition-colors duration-200 uppercase tracking-wider font-medium"
+              className="text-xs text-gray-500 hover:text-cyan-400 transition-colors duration-200 uppercase tracking-wider font-medium flex items-center gap-1"
             >
-              Credits
               <motion.div
                 animate={{ rotate: isCreditsOpen ? 180 : 0 }}
                 transition={{ duration: 0.2 }}
-                className="inline ml-1"
               >
                 <ChevronDown className="w-3 h-3" />
               </motion.div>
-
+              Credits
             </button>
           </div>
         </div>
