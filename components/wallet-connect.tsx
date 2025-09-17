@@ -23,8 +23,8 @@ export function WalletConnect() {
         htmlElement.style.fontVariant = 'normal';
         htmlElement.style.fontFeatureSettings = 'normal';
         htmlElement.style.textRendering = 'optimizeLegibility';
-        htmlElement.style.WebkitFontSmoothing = 'antialiased';
-        htmlElement.style.MozOsxFontSmoothing = 'grayscale';
+        (htmlElement.style as any).WebkitFontSmoothing = 'antialiased';
+        (htmlElement.style as any).MozOsxFontSmoothing = 'grayscale';
       });
 
       // Force font on specific wallet elements
@@ -35,8 +35,8 @@ export function WalletConnect() {
         htmlElement.style.fontVariant = 'normal';
         htmlElement.style.fontFeatureSettings = 'normal';
         htmlElement.style.textRendering = 'optimizeLegibility';
-        htmlElement.style.WebkitFontSmoothing = 'antialiased';
-        htmlElement.style.MozOsxFontSmoothing = 'grayscale';
+        (htmlElement.style as any).WebkitFontSmoothing = 'antialiased';
+        (htmlElement.style as any).MozOsxFontSmoothing = 'grayscale';
       });
     };
 

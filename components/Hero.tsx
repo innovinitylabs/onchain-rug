@@ -437,7 +437,7 @@ export default function Hero() {
           
           {/* Hidden description paragraph */}
           {/* <motion.p 
-            className="text-lg md:text-xl text-amber-700/70 mb-12 max-w-2xl mx-auto leading-relaxed"
+            className="text-lg md:text-xl text-amber-700 mb-12 max-w-2xl mx-auto leading-relaxed"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1, type: "tween" }}
@@ -477,6 +477,7 @@ export default function Hero() {
               style={{ willChange: 'transform' }}
             >
               <LiquidGlass
+                displacementScale={150}
                 blurAmount={0.2}
                 aberrationIntensity={3}
                 saturation={200}
@@ -508,6 +509,7 @@ export default function Hero() {
               style={{ willChange: 'transform' }}
             >
               <LiquidGlass
+                displacementScale={150}
                 blurAmount={0.2}
                 aberrationIntensity={3}
                 saturation={200}

@@ -437,10 +437,10 @@ export default function GalleryPage() {
         transition={{ duration: 0.8 }}
         className="text-center mb-12 pt-24"
       >
-        <h1 className="text-6xl md:text-7xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-6">
+        <h1 className="text-6xl md:text-7xl font-bold gradient-text mb-6">
           🖼️ Gallery
         </h1>
-        <p className="text-xl text-blue-700/70 max-w-3xl mx-auto mb-8">
+        <p className="text-xl text-blue-700 max-w-3xl mx-auto mb-8">
           Explore our collection of 1,111 unique Onchain Rugs, algorithmically generated and stored entirely on-chain.
           {nfts.length > 0 ? ` Currently displaying ${nfts.length} loaded NFTs.` : ' Loading NFT data from the blockchain...'}
         </p>
@@ -450,11 +450,11 @@ export default function GalleryPage() {
           <div className="text-center mb-4">
             <h3 className="text-lg font-semibold text-blue-800 mb-2">Contract Information</h3>
             <div className="bg-blue-50 rounded-lg p-3 border border-blue-200/50">
-              <div className="text-sm text-blue-700/70 mb-1">Contract Address</div>
+              <div className="text-sm text-blue-700 mb-1">Contract Address</div>
               <div className="font-mono text-sm text-blue-800 break-all">
                 {resolvedContractAddress}
               </div>
-              <div className="text-xs text-blue-600/70 mt-2">
+              <div className="text-xs text-blue-600 mt-2">
                 Shape Sepolia Testnet • Chain ID: {chainId}
               </div>
             </div>
@@ -501,19 +501,19 @@ export default function GalleryPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-2xl mx-auto">
           <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 border border-blue-200/50">
             <div className="text-2xl font-bold text-blue-600">{totalSupply ? Number(totalSupply) : 1111}</div>
-            <div className="text-sm text-blue-700/70">Total Supply</div>
+            <div className="text-sm text-blue-700">Total Supply</div>
           </div>
           <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 border border-indigo-200/50">
             <div className="text-2xl font-bold text-indigo-600">{nfts.length}</div>
-            <div className="text-sm text-blue-700/70">Loaded NFTs</div>
+            <div className="text-sm text-blue-700">Loaded NFTs</div>
           </div>
           <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 border border-purple-200/50">
             <div className="text-2xl font-bold text-purple-600">{availableTraits.paletteName?.size || 0}</div>
-            <div className="text-sm text-blue-700/70">Unique Palettes</div>
+            <div className="text-sm text-blue-700">Unique Palettes</div>
           </div>
           <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 border border-cyan-200/50">
             <div className="text-2xl font-bold text-cyan-600">{availableTraits.complexity?.size || 0}</div>
-            <div className="text-sm text-blue-700/70">Complexity Levels</div>
+            <div className="text-sm text-blue-700">Complexity Levels</div>
           </div>
         </div>
       </motion.div>
@@ -645,10 +645,10 @@ export default function GalleryPage() {
               <div className="text-center py-12">
                 <div className="text-6xl mb-4">🎨</div>
                 <h3 className="text-2xl font-bold text-blue-800 mb-4">No NFTs Available</h3>
-                <p className="text-blue-700/70 mb-6 max-w-md mx-auto">
+                <p className="text-blue-700 mb-6 max-w-md mx-auto">
                   {alchemyError || "Unable to load NFT data. This could be due to:"}
                 </p>
-                <ul className="text-left text-blue-700/70 mb-6 max-w-md mx-auto list-disc list-inside space-y-2">
+                <ul className="text-left text-blue-700 mb-6 max-w-md mx-auto list-disc list-inside space-y-2">
                   <li>Alchemy API key not configured on server</li>
                   <li>Contract not indexed by Alchemy yet</li>
                   <li>No NFTs minted in the collection</li>
@@ -677,11 +677,11 @@ export default function GalleryPage() {
           <>
             {/* Results count */}
             <div className="text-center mb-8">
-              <p className="text-blue-700/70">
+              <p className="text-blue-700">
                 Showing {paginatedNFTs.length} of {filteredAndSortedNFTs.length} loaded NFTs
                 {Object.keys(selectedTraits).length > 0 && ' (filtered)'}
                 {totalSupply && Number(totalSupply) > nfts.length && (
-                  <span className="block text-sm mt-1 text-blue-600/60">
+                  <span className="block text-sm mt-1 text-blue-600">
                     ({Number(totalSupply) - nfts.length} more NFTs available - loading first {Math.min(Number(totalSupply), 5)})
                   </span>
                 )}
@@ -762,7 +762,7 @@ export default function GalleryPage() {
 
                       {/* Description */}
                       {nft.description && (
-                        <p className="text-sm text-blue-700/70 mb-3 line-clamp-2">
+                        <p className="text-sm text-blue-700 mb-3 line-clamp-2">
                           {nft.description}
                         </p>
                       )}
@@ -789,7 +789,7 @@ export default function GalleryPage() {
                       </div>
 
                       {/* Mint Time */}
-                      <div className="text-xs text-blue-700/70 mb-4">
+                      <div className="text-xs text-blue-700 mb-4">
                         Minted: {nft.traits.mintTime ?
                           new Date(typeof nft.traits.mintTime === 'string' ?
                             nft.traits.mintTime : Number(nft.traits.mintTime) * 1000

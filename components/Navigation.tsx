@@ -181,7 +181,10 @@ export default function Navigation() {
                   fontSize: '16px',
                   fontWeight: '700',
                   fontFamily: 'system-ui, -apple-system, sans-serif',
-                  opacity: 0.6
+                  opacity: 0.6,
+                  WebkitFontSmoothing: 'antialiased',
+                  MozOsxFontSmoothing: 'grayscale',
+                  textRendering: 'optimizeLegibility',
                 }}
               >
                 ONCHAIN RUGS
@@ -199,6 +202,11 @@ export default function Navigation() {
                   fontSize: '16px',
                   fontWeight: '700',
                   fontFamily: 'system-ui, -apple-system, sans-serif',
+                  WebkitFontSmoothing: 'antialiased',
+                  MozOsxFontSmoothing: 'grayscale',
+                  textRendering: 'optimizeLegibility',
+                  fontFeatureSettings: '"kern" 1, "liga" 1',
+                  fontVariantLigatures: 'common-ligatures',
                 }}
               >
                 ONCHAIN RUGS
@@ -216,7 +224,10 @@ export default function Navigation() {
                   fontSize: '16px',
                   fontWeight: '700',
                   fontFamily: 'system-ui, -apple-system, sans-serif',
-                  mixBlendMode: 'screen'
+                  mixBlendMode: 'screen',
+                  WebkitFontSmoothing: 'antialiased',
+                  MozOsxFontSmoothing: 'grayscale',
+                  textRendering: 'optimizeLegibility',
                 }}
               >
                 ONCHAIN RUGS
@@ -236,7 +247,10 @@ export default function Navigation() {
                   fontSize: '16px',
                   fontWeight: '700',
                   fontFamily: 'system-ui, -apple-system, sans-serif',
-                  mixBlendMode: 'overlay'
+                  mixBlendMode: 'overlay',
+                  WebkitFontSmoothing: 'antialiased',
+                  MozOsxFontSmoothing: 'grayscale',
+                  textRendering: 'optimizeLegibility',
                 }}
               >
               ONCHAIN RUGS
@@ -248,7 +262,7 @@ export default function Navigation() {
           <div className="hidden md:flex items-center gap-8">
             <Link
               href="/"
-              className="flex items-center gap-2 hover:opacity-80 transition-all duration-300"
+              className="flex items-center gap-2 hover:opacity-90 transition-all duration-300"
             >
               <Home className="w-5 h-5" />
               <svg
@@ -284,6 +298,10 @@ export default function Navigation() {
                     fontSize: '14px',
                     fontWeight: '600',
                     fontFamily: 'system-ui, -apple-system, sans-serif',
+                    WebkitFontSmoothing: 'antialiased',
+                    MozOsxFontSmoothing: 'grayscale',
+                    textRendering: 'optimizeLegibility',
+                    fontFeatureSettings: '"kern" 1',
                   }}
                 >
                   Home
@@ -292,7 +310,7 @@ export default function Navigation() {
             </Link>
             <Link
               href="/generator"
-              className="flex items-center gap-2 hover:opacity-80 transition-all duration-300"
+              className="flex items-center gap-2 hover:opacity-90 transition-all duration-300"
             >
               <Palette className="w-5 h-5" />
               <svg
@@ -336,7 +354,7 @@ export default function Navigation() {
             </Link>
             <Link
               href="/gallery"
-              className="flex items-center gap-2 hover:opacity-80 transition-all duration-300"
+              className="flex items-center gap-2 hover:opacity-90 transition-all duration-300"
             >
               <Image className="w-5 h-5" />
               <svg

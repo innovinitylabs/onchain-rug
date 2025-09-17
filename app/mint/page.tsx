@@ -45,10 +45,10 @@ export default function MintPage() {
             transition={{ duration: 0.8 }}
             className="text-center mb-12"
           >
-            <h1 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent mb-6">
+            <h1 className="text-5xl md:text-6xl font-bold gradient-text mb-6">
               🚀 Mint Your Onchain Rugs
             </h1>
-            <p className="text-xl text-amber-700/70 max-w-2xl mx-auto">
+            <p className="text-xl text-amber-700 max-w-2xl mx-auto">
               Create a unique, generative onchain rugs NFT with custom text and authentic weaving patterns.
               Your rug will be one of only 1111 ever created.
             </p>

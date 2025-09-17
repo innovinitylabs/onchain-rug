@@ -729,7 +729,7 @@ export default function GeneratorPage() {
       '=': ["00000","00000","11111","00000","11111","00000","00000"],
       "'": ["00100","00100","00100","00000","00000","00000","00000"],
       '"': ["01010","01010","01010","00000","00000","00000","00000"],
-      '.': ["00000","00000","00000","00000","00000","00000","00100"]
+      '.': ["00000","00000","00000","00000","00000","00100","00100"]
     }
     
     // Global variables for NFTExporter
@@ -1751,8 +1751,8 @@ export default function GeneratorPage() {
       for (let col = 0; col < numCols; col++) {
         if (charDef[row][col] === '1') {
           // Rotate 180°: flip both axes
-          const newCol = row
-          const newRow = numCols - 1 - col
+          const newCol = numCols - 1 - col
+          const newRow = numRows - 1 - row
           pixels.push({
             x: x + newCol * scaledWarp,
             y: y + newRow * scaledWeft,
@@ -2071,8 +2071,13 @@ export default function GeneratorPage() {
   // Update text input
   const updateTextInput = (index: number, value: string) => {
     const newInputs = [...textInputs]
-    // Allow A-Z, 0-9, space, and all expressive characters: ? _ ! @ # $ & % + - ( ) [ ] * = ' " .
-    newInputs[index] = value.toUpperCase().replace(/[^A-Z0-9 ?_!@#$&%+\-()[\]*='"\.]/g, '').slice(0, 11)
+    // Allow all characters from the characterMap: A-Z, 0-9, space, ?, _, !, @, #, $, &, %, +, -, (, ), [, ], *, =, ', ", .
+    const allowedChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ?_!@#$&%+-()[]*=\'"\\.'.split('')
+    newInputs[index] = value.toUpperCase()
+      .split('')
+      .filter(char => allowedChars.includes(char))
+      .join('')
+      .slice(0, 11)
     setTextInputs(newInputs)
   }
 

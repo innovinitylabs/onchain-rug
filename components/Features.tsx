@@ -75,11 +75,11 @@ export default function Features() {
           viewport={{ once: true }}
           className="text-center mb-16"
         >
-          <h2 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-6">
+          <h2 className="text-5xl md:text-6xl font-bold gradient-text mb-6">
             ✨ Features
           </h2>
-          <p className="text-xl text-blue-700/70 max-w-3xl mx-auto">
-            Revolutionary generative art meets traditional textile craftsmanship. 
+          <p className="text-xl text-blue-700 max-w-3xl mx-auto">
+            Revolutionary generative art meets traditional textile craftsmanship.
             Each onchain rugs is a unique masterpiece with deep cultural roots.
           </p>
         </motion.div>
@@ -132,19 +132,19 @@ export default function Features() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             <div>
               <div className="text-4xl md:text-5xl font-bold text-blue-600 mb-2">1111</div>
-              <div className="text-blue-700/70 font-medium">Max Supply</div>
+              <div className="text-blue-700 font-medium">Max Supply</div>
             </div>
             <div>
               <div className="text-4xl md:text-5xl font-bold text-indigo-600 mb-2">102</div>
-              <div className="text-blue-700/70 font-medium">Color Palettes</div>
+              <div className="text-blue-700 font-medium">Color Palettes</div>
             </div>
             <div>
               <div className="text-4xl md:text-5xl font-bold text-purple-600 mb-2">5</div>
-              <div className="text-blue-700/70 font-medium">Text Rows</div>
+              <div className="text-blue-700 font-medium">Text Rows</div>
             </div>
             <div>
               <div className="text-4xl md:text-5xl font-bold text-cyan-600 mb-2">∞</div>
-              <div className="text-blue-700/70 font-medium">Unique Combinations</div>
+              <div className="text-blue-700 font-medium">Unique Combinations</div>
             </div>
           </div>
         </motion.div>
