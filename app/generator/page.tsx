@@ -1746,13 +1746,13 @@ export default function GeneratorPage() {
     const numRows = charDef.length
     const numCols = charDef[0].length
 
-    // Rotate 90° CCW: newX = col, newY = numRows - 1 - row
+    // Since canvas is rotated 90° clockwise, characters need to be rotated accordingly
     for (let row = 0; row < numRows; row++) {
       for (let col = 0; col < numCols; col++) {
         if (charDef[row][col] === '1') {
-          // Rotate 180°: flip both axes
-          const newCol = numCols - 1 - col
-          const newRow = numRows - 1 - row
+          // For 90° canvas rotation, we need to transpose coordinates
+          const newCol = row
+          const newRow = numCols - 1 - col
           pixels.push({
             x: x + newCol * scaledWarp,
             y: y + newRow * scaledWeft,
