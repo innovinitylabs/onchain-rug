@@ -59,6 +59,58 @@ body {
   --rk-fonts-body: 'system-ui, -apple-system, sans-serif' !important;
 }
 
+/* Force system font on all RainbowKit text elements */
+[data-rk] * {
+  font-family: 'system-ui, -apple-system, sans-serif' !important;
+}
+
+[data-rk] button,
+[data-rk] span,
+[data-rk] div,
+[data-rk] p,
+[data-rk] h1,
+[data-rk] h2,
+[data-rk] h3,
+[data-rk] h4,
+[data-rk] h5,
+[data-rk] h6 {
+  font-family: 'system-ui, -apple-system, sans-serif' !important;
+}
+
+/* Specific overrides for wallet dropdown and modal text */
+[data-rk] [data-testid="rk-wallet-option"] * {
+  font-family: 'system-ui, -apple-system, sans-serif' !important;
+}
+
+[data-rk] [data-testid="rk-chain-option"] * {
+  font-family: 'system-ui, -apple-system, sans-serif' !important;
+}
+
+[data-rk] [data-testid="rk-account-modal"] * {
+  font-family: 'system-ui, -apple-system, sans-serif' !important;
+}
+
+/* Override any remaining monospace fonts in wallet components */
+[data-rk] [class*="font-mono"],
+[data-rk] [class*="font-mono"] * {
+  font-family: 'system-ui, -apple-system, sans-serif' !important;
+}
+
+/* Force system font on all text within wallet-related elements */
+[data-rk] [data-testid*="wallet"],
+[data-rk] [data-testid*="chain"],
+[data-rk] [data-testid*="account"],
+[data-rk] [data-testid*="modal"] {
+  font-family: 'system-ui, -apple-system, sans-serif' !important;
+}
+
+[data-rk] [data-testid*="wallet"] *,
+[data-rk] [data-testid*="chain"] *,
+[data-rk] [data-testid*="account"] *,
+[data-rk] [data-testid*="modal"] * {
+  font-family: 'system-ui, -apple-system, sans-serif' !important;
+}
+
 /* Toast notifications glass theme */
 [data-sonner-toaster] {
   --normal-bg: rgba(255, 255, 255, 0.1) !important;
@@ -68,6 +120,11 @@ body {
   --error-bg: rgba(239, 68, 68, 0.2) !important;
   --warning-bg: rgba(245, 158, 11, 0.2) !important;
   backdrop-filter: blur(20px) !important;
+}
+
+/* Force system font on toast notifications */
+[data-sonner-toaster] * {
+  font-family: 'system-ui, -apple-system, sans-serif' !important;
 }
 
 /* Glass morphism effects for wallet components */
