@@ -70,7 +70,7 @@ export default function Hero() {
                   flex: '1',
                   maxWidth: 'none',
                   height: 'auto',
-                  filter: 'drop-shadow(0 0 30px rgba(255, 255, 255, 0.5))',
+                  filter: 'drop-shadow(0 0 20px rgba(108, 190, 230, 0.6)) drop-shadow(0 0 40px rgba(255, 255, 255, 0.3))',
                   overflow: 'visible'
                 }}
                 aria-label="ONCHAIN RUGS"
@@ -262,7 +262,7 @@ export default function Hero() {
                 display: 'block',
                 maxWidth: '100%',
                 height: 'auto',
-                filter: 'drop-shadow(0 0 20px rgba(255, 255, 255, 0.3))'
+                filter: 'drop-shadow(0 0 15px rgba(108, 190, 230, 0.5)) drop-shadow(0 0 30px rgba(255, 255, 255, 0.2))'
               }}
               aria-label="Generative Doormat Art on the Blockchain"
             >
