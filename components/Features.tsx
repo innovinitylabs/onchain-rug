@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { Palette, Type, Zap, Shield, Sparkles, Globe, Clock } from 'lucide-react'
+import LiquidGlass from '@/components/LiquidGlass';
 
 const features = [
   {
@@ -120,6 +121,7 @@ export default function Features() {
         </motion.div>
 
         {/* Stats Section */}
+        
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -127,8 +129,14 @@ export default function Features() {
           viewport={{ once: true }}
           className="mt-20 max-w-4xl mx-auto"
         >
-          <div className="relative overflow-hidden bg-white/10 backdrop-blur-sm rounded-3xl border border-white/20">
-            <div className="absolute inset-0 bg-slate-900/20 rounded-3xl"></div>
+          <LiquidGlass
+  blurAmount={0.1}
+  aberrationIntensity={2}
+  elasticity={0.1}
+  cornerRadius={24}
+>
+          <div className="relative overflow-hidden rounded-3xl ">
+            <div className="absolute inset-0 rounded-3xl"></div>
             <div className="relative p-8 md:p-12">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
                 <div>
@@ -150,7 +158,9 @@ export default function Features() {
               </div>
             </div>
           </div>
+          </LiquidGlass>
         </motion.div>
+        
       </div>
     </section>
   )
