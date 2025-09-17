@@ -65,9 +65,8 @@ contract TestContract is Script {
         console.log("URI length:", bytes(uri).length, "characters");
 
         // Test aging system
-        (uint8 dirtLevel, uint8 textureLevel) = rugs.calculateAgingState(1);
+        uint8 dirtLevel = rugs.calculateAgingState(1);
         console.log("Initial dirt level:", dirtLevel);
-        console.log("Initial texture level:", textureLevel);
 
         vm.stopBroadcast();
 

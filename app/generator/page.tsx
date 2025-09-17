@@ -2278,44 +2278,6 @@ export default function GeneratorPage() {
                       </div>
                     </div>
 
-                {/* NFT Traits Display */}
-                {traits && (
-                  <div className="mt-2 pt-2 border-t border-green-500/30">
-                    <div className="text-green-300 text-sm mb-3">NFT Traits & Rarity:</div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {Object.entries(traits).map(([key, trait]: [string, any]) => {
-                        if (key === 'seed') return null // Skip seed display
-                        
-                        const rarity = trait.rarity || 'Common'
-                        const value = trait.value
-                        const rarityColor = getRarityColor(rarity)
-                        
-                        return (
-                          <div key={key} className="bg-gray-900/50 border border-green-500/30 rounded p-3">
-                            <div className="flex justify-between items-center">
-                              <span className="text-green-400 text-sm font-mono capitalize">
-                                {key.replace(/([A-Z])/g, ' $1').trim()}
-                              </span>
-                              <span 
-                                className="text-xs px-2 py-1 rounded font-mono font-bold"
-                                style={{ 
-                                  backgroundColor: rarityColor + '20',
-                                  color: rarityColor,
-                                  border: `1px solid ${rarityColor}40`
-                                }}
-                              >
-                                {rarity}
-                              </span>
-                  </div>
-                            <div className="text-green-300 text-sm mt-1 font-mono">
-                              {typeof value === 'string' ? value : value.toString()}
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )}
               </div>
                 </div>
               </div>
@@ -2342,7 +2304,46 @@ export default function GeneratorPage() {
                   {isLoaded ? 'READY' : 'LOADING...'}
                   </div>
               </div>
-              
+
+              {/* NFT Traits Display - Hidden */}
+              {false && traits && (
+                <div className="mt-2 pt-2 border-t border-green-500/30">
+                  <div className="text-green-300 text-sm mb-3">NFT Traits & Rarity:</div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {Object.entries(traits).map(([key, trait]: [string, any]) => {
+                      if (key === 'seed') return null // Skip seed display
+
+                      const rarity = trait.rarity || 'Common'
+                      const value = trait.value
+                      const rarityColor = getRarityColor(rarity)
+
+                      return (
+                        <div key={key} className="bg-gray-900/50 border border-green-500/30 rounded p-3">
+                          <div className="flex justify-between items-center">
+                            <span className="text-green-400 text-sm font-mono capitalize">
+                              {key.replace(/([A-Z])/g, ' $1').trim()}
+                            </span>
+                            <span
+                              className="text-xs px-2 py-1 rounded font-mono font-bold"
+                              style={{
+                                backgroundColor: rarityColor + '20',
+                                color: rarityColor,
+                                border: `1px solid ${rarityColor}40`
+                              }}
+                            >
+                              {rarity}
+                            </span>
+                          </div>
+                          <div className="text-green-300 text-sm mt-1 font-mono">
+                            {typeof value === 'string' ? value : value.toString()}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* Revamped Terminal Interface */}
               <div className="space-y-4">
                 {/* Seed Input Section - Hidden but can be restored */}
@@ -2566,132 +2567,8 @@ export default function GeneratorPage() {
                   </div>
                 </div>
 
-
-
-                {/* Mint Data Dashboard */}
-                <div className="border-t border-gray-500/30 pt-3">
-                  <div className="text-gray-300 text-sm mb-3 font-mono">📊 Mint Data Dashboard</div>
-                  
-                  <div className="bg-gray-900/30 border border-gray-500/30 rounded p-4">
-                    <div className="grid grid-cols-2 gap-4 mb-4">
-                      {/* Text Data */}
-                      <div className="bg-gradient-to-br from-blue-900/30 to-blue-800/20 p-3 rounded-lg border border-blue-500/20">
-                        <div className="flex items-center mb-2">
-                          <div className="w-2 h-2 bg-blue-400 rounded-full mr-2"></div>
-                          <div className="text-blue-300 text-xs font-semibold">Text Content</div>
-                        </div>
-                        <div className="text-white text-sm">
-                          {textInputs.filter(row => row.trim() !== '').length} lines
-                        </div>
-                        <div className="text-gray-400 text-xs mt-1">
-                          {textInputs.filter(row => row.trim() !== '').slice(0, 2).join(', ')}
-                          {textInputs.filter(row => row.trim() !== '').length > 2 && '...'}
-                        </div>
-                      </div>
-
-                      {/* Palette Data */}
-                      <div className="bg-gradient-to-br from-purple-900/30 to-purple-800/20 p-3 rounded-lg border border-purple-500/20">
-                        <div className="flex items-center mb-2">
-                          <div className="w-2 h-2 bg-purple-400 rounded-full mr-2"></div>
-                          <div className="text-purple-300 text-xs font-semibold">Color Palette</div>
-                        </div>
-                        <div className="text-white text-sm">
-                          {palette?.name || 'Default'}
-                        </div>
-                        <div className="flex gap-1 mt-2">
-                          {palette?.colors?.slice(0, 4).map((color: string, index: number) => (
-                            <div
-                              key={index}
-                              className="w-3 h-3 rounded-full border border-gray-600"
-                              style={{ backgroundColor: color }}
-                            />
-                          ))}
-                          {palette?.colors?.length > 4 && (
-                            <div className="text-gray-400 text-xs ml-1">+{palette.colors.length - 4}</div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-3 mb-4">
-                      {/* Stripe Data */}
-                      <div className="bg-gradient-to-br from-green-900/30 to-green-800/20 p-3 rounded-lg border border-green-500/20">
-                        <div className="flex items-center mb-2">
-                          <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
-                          <div className="text-green-300 text-xs font-semibold">Stripes</div>
-                        </div>
-                        <div className="text-white text-sm">
-                          {typeof window !== 'undefined' && (window as any).stripeData 
-                            ? `${(window as any).stripeData.length}`
-                            : '0'
-                          }
-                        </div>
-                        <div className="text-gray-400 text-xs">patterns</div>
-                      </div>
-
-                      {/* Character Map */}
-                      <div className="bg-gradient-to-br from-orange-900/30 to-orange-800/20 p-3 rounded-lg border border-orange-500/20">
-                        <div className="flex items-center mb-2">
-                          <div className="w-2 h-2 bg-orange-400 rounded-full mr-2"></div>
-                          <div className="text-orange-300 text-xs font-semibold">Characters</div>
-                        </div>
-                        <div className="text-white text-sm">
-                          {(() => {
-                            if (typeof window === 'undefined' || !(window as any).doormatData?.characterMap) return '0';
-                            
-                            // Get only the characters actually used in text (optimization)
-                            const used = new Set<string>();
-                            textInputs.forEach(row => {
-                              for (let char of row.toUpperCase()) {
-                                used.add(char);
-                              }
-                            });
-                            used.add(' '); // Always include space
-                            
-                            const usedCharMap: any = {};
-                            used.forEach((char) => {
-                              if ((window as any).doormatData.characterMap[char]) {
-                                usedCharMap[char] = (window as any).doormatData.characterMap[char];
-                              }
-                            });
-                            return Object.keys(usedCharMap).length;
-                          })()}
-                        </div>
-                        <div className="text-gray-400 text-xs">mapped</div>
-                      </div>
-
-                      {/* Warp Thickness */}
-                      <div className="bg-gradient-to-br from-pink-900/30 to-pink-800/20 p-3 rounded-lg border border-pink-500/20">
-                        <div className="flex items-center mb-2">
-                          <div className="w-2 h-2 bg-pink-400 rounded-full mr-2"></div>
-                          <div className="text-pink-300 text-xs font-semibold">Warp</div>
-                        </div>
-                        <div className="text-white text-sm">3</div>
-                        <div className="text-gray-400 text-xs">thickness</div>
-                      </div>
-                    </div>
-
-                    {/* Seed & Status */}
-                    <div className="bg-gradient-to-r from-gray-800/40 to-gray-700/40 p-3 rounded-lg border border-gray-600/30">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <div className="w-2 h-2 bg-yellow-400 rounded-full mr-2"></div>
-                          <div className="text-yellow-300 text-xs font-semibold">Seed</div>
-                        </div>
-                        <div className="text-white text-sm font-mono">{currentSeed}</div>
-                      </div>
-                      <div className="flex items-center justify-between mt-2">
-                        <div className="flex items-center">
-                          <div className="w-2 h-2 bg-emerald-400 rounded-full mr-2"></div>
-                          <div className="text-emerald-300 text-xs font-semibold">Status</div>
-                        </div>
-                        <div className="text-emerald-400 text-xs">Ready to Mint</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
                 {/* Contract Minting Data */}
+                {false && (
                 <div className="border-t border-gray-500/30 pt-3 mt-4">
                   <div className="text-gray-300 text-sm mb-3 font-mono">🔧 Contract Minting Data</div>
 
@@ -2895,6 +2772,7 @@ export default function GeneratorPage() {
                     </div>
                   </div>
                 </div>
+                )}
 
                 {/* Mint Button Section */}
                 <div className="border-t border-green-500/30 pt-3 mt-4">
@@ -2919,6 +2797,17 @@ export default function GeneratorPage() {
                       </div>
                     </div>
                   </div>
+
+                  {/* NFT Exporter Component */}
+                  {false && (
+                  <NFTExporter
+                    currentSeed={currentSeed}
+                    currentPalette={palette}
+                    currentStripeData={typeof window !== 'undefined' ? (window as any).stripeData || [] : []}
+                    textRows={textInputs}
+                    characterMap={typeof window !== 'undefined' ? (window as any).doormatData?.characterMap || {} : {}}
+                  />
+                  )}
 
                   {/* Web3 Minting Component */}
                   <Web3Minting

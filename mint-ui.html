@@ -790,7 +790,7 @@
             <div class="form-group">
                 <label for="networkSelect">Select Network:</label>
                 <select id="networkSelect" onchange="switchNetwork()">
-                    <option value="local">🏠 Local (Anvil)</option>
+                    <option value="local" selected>🏠 Local (Anvil)</option>
                     <option value="testnet">🧪 Shape Sepolia Testnet</option>
                 </select>
             </div>
@@ -821,24 +821,31 @@
                 
                 <div class="form-group">
                     <label for="textRows">Text Lines (one per line):</label>
-                    <textarea id="textRows" placeholder="HELLO&#10;WORLD&#10;NFT" oninput="this.value = this.value.toUpperCase(); updateCharacterMap();"></textarea>
+                    <textarea id="textRows" placeholder="HELLO&#10;WORLD&#10;NFT" oninput="this.value = this.value.toUpperCase(); updateCharacterMap();">VALIPOKKANN</textarea>
                     <small style="color: #666; font-size: 12px;">💡 Each text combination can only be minted once. Try "MAT", "WELCOME", "HELLO", etc.</small>
                     <div id="charCount" style="color: #888; font-size: 11px; margin-top: 4px;">0 lines, 0 characters</div>
                 </div>
 
                 <div class="form-group">
                     <label for="seed">Seed (number):</label>
-                    <input type="number" id="seed" value="12345" placeholder="12345">
+                    <input type="number" id="seed" value="8463" placeholder="12345">
                 </div>
 
                 <div class="form-group">
                     <label for="palette">Color Palette (JSON):</label>
-                    <textarea id="palette" placeholder='{"name":"Natural Dyes","colors":["#405BAA","#B33A3A","#D9A43B","#1F1E1D","#5A7A5A","#8C5832","#A48E7F","#FAF1E3"]}' rows="3">{"name":"Natural Dyes","colors":["#405BAA","#B33A3A","#D9A43B","#1F1E1D","#5A7A5A","#8C5832","#A48E7F","#FAF1E3"]}</textarea>
+                    <textarea id="palette" placeholder='{"name":"Natural Dyes","colors":["#405BAA","#B33A3A","#D9A43B","#1F1E1D","#5A7A5A","#8C5832","#A48E7F","#FAF1E3"]}' rows="3" oninput="updatePaletteName()">{"name":"Royal Stewart","colors":["#e10600", "#ffffff", "#000000", "#ffd700", "#007a3d"]}</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="paletteName">Palette Name (auto-generated from JSON above):</label>
+                    <input type="text" id="paletteName" value="Royal Stewart" readonly style="background: #f8f9fa; color: #6c757d;">
+                    <small style="color: #666; font-size: 12px;">💡 Automatically extracted from the palette JSON. Shows the name of your color palette.</small>
+                    <button class="btn btn-small" onclick="updatePaletteName()">🔄 Refresh Name</button>
                 </div>
 
                 <div class="form-group">
                     <label for="stripeData">Stripe Data (JSON):</label>
-                    <textarea id="stripeData" placeholder='[{"y":0,"height":68.19515249342658,"primaryColor":"#8C5832","secondaryColor":null,"weaveType":"solid","warpVariation":0.2523032833822072},{"y":68.19515249342658,"height":60.57278794585727,"primaryColor":"#405BAA","secondaryColor":null,"weaveType":"textured","warpVariation":0.290026696305722},{"y":128.76794043928385,"height":63.33571700495668,"primaryColor":"#5A7A5A","secondaryColor":null,"weaveType":"textured","warpVariation":0.4872925163246692},{"y":192.10365744424053,"height":53.3551848330535,"primaryColor":"#D9A43B","secondaryColor":null,"weaveType":"mixed","warpVariation":0.264055412914604},{"y":245.45884227729402,"height":26.21111069340259,"primaryColor":"#8C5832","secondaryColor":null,"weaveType":"textured","warpVariation":0.4787444246001542},{"y":271.6699529706966,"height":33.66517815273255,"primaryColor":"#A48E7F","secondaryColor":null,"weaveType":"solid","warpVariation":0.1734160046093166},{"y":305.33513112342916,"height":28.467843332327902,"primaryColor":"#405BAA","secondaryColor":null,"weaveType":"mixed","warpVariation":0.17198934191837906},{"y":333.80297445575707,"height":35.42853733757511,"primaryColor":"#D9A43B","secondaryColor":"#1F1E1D","weaveType":"solid","warpVariation":0.34202465508133173},{"y":369.2315117933322,"height":64.56409373320639,"primaryColor":"#D9A43B","secondaryColor":"#A48E7F","weaveType":"mixed","warpVariation":0.3359488218091429},{"y":433.79560552653857,"height":30.935605061240494,"primaryColor":"#8C5832","secondaryColor":"#5A7A5A","weaveType":"mixed","warpVariation":0.4187390603125095},{"y":464.73121058777906,"height":30.467415573075414,"primaryColor":"#FAF1E3","secondaryColor":"#8C5832","weaveType":"mixed","warpVariation":0.297656558919698},{"y":495.1986261608545,"height":71.31803949712776,"primaryColor":"#5A7A5A","secondaryColor":null,"weaveType":"solid","warpVariation":0.1779076951555908},{"y":566.5166656579822,"height":59.781514236237854,"primaryColor":"#FAF1E3","secondaryColor":null,"weaveType":"textured","warpVariation":0.1889693201519549},{"y":626.2981798942201,"height":58.780578861478716,"primaryColor":"#A48E7F","secondaryColor":null,"weaveType":"solid","warpVariation":0.4463496922515333},{"y":685.0787587556988,"height":61.152302387636155,"primaryColor":"#FAF1E3","secondaryColor":null,"weaveType":"solid","warpVariation":0.11557929040864111},{"y":746.231061143335,"height":41.0022804629989,"primaryColor":"#A48E7F","secondaryColor":null,"weaveType":"solid","warpVariation":0.1446685473434627},{"y":787.2333416063339,"height":26.13990316633135,"primaryColor":"#D9A43B","secondaryColor":null,"weaveType":"mixed","warpVariation":0.41371035808697343},{"y":813.3732447726652,"height":28.3406683197245,"primaryColor":"#A48E7F","secondaryColor":"#B33A3A","weaveType":"solid","warpVariation":0.3707780132070184},{"y":841.7139130923897,"height":21.8485507927835,"primaryColor":"#B33A3A","secondaryColor":null,"weaveType":"mixed","warpVariation":0.14659687876701355},{"y":863.5624638851732,"height":36.99597468134016,"primaryColor":"#B33A3A","secondaryColor":null,"weaveType":"textured","warpVariation":0.23930853065103294},{"y":900.5584385665134,"height":42.584983836859465,"primaryColor":"#8C5832","secondaryColor":null,"weaveType":"solid","warpVariation":0.1631861712783575},{"y":943.1434224033728,"height":68.52599811507389,"primaryColor":"#8C5832","secondaryColor":"#8C5832","weaveType":"mixed","warpVariation":0.1463954740203917},{"y":1011.6694205184467,"height":37.916444225702435,"primaryColor":"#8C5832","secondaryColor":"#1F1E1D","weaveType":"textured","warpVariation":0.14169594440609218},{"y":1049.5858647441491,"height":23.670224454253912,"primaryColor":"#D9A43B","secondaryColor":"#FAF1E3","weaveType":"mixed","warpVariation":0.16411913027986885},{"y":1073.256089198403,"height":78.71323970728554,"primaryColor":"#1F1E1D","secondaryColor":"#A48E7F","weaveType":"textured","warpVariation":0.17618615701794627},{"y":1151.9693289056886,"height":48.0306710943114,"primaryColor":"#405BAA","secondaryColor":"#405BAA","weaveType":"solid","warpVariation":0.3872393210418522}]' rows="8">[{"y":0,"height":68.19515249342658,"primaryColor":"#8C5832","secondaryColor":null,"weaveType":"solid","warpVariation":0.2523032833822072},{"y":68.19515249342658,"height":60.57278794585727,"primaryColor":"#405BAA","secondaryColor":null,"weaveType":"textured","warpVariation":0.290026696305722},{"y":128.76794043928385,"height":63.33571700495668,"primaryColor":"#5A7A5A","secondaryColor":null,"weaveType":"textured","warpVariation":0.4872925163246692},{"y":192.10365744424053,"height":53.3551848330535,"primaryColor":"#D9A43B","secondaryColor":null,"weaveType":"mixed","warpVariation":0.264055412914604},{"y":245.45884227729402,"height":26.21111069340259,"primaryColor":"#8C5832","secondaryColor":null,"weaveType":"textured","warpVariation":0.4787444246001542},{"y":271.6699529706966,"height":33.66517815273255,"primaryColor":"#A48E7F","secondaryColor":null,"weaveType":"solid","warpVariation":0.1734160046093166},{"y":305.33513112342916,"height":28.467843332327902,"primaryColor":"#405BAA","secondaryColor":null,"weaveType":"mixed","warpVariation":0.17198934191837906},{"y":333.80297445575707,"height":35.42853733757511,"primaryColor":"#D9A43B","secondaryColor":"#1F1E1D","weaveType":"solid","warpVariation":0.34202465508133173},{"y":369.2315117933322,"height":64.56409373320639,"primaryColor":"#D9A43B","secondaryColor":"#A48E7F","weaveType":"mixed","warpVariation":0.3359488218091429},{"y":433.79560552653857,"height":30.935605061240494,"primaryColor":"#8C5832","secondaryColor":"#5A7A5A","weaveType":"mixed","warpVariation":0.4187390603125095},{"y":464.73121058777906,"height":30.467415573075414,"primaryColor":"#FAF1E3","secondaryColor":"#8C5832","weaveType":"mixed","warpVariation":0.297656558919698},{"y":495.1986261608545,"height":71.31803949712776,"primaryColor":"#5A7A5A","secondaryColor":null,"weaveType":"solid","warpVariation":0.1779076951555908},{"y":566.5166656579822,"height":59.781514236237854,"primaryColor":"#FAF1E3","secondaryColor":null,"weaveType":"textured","warpVariation":0.1889693201519549},{"y":626.2981798942201,"height":58.780578861478716,"primaryColor":"#A48E7F","secondaryColor":null,"weaveType":"solid","warpVariation":0.4463496922515333},{"y":685.0787587556988,"height":61.152302387636155,"primaryColor":"#FAF1E3","secondaryColor":null,"weaveType":"solid","warpVariation":0.11557929040864111},{"y":746.231061143335,"height":41.0022804629989,"primaryColor":"#A48E7F","secondaryColor":null,"weaveType":"solid","warpVariation":0.1446685473434627},{"y":787.2333416063339,"height":26.13990316633135,"primaryColor":"#D9A43B","secondaryColor":null,"weaveType":"mixed","warpVariation":0.41371035808697343},{"y":813.3732447726652,"height":28.3406683197245,"primaryColor":"#A48E7F","secondaryColor":"#B33A3A","weaveType":"solid","warpVariation":0.3707780132070184},{"y":841.7139130923897,"height":21.8485507927835,"primaryColor":"#B33A3A","secondaryColor":null,"weaveType":"mixed","warpVariation":0.14659687876701355},{"y":863.5624638851732,"height":36.99597468134016,"primaryColor":"#B33A3A","secondaryColor":null,"weaveType":"textured","warpVariation":0.23930853065103294},{"y":900.5584385665134,"height":42.584983836859465,"primaryColor":"#8C5832","secondaryColor":null,"weaveType":"solid","warpVariation":0.1631861712783575},{"y":943.1434224033728,"height":68.52599811507389,"primaryColor":"#8C5832","secondaryColor":"#8C5832","weaveType":"mixed","warpVariation":0.1463954740203917},{"y":1011.6694205184467,"height":37.916444225702435,"primaryColor":"#8C5832","secondaryColor":"#1F1E1D","weaveType":"textured","warpVariation":0.14169594440609218},{"y":1049.5858647441491,"height":23.670224454253912,"primaryColor":"#D9A43B","secondaryColor":"#FAF1E3","weaveType":"mixed","warpVariation":0.16411913027986885},{"y":1073.256089198403,"height":78.71323970728554,"primaryColor":"#1F1E1D","secondaryColor":"#A48E7F","weaveType":"textured","warpVariation":0.17618615701794627},{"y":1151.9693289056886,"height":48.0306710943114,"primaryColor":"#405BAA","secondaryColor":"#405BAA","weaveType":"solid","warpVariation":0.3872393210418522}]</textarea>
+                    <textarea id="stripeData" placeholder='[{"y":0,"height":72.2,"pc":"#000000","sc":null,"wt":"s","wv":0.406},{"y":72.2,"height":71.922,"pc":"#ffffff","sc":null,"wt":"s","wv":0.234}]' rows="8">[{"y":0,"height":72.2,"pc":"#000000","sc":null,"wt":"s","wv":0.406},{"y":72.2,"height":71.922,"pc":"#ffffff","sc":null,"wt":"s","wv":0.234},{"y":144.123,"height":37.037,"pc":"#007a3d","sc":null,"wt":"s","wv":0.178},{"y":181.159,"height":69.49,"pc":"#e10600","sc":null,"wt":"s","wv":0.135},{"y":250.649,"height":42.179,"pc":"#000000","sc":null,"wt":"m","wv":0.454},{"y":292.828,"height":39.344,"pc":"#007a3d","sc":null,"wt":"t","wv":0.313},{"y":332.172,"height":46.537,"pc":"#e10600","sc":null,"wt":"s","wv":0.164},{"y":378.709,"height":75.408,"pc":"#000000","sc":"#e10600","wt":"t","wv":0.447},{"y":454.116,"height":66.138,"pc":"#e10600","sc":"#ffd700","wt":"s","wv":0.318},{"y":520.254,"height":56.996,"pc":"#e10600","sc":null,"wt":"s","wv":0.332},{"y":577.25,"height":26.414,"pc":"#000000","sc":null,"wt":"s","wv":0.452},{"y":603.664,"height":57.912,"pc":"#007a3d","sc":null,"wt":"t","wv":0.225},{"y":661.576,"height":55.544,"pc":"#e10600","sc":null,"wt":"s","wv":0.155},{"y":717.12,"height":31.582,"pc":"#e10600","sc":null,"wt":"s","wv":0.353},{"y":748.702,"height":23.152,"pc":"#ffd700","sc":null,"wt":"t","wv":0.232},{"y":771.854,"height":77.692,"pc":"#000000","sc":null,"wt":"t","wv":0.113},{"y":849.546,"height":29.627,"pc":"#007a3d","sc":"#ffffff","wt":"m","wv":0.203},{"y":879.173,"height":62.08,"pc":"#ffffff","sc":null,"wt":"s","wv":0.477},{"y":941.253,"height":59.431,"pc":"#ffd700","sc":null,"wt":"s","wv":0.311},{"y":1000.683,"height":23.506,"pc":"#007a3d","sc":"#ffffff","wt":"s","wv":0.272},{"y":1024.19,"height":22.586,"pc":"#ffd700","sc":null,"wt":"s","wv":0.45},{"y":1046.775,"height":77.096,"pc":"#007a3d","sc":null,"wt":"s","wv":0.234},{"y":1123.871,"height":22.971,"pc":"#007a3d","sc":null,"wt":"s","wv":0.101},{"y":1146.842,"height":53.158,"pc":"#e10600","sc":null,"wt":"s","wv":0.319}]</textarea>
                 </div>
 
                 <div class="form-group">
@@ -858,11 +865,9 @@
                     <small style="color: #666; font-size: 12px;">💡 Determines the algorithmic complexity of your rug pattern</small>
                 </div>
 
+                <button class="btn btn-secondary" onclick="loadTestData()">🎯 Load Test Data</button>
+
                 <!-- Hidden fields for contract requirements -->
-                <div class="form-group" style="display: none;">
-                    <label for="paletteName">Palette Name:</label>
-                    <input type="text" id="paletteName" value="Natural Dyes" readonly>
-                </div>
 
                 <div class="form-group" style="display: none;">
                     <label for="minifiedPalette">Minified Palette:</label>
@@ -961,13 +966,13 @@
                     <p style="text-align: center; color: #666;">Enter a Token ID and click "Load NFT" to view</p>
                 </div>
 
-                <div id="tokenInfo" class="token-info hidden">
+                <div id="tokenInfo" class="token-info">
                     <h3>Token Information</h3>
                     <div id="tokenDetails"></div>
                 </div>
 
-                <div id="metadataInfo" class="metadata-info hidden">
-                    <h3>📋 OpenSea Metadata</h3>
+                <div id="metadataInfo" class="metadata-info">
+                    <h3>📋 NFT Metadata</h3>
                     
                     <div class="metadata-section">
                         <h4>🎨 Traits & Attributes</h4>
@@ -1104,7 +1109,7 @@
             window.MINT_UI_CONFIG = {
                 PRIVATE_KEYS: {
                     local: "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
-                    testnet: "YOUR_TESTNET_PRIVATE_KEY_HERE"
+                    testnet: "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
                 },
                 CONTRACTS: {
                     local: "0x5FbDB2315678afecb367f032d93F642f64180aa3",
@@ -1602,6 +1607,12 @@
             if (nftDisplay) {
                 nftDisplay.innerHTML = '<p style="text-align: center; color: #666;">Enter a Token ID and click "Load NFT" to view</p>';
             }
+
+            // Also clear metadata display
+            const metadataJsonDiv = document.getElementById('metadataJson');
+            if (metadataJsonDiv) {
+                metadataJsonDiv.textContent = 'Load an NFT to see its metadata here...';
+            }
         }
 
         // Clean and simple NFT loader
@@ -1630,9 +1641,43 @@
                 // Get token URI
                 const tokenURI = await contract.tokenURI(tokenId);
 
-                // Parse the metadata
+                // Parse the metadata (handle hex-encoded string from Solidity)
+                console.log('🔍 Raw tokenURI:', tokenURI.substring(0, 100) + '...');
+
+                let metadataString;
+                if (tokenURI.startsWith('data:application/json;base64,')) {
+                    // Handle base64 data URI format
                 const base64Json = tokenURI.split('data:application/json;base64,')[1];
-                const metadata = JSON.parse(atob(base64Json));
+                    console.log('🔍 Using base64 format, extracted base64 JSON:', base64Json.substring(0, 50) + '...');
+                    metadataString = atob(base64Json);
+                } else if (tokenURI.startsWith('0x')) {
+                    // Handle ABI-encoded string from Solidity contract call
+                    console.log('🔍 Using ABI-encoded format, decoding...');
+                    // Use ethers.js to decode the ABI-encoded string
+                    const decodedResult = ethers.utils.defaultAbiCoder.decode(['string'], tokenURI);
+                    metadataString = decodedResult[0];
+                    console.log('🔍 ABI decoded string length:', metadataString.length);
+                } else {
+                    // Assume it's already a plain string
+                    metadataString = tokenURI;
+                }
+
+                console.log('🔍 Metadata string:', metadataString.substring(0, 200) + '...');
+                const metadata = JSON.parse(metadataString);
+                console.log('🔍 Parsed metadata:', metadata);
+
+                // Display the raw JSON metadata
+                const metadataJsonDiv = document.getElementById('metadataJson');
+                console.log('🔍 metadataJsonDiv element:', metadataJsonDiv);
+                if (!metadataJsonDiv) {
+                    console.error('❌ metadataJsonDiv not found!');
+                    showStatus('mintStatus', 'Error: metadataJson element not found', 'error');
+                    return;
+                }
+                const jsonString = JSON.stringify(metadata, null, 2);
+                console.log('🔍 JSON string length:', jsonString.length);
+                metadataJsonDiv.textContent = jsonString;
+                console.log('✅ Metadata displayed in UI');
 
                 // Get the HTML from animation_url (OpenSea standard for interactive NFTs)
                 const imageUrl = metadata.animation_url;
@@ -1653,8 +1698,22 @@
 
             } catch (error) {
                 console.error('Load NFT error:', error);
+
+                // Show error in status
                 showStatus('mintStatus', `❌ Failed to load NFT: ${error.message}`, 'error');
+
+                // Clear NFT display
                 clearNFTDisplay();
+
+                // Show error message in metadata section
+                const metadataJsonDiv = document.getElementById('metadataJson');
+                if (metadataJsonDiv) {
+                    if (error.message.includes('custom error') || error.message.includes('Token does not exist')) {
+                        metadataJsonDiv.textContent = `❌ Token ID ${tokenId} does not exist.\n\n💡 Only tokens 1-3 have been minted so far.\n\nTry loading token IDs: 1, 2, or 3.`;
+                    } else {
+                        metadataJsonDiv.textContent = `❌ Error loading metadata:\n${error.message}\n\nPlease try again or check the console for more details.`;
+                    }
+                }
             }
         }
 
@@ -1761,6 +1820,9 @@
                     return;
                 }
 
+                // Update palette name first
+                updatePaletteName();
+
                 // Parse palette data
                 const paletteJson = JSON.parse(document.getElementById('palette').value);
                 const paletteName = paletteJson.name || 'Custom Palette';
@@ -1796,6 +1858,9 @@
                     .map(line => line.toUpperCase());
 
                 if (textRows.length === 0) return;
+
+                // Update palette name first
+                updatePaletteName();
 
                 // Parse palette data
                 const paletteJson = JSON.parse(document.getElementById('palette').value || '{}');
@@ -2334,7 +2399,6 @@
                 // Clear existing displays
                 clearNFTDisplay();
                 document.getElementById('mintStatus').innerHTML = '';
-                document.getElementById('metadataInfo').classList.add('hidden');
 
                 console.log(`Switched to ${NETWORKS[currentNetwork].name}`);
                 console.log(`RPC: ${RPC_URL}`);
@@ -2363,7 +2427,6 @@
             // Clear any existing status messages
             document.getElementById('mintStatus').innerHTML = '';
             clearNFTDisplay();
-            document.getElementById('metadataInfo').classList.add('hidden');
 
             console.log(`Selected contract: ${CONTRACT_ADDRESS}`);
         }
@@ -2381,39 +2444,29 @@
                 
                 console.log('Ethers.js loaded successfully');
                 
-                    // Load config from API (with fallback)
+                    // Load config for local testing (skip API, use fallback directly)
                     async function initializeConfig() {
-                        console.log('🚀 Initializing config...');
+                        console.log('🚀 Initializing local config...');
                         updateConfigStatus(false); // Show loading state
 
                         // Update contract info status
                         const contractInfo = document.getElementById('contractInfo');
                         if (contractInfo) {
-                            contractInfo.innerHTML = '<strong>Status:</strong> <span style="color: blue;">Loading configuration...</span><br><strong>Contracts Found:</strong> <span id="contractCount">0</span>';
+                            contractInfo.innerHTML = '<strong>Status:</strong> <span style="color: blue;">Loading local configuration...</span><br><strong>Contracts Found:</strong> <span id="contractCount">0</span>';
                         }
 
-                        // Try to load from API first
-                        const apiSuccess = await loadConfigFromAPI();
-
-                        if (apiSuccess && checkConfigLoaded()) {
-                            console.log('✅ Config loaded from API, proceeding...');
-                // Initialize network and scan for contracts
-                            await switchNetwork();
-                            return;
-                        }
-
-                        // If API fails, use fallback
-                        console.log('❌ API config failed, using fallback...');
+                        // For local testing, use fallback config directly (skip API)
+                        console.log('🔄 Using local fallback config for testing...');
                         loadFallbackConfig();
                         if (checkConfigLoaded()) {
-                            console.log('✅ Fallback config worked, proceeding...');
+                            console.log('✅ Local config loaded, proceeding...');
                             // Initialize network and scan for contracts
                             await switchNetwork();
                             return;
                         }
 
-                        // If everything fails
-                        document.body.innerHTML += '<div style="position: fixed; top: 0; left: 0; width: 100%; background: orange; color: white; padding: 10px; text-align: center; z-index: 9999;">⚠️ Config loading failed! Start config server with: npm run config-server<br><button onclick="location.reload()" style="margin-top: 5px; padding: 5px 10px;">Reload Page</button></div>';
+                        // If fallback fails
+                        document.body.innerHTML += '<div style="position: fixed; top: 0; left: 0; width: 100%; background: orange; color: white; padding: 10px; text-align: center; z-index: 9999;">⚠️ Local config loading failed!<br><button onclick="location.reload()" style="margin-top: 5px; padding: 5px 10px;">Reload Page</button></div>';
                     }
 
                     initializeConfig();
@@ -2426,6 +2479,68 @@
 
                 // Initialize hidden fields
                 updateHiddenFields();
+
+                // Initialize metadata display
+                const metadataJsonDiv = document.getElementById('metadataJson');
+                if (metadataJsonDiv) {
+                    metadataJsonDiv.textContent = 'Load an NFT to see its metadata here...';
+                }
+                
+                // Function to update palette name from JSON
+        function updatePaletteName() {
+            try {
+                const paletteJson = JSON.parse(document.getElementById('palette').value);
+                const paletteName = paletteJson.name || 'Custom Palette';
+                document.getElementById('paletteName').value = paletteName;
+                console.log('Palette name updated to:', paletteName);
+            } catch (error) {
+                console.error('Error parsing palette JSON:', error);
+                document.getElementById('paletteName').value = 'Invalid JSON';
+            }
+        }
+
+        // Function to load test data from test_mint_data.json
+        async function loadTestData() {
+            try {
+                console.log('🎯 Loading test data...');
+
+                // Load test data from the JSON file
+                const response = await fetch('./data/test_mint_data.json');
+                if (!response.ok) {
+                    throw new Error(`Failed to load test data: ${response.status}`);
+                }
+
+                const testData = await response.json();
+                console.log('✅ Test data loaded:', testData);
+
+                // Update form fields with test data
+                document.getElementById('textRows').value = testData.textRows.join('\n');
+                document.getElementById('seed').value = testData.seed;
+                document.getElementById('palette').value = JSON.stringify(testData.palette, null, 2);
+                document.getElementById('stripeData').value = JSON.stringify(testData.stripeData, null, 2);
+                document.getElementById('warpThickness').value = testData.warpThickness;
+                document.getElementById('complexity').value = testData.complexity;
+
+                // Update hidden fields
+                document.getElementById('paletteName').value = testData.paletteName;
+                document.getElementById('minifiedPalette').value = testData.minifiedPalette;
+                document.getElementById('minifiedStripeData').value = testData.minifiedStripeData;
+                document.getElementById('filteredCharacterMap').value = testData.filteredCharacterMap;
+                document.getElementById('characterCount').value = testData.characterCount;
+                document.getElementById('stripeCount').value = testData.stripeCount;
+
+                // Update character map and count
+                updateCharacterMap();
+
+                showStatus('mintStatus', '✅ Test data loaded! Click "Prepare Mint Data" then "Mint Rug".', 'success');
+
+                console.log('🎯 Test data loaded successfully');
+
+            } catch (error) {
+                console.error('❌ Error loading test data:', error);
+                showStatus('mintStatus', `❌ Failed to load test data: ${error.message}`, 'error');
+            }
+        }
                 
                 // Show a helpful message for testing
                 console.log('🚀 Mint UI loaded! Features:');
@@ -2436,6 +2551,7 @@
                 console.log('• Fixed: Token IDs start from 1 (not 0)');
                 console.log('• Fixed: Token existence validation');
                 console.log('• Fixed: Proper mint success detection');
+                console.log('• Load Test Data button for easy testing');
 
                 console.log(' ');
 
@@ -2444,6 +2560,8 @@
                 console.log('   loadNFT() - Load NFT by token ID');
                 console.log('   getContractInfo() - Check contract status');
                 console.log('   calculatePrice() - Calculate mint price');
+                console.log('   loadTestData() - Load test data from JSON');
+                console.log('   updatePaletteName() - Update palette name from JSON');
                 
                 // Load latest NFT if available (with error handling)
                 setTimeout(async () => {

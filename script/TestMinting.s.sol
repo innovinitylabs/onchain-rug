@@ -77,9 +77,8 @@ contract TestMinting is Script {
 
         // Test aging system
         console.log("Testing Aging System...");
-        (uint8 dirtLevel, uint8 textureLevel) = rugs.calculateAgingState(1);
+        uint8 dirtLevel = rugs.calculateAgingState(1);
         console.log("Current dirt level:", dirtLevel);
-        console.log("Current texture level:", textureLevel);
 
         // Look for base64 encoded HTML content
         bool hasBase64HTML = vm.contains(tokenURI, "data:text/html");

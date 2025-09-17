@@ -105,7 +105,7 @@ export default function GalleryPage() {
         setLoadingAlchemy(true)
         setAlchemyError(null)
 
-        const alchemyApiKey = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY || process.env.ALCHEMY_API_KEY
+        const alchemyApiKey =  process.env.ALCHEMY_API_KEY || process.env.NEXT_PUBLIC_ALCHEMY_API_KEY
         if (!alchemyApiKey) {
           throw new Error('Alchemy API key not configured')
         }

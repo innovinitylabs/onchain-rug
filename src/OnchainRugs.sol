@@ -24,17 +24,14 @@ contract OnchainRugs is ERC721, ERC721URIStorage, Ownable {
 
     // Updateable Pricing (all start at 0.000001 ETH for testing)
     uint256 public basePrice = 0.000001 ether;
-    uint256[5] public linePrices; // 5 different line costs
     uint256 public level1CleaningCost = 0.000001 ether;
     uint256 public level2CleaningCost = 0.000001 ether;
-    uint256 public textureReductionCost = 0.000001 ether;
     uint256 public fullLaunderingCost = 0.000001 ether;
     uint256 public royaltyPercentage = 1000; // 10%
 
     // Updateable Aging Time Thresholds
     uint256 public dirtLevel1Days = 3 days;
     uint256 public dirtLevel2Days = 7 days;
-    uint256 public textureIncrementDays = 14 days;
 
     // Emergency Controls
     bool public paused = false;
@@ -57,37 +54,27 @@ contract OnchainRugs is ERC721, ERC721URIStorage, Ownable {
     struct AgingData {
         uint256 lastCleaned;
         uint256 lastSalePrice;
-        uint8 textureLevel;
     }
 
     mapping(uint256 => RugData) public rugs;
     mapping(uint256 => AgingData) public agingData;
     mapping(bytes32 => bool) public usedTextHashes;
-    mapping(address => uint256) public userRugCount;
 
     // ============ EVENTS ============
     event RugMinted(uint256 indexed tokenId, address indexed owner, string[] textRows, uint256 seed);
     event RugCleaned(uint256 indexed tokenId, address indexed cleaner, uint256 cost, uint8 dirtLevel);
     event RugLaundered(uint256 indexed tokenId, address indexed cleaner, uint256 cost);
-    event TextureReduced(uint256 indexed tokenId, address indexed reducer, uint256 cost);
     event PricingUpdated(string parameter, uint256 oldValue, uint256 newValue);
     event AgingThresholdsUpdated();
 
-    constructor() ERC721("Onchain Rugs", "RUGS") Ownable(msg.sender) {
-        // Initialize all line prices to 0.000001 ETH for testing
-        for (uint256 i = 0; i < 5; i++) {
-            linePrices[i] = 0.000001 ether;
-        }
-    }
+    constructor() ERC721("Onchain Rugs", "RUGS") Ownable(msg.sender) {}
 
     function updateBasePrice(uint256 p) external onlyOwner {emit PricingUpdated("basePrice",basePrice,p);basePrice=p;}
-    function updateLinePrice(uint256 i,uint256 p) external onlyOwner {require(i<5);emit PricingUpdated(string(abi.encodePacked("linePrice",i.toString())),linePrices[i],p);linePrices[i]=p;}
     function updateCleaningCost(uint8 l,uint256 c) external onlyOwner {if(l==1){emit PricingUpdated("level1CleaningCost",level1CleaningCost,c);level1CleaningCost=c;}else if(l==2){emit PricingUpdated("level2CleaningCost",level2CleaningCost,c);level2CleaningCost=c;}}
     function updateLaunderingCost(uint256 c) external onlyOwner {emit PricingUpdated("fullLaunderingCost",fullLaunderingCost,c);fullLaunderingCost=c;}
-    function updateTextureReductionCost(uint256 c) external onlyOwner {emit PricingUpdated("textureReductionCost",textureReductionCost,c);textureReductionCost=c;}
     function updateRoyaltyPercentage(uint256 p) external onlyOwner {emit PricingUpdated("royaltyPercentage",royaltyPercentage,p);royaltyPercentage=p;}
 
-    function updateAgingThresholds(uint256 d1,uint256 d2,uint256 t) external onlyOwner {dirtLevel1Days=d1;dirtLevel2Days=d2;textureIncrementDays=t;emit AgingThresholdsUpdated();}
+    function updateAgingThresholds(uint256 d1,uint256 d2) external onlyOwner {dirtLevel1Days=d1;dirtLevel2Days=d2;emit AgingThresholdsUpdated();}
     function setPaused(bool p) external onlyOwner {paused=p;}
 
     // ============ MINTING FUNCTIONS ============
@@ -114,8 +101,7 @@ contract OnchainRugs is ERC721, ERC721URIStorage, Ownable {
             seed = uint256(keccak256(abi.encodePacked(
                 block.timestamp,
                 block.prevrandao,
-                msg.sender,
-                userRugCount[msg.sender]
+                msg.sender
             )));
         }
 
@@ -144,28 +130,56 @@ contract OnchainRugs is ERC721, ERC721URIStorage, Ownable {
         // Initialize aging data
         agingData[tokenId] = AgingData({
             lastCleaned: block.timestamp,
-            lastSalePrice: 0,
-            textureLevel: 0
+            lastSalePrice: 0
         });
 
-        userRugCount[msg.sender]++;
         _tokenCounter++;
         _safeMint(msg.sender, tokenId);
 
         emit RugMinted(tokenId, msg.sender, textRows, seed);
     }
 
-    function calculateAgingState(uint256 t) public view returns (uint8,uint8) {AgingData memory a=agingData[t];uint256 c=block.timestamp;uint256 ts=c-a.lastCleaned;uint8 dl=0;if(ts>=dirtLevel2Days)dl=2;else if(ts>=dirtLevel1Days)dl=1;uint8 tl=a.textureLevel;uint256 ti=ts/textureIncrementDays;if(ti>tl)tl=uint8(ti);return(dl,tl);}
+    function calculateAgingState(uint256 t) public view returns (uint8 dl) {
+        AgingData memory a = agingData[t];
+        uint256 ts = block.timestamp - a.lastCleaned;
+        if (ts >= dirtLevel2Days) dl = 2;
+        else if (ts >= dirtLevel1Days) dl = 1;
+    }
 
-    function cleanRug(uint256 t) external payable {require(ownerOf(t)==msg.sender,"Not owner");(uint8 dl,)=calculateAgingState(t);require(dl>0,"Already clean");uint256 c=getCleaningCost(dl);require(msg.value>=c,"Insufficient payment");agingData[t].lastCleaned=block.timestamp;emit RugCleaned(t,msg.sender,c,dl);}
-    function getCleaningCost(uint8 dl) public view returns(uint256){if(dl==1)return level1CleaningCost;if(dl==2)return level2CleaningCost;return 0;}
+    function cleanRug(uint256 t) external payable {
+        require(ownerOf(t) == msg.sender, "Not owner");
+        uint8 dl = calculateAgingState(t);
+        require(dl > 0, "Already clean");
+        uint256 c = getCleaningCost(dl);
+        require(msg.value >= c, "Insufficient payment");
+        agingData[t].lastCleaned = block.timestamp;
+        emit RugCleaned(t, msg.sender, c, dl);
+    }
 
-    function launderRug(uint256 t) external payable {require(ownerOf(t)==msg.sender,"Not owner");require(msg.value>=fullLaunderingCost,"Insufficient payment");agingData[t].lastCleaned=block.timestamp;agingData[t].textureLevel=0;emit RugLaundered(t,msg.sender,msg.value);}
-    function reduceTextureLevel(uint256 t) external payable {require(ownerOf(t)==msg.sender,"Not owner");require(agingData[t].textureLevel>0,"No texture aging to reduce");require(msg.value>=textureReductionCost,"Insufficient payment");if(agingData[t].textureLevel>0)agingData[t].textureLevel-=1;emit TextureReduced(t,msg.sender,msg.value);}
+    function getCleaningCost(uint8 dl) public view returns(uint256) {
+        if (dl == 1) return level1CleaningCost;
+        if (dl == 2) return level2CleaningCost;
+        return 0;
+    }
 
-    function launderOnSale(uint256 t) external payable {require(ownerOf(t)==msg.sender,"Not owner");require(msg.value>agingData[t].lastSalePrice,"Sale price must be higher");agingData[t].lastSalePrice=msg.value;agingData[t].lastCleaned=block.timestamp;agingData[t].textureLevel=0;emit RugLaundered(t,msg.sender,0);}
+    function launderRug(uint256 t) external payable {
+        require(ownerOf(t) == msg.sender, "Not owner");
+        require(msg.value >= fullLaunderingCost, "Insufficient payment");
+        agingData[t].lastCleaned = block.timestamp;
+        emit RugLaundered(t, msg.sender, msg.value);
+    }
 
-    function getMintPrice(uint256 tl) public view returns(uint256){if(tl==0)return basePrice;if(tl<=5)return basePrice+linePrices[tl-1];return basePrice+linePrices[4];}
+    function launderOnSale(uint256 t) external payable {
+        require(ownerOf(t) == msg.sender, "Not owner");
+        require(msg.value > agingData[t].lastSalePrice, "Sale price must be higher");
+        agingData[t].lastSalePrice = msg.value;
+        agingData[t].lastCleaned = block.timestamp;
+        emit RugLaundered(t, msg.sender, 0);
+    }
+
+    function getMintPrice(uint256 tl) public view returns(uint256) {
+        return basePrice;
+    }
 
     // ============ TOKEN URI & HTML GENERATION ============
     function tokenURI(uint256 tokenId)
@@ -177,9 +191,9 @@ contract OnchainRugs is ERC721, ERC721URIStorage, Ownable {
         require(ownerOf(tokenId) != address(0), "Token does not exist");
 
         RugData memory rug = rugs[tokenId];
-        (uint8 dirtLevel, uint8 textureLevel) = calculateAgingState(tokenId);
+        uint8 dirtLevel = calculateAgingState(tokenId);
 
-        string memory html = generateHTML(rug, dirtLevel, textureLevel);
+        string memory html = generateHTML(rug, dirtLevel, 0, tokenId);
 
         // Create JSON metadata
         string memory json = Base64.encode(
@@ -196,28 +210,60 @@ contract OnchainRugs is ERC721, ERC721URIStorage, Ownable {
                         '"},{"trait_type":"Complexity","value":"', uint256(rug.complexity).toString(),
                         '"},{"trait_type":"Warp Thickness","value":"', uint256(rug.warpThickness).toString(),
                         '"},{"trait_type":"Dirt Level","value":"', uint256(dirtLevel).toString(),
-                        '"},{"trait_type":"Texture Level","value":"', uint256(textureLevel).toString(),
                         '"}]}'
                     )
                 )
             )
         );
 
-        return string(abi.encodePacked("data:application/json;base64,", json));
+        return string.concat("data:application/json;base64,", json);
     }
 
     function generateHTML(
         RugData memory rug,
         uint8 dirtLevel,
-        uint8 textureLevel
+        uint8 textureLevel,
+        uint256 tokenId
     ) internal pure returns (string memory) {
-        return HTMLGenerator.generateHTML(rug, dirtLevel, textureLevel);
+        HTMLGenerator.RugData memory htmlRug = HTMLGenerator.RugData({
+            seed: rug.seed,
+            paletteName: rug.paletteName,
+            minifiedPalette: rug.minifiedPalette,
+            minifiedStripeData: rug.minifiedStripeData,
+            textRows: rug.textRows,
+            warpThickness: rug.warpThickness,
+            mintTime: rug.mintTime,
+            filteredCharacterMap: rug.filteredCharacterMap,
+            complexity: rug.complexity,
+            characterCount: rug.characterCount,
+            stripeCount: rug.stripeCount
+        });
+        return HTMLGenerator.generateHTML(htmlRug, dirtLevel, textureLevel, tokenId);
     }
 
-    function hashTextRows(string[] memory tr) internal pure returns(bytes32){return keccak256(abi.encode(tr));}
-    function _totalSupply() internal view returns(uint256){return _tokenCounter;}
-    function totalSupply() external view returns(uint256){return _totalSupply();}
-    function maxSupply() external pure returns(uint256){return MAX_SUPPLY;}
-    function burn(uint256 t) external {require(ownerOf(t)==msg.sender,"Not owner");delete rugs[t];delete agingData[t];_burn(t);}
-    function supportsInterface(bytes4 i) public view override(ERC721, ERC721URIStorage) returns(bool){return super.supportsInterface(i);}
+    function hashTextRows(string[] memory tr) internal pure returns(bytes32) {
+        return keccak256(abi.encode(tr));
+    }
+    function _totalSupply() internal view returns(uint256) {
+        return _tokenCounter;
+    }
+
+    function totalSupply() external view returns(uint256) {
+        return _totalSupply();
+    }
+
+    function maxSupply() external pure returns(uint256) {
+        return MAX_SUPPLY;
+    }
+
+    function burn(uint256 t) external {
+        require(ownerOf(t) == msg.sender, "Not owner");
+        delete rugs[t];
+        delete agingData[t];
+        _burn(t);
+    }
+
+    function supportsInterface(bytes4 i) public view override(ERC721, ERC721URIStorage) returns(bool) {
+        return super.supportsInterface(i);
+    }
 }

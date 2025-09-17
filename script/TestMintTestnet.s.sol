@@ -10,16 +10,16 @@ contract TestMintTestnet is Script {
         address deployer = vm.addr(deployerPrivateKey);
 
         console.log("Testing mint on Shape L2 Testnet...");
-        console.log("Contract: 0xc960fd553fa4be19e0957bde9de113bB8E299187");
+        console.log("Contract: 0x77c0F87621B7509eD76Bb78ce39eEaD9E98E6670");
         console.log("Minter:", deployer);
 
         vm.startBroadcast(deployerPrivateKey);
 
-        OnchainRugs rugs = OnchainRugs(0xc960fd553fa4be19e0957bde9de113bB8E299187);
+        OnchainRugs rugs = OnchainRugs(0x77c0F87621B7509eD76Bb78ce39eEaD9E98E6670);
         
         // Prepare test data - Use a unique text that hasn't been minted yet
         string[] memory textRows = new string[](1);
-        textRows[0] = "FIXED";
+        textRows[0] = "TESTNET";
 
         uint256 seed = 690915066;
         string memory paletteName = "Minimalist";
