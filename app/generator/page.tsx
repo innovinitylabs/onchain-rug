@@ -728,7 +728,8 @@ export default function GeneratorPage() {
       '*': ["00000","00100","10101","01110","10101","00100","00000"],
       '=': ["00000","00000","11111","00000","11111","00000","00000"],
       "'": ["00100","00100","00100","00000","00000","00000","00000"],
-      '"': ["01010","01010","01010","00000","00000","00000","00000"]
+      '"': ["01010","01010","01010","00000","00000","00000","00000"],
+      '.': ["00000","00000","00000","00000","00000","00000","00100"]
     }
     
     // Global variables for NFTExporter
@@ -2070,8 +2071,8 @@ export default function GeneratorPage() {
   // Update text input
   const updateTextInput = (index: number, value: string) => {
     const newInputs = [...textInputs]
-    // Allow A-Z, 0-9, space, and all expressive characters: ? _ ! @ # $ & % + - ( ) [ ] * = ' "
-    newInputs[index] = value.toUpperCase().replace(/[^A-Z0-9 ?_!@#$&%+\-()[\]*='"]/g, '').slice(0, 11)
+    // Allow A-Z, 0-9, space, and all expressive characters: ? _ ! @ # $ & % + - ( ) [ ] * = ' " .
+    newInputs[index] = value.toUpperCase().replace(/[^A-Z0-9 ?_!@#$&%+\-()[\]*='"\.]/g, '').slice(0, 11)
     setTextInputs(newInputs)
   }
 
