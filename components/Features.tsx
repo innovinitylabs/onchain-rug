@@ -2,7 +2,6 @@
 
 import { motion } from 'framer-motion'
 import { Palette, Type, Zap, Shield, Sparkles, Globe, Clock } from 'lucide-react'
-import LiquidGlass from '@/components/LiquidGlass';
 
 const features = [
   {
@@ -98,14 +97,7 @@ export default function Features() {
               variants={itemVariants}
               className="group"
             >
-              <LiquidGlass
-                className="h-full min-h-[300px]"
-                blurAmount={0.05}
-                aberrationIntensity={0.8}
-                mode="prominent"
-                cornerRadius={24}
-              >
-                {/* Solid background overlay to prevent gradient interference */}
+              <div className="h-full min-h-[300px] relative overflow-hidden bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20">
                 <div className="absolute inset-0 bg-slate-900/20 rounded-2xl"></div>
                 <div className="relative p-8 h-full flex flex-col justify-between">
                   <div className={`w-16 h-16 rounded-full bg-gradient-to-r ${feature.color} p-4 mb-6 group-hover:scale-110 transition-transform duration-300 mx-auto`}>
@@ -122,7 +114,7 @@ export default function Features() {
                     </p>
                   </div>
                 </div>
-              </LiquidGlass>
+              </div>
             </motion.div>
           ))}
         </motion.div>
@@ -135,14 +127,7 @@ export default function Features() {
           viewport={{ once: true }}
           className="mt-20 max-w-4xl mx-auto"
         >
-          <LiquidGlass
-            className="rounded-3xl"
-            blurAmount={0.05}
-            aberrationIntensity={0.6}
-            mode="standard"
-            cornerRadius={24}
-          >
-            {/* Solid background overlay to prevent gradient interference */}
+          <div className="relative overflow-hidden bg-white/10 backdrop-blur-sm rounded-3xl border border-white/20">
             <div className="absolute inset-0 bg-slate-900/20 rounded-3xl"></div>
             <div className="relative p-8 md:p-12">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
@@ -164,7 +149,7 @@ export default function Features() {
                 </div>
               </div>
             </div>
-          </LiquidGlass>
+          </div>
         </motion.div>
       </div>
     </section>

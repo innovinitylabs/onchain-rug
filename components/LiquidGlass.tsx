@@ -217,10 +217,10 @@ const LiquidGlassFilter: React.FC<{
   mode,
   shaderMapUrl,
 }) => (
-  <svg style={{ position: "absolute", width, height, pointerEvents: "none", zIndex: 0 }} aria-hidden="true">
+  <svg style={{ position: "absolute", width: "100%", height: "100%", pointerEvents: "none", zIndex: 0, inset: 0 }} aria-hidden="true">
     <defs>
       {/* Main displacement map */}
-      <filter id={id} x="-50%" y="-50%" width="200%" height="200%" colorInterpolationFilters="sRGB">
+      <filter id={id} x="-10%" y="-10%" width="120%" height="120%" colorInterpolationFilters="sRGB">
         {/* Base displacement map */}
         <feImage
           x="0" y="0"
@@ -268,7 +268,7 @@ const LiquidGlassFilter: React.FC<{
       </filter>
 
       {/* Additional filter for edge enhancement */}
-      <filter id={`${id}-edge`} x="-20%" y="-20%" width="140%" height="140%">
+      <filter id={`${id}-edge`} x="-10%" y="-10%" width="120%" height="120%">
         <feImage
           x="0" y="0"
           width="100%" height="100%"
