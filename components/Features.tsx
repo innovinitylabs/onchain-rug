@@ -100,12 +100,14 @@ export default function Features() {
             >
               <LiquidGlass
                 className="h-full min-h-[300px]"
-                blurAmount={0.1}
-                aberrationIntensity={1}
+                blurAmount={0.05}
+                aberrationIntensity={0.8}
                 mode="prominent"
                 cornerRadius={24}
               >
-                <div className="p-8 h-full flex flex-col justify-between">
+                {/* Solid background overlay to prevent gradient interference */}
+                <div className="absolute inset-0 bg-slate-900/20 rounded-2xl"></div>
+                <div className="relative p-8 h-full flex flex-col justify-between">
                   <div className={`w-16 h-16 rounded-full bg-gradient-to-r ${feature.color} p-4 mb-6 group-hover:scale-110 transition-transform duration-300 mx-auto`}>
                     <feature.icon className="w-full h-full text-white" />
                   </div>
@@ -135,12 +137,14 @@ export default function Features() {
         >
           <LiquidGlass
             className="rounded-3xl"
-            blurAmount={0.1}
-            aberrationIntensity={0.8}
+            blurAmount={0.05}
+            aberrationIntensity={0.6}
             mode="standard"
             cornerRadius={24}
           >
-            <div className="p-8 md:p-12">
+            {/* Solid background overlay to prevent gradient interference */}
+            <div className="absolute inset-0 bg-slate-900/20 rounded-3xl"></div>
+            <div className="relative p-8 md:p-12">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
                 <div>
                   <div className="text-4xl md:text-5xl font-bold text-cyan-400 mb-2">1111</div>
