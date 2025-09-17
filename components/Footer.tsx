@@ -67,7 +67,7 @@ export default function Footer() {
         }} />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6 py-6">
+      <div className="relative z-10 max-w-7xl mx-auto px-6 py-3">
         {/* Main Footer Content */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           {/* Copyright and Brand */}
@@ -97,13 +97,13 @@ export default function Footer() {
                 transition={{ duration: 0.2 }}
                 className="inline ml-1"
               >
-                <ChevronUp className="w-3 h-3" />
+                <ChevronDown className="w-3 h-3" />
               </motion.div>
 
               {/* Tooltip */}
               <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
                 <div className="bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
-                  Open source licenses & credits
+                  Project credits & licenses
                 </div>
                 <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
               </div>
@@ -123,7 +123,7 @@ export default function Footer() {
             >
               <div className="border-t border-gray-700 pt-8">
                 <h3 className="text-lg font-semibold text-white mb-6 text-center">
-                  Open Source Credits
+                  Credits
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   {credits.map((credit, index) => (
@@ -154,20 +154,6 @@ export default function Footer() {
                   ))}
                 </div>
 
-                {/* Additional Info */}
-                <div className="mt-8 text-center">
-                  <p className="text-sm text-gray-400">
-                    This project is open source and available on{' '}
-                    <a
-                      href="https://github.com/innovinitylabs/onchain-rug"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-cyan-400 hover:text-cyan-300 transition-colors duration-200"
-                    >
-                      GitHub
-                    </a>
-                  </p>
-                </div>
               </div>
             </motion.div>
           )}
