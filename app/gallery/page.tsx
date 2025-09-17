@@ -105,33 +105,28 @@ export default function GalleryPage() {
         setLoadingAlchemy(true)
         setAlchemyError(null)
 
-        const alchemyApiKey =  process.env.NEXT_PUBLIC_ALCHEMY_API_KEY
-        if (!alchemyApiKey) {
-          throw new Error('Alchemy API key not configured')
-        }
-
-        // Fetch collection data from Alchemy (basic info only)
-        console.log('🔄 Step 1: Fetching NFT collection list...')
+        // Fetch collection data from our secure API proxy (no API key exposed)
+        console.log('🔄 Step 1: Fetching NFT collection list via proxy...')
         const response = await fetch(
-          `https://shape-sepolia.g.alchemy.com/nft/v3/${alchemyApiKey}/getNFTsForCollection?contractAddress=${resolvedContractAddress}&withMetadata=false&limit=20`
+          `/api/alchemy?endpoint=getNFTsForCollection&contractAddress=${resolvedContractAddress}`
         )
 
         if (!response.ok) {
-          throw new Error(`Alchemy API error: ${response.status}`)
+          throw new Error(`API proxy error: ${response.status}`)
         }
 
         const collectionData = await response.json()
         console.log('✅ Got collection data:', collectionData.nfts?.length || 0, 'NFTs')
 
-        // Now fetch individual metadata for each NFT
-        console.log('🔄 Step 2: Fetching individual metadata...')
+        // Now fetch individual metadata for each NFT via proxy
+        console.log('🔄 Step 2: Fetching individual metadata via proxy...')
         const enrichedNfts = []
 
         for (const nft of collectionData.nfts || []) {
           try {
             console.log(`📋 Fetching metadata for NFT #${nft.tokenId}...`)
             const metadataResponse = await fetch(
-              `https://shape-sepolia.g.alchemy.com/nft/v3/${alchemyApiKey}/getNFTMetadata?contractAddress=${resolvedContractAddress}&tokenId=${nft.tokenId}`
+              `/api/alchemy?endpoint=getNFTMetadata&contractAddress=${resolvedContractAddress}&tokenId=${nft.tokenId}`
             )
 
             if (metadataResponse.ok) {
@@ -654,7 +649,7 @@ export default function GalleryPage() {
                   {alchemyError || "Unable to load NFT data. This could be due to:"}
                 </p>
                 <ul className="text-left text-blue-700/70 mb-6 max-w-md mx-auto list-disc list-inside space-y-2">
-                  <li>Alchemy API key not configured</li>
+                  <li>Alchemy API key not configured on server</li>
                   <li>Contract not indexed by Alchemy yet</li>
                   <li>No NFTs minted in the collection</li>
                   <li>Network connectivity issues</li>
