@@ -1,22 +1,34 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-import { Home, Palette, Image, Sparkles } from 'lucide-react'
+import { Home, Palette, Image, Sparkles, Menu, X } from 'lucide-react'
 import { WalletConnect } from './wallet-connect'
 
 export default function Navigation() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen)
+  }
+
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false)
+  }
+
   return (
-    <motion.nav
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      transition={{ duration: 0.6 }}
-      className="fixed top-0 left-0 right-0 z-50 backdrop-blur-sm"
-      style={{
-        background: 'rgba(255, 255, 255, 0.1)',
-        borderBottom: '1px solid rgba(59, 130, 246, 0.2)',
-      }}
-    >
+    <>
+      <motion.nav
+        initial={{ y: -100 }}
+        animate={{ y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="fixed top-0 left-0 right-0 z-50 backdrop-blur-sm"
+        style={{
+          background: 'rgba(255, 255, 255, 0.1)',
+          borderBottom: '1px solid rgba(59, 130, 246, 0.2)',
+        }}
+      >
       {/* Liquid Glass Background */}
       <div className="absolute inset-0 overflow-hidden">
         <svg
@@ -75,23 +87,24 @@ export default function Navigation() {
       </div>
 
       {/* Navigation Content */}
-      <div className="relative z-10 max-w-7xl mx-auto px-6 py-4">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center">
+          <Link href="/" className="flex items-center" onClick={closeMobileMenu}>
             <svg
               width="auto"
-              height="56px"
+              height="44px"
               viewBox="0 0 200 40"
               style={{
                 display: 'block',
-                height: '56px',
+                height: '44px',
                 width: 'auto',
                 filter: 'drop-shadow(0 0 8px rgba(108, 190, 230, 0.4)) drop-shadow(0 0 16px rgba(255, 255, 255, 0.2))',
                 overflow: 'visible'
               }}
               aria-label="ONCHAIN RUGS"
               preserveAspectRatio="xMidYMid meet"
+              className="sm:h-14"
             >
               <defs>
                 {/* Navbar Liquid Glass Material - Scaled Down */}
@@ -258,7 +271,7 @@ export default function Navigation() {
             </svg>
           </Link>
 
-          {/* Navigation Links */}
+          {/* Navigation Links - Desktop */}
           <div className="hidden md:flex items-center gap-8">
             <Link
               href="/"
@@ -398,10 +411,118 @@ export default function Navigation() {
             </Link>
           </div>
 
-          {/* Wallet Connection */}
-          <WalletConnect />
+          {/* Mobile Hamburger Menu Button */}
+          <div className="md:hidden flex items-center">
+            <button
+              onClick={toggleMobileMenu}
+              className="p-2 rounded-lg hover:bg-white/10 transition-colors duration-200"
+              aria-label="Toggle mobile menu"
+            >
+              <motion.div
+                animate={{ rotate: isMobileMenuOpen ? 180 : 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                {isMobileMenuOpen ? (
+                  <X className="w-6 h-6 text-white" />
+                ) : (
+                  <Menu className="w-6 h-6 text-white" />
+                )}
+              </motion.div>
+            </button>
+          </div>
+
+          {/* Wallet Connection - Desktop */}
+          <div className="hidden md:block">
+            <WalletConnect />
+          </div>
         </div>
       </div>
     </motion.nav>
+
+    {/* Mobile Menu Overlay */}
+    <AnimatePresence>
+      {isMobileMenuOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="fixed inset-0 z-40 md:hidden"
+          style={{
+            background: 'rgba(0, 0, 0, 0.5)',
+            backdropFilter: 'blur(8px)',
+          }}
+          onClick={closeMobileMenu}
+        >
+          <motion.div
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'tween', duration: 0.3 }}
+            className="fixed right-0 top-0 h-full w-80 max-w-[90vw] bg-gradient-to-b from-blue-900/95 to-indigo-900/95 backdrop-blur-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Mobile Menu Header */}
+            <div className="flex items-center justify-between p-6 border-b border-white/10">
+              <h3 className="text-xl font-bold text-white">Menu</h3>
+              <button
+                onClick={closeMobileMenu}
+                className="p-2 rounded-lg hover:bg-white/10 transition-colors duration-200"
+              >
+                <X className="w-6 h-6 text-white" />
+              </button>
+            </div>
+
+            {/* Mobile Navigation Links */}
+            <div className="flex flex-col py-6">
+              <Link
+                href="/"
+                onClick={closeMobileMenu}
+                className="flex items-center gap-4 px-6 py-4 text-white hover:bg-white/10 transition-colors duration-200"
+              >
+                <Home className="w-6 h-6" />
+                <span className="text-lg font-medium">Home</span>
+              </Link>
+
+              <Link
+                href="/generator"
+                onClick={closeMobileMenu}
+                className="flex items-center gap-4 px-6 py-4 text-white hover:bg-white/10 transition-colors duration-200"
+              >
+                <Palette className="w-6 h-6" />
+                <span className="text-lg font-medium">Generator</span>
+              </Link>
+
+              <Link
+                href="/gallery"
+                onClick={closeMobileMenu}
+                className="flex items-center gap-4 px-6 py-4 text-white hover:bg-white/10 transition-colors duration-200"
+              >
+                <Image className="w-6 h-6" />
+                <span className="text-lg font-medium">Gallery</span>
+              </Link>
+
+              <Link
+                href="/glass-demo"
+                onClick={closeMobileMenu}
+                className="flex items-center gap-4 px-6 py-4 text-white hover:bg-white/10 transition-colors duration-200"
+              >
+                <Sparkles className="w-6 h-6" />
+                <span className="text-lg font-medium">Glass Demo</span>
+              </Link>
+            </div>
+
+            {/* Mobile Wallet Connection */}
+            <div className="absolute bottom-6 left-6 right-6">
+              <div className="text-center">
+                <p className="text-white/70 text-sm mb-4">Connect Wallet</p>
+                <WalletConnect />
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+    </>
   )
 }
