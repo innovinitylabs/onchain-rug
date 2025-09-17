@@ -14,24 +14,25 @@ export function WalletConnect() {
   return (
     <div className="flex items-center gap-4">
       {isConnected && (
-        <div className="hidden md:flex items-center gap-2 text-sm text-gray-600">
-          <span className="font-mono">
+        <div className="flex flex-col items-end gap-0 text-xs text-white/80 bg-white/10 backdrop-blur-md px-3 py-2 rounded-lg border border-white/10">
+          <span className="font-mono leading-tight">
             {balance ? `${parseFloat(formatEther(balance.value)).toFixed(4)} ETH` : '0 ETH'}
           </span>
-          <span className="text-gray-400">•</span>
-          <span className="font-mono">
-            {chainId === 360 ? 'Shape Mainnet' : 'Shape Sepolia'}
+          <span className="font-mono text-[10px] leading-tight opacity-60">
+            {chainId === 360 ? 'Shape' : 'Sepolia'}
           </span>
         </div>
       )}
-      <ConnectButton 
-        showBalance={false}
-        chainStatus="icon"
-        accountStatus={{
-          smallScreen: 'avatar',
-          largeScreen: 'full',
-        }}
-      />
+      <div className="glass-wallet-button">
+        <ConnectButton
+          showBalance={false}
+          chainStatus="icon"
+          accountStatus={{
+            smallScreen: 'avatar',
+            largeScreen: 'full',
+          }}
+        />
+      </div>
     </div>
   )
 }

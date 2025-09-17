@@ -78,35 +78,305 @@ export default function Navigation() {
       <div className="relative z-10 max-w-7xl mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            <span className="text-2xl">🧶</span>
-            <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+          <Link href="/" className="flex items-center">
+            <svg
+              width="auto"
+              height="56px"
+              viewBox="0 0 200 40"
+              style={{
+                display: 'block',
+                height: '56px',
+                width: 'auto',
+                filter: 'drop-shadow(0 0 8px rgba(108, 190, 230, 0.4)) drop-shadow(0 0 16px rgba(255, 255, 255, 0.2))',
+                overflow: 'visible'
+              }}
+              aria-label="ONCHAIN RUGS"
+              preserveAspectRatio="xMidYMid meet"
+            >
+              <defs>
+                {/* Navbar Liquid Glass Material - Scaled Down */}
+                <filter id="nav-logo-glass-depth" x="-100%" y="-100%" width="300%" height="300%" colorInterpolationFilters="sRGB">
+                  <feTurbulence
+                    baseFrequency="0.008"
+                    numOctaves="4"
+                    seed="42"
+                    type="fractalNoise"
+                    result="NAV_LOGO_BASE"
+                  />
+                  <feDisplacementMap
+                    in="SourceGraphic"
+                    in2="NAV_LOGO_BASE"
+                    scale="8"
+                    xChannelSelector="R"
+                    yChannelSelector="G"
+                    result="NAV_LOGO_DISPLACED"
+                  />
+                  <feColorMatrix
+                    in="NAV_LOGO_DISPLACED"
+                    type="matrix"
+                    values="1.2 0.08 0 0 0
+                           0 1.15 0.03 0 0
+                           0 0 1.1 0 0
+                           0 0 0 1 0"
+                    result="NAV_LOGO_COLORS"
+                  />
+                  <feGaussianBlur
+                    in="NAV_LOGO_COLORS"
+                    stdDeviation="1"
+                    result="NAV_LOGO_BLUR"
+                  />
+                </filter>
+
+                <filter id="nav-logo-glass-surface" x="-100%" y="-100%" width="300%" height="300%" colorInterpolationFilters="sRGB">
+                  <feTurbulence
+                    baseFrequency="0.025"
+                    numOctaves="3"
+                    seed="123"
+                    type="fractalNoise"
+                    result="NAV_LOGO_SURFACE"
+                  />
+                  <feDisplacementMap
+                    in="SourceGraphic"
+                    in2="NAV_LOGO_SURFACE"
+                    scale="6"
+                    xChannelSelector="R"
+                    yChannelSelector="G"
+                    result="NAV_LOGO_SURFACE_DISPLACED"
+                  />
+                  <feGaussianBlur
+                    in="NAV_LOGO_SURFACE_DISPLACED"
+                    stdDeviation="0.8"
+                    result="NAV_LOGO_SURFACE_BLUR"
+                  />
+                </filter>
+
+                <linearGradient id="nav-logo-glass-fill" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" style={{ stopColor: 'rgba(255, 255, 255, 0.95)', stopOpacity: 1 }} />
+                  <stop offset="50%" style={{ stopColor: 'rgba(255, 255, 255, 0.9)', stopOpacity: 1 }} />
+                  <stop offset="100%" style={{ stopColor: 'rgba(255, 255, 255, 0.95)', stopOpacity: 1 }} />
+                </linearGradient>
+
+                <linearGradient id="nav-logo-glass-highlight" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" style={{ stopColor: 'rgba(255, 255, 255, 0.8)', stopOpacity: 1 }} />
+                  <stop offset="50%" style={{ stopColor: 'rgba(255, 255, 255, 0.6)', stopOpacity: 1 }} />
+                  <stop offset="100%" style={{ stopColor: 'rgba(255, 255, 255, 0.7)', stopOpacity: 1 }} />
+                </linearGradient>
+
+                <linearGradient id="nav-logo-glass-shadow" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" style={{ stopColor: 'rgba(0, 0, 0, 0.3)', stopOpacity: 1 }} />
+                  <stop offset="50%" style={{ stopColor: 'rgba(0, 0, 0, 0.15)', stopOpacity: 1 }} />
+                  <stop offset="100%" style={{ stopColor: 'rgba(0, 0, 0, 0.25)', stopOpacity: 1 }} />
+                </linearGradient>
+              </defs>
+
+              {/* Navbar Liquid Glass Shadow Layer */}
+              <text
+                x="50%"
+                y="26"
+                textAnchor="middle"
+                dominantBaseline="middle"
+                style={{
+                  fill: 'url(#nav-logo-glass-shadow)',
+                  filter: 'url(#nav-logo-glass-depth)',
+                  fontSize: '16px',
+                  fontWeight: '700',
+                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                  opacity: 0.6
+                }}
+              >
+                ONCHAIN RUGS
+              </text>
+
+              {/* Navbar Liquid Glass Main Fill */}
+              <text
+                x="50%"
+                y="24"
+                textAnchor="middle"
+                dominantBaseline="middle"
+                style={{
+                  fill: 'url(#nav-logo-glass-fill)',
+                  filter: 'url(#nav-logo-glass-depth)',
+                  fontSize: '16px',
+                  fontWeight: '700',
+                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                }}
+              >
+                ONCHAIN RUGS
+              </text>
+
+              {/* Navbar Liquid Glass Surface Highlight */}
+              <text
+                x="50%"
+                y="22"
+                textAnchor="middle"
+                dominantBaseline="middle"
+                style={{
+                  fill: 'url(#nav-logo-glass-highlight)',
+                  filter: 'url(#nav-logo-glass-surface)',
+                  fontSize: '16px',
+                  fontWeight: '700',
+                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                  mixBlendMode: 'screen'
+                }}
+              >
+                ONCHAIN RUGS
+              </text>
+
+              {/* Navbar Liquid Glass Rim Light */}
+              <text
+                x="50%"
+                y="24"
+                textAnchor="middle"
+                dominantBaseline="middle"
+                style={{
+                  fill: 'none',
+                  stroke: 'rgba(255, 255, 255, 0.6)',
+                  strokeWidth: '0.2',
+                  filter: 'url(#nav-logo-glass-surface)',
+                  fontSize: '16px',
+                  fontWeight: '700',
+                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                  mixBlendMode: 'overlay'
+                }}
+              >
               ONCHAIN RUGS
-            </span>
+              </text>
+            </svg>
           </Link>
 
           {/* Navigation Links */}
           <div className="hidden md:flex items-center gap-8">
             <Link
               href="/"
-              className="flex items-center gap-2 text-blue-700 hover:text-blue-800 transition-colors"
+              className="flex items-center gap-2 hover:opacity-80 transition-all duration-300"
             >
-              <Home className="w-4 h-4" />
-              Home
+              <Home className="w-5 h-5" />
+              <svg
+                width="auto"
+                height="28px"
+                viewBox="0 0 60 20"
+                style={{
+                  display: 'block',
+                  height: '28px',
+                  width: 'auto',
+                  filter: 'drop-shadow(0 0 6px rgba(108, 190, 230, 0.3))',
+                }}
+              >
+                <defs>
+                  <filter id="nav-link-depth" x="-100%" y="-100%" width="300%" height="300%">
+                    <feTurbulence baseFrequency="0.02" numOctaves="2" seed="42" type="fractalNoise" result="LINK_BASE" />
+                    <feDisplacementMap in="SourceGraphic" in2="LINK_BASE" scale="3" xChannelSelector="R" yChannelSelector="G" result="LINK_DISPLACED" />
+                    <feGaussianBlur in="LINK_DISPLACED" stdDeviation="0.5" result="LINK_BLUR" />
+                  </filter>
+                  <linearGradient id="nav-link-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style={{ stopColor: 'rgba(255, 255, 255, 0.9)', stopOpacity: 1 }} />
+                    <stop offset="100%" style={{ stopColor: 'rgba(255, 255, 255, 0.9)', stopOpacity: 1 }} />
+                  </linearGradient>
+                </defs>
+                <text
+                  x="50%"
+                  y="12"
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  style={{
+                    fill: 'url(#nav-link-gradient)',
+                    filter: 'url(#nav-link-depth)',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    fontFamily: 'system-ui, -apple-system, sans-serif',
+                  }}
+                >
+                  Home
+                </text>
+              </svg>
             </Link>
             <Link
               href="/generator"
-              className="flex items-center gap-2 text-blue-700 hover:text-blue-800 transition-colors"
+              className="flex items-center gap-2 hover:opacity-80 transition-all duration-300"
             >
-              <Palette className="w-4 h-4" />
+              <Palette className="w-5 h-5" />
+              <svg
+                width="auto"
+                height="28px"
+                viewBox="0 0 80 20"
+                style={{
+                  display: 'block',
+                  height: '28px',
+                  width: 'auto',
+                  filter: 'drop-shadow(0 0 6px rgba(108, 190, 230, 0.3))',
+                }}
+              >
+                <defs>
+                  <filter id="nav-link-depth-gen" x="-100%" y="-100%" width="300%" height="300%">
+                    <feTurbulence baseFrequency="0.02" numOctaves="2" seed="43" type="fractalNoise" result="LINK_BASE_GEN" />
+                    <feDisplacementMap in="SourceGraphic" in2="LINK_BASE_GEN" scale="3" xChannelSelector="R" yChannelSelector="G" result="LINK_DISPLACED_GEN" />
+                    <feGaussianBlur in="LINK_DISPLACED_GEN" stdDeviation="0.5" result="LINK_BLUR_GEN" />
+                  </filter>
+                  <linearGradient id="nav-link-gradient-gen" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style={{ stopColor: 'rgba(255, 255, 255, 0.9)', stopOpacity: 1 }} />
+                    <stop offset="100%" style={{ stopColor: 'rgba(255, 255, 255, 0.9)', stopOpacity: 1 }} />
+                  </linearGradient>
+                </defs>
+                <text
+                  x="50%"
+                  y="12"
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  style={{
+                    fill: 'url(#nav-link-gradient-gen)',
+                    filter: 'url(#nav-link-depth-gen)',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    fontFamily: 'system-ui, -apple-system, sans-serif',
+                  }}
+                >
               Generator
+                </text>
+              </svg>
             </Link>
             <Link
               href="/gallery"
-              className="flex items-center gap-2 text-blue-700 hover:text-blue-800 transition-colors"
+              className="flex items-center gap-2 hover:opacity-80 transition-all duration-300"
             >
-              <Image className="w-4 h-4" />
+              <Image className="w-5 h-5" />
+              <svg
+                width="auto"
+                height="28px"
+                viewBox="0 0 70 20"
+                style={{
+                  display: 'block',
+                  height: '28px',
+                  width: 'auto',
+                  filter: 'drop-shadow(0 0 6px rgba(108, 190, 230, 0.3))',
+                }}
+              >
+                <defs>
+                  <filter id="nav-link-depth-gal" x="-100%" y="-100%" width="300%" height="300%">
+                    <feTurbulence baseFrequency="0.02" numOctaves="2" seed="44" type="fractalNoise" result="LINK_BASE_GAL" />
+                    <feDisplacementMap in="SourceGraphic" in2="LINK_BASE_GAL" scale="3" xChannelSelector="R" yChannelSelector="G" result="LINK_DISPLACED_GAL" />
+                    <feGaussianBlur in="LINK_DISPLACED_GAL" stdDeviation="0.5" result="LINK_BLUR_GAL" />
+                  </filter>
+                  <linearGradient id="nav-link-gradient-gal" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style={{ stopColor: 'rgba(255, 255, 255, 0.9)', stopOpacity: 1 }} />
+                    <stop offset="100%" style={{ stopColor: 'rgba(255, 255, 255, 0.9)', stopOpacity: 1 }} />
+                  </linearGradient>
+                </defs>
+                <text
+                  x="50%"
+                  y="12"
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  style={{
+                    fill: 'url(#nav-link-gradient-gal)',
+                    filter: 'url(#nav-link-depth-gal)',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    fontFamily: 'system-ui, -apple-system, sans-serif',
+                  }}
+                >
               Gallery
+                </text>
+              </svg>
             </Link>
           </div>
 

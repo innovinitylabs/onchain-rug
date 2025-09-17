@@ -43,3 +43,60 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Custom RainbowKit Glass Theme Overrides */
+[data-rk] {
+  --rk-colors-modalBackground: rgba(255, 255, 255, 0.1) !important;
+  --rk-colors-modalBorder: rgba(255, 255, 255, 0.1) !important;
+  --rk-colors-modalBackdrop: rgba(0, 0, 0, 0.5) !important;
+  --rk-colors-modalText: #ffffff !important;
+  --rk-colors-modalTextSecondary: #94a3b8 !important;
+  --rk-colors-menuItemBackground: rgba(255, 255, 255, 0.1) !important;
+  --rk-colors-generalBorder: rgba(255, 255, 255, 0.1) !important;
+  --rk-colors-actionButtonBorder: rgba(255, 255, 255, 0.1) !important;
+  --rk-colors-profileAction: rgba(255, 255, 255, 0.1) !important;
+  --rk-colors-profileForeground: rgba(255, 255, 255, 0.1) !important;
+  --rk-fonts-body: 'system-ui, -apple-system, sans-serif' !important;
+}
+
+/* Toast notifications glass theme */
+[data-sonner-toaster] {
+  --normal-bg: rgba(255, 255, 255, 0.1) !important;
+  --normal-border: rgba(255, 255, 255, 0.1) !important;
+  --normal-text: #ffffff !important;
+  --success-bg: rgba(16, 185, 129, 0.2) !important;
+  --error-bg: rgba(239, 68, 68, 0.2) !important;
+  --warning-bg: rgba(245, 158, 11, 0.2) !important;
+  backdrop-filter: blur(20px) !important;
+}
+
+/* Glass morphism effects for wallet components */
+.glass-wallet-button [data-testid="rk-connect-button"] {
+  backdrop-filter: blur(12px) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+  border-radius: 8px !important;
+  padding: 8px 12px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  transition: all 0.2s ease !important;
+}
+
+.glass-wallet-button [data-testid="rk-connect-button"]:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* General RainbowKit overrides */
+[data-rk] [data-testid="rk-connect-button"] {
+  backdrop-filter: blur(12px) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+  border-radius: 8px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+}
