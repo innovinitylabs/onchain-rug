@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { Palette, Type, Zap, Shield, Sparkles, Globe, Clock } from 'lucide-react'
+import LiquidGlass from '@/components/LiquidGlass';
 
 const features = [
   {
@@ -97,26 +98,26 @@ export default function Features() {
               variants={itemVariants}
               className="group"
             >
-              <motion.div
-                className="bg-white/10 backdrop-blur-xl rounded-2xl p-8 shadow-2xl hover:shadow-3xl transition-all duration-300 border border-white/20 h-full"
-                whileHover={{
-                  scale: 1.05,
-                  y: -5,
-                  transition: { duration: 0.2 }
-                }}
+              <LiquidGlass
+                className="h-full"
+                blurAmount={0.4}
+                aberrationIntensity={1}
+                mode="prominent"
               >
-                <div className={`w-16 h-16 rounded-full bg-gradient-to-r ${feature.color} p-4 mb-6 group-hover:scale-110 transition-transform duration-300`}>
-                  <feature.icon className="w-full h-full text-white" />
-                </div>
-                
-                <h3 className="text-2xl font-bold text-white mb-4">
-                  {feature.title}
-                </h3>
+                <div className="p-8 h-full flex flex-col">
+                  <div className={`w-16 h-16 rounded-full bg-gradient-to-r ${feature.color} p-4 mb-6 group-hover:scale-110 transition-transform duration-300 mx-auto`}>
+                    <feature.icon className="w-full h-full text-white" />
+                  </div>
 
-                <p className="text-gray-300 leading-relaxed">
-                  {feature.description}
-                </p>
-              </motion.div>
+                  <h3 className="text-2xl font-bold text-white mb-4 text-center">
+                    {feature.title}
+                  </h3>
+
+                  <p className="text-gray-300 leading-relaxed text-center flex-1">
+                    {feature.description}
+                  </p>
+                </div>
+              </LiquidGlass>
             </motion.div>
           ))}
         </motion.div>
@@ -127,26 +128,35 @@ export default function Features() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.3 }}
           viewport={{ once: true }}
-          className="mt-20 bg-white/5 backdrop-blur-xl rounded-3xl p-8 md:p-12 border border-white/10"
+          className="mt-20"
         >
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            <div>
-              <div className="text-4xl md:text-5xl font-bold text-cyan-400 mb-2">1111</div>
-              <div className="text-gray-300 font-medium">Max Supply</div>
+          <LiquidGlass
+            className="rounded-3xl"
+            blurAmount={0.3}
+            aberrationIntensity={0.8}
+            mode="standard"
+          >
+            <div className="p-8 md:p-12">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+                <div>
+                  <div className="text-4xl md:text-5xl font-bold text-cyan-400 mb-2">1111</div>
+                  <div className="text-gray-300 font-medium">Max Supply</div>
+                </div>
+                <div>
+                  <div className="text-4xl md:text-5xl font-bold text-purple-400 mb-2">102</div>
+                  <div className="text-gray-300 font-medium">Color Palettes</div>
+                </div>
+                <div>
+                  <div className="text-4xl md:text-5xl font-bold text-pink-400 mb-2">5</div>
+                  <div className="text-gray-300 font-medium">Text Rows</div>
+                </div>
+                <div>
+                  <div className="text-4xl md:text-5xl font-bold text-green-400 mb-2">∞</div>
+                  <div className="text-gray-300 font-medium">Unique Combinations</div>
+                </div>
+              </div>
             </div>
-            <div>
-              <div className="text-4xl md:text-5xl font-bold text-purple-400 mb-2">102</div>
-              <div className="text-gray-300 font-medium">Color Palettes</div>
-            </div>
-            <div>
-              <div className="text-4xl md:text-5xl font-bold text-pink-400 mb-2">5</div>
-              <div className="text-gray-300 font-medium">Text Rows</div>
-            </div>
-            <div>
-              <div className="text-4xl md:text-5xl font-bold text-green-400 mb-2">∞</div>
-              <div className="text-gray-300 font-medium">Unique Combinations</div>
-            </div>
-          </div>
+          </LiquidGlass>
         </motion.div>
       </div>
     </section>
