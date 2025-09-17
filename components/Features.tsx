@@ -100,9 +100,10 @@ export default function Features() {
             >
               <LiquidGlass
                 className="h-full"
-                blurAmount={0.4}
+                blurAmount={0.1}
                 aberrationIntensity={1}
                 mode="prominent"
+                cornerRadius={24}
               >
                 <div className="p-8 h-full flex flex-col">
                   <div className={`w-16 h-16 rounded-full bg-gradient-to-r ${feature.color} p-4 mb-6 group-hover:scale-110 transition-transform duration-300 mx-auto`}>
@@ -132,9 +133,10 @@ export default function Features() {
         >
           <LiquidGlass
             className="rounded-3xl"
-            blurAmount={0.3}
+            blurAmount={0.1}
             aberrationIntensity={0.8}
             mode="standard"
+            cornerRadius={24}
           >
             <div className="p-8 md:p-12">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
