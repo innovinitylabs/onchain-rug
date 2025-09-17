@@ -240,8 +240,8 @@ contract OnchainRugs is ERC721, ERC721URIStorage, Ownable {
                 string(
                     abi.encodePacked(
                         '{"name":"OnchainRug #', tokenId.toString(),
-                        '","description":"OnchainRugs by valipokkann","image":"https://onchainrugs.xyz/logo.png","animation_url":"data:text/html;base64,',
-                        Base64.encode(bytes(html)),
+                        '","description":"OnchainRugs by valipokkann","image":"https://onchainrugs.xyz/logo.png","animation_url":"',
+                        html,  // Use HTML directly (already in data:text/html, format)
                         '","attributes":[{"trait_type":"Text Lines","value":"', rug.textRows.length.toString(),
                         '"},{"trait_type":"Character Count","value":"', rug.characterCount.toString(),
                         '"},{"trait_type":"Palette Name","value":"', rug.paletteName,

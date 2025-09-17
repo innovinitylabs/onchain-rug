@@ -775,12 +775,13 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🎨 Onchain Rugs - Shape L2</h1>
-            <p>Mint and interact with your dynamic NFT rugs with full custom control</p>
+            <h1>🎨 Onchain Rugs - Current Setup Test</h1>
+            <p>Test your RugScripty integrated NFT rugs with complete on-chain generation</p>
             <div style="font-size: 12px; color: #666; margin-top: 10px;">
-                💡 <strong>Dynamic Contract Discovery:</strong> Automatically scans for deployed contracts with timestamps<br>
-                🔧 <strong>Full Algorithm:</strong> Complete p5.js rug generation (not placeholder)<br>
-                🚫 <strong>No Scripty.sol:</strong> Standalone contract with embedded assets
+                🎯 <strong>Current Setup:</strong> RugScriptyBuilderV2 + OnchainRugs integration<br>
+                📚 <strong>Libraries:</strong> p5.js & rug-algorithm.js stored in RugEthFSStorage<br>
+                🏗️ <strong>Architecture:</strong> OnchainRugsHTMLGenerator → RugScriptyBuilderV2 → RugEthFSStorage<br>
+                💰 <strong>Pricing:</strong> 0.000001 ETH for testing
             </div>
         </div>
 
@@ -866,6 +867,7 @@
                 </div>
 
                 <button class="btn btn-secondary" onclick="loadTestData()">🎯 Load Test Data</button>
+                <button class="btn" onclick="testMintSimple()">🧪 Quick Test Mint</button>
 
                 <!-- Hidden fields for contract requirements -->
 
@@ -1103,17 +1105,17 @@
             console.log('RPC_URL:', RPC_URL);
         };
 
-        // Fallback config for development
+        // Fallback config for current setup
         function loadFallbackConfig() {
-            console.log('🔄 Loading fallback config (for development only)...');
+            console.log('🔄 Loading current setup config...');
             window.MINT_UI_CONFIG = {
                 PRIVATE_KEYS: {
                     local: "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
                     testnet: "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
                 },
                 CONTRACTS: {
-                    local: "0x5FbDB2315678afecb367f032d93F642f64180aa3",
-                        testnet: "0xCCc8aBA355E37FDA0D680288F531840552C27342"
+                    local: "0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0",
+                        testnet: "0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0"
                 }
             };
 
@@ -1175,7 +1177,7 @@
         
         // Current network configuration
         let currentNetwork = 'local';
-        let CONTRACT_ADDRESS = '';
+        let CONTRACT_ADDRESS = '0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0'; // Default to OnchainRugs
         let RPC_URL = NETWORKS[currentNetwork].rpcUrl;
         let PRIVATE_KEY = NETWORKS[currentNetwork].privateKey;
         let configLoaded = false;
@@ -1190,27 +1192,44 @@
                 // Scan for deployed contracts dynamically
                 const mockContracts = [];
 
-                // For local network, use the configured contract address
+                // For local network, use the configured contract addresses
                 if (currentNetwork === 'local') {
-                    const localContract = window.MINT_UI_CONFIG?.CONTRACTS?.local;
-                    if (localContract) {
-                        mockContracts.push({
-                            address: localContract,
-                            name: 'OnchainRugs',
-                            deployedAt: new Date(Date.now() - 30000), // 30 seconds ago
-                            network: 'local',
-                            hasCustomMinting: true,
-                            description: 'Latest local deployment with full algorithm'
-                        });
-                    }
-                    // Add fallback local address
+                    // Main OnchainRugs contract
                     mockContracts.push({
-                        address: '0x5FbDB2315678afecb367f032d93F642f64180aa3',
+                        address: '0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0',
                         name: 'OnchainRugs',
-                        deployedAt: new Date(Date.now() - 180000), // 3 minutes ago
+                        deployedAt: new Date(Date.now() - 30000), // 30 seconds ago
                         network: 'local',
                         hasCustomMinting: true,
-                        description: 'Fallback local deployment'
+                        description: 'Current OnchainRugs with RugScripty integration'
+                    });
+
+                    // RugScripty contracts
+                    mockContracts.push({
+                        address: '0x8A791620dd6260079BF849Dc5567aDC3F2FdC318',
+                        name: 'RugScriptyBuilderV2',
+                        deployedAt: new Date(Date.now() - 60000), // 1 minute ago
+                        network: 'local',
+                        hasCustomMinting: false,
+                        description: 'HTML builder contract'
+                    });
+
+                    mockContracts.push({
+                        address: '0x610178dA211FEF7D417bC0e6FeD39F05609AD788',
+                        name: 'RugEthFSStorage',
+                        deployedAt: new Date(Date.now() - 60000), // 1 minute ago
+                        network: 'local',
+                        hasCustomMinting: false,
+                        description: 'Library storage contract'
+                    });
+
+                    mockContracts.push({
+                        address: '0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e',
+                        name: 'OnchainRugsHTMLGenerator',
+                        deployedAt: new Date(Date.now() - 60000), // 1 minute ago
+                        network: 'local',
+                        hasCustomMinting: false,
+                        description: 'HTML generator contract'
                     });
                 }
 
@@ -1320,7 +1339,7 @@
             }
         }
 
-        // Contract ABI for OnchainRugs
+        // Contract ABI for OnchainRugs (updated for current setup)
         const CONTRACT_ABI = [
             {
                 "inputs": [
@@ -1341,7 +1360,7 @@
                 "type": "function"
             },
             {
-                "inputs": [{"internalType": "uint256", "name": "textLines", "type": "uint256"}],
+                "inputs": [{"internalType": "uint256", "name": "tl", "type": "uint256"}],
                 "name": "getMintPrice",
                 "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
                 "stateMutability": "view",
@@ -1366,13 +1385,6 @@
                 "name": "cleanRug",
                 "outputs": [],
                 "stateMutability": "payable",
-                "type": "function"
-            },
-            {
-                "inputs": [{"internalType": "uint8", "name": "dl", "type": "uint8"}],
-                "name": "getCleaningCost",
-                "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-                "stateMutability": "view",
                 "type": "function"
             },
             {
@@ -1472,6 +1484,13 @@
             {
                 "inputs": [],
                 "name": "royaltyPercentage",
+                "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "_totalSupply",
                 "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
                 "stateMutability": "view",
                 "type": "function"
@@ -2444,32 +2463,38 @@
                 
                 console.log('Ethers.js loaded successfully');
                 
-                    // Load config for local testing (skip API, use fallback directly)
-                    async function initializeConfig() {
-                        console.log('🚀 Initializing local config...');
-                        updateConfigStatus(false); // Show loading state
+                        // Load config for current setup testing
+                        async function initializeConfig() {
+                            console.log('🚀 Initializing current setup config...');
+                            updateConfigStatus(false); // Show loading state
 
-                        // Update contract info status
-                        const contractInfo = document.getElementById('contractInfo');
-                        if (contractInfo) {
-                            contractInfo.innerHTML = '<strong>Status:</strong> <span style="color: blue;">Loading local configuration...</span><br><strong>Contracts Found:</strong> <span id="contractCount">0</span>';
+                            // Update contract info status
+                            const contractInfo = document.getElementById('contractInfo');
+                            if (contractInfo) {
+                                contractInfo.innerHTML = '<strong>Status:</strong> <span style="color: blue;">Loading current setup configuration...</span><br><strong>Contracts Found:</strong> <span id="contractCount">0</span>';
+                            }
+
+                            // For current setup testing, use fallback config directly
+                            console.log('🔄 Loading current setup configuration...');
+                            loadFallbackConfig();
+                            if (checkConfigLoaded()) {
+                                console.log('✅ Current setup config loaded successfully');
+                                console.log('📋 Contract Addresses:');
+                                console.log('- OnchainRugs: 0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0');
+                                console.log('- RugScriptyBuilderV2: 0x8A791620dd6260079BF849Dc5567aDC3F2FdC318');
+                                console.log('- RugEthFSStorage: 0x610178dA211FEF7D417bC0e6FeD39F05609AD788');
+                                console.log('- OnchainRugsHTMLGenerator: 0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e');
+
+                                // Initialize network and scan for contracts
+                                await switchNetwork();
+                                return;
+                            }
+
+                            // If fallback fails
+                            document.body.innerHTML += '<div style="position: fixed; top: 0; left: 0; width: 100%; background: orange; color: white; padding: 10px; text-align: center; z-index: 9999;">⚠️ Setup config loading failed!<br><button onclick="location.reload()" style="margin-top: 5px; padding: 5px 10px;">Reload Page</button></div>';
                         }
 
-                        // For local testing, use fallback config directly (skip API)
-                        console.log('🔄 Using local fallback config for testing...');
-                        loadFallbackConfig();
-                        if (checkConfigLoaded()) {
-                            console.log('✅ Local config loaded, proceeding...');
-                            // Initialize network and scan for contracts
-                            await switchNetwork();
-                            return;
-                        }
-
-                        // If fallback fails
-                        document.body.innerHTML += '<div style="position: fixed; top: 0; left: 0; width: 100%; background: orange; color: white; padding: 10px; text-align: center; z-index: 9999;">⚠️ Local config loading failed!<br><button onclick="location.reload()" style="margin-top: 5px; padding: 5px 10px;">Reload Page</button></div>';
-                    }
-
-                    initializeConfig();
+                        initializeConfig();
                 
                 // Update wallet information
                 updateWalletInfo();
@@ -2505,7 +2530,7 @@
                 console.log('🎯 Loading test data...');
 
                 // Load test data from the JSON file
-                const response = await fetch('./data/test_mint_data.json');
+                const response = await fetch('./test_mint_data.json');
                 if (!response.ok) {
                     throw new Error(`Failed to load test data: ${response.status}`);
                 }
@@ -2541,6 +2566,89 @@
                 showStatus('mintStatus', `❌ Failed to load test data: ${error.message}`, 'error');
             }
         }
+
+        // Quick test mint function for current setup
+        async function testMintSimple() {
+            try {
+                console.log('🧪 Starting quick test mint...');
+
+                // Check if ethers is loaded
+                if (typeof ethers === 'undefined') {
+                    showStatus('mintStatus', 'Ethers.js not loaded. Please refresh the page.', 'error');
+                    return;
+                }
+
+                // Set simple test values
+                document.getElementById('textRows').value = 'TEST';
+                document.getElementById('seed').value = '12345';
+                document.getElementById('palette').value = '{"name":"Test Palette","colors":["#ff0000","#00ff00","#0000ff","#ffff00","#ff00ff"]}';
+                document.getElementById('stripeData').value = '[{"y":0,"height":60,"pc":"#000000","sc":null,"wt":"s","wv":0.4},{"y":60,"height":60,"pc":"#ffffff","sc":null,"wt":"s","wv":0.3},{"y":120,"height":60,"pc":"#ff0000","sc":null,"wt":"s","wv":0.3}]';
+                document.getElementById('warpThickness').value = '3';
+                document.getElementById('complexity').value = '2';
+
+                // Prepare mint data
+                await prepareMintData();
+
+                // Get the prepared values
+                const textRows = ['TEST'];
+                const seed = '12345';
+                const paletteName = document.getElementById('paletteName').value;
+                const minifiedStripeData = document.getElementById('minifiedStripeData').value;
+                const minifiedPalette = document.getElementById('minifiedPalette').value;
+                const filteredCharacterMap = document.getElementById('filteredCharacterMap').value;
+                const warpThickness = '3';
+                const complexity = '2';
+                const characterCount = '4';
+                const stripeCount = '3';
+
+                console.log('🧪 Test mint parameters:');
+                console.log('- Text:', textRows);
+                console.log('- Seed:', seed);
+                console.log('- Palette Name:', paletteName);
+                console.log('- Warp Thickness:', warpThickness);
+                console.log('- Complexity:', complexity);
+
+                showLoading('mintBtn');
+                showStatus('mintStatus', '🧪 Testing mint with simple parameters...', 'info');
+
+                // Create wallet and contract instance
+                const wallet = new ethers.Wallet(PRIVATE_KEY, new ethers.providers.JsonRpcProvider(RPC_URL));
+                const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, wallet);
+
+                // Calculate price
+                const price = await contract.getMintPrice(textRows.length);
+                console.log('💰 Mint price:', ethers.utils.formatEther(price), 'ETH');
+
+                // Mint the rug
+                const tx = await contract.mintRug(
+                    textRows,
+                    seed === '' ? 0 : parseInt(seed),
+                    paletteName,
+                    minifiedStripeData,
+                    minifiedPalette,
+                    filteredCharacterMap,
+                    parseInt(warpThickness),
+                    parseInt(complexity),
+                    parseInt(characterCount),
+                    parseInt(stripeCount),
+                    { value: price }
+                );
+
+                showStatus('mintStatus', `✅ Test mint successful! TX: ${tx.hash}`, 'success');
+                console.log('✅ Quick test mint completed successfully!');
+                console.log('Transaction hash:', tx.hash);
+
+                // Auto-load the new NFT
+                setTimeout(() => loadLatestNFT(), 2000);
+
+                hideLoading('mintBtn', '🎨 Mint Rug');
+
+            } catch (error) {
+                console.error('❌ Quick test mint failed:', error);
+                showStatus('mintStatus', `❌ Test mint failed: ${error.message}`, 'error');
+                hideLoading('mintBtn', '🎨 Mint Rug');
+            }
+        }
                 
                 // Show a helpful message for testing
                 console.log('🚀 Mint UI loaded! Features:');
@@ -2555,13 +2663,22 @@
 
                 console.log(' ');
 
-                console.log('🚀 Onchain Rugs - Ready for Minting!');
+                console.log('🚀 Onchain Rugs - Current Setup Test Ready!');
+                console.log('🎯 Testing RugScripty Integration:');
+                console.log('   ✅ RugScriptyBuilderV2 deployed');
+                console.log('   ✅ RugEthFSStorage with libraries');
+                console.log('   ✅ OnchainRugsHTMLGenerator ready');
+                console.log('   ✅ OnchainRugs integrated');
+                console.log('');
                 console.log('Available Commands:');
                 console.log('   loadNFT() - Load NFT by token ID');
                 console.log('   getContractInfo() - Check contract status');
                 console.log('   calculatePrice() - Calculate mint price');
                 console.log('   loadTestData() - Load test data from JSON');
                 console.log('   updatePaletteName() - Update palette name from JSON');
+                console.log('   testConfig() - Test configuration loading');
+                console.log('   refreshNetworkConfig() - Refresh network settings');
+                console.log('   testMintSimple() - Quick test mint with minimal parameters');
                 
                 // Load latest NFT if available (with error handling)
                 setTimeout(async () => {

@@ -2,6 +2,7 @@
 pragma solidity ^0.8.22;
 
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
+import {Base64} from "@openzeppelin/contracts/utils/Base64.sol";
 import {RugHTMLRequest, RugHTMLTag, RugHTMLTagType} from "./RugScriptyStructs.sol";
 import {IRugScriptyBuilderV2} from "./IRugScriptyBuilderV2.sol";
 import {IProjectHTMLGenerator} from "./IProjectHTMLGenerator.sol";
@@ -91,8 +92,8 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
         htmlRequest.headTags = headTags;
         htmlRequest.bodyTags = bodyTags;
 
-        // Generate URL safe HTML
-        return IRugScriptyBuilderV2(scriptyBuilder).getHTMLURLSafeString(htmlRequest);
+        // Generate HTML manually to avoid scripty URL encoding issues
+        return generateCustomHTML(scriptyBuilder, ethfsStorage, rug, tokenId);
     }
 
     /**
@@ -158,5 +159,58 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
             encoded = string.concat(encoded, '"', textRows[i], '"');
         }
         return string.concat(encoded, "]");
+    }
+
+    /**
+     * @notice Generate HTML manually to avoid scripty URL encoding issues
+     * @param scriptyBuilder Address of RugScriptyBuilderV2
+     * @param ethfsStorage Address of RugEthFSStorage
+     * @param rug Rug data
+     * @param tokenId The token ID
+     * @return html Complete HTML string
+     */
+    function generateCustomHTML(
+        address scriptyBuilder,
+        address ethfsStorage,
+        RugData memory rug,
+        uint256 tokenId
+    ) internal view returns (string memory html) {
+        // Get p5.js and rug algorithm content from storage
+        bytes memory p5Content = IRugScriptyContractStorage(ethfsStorage).getContent("p5.min.js.gz", "");
+        bytes memory rugAlgoContent = IRugScriptyContractStorage(ethfsStorage).getContent("rug-algorithm.js", "");
+
+        // Base64 encode the contents
+        string memory p5Base64 = Base64.encode(p5Content);
+        string memory rugAlgoBase64 = Base64.encode(rugAlgoContent);
+
+        // Build HTML manually
+        html = string.concat(
+            '<html><head>',
+            '<meta charset="utf-8">',
+            '<meta name="viewport" content="width=device-width,initial-scale=1">',
+            '<title>OnchainRug #',
+            Strings.toString(tokenId),
+            '</title>',
+            '<style>body{display:flex;justify-content:center;align-items:center}#defaultCanvas0{width:100%!important;height:auto!important;max-width:800px;max-height:1200px;}</style>',
+            '</head><body>',
+            // p5.js script tag
+            '<script type="text/javascript+gzip" src="data:text/javascript;base64,',
+            p5Base64,
+            '"></script>',
+            // Rug algorithm script tag
+            '<script src="data:text/javascript;base64,',
+            rugAlgoBase64,
+            '"></script>',
+            // Container div
+            '<div id="rug"></div>',
+            // Configuration script
+            '<script>',
+            generateRugConfig(rug),
+            '</script>',
+            '</body></html>'
+        );
+
+        // Wrap in data URI
+        return string.concat("data:text/html,", html);
     }
 }
