@@ -150,7 +150,7 @@ export default function Footer() {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3, delay: index * 0.05 }}
-                      className="bg-gray-800/50 rounded-lg p-4 border border-gray-700 hover:border-cyan-400/50 transition-colors duration-200"
+                      className="bg-gray-800/50 rounded-lg p-4 border border-gray-700"
                     >
                       <h4 className="font-semibold text-white mb-1">
                         <a
