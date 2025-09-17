@@ -73,6 +73,12 @@ export default function Footer() {
       description: "Diamond pattern implementation for smart contracts",
       license: "MIT",
       link: "https://github.com/mudgen/diamond-2"
+    },
+    {
+      name: "Freepik",
+      description: "Background images and graphics used in the project",
+      license: "Freepik License",
+      link: "https://www.freepik.com/"
     }
   ]
 
@@ -85,7 +91,7 @@ export default function Footer() {
         }} />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6 py-3">
+      <div className="relative z-10 max-w-7xl mx-auto px-6 py-2">
         {/* Main Footer Content */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           {/* Copyright and Brand */}
@@ -137,20 +143,20 @@ export default function Footer() {
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className="overflow-hidden mt-8"
+              className="overflow-hidden mt-6"
             >
-              <div className="border-t border-gray-700 pt-8">
-                <h3 className="text-lg font-semibold text-white mb-6 text-center">
+              <div className="border-t border-gray-700 pt-6">
+                <h3 className="text-lg font-semibold text-white mb-4 text-center">
                   Credits
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   {credits.map((credit, index) => (
                     <motion.div
                       key={credit.name}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3, delay: index * 0.05 }}
-                      className="bg-gray-800/50 rounded-lg p-4 border border-gray-700"
+                      className="bg-gray-800/50 rounded-lg p-3 border border-gray-700"
                     >
                       <h4 className="font-semibold text-white mb-1">
                         <a
