@@ -9,7 +9,7 @@ export default function Footer() {
 
   // Auto-collapse credits after 11 seconds
   useEffect(() => {
-    let timeoutId: number
+    let timeoutId: ReturnType<typeof setTimeout>
 
     if (isCreditsOpen) {
       timeoutId = setTimeout(() => {
