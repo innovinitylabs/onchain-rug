@@ -15,12 +15,12 @@ import "lib/openzeppelin-contracts/contracts/token/ERC721/extensions/ERC721URISt
 import "lib/openzeppelin-contracts/contracts/access/Ownable.sol";
 import "lib/openzeppelin-contracts/contracts/utils/Strings.sol";
 import "lib/openzeppelin-contracts/contracts/utils/Base64.sol";
-import "./RugHTMLGeneratorAgnostic.sol";
 import "./OnchainRugsHTMLGenerator.sol";
 
 /**
  * @title OnchainRugs
  * @dev Fully on-chain NFT rug collection with complete p5.js algorithm
+ * @author @valipokkann
  * @notice Features: Dynamic aging, text uniqueness, filtered character maps, minified HTML generation
  */
 contract OnchainRugs is ERC721, ERC721URIStorage, Ownable {
@@ -224,11 +224,10 @@ contract OnchainRugs is ERC721, ERC721URIStorage, Ownable {
         require(rugEthFSStorage != address(0), "RugEthFSStorage not configured");
         require(onchainRugsHTMLGenerator != address(0), "OnchainRugsHTMLGenerator not configured");
 
-        // Encode rug data for the agnostic HTML generator
+        // Encode rug data for the HTML generator
         bytes memory encodedRugData = abi.encode(rug);
 
-        string memory html = RugHTMLGeneratorAgnostic.generateHTML(
-            onchainRugsHTMLGenerator,
+        string memory html = OnchainRugsHTMLGenerator(onchainRugsHTMLGenerator).generateProjectHTML(
             encodedRugData,
             tokenId,
             rugScriptyBuilder,

@@ -2,9 +2,9 @@
 pragma solidity ^0.8.22;
 
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
-import {RugHTMLRequest, RugHTMLTag, RugHTMLTagType} from "./RugScriptyStructs.sol";
-import {IRugScriptyBuilderV2} from "./IRugScriptyBuilderV2.sol";
-import {IProjectHTMLGenerator} from "./IProjectHTMLGenerator.sol";
+import {RugHTMLRequest, RugHTMLTag, RugHTMLTagType} from "../RugScriptyStructs.sol";
+import {IRugScriptyBuilderV2} from "../IRugScriptyBuilderV2.sol";
+import {IProjectHTMLGenerator} from "../IProjectHTMLGenerator.sol";
 
 ///////////////////////////////////////////////////////////
 // ░██████╗░█████╗░██████╗░██╗██████╗░████████╗██╗░░░██╗ //

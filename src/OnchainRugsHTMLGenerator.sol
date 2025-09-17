@@ -21,6 +21,7 @@ import {IProjectHTMLGenerator} from "./IProjectHTMLGenerator.sol";
  * @title OnchainRugsHTMLGenerator
  * @notice Project-specific HTML generator for OnchainRugs using scripty.sol
  * @dev Implements IProjectHTMLGenerator for OnchainRugs project
+ * @author @valipokkann
  */
 contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
     using Strings for uint256;
@@ -79,7 +80,7 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
         bodyTags[1].tagType = RugHTMLTagType.scriptBase64DataURI;
 
         // 3. Canvas element
-        bodyTags[2].tagOpen = '<div id="rug"><canvas id="defaultCanvas0" width="800" height="1200"></canvas></div>';
+        bodyTags[2].tagOpen = '<div id="rug"></div>';
 
         // 4. Rug-specific JavaScript (configuration)
         bodyTags[3].tagContent = bytes(generateRugConfig(rug));
