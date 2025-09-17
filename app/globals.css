@@ -80,6 +80,7 @@ body {
   padding: 8px 12px !important;
   font-size: 14px !important;
   font-weight: 500 !important;
+  font-family: 'system-ui, -apple-system, sans-serif' !important;
   transition: all 0.2s ease !important;
 }
 
@@ -99,4 +100,25 @@ body {
   border-radius: 8px !important;
   font-size: 14px !important;
   font-weight: 500 !important;
+  font-family: 'system-ui, -apple-system, sans-serif' !important;
+}
+
+/* Additional wallet button text overrides for all states */
+[data-rk] button,
+[data-rk] [role="button"],
+[data-rk] .rk-button,
+[data-rk] [data-testid*="button"] {
+  font-family: 'system-ui, -apple-system, sans-serif' !important;
+  font-weight: 500 !important;
+  color: #ffffff !important;
+}
+
+[data-rk] * {
+  font-family: 'system-ui, -apple-system, sans-serif' !important;
+}
+
+/* Modal content text */
+[data-rk] [data-testid="rk-modal-content"] *,
+[data-rk] .rk-modal-content * {
+  font-family: 'system-ui, -apple-system, sans-serif' !important;
 }
