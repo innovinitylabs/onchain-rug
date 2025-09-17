@@ -5,6 +5,7 @@ import Navigation from '@/components/Navigation'
 import Hero from '@/components/Hero'
 import AnimatedRugs from '@/components/AnimatedRugs'
 import Features from '@/components/Features'
+import Footer from '@/components/Footer'
 import PerformanceMonitor from '@/components/PerformanceMonitor'
 import ScrollIndicator from '@/components/ScrollIndicator'
 
@@ -45,6 +46,9 @@ export default function Home() {
 
       {/* Features Section */}
       <Features />
+
+      {/* Footer */}
+      <Footer />
     </main>
   )
 }
