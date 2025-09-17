@@ -1,11 +1,28 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronUp, ChevronDown } from 'lucide-react'
 
 export default function Footer() {
   const [isCreditsOpen, setIsCreditsOpen] = useState(false)
+
+  // Auto-collapse credits after 11 seconds
+  useEffect(() => {
+    let timeoutId: number
+
+    if (isCreditsOpen) {
+      timeoutId = setTimeout(() => {
+        setIsCreditsOpen(false)
+      }, 11000) // 11 seconds
+    }
+
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
+    }
+  }, [isCreditsOpen])
 
   const credits = [
     {
