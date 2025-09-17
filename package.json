@@ -55,5 +55,6 @@
     "has-ansi": "5.0.1",
     "@metamask/sdk": "^0.33.1",
     "@metamask/sdk-communication-layer": "^0.33.1"
-  }
+  },
+  "type": "module"
 }

@@ -1,0 +1,5 @@
+---
+description: Dont use Placholders, we are still in development and so we always do full implementations, no half measures
+globs:
+alwaysApply: true
+---

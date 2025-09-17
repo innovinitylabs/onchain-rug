@@ -1,0 +1,52 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.22;
+
+///////////////////////////////////////////////////////////
+// ░██████╗░█████╗░██████╗░██╗██████╗░████████╗██╗░░░██╗ //
+// ██╔════╝██╔══██╗██╔══██╗██║██╔══██╗╚══██╔══╝╚██╗░██╔╝ //
+// ╚█████╗░██║░░╚═╝██████╔╝██║██████╔╝░░░██║░░░░╚████╔╝░ //
+// ░╚═══██╗██║░░██╗██╔══██╗██║██╔═══╝░░░░██║░░░░░╚██╔╝░░ //
+// ██████╔╝╚█████╔╝██║░░██║██║██║░░░░░░░░██║░░░░░░██║░░░ //
+// ╚═════╝░░╚════╝░╚═╝░░╚═╝╚═╝╚═╝░░░░░░░░╚═╝░░░░░░╚═╝░░░ //
+///////////////////////////////////////////////////////////
+//░░░░░░░░░░░░░░░░░░░░░░░    PROJECT HTML    ░░░░░░░░░░░░░░░░░░░░░░//
+
+/**
+ * @title IProjectHTMLGenerator
+ * @notice Generic interface for project-specific HTML generation using scripty.sol
+ * @dev Any NFT project can implement this to use the RugScripty system
+ */
+interface IProjectHTMLGenerator {
+    /**
+     * @notice Generate HTML for a specific token using project-specific data
+     * @param projectData Encoded project-specific data (e.g., RugData for OnchainRugs)
+     * @param tokenId The token ID
+     * @param scriptyBuilder Address of RugScriptyBuilderV2
+     * @param ethfsStorage Address of RugEthFSStorage
+     * @return html Generated HTML string
+     */
+    function generateProjectHTML(
+        bytes memory projectData,
+        uint256 tokenId,
+        address scriptyBuilder,
+        address ethfsStorage
+    ) external view returns (string memory html);
+
+    /**
+     * @notice Get project-specific JavaScript libraries needed
+     * @return libraries Array of library names stored in EthFS
+     */
+    function getRequiredLibraries() external view returns (string[] memory libraries);
+
+    /**
+     * @notice Get project name for metadata
+     * @return name Human-readable project name
+     */
+    function getProjectName() external view returns (string memory name);
+
+    /**
+     * @notice Get project description for metadata
+     * @return description Human-readable project description
+     */
+    function getProjectDescription() external view returns (string memory description);
+}

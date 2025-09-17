@@ -1,12 +1,22 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.22;
 
+/////////////////////////////////////////////////////////////////////////////////////////////////
+/// ██╗   ██╗ █████╗ ██╗     ██╗██████╗  ██████╗ ██╗  ██╗██╗  ██╗ █████╗ ███╗   ██╗███╗   ██╗ ///
+/// ██║   ██║██╔══██╗██║     ██║██╔══██╗██╔═══██╗██║ ██╔╝██║ ██╔╝██╔══██╗████╗  ██║████╗  ██║ ///
+/// ██║   ██║███████║██║     ██║██████╔╝██║   ██║█████╔╝ █████╔╝ ███████║██╔██╗ ██║██╔██╗ ██║ ///
+/// ╚██╗ ██╔╝██╔══██║██║     ██║██╔═══╝ ██║   ██║██╔═██╗ ██╔═██╗ ██╔══██║██║╚██╗██║██║╚██╗██║ ///
+///  ╚████╔╝ ██║  ██║███████╗██║██║     ╚██████╔╝██║  ██╗██║  ██╗██║  ██║██║ ╚████║██║ ╚████║ ///
+///   ╚═══╝  ╚═╝  ╚═╝╚══════╝╚═╝╚═╝      ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝  ╚═══╝ ///
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
 import "lib/openzeppelin-contracts/contracts/token/ERC721/ERC721.sol";
 import "lib/openzeppelin-contracts/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "lib/openzeppelin-contracts/contracts/access/Ownable.sol";
 import "lib/openzeppelin-contracts/contracts/utils/Strings.sol";
 import "lib/openzeppelin-contracts/contracts/utils/Base64.sol";
-import "./HTMLGenerator.sol";
+import "./RugHTMLGeneratorAgnostic.sol";
+import "./OnchainRugsHTMLGenerator.sol";
 
 /**
  * @title OnchainRugs
@@ -35,6 +45,11 @@ contract OnchainRugs is ERC721, ERC721URIStorage, Ownable {
 
     // Emergency Controls
     bool public paused = false;
+
+    // Rug Scripty Contracts
+    address public rugScriptyBuilder;
+    address public rugEthFSStorage;
+    address public onchainRugsHTMLGenerator;
 
     // ============ STORAGE ============
     struct RugData {
@@ -76,6 +91,17 @@ contract OnchainRugs is ERC721, ERC721URIStorage, Ownable {
 
     function updateAgingThresholds(uint256 d1,uint256 d2) external onlyOwner {dirtLevel1Days=d1;dirtLevel2Days=d2;emit AgingThresholdsUpdated();}
     function setPaused(bool p) external onlyOwner {paused=p;}
+
+    // Rug Scripty Integration
+    function setRugScriptyContracts(
+        address _rugScriptyBuilder,
+        address _rugEthFSStorage,
+        address _onchainRugsHTMLGenerator
+    ) external onlyOwner {
+        rugScriptyBuilder = _rugScriptyBuilder;
+        rugEthFSStorage = _rugEthFSStorage;
+        onchainRugsHTMLGenerator = _onchainRugsHTMLGenerator;
+    }
 
     // ============ MINTING FUNCTIONS ============
     function mintRug(
@@ -193,7 +219,21 @@ contract OnchainRugs is ERC721, ERC721URIStorage, Ownable {
         RugData memory rug = rugs[tokenId];
         uint8 dirtLevel = calculateAgingState(tokenId);
 
-        string memory html = generateHTML(rug, dirtLevel, 0, tokenId);
+        // Use Rug Scripty system - now mandatory
+        require(rugScriptyBuilder != address(0), "RugScriptyBuilder not configured");
+        require(rugEthFSStorage != address(0), "RugEthFSStorage not configured");
+        require(onchainRugsHTMLGenerator != address(0), "OnchainRugsHTMLGenerator not configured");
+
+        // Encode rug data for the agnostic HTML generator
+        bytes memory encodedRugData = abi.encode(rug);
+
+        string memory html = RugHTMLGeneratorAgnostic.generateHTML(
+            onchainRugsHTMLGenerator,
+            encodedRugData,
+            tokenId,
+            rugScriptyBuilder,
+            rugEthFSStorage
+        );
 
         // Create JSON metadata
         string memory json = Base64.encode(
@@ -219,27 +259,6 @@ contract OnchainRugs is ERC721, ERC721URIStorage, Ownable {
         return string.concat("data:application/json;base64,", json);
     }
 
-    function generateHTML(
-        RugData memory rug,
-        uint8 dirtLevel,
-        uint8 textureLevel,
-        uint256 tokenId
-    ) internal pure returns (string memory) {
-        HTMLGenerator.RugData memory htmlRug = HTMLGenerator.RugData({
-            seed: rug.seed,
-            paletteName: rug.paletteName,
-            minifiedPalette: rug.minifiedPalette,
-            minifiedStripeData: rug.minifiedStripeData,
-            textRows: rug.textRows,
-            warpThickness: rug.warpThickness,
-            mintTime: rug.mintTime,
-            filteredCharacterMap: rug.filteredCharacterMap,
-            complexity: rug.complexity,
-            characterCount: rug.characterCount,
-            stripeCount: rug.stripeCount
-        });
-        return HTMLGenerator.generateHTML(htmlRug, dirtLevel, textureLevel, tokenId);
-    }
 
     function hashTextRows(string[] memory tr) internal pure returns(bytes32) {
         return keccak256(abi.encode(tr));

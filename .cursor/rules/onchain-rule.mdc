@@ -1,0 +1,5 @@
+---
+description: This porject name is onchain rugs, we are going full onchain and not using any off chain storage like IPFS or CDNs
+globs:
+alwaysApply: true
+---

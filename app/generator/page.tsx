@@ -47,7 +47,7 @@ export default function GeneratorPage() {
       
       // Load P5.js from CDN
       const script = document.createElement('script')
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js'
+      script.src = 'https://cdn.jsdelivr.net/npm/p5@1.11.10/lib/p5.min.js'
       script.onload = () => {
         console.log('✅ P5.js loaded successfully')
         resolve()

@@ -1,0 +1,6 @@
+---
+description: - use string.concat( instead of string(abi.encodePacked(
+- also use call instead of transfer in the withdraw function
+globs:
+alwaysApply: true
+---
