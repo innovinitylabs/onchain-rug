@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ExternalLink, ChevronUp, ChevronDown } from 'lucide-react'
+import { ChevronUp, ChevronDown } from 'lucide-react'
 
 export default function Footer() {
   const [isCreditsOpen, setIsCreditsOpen] = useState(false)
@@ -67,12 +67,12 @@ export default function Footer() {
         }} />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6 py-12">
+      <div className="relative z-10 max-w-7xl mx-auto px-6 py-6">
         {/* Main Footer Content */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           {/* Copyright and Brand */}
           <div className="text-center md:text-left">
-            <div className="text-lg font-medium text-gray-300 mb-2">
+            <div className="text-base font-medium text-gray-300">
               © 2025 Onchain Rugs by{' '}
               <a
                 href="https://valipokkann.in"
@@ -81,12 +81,8 @@ export default function Footer() {
                 className="text-cyan-400 hover:text-cyan-300 transition-colors duration-200 font-semibold"
               >
                 valipokkann
-                <ExternalLink className="inline w-4 h-4 ml-1" />
               </a>
             </div>
-            <p className="text-sm text-gray-400">
-              Generative art meets traditional textile craftsmanship
-            </p>
           </div>
 
           {/* Credits Toggle */}
@@ -143,10 +139,9 @@ export default function Footer() {
                           href={credit.link}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="hover:text-cyan-400 transition-colors duration-200 flex items-center gap-1"
+                          className="hover:text-cyan-400 transition-colors duration-200"
                         >
                           {credit.name}
-                          <ExternalLink className="w-3 h-3" />
                         </a>
                       </h4>
                       <p className="text-sm text-gray-400 mb-2">
