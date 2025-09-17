@@ -70,8 +70,8 @@ export default function Features() {
     <section className="min-h-screen bg-gradient-to-br from-sky-200 via-blue-300 to-indigo-400 p-8">
       <div className="max-w-7xl mx-auto">
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 1, y: 30 }}
+          whileInView={{ opacity: 1, y: 30 }}
           transition={{ duration: 0.8 }}
           viewport={{ once: true }}
           className="text-center mb-16"
@@ -79,9 +79,8 @@ export default function Features() {
           <h2 className="text-5xl md:text-6xl font-bold mb-6 gradient-text">
             ✨ Features
           </h2>
-          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-            Revolutionary generative art meets traditional textile craftsmanship.
-            Each onchain rugs is a unique masterpiece with deep cultural roots.
+          <p className="text-xl text-blue-300 max-w-3xl mx-auto ">
+            Know Your Rug.
           </p>
         </motion.div>
 
@@ -98,8 +97,14 @@ export default function Features() {
               variants={itemVariants}
               className="group"
             >
-              <div className="h-full min-h-[300px] relative overflow-hidden bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20">
-                <div className="absolute inset-0 bg-slate-900/20 rounded-2xl"></div>
+              <LiquidGlass
+  blurAmount={0.1}
+  aberrationIntensity={2}
+  elasticity={0.1}
+  cornerRadius={24}
+>
+              <div className="h-full min-h-[400px] relative overflow-hidden rounded-2xl ">
+                <div className="absolute inset-0 rounded-2xl"></div>
                 <div className="relative p-8 h-full flex flex-col justify-between">
                   <div className={`w-16 h-16 rounded-full bg-gradient-to-r ${feature.color} p-4 mb-6 group-hover:scale-110 transition-transform duration-300 mx-auto`}>
                     <feature.icon className="w-full h-full text-white" />
@@ -116,8 +121,10 @@ export default function Features() {
                   </div>
                 </div>
               </div>
+              </LiquidGlass>
             </motion.div>
           ))}
+         
         </motion.div>
 
         {/* Stats Section */}
