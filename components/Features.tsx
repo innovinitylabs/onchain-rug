@@ -1,20 +1,19 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Palette, Type, Zap, Shield, Sparkles, Globe } from 'lucide-react'
-import LiquidGlass from './LiquidGlass'
+import { Palette, Type, Zap, Shield, Sparkles, Globe, Clock } from 'lucide-react'
 
 const features = [
   {
     icon: Palette,
     title: "102 Color Palettes",
-    description: "From Classic to Cultural, Historical to Natural Dyes. Each with rarity classification from Common to Legendary.",
+    description: "A vast spectrum inspired by tradition, history, and nature. Each palette is uniquely classified by rarity, from Common to Legendary.",
     color: "from-pink-500 to-rose-500"
   },
   {
     icon: Type,
     title: "Custom Text Embedding",
-    description: "Weave your story into the fabric. Up to 5 rows of text with authentic pixel-based font rendering.",
+    description: "Weave your story into the fabric. Up to 5 rows of text with authentic pixel-based font rendering. Each text combination is unique and cannot be used again.",
     color: "from-blue-500 to-indigo-500"
   },
   {
@@ -25,8 +24,8 @@ const features = [
   },
   {
     icon: Shield,
-    title: "Blockchain Native",
-    description: "Self-contained HTML NFTs ready for on-chain storage. Ultra-compressed with obfuscated algorithms.",
+    title: "Fully On-Chain",
+    description: "Self-contained HTML NFTs, optimized for on-chain storage. Ultra-compressed, with all rendering logic and metadata stored in HTML.",
     color: "from-purple-500 to-violet-500"
   },
   {
@@ -36,7 +35,7 @@ const features = [
     color: "from-cyan-500 to-blue-500"
   },
   {
-    icon: Globe,
+    icon: Clock,
     title: "Dynamic Aging",
     description: "Dirt and texture development over time. Dirt can be removed with a cleaning, and texture can be reset with a laundering.",
     color: "from-teal-500 to-cyan-500"
@@ -67,7 +66,7 @@ const itemVariants = {
 
 export default function Features() {
   return (
-    <section className="py-20 px-6 bg-gradient-to-b from-blue-50 to-indigo-50">
+    <section className="min-h-screen bg-gradient-to-br from-sky-200 via-blue-300 to-indigo-400 p-8">
       <div className="max-w-7xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -76,10 +75,10 @@ export default function Features() {
           viewport={{ once: true }}
           className="text-center mb-16"
         >
-          <h2 className="text-5xl md:text-6xl font-bold gradient-text mb-6">
+          <h2 className="text-5xl md:text-6xl font-bold mb-6 gradient-text">
             ✨ Features
           </h2>
-          <p className="text-xl text-blue-700 max-w-3xl mx-auto">
+          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
             Revolutionary generative art meets traditional textile craftsmanship.
             Each onchain rugs is a unique masterpiece with deep cultural roots.
           </p>
@@ -98,25 +97,26 @@ export default function Features() {
               variants={itemVariants}
               className="group"
             >
-              <LiquidGlass
-                blurAmount={0.4}
-                aberrationIntensity={1.2}
-                elasticity={0.1}
-                className="bg-white/60 backdrop-blur-sm rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 border border-blue-200/50 h-full"
-                mode="standard"
+              <motion.div
+                className="bg-white/10 backdrop-blur-xl rounded-2xl p-8 shadow-2xl hover:shadow-3xl transition-all duration-300 border border-white/20 h-full"
+                whileHover={{
+                  scale: 1.05,
+                  y: -5,
+                  transition: { duration: 0.2 }
+                }}
               >
                 <div className={`w-16 h-16 rounded-full bg-gradient-to-r ${feature.color} p-4 mb-6 group-hover:scale-110 transition-transform duration-300`}>
                   <feature.icon className="w-full h-full text-white" />
                 </div>
                 
-                <h3 className="text-2xl font-bold text-blue-800 mb-4">
+                <h3 className="text-2xl font-bold text-white mb-4">
                   {feature.title}
                 </h3>
-                
-                <p className="text-blue-700/80 leading-relaxed">
+
+                <p className="text-gray-300 leading-relaxed">
                   {feature.description}
                 </p>
-              </LiquidGlass>
+              </motion.div>
             </motion.div>
           ))}
         </motion.div>
@@ -127,65 +127,25 @@ export default function Features() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.3 }}
           viewport={{ once: true }}
-          className="mt-20 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 rounded-3xl p-8 md:p-12"
+          className="mt-20 bg-white/5 backdrop-blur-xl rounded-3xl p-8 md:p-12 border border-white/10"
         >
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             <div>
-              <div className="text-4xl md:text-5xl font-bold text-blue-600 mb-2">1111</div>
-              <div className="text-blue-700 font-medium">Max Supply</div>
+              <div className="text-4xl md:text-5xl font-bold text-cyan-400 mb-2">1111</div>
+              <div className="text-gray-300 font-medium">Max Supply</div>
             </div>
             <div>
-              <div className="text-4xl md:text-5xl font-bold text-indigo-600 mb-2">102</div>
-              <div className="text-blue-700 font-medium">Color Palettes</div>
+              <div className="text-4xl md:text-5xl font-bold text-purple-400 mb-2">102</div>
+              <div className="text-gray-300 font-medium">Color Palettes</div>
             </div>
             <div>
-              <div className="text-4xl md:text-5xl font-bold text-purple-600 mb-2">5</div>
-              <div className="text-blue-700 font-medium">Text Rows</div>
+              <div className="text-4xl md:text-5xl font-bold text-pink-400 mb-2">5</div>
+              <div className="text-gray-300 font-medium">Text Rows</div>
             </div>
             <div>
-              <div className="text-4xl md:text-5xl font-bold text-cyan-600 mb-2">∞</div>
-              <div className="text-blue-700 font-medium">Unique Combinations</div>
+              <div className="text-4xl md:text-5xl font-bold text-green-400 mb-2">∞</div>
+              <div className="text-gray-300 font-medium">Unique Combinations</div>
             </div>
-          </div>
-        </motion.div>
-
-        {/* LiquidGlass Demo */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.5 }}
-          viewport={{ once: true }}
-          className="mt-20"
-        >
-          <div className="text-center mb-8">
-            <h2 className="text-3xl md:text-4xl font-bold gradient-text mb-4">
-              ✨ Liquid Glass Technology
-            </h2>
-            <p className="text-lg text-blue-700 max-w-2xl mx-auto">
-              Experience our advanced glass morphism effects with interactive controls
-            </p>
-          </div>
-
-          <div className="flex justify-center">
-            <LiquidGlass
-              blurAmount={0.5}
-              aberrationIntensity={1.8}
-              elasticity={0.2}
-              className="max-w-lg p-8"
-              showControls={true}
-              mode="standard"
-            >
-              <div className="text-center">
-                <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 flex items-center justify-center">
-                  <span className="text-2xl">🎨</span>
-                </div>
-                <h3 className="text-2xl font-bold mb-4 text-blue-800">Interactive Glass</h3>
-                <p className="text-blue-700 leading-relaxed">
-                  Move your mouse over this panel to see real-time refraction effects.
-                  Use the controls below to adjust parameters live.
-                </p>
-              </div>
-            </LiquidGlass>
           </div>
         </motion.div>
       </div>
