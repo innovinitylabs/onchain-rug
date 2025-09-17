@@ -113,7 +113,7 @@ export default function Footer() {
           <div className="text-center md:text-right">
             <button
               onClick={() => setIsCreditsOpen(!isCreditsOpen)}
-              className="group relative text-xs text-gray-500 hover:text-cyan-400 transition-colors duration-200 uppercase tracking-wider font-medium"
+              className="text-xs text-gray-500 hover:text-cyan-400 transition-colors duration-200 uppercase tracking-wider font-medium"
             >
               Credits
               <motion.div
@@ -124,13 +124,6 @@ export default function Footer() {
                 <ChevronDown className="w-3 h-3" />
               </motion.div>
 
-              {/* Tooltip */}
-              <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
-                <div className="bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
-                  Project credits & licenses
-                </div>
-                <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
-              </div>
             </button>
           </div>
         </div>
