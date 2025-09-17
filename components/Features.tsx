@@ -19,7 +19,7 @@ const features = [
   {
     icon: Zap,
     title: "Authentic Weaving",
-    description: "Realistic warp and weft threads with natural curves, organic irregularities, and cloth-like texture.",
+    description: "Not your average Web3 rug. Realistic warp and weft threads with natural curves, organic irregularities, and cloth-like texture.",
     color: "from-green-500 to-emerald-500"
   },
   {
@@ -36,8 +36,8 @@ const features = [
   },
   {
     icon: Globe,
-    title: "Cultural Heritage",
-    description: "Inspired by Tamil weaving traditions, Jamakalam patterns, and historical textile artistry.",
+    title: "Dynamic Aging",
+    description: "Dirt and texture development over time. Dirt can be removed with a cleaning, and texture can be reset with a laundering.",
     color: "from-teal-500 to-cyan-500"
   }
 ]
