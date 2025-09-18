@@ -9,17 +9,28 @@ pragma solidity ^0.8.22;
 // ██████╔╝╚█████╔╝██║░░██║██║██║░░░░░░░░██║░░░░░░██║░░░ //
 // ╚═════╝░░╚════╝░╚═╝░░╚═╝╚═╝╚═╝░░░░░░░░╚═╝░░░░░░╚═╝░░░ //
 ///////////////////////////////////////////////////////////
+//░░░░░░░░░░░░░░░░░░░    REQUESTS    ░░░░░░░░░░░░░░░░░░░░//
+///////////////////////////////////////////////////////////
 
-/**
-  @title A generic HTML builder that fetches and assembles given JS based script and head tags.
-  @author @0xthedude
-  @author @xtremetom
+struct HTMLRequest {
+    HTMLTag[] headTags;
+    HTMLTag[] bodyTags;
+}
 
-  Special thanks to @cxkoda, @frolic and @dhof
-*/
+enum HTMLTagType {
+    useTagOpenAndClose,
+    script,
+    scriptBase64DataURI,
+    scriptGZIPBase64DataURI,
+    scriptPNGBase64DataURI
+}
 
-import "./core/ScriptyCore.sol";
-import "./htmlBuilders/ScriptyHTML.sol";
-import "./htmlBuilders/ScriptyHTMLURLSafe.sol";
-
-contract ScriptyBuilderV2 is ScriptyCore, ScriptyHTML, ScriptyHTMLURLSafe {}
+struct HTMLTag {
+    string name;
+    address contractAddress;
+    bytes contractData;
+    HTMLTagType tagType;
+    bytes tagOpen;
+    bytes tagClose;
+    bytes tagContent;
+}

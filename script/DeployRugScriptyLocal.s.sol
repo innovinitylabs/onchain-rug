@@ -3,7 +3,7 @@ pragma solidity ^0.8.22;
 
 import "forge-std/Script.sol";
 import "../src/RugScriptyBuilderV2.sol";
-import "../src/ETHFSV2FileStorage.sol";
+import "../src/scripty/ScriptyStorageV2.sol";
 import "../src/OnchainRugsHTMLGenerator.sol";
 import "../src/OnchainRugs.sol";
 
@@ -32,11 +32,12 @@ contract DeployRugScriptyLocal is Script {
         RugScriptyBuilderV2 rugScriptyBuilder = new RugScriptyBuilderV2();
         console.log("RugScriptyBuilderV2 deployed at:", address(rugScriptyBuilder));
 
-        console.log("\nStep 2: Deploying ETHFSV2FileStorage...");
+        console.log("\nStep 2: Deploying ScriptyStorageV2...");
         // Use the EthFS FileStore address (same on all networks)
-        address ethfsFileStore = 0xFe1411d6864592549AdE050215482e4385dFa0FB;
-        ETHFSV2FileStorage ethfsStorage = new ETHFSV2FileStorage(ethfsFileStore);
-        console.log("ETHFSV2FileStorage deployed at:", address(ethfsStorage));
+        address ethfsFileStoreAddr = 0xFe1411d6864592549AdE050215482e4385dFa0FB;
+        // Note: Using existing deployed ScriptyStorageV2 instead of deploying new one
+        ScriptyStorageV2 scriptyStorage = ScriptyStorageV2(0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512);
+        console.log("ScriptyStorageV2 at:", address(scriptyStorage));
 
         console.log("\nStep 3: Deploying OnchainRugsHTMLGenerator...");
         OnchainRugsHTMLGenerator htmlGenerator = new OnchainRugsHTMLGenerator();
@@ -62,7 +63,7 @@ contract DeployRugScriptyLocal is Script {
         vm.startBroadcast(deployerPrivateKey);
         onchainRugs.setRugScriptyContracts(
             address(rugScriptyBuilder),
-            address(ethfsStorage),
+            address(scriptyStorage),
             address(htmlGenerator)
         );
         vm.stopBroadcast();
@@ -79,7 +80,7 @@ contract DeployRugScriptyLocal is Script {
             "========================================\n\n",
             "Core Contracts:\n",
             "- RugScriptyBuilderV2: ", vm.toString(address(rugScriptyBuilder)), "\n",
-            "- ETHFSV2FileStorage: ", vm.toString(address(ethfsStorage)), "\n",
+            "- ScriptyStorageV2: ", vm.toString(address(scriptyStorage)), "\n",
             "- OnchainRugsHTMLGenerator: ", vm.toString(address(htmlGenerator)), "\n\n",
             "NFT Contract:\n",
             "- OnchainRugs: ", vm.toString(address(onchainRugs)), "\n\n",
@@ -92,7 +93,7 @@ contract DeployRugScriptyLocal is Script {
             "3. Mint NFTs - they'll use the new on-chain system!\n\n",
             "SYSTEM ARCHITECTURE:\n",
             "- RugScriptyBuilderV2 (Core HTML assembler)\n",
-            "- ETHFSV2FileStorage (Bridge to EthFS chunking)\n",
+            "- ScriptyStorageV2 (Efficient storage for large files)\n",
             "- OnchainRugsHTMLGenerator (Project-specific logic)\n",
             "- OnchainRugs (NFT contract using the system)\n"
         ));
@@ -107,7 +108,7 @@ contract DeployRugScriptyLocal is Script {
         string memory addresses = string(abi.encodePacked(
             "Contract Addresses:\n",
             "RUG_SCRIPPY_BUILDER=", vm.toString(address(rugScriptyBuilder)), "\n",
-            "ETHFS_STORAGE=", vm.toString(address(ethfsStorage)), "\n",
+            "SCRIPTY_STORAGE=", vm.toString(address(scriptyStorage)), "\n",
             "HTML_GENERATOR=", vm.toString(address(htmlGenerator)), "\n",
             "ONCHAIN_RUGS=", vm.toString(address(onchainRugs)), "\n"
         ));
