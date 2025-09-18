@@ -175,7 +175,7 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
             name: "p5.min.js.gz",
             contractAddress: ethfsStorage,
             contractData: abi.encode("p5.min.js.gz"),
-            tagType: RugHTMLTagType.scriptBase64DataURI,
+            tagType: RugHTMLTagType.scriptGZIPBase64DataURI,
             tagOpen: "",
             tagClose: "",
             tagContent: ""
@@ -186,7 +186,7 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
             name: "rug-algorithm.js",
             contractAddress: ethfsStorage,
             contractData: abi.encode("rug-algorithm.js"),
-            tagType: RugHTMLTagType.scriptBase64DataURI,
+            tagType: RugHTMLTagType.scriptGZIPBase64DataURI,
             tagOpen: "",
             tagClose: "",
             tagContent: ""
