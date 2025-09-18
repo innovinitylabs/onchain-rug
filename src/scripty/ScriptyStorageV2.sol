@@ -200,7 +200,16 @@ contract ScriptyStorageV2 is Ownable, IScriptyStorage, IScriptyContractStorage {
         string memory name,
         bytes memory data
     ) public view returns (bytes memory content) {
-        return AddressChunks.mergeChunks(contents[name].chunks);
+        Content memory contentData = contents[name];
+        require(contentData.owner != address(0), "Content not found");
+
+        // If chunks exist, merge them
+        if (contentData.chunks.length > 0) {
+            return AddressChunks.mergeChunks(contentData.chunks);
+        }
+
+        // Otherwise return the details (for content stored directly)
+        return contentData.details;
     }
 
     /**
@@ -213,4 +222,5 @@ contract ScriptyStorageV2 is Ownable, IScriptyStorage, IScriptyContractStorage {
     ) public view returns (address[] memory pointers) {
         return contents[name].chunks;
     }
+
 }

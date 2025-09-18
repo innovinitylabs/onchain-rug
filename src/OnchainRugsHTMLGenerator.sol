@@ -104,7 +104,19 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
      * @param rug Rug data
      * @return js JavaScript configuration string
      */
-    function generateRugConfig(RugData memory rug) internal pure returns (string memory js) {
+    function generateRugConfig(RugData memory rug) internal view returns (string memory js) {
+        // Calculate texture level based on complexity
+        uint8 textureLevel = rug.complexity > 2 ? rug.complexity - 2 : 0;
+
+        // Calculate dirt level based on time since mint (simplified version)
+        uint8 dirtLevel = 0;
+        uint256 timeSinceMint = block.timestamp - rug.mintTime;
+        if (timeSinceMint > 7 days) {
+            dirtLevel = 2;
+        } else if (timeSinceMint > 3 days) {
+            dirtLevel = 1;
+        }
+
         return string.concat(
             'let w=800,h=1200,f=30,wt=8,wp=',
             rug.warpThickness.toString(),
@@ -118,6 +130,10 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
             rug.seed.toString(),
             ';let cm=',
             rug.filteredCharacterMap,
+            ';tl=',
+            textureLevel.toString(),
+            ',dl=',
+            dirtLevel.toString(),
             ';'
         );
     }
@@ -172,28 +188,17 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
 
         // 1. p5.js library from EthFS storage (base64 encoded)
         bodyTags[0] = RugHTMLTag({
-            name: "p5.min.js.gz",
+            name: "rug-p5.js.b64",
             contractAddress: ethfsStorage,
-            contractData: abi.encode("p5.min.js.gz"),
-            tagType: RugHTMLTagType.scriptGZIPBase64DataURI,
+            contractData: abi.encode("rug-p5.js.b64"),
+            tagType: RugHTMLTagType.scriptBase64DataURI,
             tagOpen: "",
             tagClose: "",
             tagContent: ""
         });
 
-        // 2. Rug algorithm from EthFS storage
+        // 2. Container div for p5.js canvas - needs to be before scripts that reference it
         bodyTags[1] = RugHTMLTag({
-            name: "rug-algorithm.js",
-            contractAddress: ethfsStorage,
-            contractData: abi.encode("rug-algorithm.js"),
-            tagType: RugHTMLTagType.scriptGZIPBase64DataURI,
-            tagOpen: "",
-            tagClose: "",
-            tagContent: ""
-        });
-
-        // 3. Container div for p5.js canvas
-        bodyTags[2] = RugHTMLTag({
             name: "",
             contractAddress: address(0),
             contractData: "",
@@ -203,8 +208,8 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
             tagContent: ""
         });
 
-        // 4. Configuration script (inline)
-        bodyTags[3] = RugHTMLTag({
+        // 3. NFT-specific configuration script (inline)
+        bodyTags[2] = RugHTMLTag({
             name: "",
             contractAddress: address(0),
             contractData: "",
@@ -212,6 +217,17 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
             tagOpen: "",
             tagClose: "",
             tagContent: bytes(generateRugConfig(rug))
+        });
+
+        // 4. Algorithm script from storage
+        bodyTags[3] = RugHTMLTag({
+            name: "rug-algorithm.js.b64",
+            contractAddress: ethfsStorage,
+            contractData: abi.encode("rug-algorithm.js.b64"),
+            tagType: RugHTMLTagType.scriptBase64DataURI,
+            tagOpen: "",
+            tagClose: "",
+            tagContent: ""
         });
 
         htmlRequest.headTags = headTags;
