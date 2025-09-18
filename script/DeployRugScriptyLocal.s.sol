@@ -3,7 +3,7 @@ pragma solidity ^0.8.22;
 
 import "forge-std/Script.sol";
 import "../src/RugScriptyBuilderV2.sol";
-import "../src/RugEthFSStorage.sol";
+import "../src/ETHFSV2FileStorage.sol";
 import "../src/OnchainRugsHTMLGenerator.sol";
 import "../src/OnchainRugs.sol";
 
@@ -32,9 +32,11 @@ contract DeployRugScriptyLocal is Script {
         RugScriptyBuilderV2 rugScriptyBuilder = new RugScriptyBuilderV2();
         console.log("RugScriptyBuilderV2 deployed at:", address(rugScriptyBuilder));
 
-        console.log("\nStep 2: Deploying RugEthFSStorage...");
-        RugEthFSStorage rugEthFSStorage = new RugEthFSStorage();
-        console.log("RugEthFSStorage deployed at:", address(rugEthFSStorage));
+        console.log("\nStep 2: Deploying ETHFSV2FileStorage...");
+        // Use the EthFS FileStore address (same on all networks)
+        address ethfsFileStore = 0xFe1411d6864592549AdE050215482e4385dFa0FB;
+        ETHFSV2FileStorage ethfsStorage = new ETHFSV2FileStorage(ethfsFileStore);
+        console.log("ETHFSV2FileStorage deployed at:", address(ethfsStorage));
 
         console.log("\nStep 3: Deploying OnchainRugsHTMLGenerator...");
         OnchainRugsHTMLGenerator htmlGenerator = new OnchainRugsHTMLGenerator();
@@ -60,7 +62,7 @@ contract DeployRugScriptyLocal is Script {
         vm.startBroadcast(deployerPrivateKey);
         onchainRugs.setRugScriptyContracts(
             address(rugScriptyBuilder),
-            address(rugEthFSStorage),
+            address(ethfsStorage),
             address(htmlGenerator)
         );
         vm.stopBroadcast();
@@ -77,7 +79,7 @@ contract DeployRugScriptyLocal is Script {
             "========================================\n\n",
             "Core Contracts:\n",
             "- RugScriptyBuilderV2: ", vm.toString(address(rugScriptyBuilder)), "\n",
-            "- RugEthFSStorage: ", vm.toString(address(rugEthFSStorage)), "\n",
+            "- ETHFSV2FileStorage: ", vm.toString(address(ethfsStorage)), "\n",
             "- OnchainRugsHTMLGenerator: ", vm.toString(address(htmlGenerator)), "\n\n",
             "NFT Contract:\n",
             "- OnchainRugs: ", vm.toString(address(onchainRugs)), "\n\n",
@@ -85,12 +87,12 @@ contract DeployRugScriptyLocal is Script {
             "RPC URL: http://localhost:8545\n",
             "Deployer: ", vm.toString(deployer), "\n\n",
             "NEXT STEPS:\n",
-            "1. Upload p5.js to RugEthFSStorage\n",
-            "2. Upload rug-algorithm.js to RugEthFSStorage\n",
+            "1. Upload p5.js to EthFS FileStore\n",
+            "2. Upload rug-algorithm.js to EthFS FileStore\n",
             "3. Mint NFTs - they'll use the new on-chain system!\n\n",
             "SYSTEM ARCHITECTURE:\n",
             "- RugScriptyBuilderV2 (Core HTML assembler)\n",
-            "- RugEthFSStorage (Stores p5.js + algorithms)\n",
+            "- ETHFSV2FileStorage (Bridge to EthFS chunking)\n",
             "- OnchainRugsHTMLGenerator (Project-specific logic)\n",
             "- OnchainRugs (NFT contract using the system)\n"
         ));
@@ -105,7 +107,7 @@ contract DeployRugScriptyLocal is Script {
         string memory addresses = string(abi.encodePacked(
             "Contract Addresses:\n",
             "RUG_SCRIPPY_BUILDER=", vm.toString(address(rugScriptyBuilder)), "\n",
-            "RUG_ETHFS_STORAGE=", vm.toString(address(rugEthFSStorage)), "\n",
+            "ETHFS_STORAGE=", vm.toString(address(ethfsStorage)), "\n",
             "HTML_GENERATOR=", vm.toString(address(htmlGenerator)), "\n",
             "ONCHAIN_RUGS=", vm.toString(address(onchainRugs)), "\n"
         ));

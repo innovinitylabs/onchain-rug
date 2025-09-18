@@ -26,6 +26,7 @@ pragma solidity ^0.8.17;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {RugScriptyStorage} from "./RugScriptyStorage.sol";
 import {RugAddressChunks} from "./RugAddressChunks.sol";
+import {IRugScriptyBuilderV2} from "./IRugScriptyBuilderV2.sol";
 
 contract RugScriptyStorageV2 is Ownable(msg.sender), RugScriptyStorage {
     using RugAddressChunks for address[];

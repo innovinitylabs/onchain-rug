@@ -8,6 +8,12 @@ optimizer_runs = 200
 via_ir = true
 verbosity = 2
 
+# Add these lines for file access
+fs_permissions = [
+    { access = "read", path = "./data/" },
+    { access = "read", path = "./" }
+]
+
 [rpc_endpoints]
 shape-sepolia = "https://sepolia.shape.network"
 shape-mainnet = "https://mainnet.shape.network"
@@ -20,3 +26,5 @@ shape-mainnet = { key = "your-api-key", url = "https://shapescan.xyz/api" }
 [profile.default.gas]
 gas_price = 1000000000  # 1 gwei
 gas_limit = 30000000    # 30M gas limit
+
+# Solady is used via direct imports in EthFS contracts

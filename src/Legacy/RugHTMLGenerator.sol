@@ -4,7 +4,7 @@ pragma solidity ^0.8.19;
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {RugHTMLRequest, RugHTMLTag, RugHTMLTagType} from "../RugScriptyStructs.sol";
 import {IRugScriptyBuilderV2} from "../IRugScriptyBuilderV2.sol";
-import {RugEthFSStorage} from "../RugEthFSStorage.sol";
+import {RugEthFSStorage} from "./RugEthFSStorage.sol";
 
 library RugHTMLGenerator {
     using Strings for uint256;

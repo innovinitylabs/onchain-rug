@@ -4,6 +4,9 @@ pragma solidity ^0.8.22;
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {Base64} from "@openzeppelin/contracts/utils/Base64.sol";
 import {RugHTMLRequest, RugHTMLTag, RugHTMLTagType} from "./RugScriptyStructs.sol";
+import {RugScriptyCore} from "./RugScriptyCore.sol";
+import {RugScriptyHTML} from "./RugScriptyHTML.sol";
+import {IRugScriptyContractStorage} from "./IRugScriptyContractStorage.sol";
 import {IRugScriptyBuilderV2} from "./IRugScriptyBuilderV2.sol";
 import {IProjectHTMLGenerator} from "./IProjectHTMLGenerator.sol";
 
@@ -59,41 +62,15 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
     ) external view override returns (string memory html) {
         RugData memory rug = abi.decode(projectData, (RugData));
 
-        // Create head tags
-        RugHTMLTag[] memory headTags = new RugHTMLTag[](1);
-        headTags[0].tagOpen = '<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OnchainRug #';
-        headTags[0].tagContent = bytes(tokenId.toString());
-        headTags[0].tagClose = '</title><style>body{display:flex;justify-content:center;align-items:center}#defaultCanvas0{width:100%!important;height:auto!important;max-width:800px;max-height:1200px;}</style>';
+        // Create HTML request using existing method
+        RugHTMLRequest memory htmlRequest = createHTMLRequest(ethfsStorage, rug, tokenId);
 
-        // Create body tags (4 total: p5.js, algorithm, canvas, rug-specific JS)
-        RugHTMLTag[] memory bodyTags = new RugHTMLTag[](4);
+        // Use RugScripty to generate HTML (raw HTML, not URL-safe)
+        bytes memory rawHTML = IRugScriptyBuilderV2(scriptyBuilder).getHTML(htmlRequest);
 
-        // 1. p5.js library from EthFS storage (gzipped)
-        bodyTags[0].name = "p5.min.js.gz";
-        bodyTags[0].contractAddress = ethfsStorage;
-        bodyTags[0].contractData = abi.encode("p5.min.js.gz");
-        bodyTags[0].tagType = RugHTMLTagType.scriptGZIPBase64DataURI;
-
-        // 2. Rug algorithm from EthFS storage
-        bodyTags[1].name = "rug-algorithm.js";
-        bodyTags[1].contractAddress = ethfsStorage;
-        bodyTags[1].contractData = abi.encode("rug-algorithm.js");
-        bodyTags[1].tagType = RugHTMLTagType.scriptBase64DataURI;
-
-        // 3. Canvas element
-        bodyTags[2].tagOpen = '<div id="rug"></div>';
-
-        // 4. Rug-specific JavaScript (configuration)
-        bodyTags[3].tagContent = bytes(generateRugConfig(rug));
-        bodyTags[3].tagType = RugHTMLTagType.script;
-
-        // Create HTML request
-        RugHTMLRequest memory htmlRequest;
-        htmlRequest.headTags = headTags;
-        htmlRequest.bodyTags = bodyTags;
-
-        // Generate HTML manually to avoid scripty URL encoding issues
-        return generateCustomHTML(scriptyBuilder, ethfsStorage, rug, tokenId);
+        // Convert to base64 and add data URI prefix
+        string memory base64HTML = Base64.encode(rawHTML);
+        return string.concat("data:text/html;base64,", base64HTML);
     }
 
     /**
@@ -162,55 +139,82 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
     }
 
     /**
-     * @notice Generate HTML manually to avoid scripty URL encoding issues
-     * @param scriptyBuilder Address of RugScriptyBuilderV2
+     * @notice Create HTML request for RugScriptyHTML with proper tag structure
      * @param ethfsStorage Address of RugEthFSStorage
      * @param rug Rug data
      * @param tokenId The token ID
-     * @return html Complete HTML string
+     * @return htmlRequest Properly structured HTML request for scripty
      */
-    function generateCustomHTML(
-        address scriptyBuilder,
+    function createHTMLRequest(
         address ethfsStorage,
         RugData memory rug,
         uint256 tokenId
-    ) internal view returns (string memory html) {
-        // Get p5.js and rug algorithm content from storage
-        bytes memory p5Content = IRugScriptyContractStorage(ethfsStorage).getContent("p5.min.js.gz", "");
-        bytes memory rugAlgoContent = IRugScriptyContractStorage(ethfsStorage).getContent("rug-algorithm.js", "");
+    ) internal view returns (RugHTMLRequest memory htmlRequest) {
+        // Create head tags
+        RugHTMLTag[] memory headTags = new RugHTMLTag[](1);
+        headTags[0] = RugHTMLTag({
+            name: "",
+            contractAddress: address(0),
+            contractData: "",
+            tagType: RugHTMLTagType.useTagOpenAndClose,
+            tagOpen: bytes(string.concat(
+                '<meta charset="utf-8">',
+                '<meta name="viewport" content="width=device-width,initial-scale=1">',
+                '<title>OnchainRug #', Strings.toString(tokenId), '</title>',
+                '<style>body{display:flex;justify-content:center;align-items:center}#rug{width:100%!important;height:auto!important;max-width:800px;max-height:1200px;}</style>'
+            )),
+            tagClose: "",
+            tagContent: ""
+        });
 
-        // Base64 encode the contents
-        string memory p5Base64 = Base64.encode(p5Content);
-        string memory rugAlgoBase64 = Base64.encode(rugAlgoContent);
+        // Create body tags
+        RugHTMLTag[] memory bodyTags = new RugHTMLTag[](4);
 
-        // Build HTML manually
-        html = string.concat(
-            '<html><head>',
-            '<meta charset="utf-8">',
-            '<meta name="viewport" content="width=device-width,initial-scale=1">',
-            '<title>OnchainRug #',
-            Strings.toString(tokenId),
-            '</title>',
-            '<style>body{display:flex;justify-content:center;align-items:center}#defaultCanvas0{width:100%!important;height:auto!important;max-width:800px;max-height:1200px;}</style>',
-            '</head><body>',
-            // p5.js script tag
-            '<script type="text/javascript+gzip" src="data:text/javascript;base64,',
-            p5Base64,
-            '"></script>',
-            // Rug algorithm script tag
-            '<script src="data:text/javascript;base64,',
-            rugAlgoBase64,
-            '"></script>',
-            // Container div
-            '<div id="rug"></div>',
-            // Configuration script
-            '<script>',
-            generateRugConfig(rug),
-            '</script>',
-            '</body></html>'
-        );
+        // 1. p5.js library from EthFS storage (base64 encoded)
+        bodyTags[0] = RugHTMLTag({
+            name: "p5.min.js.gz",
+            contractAddress: ethfsStorage,
+            contractData: abi.encode("p5.min.js.gz"),
+            tagType: RugHTMLTagType.scriptBase64DataURI,
+            tagOpen: "",
+            tagClose: "",
+            tagContent: ""
+        });
 
-        // Wrap in data URI
-        return string.concat("data:text/html,", html);
+        // 2. Rug algorithm from EthFS storage
+        bodyTags[1] = RugHTMLTag({
+            name: "rug-algorithm.js",
+            contractAddress: ethfsStorage,
+            contractData: abi.encode("rug-algorithm.js"),
+            tagType: RugHTMLTagType.scriptBase64DataURI,
+            tagOpen: "",
+            tagClose: "",
+            tagContent: ""
+        });
+
+        // 3. Container div for p5.js canvas
+        bodyTags[2] = RugHTMLTag({
+            name: "",
+            contractAddress: address(0),
+            contractData: "",
+            tagType: RugHTMLTagType.useTagOpenAndClose,
+            tagOpen: '<div id="rug"></div>',
+            tagClose: "",
+            tagContent: ""
+        });
+
+        // 4. Configuration script (inline)
+        bodyTags[3] = RugHTMLTag({
+            name: "",
+            contractAddress: address(0),
+            contractData: "",
+            tagType: RugHTMLTagType.script,
+            tagOpen: "",
+            tagClose: "",
+            tagContent: bytes(generateRugConfig(rug))
+        });
+
+        htmlRequest.headTags = headTags;
+        htmlRequest.bodyTags = bodyTags;
     }
 }
