@@ -42,13 +42,15 @@ contract UploadLibrariesUniversal is Script {
         // Upload p5.js.b64
         console.log("\nUploading p5.js.b64...");
         string memory p5Content = vm.readFile("data/rug-p5.js.b64");
-        storageContract.createContent("rug-p5.js.b64", bytes(p5Content));
+        storageContract.createContent("rug-p5.js.b64", "p5.js library for OnchainRugs");
+        storageContract.addChunkToContent("rug-p5.js.b64", bytes(p5Content));
         console.log("p5.js.b64 uploaded successfully");
 
         // Upload rug-algorithm.js.b64
         console.log("\nUploading rug-algorithm.js.b64...");
         string memory algoContent = vm.readFile("data/rug-algorithm.js.b64");
-        storageContract.createContent("rug-algorithm.js.b64", bytes(algoContent));
+        storageContract.createContent("rug-algorithm.js.b64", "Algorithm library for OnchainRugs");
+        storageContract.addChunkToContent("rug-algorithm.js.b64", bytes(algoContent));
         console.log("rug-algorithm.js.b64 uploaded successfully");
 
         // Freeze the libraries
@@ -56,6 +58,12 @@ contract UploadLibrariesUniversal is Script {
         storageContract.freezeContent("rug-p5.js.b64");
         storageContract.freezeContent("rug-algorithm.js.b64");
         console.log("Libraries frozen successfully");
+
+        // Submit to EthFS FileStore
+        console.log("\nSubmitting to EthFS FileStore...");
+        storageContract.submitToEthFSFileStore("rug-p5.js.b64", "");
+        storageContract.submitToEthFSFileStore("rug-algorithm.js.b64", "");
+        console.log("Libraries submitted to EthFS successfully");
 
         vm.stopBroadcast();
 
