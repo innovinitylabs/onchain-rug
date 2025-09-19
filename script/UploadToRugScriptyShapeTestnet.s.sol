@@ -20,23 +20,23 @@ contract UploadToRugScriptyShapeTestnet is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         // Get the RugScriptyContractStorage address from environment or deployment file
-        address rugScriptyStorageAddr = vm.envOr("RUG_SCRIPTY_STORAGE", address(0));
+        address rugScriptyStorageAddr = vm.envOr("SCRIPTY_STORAGE_V2", address(0));
 
         // If not set, try to read from deployment file
         if (rugScriptyStorageAddr == address(0)) {
             string memory envFile = vm.readFile("rug-scripty-shape-testnet.env");
-            // Parse the RUG_SCRIPTY_STORAGE line
+            // Parse the SCRIPTY_STORAGE_V2 line
             string[] memory lines = vm.split(envFile, "\n");
             for (uint256 i = 0; i < lines.length; i++) {
-                if (vm.contains(lines[i], "RUG_SCRIPTY_STORAGE=")) {
-                    string memory addrStr = vm.replace(lines[i], "RUG_SCRIPTY_STORAGE=", "");
+                if (vm.contains(lines[i], "SCRIPTY_STORAGE_V2=")) {
+                    string memory addrStr = vm.replace(lines[i], "SCRIPTY_STORAGE_V2=", "");
                     rugScriptyStorageAddr = vm.parseAddress(addrStr);
                     break;
                 }
             }
         }
 
-        require(rugScriptyStorageAddr != address(0), "RUG_SCRIPTY_STORAGE not found. Set env var or check rug-scripty-shape-testnet.env");
+        require(rugScriptyStorageAddr != address(0), "SCRIPTY_STORAGE_V2 not found. Set env var or check rug-scripty-shape-testnet.env");
 
         ScriptyStorageV2 storageContract = ScriptyStorageV2(rugScriptyStorageAddr);
         console.log("ScriptyStorageV2:", rugScriptyStorageAddr);

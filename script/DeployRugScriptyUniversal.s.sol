@@ -185,7 +185,7 @@ contract DeployRugScriptyUniversal is Script {
         string memory addresses = string(abi.encodePacked(
             "# RugScripty ", networkName, " Addresses\n",
             "RUG_SCRIPPY_BUILDER=", vm.toString(address(scriptyBuilder)), "\n",
-            "RUG_SCRIPTY_STORAGE=", vm.toString(address(scriptyStorage)), "\n",
+            "SCRIPTY_STORAGE_V2=", vm.toString(address(scriptyStorage)), "\n",
             "HTML_GENERATOR=", vm.toString(address(htmlGenerator)), "\n",
             "ONCHAIN_RUGS=", vm.toString(address(onchainRugs)), "\n",
             "ETHFS_FILESTORE=", vm.toString(actualEthfsAddr), "\n"

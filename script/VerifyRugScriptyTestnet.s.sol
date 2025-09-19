@@ -18,7 +18,7 @@ contract VerifyRugScriptyTestnet is Script {
         string memory envFile = vm.readFile("rug-scripty-shape-testnet.env");
 
         address rugScriptyBuilderAddr = getAddressFromEnv(envFile, "RUG_SCRIPPY_BUILDER=");
-        address rugScriptyStorageAddr = getAddressFromEnv(envFile, "RUG_SCRIPTY_STORAGE=");
+        address rugScriptyStorageAddr = getAddressFromEnv(envFile, "SCRIPTY_STORAGE_V2=");
         address htmlGeneratorAddr = getAddressFromEnv(envFile, "HTML_GENERATOR=");
         address onchainRugsAddr = getAddressFromEnv(envFile, "ONCHAIN_RUGS=");
 

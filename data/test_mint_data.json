@@ -1,7 +1,7 @@
 {
   "description": "Test mint data for OnchainRugs NFT",
   "seed": 8463,
-  "textRows": ["VALIPOKKANN"],
+  "textRows": ["TEST_RUG_2025"],
   "palette": {
     "name": "Royal Stewart",
     "colors": ["#e10600", "#ffffff", "#000000", "#ffd700", "#007a3d"]

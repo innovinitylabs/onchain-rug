@@ -19,11 +19,11 @@ contract UploadLibrariesUniversal is Script {
             deployerPrivateKey = 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80;
             networkName = "Local Anvil";
             // Load from local deployment file
-            scriptyStorageAddr = vm.envAddress("RUG_SCRIPTY_STORAGE");
+            scriptyStorageAddr = vm.envAddress("SCRIPTY_STORAGE_V2");
         } else if (block.chainid == 11011) {
             deployerPrivateKey = vm.envUint("TESTNET_PRIVATE_KEY");
             networkName = "Shape L2 Testnet";
-            scriptyStorageAddr = vm.envAddress("RUG_SCRIPTY_STORAGE");
+            scriptyStorageAddr = vm.envAddress("SCRIPTY_STORAGE_V2");
         } else {
             revert("Unsupported network");
         }
