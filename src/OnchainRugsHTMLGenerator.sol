@@ -3,11 +3,8 @@ pragma solidity ^0.8.22;
 
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {Base64} from "@openzeppelin/contracts/utils/Base64.sol";
-import {RugHTMLRequest, RugHTMLTag, RugHTMLTagType} from "./RugScriptyStructs.sol";
-import {RugScriptyCore} from "./RugScriptyCore.sol";
-import {RugScriptyHTML} from "./RugScriptyHTML.sol";
-import {IRugScriptyContractStorage} from "./IRugScriptyContractStorage.sol";
-import {IRugScriptyBuilderV2} from "./IRugScriptyBuilderV2.sol";
+import {HTMLRequest, HTMLTag, HTMLTagType} from "./scripty/core/ScriptyStructs.sol";
+import {IScriptyBuilderV2} from "./scripty/interfaces/IScriptyBuilderV2.sol";
 import {IProjectHTMLGenerator} from "./IProjectHTMLGenerator.sol";
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -50,7 +47,7 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
      * @notice Generate HTML for OnchainRugs token
      * @param projectData Encoded RugData
      * @param tokenId The token ID
-     * @param scriptyBuilder Address of RugScriptyBuilderV2
+     * @param scriptyBuilder Address of ScriptyBuilderV2
      * @param ethfsStorage Address of RugEthFSStorage
      * @return html Generated HTML string
      */
@@ -63,10 +60,10 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
         RugData memory rug = abi.decode(projectData, (RugData));
 
         // Create HTML request using existing method
-        RugHTMLRequest memory htmlRequest = createHTMLRequest(ethfsStorage, rug, tokenId);
+        HTMLRequest memory htmlRequest = createHTMLRequest(ethfsStorage, rug, tokenId);
 
-        // Use RugScripty to generate HTML (raw HTML, not URL-safe)
-        bytes memory rawHTML = IRugScriptyBuilderV2(scriptyBuilder).getHTML(htmlRequest);
+        // Use Scripty to generate HTML (raw HTML, not URL-safe)
+        bytes memory rawHTML = IScriptyBuilderV2(scriptyBuilder).getHTML(htmlRequest);
 
         // Convert to base64 and add data URI prefix
         string memory base64HTML = Base64.encode(rawHTML);
@@ -165,14 +162,14 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
         address ethfsStorage,
         RugData memory rug,
         uint256 tokenId
-    ) internal view returns (RugHTMLRequest memory htmlRequest) {
+    ) internal view returns (HTMLRequest memory htmlRequest) {
         // Create head tags
-        RugHTMLTag[] memory headTags = new RugHTMLTag[](1);
-        headTags[0] = RugHTMLTag({
+        HTMLTag[] memory headTags = new HTMLTag[](1);
+        headTags[0] = HTMLTag({
             name: "",
             contractAddress: address(0),
             contractData: "",
-            tagType: RugHTMLTagType.useTagOpenAndClose,
+            tagType: HTMLTagType.useTagOpenAndClose,
             tagOpen: bytes(string.concat(
                 '<meta charset="utf-8">',
                 '<meta name="viewport" content="width=device-width,initial-scale=1">',
@@ -184,47 +181,47 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
         });
 
         // Create body tags
-        RugHTMLTag[] memory bodyTags = new RugHTMLTag[](4);
+        HTMLTag[] memory bodyTags = new HTMLTag[](4);
 
         // 1. p5.js library from EthFS storage (base64 encoded)
-        bodyTags[0] = RugHTMLTag({
+        bodyTags[0] = HTMLTag({
             name: "rug-p5.js.b64",
             contractAddress: ethfsStorage,
             contractData: abi.encode("rug-p5.js.b64"),
-            tagType: RugHTMLTagType.scriptBase64DataURI,
+            tagType: HTMLTagType.scriptBase64DataURI,
             tagOpen: "",
             tagClose: "",
             tagContent: ""
         });
 
         // 2. Container div for p5.js canvas - needs to be before scripts that reference it
-        bodyTags[1] = RugHTMLTag({
+        bodyTags[1] = HTMLTag({
             name: "",
             contractAddress: address(0),
             contractData: "",
-            tagType: RugHTMLTagType.useTagOpenAndClose,
+            tagType: HTMLTagType.useTagOpenAndClose,
             tagOpen: '<div id="rug"></div>',
             tagClose: "",
             tagContent: ""
         });
 
         // 3. NFT-specific configuration script (inline)
-        bodyTags[2] = RugHTMLTag({
+        bodyTags[2] = HTMLTag({
             name: "",
             contractAddress: address(0),
             contractData: "",
-            tagType: RugHTMLTagType.script,
+            tagType: HTMLTagType.script,
             tagOpen: "",
             tagClose: "",
             tagContent: bytes(generateRugConfig(rug))
         });
 
         // 4. Algorithm script from storage
-        bodyTags[3] = RugHTMLTag({
+        bodyTags[3] = HTMLTag({
             name: "rug-algorithm.js.b64",
             contractAddress: ethfsStorage,
             contractData: abi.encode("rug-algorithm.js.b64"),
-            tagType: RugHTMLTagType.scriptBase64DataURI,
+            tagType: HTMLTagType.scriptBase64DataURI,
             tagOpen: "",
             tagClose: "",
             tagContent: ""

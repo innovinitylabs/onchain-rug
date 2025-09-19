@@ -21,7 +21,7 @@ interface IProjectHTMLGenerator {
      * @notice Generate HTML for a specific token using project-specific data
      * @param projectData Encoded project-specific data (e.g., RugData for OnchainRugs)
      * @param tokenId The token ID
-     * @param scriptyBuilder Address of RugScriptyBuilderV2
+     * @param scriptyBuilder Address of ScriptyBuilderV2
      * @param ethfsStorage Address of RugEthFSStorage
      * @return html Generated HTML string
      */

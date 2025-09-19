@@ -14,7 +14,7 @@ pragma solidity ^0.8.22;
 
 import {RugHTMLRequest, RugHTMLTagType, RugHTMLTag} from "./RugScriptyStructs.sol";
 import {RugDynamicBuffer} from "./RugDynamicBuffer.sol";
-import {IRugScriptyContractStorage} from "./IRugScriptyContractStorage.sol";
+import {ScriptyStorageV2} from "./scripty/ScriptyStorageV2.sol";
 
 contract RugScriptyCore {
     using RugDynamicBuffer for bytes;
@@ -234,7 +234,7 @@ contract RugScriptyCore {
     ) public view returns (bytes memory) {
         if (htmlTag.contractAddress != address(0)) {
             return
-                IRugScriptyContractStorage(htmlTag.contractAddress).getContent(
+                ScriptyStorageV2(htmlTag.contractAddress).getContent(
                     htmlTag.name,
                     htmlTag.contractData
                 );

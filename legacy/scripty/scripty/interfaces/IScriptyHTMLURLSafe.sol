@@ -10,16 +10,24 @@ pragma solidity ^0.8.22;
 // ╚═════╝░░╚════╝░╚═╝░░╚═╝╚═╝╚═╝░░░░░░░░╚═╝░░░░░░╚═╝░░░ //
 ///////////////////////////////////////////////////////////
 
-import {HTMLRequest, HTMLTagType, HTMLTag} from "./../core/ScriptyCore.sol";
+import {HTMLRequest, HTMLTagType, HTMLTag} from "./../ScriptyStructs.sol";
 
-interface IScriptyHTML {
+interface IScriptyHTMLURLSafe {
     // =============================================================
     //                      RAW HTML GETTERS
     // =============================================================
 
     /**
-     * @notice  Get HTML with requested head tags and body tags
-     * @dev Your HTML is returned in the following format:
+     * @notice  Get URL safe HTML with requested head tags and body tags
+     * @dev Any tags with tagType = 1/script are converted to base64 and wrapped
+     *      with <script src="data:text/javascript;base64,[SCRIPT]"></script>
+     *
+     *      [WARNING]: Large non-base64 libraries that need base64 encoding
+     *      carry a high risk of causing a gas out. Highly advised the use
+     *      of base64 encoded scripts where possible
+     *
+     *      Your HTML is returned in the following format:
+     *
      *      <html>
      *          <head>
      *              [tagOpen[0]][contractRequest[0] | tagContent[0]][tagClose[0]]
@@ -37,20 +45,7 @@ interface IScriptyHTML {
      * @param htmlRequest - HTMLRequest
      * @return Full HTML with head and body tags
      */
-    function getHTML(
-        HTMLRequest memory htmlRequest
-    ) external view returns (bytes memory);
-
-    // =============================================================
-    //                      ENCODED HTML GETTERS
-    // =============================================================
-
-    /**
-     * @notice Get {getHTML} and base64 encode it
-     * @param htmlRequest - HTMLRequest
-     * @return Full HTML with head and script tags, base64 encoded
-     */
-    function getEncodedHTML(
+    function getHTMLURLSafe(
         HTMLRequest memory htmlRequest
     ) external view returns (bytes memory);
 
@@ -59,20 +54,11 @@ interface IScriptyHTML {
     // =============================================================
 
     /**
-     * @notice Convert {getHTML} output to a string
+     * @notice Convert {getHTMLURLSafe} output to a string
      * @param htmlRequest - HTMLRequest
-     * @return {getHTMLWrapped} as a string
+     * @return {getHTMLURLSafe} as a string
      */
-    function getHTMLString(
-        HTMLRequest memory htmlRequest
-    ) external view returns (string memory);
-
-    /**
-     * @notice Convert {getEncodedHTML} output to a string
-     * @param htmlRequest - HTMLRequest
-     * @return {getEncodedHTML} as a string
-     */
-    function getEncodedHTMLString(
+    function getHTMLURLSafeString(
         HTMLRequest memory htmlRequest
     ) external view returns (string memory);
 }

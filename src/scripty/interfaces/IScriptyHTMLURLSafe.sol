@@ -10,7 +10,7 @@ pragma solidity ^0.8.22;
 // ╚═════╝░░╚════╝░╚═╝░░╚═╝╚═╝╚═╝░░░░░░░░╚═╝░░░░░░╚═╝░░░ //
 ///////////////////////////////////////////////////////////
 
-import {HTMLRequest, HTMLTagType, HTMLTag} from "./../ScriptyStructs.sol";
+import {HTMLRequest, HTMLTagType, HTMLTag} from "./../core/ScriptyCore.sol";
 
 interface IScriptyHTMLURLSafe {
     // =============================================================
