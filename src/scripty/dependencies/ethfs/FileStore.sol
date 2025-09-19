@@ -3,9 +3,6 @@ pragma solidity ^0.8.22;
 
 import {SSTORE2} from "lib/solady/src/utils/SSTORE2.sol";
 import {LibString} from "lib/solady/src/utils/LibString.sol";
-
-// Define DATA_OFFSET constant for SSTORE2 compatibility
-uint256 constant DATA_OFFSET = 1;
 import {IFileStore} from "./IFileStore.sol";
 import {File, BytecodeSlice, SliceOutOfBounds} from "./File.sol";
 import {addContent, isValidPointer} from "./common.sol";
@@ -225,9 +222,9 @@ contract FileStore is IFileStore {
         BytecodeSlice[] memory slices = new BytecodeSlice[](chunks.length);
         for (uint256 i = 0; i < chunks.length; ++i) {
             slices[i].pointer = addContent(deployer, bytes(chunks[i]));
-            slices[i].start = uint32(DATA_OFFSET);
+            slices[i].start = uint32(1);
             slices[i].end = uint32(
-                DATA_OFFSET + bytes(chunks[i]).length
+                1 + bytes(chunks[i]).length
             );
             size += slices[i].end - slices[i].start;
         }
@@ -247,7 +244,7 @@ contract FileStore is IFileStore {
                 revert InvalidPointer(pointers[i]);
             }
             slices[i].pointer = pointers[i];
-            slices[i].start = uint32(DATA_OFFSET);
+            slices[i].start = uint32(1);
             slices[i].end = uint32(pointers[i].code.length);
             size += slices[i].end - slices[i].start;
         }
