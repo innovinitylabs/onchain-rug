@@ -498,7 +498,7 @@ export default function Hero() {
                   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
                 }}
             >
-              🚀 Start Creating
+              DYOR
               </LiquidGlass>
             </motion.div>
             
@@ -528,7 +528,7 @@ export default function Hero() {
                   padding: '1rem 2rem'
                 }}
               >
-                🎨 Gallery
+                Gallery
               </LiquidGlass>
             </motion.div>
           </motion.div>

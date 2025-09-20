@@ -324,7 +324,7 @@ export default function Navigation() {
               <Palette className="w-5 h-5" />
               <svg
                 height="28px"
-                viewBox="0 0 80 20"
+                viewBox="0 0 100 20"
                 style={{
                   display: 'block',
                   height: '28px',
@@ -355,7 +355,7 @@ export default function Navigation() {
                     fontFamily: 'system-ui, -apple-system, sans-serif',
                   }}
                 >
-              Generator
+              Rug Factory
                 </text>
               </svg>
             </Link>
@@ -482,7 +482,7 @@ export default function Navigation() {
                 className="flex items-center gap-4 px-6 py-4 text-white hover:bg-white/10 transition-colors duration-200"
               >
                 <Palette className="w-6 h-6" />
-                <span className="text-lg font-medium">Generator</span>
+                <span className="text-lg font-medium">Rug Factory</span>
               </Link>
 
               <Link
