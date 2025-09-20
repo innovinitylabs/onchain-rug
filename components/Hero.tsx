@@ -488,7 +488,7 @@ export default function Hero() {
                 saturation={200}
                 className="text-lg font-bold px-6 py-3"
                 onClick={() => window.location.href = '/generator'}
-                background="rgba(78, 168, 222, 0.11)"
+                background="rgba(78, 168, 222, 0.042)"
                 style={{
                   border: '2px solid #f59e0b',
                   borderRadius: '9999px',
@@ -520,7 +520,7 @@ export default function Hero() {
                 saturation={200}
                 className="text-lg font-bold px-6 py-3"
                 onClick={() => window.location.href = '/generator'}
-                background="rgba(235, 87, 87, 0.11)"
+                background="rgba(235, 87, 87, 0.042)"
                 style={{
                   border: '2px solid #f59e0b',
                   borderRadius: '9999px',
