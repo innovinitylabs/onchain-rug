@@ -327,6 +327,7 @@ const GlassContainer = forwardRef<
     glassSize?: { width: number; height: number }
     onClick?: () => void
     mode?: "standard" | "polar" | "prominent" | "shader"
+    background?: string
   }>
 >(
   (
@@ -349,6 +350,7 @@ const GlassContainer = forwardRef<
       glassSize = { width: 270, height: 69 },
       onClick,
       mode = "standard",
+      background,
     },
     ref,
   ) => {
@@ -405,7 +407,7 @@ const GlassContainer = forwardRef<
             boxShadow: overLight
               ? "0px 16px 70px rgba(0, 0, 0, 0.75)"
               : "0px 12px 40px rgba(0, 0, 0, 0.25), 0px 8px 20px rgba(0, 0, 0, 0.1)",
-            background: "rgba(255, 255, 255, 0.1)",
+            background: background || "rgba(255, 255, 255, 0.1)",
             border: "1px solid rgba(255, 255, 255, 0.2)",
           }}
           onMouseEnter={onMouseEnter}
@@ -466,6 +468,7 @@ interface LiquidGlassProps {
   mode?: "standard" | "polar" | "prominent" | "shader"
   onClick?: () => void
   showControls?: boolean
+  background?: string
 }
 
 export default function LiquidGlass({
@@ -486,6 +489,7 @@ export default function LiquidGlass({
   mode = "standard",
   onClick,
   showControls = false,
+  background,
 }: LiquidGlassProps) {
   const glassRef = useRef<HTMLDivElement>(null)
   const [isHovered, setIsHovered] = useState(false)
@@ -736,6 +740,7 @@ export default function LiquidGlass({
           overLight={currentOverLight}
           onClick={onClick}
           mode={currentMode}
+          background={background}
         >
           {children}
         </GlassContainer>

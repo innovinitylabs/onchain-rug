@@ -54,12 +54,16 @@ export default function Hero() {
           transition={{ duration: 1, delay: 0.2, type: "tween" }}
           style={{ willChange: 'transform, opacity' }}
         >
-          <motion.h1 
-            className="text-6xl md:text-8xl font-extrabold mb-6 flex items-center justify-center gap-4"
+          <motion.h1
+            className="text-[12rem] md:text-[18rem] lg:text-[24rem] xl:text-[28rem] 2xl:text-[32rem] font-extrabold mb-6 flex items-center justify-center gap-4"
             initial={{ scale: 0.9 }}
             animate={{ scale: 1 }}
             transition={{ duration: 0.8, delay: 0.5, type: "tween" }}
-            style={{ willChange: 'transform' }}
+            style={{
+              willChange: 'transform',
+              fontSize: 'clamp(12rem, 20vw, 32rem)',
+              lineHeight: '1'
+            }}
           >
             <svg
                 width="100%"
@@ -71,7 +75,8 @@ export default function Hero() {
                   maxWidth: 'none',
                   height: 'auto',
                   filter: 'drop-shadow(0 0 20px rgba(108, 190, 230, 0.6)) drop-shadow(0 0 40px rgba(255, 255, 255, 0.3))',
-                  overflow: 'visible'
+                  overflow: 'visible',
+                  fontSize: 'clamp(12rem, 20vw, 32rem)'
                 }}
                 aria-label="ONCHAIN RUGS"
                 preserveAspectRatio="xMidYMid meet"
@@ -178,7 +183,7 @@ export default function Hero() {
                 style={{
                   fill: 'url(#logo-glass-shadow)',
                   filter: 'url(#logo-glass-depth)',
-                  fontSize: '270px',
+                  fontSize: '1em',
                   fontWeight: '800',
                   fontFamily: 'system-ui, -apple-system, sans-serif',
                   opacity: 0.4
@@ -197,7 +202,7 @@ export default function Hero() {
                 style={{
                   fill: 'url(#logo-glass-fill)',
                   filter: 'url(#logo-glass-depth)',
-                  fontSize: '270px',
+                  fontSize: '1em',
                   fontWeight: '800',
                   fontFamily: 'system-ui, -apple-system, sans-serif',
                 }}
@@ -215,7 +220,7 @@ export default function Hero() {
                 style={{
                   fill: 'url(#logo-glass-highlight)',
                   filter: 'url(#logo-glass-surface)',
-                  fontSize: '270px',
+                  fontSize: '1em',
                   fontWeight: '800',
                   fontFamily: 'system-ui, -apple-system, sans-serif',
                   mixBlendMode: 'screen'
@@ -236,7 +241,7 @@ export default function Hero() {
                   stroke: 'rgba(255, 255, 255, 0.9)',
                   strokeWidth: '0.4',
                   filter: 'url(#logo-glass-surface)',
-                  fontSize: '270px',
+                  fontSize: '1em',
                   fontWeight: '800',
                   fontFamily: 'system-ui, -apple-system, sans-serif',
                   mixBlendMode: 'overlay'
@@ -483,10 +488,10 @@ export default function Hero() {
                 saturation={200}
                 className="text-lg font-bold px-6 py-3"
                 onClick={() => window.location.href = '/generator'}
+                background="rgba(78, 168, 222, 0.11)"
                 style={{
                   border: '2px solid #f59e0b',
                   borderRadius: '9999px',
-                  background: 'linear-gradient(to right, #f59e0b, #ea580c)',
                   color: '#ffffff',
                   cursor: 'pointer',
                   display: 'inline-flex',
@@ -497,7 +502,7 @@ export default function Hero() {
                   boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
                   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
                 }}
-            >
+              >
               DYOR
               </LiquidGlass>
             </motion.div>
@@ -515,10 +520,10 @@ export default function Hero() {
                 saturation={200}
                 className="text-lg font-bold px-6 py-3"
                 onClick={() => window.location.href = '/generator'}
+                background="rgba(235, 87, 87, 0.11)"
                 style={{
                   border: '2px solid #f59e0b',
                   borderRadius: '9999px',
-                  background: 'rgba(235, 87, 87, 0.1)',
                   color: '#92400e',
                   cursor: 'pointer',
                   display: 'inline-flex',
