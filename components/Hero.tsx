@@ -518,7 +518,7 @@ export default function Hero() {
                 style={{
                   border: '2px solid #f59e0b',
                   borderRadius: '9999px',
-                  background: 'transparent',
+                  background: 'rgba(235, 87, 87, 0.1)',
                   color: '#92400e',
                   cursor: 'pointer',
                   display: 'inline-flex',
@@ -528,7 +528,7 @@ export default function Hero() {
                   padding: '1rem 2rem'
                 }}
               >
-                Mint
+                MINT
               </LiquidGlass>
             </motion.div>
           </motion.div>
