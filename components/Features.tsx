@@ -80,8 +80,9 @@ export default function Features() {
             ✨ Features
           </h2>
           <p
-            className="text-xl text-blue-300 max-w-3xl mx-auto"
+            className="text-xl max-w-3xl mx-auto"
             style={{
+              color: '#f8f9fa',
               filter: 'drop-shadow(0 0 8px rgba(108, 190, 230, 0.3)) drop-shadow(0 0 16px rgba(255, 255, 255, 0.1))',
               textShadow: '0 2px 4px rgba(0, 0, 0, 0.2)'
             }}
