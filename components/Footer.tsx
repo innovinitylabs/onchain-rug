@@ -92,6 +92,12 @@ export default function Footer() {
       link: "https://github.com/mudgen/diamond-2"
     },
     {
+      name: "Three.js",
+      description: "A JavaScript 3D library for creating 3D graphics in the browser",
+      license: "MIT",
+      link: "https://threejs.org/"
+    },
+    {
       name: "Freepik",
       description: "Background images and graphics used in the project",
       license: "Freepik License",
