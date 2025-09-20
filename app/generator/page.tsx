@@ -2824,16 +2824,6 @@ export default function GeneratorPage() {
                     warpThickness={3}
                   />
 
-                  {/* Minting Tips */}
-                  <div className="bg-blue-900/10 border border-blue-500/30 rounded p-3 mt-3">
-                    <div className="text-blue-400 text-xs font-mono mb-2">💡 Minting Tips:</div>
-                    <div className="text-blue-300 text-xs space-y-1">
-                      <div>• Connect your wallet first</div>
-                      <div>• Ensure you have enough ETH for gas</div>
-                      <div>• Transaction will create your unique onchain rug NFT</div>
-                      <div>• Gas is optimized with character map reduction</div>
-                    </div>
-                  </div>
                 </div>
 
                 </div>
