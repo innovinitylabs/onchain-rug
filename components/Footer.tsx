@@ -98,6 +98,24 @@ export default function Footer() {
       link: "https://threejs.org/"
     },
     {
+      name: "EthFS",
+      description: "Ethereum File System for on-chain file storage and retrieval",
+      license: "MIT",
+      link: "https://github.com/frolic/ethfs"
+    },
+    {
+      name: "SSTORE2",
+      description: "Faster & cheaper contract key-value storage for Ethereum Contracts",
+      license: "MIT",
+      link: "https://github.com/0xsequence/sstore2"
+    },
+    {
+      name: "CREATE2DEPLOYER",
+      description: "Minimal bytecode contract to deploy contracts using CREATE2",
+      license: "MIT",
+      link: "https://github.com/pcaversaccio/create2deployer"
+    },
+    {
       name: "Freepik",
       description: "Background images and graphics used in the project",
       license: "Freepik License",
