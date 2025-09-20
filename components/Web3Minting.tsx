@@ -221,7 +221,7 @@ export default function Web3Minting({
     return `🚀 Mint Rug (${mintCost} ETH)`
   }
 
-  const isButtonDisabled = !isConnected || isPending || isConfirming || isSuccess
+  const isButtonDisabled = !isConnected || isPending || isConfirming
 
   return (
     <div className="space-y-3">
