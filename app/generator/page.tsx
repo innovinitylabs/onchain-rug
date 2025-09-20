@@ -2219,7 +2219,7 @@ export default function GeneratorPage() {
             currentGeneration++
 
             // Schedule next generation with increasing delay for visual effect
-            setTimeout(autoGenerate, 800 + (currentGeneration * 200))
+            setTimeout(autoGenerate, 420 + (currentGeneration * 200))
           } else {
             // Final generation - update state so minting works
             const finalSeed = Math.floor(Math.random() * 100000)
@@ -2231,7 +2231,7 @@ export default function GeneratorPage() {
         }
 
         // Start the auto-generation cycle after canvas positioning is complete
-        setTimeout(autoGenerate, 3000) // Wait 3 seconds for page to fully load and canvas to be positioned
+        setTimeout(autoGenerate, 1111) // Wait 3 seconds for page to fully load and canvas to be positioned
       }
 
       startAutoGeneration()
