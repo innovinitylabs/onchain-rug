@@ -56,6 +56,7 @@ export default function ExplorerPage() {
   const [loadingDetails, setLoadingDetails] = useState(false)
   const [currentBlockNumber, setCurrentBlockNumber] = useState<number | null>(null)
   const [lastRefresh, setLastRefresh] = useState<number>(Date.now())
+  const [showAsText, setShowAsText] = useState<Record<string, boolean>>({})
 
   // Anvil local RPC URL
   const anvilUrl = 'http://127.0.0.1:8545'
@@ -394,6 +395,7 @@ export default function ExplorerPage() {
     setError(null)
     setSelectedItem(null)
     setShowDetails(false)
+    setShowAsText({})
 
     try {
       switch (searchType) {
@@ -567,6 +569,48 @@ export default function ExplorerPage() {
     }
   }
 
+  const hexToText = (input: string) => {
+    try {
+      let hex = input.startsWith('0x') ? input.slice(2) : input
+      // Ensure even length
+      if (hex.length % 2 !== 0) hex = '0' + hex
+
+      const bytes = new Uint8Array(hex.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || [])
+
+      // Convert to text, replacing non-printable characters
+      let text = ''
+      for (const byte of bytes) {
+        if (byte >= 32 && byte <= 126) {
+          // Printable ASCII
+          text += String.fromCharCode(byte)
+        } else if (byte === 10) {
+          // Newline
+          text += '\n'
+        } else if (byte === 13) {
+          // Carriage return
+          text += '\r'
+        } else if (byte === 9) {
+          // Tab
+          text += '\t'
+        } else {
+          // Non-printable character, show as [HEX]
+          text += `[${byte.toString(16).padStart(2, '0').toUpperCase()}]`
+        }
+      }
+
+      return text
+    } catch (err) {
+      return 'Invalid hex input'
+    }
+  }
+
+  const toggleHexText = (key: string) => {
+    setShowAsText(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }))
+  }
+
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text)
@@ -607,6 +651,7 @@ export default function ExplorerPage() {
     setShowDetails(false)
     setDetailedData(null)
     setCurrentBlockNumber(null)
+    setShowAsText({})
     setLastRefresh(Date.now())
   }
 
@@ -994,9 +1039,17 @@ export default function ExplorerPage() {
                           </div>
                           {tx.input && tx.input !== '0x' && (
                             <div className="mt-4">
-                              <div className="text-sm text-blue-600 mb-2">Input Data</div>
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="text-sm text-blue-600">Input Data</div>
+                                <button
+                                  onClick={() => toggleHexText(`tx-${tx.hash}`)}
+                                  className="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded text-xs text-gray-700 transition-colors"
+                                >
+                                  {showAsText[`tx-${tx.hash}`] ? 'Show Hex' : 'Show Text'}
+                                </button>
+                              </div>
                               <div className="bg-gray-50 p-3 rounded font-mono text-sm break-all max-h-32 overflow-y-auto text-gray-900">
-                                {tx.input}
+                                {showAsText[`tx-${tx.hash}`] ? hexToText(tx.input) : tx.input}
                               </div>
                             </div>
                           )}
@@ -1050,9 +1103,17 @@ export default function ExplorerPage() {
                               <div className="font-mono text-blue-800 break-all">{contract.address}</div>
                             </div>
                             <div>
-                              <div className="text-sm text-blue-600 mb-2">Bytecode</div>
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="text-sm text-blue-600">Bytecode</div>
+                                <button
+                                  onClick={() => toggleHexText(`contract-${contract.address}`)}
+                                  className="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded text-xs text-gray-700 transition-colors"
+                                >
+                                  {showAsText[`contract-${contract.address}`] ? 'Show Hex' : 'Show Text'}
+                                </button>
+                              </div>
                               <div className="bg-gray-50 p-3 rounded font-mono text-sm break-all max-h-48 overflow-y-auto text-gray-900">
-                                {contract.code}
+                                {showAsText[`contract-${contract.address}`] ? hexToText(contract.code) : contract.code}
                               </div>
                             </div>
                             <div className="mt-4 text-sm text-blue-600">
