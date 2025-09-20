@@ -79,7 +79,13 @@ export default function Features() {
           <h2 className="text-5xl md:text-6xl font-bold mb-6 gradient-text">
             ✨ Features
           </h2>
-          <p className="text-xl text-blue-300 max-w-3xl mx-auto ">
+          <p
+            className="text-xl text-blue-300 max-w-3xl mx-auto"
+            style={{
+              filter: 'drop-shadow(0 0 8px rgba(108, 190, 230, 0.3)) drop-shadow(0 0 16px rgba(255, 255, 255, 0.1))',
+              textShadow: '0 2px 4px rgba(0, 0, 0, 0.2)'
+            }}
+          >
             Do Your Own Rug.
           </p>
         </motion.div>
