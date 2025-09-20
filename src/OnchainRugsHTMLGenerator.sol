@@ -48,19 +48,19 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
      * @param projectData Encoded RugData
      * @param tokenId The token ID
      * @param scriptyBuilder Address of ScriptyBuilderV2
-     * @param ethfsStorage Address of RugEthFSStorage
+     * @param scriptyStorage Address of ScriptyStorage
      * @return html Generated HTML string
      */
     function generateProjectHTML(
         bytes memory projectData,
         uint256 tokenId,
         address scriptyBuilder,
-        address ethfsStorage
+        address scriptyStorage
     ) external view override returns (string memory html) {
         RugData memory rug = abi.decode(projectData, (RugData));
 
         // Create HTML request using existing method
-        HTMLRequest memory htmlRequest = createHTMLRequest(ethfsStorage, rug, tokenId);
+        HTMLRequest memory htmlRequest = createHTMLRequest(scriptyStorage, rug, tokenId);
 
         // Use Scripty to generate HTML (raw HTML, not URL-safe)
         bytes memory rawHTML = IScriptyBuilderV2(scriptyBuilder).getHTML(htmlRequest);
@@ -76,8 +76,8 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
      */
     function getRequiredLibraries() external pure override returns (string[] memory libraries) {
         libraries = new string[](2);
-        libraries[0] = "p5.min.js.gz";
-        libraries[1] = "rug-algorithm.js";
+        libraries[0] = "rug-p5.js.b64";
+        libraries[1] = "rug-algorithm.js.b64";
     }
 
     /**
@@ -153,13 +153,13 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
 
     /**
      * @notice Create HTML request for RugScriptyHTML with proper tag structure
-     * @param ethfsStorage Address of RugEthFSStorage
+     * @param scriptyStorage Address of ScriptyStorage
      * @param rug Rug data
      * @param tokenId The token ID
      * @return htmlRequest Properly structured HTML request for scripty
      */
     function createHTMLRequest(
-        address ethfsStorage,
+        address scriptyStorage,
         RugData memory rug,
         uint256 tokenId
     ) internal view returns (HTMLRequest memory htmlRequest) {
@@ -183,10 +183,10 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
         // Create body tags
         HTMLTag[] memory bodyTags = new HTMLTag[](4);
 
-        // 1. p5.js library from EthFS storage (base64 encoded)
+        // 1. p5.js library from ScriptyStorage (base64 encoded)
         bodyTags[0] = HTMLTag({
             name: "rug-p5.js.b64",
-            contractAddress: ethfsStorage,
+            contractAddress: scriptyStorage,
             contractData: abi.encode("rug-p5.js.b64"),
             tagType: HTMLTagType.scriptBase64DataURI,
             tagOpen: "",
@@ -216,10 +216,10 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
             tagContent: bytes(generateRugConfig(rug))
         });
 
-        // 4. Algorithm script from storage
+        // 4. Algorithm script from ScriptyStorage
         bodyTags[3] = HTMLTag({
             name: "rug-algorithm.js.b64",
-            contractAddress: ethfsStorage,
+            contractAddress: scriptyStorage,
             contractData: abi.encode("rug-algorithm.js.b64"),
             tagType: HTMLTagType.scriptBase64DataURI,
             tagOpen: "",

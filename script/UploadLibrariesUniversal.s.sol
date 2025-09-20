@@ -19,11 +19,11 @@ contract UploadLibrariesUniversal is Script {
             deployerPrivateKey = 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80;
             networkName = "Local Anvil";
             // Load from local deployment file
-            scriptyStorageAddr = vm.envAddress("SCRIPTY_STORAGE_V2");
+            scriptyStorageAddr = 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512;//vm.envAddress("SCRIPTY_STORAGE_V2");
         } else if (block.chainid == 11011) {
             deployerPrivateKey = vm.envUint("TESTNET_PRIVATE_KEY");
             networkName = "Shape L2 Testnet";
-            scriptyStorageAddr = vm.envAddress("SCRIPTY_STORAGE_V2");
+            scriptyStorageAddr = 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512;//vm.envAddress("SCRIPTY_STORAGE_V2");
         } else {
             revert("Unsupported network");
         }
@@ -41,28 +41,28 @@ contract UploadLibrariesUniversal is Script {
 
         // Upload p5.js.b64
         console.log("\nUploading p5.js.b64...");
-        string memory p5Content = vm.readFile("data/rug-p5.js.b64");
-        storageContract.createContent("rug-p5.js.b64", "p5.js library for OnchainRugs");
-        storageContract.addChunkToContent("rug-p5.js.b64", bytes(p5Content));
+        string memory p5Content = vm.readFile("data/onchainrugs-p5.js.b64");
+        storageContract.createContent("onchainrugs-p5v2.js.b64", "p5.js library for OnchainRugs");
+        storageContract.addChunkToContent("onchainrugs-p5.js.b64", bytes(p5Content));
         console.log("p5.js.b64 uploaded successfully");
 
-        // Upload rug-algorithm.js.b64
-        console.log("\nUploading rug-algorithm.js.b64...");
-        string memory algoContent = vm.readFile("data/rug-algorithm.js.b64");
-        storageContract.createContent("rug-algorithm.js.b64", "Algorithm library for OnchainRugs");
-        storageContract.addChunkToContent("rug-algorithm.js.b64", bytes(algoContent));
-        console.log("rug-algorithm.js.b64 uploaded successfully");
+        // Upload onchainrugs.js.b64
+        console.log("\nUploading onchainrugs.js.b64...");
+        string memory algoContent = vm.readFile("data/onchainrugs.js.b64");
+        storageContract.createContent("onchainrugsv2.js.b64", "Algorithm library for OnchainRugs");
+        storageContract.addChunkToContent("onchainrugs.js.b64", bytes(algoContent));
+        console.log("onchainrugs.js.b64 uploaded successfully");
 
         // Freeze the libraries
         console.log("\nFreezing libraries...");
-        storageContract.freezeContent("rug-p5.js.b64");
-        storageContract.freezeContent("rug-algorithm.js.b64");
+        storageContract.freezeContent("onchainrugs-p5.js.b64");
+        storageContract.freezeContent("onchainrugs.js.b64");
         console.log("Libraries frozen successfully");
 
         // Submit to EthFS FileStore
         console.log("\nSubmitting to EthFS FileStore...");
-        storageContract.submitToEthFSFileStore("rug-p5.js.b64", "");
-        storageContract.submitToEthFSFileStore("rug-algorithm.js.b64", "");
+        storageContract.submitToEthFSFileStore("onchainrugs-p5.js.b64", "");
+        storageContract.submitToEthFSFileStore("onchainrugs.js.b64", "");
         console.log("Libraries submitted to EthFS successfully");
 
         vm.stopBroadcast();

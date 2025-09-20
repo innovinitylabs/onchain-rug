@@ -1,0 +1,117 @@
+forge create src/scripty/dependencies/ethfs/Create2Deployer.sol:Create2Deployer \
+  --rpc-url http://127.0.0.1:8545 \
+  --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
+  --broadcast
+
+
+
+CREATE2DEPLOYER_ADDRESS=0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
+
+forge create src/scripty/dependencies/ethfs/FileStore.sol:FileStore \
+  --rpc-url http://127.0.0.1:8545 \
+  --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
+  --broadcast \
+  --constructor-args 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
+
+  #create2deployer addy above
+
+FileStore=0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
+____________________________
+forge create src/scripty/ScriptyBuilderV2.sol:ScriptyBuilderV2 \
+  --rpc-url http://127.0.0.1:8545 \
+  --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
+  --broadcast
+
+ScriptyBuilderV2=0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9
+
+____________________________
+
+forge create src/scripty/ScriptyStorageV2.sol:ScriptyStorageV2 \
+  --constructor-args FILESTORE_ADDRESS \
+  --rpc-url http://127.0.0.1:8545 \
+  --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
+  --broadcast
+
+forge create src/scripty/ScriptyStorageV2.sol:ScriptyStorageV2 \
+  --rpc-url http://127.0.0.1:8545 \
+  --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
+  --broadcast \
+  --constructor-args 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
+
+  ScriptyStorageV2=0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9
+
+
+  ____________________________
+
+forge create src/OnchainRugsHTMLGenerator.sol:OnchainRugsHTMLGenerator \
+  --rpc-url http://127.0.0.1:8545 \
+  --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
+  --broadcast
+
+  OnchainRugsHTMLGenerator=0x5FC8d32690cc91D4c39d9d3abcBD16989F875707
+
+  ____________________________
+
+  forge create src/OnchainRugs.sol:OnchainRugs \
+  --rpc-url http://127.0.0.1:8545 \
+  --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
+  --broadcast
+
+
+OnchainRugs=0x0165878A594ca255338adfa4d48449f69242Eb8F
+
+____________________________
+
+
+cast send ONCHAINRUGS_ADDRESS \
+  "setRugScriptyContracts(address,address,address)" \
+  SCRIPTYBUILDER_ADDRESS \
+  SCRIPTYSTORAGE_ADDRESS \
+  HTMLGENERATOR_ADDRESS \
+  --rpc-url http://127.0.0.1:8545 \
+  --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+
+ cast send 0x0165878A594ca255338adfa4d48449f69242Eb8F \
+  "setRugScriptyContracts(address,address,address)" \
+  0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 \
+  0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9 \
+  0x5FC8d32690cc91D4c39d9d3abcBD16989F875707 \
+  --rpc-url http://127.0.0.1:8545 \
+  --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 
+
+
+____________________________
+____________________________
+  ## Uploading libraries
+
+  # Upload p5.js
+cast send 0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9 \
+  "createContent(string,bytes)" \
+  "onchainrugs-p5.js.b64" \
+  $(cast abi-encode "bytes(string)" "P5.js library for OnchainRugs") \
+  --rpc-url http://127.0.0.1:8545 \
+  --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+
+# Read and upload the p5.js content (you'll need the actual base64 content)
+# Add the p5.js chunk directly from file
+cast send 0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9 \
+  "addChunkToContent(string,bytes)" \
+  "onchainrugs-p5.js.b64" \
+  $(node -e "const fs = require('fs'); const b64 = fs.readFileSync('data/onchainrugs-p5.js.b64', 'utf8'); process.stdout.write('0x' + Buffer.from(b64, 'utf8').toString('hex'));") \
+  --rpc-url http://127.0.0.1:8545 \
+  --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+
+# Freeze p5.js
+cast send SCRIPTYSTORAGE_ADDRESS \
+  "freezeContent(string)" \
+  "onchainrugs-p5.js.b64" \
+  --rpc-url http://127.0.0.1:8545 \
+  --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+
+# Submit to EthFS
+cast send SCRIPTYSTORAGE_ADDRESS \
+  "submitToEthFSFileStore(string,string)" \
+  "onchainrugs-p5.js.b64" \
+  "" \
+  --rpc-url http://127.0.0.1:8545 \
+  --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
