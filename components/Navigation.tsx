@@ -494,15 +494,6 @@ export default function Navigation() {
                 <span className="text-lg font-medium">Gallery</span>
               </Link>
 
-              <Link
-                href="/glass-demo"
-                onClick={closeMobileMenu}
-                className="flex items-center gap-4 px-6 py-4 text-white hover:bg-white/10 transition-colors duration-200"
-              >
-                <Sparkles className="w-6 h-6" />
-                <span className="text-lg font-medium">Glass Demo</span>
-              </Link>
-
             </div>
 
             {/* Mobile Wallet Connection */}
