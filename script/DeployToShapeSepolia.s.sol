@@ -52,8 +52,8 @@ contract DeployToShapeSepolia is Script {
     address public onchainRugsAddr;
 
     // Libraries to upload
-    string constant P5_LIBRARY_NAME = "onchainrugs-p5.js.b64";
-    string constant ALGO_LIBRARY_NAME = "onchainrugs.js.b64";
+    string constant P5_LIBRARY_NAME = "rug-p5.js";
+    string constant ALGO_LIBRARY_NAME = "rug-algo.js";
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -102,7 +102,7 @@ contract DeployToShapeSepolia is Script {
         console.log("\\n7. Configuring OnchainRugs with Scripty contracts...");
         onchainRugs.setRugScriptyContracts(
             scriptyBuilderAddr,
-            fileStoreAddr,
+            scriptyStorageAddr,  // FIXED: Use ScriptyStorageV2, not FileStore
             htmlGeneratorAddr
         );
         console.log("OnchainRugs configured successfully");
@@ -130,12 +130,12 @@ contract DeployToShapeSepolia is Script {
 
         // Upload p5.js library
         console.log("Uploading p5.js library...");
-        string memory p5Content = vm.readFile("./data/rug-p5.js.b64");
+        string memory p5Content = vm.readFile("./data/rug-p5.js");
         uploadFile(P5_LIBRARY_NAME, p5Content);
 
         // Upload algorithm library
         console.log("Uploading algorithm library...");
-        string memory algoContent = vm.readFile("./data/rug-algo.js.b64");
+        string memory algoContent = vm.readFile("./data/rug-algo.js");
         uploadFile(ALGO_LIBRARY_NAME, algoContent);
 
         vm.stopBroadcast();
