@@ -26,7 +26,7 @@ pragma solidity ^0.8.17;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IFileStore} from "./dependencies/ethfs/IFileStore.sol";
 import "./dependencies/ethfs/common.sol";
-import {AddressChunks} from "./dependencies/utils/AddressChunks.sol";
+import {AddressChunks} from "./utils/AddressChunks.sol";
 
 import {IScriptyStorage} from "./interfaces/IScriptyStorage.sol";
 import {IScriptyContractStorage} from "./interfaces/IScriptyContractStorage.sol";
@@ -35,7 +35,7 @@ contract ScriptyStorageV2 is Ownable, IScriptyStorage, IScriptyContractStorage {
     IFileStore public immutable ethfsFileStore;
     mapping(string => Content) public contents;
 
-    constructor(IFileStore ethfsFileStore_) Ownable(msg.sender) {
+    constructor(IFileStore ethfsFileStore_) {
         ethfsFileStore = IFileStore(ethfsFileStore_);
     }
 

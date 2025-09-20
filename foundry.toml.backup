@@ -27,3 +27,8 @@ shape-mainnet = { key = "your-api-key", url = "https://shapescan.xyz/api" }
 [profile.default.gas]
 gas_price = 1000000000  # 1 gwei
 gas_limit = 30000000    # 30M gas limit
+
+# Solady is used via direct imports in EthFS contracts
+
+[profile.default.remappings]
+scripty.sol="lib/scripty.sol/contracts/"

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.22;
 
-import {SSTORE2} from "solady/src/utils/SSTORE2.sol";
-import {LibString} from "solady/src/utils/LibString.sol";
+import {SSTORE2} from "solady/utils/SSTORE2.sol";
+import {LibString} from "solady/utils/LibString.sol";
 import {IFileStore} from "./IFileStore.sol";
 import {File, BytecodeSlice, SliceOutOfBounds} from "./File.sol";
 import {addContent, isValidPointer} from "./common.sol";

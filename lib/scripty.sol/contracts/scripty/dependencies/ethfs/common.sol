@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.22;
 
-import {SSTORE2} from "solady/src/utils/SSTORE2.sol";
+import {SSTORE2} from "solady/utils/SSTORE2.sol";
 
 bytes32 constant SALT = bytes32("EthFS");
 

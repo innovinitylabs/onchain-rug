@@ -3,8 +3,8 @@ pragma solidity ^0.8.22;
 
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {Base64} from "@openzeppelin/contracts/utils/Base64.sol";
-import {HTMLRequest, HTMLTag, HTMLTagType} from "./scripty/core/ScriptyStructs.sol";
-import {IScriptyBuilderV2} from "./scripty/interfaces/IScriptyBuilderV2.sol";
+import {HTMLRequest, HTMLTag, HTMLTagType} from "scripty.sol/core/ScriptyStructs.sol";
+import {IScriptyBuilderV2} from "scripty.sol/interfaces/IScriptyBuilderV2.sol";
 import {IProjectHTMLGenerator} from "./IProjectHTMLGenerator.sol";
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -76,8 +76,8 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
      */
     function getRequiredLibraries() external pure override returns (string[] memory libraries) {
         libraries = new string[](2);
-        libraries[0] = "rug-p5.js.b64";
-        libraries[1] = "rug-algorithm.js.b64";
+        libraries[0] = "onchainrugs-p5.js.b64";
+        libraries[1] = "onchainrugs.js.b64";
     }
 
     /**
@@ -185,9 +185,9 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
 
         // 1. p5.js library from ScriptyStorage (base64 encoded)
         bodyTags[0] = HTMLTag({
-            name: "rug-p5.js.b64",
+            name: "onchainrugs-p5.js.b64",
             contractAddress: scriptyStorage,
-            contractData: abi.encode("rug-p5.js.b64"),
+            contractData: abi.encode("onchainrugs-p5.js.b64"),
             tagType: HTMLTagType.scriptBase64DataURI,
             tagOpen: "",
             tagClose: "",
@@ -218,9 +218,9 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
 
         // 4. Algorithm script from ScriptyStorage
         bodyTags[3] = HTMLTag({
-            name: "rug-algorithm.js.b64",
+            name: "onchainrugs.js.b64",
             contractAddress: scriptyStorage,
-            contractData: abi.encode("rug-algorithm.js.b64"),
+            contractData: abi.encode("onchainrugs.js.b64"),
             tagType: HTMLTagType.scriptBase64DataURI,
             tagOpen: "",
             tagClose: "",

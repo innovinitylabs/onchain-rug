@@ -13,7 +13,7 @@ pragma solidity ^0.8.17;
 ///////////////////////////////////////////////////////////
 
 import {HTMLRequest, HTMLTagType, HTMLTag} from "./ScriptyStructs.sol";
-import {DynamicBuffer} from "./../dependencies/utils/DynamicBuffer.sol";
+import {DynamicBuffer} from "./../utils/DynamicBuffer.sol";
 import {IScriptyContractStorage} from "./../interfaces/IScriptyContractStorage.sol";
 
 contract ScriptyCore {
