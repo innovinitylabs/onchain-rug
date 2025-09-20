@@ -3,8 +3,8 @@ pragma solidity ^0.8.22;
 
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {Base64} from "@openzeppelin/contracts/utils/Base64.sol";
-import {HTMLRequest, HTMLTag, HTMLTagType} from "scripty.sol/core/ScriptyStructs.sol";
-import {IScriptyBuilderV2} from "scripty.sol/interfaces/IScriptyBuilderV2.sol";
+import {HTMLRequest, HTMLTag, HTMLTagType} from "./scripty/core/ScriptyStructs.sol";
+import {IScriptyBuilderV2} from "./scripty/interfaces/IScriptyBuilderV2.sol";
 import {IProjectHTMLGenerator} from "./IProjectHTMLGenerator.sol";
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -183,12 +183,12 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
         // Create body tags
         HTMLTag[] memory bodyTags = new HTMLTag[](4);
 
-        // 1. p5.js library from ScriptyStorage (base64 encoded)
+        // 1. p5.js library from ScriptyStorage (inline script)
         bodyTags[0] = HTMLTag({
             name: "onchainrugs-p5.js.b64",
             contractAddress: scriptyStorage,
             contractData: abi.encode("onchainrugs-p5.js.b64"),
-            tagType: HTMLTagType.scriptBase64DataURI,
+            tagType: HTMLTagType.script,
             tagOpen: "",
             tagClose: "",
             tagContent: ""
@@ -216,12 +216,12 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
             tagContent: bytes(generateRugConfig(rug))
         });
 
-        // 4. Algorithm script from ScriptyStorage
+        // 4. Algorithm script from ScriptyStorage (inline script)
         bodyTags[3] = HTMLTag({
             name: "onchainrugs.js.b64",
             contractAddress: scriptyStorage,
             contractData: abi.encode("onchainrugs.js.b64"),
-            tagType: HTMLTagType.scriptBase64DataURI,
+            tagType: HTMLTagType.script,
             tagOpen: "",
             tagClose: "",
             tagContent: ""

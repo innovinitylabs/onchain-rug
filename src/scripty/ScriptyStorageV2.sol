@@ -35,7 +35,7 @@ contract ScriptyStorageV2 is Ownable, IScriptyStorage, IScriptyContractStorage {
     IFileStore public immutable ethfsFileStore;
     mapping(string => Content) public contents;
 
-    constructor(IFileStore ethfsFileStore_) {
+    constructor(IFileStore ethfsFileStore_, address initialOwner) Ownable(initialOwner) {
         ethfsFileStore = IFileStore(ethfsFileStore_);
     }
 

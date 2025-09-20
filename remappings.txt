@@ -1,5 +1,6 @@
 forge-std/=lib/forge-std/src/
 openzeppelin-contracts/=lib/openzeppelin-contracts/
 solady/=lib/solady/src/
+solady/src/=lib/solady/src/
 sstore2/=lib/sstore2/contracts/
 scripty.sol/=lib/scripty.sol/contracts/scripty/

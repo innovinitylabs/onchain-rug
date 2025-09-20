@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.22;
 
-import {SSTORE2} from "solady/src/utils/SSTORE2.sol";
-import {LibString} from "solady/src/utils/LibString.sol";
+import {SSTORE2} from "solady/utils/SSTORE2.sol";
+import {LibString} from "solady/utils/LibString.sol";
 import {IFileStore} from "./IFileStore.sol";
 import {File, BytecodeSlice, SliceOutOfBounds} from "./File.sol";
 import {addContent, isValidPointer} from "./common.sol";
+
+// SSTORE2 data offset (data starts after STOP opcode)
+uint256 constant DATA_OFFSET = 1;
 
 /**
  * @title EthFS FileStore
@@ -222,9 +225,9 @@ contract FileStore is IFileStore {
         BytecodeSlice[] memory slices = new BytecodeSlice[](chunks.length);
         for (uint256 i = 0; i < chunks.length; ++i) {
             slices[i].pointer = addContent(deployer, bytes(chunks[i]));
-            slices[i].start = uint32(SSTORE2.DATA_OFFSET);
+            slices[i].start = uint32(DATA_OFFSET);
             slices[i].end = uint32(
-                SSTORE2.DATA_OFFSET + bytes(chunks[i]).length
+                DATA_OFFSET + bytes(chunks[i]).length
             );
             size += slices[i].end - slices[i].start;
         }
@@ -244,7 +247,7 @@ contract FileStore is IFileStore {
                 revert InvalidPointer(pointers[i]);
             }
             slices[i].pointer = pointers[i];
-            slices[i].start = uint32(SSTORE2.DATA_OFFSET);
+            slices[i].start = uint32(DATA_OFFSET);
             slices[i].end = uint32(pointers[i].code.length);
             size += slices[i].end - slices[i].start;
         }

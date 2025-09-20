@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.22;
 
-import {SSTORE2} from "solady/src/utils/SSTORE2.sol";
+import {SSTORE2} from "solady/utils/SSTORE2.sol";
 
 bytes32 constant SALT = bytes32("EthFS");
 
@@ -33,16 +33,16 @@ function contentToInitCode(
 }
 
 /**
- * @dev Predicts the address of a data contract based on its content
- * @param deployer The deployer's address
+ * @dev Creates SSTORE2 data contract and returns its address
+ * @param deployer The deployer's address (unused for SSTORE2.write)
  * @param content The content of the data contract
- * @return pointer The predicted address of the data contract
+ * @return pointer The address of the deployed data contract
  */
 function getPointer(
     address deployer,
     bytes memory content
-) pure returns (address pointer) {
-    return SSTORE2.predictDeterministicAddress(content, SALT, deployer);
+) returns (address pointer) {
+    return SSTORE2.write(content);
 }
 
 /**
@@ -55,8 +55,8 @@ function pointerExists(address pointer) view returns (bool) {
 }
 
 /**
- * @dev Adds content as a data contract using a deterministic deployer
- * @param deployer The deployer's address
+ * @dev Adds content as a data contract using SSTORE2
+ * @param deployer The deployer's address (unused for SSTORE2)
  * @param content The content to be added as a data contract
  * @return pointer The address of the data contract
  */
@@ -64,20 +64,8 @@ function addContent(
     address deployer,
     bytes memory content
 ) returns (address pointer) {
-    address expectedPointer = getPointer(deployer, content);
-    if (pointerExists(expectedPointer)) {
-        return expectedPointer;
-    }
-
-    (bool success, bytes memory data) = deployer.call(
-        abi.encodePacked(SALT, contentToInitCode(content))
-    );
-    if (!success) revertWithBytes(data);
-
-    pointer = address(uint160(bytes20(data)));
-    if (pointer != expectedPointer) {
-        revert UnexpectedPointer(expectedPointer, pointer);
-    }
+    // Use SSTORE2.write directly since we can't predict CREATE addresses
+    pointer = SSTORE2.write(content);
 }
 
 /**
