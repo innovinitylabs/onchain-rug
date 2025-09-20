@@ -783,7 +783,7 @@ export default function GeneratorPage() {
                                        doormatData.config.DOORMAT_WIDTH + (doormatData.config.FRINGE_LENGTH * 4))
             canvas.parent('canvas-container')
             // Let CSS handle positioning - don't set styles here
-        p.pixelDensity(1)
+        p.pixelDensity(2)
         p.noLoop()
             console.log('🎨 P5.js canvas created with original dimensions')
           }
@@ -1784,12 +1784,35 @@ export default function GeneratorPage() {
       // Create P5.js instance
       await createP5Instance(doormatData)
       console.log('✅ P5.js instance created')
-      
-      // Generate initial doormat
-      generateDoormatCore(currentSeed, doormatData)
-      
-      // Update UI
-      setIsLoaded(true)
+
+      // Auto-generate 3-5 different rugs on page load for "rolling dice" effect
+      console.log('🎲 Starting auto-generation cycle (rolling dice effect)...')
+
+      const generationCount = Math.floor(Math.random() * 3) + 3 // 3-5 generations
+      let currentGeneration = 0
+
+      const autoGenerate = () => {
+        if (currentGeneration < generationCount) {
+          const randomSeed = Math.floor(Math.random() * 100000)
+          console.log(`🎲 Auto-generation ${currentGeneration + 1}/${generationCount} with seed: ${randomSeed}`)
+          generateDoormatCore(randomSeed, doormatData)
+          currentGeneration++
+
+          // Schedule next generation with increasing delay for visual effect
+          setTimeout(autoGenerate, 800 + (currentGeneration * 200))
+        } else {
+          // Final generation - update UI and use this as the final seed
+          const finalSeed = Math.floor(Math.random() * 100000)
+          console.log(`🎯 Final generation with seed: ${finalSeed}`)
+          generateDoormatCore(finalSeed, doormatData)
+          setCurrentSeed(finalSeed) // Update the state so minting works
+          setIsLoaded(true)
+          console.log('✅ Auto-generation cycle complete - page ready!')
+        }
+      }
+
+      // Start the auto-generation cycle
+      autoGenerate()
       
     } catch (error) {
       console.error('❌ Initialization failed:', error)
