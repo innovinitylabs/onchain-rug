@@ -185,9 +185,9 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
 
         // 1. p5.js library from ScriptyStorage (inline script)
         bodyTags[0] = HTMLTag({
-            name: "onchainrugs-p5.js.b64",
+            name: "onchainrugs-p5.js",
             contractAddress: scriptyStorage,
-            contractData: abi.encode("onchainrugs-p5.js.b64"),
+            contractData: abi.encode("onchainrugs-p5.js"),
             tagType: HTMLTagType.script,
             tagOpen: "",
             tagClose: "",
@@ -218,9 +218,9 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
 
         // 4. Algorithm script from ScriptyStorage (inline script)
         bodyTags[3] = HTMLTag({
-            name: "onchainrugs.js.b64",
+            name: "onchainrugs.js",
             contractAddress: scriptyStorage,
-            contractData: abi.encode("onchainrugs.js.b64"),
+            contractData: abi.encode("onchainrugs.js"),
             tagType: HTMLTagType.script,
             tagOpen: "",
             tagClose: "",

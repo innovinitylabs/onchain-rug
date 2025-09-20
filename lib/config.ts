@@ -15,14 +15,14 @@ export const config = {
   // 🔓 SAFE TO EXPOSE - Contract addresses (public blockchain data)
   contracts: {
     onchainRugs: process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT ||
-                process.env.ONCHAIN_RUGS_CONTRACT || '0x77c0F87621B7509eD76Bb78ce39eEaD9E98E6670',
+                process.env.ONCHAIN_RUGS_CONTRACT || '0xF6eE290597cCB1e136772122C1c4DcBb6Bf7f089',
   },
 
   // 🔓 SAFE TO EXPOSE - Legacy contract address references (public blockchain data)
   rugContractAddress: process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT ||
-                     process.env.ONCHAIN_RUGS_CONTRACT || '0x77c0F87621B7509eD76Bb78ce39eEaD9E98E6670',
+                     process.env.ONCHAIN_RUGS_CONTRACT || '0xF6eE290597cCB1e136772122C1c4DcBb6Bf7f089',
   cleaningContractAddress: process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT ||
-                          process.env.ONCHAIN_RUGS_CONTRACT || '0x77c0F87621B7509eD76Bb78ce39eEaD9E98E6670',
+                          process.env.ONCHAIN_RUGS_CONTRACT || '0xF6eE290597cCB1e136772122C1c4DcBb6Bf7f089',
   
   // Network configuration
   networks: {
