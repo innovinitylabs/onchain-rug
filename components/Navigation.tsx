@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-import { Home, Palette, Image, Sparkles, Search, Menu, X } from 'lucide-react'
+import { Home, Palette, Image, Sparkles, Menu, X } from 'lucide-react'
 import { WalletConnect } from './wallet-connect'
 
 export default function Navigation() {
@@ -324,7 +324,7 @@ export default function Navigation() {
               <Palette className="w-5 h-5" />
               <svg
                 height="28px"
-                viewBox="0 0 80 20"
+                viewBox="0 0 100 20"
                 style={{
                   display: 'block',
                   height: '28px',
@@ -355,7 +355,7 @@ export default function Navigation() {
                     fontFamily: 'system-ui, -apple-system, sans-serif',
                   }}
                 >
-              Generator
+              Rug Factory
                 </text>
               </svg>
             </Link>
@@ -398,48 +398,6 @@ export default function Navigation() {
                   }}
                 >
               Gallery
-                </text>
-              </svg>
-            </Link>
-            <Link
-              href="/explorer"
-              className="flex items-center gap-2 hover:opacity-90 transition-all duration-300"
-            >
-              <Search className="w-5 h-5" />
-              <svg
-                height="28px"
-                viewBox="0 0 80 20"
-                style={{
-                  display: 'block',
-                  height: '28px',
-                  filter: 'drop-shadow(0 0 6px rgba(108, 190, 230, 0.3))',
-                }}
-              >
-                <defs>
-                  <filter id="nav-link-depth-exp" x="-100%" y="-100%" width="300%" height="300%">
-                    <feTurbulence baseFrequency="0.02" numOctaves="2" seed="45" type="fractalNoise" result="LINK_BASE_EXP" />
-                    <feDisplacementMap in="SourceGraphic" in2="LINK_BASE_EXP" scale="3" xChannelSelector="R" yChannelSelector="G" result="LINK_DISPLACED_EXP" />
-                    <feGaussianBlur in="LINK_DISPLACED_EXP" stdDeviation="0.5" result="LINK_BLUR_EXP" />
-                  </filter>
-                  <linearGradient id="nav-link-gradient-exp" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" style={{ stopColor: 'rgba(255, 255, 255, 0.9)', stopOpacity: 1 }} />
-                    <stop offset="100%" style={{ stopColor: 'rgba(255, 255, 255, 0.9)', stopOpacity: 1 }} />
-                  </linearGradient>
-                </defs>
-                <text
-                  x="50%"
-                  y="12"
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  style={{
-                    fill: 'url(#nav-link-gradient-exp)',
-                    filter: 'url(#nav-link-depth-exp)',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    fontFamily: 'system-ui, -apple-system, sans-serif',
-                  }}
-                >
-              Explorer
                 </text>
               </svg>
             </Link>
@@ -524,7 +482,7 @@ export default function Navigation() {
                 className="flex items-center gap-4 px-6 py-4 text-white hover:bg-white/10 transition-colors duration-200"
               >
                 <Palette className="w-6 h-6" />
-                <span className="text-lg font-medium">Generator</span>
+                <span className="text-lg font-medium">Rug Factory</span>
               </Link>
 
               <Link
@@ -545,14 +503,6 @@ export default function Navigation() {
                 <span className="text-lg font-medium">Glass Demo</span>
               </Link>
 
-              <Link
-                href="/explorer"
-                onClick={closeMobileMenu}
-                className="flex items-center gap-4 px-6 py-4 text-white hover:bg-white/10 transition-colors duration-200"
-              >
-                <Search className="w-6 h-6" />
-                <span className="text-lg font-medium">Explorer</span>
-              </Link>
             </div>
 
             {/* Mobile Wallet Connection */}

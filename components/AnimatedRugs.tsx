@@ -2022,7 +2022,7 @@ export default function AnimatedRugs() {
         style={{ 
           background: 'transparent',
           opacity: isVisible ? 1 : 0,
-          transition: 'opacity 1.5s ease-in-out'
+          transition: 'opacity 5s ease-in-out'
         }}
       >
         <Suspense fallback={null}>
