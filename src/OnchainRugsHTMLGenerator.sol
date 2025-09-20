@@ -76,8 +76,8 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
      */
     function getRequiredLibraries() external pure override returns (string[] memory libraries) {
         libraries = new string[](2);
-        libraries[0] = "onchainrugs-p5.js.b64";
-        libraries[1] = "onchainrugs.js.b64";
+        libraries[0] = "rug-p5.js";
+        libraries[1] = "rug-algo.js";
     }
 
     /**
@@ -174,7 +174,7 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
                 '<meta charset="utf-8">',
                 '<meta name="viewport" content="width=device-width,initial-scale=1">',
                 '<title>OnchainRug #', Strings.toString(tokenId), '</title>',
-                '<style>body{display:flex;justify-content:center;align-items:center}#rug{width:100%!important;height:auto!important;max-width:800px;max-height:1200px;}</style>'
+                '<style>body{display:flex;justify-content:center;align-items:center}#defaultCanvas0{width:100%!important;height:auto!important;}</style>'
             )),
             tagClose: "",
             tagContent: ""
@@ -185,9 +185,9 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
 
         // 1. p5.js library from ScriptyStorage (inline script)
         bodyTags[0] = HTMLTag({
-            name: "onchainrugs-p5.js",
+            name: "rug-p5.js",
             contractAddress: scriptyStorage,
-            contractData: abi.encode("onchainrugs-p5.js"),
+            contractData: abi.encode("rug-p5.js"),
             tagType: HTMLTagType.script,
             tagOpen: "",
             tagClose: "",
@@ -218,9 +218,9 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
 
         // 4. Algorithm script from ScriptyStorage (inline script)
         bodyTags[3] = HTMLTag({
-            name: "onchainrugs.js",
+            name: "rug-algo.js",
             contractAddress: scriptyStorage,
-            contractData: abi.encode("onchainrugs.js"),
+            contractData: abi.encode("rug-algo.js"),
             tagType: HTMLTagType.script,
             tagOpen: "",
             tagClose: "",
