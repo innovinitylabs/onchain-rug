@@ -11,9 +11,8 @@ const desktopBackgrounds = [
 
 // Available background images for mobile (vertical)
 const mobileBackgrounds = [
-  '/backgrounds/mobile/anime-style-clouds.jpg',
-  '/backgrounds/mobile/anime-style-clouds-1.jpg',
-  '/backgrounds/mobile/anime-style-clouds-2.jpg'
+  '/backgrounds/mobile/anime-style-clouds-port-0.jpg',
+  '/backgrounds/mobile/anime-style-clouds-port-1.jpg'
 ];
 
 // Mobile detection function
