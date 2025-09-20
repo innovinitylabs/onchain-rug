@@ -317,44 +317,6 @@ export default function Web3Minting({
         {getButtonText()}
       </motion.button>
 
-      {/* Debug Info */}
-      <div className="bg-gray-900/50 border border-gray-500/30 rounded p-2">
-        <div className="text-gray-400 text-xs font-mono">
-          Ready to mint: {textRows.filter(row => row.trim() !== '').length} text line(s)
-        </div>
-        <div className="text-gray-400 text-xs font-mono mt-1">
-          Contract: {process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT ? '✅ Set' : '❌ Missing'}
-        </div>
-        <div className="text-gray-400 text-xs font-mono">
-          Wallet: {isConnected ? '✅ Connected' : '❌ Not connected'}
-        </div>
-        <div className="text-gray-400 text-xs font-mono">
-          Gas: Fixed 5M limit (optimized)
-        </div>
-      </div>
-
-      {/* Test Button */}
-      <button
-        onClick={() => {
-          console.log('=== DEBUG INFO ===');
-          console.log('Contract:', process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT);
-          console.log('Connected:', isConnected);
-          console.log('Address:', address);
-          console.log('Chain ID:', chainId);
-          console.log('Gas Estimate:', gasEstimate);
-          console.log('Gas Error:', gasError);
-          console.log('Text Rows:', textRows);
-          console.log('Palette:', currentPalette);
-          console.log('Stripe Data:', currentStripeData);
-          console.log('Character Map:', characterMap);
-          console.log('Warp Thickness:', warpThickness);
-          console.log('Mint Cost:', mintCost);
-          console.log('==================');
-        }}
-        className="w-full py-2 px-3 rounded font-mono text-xs bg-blue-600 hover:bg-blue-700 text-white"
-      >
-        🔍 Debug Info (Check Console)
-      </button>
 
     </div>
   )
