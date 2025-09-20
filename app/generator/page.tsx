@@ -1785,34 +1785,11 @@ export default function GeneratorPage() {
       await createP5Instance(doormatData)
       console.log('✅ P5.js instance created')
 
-      // Auto-generate 3-5 different rugs on page load for "rolling dice" effect
-      console.log('🎲 Starting auto-generation cycle (rolling dice effect)...')
+      // Generate initial doormat (will be replaced by auto-generation cycle after page loads)
+      generateDoormatCore(currentSeed, doormatData)
 
-      const generationCount = Math.floor(Math.random() * 3) + 3 // 3-5 generations
-      let currentGeneration = 0
-
-      const autoGenerate = () => {
-        if (currentGeneration < generationCount) {
-          const randomSeed = Math.floor(Math.random() * 100000)
-          console.log(`🎲 Auto-generation ${currentGeneration + 1}/${generationCount} with seed: ${randomSeed}`)
-          generateDoormatCore(randomSeed, doormatData)
-          currentGeneration++
-
-          // Schedule next generation with increasing delay for visual effect
-          setTimeout(autoGenerate, 800 + (currentGeneration * 200))
-        } else {
-          // Final generation - update UI and use this as the final seed
-          const finalSeed = Math.floor(Math.random() * 100000)
-          console.log(`🎯 Final generation with seed: ${finalSeed}`)
-          generateDoormatCore(finalSeed, doormatData)
-          setCurrentSeed(finalSeed) // Update the state so minting works
-          setIsLoaded(true)
-          console.log('✅ Auto-generation cycle complete - page ready!')
-        }
-      }
-
-      // Start the auto-generation cycle
-      autoGenerate()
+      // Update UI
+      setIsLoaded(true)
       
     } catch (error) {
       console.error('❌ Initialization failed:', error)
@@ -2217,6 +2194,49 @@ export default function GeneratorPage() {
       setTimeout(positionCanvas, 200)
     }
   }, [isLoaded])
+
+  // Auto-generate rugs after page completely loads (rolling dice effect)
+  useEffect(() => {
+    if (isLoaded && typeof window !== 'undefined') {
+      // Delay auto-generation to ensure canvas is fully positioned and rendered
+      const startAutoGeneration = () => {
+        console.log('🎲 Starting auto-generation cycle after page load...')
+
+        const doormatData = (window as any).doormatData
+        if (!doormatData) {
+          console.log('⚠️ Doormat data not available, skipping auto-generation')
+          return
+        }
+
+        const generationCount = Math.floor(Math.random() * 3) + 3 // 3-5 generations
+        let currentGeneration = 0
+
+        const autoGenerate = () => {
+          if (currentGeneration < generationCount) {
+            const randomSeed = Math.floor(Math.random() * 100000)
+            console.log(`🎲 Auto-generation ${currentGeneration + 1}/${generationCount} with seed: ${randomSeed}`)
+            generateDoormatCore(randomSeed, doormatData)
+            currentGeneration++
+
+            // Schedule next generation with increasing delay for visual effect
+            setTimeout(autoGenerate, 800 + (currentGeneration * 200))
+          } else {
+            // Final generation - update state so minting works
+            const finalSeed = Math.floor(Math.random() * 100000)
+            console.log(`🎯 Final generation with seed: ${finalSeed}`)
+            generateDoormatCore(finalSeed, doormatData)
+            setCurrentSeed(finalSeed) // Update the state so minting works
+            console.log('✅ Auto-generation cycle complete - page fully ready!')
+          }
+        }
+
+        // Start the auto-generation cycle after canvas positioning is complete
+        setTimeout(autoGenerate, 3000) // Wait 3 seconds for page to fully load and canvas to be positioned
+      }
+
+      startAutoGeneration()
+    }
+  }, [isLoaded]) // Only run when isLoaded changes to true
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100">
