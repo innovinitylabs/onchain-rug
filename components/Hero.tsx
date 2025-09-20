@@ -519,7 +519,15 @@ export default function Hero() {
                 aberrationIntensity={3}
                 saturation={200}
                 className="text-base font-bold px-4 py-2"
-                onClick={() => window.location.href = '/generator'}
+                onClick={() => {
+                  const featuresSection = document.getElementById('features');
+                  if (featuresSection) {
+                    featuresSection.scrollIntoView({
+                      behavior: 'smooth',
+                      block: 'start'
+                    });
+                  }
+                }}
                 background="rgba(78, 168, 222, 0.042)"
                 style={{
                   border: '2px solid #f59e0b',
