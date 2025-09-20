@@ -514,7 +514,7 @@ export default function Hero() {
                 aberrationIntensity={3}
                 saturation={200}
                 className="text-lg font-bold px-6 py-3"
-                onClick={() => window.location.href = '/gallery'}
+                onClick={() => window.location.href = '/generator'}
                 style={{
                   border: '2px solid #f59e0b',
                   borderRadius: '9999px',
@@ -528,7 +528,7 @@ export default function Hero() {
                   padding: '1rem 2rem'
                 }}
               >
-                Gallery
+                Mint
               </LiquidGlass>
             </motion.div>
           </motion.div>
