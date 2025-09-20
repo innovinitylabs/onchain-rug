@@ -486,9 +486,9 @@ export default function Hero() {
                 blurAmount={0.2}
                 aberrationIntensity={3}
                 saturation={200}
-                className="text-lg font-bold px-6 py-3"
+                className="text-base font-bold px-4 py-2"
                 onClick={() => window.location.href = '/generator'}
-                background="rgba(78, 168, 222, 0.042)"
+                background="rgba(235, 87, 87, 0.042)"
                 style={{
                   border: '2px solid #f59e0b',
                   borderRadius: '9999px',
@@ -498,12 +498,12 @@ export default function Hero() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '0.5rem',
-                  padding: '1rem 2rem',
+                  padding: '0.75rem 1.5rem',
                   boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
                   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
                 }}
               >
-              DYOR
+              🫲🏽 MINT
               </LiquidGlass>
             </motion.div>
             
@@ -518,9 +518,9 @@ export default function Hero() {
                 blurAmount={0.2}
                 aberrationIntensity={3}
                 saturation={200}
-                className="text-lg font-bold px-6 py-3"
+                className="text-base font-bold px-4 py-2"
                 onClick={() => window.location.href = '/generator'}
-                background="rgba(235, 87, 87, 0.042)"
+                background="rgba(78, 168, 222, 0.042)"
                 style={{
                   border: '2px solid #f59e0b',
                   borderRadius: '9999px',
@@ -533,7 +533,7 @@ export default function Hero() {
                   padding: '1rem 2rem'
                 }}
               >
-                MINT
+                DYOR 🫱🏽
               </LiquidGlass>
             </motion.div>
           </motion.div>
