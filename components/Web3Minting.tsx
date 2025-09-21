@@ -13,6 +13,7 @@ interface Web3MintingProps {
   characterMap: any
   warpThickness: number
   seed: number
+  complexity: number
 }
 
 export default function Web3Minting({
@@ -21,7 +22,8 @@ export default function Web3Minting({
   currentStripeData,
   characterMap,
   warpThickness,
-  seed
+  seed,
+  complexity
 }: Web3MintingProps) {
   const [isMinting, setIsMinting] = useState(false)
   const { address, isConnected } = useAccount()
@@ -154,7 +156,7 @@ export default function Web3Minting({
             JSON.stringify(optimized.palette),
             JSON.stringify(optimized.characterMap),
             warpThickness, // Using the actual warp thickness from generator
-            2, // complexity
+            complexity, // Using the calculated complexity from generator
             BigInt(optimized.textRows.join('').length), // characterCount
             BigInt(optimized.stripeData.length) // stripeCount
           ],
@@ -218,8 +220,8 @@ export default function Web3Minting({
         minifiedStripeData: JSON.stringify(optimized.stripeData),
         minifiedPalette: JSON.stringify(optimized.palette),
         filteredCharacterMap: JSON.stringify(optimized.characterMap),
-        warpThickness: 3,
-        complexity: 2,
+        warpThickness: warpThickness, // Dynamic from generator
+        complexity: complexity, // Dynamic from generator
         characterCount: optimized.textRows.join('').length,
         stripeCount: optimized.stripeData.length,
         mintCost,
@@ -254,18 +256,18 @@ export default function Web3Minting({
           }
         ] as const,
         functionName: 'mintRug',
-          args: [
-            optimized.textRows,
-            BigInt(seed), // Using the seed from the generator
-            optimized.palette.name,
-            JSON.stringify(optimized.stripeData),
-            JSON.stringify(optimized.palette),
-            JSON.stringify(optimized.characterMap),
-            warpThickness, // Using the actual warp thickness from generator
-            2, // complexity
-            BigInt(optimized.textRows.join('').length), // characterCount
-            BigInt(optimized.stripeData.length) // stripeCount
-          ],
+        args: [
+          optimized.textRows,
+          BigInt(seed), // Using the seed from the generator
+          optimized.palette.name,
+          JSON.stringify(optimized.stripeData),
+          JSON.stringify(optimized.palette),
+          JSON.stringify(optimized.characterMap),
+          warpThickness, // Using the actual warp thickness from generator
+          complexity, // Using the calculated complexity from generator
+          BigInt(optimized.textRows.join('').length), // characterCount
+          BigInt(optimized.stripeData.length) // stripeCount
+        ],
         value: parseEther(mintCost.toString()),
         gas: gasLimit,
         chain: chainId === 11011 ? shapeSepolia : shapeMainnet,
