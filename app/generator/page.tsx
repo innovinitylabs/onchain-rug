@@ -2129,17 +2129,18 @@ export default function GeneratorPage() {
       .filter(char => allowedChars.includes(char))
       .join('')
       .slice(0, 11)
-    setTextInputs(newInputs)
 
     // Automatically embed text as user types (with small delay to avoid excessive updates)
+    setTextInputs(newInputs)
     setTimeout(() => {
-      addTextToDoormat()
+      addTextToDoormat(newInputs)
     }, 50)
   }
 
   // Add text to doormat
-  const addTextToDoormat = () => {
-    const validTexts = textInputs.filter(text => text.trim().length > 0)
+  const addTextToDoormat = (inputs?: string[]) => {
+    const inputsToUse = inputs || textInputs
+    const validTexts = inputsToUse.filter(text => text.trim().length > 0)
     
     if (validTexts.length > 0 && typeof window !== 'undefined' && (window as any).doormatData) {
       (window as any).doormatData.doormatTextRows = validTexts
@@ -2554,7 +2555,7 @@ export default function GeneratorPage() {
                       </button>
                     )}
                     <button
-                      onClick={addTextToDoormat}
+                      onClick={() => addTextToDoormat()}
                       disabled={!isLoaded}
                       className="bg-blue-600/80 hover:bg-blue-600 disabled:bg-gray-700 text-white px-3 py-1.5 rounded font-mono transition-all duration-200 border border-blue-400 flex items-center gap-1.5 text-xs"
                       title="Text embeds automatically - use this to manually refresh if needed"
