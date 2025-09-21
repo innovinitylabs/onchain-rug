@@ -448,21 +448,22 @@ export default function Navigation() {
           onClick={closeMobileMenu}
         >
           <motion.div
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.8, opacity: 0 }}
             transition={{ type: 'tween', duration: 0.3 }}
-            className="fixed right-0 top-0 h-full w-80 max-w-[90vw]"
+            className="fixed inset-0 flex items-center justify-center p-4"
             onClick={(e) => e.stopPropagation()}
           >
-            <LiquidGlass
-              blurAmount={0.15}
-              aberrationIntensity={3}
-              elasticity={0.1}
-              cornerRadius={0}
-              background="linear-gradient(180deg, rgba(30, 58, 138, 0.95) 0%, rgba(67, 56, 202, 0.95) 100%)"
-              className="h-full w-full"
-            >
+            <div className="w-full max-w-sm max-h-[80vh] overflow-hidden">
+              <LiquidGlass
+                blurAmount={0.15}
+                aberrationIntensity={3}
+                elasticity={0.1}
+                cornerRadius={16}
+                background="linear-gradient(180deg, rgba(30, 58, 138, 0.95) 0%, rgba(67, 56, 202, 0.95) 100%)"
+                className="h-full w-full"
+              >
             {/* Mobile Menu Header */}
             <div className="flex items-center justify-between p-6 border-b border-white/10">
               <h3 className="text-xl font-bold text-white">Menu</h3>
@@ -506,13 +507,14 @@ export default function Navigation() {
             </div>
 
             {/* Mobile Wallet Connection */}
-            <div className="absolute bottom-6 left-6 right-6">
+            <div className="mt-6 pt-6 border-t border-white/10">
               <div className="text-center">
                 <p className="text-white/70 text-sm mb-4">Connect Wallet</p>
                 <WalletConnect />
               </div>
             </div>
-            </LiquidGlass>
+              </LiquidGlass>
+            </div>
           </motion.div>
         </motion.div>
       )}
