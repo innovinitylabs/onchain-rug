@@ -2555,15 +2555,6 @@ export default function GeneratorPage() {
                       </button>
                     )}
                     <button
-                      onClick={() => addTextToDoormat()}
-                      disabled={!isLoaded}
-                      className="bg-blue-600/80 hover:bg-blue-600 disabled:bg-gray-700 text-white px-3 py-1.5 rounded font-mono transition-all duration-200 border border-blue-400 flex items-center gap-1.5 text-xs"
-                      title="Text embeds automatically - use this to manually refresh if needed"
-                    >
-                      <FileText className="w-3 h-3" />
-                      AUTO-EMBED
-                    </button>
-                    <button
                       onClick={clearText}
                       className="bg-gray-600/80 hover:bg-gray-600 text-white px-3 py-1.5 rounded font-mono transition-all duration-200 border border-gray-400 text-xs"
                     >
