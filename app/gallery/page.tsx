@@ -22,6 +22,7 @@ interface RugTraits {
   complexity: number
   characterCount: bigint
   stripeCount: bigint
+  textLinesCount: number // From Alchemy "Text Lines" trait
 }
 
 interface NFTData {
@@ -237,6 +238,7 @@ export default function GalleryPage() {
               complexity: 2,
               characterCount: BigInt(1),
               stripeCount: BigInt(0),
+              textLinesCount: 0, // Default from "Text Lines" trait
             }
 
             // Dynamic trait mapping: trait_type from tokenURI metadata -> RugTraits field
@@ -246,7 +248,7 @@ export default function GalleryPage() {
               'Complexity': 'complexity',
               'Character Count': 'characterCount',
               'Stripe Count': 'stripeCount',
-              // Note: 'Text Lines' gives count but RugTraits expects textRows array
+              'Text Lines': 'textLinesCount', // Maps count to textLinesCount field
               // Note: 'Dirt Level' exists in metadata but not in RugTraits interface
             }
 
@@ -265,6 +267,7 @@ export default function GalleryPage() {
                     break
                   case 'warpThickness':
                   case 'complexity':
+                  case 'textLinesCount':
                     (traits as any)[fieldName] = Number(value)
                     break
                   case 'paletteName':
@@ -275,9 +278,6 @@ export default function GalleryPage() {
                     (traits as any)[fieldName] = value
                 }
                 console.log(`✅ Mapped ${traitType} -> ${fieldName}: ${value}`)
-              } else if (traitType === 'Text Lines') {
-                // Special case: Text Lines gives count but we need textRows array
-                console.log(`ℹ️ Text Lines trait: ${value} (count only, no actual text)`)
               } else if (traitType === 'Dirt Level') {
                 console.log(`ℹ️ Dirt Level trait: ${value} (not in RugTraits interface)`)
               } else {
@@ -291,7 +291,8 @@ export default function GalleryPage() {
               warpThickness: traits.warpThickness,
               complexity: traits.complexity,
               characterCount: traits.characterCount.toString(),
-              stripeCount: traits.stripeCount.toString()
+              stripeCount: traits.stripeCount.toString(),
+              textLinesCount: traits.textLinesCount
             })
 
             const nftItem: NFTData = {
@@ -855,14 +856,14 @@ export default function GalleryPage() {
                       {/* Traits Display */}
                       <div className="grid grid-cols-2 gap-2 text-sm mb-4">
                         {Object.entries(nft.traits).filter(([key]) =>
-                          ['paletteName', 'complexity', 'characterCount', 'stripeCount', 'textRows', 'warpThickness'].includes(key)
+                          ['paletteName', 'complexity', 'characterCount', 'stripeCount', 'textLinesCount', 'warpThickness'].includes(key)
                         ).slice(0, 6).map(([key, value]) => (
                           <div key={key} className="bg-blue-50 rounded-lg p-2">
                             <div className="text-xs text-blue-600 font-medium capitalize">
                               {key === 'paletteName' ? 'Palette' :
                                key === 'characterCount' ? 'Characters' :
                                key === 'stripeCount' ? 'Stripes' :
-                               key === 'textRows' ? 'Text Lines' :
+                               key === 'textLinesCount' ? 'Text Lines' :
                                key === 'warpThickness' ? 'Warp' :
                                key.replace(/([A-Z])/g, ' $1').trim()}
                             </div>

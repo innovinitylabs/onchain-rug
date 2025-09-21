@@ -21,6 +21,8 @@ export default function GeneratorPage() {
   const [dirtLevel, setDirtLevel] = useState(0) // 0 = clean, 1 = 50% dirty, 2 = full dirty
   const [showTexture, setShowTexture] = useState(false)
   const [textureLevel, setTextureLevel] = useState(0) // 0 = none, 1 = 7 days, 2 = 30 days
+  const [warpThickness, setWarpThickness] = useState(2) // Default warp thickness
+  const [complexity, setComplexity] = useState(2) // Default complexity
 
   // Copy to clipboard function
   const copyToClipboard = async (text: string, label: string) => {
@@ -901,7 +903,11 @@ export default function GeneratorPage() {
     
     // Generate stripes with seeded randomness
     doormatData.stripeData = generateStripes(doormatData, seed)
-    
+
+    // Calculate complexity based on stripe patterns
+    const calculatedComplexity = calculateNumericComplexity(doormatData.stripeData)
+    doormatData.complexity = calculatedComplexity
+
     // Update text colors and generate text data (MISSING FROM ORIGINAL)
     if (typeof window !== 'undefined' && (window as any).p5Instance) {
       updateTextColors((window as any).p5Instance, doormatData)
@@ -935,11 +941,11 @@ export default function GeneratorPage() {
     // RARITY-BASED PALETTE SELECTION
     // Weighted generation for true rarity distribution
     const rarityWeights = {
-      Legendary: 0.01,    // 1% chance
-      Epic: 0.05,         // 5% chance  
-      Rare: 0.15,         // 15% chance
-      Uncommon: 0.25,     // 25% chance
-      Common: 0.54        // 54% chance
+      Legendary: 0.07,    // 7% chance - Premium but achievable
+      Epic: 0.13,         // 13% chance - Highly desirable
+      Rare: 0.22,         // 22% chance - Notable collection piece
+      Uncommon: 0.28,     // 28% chance - Special but accessible
+      Common: 0.30        // 30% chance - Base tier, still meaningful
     }
     
     // Roll for rarity tier using PRNG for deterministic results
@@ -1789,6 +1795,10 @@ export default function GeneratorPage() {
       // Generate initial doormat (will be replaced by auto-generation cycle after page loads)
       generateDoormatCore(currentSeed, doormatData)
 
+      // Update warp thickness and complexity state from generated doormat data
+      setWarpThickness(doormatData.warpThickness)
+      setComplexity((doormatData as any).complexity || 2)
+
       // Update UI
       setIsLoaded(true)
       
@@ -1822,7 +1832,47 @@ export default function GeneratorPage() {
     return "Common"
   }
 
-  // Calculate stripe complexity
+  // Calculate numeric complexity for minting (1-5 scale)
+  const calculateNumericComplexity = (stripeData: any[]): number => {
+    if (!stripeData || stripeData.length === 0) return 1
+
+    let complexityScore = 0
+    let mixedCount = 0
+    let texturedCount = 0
+    let secondaryColorCount = 0
+
+    // Count different pattern types and features
+    for (let stripe of stripeData) {
+      if (stripe.weaveType === 'mixed') {
+        mixedCount++
+        complexityScore += 2 // Mixed weave adds significant complexity
+      } else if (stripe.weaveType === 'textured') {
+        texturedCount++
+        complexityScore += 1.5 // Textured adds medium complexity
+      }
+      // Solid adds no complexity
+
+      if (stripe.secondaryColor) {
+        secondaryColorCount++
+        complexityScore += 1 // Secondary colors add complexity
+      }
+    }
+
+    // Calculate ratios
+    const solidRatio = (stripeData.length - mixedCount - texturedCount) / stripeData.length
+    const secondaryRatio = secondaryColorCount / stripeData.length
+    const normalizedComplexity = complexityScore / (stripeData.length * 3) // Max possible is 3 per stripe
+
+    // Convert to 1-5 scale based on complexity patterns
+    if (solidRatio > 0.9) return 1 // Almost all solid = lowest complexity
+    if (solidRatio > 0.75 && normalizedComplexity < 0.2) return 1 // Mostly solid with minimal features
+    if (solidRatio > 0.6 && normalizedComplexity < 0.3) return 2 // Good balance of solid and features
+    if (normalizedComplexity < 0.5) return 3 // Significant complexity features
+    if (normalizedComplexity < 0.7) return 4 // High complexity
+    return 5 // Maximum complexity
+  }
+
+  // Calculate stripe complexity (for display purposes)
   const calculateStripeComplexity = (stripeData: any[]) => {
     if (!stripeData || stripeData.length === 0) return "Basic"
     
@@ -2217,6 +2267,8 @@ export default function GeneratorPage() {
             const randomSeed = Math.floor(Math.random() * 100000)
             console.log(`🎲 Auto-generation ${currentGeneration + 1}/${generationCount} with seed: ${randomSeed}`)
             generateDoormatCore(randomSeed, doormatData)
+            setWarpThickness(doormatData.warpThickness) // Update warp thickness state
+            setComplexity((doormatData as any).complexity || 2) // Update complexity state
             currentGeneration++
 
             // Schedule next generation with increasing delay for visual effect
@@ -2227,6 +2279,8 @@ export default function GeneratorPage() {
             console.log(`🎯 Final generation with seed: ${finalSeed}`)
             generateDoormatCore(finalSeed, doormatData)
             setCurrentSeed(finalSeed) // Update the state so minting works
+            setWarpThickness(doormatData.warpThickness) // Update warp thickness state
+            setComplexity((doormatData as any).complexity || 2) // Update complexity state
             console.log('✅ Auto-generation cycle complete - page fully ready!')
           }
         }
@@ -2865,7 +2919,9 @@ export default function GeneratorPage() {
                     currentPalette={palette}
                     currentStripeData={typeof window !== 'undefined' ? (window as any).stripeData || [] : []}
                     characterMap={typeof window !== 'undefined' ? (window as any).doormatData?.characterMap || {} : {}}
-                    warpThickness={3}
+                    warpThickness={warpThickness}
+                    seed={currentSeed}
+                    complexity={complexity}
                   />
 
                 </div>
