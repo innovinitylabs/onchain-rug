@@ -103,7 +103,7 @@ export default function Navigation() {
               }}
               aria-label="ONCHAIN RUGS"
               preserveAspectRatio="xMidYMid meet"
-              className="sm:h-14"
+              className="h-11 sm:h-14"
             >
               <defs>
                 {/* Navbar Liquid Glass Material - Scaled Down */}
@@ -190,7 +190,7 @@ export default function Navigation() {
                 style={{
                   fill: 'url(#nav-logo-glass-shadow)',
                   filter: 'url(#nav-logo-glass-depth)',
-                  fontSize: '16px',
+                  fontSize: '18px',
                   fontWeight: '700',
                   fontFamily: 'system-ui, -apple-system, sans-serif',
                   opacity: 0.6,
@@ -211,7 +211,7 @@ export default function Navigation() {
                 style={{
                   fill: 'url(#nav-logo-glass-fill)',
                   filter: 'url(#nav-logo-glass-depth)',
-                  fontSize: '16px',
+                  fontSize: '18px',
                   fontWeight: '700',
                   fontFamily: 'system-ui, -apple-system, sans-serif',
                   WebkitFontSmoothing: 'antialiased',
@@ -233,7 +233,7 @@ export default function Navigation() {
                 style={{
                   fill: 'url(#nav-logo-glass-highlight)',
                   filter: 'url(#nav-logo-glass-surface)',
-                  fontSize: '16px',
+                  fontSize: '18px',
                   fontWeight: '700',
                   fontFamily: 'system-ui, -apple-system, sans-serif',
                   mixBlendMode: 'screen',
@@ -256,7 +256,7 @@ export default function Navigation() {
                   stroke: 'rgba(255, 255, 255, 0.6)',
                   strokeWidth: '0.2',
                   filter: 'url(#nav-logo-glass-surface)',
-                  fontSize: '16px',
+                  fontSize: '18px',
                   fontWeight: '700',
                   fontFamily: 'system-ui, -apple-system, sans-serif',
                   mixBlendMode: 'overlay',
