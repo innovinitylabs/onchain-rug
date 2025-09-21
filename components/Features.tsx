@@ -67,7 +67,7 @@ const itemVariants = {
 
 export default function Features() {
   return (
-    <section id="features" className="min-h-screen bg-gradient-to-br from-sky-200 via-blue-300 to-indigo-400 p-8">
+    <section id="features" className="min-h-screen bg-gradient-to-br from-sky-200 via-blue-300 to-indigo-400 p-8 pt-16">
       <div className="max-w-7xl mx-auto">
         <motion.div
           initial={{ opacity: 1, y: 30 }}
