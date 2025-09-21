@@ -941,11 +941,11 @@ export default function GeneratorPage() {
     // RARITY-BASED PALETTE SELECTION
     // Weighted generation for true rarity distribution
     const rarityWeights = {
-      Legendary: 0.05,    // 5% chance - Rare but achievable
-      Epic: 0.10,         // 10% chance - Premium tier
-      Rare: 0.20,         // 20% chance - Notable rarity
-      Uncommon: 0.30,     // 30% chance - Common but special
-      Common: 0.35        // 35% chance - Most frequent but still meaningful
+      Legendary: 0.07,    // 7% chance - Premium but achievable
+      Epic: 0.13,         // 13% chance - Highly desirable
+      Rare: 0.22,         // 22% chance - Notable collection piece
+      Uncommon: 0.28,     // 28% chance - Special but accessible
+      Common: 0.30        // 30% chance - Base tier, still meaningful
     }
     
     // Roll for rarity tier using PRNG for deterministic results
