@@ -518,115 +518,134 @@ export default function GalleryPage() {
         </div>
       </motion.div>
 
-      {/* Controls */}
+      {/* Main Content Layout - Sidebar + NFTs */}
       <div className="max-w-7xl mx-auto px-6 mb-8">
-        <div className="flex flex-wrap items-center justify-between gap-4 bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-blue-200/50">
-          {/* Sorting */}
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <SortAsc className="w-4 h-4 text-blue-600" />
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="px-3 py-2 bg-white/80 border border-blue-200 rounded-lg text-blue-700"
-              >
-                <option value="tokenId">Token ID</option>
-                <option value="mintTime">Mint Date</option>
-                <option value="rarity">Rarity Score</option>
-                <option value="complexity">Complexity</option>
-                <option value="stripeCount">Stripes</option>
-                <option value="characterCount">Characters</option>
-              </select>
-              <button
-                onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}
-                className="px-3 py-2 bg-blue-100 hover:bg-blue-200 border border-blue-200 rounded-lg text-blue-700 transition-colors"
-              >
-                {sortDirection === 'asc' ? '↑' : '↓'}
-              </button>
-            </div>
-          </div>
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Sidebar - Filters & Controls */}
+          <div className="lg:w-80 flex-shrink-0">
+            {/* Controls */}
+            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-blue-200/50 mb-6">
+              <h3 className="text-lg font-semibold text-blue-800 mb-4 flex items-center gap-2">
+                <Filter className="w-5 h-5" />
+                Gallery Controls
+              </h3>
 
-          {/* View Mode & Refresh */}
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`p-2 rounded-lg transition-colors ${
-                  viewMode === 'grid'
-                    ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                    : 'text-blue-600 hover:bg-blue-50'
-                }`}
-              >
-                <Grid className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setViewMode('list')}
-                className={`p-2 rounded-lg transition-colors ${
-                  viewMode === 'list'
-                    ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                    : 'text-blue-600 hover:bg-blue-50'
-                }`}
-              >
-                <List className="w-4 h-4" />
-              </button>
-            </div>
-
-            <button
-              onClick={handleRefresh}
-              disabled={refreshing}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-100 hover:bg-blue-200 border border-blue-200 rounded-lg text-blue-700 transition-colors disabled:opacity-50"
-            >
-              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-              Refresh
-            </button>
-          </div>
-        </div>
-
-        {/* Trait Filters */}
-        <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-blue-200/50 mt-4">
-          <div className="flex items-center gap-2 mb-4">
-            <Filter className="w-4 h-4 text-blue-600" />
-            <span className="text-blue-700 font-medium">Filter by Traits:</span>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {Object.entries(availableTraits).slice(0, 12).map(([trait, values]) => (
-              <div key={trait} className="space-y-2">
-                <label className="block text-sm font-medium text-blue-700 capitalize">
-                  {trait.replace(/([A-Z])/g, ' $1').trim()}
+              {/* Sorting */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-blue-700 mb-2 flex items-center gap-2">
+                  <SortAsc className="w-4 h-4" />
+                  Sort By
                 </label>
-                <select
-                  value={selectedTraits[trait] || ''}
-                  onChange={(e) => setSelectedTraits(prev => ({
-                    ...prev,
-                    [trait]: e.target.value === '' ? null : e.target.value
-                  }))}
-                  className="w-full px-2 py-1 text-sm bg-white/80 border border-blue-200 rounded text-blue-700"
-                >
-                  <option value="">All</option>
-                  {Array.from(values).slice(0, 10).map((value, idx) => (
-                    <option key={idx} value={String(value)}>
-                      {String(value).length > 20 ? String(value).substring(0, 20) + '...' : String(value)}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex gap-2">
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as SortOption)}
+                    className="flex-1 px-3 py-2 bg-white/80 border border-blue-200 rounded-lg text-blue-700"
+                  >
+                    <option value="tokenId">Token ID</option>
+                    <option value="mintTime">Mint Date</option>
+                    <option value="rarity">Rarity Score</option>
+                    <option value="complexity">Complexity</option>
+                    <option value="stripeCount">Stripes</option>
+                    <option value="characterCount">Characters</option>
+                  </select>
+                  <button
+                    onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}
+                    className="px-3 py-2 bg-blue-100 hover:bg-blue-200 border border-blue-200 rounded-lg text-blue-700 transition-colors"
+                    title={`Sort ${sortDirection === 'asc' ? 'ascending' : 'descending'}`}
+                  >
+                    {sortDirection === 'asc' ? '↑' : '↓'}
+                  </button>
+                </div>
               </div>
-            ))}
+
+              {/* View Mode */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-blue-700 mb-2">View Mode</label>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setViewMode('grid')}
+                    className={`flex-1 flex items-center justify-center gap-2 p-2 rounded-lg transition-colors ${
+                      viewMode === 'grid'
+                        ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                        : 'text-blue-600 hover:bg-blue-50'
+                    }`}
+                  >
+                    <Grid className="w-4 h-4" />
+                    Grid
+                  </button>
+                  <button
+                    onClick={() => setViewMode('list')}
+                    className={`flex-1 flex items-center justify-center gap-2 p-2 rounded-lg transition-colors ${
+                      viewMode === 'list'
+                        ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                        : 'text-blue-600 hover:bg-blue-50'
+                    }`}
+                  >
+                    <List className="w-4 h-4" />
+                    List
+                  </button>
+                </div>
+              </div>
+
+              {/* Refresh Button */}
+              <button
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-100 hover:bg-blue-200 border border-blue-200 rounded-lg text-blue-700 transition-colors disabled:opacity-50"
+              >
+                <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+                {refreshing ? 'Refreshing...' : 'Refresh NFTs'}
+              </button>
+            </div>
+
+            {/* Trait Filters */}
+            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-blue-200/50">
+              <div className="flex items-center gap-2 mb-4">
+                <Filter className="w-4 h-4 text-blue-600" />
+                <span className="text-blue-700 font-medium">Filter by Traits</span>
+              </div>
+
+              <div className="space-y-4">
+                {Object.entries(availableTraits).slice(0, 12).map(([trait, values]) => (
+                  <div key={trait} className="space-y-2">
+                    <label className="block text-sm font-medium text-blue-700 capitalize">
+                      {trait.replace(/([A-Z])/g, ' $1').trim()}
+                    </label>
+                    <select
+                      value={selectedTraits[trait] || ''}
+                      onChange={(e) => setSelectedTraits(prev => ({
+                        ...prev,
+                        [trait]: e.target.value === '' ? null : e.target.value
+                      }))}
+                      className="w-full px-2 py-2 text-sm bg-white/80 border border-blue-200 rounded text-blue-700"
+                    >
+                      <option value="">All</option>
+                      {Array.from(values).slice(0, 10).map((value, idx) => (
+                        <option key={idx} value={String(value)}>
+                          {String(value).length > 20 ? String(value).substring(0, 20) + '...' : String(value)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
+              </div>
+
+              {Object.keys(selectedTraits).length > 0 && (
+                <button
+                  onClick={() => setSelectedTraits({})}
+                  className="mt-4 w-full px-4 py-2 bg-red-100 hover:bg-red-200 border border-red-200 rounded-lg text-red-700 transition-colors"
+                >
+                  Clear All Filters
+                </button>
+              )}
+            </div>
           </div>
 
-          {Object.keys(selectedTraits).length > 0 && (
-            <button
-              onClick={() => setSelectedTraits({})}
-              className="mt-4 px-4 py-2 bg-red-100 hover:bg-red-200 border border-red-200 rounded-lg text-red-700 transition-colors"
-            >
-              Clear Filters
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* NFT Grid/List */}
-      <div className="max-w-7xl mx-auto px-6 pb-20">
+          {/* Main Content - NFTs */}
+          <div className="flex-1">
+            {/* NFT Grid/List */}
+            <div className="pb-20">
         {(() => {
           const shouldShowLoading = loading || loadingAlchemy || initialLoad
           console.log('🎯 Render decision:', {
@@ -849,6 +868,9 @@ export default function GalleryPage() {
             )
           }
         })()}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )
