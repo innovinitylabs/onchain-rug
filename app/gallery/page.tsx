@@ -171,17 +171,18 @@ export default function GalleryPage() {
 
   // Process Alchemy NFT data - much simpler!
   useEffect(() => {
-    console.log('🔄 Processing useEffect triggered:', {
-      hasAlchemyData: !!alchemyData,
-      hasAlchemyError: !!alchemyError,
-      loadingAlchemy,
-      loading,
-      initialLoad,
-      nftsLength: nfts.length,
-      alchemyDataLength: alchemyData?.nfts?.length || 0
-    })
+    (async () => {
+      console.log('🔄 Processing useEffect triggered:', {
+        hasAlchemyData: !!alchemyData,
+        hasAlchemyError: !!alchemyError,
+        loadingAlchemy,
+        loading,
+        initialLoad,
+        nftsLength: nfts.length,
+        alchemyDataLength: alchemyData?.nfts?.length || 0
+      })
 
-    if (!alchemyData || alchemyError) {
+      if (!alchemyData || alchemyError) {
       console.log('⏸️ Skipping processing - no data or error:', {
         alchemyData: !!alchemyData,
         alchemyError: alchemyError
@@ -202,26 +203,58 @@ export default function GalleryPage() {
       // Process Alchemy NFT data
       if (alchemyData.nfts && Array.isArray(alchemyData.nfts)) {
         console.log('🎯 Processing', alchemyData.nfts.length, 'NFTs from Alchemy')
-        alchemyData.nfts.forEach((nft: any, index: number) => {
-          console.log(`🆔 NFT #${nft.tokenId} (index ${index}):`, {
-            name: nft.name,
-            description: nft.description,
-            animation_url: !!nft.animation_url,
-            attributes: nft.metadata?.attributes?.length || 0,
-            hasMetadata: !!nft.metadata,
-            owners: nft.owners
-          })
-          try {
+        // Process NFTs with async trait fetching
+        const processNFTs = async () => {
+          for (const [index, nft] of alchemyData.nfts.entries()) {
+            console.log(`🆔 NFT #${nft.tokenId} (index ${index}):`, {
+              name: nft.name,
+              description: nft.description,
+              animation_url: !!nft.animation_url,
+              attributes: nft.metadata?.attributes?.length || 0,
+              hasMetadata: !!nft.metadata,
+              owners: nft.owners
+            })
+            try {
             // Extract traits from metadata attributes
-            const attributes = nft.attributes || nft.metadata?.attributes || []
+            let attributes = nft.attributes || nft.metadata?.attributes || []
+
+            // If no attributes from Alchemy, try to manually fetch and parse tokenURI
+            const tokenUri = nft.tokenUri || nft.token_uri || nft.tokenUri
+            if ((!attributes || attributes.length === 0) && tokenUri) {
+              console.log(`🔄 NFT #${nft.tokenId} has no attributes, fetching tokenURI manually...`)
+              console.log(`🔗 TokenURI: ${tokenUri}`)
+              try {
+                const tokenUriResponse = await fetch(tokenUri)
+                if (tokenUriResponse.ok) {
+                  const tokenUriText = await tokenUriResponse.text()
+                  console.log(`📄 NFT #${nft.tokenId} raw tokenURI:`, tokenUriText.substring(0, 200) + '...')
+
+                  // Try to parse as JSON (might be data:application/json;base64,...)
+                  let metadataJson
+                  if (tokenUriText.startsWith('data:application/json;base64,')) {
+                    const base64Data = tokenUriText.replace('data:application/json;base64,', '')
+                    const decoded = atob(base64Data)
+                    metadataJson = JSON.parse(decoded)
+                  } else if (tokenUriText.startsWith('data:application/json,')) {
+                    const jsonData = tokenUriText.replace('data:application/json,', '')
+                    metadataJson = JSON.parse(jsonData)
+                  } else {
+                    metadataJson = JSON.parse(tokenUriText)
+                  }
+
+                  console.log(`📊 NFT #${nft.tokenId} parsed metadata:`, metadataJson)
+                  attributes = metadataJson.attributes || []
+                  console.log(`✅ NFT #${nft.tokenId} extracted ${attributes.length} attributes from tokenURI`)
+                }
+              } catch (error) {
+                console.warn(`❌ Failed to parse tokenURI for NFT #${nft.tokenId}:`, error)
+              }
+            }
 
             // Debug: Log the actual attributes structure
-            console.log(`🔍 NFT #${nft.tokenId} attributes:`, attributes)
-            console.log(`🔍 NFT #${nft.tokenId} metadata structure:`, {
-              attributes: nft.attributes,
-              metadata: nft.metadata,
-              metadataAttributes: nft.metadata?.attributes
-            })
+            console.log(`🔍 NFT #${nft.tokenId} final attributes:`, attributes)
+            console.log(`🔍 NFT #${nft.tokenId} full NFT object:`, nft)
+            console.log(`🔍 NFT #${nft.tokenId} metadata content:`, nft.metadata)
 
             const traits: RugTraits = {
               seed: BigInt(nft.tokenId || 0),
@@ -263,7 +296,11 @@ export default function GalleryPage() {
           } catch (error) {
             console.warn(`❌ Error processing Alchemy NFT ${nft.tokenId}:`, error)
           }
-        })
+          }
+        }
+
+        // Process all NFTs asynchronously
+        await processNFTs()
 
         console.log('📊 NFT processing complete:', {
           totalProcessed: alchemyData.nfts.length,
@@ -287,6 +324,7 @@ export default function GalleryPage() {
       console.error('Error processing Alchemy data:', error)
       setAlchemyError('Failed to process NFT data')
     }
+    })()
   }, [alchemyData, alchemyError, loadingAlchemy])
 
   // Handle loading timeout and fallback
