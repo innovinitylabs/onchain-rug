@@ -7,7 +7,6 @@ import Navigation from '@/components/Navigation'
 import NFTExporter from '@/components/NFTExporter'
 import Web3Minting from '@/components/Web3Minting'
 import SimpleMinting from '@/components/SimpleMinting'
-import Footer from '@/components/Footer'
 import { initPRNG, getPRNG, createDerivedPRNG } from '@/lib/DeterministicPRNG'
 
 export default function GeneratorPage() {
@@ -2220,7 +2219,7 @@ export default function GeneratorPage() {
             currentGeneration++
 
             // Schedule next generation with increasing delay for visual effect
-            setTimeout(autoGenerate, 111 + (currentGeneration * 200))
+            setTimeout(autoGenerate, 420 + (currentGeneration * 200))
           } else {
             // Final generation - update state so minting works
             const finalSeed = Math.floor(Math.random() * 100000)
@@ -2232,7 +2231,7 @@ export default function GeneratorPage() {
         }
 
         // Start the auto-generation cycle after canvas positioning is complete
-        setTimeout(autoGenerate, 690) // Wait 3 seconds for page to fully load and canvas to be positioned
+        setTimeout(autoGenerate, 1111) // Wait 3 seconds for page to fully load and canvas to be positioned
       }
 
       startAutoGeneration()
@@ -2861,8 +2860,8 @@ export default function GeneratorPage() {
 
                   {/* Web3 Minting Component */}
                   <Web3Minting
-                    textRows={typeof window !== 'undefined' ? (window as any).doormatTextRows || [''] : ['']}
-                    currentPalette={typeof window !== 'undefined' ? (window as any).selectedPalette || palette : palette}
+                    textRows={textInputs}
+                    currentPalette={palette}
                     currentStripeData={typeof window !== 'undefined' ? (window as any).stripeData || [] : []}
                     characterMap={typeof window !== 'undefined' ? (window as any).doormatData?.characterMap || {} : {}}
                     warpThickness={3}
@@ -2886,9 +2885,6 @@ export default function GeneratorPage() {
           <button id="toggleRowsBtn"></button>
         </div>
       </div>
-
-      {/* Footer */}
-      <Footer />
     </div>
   )
 }

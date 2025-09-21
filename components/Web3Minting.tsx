@@ -127,20 +127,6 @@ export default function Web3Minting({
       return
     }
 
-    // Debug: Log all the data being used for minting
-    console.log('🎨 Minting Debug Info:', {
-      textRows,
-      currentPalette,
-      currentStripeData,
-      characterMap: Object.keys(characterMap || {}).length + ' characters',
-      warpThickness,
-      globalDoormatData: typeof window !== 'undefined' ? !!(window as any).doormatData : false,
-      globalCharacterMap: typeof window !== 'undefined' ? !!(window as any).doormatData?.characterMap : false,
-      globalStripeData: typeof window !== 'undefined' ? !!((window as any).stripeData) : false,
-      globalDoormatTextRows: typeof window !== 'undefined' ? !!((window as any).doormatTextRows) : false,
-      globalSelectedPalette: typeof window !== 'undefined' ? !!((window as any).selectedPalette) : false,
-    })
-
     try {
       // Check if character map is available
       const globalCharacterMap = typeof window !== 'undefined' && (window as any).doormatData?.characterMap
@@ -235,7 +221,7 @@ export default function Web3Minting({
     return `🚀 Mint Rug (${mintCost} ETH)`
   }
 
-  const isButtonDisabled = !isConnected || isPending || isConfirming
+  const isButtonDisabled = !isConnected || isPending || isConfirming || isSuccess
 
   return (
     <div className="space-y-3">
