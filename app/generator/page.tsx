@@ -7,6 +7,7 @@ import Navigation from '@/components/Navigation'
 import NFTExporter from '@/components/NFTExporter'
 import Web3Minting from '@/components/Web3Minting'
 import SimpleMinting from '@/components/SimpleMinting'
+import Footer from '@/components/Footer'
 import { initPRNG, getPRNG, createDerivedPRNG } from '@/lib/DeterministicPRNG'
 
 export default function GeneratorPage() {
@@ -20,6 +21,7 @@ export default function GeneratorPage() {
   const [dirtLevel, setDirtLevel] = useState(0) // 0 = clean, 1 = 50% dirty, 2 = full dirty
   const [showTexture, setShowTexture] = useState(false)
   const [textureLevel, setTextureLevel] = useState(0) // 0 = none, 1 = 7 days, 2 = 30 days
+  const [warpThickness, setWarpThickness] = useState(2) // Default warp thickness
 
   // Copy to clipboard function
   const copyToClipboard = async (text: string, label: string) => {
@@ -1788,6 +1790,9 @@ export default function GeneratorPage() {
       // Generate initial doormat (will be replaced by auto-generation cycle after page loads)
       generateDoormatCore(currentSeed, doormatData)
 
+      // Update warp thickness state from generated doormat data
+      setWarpThickness(doormatData.warpThickness)
+
       // Update UI
       setIsLoaded(true)
       
@@ -2216,22 +2221,24 @@ export default function GeneratorPage() {
             const randomSeed = Math.floor(Math.random() * 100000)
             console.log(`🎲 Auto-generation ${currentGeneration + 1}/${generationCount} with seed: ${randomSeed}`)
             generateDoormatCore(randomSeed, doormatData)
+            setWarpThickness(doormatData.warpThickness) // Update warp thickness state
             currentGeneration++
 
             // Schedule next generation with increasing delay for visual effect
-            setTimeout(autoGenerate, 420 + (currentGeneration * 200))
+            setTimeout(autoGenerate, 111 + (currentGeneration * 200))
           } else {
             // Final generation - update state so minting works
             const finalSeed = Math.floor(Math.random() * 100000)
             console.log(`🎯 Final generation with seed: ${finalSeed}`)
             generateDoormatCore(finalSeed, doormatData)
             setCurrentSeed(finalSeed) // Update the state so minting works
+            setWarpThickness(doormatData.warpThickness) // Update warp thickness state
             console.log('✅ Auto-generation cycle complete - page fully ready!')
           }
         }
 
         // Start the auto-generation cycle after canvas positioning is complete
-        setTimeout(autoGenerate, 1111) // Wait 3 seconds for page to fully load and canvas to be positioned
+        setTimeout(autoGenerate, 690) // Wait 3 seconds for page to fully load and canvas to be positioned
       }
 
       startAutoGeneration()
@@ -2864,7 +2871,8 @@ export default function GeneratorPage() {
                     currentPalette={palette}
                     currentStripeData={typeof window !== 'undefined' ? (window as any).stripeData || [] : []}
                     characterMap={typeof window !== 'undefined' ? (window as any).doormatData?.characterMap || {} : {}}
-                    warpThickness={3}
+                    warpThickness={warpThickness}
+                    seed={currentSeed}
                   />
 
                 </div>
@@ -2885,6 +2893,9 @@ export default function GeneratorPage() {
           <button id="toggleRowsBtn"></button>
         </div>
       </div>
+
+      {/* Footer */}
+      <Footer />
     </div>
   )
 }

@@ -12,14 +12,16 @@ interface Web3MintingProps {
   currentStripeData: any[]
   characterMap: any
   warpThickness: number
+  seed: number
 }
 
-export default function Web3Minting({ 
-  textRows, 
-  currentPalette, 
-  currentStripeData, 
-  characterMap, 
-  warpThickness 
+export default function Web3Minting({
+  textRows,
+  currentPalette,
+  currentStripeData,
+  characterMap,
+  warpThickness,
+  seed
 }: Web3MintingProps) {
   const [isMinting, setIsMinting] = useState(false)
   const { address, isConnected } = useAccount()
@@ -111,10 +113,59 @@ export default function Web3Minting({
     }
   }
 
-  // Skip gas estimation - use fixed high gas limit to avoid wallet issues
-  const gasEstimate = null
-  const gasError = null
-  const gasLoading = false
+  // Gas estimation for the mint transaction
+  const { data: gasEstimate, error: gasError, isLoading: gasLoading } = useEstimateGas({
+    to: process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT as `0x${string}`,
+    data: isConnected ? (() => {
+      try {
+        const optimized = optimizeData()
+
+        // Encode the function call for gas estimation
+        const abi = [
+          {
+            "inputs": [
+              {"internalType": "string[]", "name": "textRows", "type": "string[]"},
+              {"internalType": "uint256", "name": "seed", "type": "uint256"},
+              {"internalType": "string", "name": "paletteName", "type": "string"},
+              {"internalType": "string", "name": "minifiedStripeData", "type": "string"},
+              {"internalType": "string", "name": "minifiedPalette", "type": "string"},
+              {"internalType": "string", "name": "filteredCharacterMap", "type": "string"},
+              {"internalType": "uint8", "name": "warpThickness", "type": "uint8"},
+              {"internalType": "uint8", "name": "complexity", "type": "uint8"},
+              {"internalType": "uint256", "name": "characterCount", "type": "uint256"},
+              {"internalType": "uint256", "name": "stripeCount", "type": "uint256"}
+            ],
+            "name": "mintRug",
+            "outputs": [],
+            "stateMutability": "payable",
+            "type": "function"
+          }
+        ] as const
+
+        // This will be used by wagmi to estimate gas
+        return {
+          functionName: 'mintRug',
+          abi,
+          args: [
+            optimized.textRows,
+            BigInt(seed),
+            optimized.palette.name,
+            JSON.stringify(optimized.stripeData),
+            JSON.stringify(optimized.palette),
+            JSON.stringify(optimized.characterMap),
+            warpThickness, // Using the actual warp thickness from generator
+            2, // complexity
+            BigInt(optimized.textRows.join('').length), // characterCount
+            BigInt(optimized.stripeData.length) // stripeCount
+          ],
+          value: parseEther(mintCost.toString()),
+        }
+      } catch (err) {
+        console.warn('Failed to prepare gas estimation data:', err)
+        return undefined
+      }
+    })() : undefined,
+  })
 
   const handleMint = async () => {
     if (!isConnected) {
@@ -135,15 +186,34 @@ export default function Web3Minting({
       }
 
       const optimized = optimizeData()
-      const seed = Math.floor(Math.random() * 4294967296) // Generate random seed
-      
-      // Use a very high fixed gas limit to avoid wallet simulation issues
-      const gasLimit = BigInt(5000000) // 5M gas - very high limit for Shape L2
+      // Use the seed from the generator (not random!)
+
+      // Use estimated gas with fallback for Shape L2
+      let gasLimit: bigint
+      if (gasEstimate) {
+        // Add 20% buffer to estimated gas
+        gasLimit = gasEstimate * BigInt(120) / BigInt(100)
+        console.log('Using estimated gas with buffer:', gasLimit.toString())
+      } else {
+        // Fallback gas limits for Shape L2 when estimation fails
+        const textLength = optimized.textRows.join('').length
+        const stripeCount = optimized.stripeData.length
+
+        if (textLength > 50 || stripeCount > 10) {
+          gasLimit = BigInt(3000000) // 3M gas for complex rugs
+        } else if (textLength > 20 || stripeCount > 5) {
+          gasLimit = BigInt(2000000) // 2M gas for medium complexity
+        } else {
+          gasLimit = BigInt(1500000) // 1.5M gas for simple rugs
+        }
+
+        console.log('Using fallback gas limit:', gasLimit.toString(), '(estimation failed)')
+      }
       
       console.log('Minting with optimized data:', {
         contract: process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT,
         textRows: optimized.textRows,
-        seed,
+        seed: seed, // Using the seed from the generator
         paletteName: optimized.palette.name,
         minifiedStripeData: JSON.stringify(optimized.stripeData),
         minifiedPalette: JSON.stringify(optimized.palette),
@@ -184,18 +254,18 @@ export default function Web3Minting({
           }
         ] as const,
         functionName: 'mintRug',
-        args: [
-          optimized.textRows,
-          BigInt(seed),
-          optimized.palette.name,
-          JSON.stringify(optimized.stripeData),
-          JSON.stringify(optimized.palette),
-          JSON.stringify(optimized.characterMap),
-          3, // warpThickness
-          2, // complexity
-          BigInt(optimized.textRows.join('').length), // characterCount
-          BigInt(optimized.stripeData.length) // stripeCount
-        ],
+          args: [
+            optimized.textRows,
+            BigInt(seed), // Using the seed from the generator
+            optimized.palette.name,
+            JSON.stringify(optimized.stripeData),
+            JSON.stringify(optimized.palette),
+            JSON.stringify(optimized.characterMap),
+            warpThickness, // Using the actual warp thickness from generator
+            2, // complexity
+            BigInt(optimized.textRows.join('').length), // characterCount
+            BigInt(optimized.stripeData.length) // stripeCount
+          ],
         value: parseEther(mintCost.toString()),
         gas: gasLimit,
         chain: chainId === 11011 ? shapeSepolia : shapeMainnet,
@@ -221,7 +291,7 @@ export default function Web3Minting({
     return `🚀 Mint Rug (${mintCost} ETH)`
   }
 
-  const isButtonDisabled = !isConnected || isPending || isConfirming || isSuccess
+  const isButtonDisabled = !isConnected || isPending || isConfirming
 
   return (
     <div className="space-y-3">
@@ -253,7 +323,7 @@ export default function Web3Minting({
       )}
 
       {/* Gas Estimation Status */}
-      {isConnected && !gasEstimate && !gasError && (
+      {isConnected && gasLoading && (
         <div className="bg-blue-900/30 border border-blue-500/30 rounded p-2">
           <div className="text-blue-400 text-xs font-mono">
             ⏳ Estimating gas costs...
@@ -264,15 +334,18 @@ export default function Web3Minting({
       {gasError && (
         <div className="bg-yellow-900/30 border border-yellow-500/30 rounded p-2">
           <div className="text-yellow-400 text-xs font-mono">
-            ⚠️ Gas estimation failed, using default gas limit (200,000)
+            ⚠️ Gas estimation failed, using adaptive fallback limit
+          </div>
+          <div className="text-yellow-300 text-xs mt-1">
+            Error: {gasError.message}
           </div>
         </div>
       )}
 
-      {gasEstimate && (
+      {gasEstimate && !gasError && (
         <div className="bg-green-900/30 border border-green-500/30 rounded p-2">
           <div className="text-green-400 text-xs font-mono">
-            ✅ Gas estimated: {gasEstimate.toString()} units
+            ✅ Gas estimated: {gasEstimate.toString()} units (+20% buffer)
           </div>
         </div>
       )}
