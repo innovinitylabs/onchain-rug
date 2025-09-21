@@ -118,11 +118,11 @@ export default function Features() {
                   </div>
 
                   <div className="flex-1 flex flex-col justify-center">
-                    <h3 className="text-2xl font-bold text-white mb-4 text-center">
+                    <h3 className="text-2xl font-bold mb-4 text-center" style={{ color: '#f8f9fa' }}>
                       {feature.title}
                     </h3>
 
-                    <p className="text-gray-300 leading-relaxed text-center">
+                    <p className="leading-relaxed text-center" style={{ color: '#f8f9fa', opacity: 0.9 }}>
                       {feature.description}
                     </p>
                   </div>
