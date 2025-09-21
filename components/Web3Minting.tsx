@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useChainId } from 'wagmi'
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useChainId, usePublicClient } from 'wagmi'
 import { parseEther } from 'viem'
 import { shapeSepolia, shapeMainnet } from '@/lib/web3'
 
@@ -32,6 +32,11 @@ export default function Web3Minting({
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
   })
+
+  const publicClient = usePublicClient()
+  const [gasEstimate, setGasEstimate] = useState<bigint | null>(null)
+  const [gasError, setGasError] = useState<string | null>(null)
+  const [gasLoading, setGasLoading] = useState(false)
 
   // Calculate minting cost - NO TEXT IS FREE TO MINT
   const calculateCost = () => {
@@ -115,12 +120,6 @@ export default function Web3Minting({
     }
   }
 
-  // Gas estimation disabled - using conservative fallback for Shape L2
-  // The complex contract operations make gas estimation unreliable
-  const gasEstimate = null
-  const gasError = null
-  const gasLoading = false
-
   const handleMint = async () => {
     if (!isConnected) {
       alert('Please connect your wallet first!')
@@ -142,28 +141,75 @@ export default function Web3Minting({
       const optimized = optimizeData()
       // Use the seed from the generator (not random!)
 
-      // Conservative gas limits for Shape L2 - complex contract operations need generous limits
+      // Try estimating gas first
       let gasLimit: bigint
+      setGasLoading(true)
+      try {
+        const est = await publicClient.estimateContractGas({
+          address: process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT as `0x${string}`,
+          abi: [
+            {
+              "inputs": [
+                {"internalType": "string[]", "name": "textRows", "type": "string[]"},
+                {"internalType": "uint256", "name": "seed", "type": "uint256"},
+                {"internalType": "string", "name": "paletteName", "type": "string"},
+                {"internalType": "string", "name": "minifiedStripeData", "type": "string"},
+                {"internalType": "string", "name": "minifiedPalette", "type": "string"},
+                {"internalType": "string", "name": "filteredCharacterMap", "type": "string"},
+                {"internalType": "uint8", "name": "warpThickness", "type": "uint8"},
+                {"internalType": "uint8", "name": "complexity", "type": "uint8"},
+                {"internalType": "uint256", "name": "characterCount", "type": "uint256"},
+                {"internalType": "uint256", "name": "stripeCount", "type": "uint256"}
+              ],
+              "name": "mintRug",
+              "outputs": [],
+              "stateMutability": "payable",
+              "type": "function"
+            }
+          ] as const,
+          functionName: 'mintRug',
+          args: [
+            optimized.textRows,
+            BigInt(seed),
+            optimized.palette.name,
+            JSON.stringify(optimized.stripeData),
+            JSON.stringify(optimized.palette),
+            JSON.stringify(optimized.characterMap),
+            warpThickness,
+            complexity,
+            BigInt(optimized.textRows.join('').length),
+            BigInt(optimized.stripeData.length)
+          ],
+          value: parseEther(mintCost.toString()),
+          account: address
+        })
+        gasLimit = est * BigInt(12) / BigInt(10) // add 20% buffer
+        setGasEstimate(gasLimit)
+        setGasError(null)
+      } catch (e: any) {
+        console.warn("Gas estimation failed, falling back to static limits:", e)
+        setGasError(e.message || "Estimation failed")
 
-      // Base gas limit for Shape L2 contract operations
-      const baseGasLimit = BigInt(8000000) // 8M gas - very generous for L2
+        // Conservative fallback for Shape L2
+        const baseGasLimit = BigInt(8000000)
+        const textLength = optimized.textRows.join('').length
+        const stripeCount = optimized.stripeData.length
+        const dataComplexity = textLength + (stripeCount * 100)
 
-      // Adjust based on data complexity (but keep it high)
-      const textLength = optimized.textRows.join('').length
-      const stripeCount = optimized.stripeData.length
-      const dataComplexity = textLength + (stripeCount * 100) // Rough complexity metric
-
-      if (dataComplexity > 1000) {
-        gasLimit = baseGasLimit // Max complexity
-      } else if (dataComplexity > 500) {
-        gasLimit = baseGasLimit * BigInt(90) / BigInt(100) // 90% for high complexity
-      } else if (dataComplexity > 200) {
-        gasLimit = baseGasLimit * BigInt(80) / BigInt(100) // 80% for medium complexity
-      } else {
-        gasLimit = baseGasLimit * BigInt(70) / BigInt(100) // 70% for simple rugs
+        if (dataComplexity > 1000) {
+          gasLimit = baseGasLimit
+        } else if (dataComplexity > 500) {
+          gasLimit = baseGasLimit * BigInt(90) / BigInt(100)
+        } else if (dataComplexity > 200) {
+          gasLimit = baseGasLimit * BigInt(80) / BigInt(100)
+        } else {
+          gasLimit = baseGasLimit * BigInt(70) / BigInt(100)
+        }
       }
 
-      console.log('Using Shape L2 gas limit:', gasLimit.toString(), `(data complexity: ${dataComplexity})`)
+      setGasLoading(false)
+
+      console.log('Using gas limit:', gasLimit.toString())
       
       console.log('Minting with optimized data:', {
         contract: process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT,
@@ -281,11 +327,13 @@ export default function Web3Minting({
       {isConnected && (
         <div className="bg-green-900/30 border border-green-500/30 rounded p-2">
           <div className="text-green-400 text-xs font-mono">
-            ⛽ Using conservative gas limits for Shape L2
+            ⛽ {gasLoading ? "Estimating gas..." : gasEstimate ? `Estimated gas: ${gasEstimate.toString()}` : "Using fallback gas limits"}
           </div>
-          <div className="text-green-300 text-xs mt-1">
-            Gas estimation disabled for complex contract operations
-          </div>
+          {gasError && (
+            <div className="text-red-300 text-xs mt-1">
+              Estimation error: {gasError}
+            </div>
+          )}
         </div>
       )}
 
