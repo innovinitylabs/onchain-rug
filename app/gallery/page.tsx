@@ -207,27 +207,92 @@ export default function GalleryPage() {
             name: nft.name,
             description: nft.description,
             animation_url: !!nft.animation_url,
-            attributes: nft.metadata?.attributes?.length || 0,
-            hasMetadata: !!nft.metadata,
-            owners: nft.owners
+            rawMetadataAttributes: nft.raw?.metadata?.attributes?.length || 0,
+            hasRawMetadata: !!nft.raw?.metadata,
+            owners: nft.owners?.length || 0
           })
           try {
-            // Extract traits from metadata attributes
-            const attributes = nft.attributes || nft.metadata?.attributes || []
+            // Extract traits from Alchemy's raw.metadata.attributes (the actual tokenURI metadata)
+            const attributes = nft.raw?.metadata?.attributes || []
 
+            // Debug: Log the actual attributes structure from Alchemy
+            console.log(`🔍 NFT #${nft.tokenId} raw metadata attributes:`, attributes)
+            console.log(`🔍 NFT #${nft.tokenId} full Alchemy structure:`, {
+              raw: nft.raw,
+              metadata: nft.raw?.metadata,
+              attributes: nft.raw?.metadata?.attributes,
+              topLevelAttributes: nft.attributes
+            })
+
+            // Start with default values, then dynamically parse from metadata
             const traits: RugTraits = {
               seed: BigInt(nft.tokenId || 0),
-              paletteName: attributes.find((a: any) => a.trait_type === 'Palette Name')?.value || 'Default Palette',
+              paletteName: 'Default Palette',
               minifiedPalette: '', // Not available from Alchemy
               minifiedStripeData: '', // Not available from Alchemy
               textRows: [], // Not available from Alchemy
-              warpThickness: Number(attributes.find((a: any) => a.trait_type === 'Warp Thickness')?.value || 3),
+              warpThickness: 3,
               mintTime: nft.mint?.timestamp ? BigInt(new Date(nft.mint.timestamp).getTime()) : BigInt(Date.now()),
               filteredCharacterMap: '', // Not available from Alchemy
-              complexity: Number(attributes.find((a: any) => a.trait_type === 'Complexity')?.value || 2),
-              characterCount: BigInt(attributes.find((a: any) => a.trait_type === 'Character Count')?.value || 1),
-              stripeCount: BigInt(attributes.find((a: any) => a.trait_type === 'Stripe Count')?.value || 0),
+              complexity: 2,
+              characterCount: BigInt(1),
+              stripeCount: BigInt(0),
             }
+
+            // Dynamic trait mapping: trait_type from tokenURI metadata -> RugTraits field
+            const traitMapping: Record<string, keyof RugTraits> = {
+              'Palette Name': 'paletteName',
+              'Warp Thickness': 'warpThickness',
+              'Complexity': 'complexity',
+              'Character Count': 'characterCount',
+              'Stripe Count': 'stripeCount',
+              // Note: 'Text Lines' gives count but RugTraits expects textRows array
+              // Note: 'Dirt Level' exists in metadata but not in RugTraits interface
+            }
+
+            // Parse attributes from nft.raw.metadata.attributes (the decoded tokenURI)
+            attributes.forEach((attr: any) => {
+              const traitType = attr.trait_type
+              const value = attr.value
+              const fieldName = traitMapping[traitType]
+
+              if (fieldName && fieldName in traits) {
+                // Type conversion based on the field type
+                switch (fieldName) {
+                  case 'characterCount':
+                  case 'stripeCount':
+                    (traits as any)[fieldName] = BigInt(value)
+                    break
+                  case 'warpThickness':
+                  case 'complexity':
+                    (traits as any)[fieldName] = Number(value)
+                    break
+                  case 'paletteName':
+                    (traits as any)[fieldName] = String(value)
+                    break
+                  default:
+                    // For other fields, keep as string for now
+                    (traits as any)[fieldName] = value
+                }
+                console.log(`✅ Mapped ${traitType} -> ${fieldName}: ${value}`)
+              } else if (traitType === 'Text Lines') {
+                // Special case: Text Lines gives count but we need textRows array
+                console.log(`ℹ️ Text Lines trait: ${value} (count only, no actual text)`)
+              } else if (traitType === 'Dirt Level') {
+                console.log(`ℹ️ Dirt Level trait: ${value} (not in RugTraits interface)`)
+              } else {
+                console.log(`❓ Unknown trait type: ${traitType} = ${value}`)
+              }
+            })
+
+            // Debug: Show final parsed traits
+            console.log(`🎯 NFT #${nft.tokenId} parsed traits:`, {
+              paletteName: traits.paletteName,
+              warpThickness: traits.warpThickness,
+              complexity: traits.complexity,
+              characterCount: traits.characterCount.toString(),
+              stripeCount: traits.stripeCount.toString()
+            })
 
             const nftItem: NFTData = {
               tokenId: Number(nft.tokenId),
