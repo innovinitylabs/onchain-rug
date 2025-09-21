@@ -215,6 +215,14 @@ export default function GalleryPage() {
             // Extract traits from metadata attributes
             const attributes = nft.attributes || nft.metadata?.attributes || []
 
+            // Debug: Log the actual attributes structure
+            console.log(`🔍 NFT #${nft.tokenId} attributes:`, attributes)
+            console.log(`🔍 NFT #${nft.tokenId} metadata structure:`, {
+              attributes: nft.attributes,
+              metadata: nft.metadata,
+              metadataAttributes: nft.metadata?.attributes
+            })
+
             const traits: RugTraits = {
               seed: BigInt(nft.tokenId || 0),
               paletteName: attributes.find((a: any) => a.trait_type === 'Palette Name')?.value || 'Default Palette',
@@ -228,6 +236,15 @@ export default function GalleryPage() {
               characterCount: BigInt(attributes.find((a: any) => a.trait_type === 'Character Count')?.value || 1),
               stripeCount: BigInt(attributes.find((a: any) => a.trait_type === 'Stripe Count')?.value || 0),
             }
+
+            // Debug: Log the extracted traits
+            console.log(`🎯 NFT #${nft.tokenId} extracted traits:`, {
+              paletteName: traits.paletteName,
+              warpThickness: traits.warpThickness,
+              complexity: traits.complexity,
+              characterCount: traits.characterCount.toString(),
+              stripeCount: traits.stripeCount.toString()
+            })
 
             const nftItem: NFTData = {
               tokenId: Number(nft.tokenId),
