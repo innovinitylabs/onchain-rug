@@ -441,10 +441,10 @@ export default function Navigation() {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
           className="fixed inset-0 z-40 md:hidden"
-          style={{
-            background: 'rgba(0, 0, 0, 0.5)',
-            backdropFilter: 'blur(8px)',
-          }}
+          // style={{
+          //   // background: 'rgba(0, 0, 0, 0.5)',
+          //   backdropFilter: 'blur(8px)',
+          // }}
           onClick={closeMobileMenu}
         >
           <motion.div
@@ -461,7 +461,7 @@ export default function Navigation() {
                 aberrationIntensity={3}
                 elasticity={0.1}
                 cornerRadius={16}
-                background="linear-gradient(180deg, rgba(30, 58, 138, 0.95) 0%, rgba(67, 56, 202, 0.95) 100%)"
+                // background="linear-gradient(180deg, rgba(30, 58, 138, 0.95) 0%, rgba(67, 56, 202, 0.95) 100%)"
                 className="h-full w-full"
               >
             {/* Mobile Menu Header */}
