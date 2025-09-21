@@ -7,6 +7,7 @@ import { ExternalLink, Filter, SortAsc, Grid, List, RefreshCw, ChevronDown, Chev
 import { onchainRugsABI, contractAddresses } from '@/lib/web3'
 import { config } from '@/lib/config'
 import Navigation from '@/components/Navigation'
+import Footer from '@/components/Footer'
 
 // Types for our NFT data
 interface RugTraits {
@@ -872,6 +873,9 @@ export default function GalleryPage() {
           </div>
         </div>
       </div>
+
+      {/* Footer */}
+      <Footer />
     </div>
   )
 }
