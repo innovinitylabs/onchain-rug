@@ -2119,7 +2119,7 @@ export default function GeneratorPage() {
     }
   }
 
-  // Update text input
+  // Update text input with automatic embedding
   const updateTextInput = (index: number, value: string) => {
     const newInputs = [...textInputs]
     // Allow all characters from the characterMap: A-Z, 0-9, space, ?, _, !, @, #, $, &, %, +, -, (, ), [, ], *, =, ', ", .
@@ -2129,12 +2129,18 @@ export default function GeneratorPage() {
       .filter(char => allowedChars.includes(char))
       .join('')
       .slice(0, 11)
+
+    // Automatically embed text as user types (with small delay to avoid excessive updates)
     setTextInputs(newInputs)
+    setTimeout(() => {
+      addTextToDoormat(newInputs)
+    }, 50)
   }
 
   // Add text to doormat
-  const addTextToDoormat = () => {
-    const validTexts = textInputs.filter(text => text.trim().length > 0)
+  const addTextToDoormat = (inputs?: string[]) => {
+    const inputsToUse = inputs || textInputs
+    const validTexts = inputsToUse.filter(text => text.trim().length > 0)
     
     if (validTexts.length > 0 && typeof window !== 'undefined' && (window as any).doormatData) {
       (window as any).doormatData.doormatTextRows = validTexts
@@ -2548,14 +2554,6 @@ export default function GeneratorPage() {
                         ADD ROW
                       </button>
                     )}
-                    <button
-                      onClick={addTextToDoormat}
-                      disabled={!isLoaded}
-                      className="bg-purple-600/80 hover:bg-purple-600 disabled:bg-gray-700 text-white px-3 py-1.5 rounded font-mono transition-all duration-200 border border-purple-400 flex items-center gap-1.5 text-xs"
-                    >
-                      <FileText className="w-3 h-3" />
-                      EMBED
-                    </button>
                     <button
                       onClick={clearText}
                       className="bg-gray-600/80 hover:bg-gray-600 text-white px-3 py-1.5 rounded font-mono transition-all duration-200 border border-gray-400 text-xs"
