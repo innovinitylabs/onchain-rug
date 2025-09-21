@@ -171,18 +171,17 @@ export default function GalleryPage() {
 
   // Process Alchemy NFT data - much simpler!
   useEffect(() => {
-    (async () => {
-      console.log('🔄 Processing useEffect triggered:', {
-        hasAlchemyData: !!alchemyData,
-        hasAlchemyError: !!alchemyError,
-        loadingAlchemy,
-        loading,
-        initialLoad,
-        nftsLength: nfts.length,
-        alchemyDataLength: alchemyData?.nfts?.length || 0
-      })
+    console.log('🔄 Processing useEffect triggered:', {
+      hasAlchemyData: !!alchemyData,
+      hasAlchemyError: !!alchemyError,
+      loadingAlchemy,
+      loading,
+      initialLoad,
+      nftsLength: nfts.length,
+      alchemyDataLength: alchemyData?.nfts?.length || 0
+    })
 
-      if (!alchemyData || alchemyError) {
+    if (!alchemyData || alchemyError) {
       console.log('⏸️ Skipping processing - no data or error:', {
         alchemyData: !!alchemyData,
         alchemyError: alchemyError
@@ -203,75 +202,91 @@ export default function GalleryPage() {
       // Process Alchemy NFT data
       if (alchemyData.nfts && Array.isArray(alchemyData.nfts)) {
         console.log('🎯 Processing', alchemyData.nfts.length, 'NFTs from Alchemy')
-        // Process NFTs with async trait fetching
-        const processNFTs = async () => {
-          for (const [index, nft] of alchemyData.nfts.entries()) {
-            console.log(`🆔 NFT #${nft.tokenId} (index ${index}):`, {
-              name: nft.name,
-              description: nft.description,
-              animation_url: !!nft.animation_url,
-              attributes: nft.metadata?.attributes?.length || 0,
-              hasMetadata: !!nft.metadata,
-              owners: nft.owners
+        alchemyData.nfts.forEach((nft: any, index: number) => {
+          console.log(`🆔 NFT #${nft.tokenId} (index ${index}):`, {
+            name: nft.name,
+            description: nft.description,
+            animation_url: !!nft.animation_url,
+            rawMetadataAttributes: nft.raw?.metadata?.attributes?.length || 0,
+            hasRawMetadata: !!nft.raw?.metadata,
+            owners: nft.owners?.length || 0
+          })
+          try {
+            // Extract traits from Alchemy's raw.metadata.attributes (the actual tokenURI metadata)
+            const attributes = nft.raw?.metadata?.attributes || []
+
+            // Debug: Log the actual attributes structure from Alchemy
+            console.log(`🔍 NFT #${nft.tokenId} raw metadata attributes:`, attributes)
+            console.log(`🔍 NFT #${nft.tokenId} full Alchemy structure:`, {
+              raw: nft.raw,
+              metadata: nft.raw?.metadata,
+              attributes: nft.raw?.metadata?.attributes,
+              topLevelAttributes: nft.attributes
             })
-            try {
-            // Extract traits from metadata attributes
-            let attributes = nft.attributes || nft.metadata?.attributes || []
 
-            // If no attributes from Alchemy, try to manually fetch and parse tokenURI
-            const tokenUri = nft.tokenUri || nft.token_uri || nft.tokenUri
-            if ((!attributes || attributes.length === 0) && tokenUri) {
-              console.log(`🔄 NFT #${nft.tokenId} has no attributes, fetching tokenURI manually...`)
-              console.log(`🔗 TokenURI: ${tokenUri}`)
-              try {
-                const tokenUriResponse = await fetch(tokenUri)
-                if (tokenUriResponse.ok) {
-                  const tokenUriText = await tokenUriResponse.text()
-                  console.log(`📄 NFT #${nft.tokenId} raw tokenURI:`, tokenUriText.substring(0, 200) + '...')
-
-                  // Try to parse as JSON (might be data:application/json;base64,...)
-                  let metadataJson
-                  if (tokenUriText.startsWith('data:application/json;base64,')) {
-                    const base64Data = tokenUriText.replace('data:application/json;base64,', '')
-                    const decoded = atob(base64Data)
-                    metadataJson = JSON.parse(decoded)
-                  } else if (tokenUriText.startsWith('data:application/json,')) {
-                    const jsonData = tokenUriText.replace('data:application/json,', '')
-                    metadataJson = JSON.parse(jsonData)
-                  } else {
-                    metadataJson = JSON.parse(tokenUriText)
-                  }
-
-                  console.log(`📊 NFT #${nft.tokenId} parsed metadata:`, metadataJson)
-                  attributes = metadataJson.attributes || []
-                  console.log(`✅ NFT #${nft.tokenId} extracted ${attributes.length} attributes from tokenURI`)
-                }
-              } catch (error) {
-                console.warn(`❌ Failed to parse tokenURI for NFT #${nft.tokenId}:`, error)
-              }
-            }
-
-            // Debug: Log the actual attributes structure
-            console.log(`🔍 NFT #${nft.tokenId} final attributes:`, attributes)
-            console.log(`🔍 NFT #${nft.tokenId} full NFT object:`, nft)
-            console.log(`🔍 NFT #${nft.tokenId} metadata content:`, nft.metadata)
-
+            // Start with default values, then dynamically parse from metadata
             const traits: RugTraits = {
               seed: BigInt(nft.tokenId || 0),
-              paletteName: attributes.find((a: any) => a.trait_type === 'Palette Name')?.value || 'Default Palette',
+              paletteName: 'Default Palette',
               minifiedPalette: '', // Not available from Alchemy
               minifiedStripeData: '', // Not available from Alchemy
               textRows: [], // Not available from Alchemy
-              warpThickness: Number(attributes.find((a: any) => a.trait_type === 'Warp Thickness')?.value || 3),
+              warpThickness: 3,
               mintTime: nft.mint?.timestamp ? BigInt(new Date(nft.mint.timestamp).getTime()) : BigInt(Date.now()),
               filteredCharacterMap: '', // Not available from Alchemy
-              complexity: Number(attributes.find((a: any) => a.trait_type === 'Complexity')?.value || 2),
-              characterCount: BigInt(attributes.find((a: any) => a.trait_type === 'Character Count')?.value || 1),
-              stripeCount: BigInt(attributes.find((a: any) => a.trait_type === 'Stripe Count')?.value || 0),
+              complexity: 2,
+              characterCount: BigInt(1),
+              stripeCount: BigInt(0),
             }
 
-            // Debug: Log the extracted traits
-            console.log(`🎯 NFT #${nft.tokenId} extracted traits:`, {
+            // Dynamic trait mapping: trait_type from tokenURI metadata -> RugTraits field
+            const traitMapping: Record<string, keyof RugTraits> = {
+              'Palette Name': 'paletteName',
+              'Warp Thickness': 'warpThickness',
+              'Complexity': 'complexity',
+              'Character Count': 'characterCount',
+              'Stripe Count': 'stripeCount',
+              // Note: 'Text Lines' gives count but RugTraits expects textRows array
+              // Note: 'Dirt Level' exists in metadata but not in RugTraits interface
+            }
+
+            // Parse attributes from nft.raw.metadata.attributes (the decoded tokenURI)
+            attributes.forEach((attr: any) => {
+              const traitType = attr.trait_type
+              const value = attr.value
+              const fieldName = traitMapping[traitType]
+
+              if (fieldName && fieldName in traits) {
+                // Type conversion based on the field type
+                switch (fieldName) {
+                  case 'characterCount':
+                  case 'stripeCount':
+                    (traits as any)[fieldName] = BigInt(value)
+                    break
+                  case 'warpThickness':
+                  case 'complexity':
+                    (traits as any)[fieldName] = Number(value)
+                    break
+                  case 'paletteName':
+                    (traits as any)[fieldName] = String(value)
+                    break
+                  default:
+                    // For other fields, keep as string for now
+                    (traits as any)[fieldName] = value
+                }
+                console.log(`✅ Mapped ${traitType} -> ${fieldName}: ${value}`)
+              } else if (traitType === 'Text Lines') {
+                // Special case: Text Lines gives count but we need textRows array
+                console.log(`ℹ️ Text Lines trait: ${value} (count only, no actual text)`)
+              } else if (traitType === 'Dirt Level') {
+                console.log(`ℹ️ Dirt Level trait: ${value} (not in RugTraits interface)`)
+              } else {
+                console.log(`❓ Unknown trait type: ${traitType} = ${value}`)
+              }
+            })
+
+            // Debug: Show final parsed traits
+            console.log(`🎯 NFT #${nft.tokenId} parsed traits:`, {
               paletteName: traits.paletteName,
               warpThickness: traits.warpThickness,
               complexity: traits.complexity,
@@ -296,11 +311,7 @@ export default function GalleryPage() {
           } catch (error) {
             console.warn(`❌ Error processing Alchemy NFT ${nft.tokenId}:`, error)
           }
-          }
-        }
-
-        // Process all NFTs asynchronously
-        await processNFTs()
+        })
 
         console.log('📊 NFT processing complete:', {
           totalProcessed: alchemyData.nfts.length,
@@ -324,7 +335,6 @@ export default function GalleryPage() {
       console.error('Error processing Alchemy data:', error)
       setAlchemyError('Failed to process NFT data')
     }
-    })()
   }, [alchemyData, alchemyError, loadingAlchemy])
 
   // Handle loading timeout and fallback
