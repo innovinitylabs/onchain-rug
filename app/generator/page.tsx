@@ -2861,8 +2861,8 @@ export default function GeneratorPage() {
 
                   {/* Web3 Minting Component */}
                   <Web3Minting
-                    textRows={textInputs}
-                    currentPalette={palette}
+                    textRows={typeof window !== 'undefined' ? (window as any).doormatTextRows || [''] : ['']}
+                    currentPalette={typeof window !== 'undefined' ? (window as any).selectedPalette || palette : palette}
                     currentStripeData={typeof window !== 'undefined' ? (window as any).stripeData || [] : []}
                     characterMap={typeof window !== 'undefined' ? (window as any).doormatData?.characterMap || {} : {}}
                     warpThickness={3}
