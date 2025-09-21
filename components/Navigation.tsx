@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { Home, Palette, Image, Sparkles, Menu, X } from 'lucide-react'
 import { WalletConnect } from './wallet-connect'
+import LiquidGlass from './LiquidGlass'
 
 export default function Navigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -451,9 +452,17 @@ export default function Navigation() {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'tween', duration: 0.3 }}
-            className="fixed right-0 top-0 h-full w-80 max-w-[90vw] bg-gradient-to-b from-blue-900/95 to-indigo-900/95 backdrop-blur-xl"
+            className="fixed right-0 top-0 h-full w-80 max-w-[90vw]"
             onClick={(e) => e.stopPropagation()}
           >
+            <LiquidGlass
+              blurAmount={0.15}
+              aberrationIntensity={3}
+              elasticity={0.1}
+              cornerRadius={0}
+              background="linear-gradient(180deg, rgba(30, 58, 138, 0.95) 0%, rgba(67, 56, 202, 0.95) 100%)"
+              className="h-full w-full"
+            >
             {/* Mobile Menu Header */}
             <div className="flex items-center justify-between p-6 border-b border-white/10">
               <h3 className="text-xl font-bold text-white">Menu</h3>
@@ -503,6 +512,7 @@ export default function Navigation() {
                 <WalletConnect />
               </div>
             </div>
+            </LiquidGlass>
           </motion.div>
         </motion.div>
       )}
