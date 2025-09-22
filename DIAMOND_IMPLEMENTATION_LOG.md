@@ -205,11 +205,21 @@ contracts/
 - ✅ Progression info for UI display
 - ✅ Time-to-next-aging calculations
 
-### Next: RugMaintenanceFacet
-- Cleaning functionality with payment
-- Restoration services
-- Master restoration (full reset)
-- Cost calculations and validations
+### Next: RugMaintenanceFacet ✅ COMPLETED
+- ✅ Cleaning functionality with ETH payment validation
+- ✅ Restoration services (reduce texture by 1 level)
+- ✅ Master restoration (complete aging reset)
+- ✅ Free cleaning logic (initial mint period + maintenance windows)
+- ✅ Cost calculations for all services
+- ✅ Safe ETH handling with `call()` method
+- ✅ Comprehensive maintenance options queries
+- ✅ Integration with aging calculations
+
+### Next: RugCommerceFacet
+- Withdraw function with `call()` for safety
+- EIP-2981 royalty system with multiple wallets
+- Royalty percentage configuration
+- Revenue distribution tracking
 
 ---
 
