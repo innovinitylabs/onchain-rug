@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.22;
 
-import {IERC2981} from "@openzeppelin/contracts/interfaces/IERC2981.sol";
 import {LibRugStorage} from "../libraries/LibRugStorage.sol";
 import {LibDiamond} from "../diamond/libraries/LibDiamond.sol";
 
@@ -10,7 +9,7 @@ import {LibDiamond} from "../diamond/libraries/LibDiamond.sol";
  * @notice Commerce facet for OnchainRugs withdrawals and royalties
  * @dev Handles ETH withdrawals and EIP-2981 royalty system
  */
-contract RugCommerceFacet is IERC2981 {
+contract RugCommerceFacet {
 
     // Events
     event Withdrawn(address indexed to, uint256 amount);
@@ -123,7 +122,6 @@ contract RugCommerceFacet is IERC2981 {
     function royaltyInfo(uint256 tokenId, uint256 salePrice)
         external
         view
-        override
         returns (address receiver, uint256 royaltyAmount)
     {
         RoyaltyConfig storage rs = royaltyStorage();
@@ -227,20 +225,7 @@ contract RugCommerceFacet is IERC2981 {
         return rs.recipients.length > 0 && rs.royaltyPercentage > 0;
     }
 
-    // ERC-165 support
-    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
-        return
-            interfaceId == type(IERC2981).interfaceId ||
-            interfaceId == 0x01ffc9a7; // ERC165
-    }
+    // Note: supportsInterface removed to avoid conflict with ERC721's supportsInterface
 
-    // Receive function to accept ETH payments
-    receive() external payable {
-        emit RevenueReceived(msg.value, "direct");
-    }
-
-    // Fallback function
-    fallback() external payable {
-        emit RevenueReceived(msg.value, "fallback");
-    }
+    // Note: receive() and fallback() functions removed as Diamond handles ETH reception
 }

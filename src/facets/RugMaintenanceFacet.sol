@@ -199,7 +199,12 @@ contract RugMaintenanceFacet {
     /**
      * @notice Get maintenance options available for a rug
      * @param tokenId Token ID to check
-     * @return canClean, canRestore, needsMaster, cleaningCost, restorationCost, masterCost
+     * @return canClean Whether the rug can be cleaned
+     * @return canRestore Whether the rug can be restored
+     * @return needsMaster Whether master restoration is needed
+     * @return cleaningCost Cost to clean the rug
+     * @return restorationCost Cost to restore the rug
+     * @return masterCost Cost for master restoration
      */
     function getMaintenanceOptions(uint256 tokenId) external view returns (
         bool canClean,

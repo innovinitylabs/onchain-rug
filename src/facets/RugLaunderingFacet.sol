@@ -3,6 +3,7 @@ pragma solidity ^0.8.22;
 
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {LibRugStorage} from "../libraries/LibRugStorage.sol";
+import {LibDiamond} from "../diamond/libraries/LibDiamond.sol";
 
 /**
  * @title RugLaunderingFacet
@@ -169,7 +170,7 @@ contract RugLaunderingFacet {
         }
 
         // Get maximum of last 3 sales
-        uint256 maxRecentPrice = getMaxRecentSalePrice(tokenId);
+        uint256 maxRecentPrice = _getMaxRecentSalePrice(tokenId);
 
         // Condition 1: Sale price above laundering threshold
         bool aboveThreshold = salePrice >= rs.launderingThreshold;
@@ -213,5 +214,19 @@ contract RugLaunderingFacet {
         (bool shouldTrigger, string memory reason) = _checkLaunderingConditions(tokenId, salePrice);
 
         emit RugLaundered(tokenId, buyer, salePrice, reason);
+    }
+
+    // Internal helper functions
+
+    function _getMaxRecentSalePrice(uint256 tokenId) internal view returns (uint256) {
+        LibRugStorage.AgingData storage aging = LibRugStorage.rugStorage().agingData[tokenId];
+
+        uint256 maxPrice = 0;
+        for (uint256 i = 0; i < 3; i++) {
+            if (aging.recentSalePrices[i] > maxPrice) {
+                maxPrice = aging.recentSalePrices[i];
+            }
+        }
+        return maxPrice;
     }
 }
