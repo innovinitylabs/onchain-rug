@@ -195,11 +195,21 @@ contracts/
 - ✅ Laundering toggle
 - ✅ Configuration view functions
 
-### Next: RugAgingFacet
-- Dirt level calculations
-- Texture aging mechanics
-- Time-based progression
-- Aging state queries
+### Next: RugAgingFacet ✅ COMPLETED
+- ✅ Dirt level calculations (0-2 levels)
+- ✅ Texture aging mechanics (0-10 levels, configurable)
+- ✅ Time-based progression with thresholds
+- ✅ Aging state queries and statistics
+- ✅ Free cleaning eligibility checks
+- ✅ Well-maintained status detection
+- ✅ Progression info for UI display
+- ✅ Time-to-next-aging calculations
+
+### Next: RugMaintenanceFacet
+- Cleaning functionality with payment
+- Restoration services
+- Master restoration (full reset)
+- Cost calculations and validations
 
 ---
 
