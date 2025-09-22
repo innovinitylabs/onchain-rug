@@ -166,4 +166,41 @@ contracts/
 
 ---
 
+## 🚀 Phase 2: Rug-Specific Facets (Starting Now)
+
+### Objectives
+- [ ] Create RugNFTFacet (ERC721 core + minting)
+- [ ] Add RugAgingFacet (dirt/texture aging)
+- [ ] Implement RugMaintenanceFacet (cleaning/restoration)
+- [ ] Build RugCommerceFacet (withdraw/royalties/pricing)
+- [ ] Add RugAdminFacet (owner controls)
+- [ ] Create RugLaunderingFacet (sale tracking)
+
+### Current Focus: RugNFTFacet ✅ COMPLETED
+- ✅ ERC721 compliance with ERC721URIStorage
+- ✅ Minting with configurable pricing
+- ✅ Text uniqueness enforcement
+- ✅ Wallet limits (7 per wallet) with exceptions
+- ✅ Basic token URI generation
+- ✅ Burn functionality
+- ✅ Supply tracking
+- ✅ Shared storage integration
+
+### Next: RugAdminFacet ✅ COMPLETED
+- ✅ Owner controls for all parameters
+- ✅ Pricing configuration (mint + services)
+- ✅ Aging parameter updates
+- ✅ Exception list management
+- ✅ Launch status controls
+- ✅ Laundering toggle
+- ✅ Configuration view functions
+
+### Next: RugAgingFacet
+- Dirt level calculations
+- Texture aging mechanics
+- Time-based progression
+- Aging state queries
+
+---
+
 *This log maintains implementation context and progress tracking.*
