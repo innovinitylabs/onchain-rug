@@ -215,11 +215,41 @@ contracts/
 - ✅ Comprehensive maintenance options queries
 - ✅ Integration with aging calculations
 
-### Next: RugCommerceFacet
-- Withdraw function with `call()` for safety
-- EIP-2981 royalty system with multiple wallets
-- Royalty percentage configuration
-- Revenue distribution tracking
+### Next: RugCommerceFacet ✅ COMPLETED
+- ✅ Withdraw functions with `call()` for safety
+- ✅ EIP-2981 royalty system with multi-recipient support
+- ✅ Royalty percentage and wallet configuration
+- ✅ Royalty distribution with configurable splits
+- ✅ Revenue tracking and balance queries
+- ✅ ERC-165 interface support
+- ✅ Safe ETH handling throughout
+
+### Next: RugLaunderingFacet ✅ COMPLETED
+- ✅ Sale price tracking (last 3 sales with rotation)
+- ✅ Auto-laundering logic (threshold + recent max conditions)
+- ✅ Laundering threshold configuration (owner-controlled)
+- ✅ Sale event processing and laundering triggers
+- ✅ Laundering execution (dirt reset, texture continues)
+- ✅ Comprehensive laundering statistics and queries
+- ✅ Safe sale recording with validation
+
+---
+
+## 🎉 PHASE 2 COMPLETE: ALL RUG FACETS IMPLEMENTED!
+
+### **Core Rug Features ✅ COMPLETED:**
+- **RugNFTFacet**: ERC721 minting with pricing, uniqueness, limits
+- **RugAdminFacet**: Owner controls for all parameters
+- **RugAgingFacet**: Dynamic dirt/texture aging system
+- **RugMaintenanceFacet**: Cleaning/restoration services
+- **RugCommerceFacet**: Safe withdrawals + EIP-2981 royalties
+- **RugLaunderingFacet**: Sale tracking + auto-cleaning
+
+### **Next: Phase 3 - Integration & Testing**
+- Diamond deployment with all facets
+- Function selectors and facet cuts
+- Foundry tests for Rug functionality
+- Integration with existing Scripty.sol system
 
 ---
 
