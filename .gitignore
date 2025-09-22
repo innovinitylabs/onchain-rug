@@ -96,5 +96,6 @@ jspm_packages/
 mint-ui-config.js
 mint-ui-config-template.js
 
-
+# Reference implementations
+diamond-3-hardhat/
 scripty-sol-original/
