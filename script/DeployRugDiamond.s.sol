@@ -283,7 +283,7 @@ contract DeployRugDiamond is Script {
     }
 
     function _getRugAdminSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](15);
+        bytes4[] memory selectors = new bytes4[](16);
         selectors[0] = RugAdminFacet.updateCollectionCap.selector;
         selectors[1] = RugAdminFacet.updateWalletLimit.selector;
         selectors[2] = RugAdminFacet.updateMintPricing.selector;
@@ -293,12 +293,13 @@ contract DeployRugDiamond is Script {
         selectors[6] = RugAdminFacet.removeFromExceptionList.selector;
         selectors[7] = RugAdminFacet.setLaunderingEnabled.selector;
         selectors[8] = RugAdminFacet.setLaunchStatus.selector;
-        selectors[9] = RugAdminFacet.getConfig.selector;
-        selectors[10] = RugAdminFacet.getMintPricing.selector;
-        selectors[11] = RugAdminFacet.getServicePricing.selector;
-        selectors[12] = RugAdminFacet.getAgingThresholds.selector;
-        selectors[13] = RugAdminFacet.getExceptionList.selector;
-        selectors[14] = RugAdminFacet.isConfigured.selector;
+        selectors[9] = RugAdminFacet.setScriptyContracts.selector;
+        selectors[10] = RugAdminFacet.getConfig.selector;
+        selectors[11] = RugAdminFacet.getMintPricing.selector;
+        selectors[12] = RugAdminFacet.getServicePricing.selector;
+        selectors[13] = RugAdminFacet.getAgingThresholds.selector;
+        selectors[14] = RugAdminFacet.getExceptionList.selector;
+        selectors[15] = RugAdminFacet.isConfigured.selector;
         return selectors;
     }
 

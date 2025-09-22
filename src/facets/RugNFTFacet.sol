@@ -6,8 +6,10 @@ import {ERC721URIStorage} from "@openzeppelin/contracts/token/ERC721/extensions/
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {IERC721Metadata} from "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
+import {Base64} from "@openzeppelin/contracts/utils/Base64.sol";
 import {LibRugStorage} from "../libraries/LibRugStorage.sol";
 import {LibDiamond} from "../diamond/libraries/LibDiamond.sol";
+import {OnchainRugsHTMLGenerator} from "../OnchainRugsHTMLGenerator.sol";
 
 /**
  * @title RugNFTFacet
@@ -211,23 +213,57 @@ contract RugNFTFacet is ERC721, ERC721URIStorage {
     }
 
     // ERC721 overrides
-    function tokenURI(uint256 tokenId) public view override(ERC721, ERC721URIStorage) returns (string memory) {
+    function tokenURI(uint256 tokenId)
+        public
+        view
+        override(ERC721, ERC721URIStorage)
+        returns (string memory)
+    {
         require(_exists(tokenId), "Token does not exist");
 
-        LibRugStorage.RugData memory rug = LibRugStorage.rugStorage().rugs[tokenId];
+        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+        LibRugStorage.RugData memory rug = rs.rugs[tokenId];
+        LibRugStorage.AgingData memory aging = rs.agingData[tokenId];
 
-        // Create basic metadata (will be enhanced by other facets)
-        string memory json = string(abi.encodePacked(
-            '{"name": "OnchainRug #', tokenId.toString(),
-            '","description": "A unique onchain rug with dynamic aging mechanics",',
-            '"attributes": [',
-            '{"trait_type": "Text Lines", "value": "', rug.textRows.length.toString(), '"},',
-            '{"trait_type": "Palette", "value": "', rug.paletteName, '"},',
-            '{"trait_type": "Complexity", "value": "', uint256(rug.complexity).toString(), '"}',
-            ']}'
-        ));
+        uint8 dirtLevel = _getDirtLevel(tokenId);
 
-        return string(abi.encodePacked("data:application/json;base64,", json));
+        // Use Scripty system - now mandatory
+        require(rs.rugScriptyBuilder != address(0), "ScriptyBuilder not configured");
+        require(rs.rugEthFSStorage != address(0), "EthFS storage not configured");
+        require(rs.onchainRugsHTMLGenerator != address(0), "HTML generator not configured");
+
+        // Encode rug data for the HTML generator
+        bytes memory encodedRugData = abi.encode(rug);
+
+        string memory html = OnchainRugsHTMLGenerator(rs.onchainRugsHTMLGenerator).generateProjectHTML(
+            encodedRugData,
+            tokenId,
+            rs.rugScriptyBuilder,
+            rs.rugEthFSStorage
+        );
+
+        // Create JSON metadata
+        string memory json = Base64.encode(
+            bytes(
+                string(
+                    abi.encodePacked(
+                        '{"name":"OnchainRug #', tokenId.toString(),
+                        '","description":"OnchainRugs by valipokkann","image":"https://onchainrugs.xyz/logo.png","animation_url":"',
+                        html,  // HTML generator now returns complete data URI
+                        '","attributes":[{"trait_type":"Text Lines","value":"', rug.textRows.length.toString(),
+                        '"},{"trait_type":"Character Count","value":"', rug.characterCount.toString(),
+                        '"},{"trait_type":"Palette Name","value":"', rug.paletteName,
+                        '"},{"trait_type":"Stripe Count","value":"', rug.stripeCount.toString(),
+                        '"},{"trait_type":"Complexity","value":"', uint256(rug.complexity).toString(),
+                        '"},{"trait_type":"Warp Thickness","value":"', uint256(rug.warpThickness).toString(),
+                        '"},{"trait_type":"Dirt Level","value":"', uint256(dirtLevel).toString(),
+                        '"}]}'
+                    )
+                )
+            )
+        );
+
+        return string.concat("data:application/json;base64,", json);
     }
 
     function supportsInterface(bytes4 interfaceId) public view override(ERC721, ERC721URIStorage) returns (bool) {
@@ -236,5 +272,17 @@ contract RugNFTFacet is ERC721, ERC721URIStorage {
 
     function _exists(uint256 tokenId) internal view returns (bool) {
         return ownerOf(tokenId) != address(0);
+    }
+
+    // Internal helper functions
+    function _getDirtLevel(uint256 tokenId) internal view returns (uint8) {
+        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+        LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
+
+        uint256 timeSinceCleaned = block.timestamp - aging.lastCleaned;
+
+        if (timeSinceCleaned >= rs.dirtLevel2Days) return 2;
+        if (timeSinceCleaned >= rs.dirtLevel1Days) return 1;
+        return 0;
     }
 }

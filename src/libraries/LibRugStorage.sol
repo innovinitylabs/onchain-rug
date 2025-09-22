@@ -40,6 +40,11 @@ library LibRugStorage {
         bool isLaunched;               // Launch state
         bool launderingEnabled;        // Global laundering toggle
         address[] exceptionList;       // Addresses exempt from wallet limits
+
+        // Scripty integration
+        address rugScriptyBuilder;      // ScriptyBuilderV2 contract
+        address rugEthFSStorage;        // EthFS storage contract
+        address onchainRugsHTMLGenerator; // HTML generator contract
         // Pricing configuration
         uint256 basePrice;             // Base mint cost
         uint256 linePrice1;            // Additional for line 1

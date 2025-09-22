@@ -253,8 +253,30 @@ contract RugAdminFacet {
     }
 
     /**
+     * @notice Set Scripty contract addresses for HTML generation
+     * @param _rugScriptyBuilder ScriptyBuilderV2 contract address
+     * @param _rugEthFSStorage EthFS storage contract address
+     * @param _onchainRugsHTMLGenerator HTML generator contract address
+     */
+    function setScriptyContracts(
+        address _rugScriptyBuilder,
+        address _rugEthFSStorage,
+        address _onchainRugsHTMLGenerator
+    ) external {
+        LibDiamond.enforceIsContractOwner();
+        require(_rugScriptyBuilder != address(0), "Invalid ScriptyBuilder");
+        require(_rugEthFSStorage != address(0), "Invalid EthFS storage");
+        require(_onchainRugsHTMLGenerator != address(0), "Invalid HTML generator");
+
+        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+        rs.rugScriptyBuilder = _rugScriptyBuilder;
+        rs.rugEthFSStorage = _rugEthFSStorage;
+        rs.onchainRugsHTMLGenerator = _onchainRugsHTMLGenerator;
+    }
+
+    /**
      * @notice Check if contract is properly configured
-     * @return True if all required parameters are set
+     * @return configured True if all required parameters are set
      */
     function isConfigured() external view returns (bool) {
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
