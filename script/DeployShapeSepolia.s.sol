@@ -215,27 +215,53 @@ contract DeployShapeSepolia is Script {
     function uploadLibraries() internal {
         console.log("7. Uploading JavaScript libraries...");
 
-        // Read and upload p5.js
-        string memory p5js = vm.readFile("data/rug-p5.js");
-        bytes memory p5jsBytes = bytes(p5js);
-
+        // Upload p5.js library
         console.log("   Uploading p5.js library...");
-        console.log("   File size:", p5jsBytes.length, "bytes");
+        string memory p5Content = vm.readFile("data/rug-p5.js");
+        uploadFile("rug-p5.js", p5Content);
 
-        // Upload p5.js directly (small enough file)
-        (address p5Pointer, ) = fileStore.createFile("rug-p5.js", p5js);
-        console.log("   p5.js uploaded at pointer:", p5Pointer);
-
-        // Read and upload algorithm
-        string memory algo = vm.readFile("data/rug-algo.js");
-        bytes memory algoBytes = bytes(algo);
-
+        // Upload algorithm library
         console.log("   Uploading algorithm library...");
-        console.log("   File size:", algoBytes.length, "bytes");
-        (address algoPointer, ) = fileStore.createFile("rug-algo.js", algo);
-        console.log("   Algorithm uploaded at pointer:", algoPointer);
+        string memory algoContent = vm.readFile("data/rug-algo.js");
+        uploadFile("rug-algo.js", algoContent);
 
         console.log("   Libraries uploaded successfully");
+    }
+
+    function uploadFile(string memory fileName, string memory content) internal {
+        bytes memory contentBytes = bytes(content);
+
+        // Split into 20KB chunks (like the legacy script)
+        uint256 chunkSize = 20000; // 20KB chunks
+        uint256 totalChunks = (contentBytes.length + chunkSize - 1) / chunkSize;
+
+        console.log("   File:", fileName);
+        console.log("   Size:", contentBytes.length, "bytes");
+        console.log("   Chunks:", totalChunks);
+
+        // Create the content in ScriptyStorage
+        scriptyStorage.createContent(fileName, "");
+
+        // Upload chunks
+        for (uint256 i = 0; i < totalChunks; i++) {
+            uint256 start = i * chunkSize;
+            uint256 end = start + chunkSize;
+            if (end > contentBytes.length) {
+                end = contentBytes.length;
+            }
+
+            bytes memory chunk = new bytes(end - start);
+            for (uint256 j = start; j < end; j++) {
+                chunk[j - start] = contentBytes[j];
+            }
+
+            scriptyStorage.addChunkToContent(fileName, chunk);
+            console.log("   Uploaded chunk", i + 1, "/", totalChunks);
+        }
+
+        // Freeze the content
+        scriptyStorage.freezeContent(fileName);
+        console.log("   Content", fileName, "uploaded and frozen");
     }
 
     function initializeSystem() internal {
