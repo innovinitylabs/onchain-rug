@@ -96,10 +96,13 @@ contract RugNFTFacet is ERC721, ERC721URIStorage {
         // Initialize aging data
         rs.agingData[tokenId] = LibRugStorage.AgingData({
             lastCleaned: block.timestamp,
+            lastTextureReset: block.timestamp, // Initialize texture timer to mint time
             lastSalePrice: 0,
             recentSalePrices: [uint256(0), 0, 0],
-            dirtLevel: 0,
-            textureLevel: 0
+            dirtLevel: 0, // deprecated, will be calculated
+            textureLevel: 0, // deprecated, will be calculated
+            launderingCount: 0, // Never laundered initially
+            lastLaundered: 0 // Never laundered initially
         });
 
         // Mark text as used and record mint
@@ -223,9 +226,10 @@ contract RugNFTFacet is ERC721, ERC721URIStorage {
 
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
         LibRugStorage.RugData memory rug = rs.rugs[tokenId];
-        LibRugStorage.AgingData memory aging = rs.agingData[tokenId];
 
+        // Get current dirt and texture levels
         uint8 dirtLevel = _getDirtLevel(tokenId);
+        uint8 textureLevel = _getTextureLevel(tokenId);
 
         // Use Scripty system - now mandatory
         require(rs.rugScriptyBuilder != address(0), "ScriptyBuilder not configured");
@@ -233,11 +237,14 @@ contract RugNFTFacet is ERC721, ERC721URIStorage {
         require(rs.onchainRugsHTMLGenerator != address(0), "HTML generator not configured");
 
         // Encode rug data for the HTML generator
+        // Use abi.encode to match the RugData struct in OnchainRugsHTMLGenerator
         bytes memory encodedRugData = abi.encode(rug);
 
         string memory html = OnchainRugsHTMLGenerator(rs.onchainRugsHTMLGenerator).generateProjectHTML(
             encodedRugData,
             tokenId,
+            dirtLevel,
+            textureLevel,
             rs.rugScriptyBuilder,
             rs.rugEthFSStorage
         );
@@ -284,5 +291,23 @@ contract RugNFTFacet is ERC721, ERC721URIStorage {
         if (timeSinceCleaned >= rs.dirtLevel2Days) return 2;
         if (timeSinceCleaned >= rs.dirtLevel1Days) return 1;
         return 0;
+    }
+
+    function _getTextureLevel(uint256 tokenId) internal view returns (uint8) {
+        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+        LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
+
+        // Texture level based on time since last texture reset (totally independent of dirt maintenance)
+        uint256 timeSinceTextureReset = block.timestamp - aging.lastTextureReset;
+
+        // Texture progression over time (longer timeline than dirt)
+        if (timeSinceTextureReset >= rs.textureLevel2Days * 10) return 10;
+        if (timeSinceTextureReset >= rs.textureLevel2Days * 8) return 8;
+        if (timeSinceTextureReset >= rs.textureLevel2Days * 6) return 6;
+        if (timeSinceTextureReset >= rs.textureLevel2Days * 4) return 4;
+        if (timeSinceTextureReset >= rs.textureLevel2Days * 2) return 2;
+        if (timeSinceTextureReset >= rs.textureLevel1Days * 2) return 1;
+
+        return 0; // Fresh texture
     }
 }

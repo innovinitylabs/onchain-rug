@@ -50,7 +50,7 @@ contract RugMaintenanceFacet {
     }
 
     /**
-     * @notice Restore a rug (reduce texture level by 1)
+     * @notice Restore a rug (reduce texture level by 1, set dirt to 0)
      * @param tokenId Token ID to restore
      */
     function restoreRug(uint256 tokenId) external payable {
@@ -60,9 +60,9 @@ contract RugMaintenanceFacet {
         // Verify ownership
         require(IERC721(address(this)).ownerOf(tokenId) == msg.sender, "Not token owner");
 
-        // Check if restoration is available
+        // Check if texture restoration is available
         uint8 currentTexture = _getTextureLevel(tokenId);
-        require(currentTexture > 0, "Rug has no texture aging");
+        require(currentTexture > 0, "Rug has no texture aging to restore");
 
         // Validate payment
         require(msg.value >= rs.restorationCost, "Insufficient payment");
@@ -72,19 +72,13 @@ contract RugMaintenanceFacet {
             payable(msg.sender).call{value: msg.value - rs.restorationCost}("");
         }
 
-        // Reduce texture level by 1 (with floor at 0)
-        uint8 previousLevel = currentTexture;
-        uint8 newLevel = currentTexture > 1 ? currentTexture - 1 : 0;
-
-        // Store the reduced level in aging data
-        // Note: This is a simplification - in practice, we might need to adjust the lastCleaned timestamp
-        // to achieve the desired texture level, but for now we'll store it directly
-        aging.textureLevel = newLevel;
-
-        // Reset dirt timer to maintain cleanliness
+        // Reset both dirt and texture timers (full restoration as per spec)
+        uint8 previousDirt = _getDirtLevel(tokenId);
+        uint8 previousTexture = currentTexture;
         aging.lastCleaned = block.timestamp;
+        aging.lastTextureReset = block.timestamp;
 
-        emit RugRestored(tokenId, msg.sender, previousLevel, newLevel, rs.restorationCost);
+        emit RugRestored(tokenId, msg.sender, previousDirt, previousTexture - 1, rs.restorationCost);
     }
 
     /**
@@ -111,10 +105,9 @@ contract RugMaintenanceFacet {
             payable(msg.sender).call{value: msg.value - rs.masterRestorationCost}("");
         }
 
-        // Reset all aging data
+        // Reset aging timers (resets both dirt and texture levels to 0)
         aging.lastCleaned = block.timestamp;
-        aging.dirtLevel = 0;
-        aging.textureLevel = 0;
+        aging.lastTextureReset = block.timestamp;
 
         emit RugMasterRestored(tokenId, msg.sender, currentDirt, currentTexture, rs.masterRestorationCost);
     }
@@ -144,8 +137,8 @@ contract RugMaintenanceFacet {
         // Verify token exists and ownership
         require(IERC721(address(this)).ownerOf(tokenId) != address(0), "Token does not exist");
 
-        uint8 currentTexture = _getTextureLevel(tokenId);
-        return currentTexture > 0 ? rs.restorationCost : 0;
+        uint8 currentDirt = _getDirtLevel(tokenId);
+        return currentDirt > 0 ? rs.restorationCost : 0;
     }
 
     /**
@@ -175,13 +168,13 @@ contract RugMaintenanceFacet {
     }
 
     /**
-     * @notice Check if a rug can be restored (has texture aging)
+     * @notice Check if a rug can be restored (has dirt that can be reset)
      * @param tokenId Token ID to check
      * @return canRestore True if restoration is available
      */
     function canRestoreRug(uint256 tokenId) external view returns (bool) {
         require(IERC721(address(this)).ownerOf(tokenId) != address(0), "Token does not exist");
-        return _getTextureLevel(tokenId) > 0;
+        return _getDirtLevel(tokenId) > 0;
     }
 
     /**
@@ -217,7 +210,7 @@ contract RugMaintenanceFacet {
         require(IERC721(address(this)).ownerOf(tokenId) != address(0), "Token does not exist");
 
         canClean = _getDirtLevel(tokenId) > 0;
-        canRestore = _getTextureLevel(tokenId) > 0;
+        canRestore = _getTextureLevel(tokenId) > 0; // Restoration reduces texture level
         needsMaster = canClean || canRestore;
 
         cleaningCost = canClean ? (_isCleaningFree(tokenId) ? 0 : LibRugStorage.rugStorage().cleaningCost) : 0;
@@ -242,7 +235,7 @@ contract RugMaintenanceFacet {
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
         LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
 
-        uint256 timeSinceLastReset = block.timestamp - aging.lastCleaned;
+        uint256 timeSinceLastReset = block.timestamp - aging.lastTextureReset;
 
         if (timeSinceLastReset >= rs.textureLevel2Days * 5) return 10;
         if (timeSinceLastReset >= rs.textureLevel2Days * 4) return 8;
@@ -261,7 +254,7 @@ contract RugMaintenanceFacet {
 
         // Free if within initial period from mint
         uint256 timeSinceMint = block.timestamp - rug.mintTime;
-        if (timeSinceMint <= rs.freeCleanWindow) return true;
+        if (timeSinceMint <= rs.freeCleanDays) return true;
 
         // Free if recently cleaned
         uint256 timeSinceLastClean = block.timestamp - aging.lastCleaned;

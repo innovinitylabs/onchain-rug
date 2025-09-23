@@ -27,10 +27,13 @@ library LibRugStorage {
 
     struct AgingData {
         uint256 lastCleaned;            // Last cleaning timestamp
+        uint256 lastTextureReset;       // Last texture reset timestamp (mint time initially)
         uint256 lastSalePrice;          // Highest sale price
         uint256[3] recentSalePrices;    // Last 3 sale prices
-        uint8 dirtLevel;                // Current dirt (0-2)
-        uint8 textureLevel;             // Current texture aging (0-10)
+        uint8 dirtLevel;                // Current dirt (0-2) - deprecated, calculated
+        uint8 textureLevel;             // Current texture aging (0-10) - deprecated, calculated
+        uint256 launderingCount;        // Number of times laundered
+        uint256 lastLaundered;          // Last laundering timestamp
     }
 
     struct RugConfig {
@@ -57,7 +60,8 @@ library LibRugStorage {
         uint256 dirtLevel2Days;        // Days for dirt level 2
         uint256 textureLevel1Days;     // Days for texture level 1
         uint256 textureLevel2Days;     // Days for texture level 2
-        uint256 freeCleanWindow;       // Days for free cleaning
+        uint256 freeCleanDays;         // Days after mint for free cleaning
+        uint256 freeCleanWindow;       // Days after cleaning for free cleaning
         // Maintenance pricing
         uint256 cleaningCost;          // Regular cleaning cost
         uint256 restorationCost;       // Per level restoration cost

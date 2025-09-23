@@ -21,6 +21,8 @@ interface IProjectHTMLGenerator {
      * @notice Generate HTML for a specific token using project-specific data
      * @param projectData Encoded project-specific data (e.g., RugData for OnchainRugs)
      * @param tokenId The token ID
+     * @param dirtLevel Current dirt level (0-2)
+     * @param textureLevel Current texture level (0-10)
      * @param scriptyBuilder Address of ScriptyBuilderV2
      * @param ethfsStorage Address of RugEthFSStorage
      * @return html Generated HTML string
@@ -28,6 +30,8 @@ interface IProjectHTMLGenerator {
     function generateProjectHTML(
         bytes memory projectData,
         uint256 tokenId,
+        uint8 dirtLevel,
+        uint8 textureLevel,
         address scriptyBuilder,
         address ethfsStorage
     ) external view returns (string memory html);

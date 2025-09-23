@@ -258,14 +258,12 @@ contract RugDiamondIntegrationTest is Test {
     }
 
     function test_WalletLimits() public {
-        // Test wallet limit enforcement
+        // Mint 7 rugs as user1 to hit the wallet limit
+        vm.startPrank(user1);
         for (uint256 i = 1; i <= 7; i++) {
-            address user = i == 1 ? user1 : i == 2 ? user2 : user3;
-            vm.startPrank(user);
-
             uint256 mintPrice = RugNFTFacet(diamondAddress).getMintPrice(1);
             string[] memory singleLine = new string[](1);
-            singleLine[0] = "TEST";
+            singleLine[0] = string(abi.encodePacked("TEST", i));
 
             RugNFTFacet(diamondAddress).mintRug{value: mintPrice}(
                 singleLine,
@@ -279,11 +277,10 @@ contract RugDiamondIntegrationTest is Test {
                 4,
                 3
             );
-
-            vm.stopPrank();
         }
+        vm.stopPrank();
 
-        // Test that 8th mint is blocked for user1
+        // Test that 8th mint is blocked for user1 (wallet limit exceeded)
         vm.startPrank(user1);
         bool canMint = RugNFTFacet(diamondAddress).canMint(user1);
         assertFalse(canMint, "Should not be able to mint 8th rug");

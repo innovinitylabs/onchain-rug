@@ -137,13 +137,9 @@ contract RugLaunderingFacet {
     function getLaunderingStats(uint256 tokenId) external view returns (uint256 timesLaundered, uint256 lastLaundered, bool eligibleForLaundering) {
         LibRugStorage.AgingData storage aging = LibRugStorage.rugStorage().agingData[tokenId];
 
-        // For now, we don't track laundering count in storage
-        // This would need to be tracked via events or additional storage
-        timesLaundered = 0; // Placeholder
-
-        // Last laundered time could be inferred from lastCleaned if it was a laundering event
-        // For now, return 0 (would need event indexing or additional storage)
-        lastLaundered = 0; // Placeholder
+        // Get actual laundering statistics from storage
+        timesLaundered = aging.launderingCount;
+        lastLaundered = aging.lastLaundered;
 
         // Check if current conditions would trigger laundering
         (bool wouldTrigger,) = _checkLaunderingConditions(tokenId, aging.lastSalePrice);
@@ -206,10 +202,15 @@ contract RugLaunderingFacet {
     function _triggerLaundering(uint256 tokenId, address buyer, uint256 salePrice) internal {
         LibRugStorage.AgingData storage aging = LibRugStorage.rugStorage().agingData[tokenId];
 
-        // Reset aging to clean state (like after cleaning)
+        // Reset all aging (laundering resets everything to level 0)
         aging.lastCleaned = block.timestamp;
-        aging.dirtLevel = 0;
-        // Note: Texture level continues aging from last reset
+        aging.lastTextureReset = block.timestamp;
+        aging.dirtLevel = 0; // deprecated
+        aging.textureLevel = 0; // deprecated
+
+        // Track laundering statistics
+        aging.launderingCount++;
+        aging.lastLaundered = block.timestamp;
 
         (bool shouldTrigger, string memory reason) = _checkLaunderingConditions(tokenId, salePrice);
 

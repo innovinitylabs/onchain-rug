@@ -27,36 +27,21 @@ contract RugAgingFacet {
     }
 
     /**
-     * @notice Calculate current texture level for a rug
+     * @notice Get texture level for a rug (based on aging time)
      * @param tokenId Token ID to check
-     * @return textureLevel Current texture level (0-10)
+     * @return textureLevel Texture level based on time since last cleaning (0-10)
      */
     function getTextureLevel(uint256 tokenId) external view returns (uint8) {
-        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
-        LibRugStorage.RugData storage rug = rs.rugs[tokenId];
-        LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
-
-        // Texture level increases based on time since mint, but can be reset by cleaning
-        uint256 timeSinceLastReset = block.timestamp - aging.lastCleaned;
-
-        // Texture progression (configurable levels)
-        if (timeSinceLastReset >= rs.textureLevel2Days * 5) return 10;
-        if (timeSinceLastReset >= rs.textureLevel2Days * 4) return 8;
-        if (timeSinceLastReset >= rs.textureLevel2Days * 3) return 6;
-        if (timeSinceLastReset >= rs.textureLevel2Days * 2) return 4;
-        if (timeSinceLastReset >= rs.textureLevel2Days) return 2;
-        if (timeSinceLastReset >= rs.textureLevel1Days) return 1;
-
-        return 0; // Fresh/clean
+        return _getTextureLevel(tokenId);
     }
 
     /**
      * @notice Get complete aging state for a rug
      * @param tokenId Token ID to check
-     * @return dirtLevel Current dirt level (0-2)
-     * @return textureLevel Current texture level (0-10)
+     * @return dirtLevel Current dirt level based on aging (0-2)
+     * @return textureLevel Current texture level based on aging (0-10)
      * @return showDirt Whether dirt should be displayed
-     * @return showTexture Whether texture aging should be displayed
+     * @return showTexture Whether texture should be displayed
      * @return timeSinceCleaned Seconds since last cleaning
      * @return timeSinceMint Seconds since minting
      */
@@ -114,7 +99,7 @@ contract RugAgingFacet {
 
         // Free if within initial period from mint
         uint256 timeSinceMint = block.timestamp - rug.mintTime;
-        if (timeSinceMint <= rs.freeCleanWindow) return true;
+        if (timeSinceMint <= rs.freeCleanDays) return true;
 
         // Free if recently cleaned
         uint256 timeSinceLastClean = block.timestamp - aging.lastCleaned;
@@ -155,7 +140,7 @@ contract RugAgingFacet {
         LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
 
         uint8 currentTexture = _getTextureLevel(tokenId);
-        uint256 timeSinceReset = block.timestamp - aging.lastCleaned;
+        uint256 timeSinceReset = block.timestamp - aging.lastTextureReset;
 
         // Simple calculation - next level threshold
         uint256 nextThreshold;
@@ -259,16 +244,18 @@ contract RugAgingFacet {
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
         LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
 
-        uint256 timeSinceLastReset = block.timestamp - aging.lastCleaned;
+        // Texture level based on time since last texture reset (totally independent of dirt maintenance)
+        uint256 timeSinceTextureReset = block.timestamp - aging.lastTextureReset;
 
-        if (timeSinceLastReset >= rs.textureLevel2Days * 5) return 10;
-        if (timeSinceLastReset >= rs.textureLevel2Days * 4) return 8;
-        if (timeSinceLastReset >= rs.textureLevel2Days * 3) return 6;
-        if (timeSinceLastReset >= rs.textureLevel2Days * 2) return 4;
-        if (timeSinceLastReset >= rs.textureLevel2Days) return 2;
-        if (timeSinceLastReset >= rs.textureLevel1Days) return 1;
+        // Texture progression over time (longer timeline than dirt)
+        if (timeSinceTextureReset >= rs.textureLevel2Days * 5) return 10;
+        if (timeSinceTextureReset >= rs.textureLevel2Days * 4) return 8;
+        if (timeSinceTextureReset >= rs.textureLevel2Days * 3) return 6;
+        if (timeSinceTextureReset >= rs.textureLevel2Days * 2) return 4;
+        if (timeSinceTextureReset >= rs.textureLevel2Days) return 2;
+        if (timeSinceTextureReset >= rs.textureLevel1Days) return 1;
 
-        return 0;
+        return 0; // Fresh texture
     }
 
     function _timeUntilNextDirt(uint256 tokenId) internal view returns (uint256) {

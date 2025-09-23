@@ -96,12 +96,39 @@ contract DeployRugDiamond is Script {
         IDiamondCut(address(diamond)).diamondCut(loupeCut, address(0), "");
         console.log("Added DiamondLoupeFacet to diamond");
 
-        // RugNFTFacet
+        // RugNFTFacet - REMOVED supportsInterface to avoid conflict with DiamondLoupeFacet
+        console.log("Adding RugNFTFacet...");
+        bytes4[] memory nftSelectors = new bytes4[](22);
+        // RugNFTFacet specific functions
+        nftSelectors[0] = RugNFTFacet.mintRug.selector;
+        nftSelectors[1] = RugNFTFacet.burn.selector;
+        nftSelectors[2] = RugNFTFacet.getRugData.selector;
+        nftSelectors[3] = RugNFTFacet.getAgingData.selector;
+        nftSelectors[4] = RugNFTFacet.totalSupply.selector;
+        nftSelectors[5] = RugNFTFacet.maxSupply.selector;
+        nftSelectors[6] = RugNFTFacet.isTextAvailable.selector;
+        nftSelectors[7] = RugNFTFacet.getMintPrice.selector;
+        nftSelectors[8] = RugNFTFacet.canMint.selector;
+        nftSelectors[9] = RugNFTFacet.walletMints.selector;
+        nftSelectors[10] = RugNFTFacet.isWalletException.selector;
+        nftSelectors[11] = RugNFTFacet.tokenURI.selector;
+        // Essential ERC721 functions
+        nftSelectors[12] = bytes4(keccak256("ownerOf(uint256)"));
+        nftSelectors[13] = bytes4(keccak256("balanceOf(address)"));
+        nftSelectors[14] = bytes4(keccak256("transferFrom(address,address,uint256)"));
+        nftSelectors[15] = bytes4(keccak256("safeTransferFrom(address,address,uint256)"));
+        nftSelectors[16] = bytes4(keccak256("safeTransferFrom(address,address,uint256,bytes)"));
+        nftSelectors[17] = bytes4(keccak256("approve(address,uint256)"));
+        nftSelectors[18] = bytes4(keccak256("setApprovalForAll(address,bool)"));
+        nftSelectors[19] = bytes4(keccak256("getApproved(uint256)"));
+        nftSelectors[20] = bytes4(keccak256("isApprovedForAll(address,address)"));
+        nftSelectors[21] = bytes4(keccak256("name()"));
         IDiamondCut.FacetCut[] memory nftCut = new IDiamondCut.FacetCut[](1);
-        nftCut[0] = _createFacetCut(
-            address(rugNFTFacet),
-            _generateSelectors("RugNFTFacet")
-        );
+        nftCut[0] = IDiamondCut.FacetCut({
+            facetAddress: address(rugNFTFacet),
+            action: IDiamondCut.FacetCutAction.Add,
+            functionSelectors: nftSelectors
+        });
         IDiamondCut(address(diamond)).diamondCut(nftCut, address(0), "");
         console.log("Added RugNFTFacet to diamond");
 
@@ -179,12 +206,12 @@ contract DeployRugDiamond is Script {
 
         // Set aging thresholds (in days, converted to seconds)
         uint256[6] memory agingThresholds = [
-            uint256(3),  // dirtLevel1Days
-            uint256(7),  // dirtLevel2Days
-            uint256(30), // textureLevel1Days
-            uint256(90), // textureLevel2Days (supports 10 levels total)
-            uint256(7),  // freeCleanWindow (days)
-            uint256(3)   // freeCleanWindow (days) - duplicate for now
+            uint256(3),  // dirtLevel1Days (3 days for dirt level 1)
+            uint256(7),  // dirtLevel2Days (7 days for dirt level 2)
+            uint256(30), // textureLevel1Days (30 days for texture level 1)
+            uint256(90), // textureLevel2Days (90 days for texture level 2)
+            uint256(30), // freeCleanDays (30 days free after mint)
+            uint256(11)  // freeCleanWindow (11 days free after cleaning)
         ];
         RugAdminFacet(address(diamond)).updateAgingThresholds(agingThresholds);
 
@@ -304,7 +331,7 @@ contract DeployRugDiamond is Script {
     }
 
     function _getRugAgingSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](10);
+        bytes4[] memory selectors = new bytes4[](11);
         selectors[0] = RugAgingFacet.getDirtLevel.selector;
         selectors[1] = RugAgingFacet.getTextureLevel.selector;
         selectors[2] = RugAgingFacet.getAgingState.selector;
@@ -315,6 +342,7 @@ contract DeployRugDiamond is Script {
         selectors[7] = RugAgingFacet.timeUntilNextTexture.selector;
         selectors[8] = RugAgingFacet.getAgingStats.selector;
         selectors[9] = RugAgingFacet.isWellMaintained.selector;
+        selectors[10] = RugAgingFacet.getProgressionInfo.selector;
         return selectors;
     }
 
