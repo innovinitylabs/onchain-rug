@@ -4,6 +4,7 @@ import "./globals.css";
 import { Providers } from "@/components/providers";
 import BackgroundRotator from "@/components/BackgroundRotator";
 import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -44,6 +45,7 @@ export default function RootLayout({
           {children}
         </Providers>
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
