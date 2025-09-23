@@ -29,24 +29,27 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
     using Strings for uint8;
 
     // Rug data structure (specific to OnchainRugs project)
+    // MUST match LibRugStorage.RugData exactly for abi.decode to work
     struct RugData {
-        uint256 seed;
-        string paletteName;
-        string minifiedPalette;
-        string minifiedStripeData;
-        string[] textRows;
-        uint8 warpThickness;
-        uint256 mintTime;
-        string filteredCharacterMap;
-        uint8 complexity;
-        uint256 characterCount;
-        uint256 stripeCount;
+        uint256 seed;                    // Generation seed
+        string[] textRows;              // User text (1-5 lines)
+        string paletteName;             // Color palette identifier
+        string minifiedPalette;         // Compressed color data
+        string minifiedStripeData;      // Compressed pattern data
+        uint8 warpThickness;            // Design parameter (1-5)
+        uint256 mintTime;               // Auto-set on mint
+        string filteredCharacterMap;    // Used characters only
+        uint8 complexity;               // Pattern complexity (1-5)
+        uint256 characterCount;         // Total characters
+        uint256 stripeCount;            // Pattern stripes
     }
 
     /**
      * @notice Generate HTML for OnchainRugs token
      * @param projectData Encoded RugData
      * @param tokenId The token ID
+     * @param dirtLevel Current dirt level (0-2)
+     * @param textureLevel Current texture level (0-10)
      * @param scriptyBuilder Address of ScriptyBuilderV2
      * @param scriptyStorage Address of ScriptyStorage
      * @return html Generated HTML string
@@ -54,13 +57,15 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
     function generateProjectHTML(
         bytes memory projectData,
         uint256 tokenId,
+        uint8 dirtLevel,
+        uint8 textureLevel,
         address scriptyBuilder,
         address scriptyStorage
     ) external view override returns (string memory html) {
         RugData memory rug = abi.decode(projectData, (RugData));
 
         // Create HTML request using existing method
-        HTMLRequest memory htmlRequest = createHTMLRequest(scriptyStorage, rug, tokenId);
+        HTMLRequest memory htmlRequest = createHTMLRequest(scriptyStorage, rug, dirtLevel, textureLevel, tokenId);
 
         // Use Scripty to generate HTML (raw HTML, not URL-safe)
         bytes memory rawHTML = IScriptyBuilderV2(scriptyBuilder).getHTML(htmlRequest);
@@ -101,37 +106,25 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
      * @param rug Rug data
      * @return js JavaScript configuration string
      */
-    function generateRugConfig(RugData memory rug) internal view returns (string memory js) {
-        // Calculate texture level based on complexity
-        uint8 textureLevel = rug.complexity > 2 ? rug.complexity - 2 : 0;
-
-        // Calculate dirt level based on time since mint (simplified version)
-        uint8 dirtLevel = 0;
-        uint256 timeSinceMint = block.timestamp - rug.mintTime;
-        if (timeSinceMint > 7 days) {
-            dirtLevel = 2;
-        } else if (timeSinceMint > 3 days) {
-            dirtLevel = 1;
-        }
-
+    function generateRugConfig(RugData memory rug, uint8 dirtLevel, uint8 textureLevel) internal pure returns (string memory js) {
         return string.concat(
             'let w=800,h=1200,f=30,wt=8,wp=',
             rug.warpThickness.toString(),
-            ',ts=2,lt,dt,p=',
+            ',ts=2,lt,dt,p=\'',
             rug.minifiedPalette,
-            ',sd=',
+            '\',sd=\'',
             rug.minifiedStripeData,
-            ',tr=',
+            '\',tr=',
             encodeTextRows(rug.textRows),
             ',td=[],s=',
             rug.seed.toString(),
-            ';let cm=',
+            ',cm=\'',
             rug.filteredCharacterMap,
-            ';tl=',
-            textureLevel.toString(),
+            '\',tl=',
+            Strings.toString(textureLevel),
             ',dl=',
-            dirtLevel.toString(),
-            ';'
+            Strings.toString(dirtLevel),
+            ';p=JSON.parse(p);sd=JSON.parse(sd);cm=JSON.parse(cm);'
         );
     }
 
@@ -155,12 +148,16 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
      * @notice Create HTML request for RugScriptyHTML with proper tag structure
      * @param scriptyStorage Address of ScriptyStorage
      * @param rug Rug data
+     * @param dirtLevel Current dirt level (0-2)
+     * @param textureLevel Current texture level (0-10)
      * @param tokenId The token ID
      * @return htmlRequest Properly structured HTML request for scripty
      */
     function createHTMLRequest(
         address scriptyStorage,
         RugData memory rug,
+        uint8 dirtLevel,
+        uint8 textureLevel,
         uint256 tokenId
     ) internal view returns (HTMLRequest memory htmlRequest) {
         // Create head tags
@@ -213,7 +210,7 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
             tagType: HTMLTagType.script,
             tagOpen: "",
             tagClose: "",
-            tagContent: bytes(generateRugConfig(rug))
+            tagContent: bytes(generateRugConfig(rug, dirtLevel, textureLevel))
         });
 
         // 4. Algorithm script from ScriptyStorage (inline script)

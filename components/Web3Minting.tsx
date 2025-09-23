@@ -240,8 +240,8 @@ export default function Web3Minting({
               {"internalType": "string[]", "name": "textRows", "type": "string[]"},
               {"internalType": "uint256", "name": "seed", "type": "uint256"},
               {"internalType": "string", "name": "paletteName", "type": "string"},
-              {"internalType": "string", "name": "minifiedStripeData", "type": "string"},
               {"internalType": "string", "name": "minifiedPalette", "type": "string"},
+              {"internalType": "string", "name": "minifiedStripeData", "type": "string"},
               {"internalType": "string", "name": "filteredCharacterMap", "type": "string"},
               {"internalType": "uint8", "name": "warpThickness", "type": "uint8"},
               {"internalType": "uint8", "name": "complexity", "type": "uint8"},
@@ -259,8 +259,8 @@ export default function Web3Minting({
           optimized.textRows,
           BigInt(seed), // Using the seed from the generator
           optimized.palette.name,
-          JSON.stringify(optimized.stripeData),
           JSON.stringify(optimized.palette),
+          JSON.stringify(optimized.stripeData),
           JSON.stringify(optimized.characterMap),
           warpThickness, // Using the actual warp thickness from generator
           complexity, // Using the calculated complexity from generator

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { Search, Database, Hexagon, FileText, Hash, Copy, CheckCircle, AlertCircle, RefreshCw, Eye, EyeOff, ChevronLeft, ChevronRight } from 'lucide-react'
 import Navigation from '@/components/Navigation'
@@ -32,6 +32,8 @@ interface ContractData {
   address: string
   code: string
   storage?: Record<string, string>
+  name?: string
+  index?: number
 }
 
 export default function ExplorerPage() {
@@ -62,7 +64,7 @@ export default function ExplorerPage() {
   const anvilUrl = 'http://127.0.0.1:8545'
 
   // Fetch latest blocks
-  const fetchBlocks = async () => {
+  const fetchBlocks = useCallback(async () => {
     setLoadingBlocks(true)
     setError(null)
     try {
@@ -98,10 +100,10 @@ export default function ExplorerPage() {
     } finally {
       setLoadingBlocks(false)
     }
-  }
+  }, [anvilUrl])
 
   // Fetch transactions from recent blocks
-  const fetchTransactions = async () => {
+  const fetchTransactions = useCallback(async () => {
     setLoadingTransactions(true)
     setError(null)
     try {
@@ -135,7 +137,7 @@ export default function ExplorerPage() {
     } finally {
       setLoadingTransactions(false)
     }
-  }
+  }, [anvilUrl])
 
   // Fetch transactions from a specific block
   const fetchTransactionsFromBlock = async (blockNumber: number): Promise<TransactionData[]> => {
@@ -192,7 +194,7 @@ export default function ExplorerPage() {
   }
 
   // Fetch contracts from recent transactions
-  const fetchContracts = async () => {
+  const fetchContracts = useCallback(async () => {
     setLoadingContracts(true)
     setError(null)
     try {
@@ -224,14 +226,20 @@ export default function ExplorerPage() {
         index === self.findIndex(c => c.address === contract.address)
       ).slice(0, 10) // Limit to 10 contracts
 
-      setContracts(uniqueContracts)
+      // Add index numbers to contracts
+      const numberedContracts = uniqueContracts.map((contract, index) => ({
+        ...contract,
+        index: index + 1
+      }))
+
+      setContracts(numberedContracts)
     } catch (err) {
       setError('Failed to fetch contracts from Anvil')
       console.error(err)
     } finally {
       setLoadingContracts(false)
     }
-  }
+  }, [anvilUrl])
 
   // Fetch contracts from a specific block
   const fetchContractsFromBlock = async (blockNumber: number): Promise<ContractData[]> => {
@@ -361,6 +369,100 @@ export default function ExplorerPage() {
     }
   }
 
+  const resolveContractName = async (address: string, bytecode: string): Promise<string> => {
+    try {
+
+      // Try eth_call with ERC721/ERC20 name() selector (0x06fdde03) and decode the string
+      try {
+        const nameResponse = await fetch(anvilUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            id: 1,
+            method: 'eth_call',
+            params: [{
+              to: address,
+              data: '0x06fdde03' // name() function signature
+            }, 'latest']
+          })
+        })
+        const nameData = await nameResponse.json()
+        if (nameData.result && nameData.result !== '0x') {
+          // Handle hex decoding carefully (strip 0x, group into bytes, TextDecoder into UTF-8)
+          const resultHex = nameData.result.replace(/^0x/, '')
+          if (resultHex.length >= 128) { // At least 64 bytes for offset + 32 bytes for length + some data
+            const resultBytes = new Uint8Array(resultHex.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || [])
+
+            // Read the offset (first 32 bytes, big-endian)
+            const offset = (resultBytes[28] << 24) | (resultBytes[29] << 16) | (resultBytes[30] << 8) | resultBytes[31]
+
+            if (offset >= 64 && offset < resultBytes.length) {
+              // Read the length (32 bytes starting from offset)
+              const length = (resultBytes[offset + 28] << 24) | (resultBytes[offset + 29] << 16) | (resultBytes[offset + 30] << 8) | resultBytes[offset + 31]
+
+              if (length > 0 && length < 100 && offset + 32 + length <= resultBytes.length) {
+                // Extract the string data
+                const stringBytes = resultBytes.slice(offset + 32, offset + 32 + length)
+                const name = new TextDecoder('utf-8').decode(stringBytes)
+                if (name && name.length > 0) {
+                  return name
+                }
+              }
+            }
+          }
+        }
+      } catch (e) {
+        // ERC721/ERC20 name() call failed, continue
+      }
+
+
+      // Parse the Solidity metadata CBOR blob at the end of bytecode
+      // The blob begins with a165627a7a72305820 or a2646970667358
+      const metadataPattern = /(a165627a7a72305820|a2646970667358)([0-9a-f]*)$/i
+      const metadataMatch = bytecode.match(metadataPattern)
+      if (metadataMatch) {
+        try {
+          const metadataHex = metadataMatch[2]
+          if (metadataHex.length > 0) {
+            // Convert hex to bytes carefully
+            const cleanHex = metadataHex.replace(/^0x/, '')
+            const metadataBytes = new Uint8Array(cleanHex.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || [])
+
+            // Try to decode as UTF-8 string
+            const metadataString = new TextDecoder('utf-8').decode(metadataBytes)
+
+            // Look for "contractName": "..." in the embedded JSON
+            const nameMatch = metadataString.match(/"contractName"\s*:\s*"([^"]+)"/)
+            if (nameMatch && nameMatch[1]) {
+              return nameMatch[1]
+            }
+          }
+        } catch (e) {
+          // Metadata decoding failed, continue with other methods
+        }
+      }
+
+      // Check for common contract patterns in bytecode
+      if (bytecode.includes('608060405234801561001057600080fd5b50d3801561001d57600080fd5b50d2801561002a57600080fd5b5060')) {
+        // Looks like a proxy contract
+        return 'Proxy Contract'
+      }
+
+      // Check for diamond pattern (delegatecall usage)
+      if (bytecode.includes('5af43d82803e903d91602b57fd5bf3')) {
+        return 'Diamond Contract'
+      }
+
+      // Fallback: Use bytecode hash as identifier
+      const hash = bytecode.slice(0, 10)
+      return `Contract_${hash.slice(2, 8).toUpperCase()}`
+
+    } catch (err) {
+      return 'Unknown Contract'
+    }
+  }
+
   const fetchContract = async (address: string): Promise<ContractData | null> => {
     try {
       const codeResponse = await fetch(anvilUrl, {
@@ -376,9 +478,11 @@ export default function ExplorerPage() {
       const codeData = await codeResponse.json()
 
       if (codeData.result && codeData.result !== '0x') {
+        const name = await resolveContractName(address, codeData.result)
         return {
           address,
-          code: codeData.result
+          code: codeData.result,
+          name
         }
       }
       return null
@@ -427,8 +531,9 @@ export default function ExplorerPage() {
         case 'address':
           const contract = await fetchContract(searchQuery)
           if (contract) {
-            setContracts([contract])
-            setSelectedItem(contract)
+            const numberedContract = { ...contract, index: 1 }
+            setContracts([numberedContract])
+            setSelectedItem(numberedContract)
             // Switch to contracts tab to show the result
             setActiveTab('contracts')
           } else {
@@ -1086,7 +1191,9 @@ export default function ExplorerPage() {
                   ) : (
                     <>
                       <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-2xl font-bold text-blue-800">Deployed Contracts</h2>
+                        <h2 className="text-2xl font-bold text-blue-800">
+                          Deployed Contracts ({contracts.length})
+                        </h2>
                         <button
                           onClick={fetchContracts}
                           className="flex items-center gap-2 px-4 py-2 bg-blue-100 hover:bg-blue-200 rounded-lg text-blue-700 transition-colors"
@@ -1098,6 +1205,17 @@ export default function ExplorerPage() {
                       <div className="space-y-4">
                         {contracts.map((contract) => (
                           <div key={contract.address} className="bg-white/80 rounded-lg p-4 border border-blue-200/50">
+                            <div className="flex items-center justify-between mb-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-sm font-bold text-blue-700">
+                                  {contract.index}
+                                </div>
+                                <div>
+                                  <div className="text-lg font-semibold text-blue-800">{contract.name || 'Unknown Contract'}</div>
+                                  <div className="text-sm text-blue-600">Contract #{contract.index}</div>
+                                </div>
+                              </div>
+                            </div>
                             <div className="mb-4">
                               <div className="text-sm text-blue-600">Contract Address</div>
                               <div className="font-mono text-blue-800 break-all">{contract.address}</div>
