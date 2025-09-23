@@ -40,7 +40,8 @@ contract RugMaintenanceFacet {
 
         // Refund excess payment
         if (msg.value > cost) {
-            payable(msg.sender).call{value: msg.value - cost}("");
+            (bool success,) = payable(msg.sender).call{value: msg.value - cost}("");
+            require(success, "Refund transfer failed");
         }
 
         // Update aging data - reset dirt timer, keep texture level
@@ -69,7 +70,8 @@ contract RugMaintenanceFacet {
 
         // Refund excess payment
         if (msg.value > rs.restorationCost) {
-            payable(msg.sender).call{value: msg.value - rs.restorationCost}("");
+            (bool success,) = payable(msg.sender).call{value: msg.value - rs.restorationCost}("");
+            require(success, "Refund transfer failed");
         }
 
         // Reset both dirt and texture timers (full restoration as per spec)
@@ -102,7 +104,8 @@ contract RugMaintenanceFacet {
 
         // Refund excess payment
         if (msg.value > rs.masterRestorationCost) {
-            payable(msg.sender).call{value: msg.value - rs.masterRestorationCost}("");
+            (bool success,) = payable(msg.sender).call{value: msg.value - rs.masterRestorationCost}("");
+            require(success, "Refund transfer failed");
         }
 
         // Reset aging timers (resets both dirt and texture levels to 0)

@@ -46,7 +46,6 @@ contract RugDiamondIntegrationTest is Test {
 
     function setUp() public {
         // Setup test accounts
-        owner = address(this);
         user1 = makeAddr("user1");
         user2 = makeAddr("user2");
         user3 = makeAddr("user3");
@@ -56,11 +55,15 @@ contract RugDiamondIntegrationTest is Test {
         vm.deal(user2, 1 ether);
         vm.deal(user3, 1 ether);
 
+        // Set up the deployer (this will be the owner)
+        uint256 deployerPrivateKey = uint256(keccak256("test_key"));
+        owner = vm.addr(deployerPrivateKey);
+
         // Deploy the complete diamond
         DeployRugDiamond deployScript = new DeployRugDiamond();
 
         // Set environment variable for deployment
-        vm.setEnv("PRIVATE_KEY", vm.toString(uint256(keccak256("test_key"))));
+        vm.setEnv("PRIVATE_KEY", vm.toString(deployerPrivateKey));
 
         // Deploy
         deployScript.run();
@@ -68,6 +71,7 @@ contract RugDiamondIntegrationTest is Test {
         diamond = Diamond(payable(diamondAddress));
 
         console.log("Diamond deployed at:", diamondAddress);
+        console.log("Owner set to:", owner);
     }
 
     function test_DiamondDeployment() public {
@@ -221,7 +225,9 @@ contract RugDiamondIntegrationTest is Test {
         test_MintRug();
 
         // Enable laundering
+        vm.startPrank(owner);
         RugAdminFacet(diamondAddress).setLaunderingEnabled(true);
+        vm.stopPrank();
 
         // Record a high-value sale that should trigger laundering
         vm.startPrank(user1);
@@ -318,6 +324,7 @@ contract RugDiamondIntegrationTest is Test {
 
     function test_OwnerControls() public {
         // Test collection cap update
+        vm.startPrank(owner);
         RugAdminFacet(diamondAddress).updateCollectionCap(5000);
         (uint256 newCap,,,) = RugAdminFacet(diamondAddress).getConfig();
         assertEq(newCap, 5000, "Collection cap update failed");
@@ -329,6 +336,7 @@ contract RugDiamondIntegrationTest is Test {
         (uint256 newBasePrice,) = RugAdminFacet(diamondAddress).getMintPricing();
         assertEq(newBasePrice, TEST_ETH * 2, "Pricing update failed");
 
+        vm.stopPrank();
         console.log("Owner controls working correctly");
     }
 
@@ -341,7 +349,9 @@ contract RugDiamondIntegrationTest is Test {
         assertEq(contractBalance, 1 ether, "Contract should have 1 ether");
 
         // Withdraw as owner
+        vm.startPrank(owner);
         RugCommerceFacet(payable(diamondAddress)).withdraw(0.5 ether);
+        vm.stopPrank();
 
         uint256 finalBalance = owner.balance;
         assertEq(finalBalance, initialBalance + 0.5 ether, "Owner should receive withdrawn ETH");
@@ -373,9 +383,12 @@ contract RugDiamondIntegrationTest is Test {
         vm.stopPrank();
 
         // 5. Record sale with laundering
+        vm.startPrank(owner);
         RugAdminFacet(diamondAddress).setLaunderingEnabled(true);
-        vm.prank(user2);
+        vm.stopPrank();
+        vm.startPrank(user2);
         RugLaunderingFacet(diamondAddress).recordSale(TOKEN_ID_1, user1, user2, TEST_ETH * 2);
+        vm.stopPrank();
         console.log("Sale recorded with laundering");
 
         // 6. Verify laundering occurred
