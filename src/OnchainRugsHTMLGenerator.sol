@@ -110,21 +110,21 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
         return string.concat(
             'let w=800,h=1200,f=30,wt=8,wp=',
             rug.warpThickness.toString(),
-            ',ts=2,lt,dt,p=',
+            ',ts=2,lt,dt,p=\'',
             rug.minifiedPalette,
-            ',sd=',
+            '\',sd=\'',
             rug.minifiedStripeData,
-            ',tr=',
+            '\',tr=',
             encodeTextRows(rug.textRows),
             ',td=[],s=',
             rug.seed.toString(),
-            ';let cm=',
+            ',cm=\'',
             rug.filteredCharacterMap,
-            ';tl=',
+            '\',tl=',
             Strings.toString(textureLevel),
             ',dl=',
             Strings.toString(dirtLevel),
-            ';'
+            ';p=JSON.parse(p);sd=JSON.parse(sd);cm=JSON.parse(cm);'
         );
     }
 
