@@ -495,10 +495,11 @@ export default function GalleryPage() {
   )
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-indigo-50 flex flex-col">
       <Navigation />
-      {/* Header */}
-      <motion.div
+      <main className="flex-grow">
+        {/* Header */}
+        <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
@@ -939,6 +940,7 @@ export default function GalleryPage() {
           </div>
         </div>
       </div>
+      </main>
 
       {/* Footer */}
       <Footer />

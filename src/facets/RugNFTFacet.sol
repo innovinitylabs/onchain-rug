@@ -102,7 +102,11 @@ contract RugNFTFacet is ERC721, ERC721URIStorage {
             dirtLevel: 0, // deprecated, will be calculated
             textureLevel: 0, // deprecated, will be calculated
             launderingCount: 0, // Never laundered initially
-            lastLaundered: 0 // Never laundered initially
+            lastLaundered: 0, // Never laundered initially
+            cleaningCount: 0, // Never cleaned initially
+            restorationCount: 0, // Never restored initially
+            masterRestorationCount: 0, // Never master restored initially
+            maintenanceScore: 0 // Initial maintenance score
         });
 
         // Mark text as used and record mint
@@ -240,11 +244,14 @@ contract RugNFTFacet is ERC721, ERC721URIStorage {
         // Use abi.encode to match the RugData struct in OnchainRugsHTMLGenerator
         bytes memory encodedRugData = abi.encode(rug);
 
+        string memory frameLevel = _getFrameLevel(tokenId);
+
         string memory html = OnchainRugsHTMLGenerator(rs.onchainRugsHTMLGenerator).generateProjectHTML(
             encodedRugData,
             tokenId,
             dirtLevel,
             textureLevel,
+            frameLevel,
             rs.rugScriptyBuilder,
             rs.rugEthFSStorage
         );
@@ -264,6 +271,13 @@ contract RugNFTFacet is ERC721, ERC721URIStorage {
                         '"},{"trait_type":"Complexity","value":"', uint256(rug.complexity).toString(),
                         '"},{"trait_type":"Warp Thickness","value":"', uint256(rug.warpThickness).toString(),
                         '"},{"trait_type":"Dirt Level","value":"', uint256(dirtLevel).toString(),
+                        '"},{"trait_type":"Texture Level","value":"', uint256(textureLevel).toString(),
+                        '"},{"trait_type":"Cleaning Count","value":"', aging.cleaningCount.toString(),
+                        '"},{"trait_type":"Restoration Count","value":"', aging.restorationCount.toString(),
+                        '"},{"trait_type":"Master Restoration Count","value":"', aging.masterRestorationCount.toString(),
+                        '"},{"trait_type":"Laundering Count","value":"', aging.launderingCount.toString(),
+                        '"},{"trait_type":"Maintenance Score","value":"', _calculateMaintenanceScore(tokenId).toString(),
+                        '"},{"trait_type":"Frame Level","value":"', _getFrameLevel(tokenId),
                         '"}]}'
                     )
                 )
@@ -309,5 +323,32 @@ contract RugNFTFacet is ERC721, ERC721URIStorage {
         if (timeSinceTextureReset >= rs.textureLevel1Days * 2) return 1;
 
         return 0; // Fresh texture
+    }
+
+    function _calculateMaintenanceScore(uint256 tokenId) internal view returns (uint256) {
+        LibRugStorage.AgingData storage aging = LibRugStorage.rugStorage().agingData[tokenId];
+
+        // Maintenance score formula:
+        // +2 points per cleaning (shows regular care)
+        // +5 points per restoration (shows investment in quality)
+        // +10 points per laundering (shows high-value trading)
+        // Max score capped at 1000 to prevent overflow
+        uint256 score = (aging.cleaningCount * 2) +
+                       (aging.restorationCount * 5) +
+                       (aging.masterRestorationCount * 10) +
+                       (aging.launderingCount * 10);
+
+        return score > 1000 ? 1000 : score;
+    }
+
+    function _getFrameLevel(uint256 tokenId) internal view returns (string memory) {
+        uint256 score = _calculateMaintenanceScore(tokenId);
+
+        if (score >= 500) return "Diamond";
+        if (score >= 200) return "Platinum";
+        if (score >= 100) return "Gold";
+        if (score >= 50) return "Silver";
+        if (score >= 25) return "Bronze";
+        return "None";
     }
 }

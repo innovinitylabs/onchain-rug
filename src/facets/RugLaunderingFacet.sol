@@ -211,6 +211,7 @@ contract RugLaunderingFacet {
         // Track laundering statistics
         aging.launderingCount++;
         aging.lastLaundered = block.timestamp;
+        aging.maintenanceScore = (aging.cleaningCount * 2) + (aging.restorationCount * 5) + (aging.masterRestorationCount * 10) + (aging.launderingCount * 10);
 
         (bool shouldTrigger, string memory reason) = _checkLaunderingConditions(tokenId, salePrice);
 

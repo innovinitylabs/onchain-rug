@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-import { Home, Palette, Image, Sparkles, Menu, X } from 'lucide-react'
+import { Home, Palette, Image, Sparkles, Menu, X, ShoppingCart, User } from 'lucide-react'
 import { WalletConnect } from './wallet-connect'
 import LiquidGlass from './LiquidGlass'
 
@@ -361,10 +361,10 @@ export default function Navigation() {
               </svg>
             </Link>
             <Link
-              href="/gallery"
+              href="/market"
               className="flex items-center gap-2 hover:opacity-90 transition-all duration-300"
             >
-              <Image className="w-5 h-5" />
+              <ShoppingCart className="w-5 h-5" />
               <svg
                 height="28px"
                 viewBox="0 0 70 20"
@@ -375,12 +375,12 @@ export default function Navigation() {
                 }}
               >
                 <defs>
-                  <filter id="nav-link-depth-gal" x="-100%" y="-100%" width="300%" height="300%">
-                    <feTurbulence baseFrequency="0.02" numOctaves="2" seed="44" type="fractalNoise" result="LINK_BASE_GAL" />
-                    <feDisplacementMap in="SourceGraphic" in2="LINK_BASE_GAL" scale="3" xChannelSelector="R" yChannelSelector="G" result="LINK_DISPLACED_GAL" />
-                    <feGaussianBlur in="LINK_DISPLACED_GAL" stdDeviation="0.5" result="LINK_BLUR_GAL" />
+                  <filter id="nav-link-depth-market" x="-100%" y="-100%" width="300%" height="300%">
+                    <feTurbulence baseFrequency="0.02" numOctaves="2" seed="45" type="fractalNoise" result="LINK_BASE_MARKET" />
+                    <feDisplacementMap in="SourceGraphic" in2="LINK_BASE_MARKET" scale="3" xChannelSelector="R" yChannelSelector="G" result="LINK_DISPLACED_MARKET" />
+                    <feGaussianBlur in="LINK_DISPLACED_MARKET" stdDeviation="0.5" result="LINK_BLUR_MARKET" />
                   </filter>
-                  <linearGradient id="nav-link-gradient-gal" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <linearGradient id="nav-link-gradient-market" x1="0%" y1="0%" x2="100%" y2="100%">
                     <stop offset="0%" style={{ stopColor: 'rgba(255, 255, 255, 0.9)', stopOpacity: 1 }} />
                     <stop offset="100%" style={{ stopColor: 'rgba(255, 255, 255, 0.9)', stopOpacity: 1 }} />
                   </linearGradient>
@@ -391,14 +391,56 @@ export default function Navigation() {
                   textAnchor="middle"
                   dominantBaseline="middle"
                   style={{
-                    fill: 'url(#nav-link-gradient-gal)',
-                    filter: 'url(#nav-link-depth-gal)',
+                    fill: 'url(#nav-link-gradient-market)',
+                    filter: 'url(#nav-link-depth-market)',
                     fontSize: '14px',
                     fontWeight: '600',
                     fontFamily: 'system-ui, -apple-system, sans-serif',
                   }}
                 >
-              Gallery
+              Market
+                </text>
+              </svg>
+            </Link>
+            <Link
+              href="/dashboard"
+              className="flex items-center gap-2 hover:opacity-90 transition-all duration-300"
+            >
+              <User className="w-5 h-5" />
+              <svg
+                height="28px"
+                viewBox="0 0 90 20"
+                style={{
+                  display: 'block',
+                  height: '28px',
+                  filter: 'drop-shadow(0 0 6px rgba(108, 190, 230, 0.3))',
+                }}
+              >
+                <defs>
+                  <filter id="nav-link-depth-dashboard" x="-100%" y="-100%" width="300%" height="300%">
+                    <feTurbulence baseFrequency="0.02" numOctaves="2" seed="46" type="fractalNoise" result="LINK_BASE_DASHBOARD" />
+                    <feDisplacementMap in="SourceGraphic" in2="LINK_BASE_DASHBOARD" scale="3" xChannelSelector="R" yChannelSelector="G" result="LINK_DISPLACED_DASHBOARD" />
+                    <feGaussianBlur in="LINK_DISPLACED_DASHBOARD" stdDeviation="0.5" result="LINK_BLUR_DASHBOARD" />
+                  </filter>
+                  <linearGradient id="nav-link-gradient-dashboard" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style={{ stopColor: 'rgba(255, 255, 255, 0.9)', stopOpacity: 1 }} />
+                    <stop offset="100%" style={{ stopColor: 'rgba(255, 255, 255, 0.9)', stopOpacity: 1 }} />
+                  </linearGradient>
+                </defs>
+                <text
+                  x="50%"
+                  y="12"
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  style={{
+                    fill: 'url(#nav-link-gradient-dashboard)',
+                    filter: 'url(#nav-link-depth-dashboard)',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    fontFamily: 'system-ui, -apple-system, sans-serif',
+                  }}
+                >
+              Dashboard
                 </text>
               </svg>
             </Link>
@@ -491,12 +533,21 @@ export default function Navigation() {
               </Link>
 
               <Link
-                href="/gallery"
+                href="/market"
                 onClick={closeMobileMenu}
                 className="flex items-center gap-4 px-6 py-4 text-white hover:bg-white/10 transition-colors duration-200"
               >
-                <Image className="w-6 h-6" />
-                <span className="text-lg font-medium">Gallery</span>
+                <ShoppingCart className="w-6 h-6" />
+                <span className="text-lg font-medium">Market</span>
+              </Link>
+
+              <Link
+                href="/dashboard"
+                onClick={closeMobileMenu}
+                className="flex items-center gap-4 px-6 py-4 text-white hover:bg-white/10 transition-colors duration-200"
+              >
+                <User className="w-6 h-6" />
+                <span className="text-lg font-medium">Dashboard</span>
               </Link>
 
             </div>

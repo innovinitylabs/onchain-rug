@@ -1876,9 +1876,10 @@ export default function GeneratorPage() {
   }, [isLoaded]) // Only run when isLoaded changes to true
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100 flex flex-col">
       <Navigation />
-      <div className="max-w-[1800px] mx-auto px-4 pt-24">
+      <main className="flex-grow">
+        <div className="max-w-[1800px] mx-auto px-4 pt-24">
       {/* Header */}
 
         {/* Old-School Terminal Layout - Art on Top, Terminal on Bottom */}
@@ -2516,6 +2517,7 @@ export default function GeneratorPage() {
           <button id="toggleRowsBtn"></button>
         </div>
       </div>
+      </main>
 
       {/* Footer */}
       <Footer />

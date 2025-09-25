@@ -244,7 +244,7 @@ contract RugAgingFacet {
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
         LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
 
-        // Texture level based on time since last texture reset (totally independent of dirt maintenance)
+        // Texture level based on time since last texture reset (resets with cleaning for maintenance incentive)
         uint256 timeSinceTextureReset = block.timestamp - aging.lastTextureReset;
 
         // Texture progression over time (longer timeline than dirt)

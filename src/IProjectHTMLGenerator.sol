@@ -23,8 +23,9 @@ interface IProjectHTMLGenerator {
      * @param tokenId The token ID
      * @param dirtLevel Current dirt level (0-2)
      * @param textureLevel Current texture level (0-10)
+     * @param frameLevel Frame level string ("None", "Bronze", "Silver", "Gold", "Platinum", "Diamond")
      * @param scriptyBuilder Address of ScriptyBuilderV2
-     * @param ethfsStorage Address of RugEthFSStorage
+     * @param ethfsStorage Address of EthFS storage contract
      * @return html Generated HTML string
      */
     function generateProjectHTML(
@@ -32,6 +33,7 @@ interface IProjectHTMLGenerator {
         uint256 tokenId,
         uint8 dirtLevel,
         uint8 textureLevel,
+        string memory frameLevel,
         address scriptyBuilder,
         address ethfsStorage
     ) external view returns (string memory html);

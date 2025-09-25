@@ -34,6 +34,10 @@ library LibRugStorage {
         uint8 textureLevel;             // Current texture aging (0-10) - deprecated, calculated
         uint256 launderingCount;        // Number of times laundered
         uint256 lastLaundered;          // Last laundering timestamp
+        uint256 cleaningCount;          // Number of times cleaned
+        uint256 restorationCount;       // Number of times restored
+        uint256 masterRestorationCount; // Number of times master restored
+        uint256 maintenanceScore;       // Calculated maintenance quality score
     }
 
     struct RugConfig {

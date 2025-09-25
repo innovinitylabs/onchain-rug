@@ -44,8 +44,11 @@ contract RugMaintenanceFacet {
             require(success, "Refund transfer failed");
         }
 
-        // Update aging data - reset dirt timer, keep texture level
+        // Update aging data - reset both dirt and texture timers (spec-compliant maintenance)
         aging.lastCleaned = block.timestamp;
+        aging.lastTextureReset = block.timestamp;
+        aging.cleaningCount++;
+        aging.maintenanceScore = (aging.cleaningCount * 2) + (aging.restorationCount * 5) + (aging.masterRestorationCount * 10) + (aging.launderingCount * 10);
 
         emit RugCleaned(tokenId, msg.sender, cost, isFree);
     }
@@ -79,6 +82,8 @@ contract RugMaintenanceFacet {
         uint8 previousTexture = currentTexture;
         aging.lastCleaned = block.timestamp;
         aging.lastTextureReset = block.timestamp;
+        aging.restorationCount++;
+        aging.maintenanceScore = (aging.cleaningCount * 2) + (aging.restorationCount * 5) + (aging.masterRestorationCount * 10) + (aging.launderingCount * 10);
 
         emit RugRestored(tokenId, msg.sender, previousDirt, previousTexture - 1, rs.restorationCost);
     }
@@ -111,6 +116,8 @@ contract RugMaintenanceFacet {
         // Reset aging timers (resets both dirt and texture levels to 0)
         aging.lastCleaned = block.timestamp;
         aging.lastTextureReset = block.timestamp;
+        aging.masterRestorationCount++;
+        aging.maintenanceScore = (aging.cleaningCount * 2) + (aging.restorationCount * 5) + (aging.masterRestorationCount * 10) + (aging.launderingCount * 10);
 
         emit RugMasterRestored(tokenId, msg.sender, currentDirt, currentTexture, rs.masterRestorationCost);
     }

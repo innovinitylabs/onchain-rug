@@ -54,6 +54,7 @@ contract FreshDeploy is Script {
     // Libraries to upload
     string constant P5_LIBRARY_NAME = "rug-p5.js";
     string constant ALGO_LIBRARY_NAME = "rug-algo.js";
+    string constant FRAME_LIBRARY_NAME = "rug-frame.js";
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -131,6 +132,11 @@ contract FreshDeploy is Script {
         console.log("Uploading algorithm library...");
         string memory algoContent = vm.readFile("./data/rug-algo.js");
         uploadFile(ALGO_LIBRARY_NAME, algoContent);
+
+        // Upload frame library
+        console.log("Uploading frame library...");
+        string memory frameContent = vm.readFile("./data/rug-frame.js");
+        uploadFile(FRAME_LIBRARY_NAME, frameContent);
 
         vm.stopBroadcast();
         console.log("Libraries uploaded successfully");

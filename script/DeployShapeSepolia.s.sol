@@ -225,6 +225,11 @@ contract DeployShapeSepolia is Script {
         string memory algoContent = vm.readFile("data/rug-algo.js");
         uploadFile("rug-algo.js", algoContent);
 
+        // Upload frame library
+        console.log("   Uploading frame library...");
+        string memory frameContent = vm.readFile("data/rug-frame.js");
+        uploadFile("rug-frame.js", frameContent);
+
         console.log("   Libraries uploaded successfully");
     }
 
