@@ -139,17 +139,12 @@ const NFTExporter: React.FC<NFTExporterProps> = ({
       return Math.round(value * 1000) / 1000;
     };
 
-    const shortenWeaveType = (weaveType) => {
-      const mapping = { 'solid': 's', 'mixed': 'm', 'textured': 't' };
-      return mapping[weaveType] || weaveType; // Fallback for safety
-    };
-
     const shortenedStripeData = stripeData.map(stripe => ({
       y: truncateTo3Decimals(stripe.y),               // Truncate y values for consistency (potential chars saved)
       h: truncateTo3Decimals(stripe.height),           // 17 digits → 3 digits (14 chars saved)
       pc: stripe.primaryColor,            // primaryColor → pc (10 chars saved)
       sc: stripe.secondaryColor,          // secondaryColor → sc (12 chars saved)
-      wt: shortenWeaveType(stripe.weaveType),         // "solid" → "s", "mixed" → "m", "textured" → "t" (4-7 chars saved)
+      wt: stripe.weaveType,               // Already shortened in generator
       wv: truncateTo3Decimals(stripe.warpVariation)    // 16 digits → 3 digits (13 chars saved)
     }));
 
@@ -961,7 +956,195 @@ let cm=${JSON.stringify(optimizedCharacterMapFinal)};
 function setup(){noiseSeed(${s});window.d=function(s){window.prngSeed=s%2147483647;if(window.prngSeed<=0)window.prngSeed+=2147483646};window.b=function(){window.prngSeed=(window.prngSeed*16807)%2147483647;return(window.prngSeed-1)/2147483646};window.a=function(min,max){return min+window.b()*(max-min)};window.c=function(array){return array[Math.floor(window.b()*array.length)]};window.d(${s});let canvas=createCanvas(h+(f*4),w+(f*4));canvas.parent("rug");pixelDensity(2.5);u();gtd();noLoop()}
 function u(){if(!p||!p.colors)return;let d=p.colors[0],l=p.colors[0],dv=999,lv=-1;for(let hex of p.colors){let c=color(hex),b=(red(c)+green(c)+blue(c))/3;if(b<dv){dv=b;d=hex}if(b>lv){lv=b;l=hex}}dt=lerpColor(color(d),color(0),0.4);lt=lerpColor(color(l),color(255),0.3)}
 function draw(){background(222,222,222);push();translate(width/2,height/2);rotate(PI/2);translate(-height/2,-width/2);push();translate(f*2,f*2);for(let stripe of sd)ds(stripe);if(tl>0)dtol(Math.floor(tl));pop();df();if(dl>0)ddo(Math.floor(dl));pop()} 
-function ds(s){let ws=wp+1,we=wt+1;for(let x=0;x<w;x+=ws){for(let y=s.y;y<s.y+s.h;y+=we){let wc=color(s.pc),itp=false;if(td.length>0){for(let tp of td){if(x>=tp.x&&x<tp.x+tp.width&&y>=tp.y&&y<tp.y+tp.height){itp=true;break}}}let r=red(wc)+window.a(-15,15),g=green(wc)+window.a(-15,15),b=blue(wc)+window.a(-15,15);if(itp){const bb=(r+g+b)/3;let tc=bb<128?lt:dt;r=red(tc);g=green(tc);b=blue(tc)}r=constrain(r,0,255);g=constrain(g,0,255);b=constrain(b,0,255);fill(r,g,b);noStroke();let wcv=sin(y*0.05)*0.5;rect(x+wcv,y,wp,we)}}for(let y=s.y;y<s.y+s.h;y+=we){for(let x=0;x<w;x+=ws){let wc=color(s.pc),itp=false;if(td.length>0){for(let tp of td){if(x>=tp.x&&x<tp.x+tp.width&&y>=tp.y&&y<tp.y+tp.height){itp=true;break}}}if(s.wt==="m"&&s.sc){if(noise(x*0.1,y*0.1)>0.5)wc=color(s.sc)}else if(s.wt==="t"){let nv=noise(x*0.05,y*0.05);wc=lerpColor(color(s.pc),color(255),nv*0.15)}let r=red(wc)+window.a(-20,20),g=green(wc)+window.a(-20,20),b=blue(wc)+window.a(-20,20);if(itp){const bb=(r+g+b)/3;let tc=bb<128?lt:dt;r=red(tc);g=green(tc);b=blue(tc)}r=constrain(r,0,255);g=constrain(g,0,255);b=constrain(b,0,255);fill(r,g,b);noStroke();let wcv=cos(x*0.05)*0.5;rect(x,y+wcv,ws,wt)}}for(let y=s.y;y<s.y+s.h;y+=we*2){for(let x=0;x<w;x+=ws*2){fill(0,0,0,40);noStroke();rect(x+1,y+1,ws-2,we-2)}}for(let y=s.y+we;y<s.y+s.h;y+=we*2){for(let x=ws;x<w;x+=ws*2){fill(255,255,255,30);noStroke();rect(x,y,ws-1,we-1)}}}
+function ds(s){
+  let ws=wp+1,we=wt+1;
+  for(let x=0;x<w;x+=ws){
+    for(let y=s.y;y<s.y+s.h;y+=we){
+      let wc=color(s.pc),itp=false;
+      if(td.length>0){
+        for(let tp of td){
+          if(x>=tp.x&&x<tp.x+tp.width&&y>=tp.y&&y<tp.y+tp.height){
+            itp=true;
+            break;
+          }
+        }
+      }
+      let r=red(wc)+window.a(-15,15),
+          g=green(wc)+window.a(-15,15),
+          b=blue(wc)+window.a(-15,15);
+      if(itp){
+        fill(0,0,0,120);
+        noStroke();
+        let wcv=sin(y*0.05)*0.5;
+        rect(x+wcv+0.5,y+0.5,wp,we);
+        if(s.wt==="m"&&s.sc){
+          const pb=(red(color(s.pc))+green(color(s.pc))+blue(color(s.pc)))/3,
+                sb=(red(color(s.sc))+green(color(s.sc))+blue(color(s.sc)))/3,
+                ab=(pb+sb)/2,
+                tc=ab<128?lerpColor(lt,color(0,0,0),0.2):lerpColor(dt,color(255,255,255),0.2);
+          r=red(tc);
+          g=green(tc);
+          b=blue(tc);
+        }else{
+          const bb=(r+g+b)/3,
+                tc=bb<128?lt:dt;
+          r=red(tc);
+          g=green(tc);
+          b=blue(tc);
+        }
+      }
+      r=constrain(r,0,255);
+      g=constrain(g,0,255);
+      b=constrain(b,0,255);
+      fill(r,g,b);
+      noStroke();
+      let wcv=sin(y*0.05)*0.5;
+      rect(x+wcv,y,wp,we);
+    }
+  }
+  for(let y=s.y;y<s.y+s.h;y+=we){
+    for(let x=0;x<w;x+=ws){
+      let wc=color(s.pc),itp=false;
+      if(td.length>0){
+        for(let tp of td){
+          if(x>=tp.x&&x<tp.x+tp.width&&y>=tp.y&&y<tp.y+tp.height){
+            itp=true;
+            break;
+          }
+        }
+      }
+      if(s.wt==="m"&&s.sc){
+        if(noise(x*0.1,y*0.1)>0.5)wc=color(s.sc);
+      }else if(s.wt==="t"){
+        let nv=noise(x*0.05,y*0.05);
+        wc=lerpColor(color(s.pc),color(255),nv*0.15);
+      }
+      let r=red(wc)+window.a(-20,20),
+          g=green(wc)+window.a(-20,20),
+          b=blue(wc)+window.a(-20,20);
+      if(itp){
+        fill(0,0,0,120);
+        noStroke();
+        let wcv=cos(x*0.05)*0.5;
+        rect(x+0.5,y+wcv+0.5,ws,wt);
+        if(s.wt==="m"&&s.sc){
+          let sampleColors=[color(wc)], radius=2;
+          for(let dx=-radius;dx<=radius;dx++){
+            for(let dy=-radius;dy<=radius;dy++){
+              if(dx===0&&dy===0)continue;
+              let cx=x+dx,cy=y+dy;
+              if(cx>=0&&cx<w&&cy>=s.y&&cy<s.y+s.h){
+                let cWeft=color(s.pc);
+                if(noise(cx*0.1,cy*0.1)>0.5)cWeft=color(s.sc);
+                sampleColors.push(cWeft);
+              }
+            }
+          }
+          if(sampleColors.length===0)sampleColors.push(color(s.pc));
+
+          const relLum=(col)=>{const conv=(val)=>{const ch=val/255;return ch<=0.03928?ch/12.92:pow((ch+0.055)/1.055,2.4);};return 0.2126*conv(red(col))+0.7152*conv(green(col))+0.0722*conv(blue(col));};
+          const contrastRatio=(a,b)=>{const la=relLum(a),lb=relLum(b),light=max(la,lb),dark=min(la,lb);return(light+0.05)/(dark+0.05);};
+          const colorDistance=(a,b)=>Math.abs(red(a)-red(b))+Math.abs(green(a)-green(b))+Math.abs(blue(a)-blue(b));
+
+          const primary=color(s.pc),secondary=color(s.sc),lightColor=color(lt),darkColor=color(dt),white=color(255,255,255),black=color(0,0,0);
+          const distinctThreshold=90;
+          const isDistinct=(candidate)=>colorDistance(candidate,primary)>distinctThreshold&&colorDistance(candidate,secondary)>distinctThreshold;
+
+          const candidates=[],candidateKeys=new Set();
+          const toKey=(col)=>Math.round(red(col))+'-'+Math.round(green(col))+'-'+Math.round(blue(col));
+          const pushCandidate=(entry)=>{const cand=color(entry),key=toKey(cand);if(!candidateKeys.has(key)){candidateKeys.add(key);candidates.push(cand);}};
+          const pushWithVariants=(base)=>{pushCandidate(base);pushCandidate(lerpColor(base,white,0.6));pushCandidate(lerpColor(base,black,0.6));};
+
+          pushWithVariants(lightColor);
+          pushWithVariants(darkColor);
+
+          const bandCandidates=[];
+          const pushBandCandidate=(entry)=>{const cand=color(entry),key=toKey(cand);if(!candidateKeys.has(key)){candidateKeys.add(key);bandCandidates.push(cand);}};
+          pushBandCandidate(primary);
+          pushBandCandidate(secondary);
+
+          if(p.colors&&p.colors.length){
+            for(const palColor of p.colors){
+              const pal=color(palColor);
+              pushWithVariants(pal);
+            }
+          }
+
+          const evaluate=(pool)=>{
+            if(pool.length===0)return {best:white,bestScore:-1};
+            let best=pool[0],bestScore=-1;
+            for(const candidate of pool){
+              let minContrast=Infinity;
+              for(const background of sampleColors){
+                const ratio=contrastRatio(candidate,background);
+                if(ratio<minContrast)minContrast=ratio;
+              }
+              if(minContrast>bestScore){bestScore=minContrast;best=candidate;}
+            }
+            return {best,bestScore};
+          };
+
+          const distinctPool=candidates.filter(isDistinct);
+          let evaluationPool=distinctPool.length>0?distinctPool:candidates;
+          if(evaluationPool.length===0) evaluationPool=bandCandidates.filter(isDistinct);
+          if(evaluationPool.length===0) evaluationPool=[white,black];
+
+          let {best:bestCandidate,bestScore}=evaluate(evaluationPool);
+
+          if(bestScore<4.5){
+            let avgR=0,avgG=0,avgB=0;
+            for(const background of sampleColors){avgR+=red(background);avgG+=green(background);avgB+=blue(background);} 
+            const count=sampleColors.length||1;
+            const average=color(avgR/count,avgG/count,avgB/count);
+            const contrastBlack=contrastRatio(black,average),contrastWhite=contrastRatio(white,average);
+            const complement=color(255-red(average),255-green(average),255-blue(average));
+            const fallback=[];
+            const addFallback=(candidate)=>{if(isDistinct(candidate))fallback.push(candidate);};
+            addFallback(contrastBlack>=contrastWhite?black:white);
+            addFallback(complement);
+            addFallback(lerpColor(average,white,0.85));
+            addFallback(lerpColor(average,black,0.85));
+            if(fallback.length>0){({best:bestCandidate}=evaluate(fallback));}
+            else bestCandidate=contrastBlack>=contrastWhite?white:black;
+          }
+
+          if(!isDistinct(bestCandidate)&&distinctPool.length>0){({best:bestCandidate}=evaluate(distinctPool));}
+
+          r=red(bestCandidate);
+          g=green(bestCandidate);
+          b=blue(bestCandidate);
+        }else{
+          const bb=(r+g+b)/3,
+                tc=bb<128?lt:dt;
+          r=red(tc);
+          g=green(tc);
+          b=blue(tc);
+        }
+      }
+      r=constrain(r,0,255);
+      g=constrain(g,0,255);
+      b=constrain(b,0,255);
+      fill(r,g,b);
+      noStroke();
+      let wcv=cos(x*0.05)*0.5;
+      rect(x,y+wcv,ws,wt);
+    }
+  }
+  for(let y=s.y;y<s.y+s.h;y+=we*2){
+    for(let x=0;x<w;x+=ws*2){
+      fill(0,0,0,40);
+      noStroke();
+      rect(x+1,y+1,ws-2,we-2);
+    }
+  }
+  for(let y=s.y+we;y<s.y+s.h;y+=we*2){
+    for(let x=ws;x<w;x+=ws*2){
+      fill(255,255,255,30);
+      noStroke();
+      rect(x,y,ws-1,we-1);
+    }
+  }
+}
 function dto(){push();blendMode(MULTIPLY);for(let x=0;x<w;x+=2){for(let y=0;y<h;y+=2){let nv=noise(x*0.02,y*0.02),a=map(nv,0,1,0,50);fill(0,0,0,a);noStroke();rect(x,y,2,2)}}for(let x=0;x<w;x+=6){for(let y=0;y<h;y+=6){let nv=noise(x*0.03,y*0.03);if(nv>0.6){fill(255,255,255,25);noStroke();rect(x,y,6,6)}else if(nv<0.4){fill(0,0,0,20);noStroke();rect(x,y,6,6)}}}pop()}
 function dtol(tl){const hi=tl===1?30:tl===2?80:120,ri=tl===1?20:tl===2?40:60,rt=tl===1?0.6:tl===2?0.5:0.4;push();blendMode(MULTIPLY);for(let x=0;x<w;x+=2){for(let y=0;y<h;y+=2){let nv=noise(x*0.02,y*0.02),i=map(nv,0,1,0,hi);fill(0,0,0,i);noStroke();rect(x,y,2,2)}}for(let x=0;x<w;x+=6){for(let y=0;y<h;y+=6){let rn=noise(x*0.03,y*0.03);if(rn>rt){fill(255,255,255,ri);noStroke();rect(x,y,6,6)}else if(rn<(1-rt)){fill(0,0,0,ri*0.8);noStroke();rect(x,y,6,6)}}}if(tl>=2){for(let x=0;x<w;x+=8){for(let y=0;y<h;y+=8){let wn=noise(x*0.01,y*0.01);if(wn>0.7){fill(0,0,0,15);noStroke();rect(x,y,8,2)}}}}if(tl>=3){for(let x=0;x<w;x+=4){for(let y=0;y<h;y+=4){let wn=noise(x*0.005,y*0.005);if(wn>0.8){fill(0,0,0,25);noStroke();rect(x,y,4,1)}}}}pop()}
 function ddo(dl){const di=dl===1?0.5:1.0,doo=dl===1?30:60;push();translate(f*2,f*2);for(let x=0;x<w;x+=3){for(let y=0;y<h;y+=3){const dn=window.a(0,1),dt=0.85*di;if(dn>dt){const ds=window.a(1,4),da=window.a(doo*0.5,doo),dr=window.a(60,90),dg=window.a(40,60),db=window.a(20,40);fill(dr,dg,db,da);noStroke();ellipse(x,y,ds,ds)}}}for(let i=0;i<15*di;i++){const sx=window.a(0,w),sy=window.a(0,h),ss=window.a(8,20),sa=window.a(doo*0.3,doo*0.7),sr=window.a(40,70),sg=window.a(25,45),sb=window.a(15,30);fill(sr,sg,sb,sa);noStroke();ellipse(sx,sy,ss,ss)}for(let x=0;x<w;x+=2){for(let y=0;y<h;y+=2){const ed=Math.min(x,y,w-x,h-y);if(ed<10){const edirt=window.a(0,1);if(edirt>0.7*di){const ea=window.a(10,25);fill(80,50,20,ea);noStroke();rect(x,y,2,2)}}}}pop()}

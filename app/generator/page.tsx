@@ -17,6 +17,7 @@ export default function GeneratorPage() {
   const [currentRowCount, setCurrentRowCount] = useState(1)
   const [palette, setPalette] = useState<any>(null)
   const [traits, setTraits] = useState<any>(null)
+  const [stripeData, setStripeData] = useState<any[]>([])
   const [showDirt, setShowDirt] = useState(false)
   const [dirtLevel, setDirtLevel] = useState(0) // 0 = clean, 1 = 50% dirty, 2 = full dirty
   const [showTexture, setShowTexture] = useState(false)
@@ -412,9 +413,9 @@ export default function GeneratorPage() {
     // Limited to 1-4 to prevent text clipping with 5 lines
     const warpThicknessWeights = {
       1: 0.10,  // 10% - Very thin
-      2: 0.25,  // 25% - Thin
-      3: 0.35,  // 35% - Medium-thin (most common)
-      4: 0.30   // 30% - Medium
+      2: 0.25,  // 25% chance (rare)
+      3: 0.35,  // 35% chance (most common)
+      4: 0.30   // 30% chance
     }
     
     const warpThicknessRoll = prng.next()
@@ -437,6 +438,7 @@ export default function GeneratorPage() {
     
     // Generate stripes with seeded randomness
     doormatData.stripeData = generateStripes(doormatData, seed)
+    setStripeData(doormatData.stripeData) // Update React state
 
     // Calculate complexity based on stripe patterns
     const calculatedComplexity = calculateNumericComplexity(doormatData.stripeData)
@@ -677,11 +679,11 @@ export default function GeneratorPage() {
       }
       
       if (weaveRand < solidChance) {
-        weaveType = 'solid'
+        weaveType = 's'  // solid
       } else if (weaveRand < solidChance + texturedChance) {
-        weaveType = 'textured'
+        weaveType = 't'  // textured
       } else {
-        weaveType = 'mixed'
+        weaveType = 'm'  // mixed
       }
       
       // Create stripe object (original structure)
@@ -706,7 +708,10 @@ export default function GeneratorPage() {
     const config = doormatData.config
     const warpSpacing = doormatData.warpThickness + 1
     const weftSpacing = config.WEFT_THICKNESS + 1
-    
+
+    // Draw character outlines first (for mixed weaves)
+    drawCharacterOutlines(p, stripe, doormatData)
+
     // First, draw the warp threads (vertical) as the foundation
     for (let x = 0; x < config.DOORMAT_WIDTH; x += warpSpacing) {
       for (let y = stripe.y; y < stripe.y + stripe.height; y += weftSpacing) {
@@ -729,20 +734,52 @@ export default function GeneratorPage() {
         let g = p.green(warpColor) + drawingPRNG.range(-15, 15)
         let b = p.blue(warpColor) + drawingPRNG.range(-15, 15)
         
-        // Modify color for text pixels (vertical lines use weft thickness)
+        // Handle text pixels in warp threads
         if (isTextPixel) {
-          const bgBrightness = (r + g + b) / 3
-          let tc = bgBrightness < 128 ? doormatData.lightTextColor : doormatData.darkTextColor
-          r = p.red(tc); g = p.green(tc); b = p.blue(tc)
+          // Draw shadow for text
+          p.fill(0, 0, 0, 120)
+          p.noStroke()
+          let warpCurve = p.sin(y * 0.05) * 0.5
+          p.rect(x + warpCurve + 0.5, y + 0.5, doormatData.warpThickness, weftSpacing)
+
+          // Use intelligent text color selection for warp threads
+          if (stripe.weaveType === 'm' && stripe.secondaryColor) {
+            // For mixed weaves, choose text color that contrasts best with BOTH colors
+            const primaryBrightness = (p.red(p.color(stripe.primaryColor)) + p.green(p.color(stripe.primaryColor)) + p.blue(p.color(stripe.primaryColor))) / 3
+            const secondaryBrightness = (p.red(p.color(stripe.secondaryColor)) + p.green(p.color(stripe.secondaryColor)) + p.blue(p.color(stripe.secondaryColor))) / 3
+
+            // Test contrast with black vs white
+            const blackContrastPrimary = Math.abs(primaryBrightness - 0)
+            const blackContrastSecondary = Math.abs(secondaryBrightness - 0)
+            const whiteContrastPrimary = Math.abs(primaryBrightness - 255)
+            const whiteContrastSecondary = Math.abs(secondaryBrightness - 255)
+
+            // Use the color that gives better minimum contrast
+            const blackMinContrast = Math.min(blackContrastPrimary, blackContrastSecondary)
+            const whiteMinContrast = Math.min(whiteContrastPrimary, whiteContrastSecondary)
+
+            if (whiteMinContrast > blackMinContrast) {
+              r = 255; g = 255; b = 255 // White
+            } else {
+              r = 0; g = 0; b = 0 // Black
+            }
+          } else {
+            r = 0; g = 0; b = 0 // Black for warp threads
+          }
+        } else {
+          // Normal warp thread color
+          r = p.red(warpColor) + drawingPRNG.range(-15, 15)
+          g = p.green(warpColor) + drawingPRNG.range(-15, 15)
+          b = p.blue(warpColor) + drawingPRNG.range(-15, 15)
         }
-        
+
         r = p.constrain(r, 0, 255)
         g = p.constrain(g, 0, 255)
         b = p.constrain(b, 0, 255)
-        
+
         p.fill(r, g, b)
         p.noStroke()
-        
+
         // Draw warp thread with slight curve for natural look
         let warpCurve = p.sin(y * 0.05) * 0.5
         p.rect(x + warpCurve, y, doormatData.warpThickness, weftSpacing)
@@ -755,11 +792,11 @@ export default function GeneratorPage() {
         let weftColor = p.color(stripe.primaryColor)
         
         // Add variation based on weave type
-        if (stripe.weaveType === 'mixed' && stripe.secondaryColor) {
+        if (stripe.weaveType === 'm' && stripe.secondaryColor) {
           if (p.noise(x * 0.1, y * 0.1) > 0.5) {
             weftColor = p.color(stripe.secondaryColor)
           }
-        } else if (stripe.weaveType === 'textured') {
+        } else if (stripe.weaveType === 't') {
           let noiseVal = p.noise(x * 0.05, y * 0.05)
           weftColor = p.lerpColor(p.color(stripe.primaryColor), p.color(255), noiseVal * 0.15)
         }
@@ -780,21 +817,214 @@ export default function GeneratorPage() {
         let r = p.red(weftColor) + drawingPRNG.range(-20, 20)
         let g = p.green(weftColor) + drawingPRNG.range(-20, 20)
         let b = p.blue(weftColor) + drawingPRNG.range(-20, 20)
-        
-        // Modify color for text pixels (horizontal lines use warp thickness)
+
+        // Handle text pixels with special rendering
         if (isTextPixel) {
-          const bgBrightness = (r + g + b) / 3
-          let tc = bgBrightness < 128 ? doormatData.lightTextColor : doormatData.darkTextColor
-          r = p.red(tc); g = p.green(tc); b = p.blue(tc)
+          // Draw shadow for text (works on all backgrounds)
+          p.fill(0, 0, 0, 120) // Semi-transparent black shadow
+          p.noStroke()
+          let weftCurve = p.cos(x * 0.05) * 0.5
+          p.rect(x + 0.5, y + weftCurve + 0.5, warpSpacing, config.WEFT_THICKNESS)
+
+          // Use high contrast text color
+          if (stripe.weaveType === 'm' && stripe.secondaryColor) {
+            // For mixed weaves: analyse local background and choose a high-contrast colour
+            const sampleColors: any[] = []
+            const checkRadius = 2
+            const stripeWidth = doormatData.config?.DOORMAT_WIDTH || config.DOORMAT_WIDTH
+
+            // Always include the current weft colour
+            sampleColors.push(p.color(weftColor))
+
+            for (let dx = -checkRadius; dx <= checkRadius; dx++) {
+              for (let dy = -checkRadius; dy <= checkRadius; dy++) {
+                if (dx === 0 && dy === 0) continue
+
+                const checkX = x + dx
+                const checkY = y + dy
+
+                if (checkY < stripe.y || checkY >= stripe.y + stripe.height) continue
+                if (checkX < 0 || checkX >= stripeWidth) continue
+
+                let checkWeftColor = p.color(stripe.primaryColor)
+                const noiseVal = p.noise(checkX * 0.1, checkY * 0.1)
+                if (noiseVal > 0.5) {
+                  checkWeftColor = p.color(stripe.secondaryColor)
+                }
+                sampleColors.push(checkWeftColor)
+              }
+            }
+
+            if (sampleColors.length === 0) {
+              sampleColors.push(p.color(stripe.primaryColor))
+            }
+
+            const toKey = (colorObj: any) => {
+              return [Math.round(p.red(colorObj)), Math.round(p.green(colorObj)), Math.round(p.blue(colorObj))].join('-')
+            }
+
+            const toRelativeLuminance = (colorObj: any) => {
+              const convert = (value: number) => {
+                const channel = value / 255
+                return channel <= 0.03928 ? channel / 12.92 : Math.pow((channel + 0.055) / 1.055, 2.4)
+              }
+              const rLum = convert(p.red(colorObj))
+              const gLum = convert(p.green(colorObj))
+              const bLum = convert(p.blue(colorObj))
+              return 0.2126 * rLum + 0.7152 * gLum + 0.0722 * bLum
+            }
+
+            const contrastRatio = (a: any, b: any) => {
+              const lumA = toRelativeLuminance(a)
+              const lumB = toRelativeLuminance(b)
+              const lighter = Math.max(lumA, lumB)
+              const darker = Math.min(lumA, lumB)
+              return (lighter + 0.05) / (darker + 0.05)
+            }
+
+            const colorDistance = (a: any, b: any) => {
+              return Math.abs(p.red(a) - p.red(b)) + Math.abs(p.green(a) - p.green(b)) + Math.abs(p.blue(a) - p.blue(b))
+            }
+
+            const primaryColor = p.color(stripe.primaryColor)
+            const secondaryColor = p.color(stripe.secondaryColor)
+            const distinctThreshold = 90
+            const isDistinct = (candidate: any) => {
+              return colorDistance(candidate, primaryColor) > distinctThreshold && colorDistance(candidate, secondaryColor) > distinctThreshold
+            }
+
+            const candidateColors: any[] = []
+            const candidateKeys = new Set<string>()
+            const pushCandidate = (value: any) => {
+              const candidate = p.color(value)
+              const key = toKey(candidate)
+              if (!candidateKeys.has(key)) {
+                candidateKeys.add(key)
+                candidateColors.push(candidate)
+              }
+            }
+
+            const lightTextColor = p.color(doormatData.lightTextColor)
+            const darkTextColor = p.color(doormatData.darkTextColor)
+            const whiteColor = p.color(255, 255, 255)
+            const blackColor = p.color(0, 0, 0)
+
+            const pushWithVariants = (base: any) => {
+              pushCandidate(base)
+              pushCandidate(p.lerpColor(base, whiteColor, 0.6))
+              pushCandidate(p.lerpColor(base, blackColor, 0.6))
+            }
+
+            pushWithVariants(lightTextColor)
+            pushWithVariants(darkTextColor)
+            // Only add stripe band colours as fallbacks if nothing else is available later
+            const bandCandidates: any[] = []
+            const pushBandCandidate = (value: any) => {
+              const candidate = p.color(value)
+              const key = toKey(candidate)
+              if (!candidateKeys.has(key)) {
+                candidateKeys.add(key)
+                bandCandidates.push(candidate)
+              }
+            }
+            pushBandCandidate(primaryColor)
+            pushBandCandidate(secondaryColor)
+
+            if (doormatData.selectedPalette?.colors?.length) {
+              for (const paletteColor of doormatData.selectedPalette.colors) {
+                const paletteColorObj = p.color(paletteColor)
+                pushWithVariants(paletteColorObj)
+              }
+            }
+
+            // Evaluate candidates using WCAG contrast ratio against all sampled backgrounds
+            const evaluateCandidates = (pool: any[]) => {
+              let bestCandidate = pool[0]
+              let bestScore = -1
+              for (const candidate of pool) {
+                let minContrast = Infinity
+                for (const sampleColor of sampleColors) {
+                  const ratio = contrastRatio(candidate, sampleColor)
+                  if (ratio < minContrast) {
+                    minContrast = ratio
+                  }
+                }
+                if (minContrast > bestScore) {
+                  bestScore = minContrast
+                  bestCandidate = candidate
+                }
+              }
+              return { bestCandidate, bestScore }
+            }
+
+            const distinctCandidates = candidateColors.filter(isDistinct)
+            let evaluationPool = distinctCandidates.length > 0 ? distinctCandidates : candidateColors
+            if (evaluationPool.length === 0) {
+              evaluationPool = bandCandidates.length > 0 ? bandCandidates : [whiteColor, blackColor]
+            }
+
+            let { bestCandidate, bestScore } = evaluateCandidates(evaluationPool)
+
+            const desiredContrast = 4.5
+            if (bestScore < desiredContrast) {
+              let avgR = 0
+              let avgG = 0
+              let avgB = 0
+              for (const sampleColor of sampleColors) {
+                avgR += p.red(sampleColor)
+                avgG += p.green(sampleColor)
+                avgB += p.blue(sampleColor)
+              }
+              const divisor = sampleColors.length || 1
+              const averageBackground = p.color(avgR / divisor, avgG / divisor, avgB / divisor)
+              const contrastWithBlack = contrastRatio(blackColor, averageBackground)
+              const contrastWithWhite = contrastRatio(whiteColor, averageBackground)
+
+              const complementColor = p.color(255 - p.red(averageBackground), 255 - p.green(averageBackground), 255 - p.blue(averageBackground))
+              const fallbackPool: any[] = []
+              const pushFallback = (candidate: any) => {
+                if (isDistinct(candidate)) {
+                  fallbackPool.push(candidate)
+                }
+              }
+              pushFallback(contrastWithBlack >= contrastWithWhite ? blackColor : whiteColor)
+              pushFallback(complementColor)
+              pushFallback(p.lerpColor(averageBackground, whiteColor, 0.85))
+              pushFallback(p.lerpColor(averageBackground, blackColor, 0.85))
+              if (fallbackPool.length > 0) {
+                ;({ bestCandidate } = evaluateCandidates(fallbackPool))
+              } else {
+                bestCandidate = contrastWithBlack >= contrastWithWhite ? whiteColor : blackColor
+              }
+            }
+
+            if (!isDistinct(bestCandidate) && distinctCandidates.length > 0) {
+              ;({ bestCandidate } = evaluateCandidates(distinctCandidates))
+            }
+
+            r = p.red(bestCandidate)
+            g = p.green(bestCandidate)
+            b = p.blue(bestCandidate)
+          } else {
+            // For solid and textured weaves, use current logic
+            const bgBrightness = (p.red(weftColor) + p.green(weftColor) + p.blue(weftColor)) / 3
+            let tc = bgBrightness < 128 ? doormatData.lightTextColor : doormatData.darkTextColor
+            r = p.red(tc); g = p.green(tc); b = p.blue(tc)
+          }
+        } else {
+          // Normal thread color
+          r = p.red(weftColor) + drawingPRNG.range(-20, 20)
+          g = p.green(weftColor) + drawingPRNG.range(-20, 20)
+          b = p.blue(weftColor) + drawingPRNG.range(-20, 20)
         }
-        
+
         r = p.constrain(r, 0, 255)
         g = p.constrain(g, 0, 255)
         b = p.constrain(b, 0, 255)
-        
+
         p.fill(r, g, b)
         p.noStroke()
-        
+
         // Draw weft thread with slight curve
         let weftCurve = p.cos(x * 0.05) * 0.5
         p.rect(x, y + weftCurve, warpSpacing, config.WEFT_THICKNESS)
@@ -997,7 +1227,7 @@ export default function GeneratorPage() {
         let selvedgeColor = p.color(stripe.primaryColor)
         
         // Check if there's a secondary color for blending
-        if (stripe.secondaryColor && stripe.weaveType === 'mixed') {
+        if (stripe.secondaryColor && stripe.weaveType === 'm') {
           let secondaryColor = p.color(stripe.secondaryColor)
           let blendFactor = p.noise(y * 0.1) * 0.5 + 0.5
           selvedgeColor = p.lerpColor(selvedgeColor, secondaryColor, blendFactor)
@@ -1037,7 +1267,7 @@ export default function GeneratorPage() {
         let selvedgeColor = p.color(stripe.primaryColor)
         
         // Check if there's a secondary color for blending
-        if (stripe.secondaryColor && stripe.weaveType === 'mixed') {
+        if (stripe.secondaryColor && stripe.weaveType === 'm') {
           let secondaryColor = p.color(stripe.secondaryColor)
           let blendFactor = p.noise(y * 0.1) * 0.5 + 0.5
           selvedgeColor = p.lerpColor(selvedgeColor, secondaryColor, blendFactor)
@@ -1227,6 +1457,58 @@ export default function GeneratorPage() {
   }
 
   // MISSING TEXT FUNCTIONS FROM ORIGINAL DOORMAT.JS
+
+  // Draw character outlines for all text (new function)
+  const drawCharacterOutlines = (p: any, stripe: any, doormatData: any) => {
+
+    // Find all text pixels in this stripe
+    const textPixels: any[] = []
+
+    for (let y = stripe.y; y < stripe.y + stripe.height; y++) {
+      for (let x = 0; x < doormatData.width; x++) {
+        let isTextPixel = false
+        if (doormatData.textData && doormatData.textData.length > 0) {
+          for (let textPixel of doormatData.textData) {
+            if (x >= textPixel.x && x < textPixel.x + textPixel.width &&
+                y >= textPixel.y && y < textPixel.y + textPixel.height) {
+              isTextPixel = true
+              break
+            }
+          }
+        }
+        if (isTextPixel) {
+          textPixels.push({x, y})
+        }
+      }
+    }
+
+    if (textPixels.length === 0) return
+
+    // Find bounding box for all text pixels in this stripe
+    let minX = Math.min(...textPixels.map(p => p.x))
+    let maxX = Math.max(...textPixels.map(p => p.x))
+    let minY = Math.min(...textPixels.map(p => p.y))
+    let maxY = Math.max(...textPixels.map(p => p.y))
+
+    // Expand bounding box slightly
+    minX -= 2
+    maxX += 3
+    minY -= 2
+    maxY += 3
+
+    const width = maxX - minX
+    const height = maxY - minY
+
+    // Draw outline around all text (thick border)
+    p.fill(0, 0, 0, 180) // Dark outline
+    p.noStroke()
+    p.rect(minX, minY, width, height)
+
+    // Inner lighter border for depth
+    p.fill(255, 255, 255, 80)
+    p.noStroke()
+    p.rect(minX + 1, minY + 1, width - 2, height - 2)
+  }
 
   // Update text colors based on palette (original function)
   const updateTextColors = (p: any, doormatData: any) => {
@@ -1419,10 +1701,10 @@ export default function GeneratorPage() {
 
     // Count different pattern types and features
     for (let stripe of stripeData) {
-      if (stripe.weaveType === 'mixed') {
+      if (stripe.weaveType === 'm') {
         mixedCount++
         complexityScore += 2 // Mixed weave adds significant complexity
-      } else if (stripe.weaveType === 'textured') {
+      } else if (stripe.weaveType === 't') {
         texturedCount++
         complexityScore += 1.5 // Textured adds medium complexity
       }
@@ -1460,10 +1742,10 @@ export default function GeneratorPage() {
     
     // Count different pattern types
     for (let stripe of stripeData) {
-      if (stripe.weaveType === 'mixed') {
+      if (stripe.weaveType === 'm') {
         mixedCount++
         complexityScore += 2 // Mixed weave adds more complexity
-      } else if (stripe.weaveType === 'textured') {
+      } else if (stripe.weaveType === 't') {
         texturedCount++
         complexityScore += 1.5 // Textured adds medium complexity
       } else {
@@ -2492,7 +2774,7 @@ export default function GeneratorPage() {
                   <Web3Minting
                     textRows={textInputs}
                     currentPalette={palette}
-                    currentStripeData={typeof window !== 'undefined' ? (window as any).stripeData || [] : []}
+                    currentStripeData={stripeData}
                     characterMap={typeof window !== 'undefined' ? (window as any).doormatData?.characterMap || {} : {}}
                     warpThickness={warpThickness}
                     seed={currentSeed}
@@ -2524,3 +2806,4 @@ export default function GeneratorPage() {
     </div>
   )
 }
+
