@@ -1046,27 +1046,54 @@ function ds(s){
           const contrastRatio=(a,b)=>{const la=relLum(a),lb=relLum(b),light=max(la,lb),dark=min(la,lb);return(light+0.05)/(dark+0.05);};
           const colorDistance=(a,b)=>Math.abs(red(a)-red(b))+Math.abs(green(a)-green(b))+Math.abs(blue(a)-blue(b));
 
-          const primary=color(s.pc),secondary=color(s.sc),lightColor=color(lt),darkColor=color(dt),white=color(255,255,255),black=color(0,0,0);
+          const primary=color(s.pc),secondary=color(s.sc),white=color(255,255,255),black=color(0,0,0);
           const distinctThreshold=90;
           const isDistinct=(candidate)=>colorDistance(candidate,primary)>distinctThreshold&&colorDistance(candidate,secondary)>distinctThreshold;
 
+          // BULLETPROOF SOLUTION: For mixed weaves, use palette colors NOT used in stripe
           const candidates=[],candidateKeys=new Set();
-          const toKey=(col)=>Math.round(red(col))+'-'+Math.round(green(col))+'-'+Math.round(blue(col));
-          const pushCandidate=(entry)=>{const cand=color(entry),key=toKey(cand);if(!candidateKeys.has(key)){candidateKeys.add(key);candidates.push(cand);}};
-          const pushWithVariants=(base)=>{pushCandidate(base);pushCandidate(lerpColor(base,white,0.6));pushCandidate(lerpColor(base,black,0.6));};
+          const addColor=(col)=>{
+            const key=Math.round(red(col))+'-'+Math.round(green(col))+'-'+Math.round(blue(col));
+            if(!candidateKeys.has(key)){
+              candidateKeys.add(key);
+              candidates.push(col);
+            }
+          };
 
-          pushWithVariants(lightColor);
-          pushWithVariants(darkColor);
-
-          const bandCandidates=[];
-          const pushBandCandidate=(entry)=>{const cand=color(entry),key=toKey(cand);if(!candidateKeys.has(key)){candidateKeys.add(key);bandCandidates.push(cand);}};
-          pushBandCandidate(primary);
-          pushBandCandidate(secondary);
-
+          // Get all palette colors as p5.Color objects
+          const allPaletteColors=p.colors&&p.colors.length?[]:[];
           if(p.colors&&p.colors.length){
             for(const palColor of p.colors){
-              const pal=color(palColor);
-              pushWithVariants(pal);
+              allPaletteColors.push(color(palColor));
+            }
+          }
+
+          // Create a simple set of used colors (primary + secondary)
+          const usedColors=new Set();
+          const primary=color(s.pc),secondary=color(s.sc);
+          usedColors.add(Math.round(red(primary))+'-'+Math.round(green(primary))+'-'+Math.round(blue(primary)));
+          usedColors.add(Math.round(red(secondary))+'-'+Math.round(green(secondary))+'-'+Math.round(blue(secondary)));
+
+          // Find unused palette colors
+          const unusedPaletteColors=[];
+          for(const paletteColor of allPaletteColors){
+            const colorKey=Math.round(red(paletteColor))+'-'+Math.round(green(paletteColor))+'-'+Math.round(blue(paletteColor));
+            if(!usedColors.has(colorKey)){
+              unusedPaletteColors.push(paletteColor);
+            }
+          }
+
+          // Use unused colors (darkened) as primary choice
+          for(const unusedColor of unusedPaletteColors){
+            const darkened=lerpColor(unusedColor,color(0,0,0),0.4);
+            addColor(darkened);
+          }
+
+          // If no unused colors, use ALL palette colors (darkened) as fallback
+          if(candidates.length===0&&allPaletteColors.length>0){
+            for(const paletteColor of allPaletteColors){
+              const darkened=lerpColor(paletteColor,color(0,0,0),0.4);
+              addColor(darkened);
             }
           }
 
@@ -1084,35 +1111,50 @@ function ds(s){
             return {best,bestScore};
           };
 
-          const distinctPool=candidates.filter(isDistinct);
-          let evaluationPool=distinctPool.length>0?distinctPool:candidates;
-          if(evaluationPool.length===0) evaluationPool=bandCandidates.filter(isDistinct);
-          if(evaluationPool.length===0) evaluationPool=[white,black];
+          // For mixed weaves, we already filtered to only palette colors above
+          // Just evaluate what we have
+          let {best:bestCandidate,bestScore}=evaluate(candidates);
 
-          let {best:bestCandidate,bestScore}=evaluate(evaluationPool);
-
-          if(bestScore<4.5){
-            let avgR=0,avgG=0,avgB=0;
-            for(const background of sampleColors){avgR+=red(background);avgG+=green(background);avgB+=blue(background);} 
-            const count=sampleColors.length||1;
-            const average=color(avgR/count,avgG/count,avgB/count);
-            const contrastBlack=contrastRatio(black,average),contrastWhite=contrastRatio(white,average);
-            const complement=color(255-red(average),255-green(average),255-blue(average));
-            const fallback=[];
-            const addFallback=(candidate)=>{if(isDistinct(candidate))fallback.push(candidate);};
-            addFallback(contrastBlack>=contrastWhite?black:white);
-            addFallback(complement);
-            addFallback(lerpColor(average,white,0.85));
-            addFallback(lerpColor(average,black,0.85));
-            if(fallback.length>0){({best:bestCandidate}=evaluate(fallback));}
-            else bestCandidate=contrastBlack>=contrastWhite?white:black;
+          // If still no good contrast, use ALL palette colors (darkened) as final fallback
+          if(bestScore<4.5&&allPaletteColors.length>0){
+            const allPaletteCandidates=[];
+            for(const paletteColor of allPaletteColors){
+              const darkenedColor=lerpColor(paletteColor,color(0,0,0),0.4);
+              allPaletteCandidates.push(darkenedColor);
+            }
+            ({best:bestCandidate}=evaluate(allPaletteCandidates));
           }
 
-          if(!isDistinct(bestCandidate)&&distinctPool.length>0){({best:bestCandidate}=evaluate(distinctPool));}
+          // For mixed weaves: Use thicker outline/border effect for maximum readability
+          const mainTextColor=bestCandidate;
+          const outlineColor=color(0,0,0); // Black outline
 
-          r=red(bestCandidate);
-          g=green(bestCandidate);
-          b=blue(bestCandidate);
+          // Draw thicker outline first (offset by 1-2 pixels)
+          fill(outlineColor);
+          noStroke();
+          let outlineCurve=cos(x*0.05)*0.5;
+
+          // Draw border in all 8 directions for thicker outline
+          // Primary offsets (±1, ±1)
+          rect(x+0.5+1,y+outlineCurve+0.5+1,ws,wt);
+          rect(x+0.5-1,y+outlineCurve+0.5-1,ws,wt);
+          rect(x+0.5+1,y+outlineCurve+0.5-1,ws,wt);
+          rect(x+0.5-1,y+outlineCurve+0.5+1,ws,wt);
+
+          // Additional border pixels for extra thickness (±2, ±0), (±0, ±2), (±2, ±2)
+          rect(x+0.5+2,y+outlineCurve+0.5,ws,wt);
+          rect(x+0.5-2,y+outlineCurve+0.5,ws,wt);
+          rect(x+0.5,y+outlineCurve+0.5+2,ws,wt);
+          rect(x+0.5,y+outlineCurve+0.5-2,ws,wt);
+          rect(x+0.5+2,y+outlineCurve+0.5+2,ws,wt);
+          rect(x+0.5-2,y+outlineCurve+0.5-2,ws,wt);
+          rect(x+0.5+2,y+outlineCurve+0.5-2,ws,wt);
+          rect(x+0.5-2,y+outlineCurve+0.5+2,ws,wt);
+
+          // Now draw main text color on top
+          r=red(mainTextColor);
+          g=green(mainTextColor);
+          b=blue(mainTextColor);
         }else{
           const bb=(r+g+b)/3,
                 tc=bb<128?lt:dt;

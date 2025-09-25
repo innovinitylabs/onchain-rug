@@ -893,47 +893,54 @@ export default function GeneratorPage() {
               return colorDistance(candidate, primaryColor) > distinctThreshold && colorDistance(candidate, secondaryColor) > distinctThreshold
             }
 
+            // BULLETPROOF SOLUTION: For mixed weaves, use palette colors NOT used in stripe
             const candidateColors: any[] = []
             const candidateKeys = new Set<string>()
-            const pushCandidate = (value: any) => {
-              const candidate = p.color(value)
-              const key = toKey(candidate)
+
+            // Simple function to add color to candidates
+            const addColor = (color: any) => {
+              const key = Math.round(p.red(color)) + '-' + Math.round(p.green(color)) + '-' + Math.round(p.blue(color))
               if (!candidateKeys.has(key)) {
                 candidateKeys.add(key)
-                candidateColors.push(candidate)
+                candidateColors.push(color)
               }
             }
 
-            const lightTextColor = p.color(doormatData.lightTextColor)
-            const darkTextColor = p.color(doormatData.darkTextColor)
-            const whiteColor = p.color(255, 255, 255)
-            const blackColor = p.color(0, 0, 0)
-
-            const pushWithVariants = (base: any) => {
-              pushCandidate(base)
-              pushCandidate(p.lerpColor(base, whiteColor, 0.6))
-              pushCandidate(p.lerpColor(base, blackColor, 0.6))
-            }
-
-            pushWithVariants(lightTextColor)
-            pushWithVariants(darkTextColor)
-            // Only add stripe band colours as fallbacks if nothing else is available later
-            const bandCandidates: any[] = []
-            const pushBandCandidate = (value: any) => {
-              const candidate = p.color(value)
-              const key = toKey(candidate)
-              if (!candidateKeys.has(key)) {
-                candidateKeys.add(key)
-                bandCandidates.push(candidate)
-              }
-            }
-            pushBandCandidate(primaryColor)
-            pushBandCandidate(secondaryColor)
-
+            // Get all palette colors as p5.Color objects
+            const allPaletteColors: any[] = []
             if (doormatData.selectedPalette?.colors?.length) {
               for (const paletteColor of doormatData.selectedPalette.colors) {
-                const paletteColorObj = p.color(paletteColor)
-                pushWithVariants(paletteColorObj)
+                allPaletteColors.push(p.color(paletteColor))
+              }
+            }
+
+            // Create a simple set of used colors (primary + secondary)
+            const usedColors = new Set<string>()
+            const primaryKey = Math.round(p.red(primaryColor)) + '-' + Math.round(p.green(primaryColor)) + '-' + Math.round(p.blue(primaryColor))
+            const secondaryKey = Math.round(p.red(secondaryColor)) + '-' + Math.round(p.green(secondaryColor)) + '-' + Math.round(p.blue(secondaryColor))
+            usedColors.add(primaryKey)
+            usedColors.add(secondaryKey)
+
+            // Find unused palette colors
+            const unusedPaletteColors: any[] = []
+            for (const paletteColor of allPaletteColors) {
+              const colorKey = Math.round(p.red(paletteColor)) + '-' + Math.round(p.green(paletteColor)) + '-' + Math.round(p.blue(paletteColor))
+              if (!usedColors.has(colorKey)) {
+                unusedPaletteColors.push(paletteColor)
+              }
+            }
+
+            // Use unused colors (darkened) as primary choice
+            for (const unusedColor of unusedPaletteColors) {
+              const darkened = p.lerpColor(unusedColor, p.color(0, 0, 0), 0.4)
+              addColor(darkened)
+            }
+
+            // If no unused colors, use ALL palette colors (darkened) as fallback
+            if (candidateColors.length === 0) {
+              for (const paletteColor of allPaletteColors) {
+                const darkened = p.lerpColor(paletteColor, p.color(0, 0, 0), 0.4)
+                addColor(darkened)
               }
             }
 
@@ -957,54 +964,51 @@ export default function GeneratorPage() {
               return { bestCandidate, bestScore }
             }
 
-            const distinctCandidates = candidateColors.filter(isDistinct)
-            let evaluationPool = distinctCandidates.length > 0 ? distinctCandidates : candidateColors
-            if (evaluationPool.length === 0) {
-              evaluationPool = bandCandidates.length > 0 ? bandCandidates : [whiteColor, blackColor]
-            }
+            // For mixed weaves, we already filtered to only palette colors above
+            // Just evaluate what we have
+            let { bestCandidate, bestScore } = evaluateCandidates(candidateColors)
 
-            let { bestCandidate, bestScore } = evaluateCandidates(evaluationPool)
-
+            // If still no good contrast, use ALL palette colors (darkened) as final fallback
             const desiredContrast = 4.5
-            if (bestScore < desiredContrast) {
-              let avgR = 0
-              let avgG = 0
-              let avgB = 0
-              for (const sampleColor of sampleColors) {
-                avgR += p.red(sampleColor)
-                avgG += p.green(sampleColor)
-                avgB += p.blue(sampleColor)
+            if (bestScore < desiredContrast && allPaletteColors.length > 0) {
+              const allPaletteCandidates: any[] = []
+              for (const paletteColor of allPaletteColors) {
+                const darkenedColor = p.lerpColor(paletteColor, p.color(0, 0, 0), 0.4)
+                allPaletteCandidates.push(darkenedColor)
               }
-              const divisor = sampleColors.length || 1
-              const averageBackground = p.color(avgR / divisor, avgG / divisor, avgB / divisor)
-              const contrastWithBlack = contrastRatio(blackColor, averageBackground)
-              const contrastWithWhite = contrastRatio(whiteColor, averageBackground)
-
-              const complementColor = p.color(255 - p.red(averageBackground), 255 - p.green(averageBackground), 255 - p.blue(averageBackground))
-              const fallbackPool: any[] = []
-              const pushFallback = (candidate: any) => {
-                if (isDistinct(candidate)) {
-                  fallbackPool.push(candidate)
-                }
-              }
-              pushFallback(contrastWithBlack >= contrastWithWhite ? blackColor : whiteColor)
-              pushFallback(complementColor)
-              pushFallback(p.lerpColor(averageBackground, whiteColor, 0.85))
-              pushFallback(p.lerpColor(averageBackground, blackColor, 0.85))
-              if (fallbackPool.length > 0) {
-                ;({ bestCandidate } = evaluateCandidates(fallbackPool))
-              } else {
-                bestCandidate = contrastWithBlack >= contrastWithWhite ? whiteColor : blackColor
-              }
+              ;({ bestCandidate } = evaluateCandidates(allPaletteCandidates))
             }
 
-            if (!isDistinct(bestCandidate) && distinctCandidates.length > 0) {
-              ;({ bestCandidate } = evaluateCandidates(distinctCandidates))
-            }
+            // For mixed weaves: Use thicker outline/border effect for maximum readability
+            const mainTextColor = bestCandidate
+            const outlineColor = p.color(0, 0, 0) // Black outline
 
-            r = p.red(bestCandidate)
-            g = p.green(bestCandidate)
-            b = p.blue(bestCandidate)
+            // Draw thicker outline first (offset by 1-2 pixels)
+            p.fill(outlineColor)
+            p.noStroke()
+            let outlineCurve = p.cos(x * 0.05) * 0.5
+
+            // Draw border in all 8 directions for thicker outline
+            // Primary offsets (±1, ±1)
+            p.rect(x + 0.5 + 1, y + outlineCurve + 0.5 + 1, warpSpacing, config.WEFT_THICKNESS)
+            p.rect(x + 0.5 - 1, y + outlineCurve + 0.5 - 1, warpSpacing, config.WEFT_THICKNESS)
+            p.rect(x + 0.5 + 1, y + outlineCurve + 0.5 - 1, warpSpacing, config.WEFT_THICKNESS)
+            p.rect(x + 0.5 - 1, y + outlineCurve + 0.5 + 1, warpSpacing, config.WEFT_THICKNESS)
+
+            // Additional border pixels for extra thickness (±2, ±0), (±0, ±2), (±2, ±2)
+            p.rect(x + 0.5 + 2, y + outlineCurve + 0.5, warpSpacing, config.WEFT_THICKNESS)
+            p.rect(x + 0.5 - 2, y + outlineCurve + 0.5, warpSpacing, config.WEFT_THICKNESS)
+            p.rect(x + 0.5, y + outlineCurve + 0.5 + 2, warpSpacing, config.WEFT_THICKNESS)
+            p.rect(x + 0.5, y + outlineCurve + 0.5 - 2, warpSpacing, config.WEFT_THICKNESS)
+            p.rect(x + 0.5 + 2, y + outlineCurve + 0.5 + 2, warpSpacing, config.WEFT_THICKNESS)
+            p.rect(x + 0.5 - 2, y + outlineCurve + 0.5 - 2, warpSpacing, config.WEFT_THICKNESS)
+            p.rect(x + 0.5 + 2, y + outlineCurve + 0.5 - 2, warpSpacing, config.WEFT_THICKNESS)
+            p.rect(x + 0.5 - 2, y + outlineCurve + 0.5 + 2, warpSpacing, config.WEFT_THICKNESS)
+
+            // Now draw main text color on top
+            r = p.red(mainTextColor)
+            g = p.green(mainTextColor)
+            b = p.blue(mainTextColor)
           } else {
             // For solid and textured weaves, use current logic
             const bgBrightness = (p.red(weftColor) + p.green(weftColor) + p.blue(weftColor)) / 3
