@@ -141,9 +141,14 @@ export default function DashboardPage() {
               const rugResponse = await fetch(`${window.location.origin}/api/alchemy?endpoint=getNFTMetadata&contractAddress=${contractAddress}&tokenId=${tokenId}`)
               const rugData = await rugResponse.json()
 
+              console.log(`Rug #${tokenId} full API response:`, JSON.stringify(rugData, null, 2));
+
               if (rugData) {
                 // Parse aging data from tokenURI attributes (all data is baked into the NFT metadata)
                 const agingData = parseAgingDataFromAttributes(rugData.raw?.metadata?.attributes || rugData.attributes || [])
+
+                const animationUrl = rugData.animation_url || rugData.raw?.metadata?.animation_url;
+                console.log(`Rug #${tokenId} animation_url:`, animationUrl ? animationUrl.substring(0, 50) + '...' : 'undefined');
 
                 rugs.push({
                   tokenId,
@@ -152,7 +157,7 @@ export default function DashboardPage() {
                   owner: address,
                   name: rugData.name,
                   image: rugData.image,
-                  animation_url: rugData.animation_url
+                  animation_url: animationUrl
                 })
               }
             } catch (error) {
@@ -340,18 +345,36 @@ export default function DashboardPage() {
                       {/* Rug Preview */}
                       <div className="aspect-square bg-black/30 rounded-lg overflow-hidden">
                         {rug.animation_url ? (
-                          <iframe
-                            src={rug.animation_url}
-                            className="w-full h-full"
-                            title={`Rug #${rug.tokenId}`}
-                            sandbox="allow-scripts allow-same-origin"
-                            style={{ border: 'none' }}
-                          />
+                          rug.animation_url.startsWith('data:text/html') ? (
+                            <div
+                              className="w-full h-full"
+                              dangerouslySetInnerHTML={{
+                                __html: (() => {
+                                  try {
+                                    const htmlContent = rug.animation_url.split(',')[1];
+                                    return decodeURIComponent(atob(htmlContent));
+                                  } catch (e) {
+                                    console.error('Failed to decode HTML for rug', rug.tokenId, e);
+                                    return `<div class="w-full h-full flex items-center justify-center text-white/50"><div>🧵</div><div>Error loading #${rug.tokenId}</div></div>`;
+                                  }
+                                })()
+                              }}
+                            />
+                          ) : (
+                            <iframe
+                              src={rug.animation_url}
+                              className="w-full h-full"
+                              title={`Rug #${rug.tokenId}`}
+                              sandbox="allow-scripts allow-same-origin"
+                              style={{ border: 'none' }}
+                            />
+                          )
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-white/50">
                             <div className="text-center">
                               <div className="text-4xl mb-2">🧵</div>
                               <div>Rug #{rug.tokenId}</div>
+                              <div className="text-xs mt-1">No preview</div>
                             </div>
                           </div>
                         )}
@@ -449,13 +472,30 @@ export default function DashboardPage() {
                     <div className="space-y-4">
                       <div className="aspect-square bg-black/30 rounded-lg overflow-hidden">
                         {selectedRug.animation_url ? (
-                          <iframe
-                            src={selectedRug.animation_url}
-                            className="w-full h-full"
-                            title={`Rug #${selectedRug.tokenId}`}
-                            sandbox="allow-scripts allow-same-origin"
-                            style={{ border: 'none' }}
-                          />
+                          selectedRug.animation_url.startsWith('data:text/html') ? (
+                            <div
+                              className="w-full h-full"
+                              dangerouslySetInnerHTML={{
+                                __html: (() => {
+                                  try {
+                                    const htmlContent = selectedRug.animation_url.split(',')[1];
+                                    return decodeURIComponent(atob(htmlContent));
+                                  } catch (e) {
+                                    console.error('Failed to decode HTML for selected rug', selectedRug.tokenId, e);
+                                    return '<div class="w-full h-full flex items-center justify-center text-white/50">Error loading preview</div>';
+                                  }
+                                })()
+                              }}
+                            />
+                          ) : (
+                            <iframe
+                              src={selectedRug.animation_url}
+                              className="w-full h-full"
+                              title={`Rug #${selectedRug.tokenId}`}
+                              sandbox="allow-scripts allow-same-origin"
+                              style={{ border: 'none' }}
+                            />
+                          )
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-white/50">
                             Rug Preview
@@ -489,18 +529,19 @@ export default function DashboardPage() {
                           <div>
                             <div className="text-sm font-medium text-blue-300 mb-1">Animation URL:</div>
                             <div className="bg-black/50 rounded p-2 text-xs font-mono text-green-400 break-all max-h-32 overflow-y-auto">
-                              {selectedRug.animation_url || 'No animation URL'}
+                              {selectedRug.animation_url ? selectedRug.animation_url : 'No animation URL found'}
                             </div>
-                            {selectedRug.animation_url && (
-                              <div className="mt-2">
-                                <div className="text-sm font-medium text-blue-300 mb-1">Animation URL Type:</div>
-                                <div className="text-xs font-mono text-purple-300">
-                                  {selectedRug.animation_url.startsWith('data:') ? 'Data URI' :
+                            <div className="mt-2">
+                              <div className="text-sm font-medium text-blue-300 mb-1">Animation URL Status:</div>
+                              <div className="text-xs font-mono text-purple-300">
+                                {selectedRug.animation_url ?
+                                  (selectedRug.animation_url.startsWith('data:') ? 'Data URI ✓' :
                                    selectedRug.animation_url.startsWith('http') ? 'HTTP URL' :
-                                   'Unknown format'}
-                                </div>
+                                   'Unknown format') :
+                                  'No animation URL ❌'
+                                }
                               </div>
-                            )}
+                            </div>
                           </div>
 
                           {/* Metadata Debug */}
