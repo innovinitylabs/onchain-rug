@@ -395,7 +395,14 @@ export default function DashboardPage() {
                                 background: 'transparent',
                                 outline: 'none',
                                 margin: 0,
-                                padding: 0
+                                padding: 0,
+                                fontFamily: 'inherit',
+                                fontSize: 'inherit',
+                                fontWeight: 'inherit',
+                                lineHeight: 'inherit',
+                                letterSpacing: 'inherit',
+                                textDecoration: 'none',
+                                boxShadow: 'none'
                               }}
                             />
                           ) : (
@@ -530,7 +537,14 @@ export default function DashboardPage() {
                                 background: 'transparent',
                                 outline: 'none',
                                 margin: 0,
-                                padding: 0
+                                padding: 0,
+                                fontFamily: 'inherit',
+                                fontSize: 'inherit',
+                                fontWeight: 'inherit',
+                                lineHeight: 'inherit',
+                                letterSpacing: 'inherit',
+                                textDecoration: 'none',
+                                boxShadow: 'none'
                               }}
                             />
                           ) : (
