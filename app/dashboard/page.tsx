@@ -396,17 +396,9 @@ export default function DashboardPage() {
                                 outline: 'none',
                                 margin: 0,
                                 padding: 0,
-                                fontFamily: 'unset',
-                                fontSize: 'unset',
-                                fontWeight: 'unset',
-                                lineHeight: 'unset',
-                                letterSpacing: 'unset',
                                 textDecoration: 'none',
                                 boxShadow: 'none',
-                                fontVariant: 'unset',
-                                fontFeatureSettings: 'unset',
-                                textRendering: 'auto',
-                                WebkitFontSmoothing: 'unset'
+                                fontFamily: 'monospace'
                               }}
                             />
                           ) : (
@@ -542,17 +534,9 @@ export default function DashboardPage() {
                                 outline: 'none',
                                 margin: 0,
                                 padding: 0,
-                                fontFamily: 'unset',
-                                fontSize: 'unset',
-                                fontWeight: 'unset',
-                                lineHeight: 'unset',
-                                letterSpacing: 'unset',
                                 textDecoration: 'none',
                                 boxShadow: 'none',
-                                fontVariant: 'unset',
-                                fontFeatureSettings: 'unset',
-                                textRendering: 'auto',
-                                WebkitFontSmoothing: 'unset'
+                                fontFamily: 'monospace'
                               }}
                             />
                           ) : (
