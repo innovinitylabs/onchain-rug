@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useAccount, useReadContract, useChainId } from 'wagmi'
+import { useAccount, useReadContract, useChainId, usePublicClient } from 'wagmi'
+import { onchainRugsABI } from '@/lib/web3'
 import { Wallet, AlertCircle, RefreshCw, Droplets, Sparkles, Crown, TrendingUp, Clock, ExternalLink, Copy, CheckCircle } from 'lucide-react'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
@@ -89,6 +90,7 @@ interface RugData {
 export default function DashboardPage() {
   const { address, isConnected } = useAccount()
   const chainId = useChainId()
+  const publicClient = usePublicClient()
   const [userRugs, setUserRugs] = useState<RugData[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedRug, setSelectedRug] = useState<RugData | null>(null)
@@ -137,41 +139,38 @@ export default function DashboardPage() {
             try {
               const tokenId = parseInt(nft.tokenId)
 
-              // Get rug metadata
-              const rugResponse = await fetch(`${window.location.origin}/api/alchemy?endpoint=getNFTMetadata&contractAddress=${contractAddress}&tokenId=${tokenId}`)
-              const rugData = await rugResponse.json()
+              // Get tokenURI directly from contract using public client (no caching)
+              const tokenURI = await publicClient.readContract({
+                address: contractAddress as `0x${string}`,
+                abi: onchainRugsABI,
+                functionName: 'tokenURI',
+                args: [BigInt(tokenId)]
+              }) as string
 
-              console.log(`Rug #${tokenId} full API response:`, JSON.stringify(rugData, null, 2));
+              if (tokenURI) {
+                // Parse the tokenURI JSON data
+                const metadata = JSON.parse(tokenURI.replace('data:application/json,', ''))
 
-              if (rugData) {
                 // Parse aging data from tokenURI attributes - contains real-time contract state
-                // The tokenURI is generated on-chain and includes current dirt/texture levels
-                const agingData = parseAgingDataFromAttributes(rugData.raw?.metadata?.attributes || rugData.attributes || [])
+                const agingData = parseAgingDataFromAttributes(metadata.attributes || [])
 
-                // Try multiple possible paths for animation_url in Alchemy response
-                const animationUrl = rugData.animation_url ||
-                                   rugData.raw?.metadata?.animation_url ||
-                                   rugData.metadata?.animation_url ||
-                                   rugData.contractMetadata?.animation_url ||
-                                   rugData.nft?.metadata?.animation_url;
+                // Get animation URL from metadata
+                const animationUrl = metadata.animation_url
 
-                // Debug logging
-                console.log(`Rug #${tokenId} animation_url extraction:`, {
-                  direct: rugData.animation_url,
-                  rawMetadata: rugData.raw?.metadata?.animation_url,
-                  metadata: rugData.metadata?.animation_url,
-                  contractMetadata: rugData.contractMetadata?.animation_url,
-                  nftMetadata: rugData.nft?.metadata?.animation_url,
-                  final: animationUrl ? animationUrl.substring(0, 50) + '...' : 'undefined'
+                console.log(`Rug #${tokenId} real-time metadata:`, {
+                  name: metadata.name,
+                  dirtLevel: agingData.dirtLevel,
+                  textureLevel: agingData.textureLevel,
+                  animationUrl: animationUrl ? animationUrl.substring(0, 50) + '...' : 'undefined'
                 });
 
                 rugs.push({
                   tokenId,
-                  traits: rugData.rugData || {},
+                  traits: metadata.rugData || {},
                   aging: agingData,
                   owner: address,
-                  name: rugData.name,
-                  image: rugData.image,
+                  name: metadata.name,
+                  image: metadata.image,
                   animation_url: animationUrl
                 })
               }

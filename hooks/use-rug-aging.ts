@@ -1,4 +1,4 @@
-import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt, useChainId } from 'wagmi'
+import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt, useChainId, usePublicClient } from 'wagmi'
 import { useState, useEffect, useMemo } from 'react'
 import { config, agingConfig } from '@/lib/config'
 import { shapeSepolia, shapeMainnet, contractAddresses } from '@/lib/web3'
@@ -7,6 +7,7 @@ import { shapeSepolia, shapeMainnet, contractAddresses } from '@/lib/web3'
 export function useRugAging(tokenId?: bigint) {
   const { address } = useAccount()
   const chainId = useChainId()
+  const publicClient = usePublicClient()
   const [dirtLevel, setDirtLevel] = useState(0)
   const [textureLevel, setTextureLevel] = useState(0)
   const [lastCleaned, setLastCleaned] = useState<Date | null>(null)
@@ -14,24 +15,68 @@ export function useRugAging(tokenId?: bigint) {
 
   const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
 
-  // Read rug aging data from contract using tokenURI (contains real-time aging state)
-  const { data: tokenURI, refetch } = useReadContract({
-    address: contractAddress as `0x${string}`,
-    abi: [
-      {
-        inputs: [{ name: 'tokenId', type: 'uint256' }],
-        name: 'tokenURI',
-        outputs: [{ name: '', type: 'string' }],
-        stateMutability: 'view',
-        type: 'function',
-      },
-    ] as const,
-    functionName: 'tokenURI',
-    args: tokenId ? [tokenId] : undefined,
-    query: {
-      enabled: !!tokenId,
-    },
-  })
+  // Read rug aging data directly from contract using public client
+  const [tokenURI, setTokenURI] = useState<string | null>(null)
+
+  // Fetch tokenURI when tokenId changes
+  useEffect(() => {
+    if (!tokenId || !publicClient) {
+      setTokenURI(null)
+      return
+    }
+
+    const fetchTokenURI = async () => {
+      try {
+        setIsLoading(true)
+        const uri = await publicClient.readContract({
+          address: contractAddress as `0x${string}`,
+          abi: [
+            {
+              inputs: [{ name: 'tokenId', type: 'uint256' }],
+              name: 'tokenURI',
+              outputs: [{ name: '', type: 'string' }],
+              stateMutability: 'view',
+              type: 'function',
+            },
+          ] as const,
+          functionName: 'tokenURI',
+          args: [tokenId],
+        }) as string
+
+        setTokenURI(uri)
+      } catch (error) {
+        console.warn('Failed to fetch tokenURI:', error)
+        setTokenURI(null)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchTokenURI()
+  }, [tokenId, publicClient, contractAddress])
+
+  const refetch = () => {
+    if (tokenId && publicClient) {
+      publicClient.readContract({
+        address: contractAddress as `0x${string}`,
+        abi: [
+          {
+            inputs: [{ name: 'tokenId', type: 'uint256' }],
+            name: 'tokenURI',
+            outputs: [{ name: '', type: 'string' }],
+            stateMutability: 'view',
+            type: 'function',
+          },
+        ] as const,
+        functionName: 'tokenURI',
+        args: [tokenId],
+      }).then((uri) => {
+        setTokenURI(uri as string)
+      }).catch((error) => {
+        console.warn('Failed to refetch tokenURI:', error)
+      })
+    }
+  }
 
   // Parse aging data from tokenURI
   const agingData = useMemo(() => {
