@@ -13,21 +13,6 @@ import { onchainRugsABI, contractAddresses } from '@/lib/web3'
 import { config } from '@/lib/config'
 import { formatEther } from 'viem'
 
-// Utility function to recursively convert BigInts to strings for JSON serialization
-function serializeWithBigInt(obj: any): any {
-  if (obj === null || obj === undefined) return obj
-  if (typeof obj === 'bigint') return obj.toString()
-  if (Array.isArray(obj)) return obj.map(serializeWithBigInt)
-  if (typeof obj === 'object') {
-    const result: any = {}
-    for (const [key, value] of Object.entries(obj)) {
-      result[key] = serializeWithBigInt(value)
-    }
-    return result
-  }
-  return obj
-}
-
 // Types for our NFT data
 interface RugTraits {
   seed: bigint
@@ -604,20 +589,6 @@ export default function DashboardPage() {
                                   'No animation URL ❌'
                                 }
                               </div>
-                            </div>
-                          </div>
-
-                          {/* Metadata Debug */}
-                          <div>
-                            <div className="text-sm font-medium text-blue-300 mb-1">Metadata:</div>
-                            <div className="bg-black/50 rounded p-2 text-xs font-mono text-yellow-400 max-h-48 overflow-y-auto">
-                              <pre>{JSON.stringify(serializeWithBigInt({
-                                name: selectedRug.name,
-                                tokenId: selectedRug.tokenId,
-                                traits: selectedRug.traits,
-                                aging: selectedRug.aging,
-                                owner: selectedRug.owner
-                              }), null, 2)}</pre>
                             </div>
                           </div>
 
