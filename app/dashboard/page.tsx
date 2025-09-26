@@ -513,7 +513,7 @@ export default function DashboardPage() {
                     </button>
                   </div>
 
-                  <div className="max-w-2xl mx-auto">
+                  <div className="grid md:grid-cols-2 gap-6">
                     {/* Rug Display */}
                     <div className="space-y-4">
                       <div
@@ -560,6 +560,60 @@ export default function DashboardPage() {
                         <button className="px-4 py-3 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 rounded-lg transition-colors duration-200">
                           <TrendingUp className="w-4 h-4 inline mr-2" />
                           List for Sale
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Management Panel */}
+                    <div className="space-y-6">
+                      {/* Rug Stats */}
+                      <div className="bg-slate-700/50 rounded-lg p-4">
+                        <h3 className="text-lg font-semibold text-white mb-3">Rug Statistics</h3>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-white/70">Minted:</span>
+                            <span className="text-white">{getTimeSinceEvent(selectedRug.traits.mintTime)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-white/70">Last Cleaned:</span>
+                            <span className="text-white">
+                              {selectedRug.aging.lastCleaned > BigInt(0) ? getTimeSinceEvent(selectedRug.aging.lastCleaned) : 'Never'}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-white/70">Laundering Count:</span>
+                            <span className="text-white">{Number(selectedRug.aging.launderingCount)}</span>
+                          </div>
+                          {selectedRug.aging.lastSalePrice > BigInt(0) && (
+                            <div className="flex justify-between">
+                              <span className="text-white/70">Last Sale Price:</span>
+                              <span className="text-white">{formatEther(selectedRug.aging.lastSalePrice)} ETH</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Maintenance */}
+                      <RugCleaning tokenId={BigInt(selectedRug.tokenId)} />
+
+                      {/* Marketplace */}
+                      <div className="bg-slate-700/50 rounded-lg p-4">
+                        <h3 className="text-lg font-semibold text-white mb-3">Marketplace</h3>
+                        <RugMarketplace
+                          tokenId={selectedRug.tokenId}
+                          isOwner={true}
+                          currentPrice={selectedRug.aging.lastSalePrice > BigInt(0) ? formatEther(selectedRug.aging.lastSalePrice) : undefined}
+                        />
+                      </div>
+
+                      {/* Transfer */}
+                      <div className="bg-slate-700/50 rounded-lg p-4">
+                        <h3 className="text-lg font-semibold text-white mb-3">Transfer Rug</h3>
+                        <p className="text-white/60 text-sm mb-3">
+                          Transfer this rug to another wallet address
+                        </p>
+                        <button className="w-full px-4 py-2 bg-orange-500/20 hover:bg-orange-500/30 text-orange-300 rounded-lg transition-colors duration-200">
+                          Transfer to Address
                         </button>
                       </div>
                     </div>
