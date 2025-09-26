@@ -355,12 +355,12 @@ export default function DashboardPage() {
                     cornerRadius={12}
                     className="p-4"
                   >
-                    <div className="space-y-4">
-                      {/* Rug Preview */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      {/* Rug Preview - Takes up 1/3 of space */}
                       <div
-                        className="w-full bg-black/30 rounded-lg overflow-hidden"
+                        className="md:col-span-1 bg-black/30 rounded-lg overflow-hidden"
                         style={{
-                          paddingBottom: '56.25%', // 16:9 aspect ratio for landscape orientation
+                          paddingBottom: '69.7%', // 920/1320 * 100% = 69.7% (maintains 1320:920 aspect ratio)
                           position: 'relative'
                         }}
                       >
@@ -385,8 +385,8 @@ export default function DashboardPage() {
                         </div>
                       </div>
 
-                      {/* Rug Info */}
-                      <div>
+                      {/* Rug Info - Takes up 2/3 of space */}
+                      <div className="md:col-span-2">
                         <h3 className="text-lg font-bold text-white mb-2">
                           Rug #{rug.tokenId}
                         </h3>
@@ -478,7 +478,7 @@ export default function DashboardPage() {
                       <div
                         className="w-full bg-black/30 rounded-lg overflow-hidden"
                         style={{
-                          paddingBottom: '56.25%', // 16:9 aspect ratio for landscape orientation
+                          paddingBottom: '69.7%', // 920/1320 * 100% = 69.7% (maintains 1320:920 aspect ratio)
                           position: 'relative'
                         }}
                       >
