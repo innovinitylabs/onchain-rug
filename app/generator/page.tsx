@@ -338,31 +338,32 @@ export default function GeneratorPage() {
             // Create derived PRNG for drawing operations
             const drawingPRNG = createDerivedPRNG(2000)
             
-            // Draw fringe before rotation (to avoid coordinate transformation issues)
-            drawFringeOriginal(p, doormatData, drawingPRNG)
-            drawSelvedgeEdgesOriginal(p, doormatData, drawingPRNG)
-
             // Rotate canvas 90 degrees clockwise (original)
             p.push()
             p.translate(p.width/2, p.height/2)
             p.rotate(p.PI/2)
             p.translate(-p.height/2, -p.width/2)
-
+            
             // Draw the main doormat area
             p.push()
             p.translate(doormatData.config.FRINGE_LENGTH * 2, doormatData.config.FRINGE_LENGTH * 2)
-
+            
             // Draw stripes using original logic
             for (const stripe of doormatData.stripeData) {
               drawStripeOriginal(p, stripe, doormatData, drawingPRNG)
             }
-
+            
             // Add overall texture overlay if enabled
             const currentShowTexture = (window as any).showTexture || false
             const currentTextureLevel = (window as any).textureLevel || 0
             if (currentShowTexture && currentTextureLevel > 0) {
               drawTextureOverlayWithLevel(p, doormatData, currentTextureLevel)
             }
+            
+            // Draw fringe and selvedge within the same translation as the rug (rotated coordinate system)
+            drawFringeOriginal(p, doormatData, drawingPRNG)
+            drawSelvedgeEdgesOriginal(p, doormatData, drawingPRNG)
+
             p.pop()
             
             // Draw dirt overlay if enabled
@@ -573,7 +574,7 @@ export default function GeneratorPage() {
 
     // Track previous stripe's weave type to prevent consecutive mixed stripes
     let previousWeaveType = null
-
+    
     // Decide stripe density pattern for this doormat
     let densityType = stripePRNG.next()
     let minHeight, maxHeight
@@ -701,7 +702,7 @@ export default function GeneratorPage() {
         weaveType: weaveType,
         warpVariation: stripePRNG.next() * 0.4 + 0.1 // How much the weave varies
       }
-
+      
       stripes.push(stripe)
       previousWeaveType = weaveType  // Track for preventing consecutive mixed stripes
       currentY += stripeHeight
@@ -1289,11 +1290,11 @@ export default function GeneratorPage() {
   // Original doormat.js drawFringe function
   const drawFringeOriginal = (p: any, doormatData: any, drawingPRNG: any) => {
     const config = doormatData.config
-    // Top fringe (warp ends)
-    drawFringeSectionOriginal(p, config.FRINGE_LENGTH * 2, config.FRINGE_LENGTH, config.DOORMAT_WIDTH, config.FRINGE_LENGTH, 'top', doormatData, drawingPRNG)
-    
-    // Bottom fringe (warp ends)
-    drawFringeSectionOriginal(p, config.FRINGE_LENGTH * 2, config.FRINGE_LENGTH * 2 + config.DOORMAT_HEIGHT, config.DOORMAT_WIDTH, config.FRINGE_LENGTH, 'bottom', doormatData, drawingPRNG)
+    // Top fringe (warp ends) - relative to rug translation
+    drawFringeSectionOriginal(p, 0, -config.FRINGE_LENGTH, config.DOORMAT_WIDTH, config.FRINGE_LENGTH, 'top', doormatData, drawingPRNG)
+
+    // Bottom fringe (warp ends) - relative to rug translation
+    drawFringeSectionOriginal(p, 0, config.DOORMAT_HEIGHT, config.DOORMAT_WIDTH, config.FRINGE_LENGTH, 'bottom', doormatData, drawingPRNG)
   }
 
   // Original doormat.js drawFringeSection function
@@ -1381,8 +1382,8 @@ export default function GeneratorPage() {
         p.noStroke()
         
         let radius = config.WEFT_THICKNESS * drawingPRNG.range(1.2, 1.8)
-        let centerX = config.FRINGE_LENGTH * 2 + drawingPRNG.range(-2, 2)
-        let centerY = config.FRINGE_LENGTH * 2 + y + config.WEFT_THICKNESS/2 + drawingPRNG.range(-1, 1)
+        let centerX = drawingPRNG.range(-2, 2)  // Relative to rug translation
+        let centerY = y + config.WEFT_THICKNESS/2 + drawingPRNG.range(-1, 1)  // Relative to rug translation
         
         // Vary the arc angles for more natural look
         let startAngle = p.HALF_PI + drawingPRNG.range(-0.2, 0.2)
@@ -1421,8 +1422,8 @@ export default function GeneratorPage() {
         p.noStroke()
         
         let radius = config.WEFT_THICKNESS * drawingPRNG.range(1.2, 1.8)
-        let centerX = config.FRINGE_LENGTH * 2 + config.DOORMAT_WIDTH + drawingPRNG.range(-2, 2)
-        let centerY = config.FRINGE_LENGTH * 2 + y + config.WEFT_THICKNESS/2 + drawingPRNG.range(-1, 1)
+        let centerX = config.DOORMAT_WIDTH + drawingPRNG.range(-2, 2)  // Relative to rug translation
+        let centerY = y + config.WEFT_THICKNESS/2 + drawingPRNG.range(-1, 1)  // Relative to rug translation
         
         // Vary the arc angles for more natural look
         let startAngle = -p.HALF_PI + drawingPRNG.range(-0.2, 0.2)
