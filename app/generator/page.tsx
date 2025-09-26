@@ -683,7 +683,8 @@ export default function GeneratorPage() {
       } else if (weaveRand < solidChance + texturedChance) {
         weaveType = 't'  // textured
       } else {
-        weaveType = 'm'  // mixed
+        // Only use mixed if we actually have a secondary color
+        weaveType = hasSecondaryColor ? 'm' : 's'  // mixed only if secondary color exists, otherwise fallback to solid
       }
       
       // Create stripe object (original structure)
