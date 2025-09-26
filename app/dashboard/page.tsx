@@ -383,7 +383,7 @@ export default function DashboardPage() {
                         </div>
 
                         {/* Full-size Rug Preview */}
-                        <div className="w-full bg-black/30 rounded-lg overflow-hidden" style={{ aspectRatio: '1320/920' }}>
+                        <div className="w-full bg-transparent rounded-lg overflow-hidden" style={{ aspectRatio: '1320/920' }}>
                           {rug.animation_url ? (
                             <iframe
                               src={rug.animation_url}

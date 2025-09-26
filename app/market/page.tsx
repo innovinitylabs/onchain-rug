@@ -614,14 +614,14 @@ export default function MarketPage() {
                       </div>
 
                       {/* Rug Preview */}
-                      <div className={`bg-black/30 rounded-lg overflow-hidden mb-4 ${
-                        viewMode === 'list' ? 'w-32 h-32 float-left mr-4' : 'w-full'
-                      }`} style={
-                        viewMode === 'grid' ? {
-                          paddingBottom: '69.7%', // 920/1320 * 100% = 69.7% (maintains 1320:920 aspect ratio)
-                          position: 'relative'
-                        } : {}
-                      }>
+        <div className={`bg-transparent rounded-lg overflow-hidden mb-4 ${
+          viewMode === 'list' ? 'w-32 h-32 float-left mr-4' : 'w-full'
+        }`} style={
+          viewMode === 'grid' ? {
+            paddingBottom: '69.7%', // 920/1320 * 100% = 69.7% (maintains 1320:920 aspect ratio)
+            position: 'relative'
+          } : {}
+        }>
                         {viewMode === 'grid' ? (
                           <div className="absolute inset-0">
                             {nft.animation_url ? (
