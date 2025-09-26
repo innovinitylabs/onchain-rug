@@ -106,7 +106,12 @@ contract RugNFTFacet is ERC721, ERC721URIStorage {
             cleaningCount: 0, // Never cleaned initially
             restorationCount: 0, // Never restored initially
             masterRestorationCount: 0, // Never master restored initially
-            maintenanceScore: 0 // Initial maintenance score
+            maintenanceScore: 0, // Initial maintenance score
+            currentFrameLevel: "None", // No frame initially
+            frameAchievedTime: 0, // No frame achieved yet
+            gracePeriodActive: false, // No grace period initially
+            gracePeriodEnd: 0, // No grace period end
+            isMuseumPiece: false // Not a museum piece initially
         });
 
         // Mark text as used and record mint
@@ -219,6 +224,94 @@ contract RugNFTFacet is ERC721, ERC721URIStorage {
         return LibRugStorage.isException(account);
     }
 
+    /**
+     * @notice Get complete frame status for a rug
+     * @param tokenId Token ID to check
+     * @return frameLevel Current frame level
+     * @return frameAchievedTime When frame was achieved
+     * @return gracePeriodActive Whether in grace period
+     * @return gracePeriodEnd Grace period expiration
+     * @return isMuseumPiece Whether it's a permanent Diamond
+     */
+    function getFrameStatus(uint256 tokenId) external view returns (
+        string memory frameLevel,
+        uint256 frameAchievedTime,
+        bool gracePeriodActive,
+        uint256 gracePeriodEnd,
+        bool isMuseumPiece
+    ) {
+        require(_exists(tokenId), "Token does not exist");
+        LibRugStorage.AgingData storage aging = LibRugStorage.rugStorage().agingData[tokenId];
+
+        return (
+            aging.currentFrameLevel,
+            aging.frameAchievedTime,
+            aging.gracePeriodActive,
+            aging.gracePeriodEnd,
+            aging.isMuseumPiece
+        );
+    }
+
+    /**
+     * @notice Get complete maintenance history for a rug
+     * @param tokenId Token ID to check
+     * @return cleaningCount Number of cleanings
+     * @return restorationCount Number of restorations
+     * @return masterRestorationCount Number of master restorations
+     * @return launderingCount Number of launderings
+     * @return maintenanceScore Calculated maintenance score
+     * @return lastLaundered Last laundering timestamp
+     */
+    function getMaintenanceHistory(uint256 tokenId) external view returns (
+        uint256 cleaningCount,
+        uint256 restorationCount,
+        uint256 masterRestorationCount,
+        uint256 launderingCount,
+        uint256 maintenanceScore,
+        uint256 lastLaundered
+    ) {
+        require(_exists(tokenId), "Token does not exist");
+        LibRugStorage.AgingData storage aging = LibRugStorage.rugStorage().agingData[tokenId];
+
+        return (
+            aging.cleaningCount,
+            aging.restorationCount,
+            aging.masterRestorationCount,
+            aging.launderingCount,
+            _calculateMaintenanceScore(tokenId),
+            aging.lastLaundered
+        );
+    }
+
+    /**
+     * @notice Get complete sale history for a rug
+     * @param tokenId Token ID to check
+     * @return lastSalePrice Most recent sale price
+     * @return recentSalePrices Last 3 sale prices
+     * @return maxRecentSalePrice Highest of last 3 sales
+     */
+    function getSaleHistory(uint256 tokenId) external view returns (
+        uint256 lastSalePrice,
+        uint256[3] memory recentSalePrices,
+        uint256 maxRecentSalePrice
+    ) {
+        require(_exists(tokenId), "Token does not exist");
+        LibRugStorage.AgingData storage aging = LibRugStorage.rugStorage().agingData[tokenId];
+
+        uint256 maxPrice = 0;
+        for (uint256 i = 0; i < 3; i++) {
+            if (aging.recentSalePrices[i] > maxPrice) {
+                maxPrice = aging.recentSalePrices[i];
+            }
+        }
+
+        return (
+            aging.lastSalePrice,
+            aging.recentSalePrices,
+            maxPrice
+        );
+    }
+
     // ERC721 overrides
     function tokenURI(uint256 tokenId)
         public
@@ -230,6 +323,7 @@ contract RugNFTFacet is ERC721, ERC721URIStorage {
 
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
         LibRugStorage.RugData memory rug = rs.rugs[tokenId];
+        LibRugStorage.AgingData memory aging = rs.agingData[tokenId];
 
         // Get current dirt and texture levels
         uint8 dirtLevel = _getDirtLevel(tokenId);
@@ -278,6 +372,9 @@ contract RugNFTFacet is ERC721, ERC721URIStorage {
                         '"},{"trait_type":"Laundering Count","value":"', aging.launderingCount.toString(),
                         '"},{"trait_type":"Maintenance Score","value":"', _calculateMaintenanceScore(tokenId).toString(),
                         '"},{"trait_type":"Frame Level","value":"', _getFrameLevel(tokenId),
+                        '"},{"trait_type":"Museum Piece","value":"', aging.isMuseumPiece ? 'true' : 'false',
+                        '"},{"trait_type":"Last Sale Price","value":"', aging.lastSalePrice.toString(),
+                        '"},{"trait_type":"Mint Time","value":"', rug.mintTime.toString(),
                         '"}]}'
                     )
                 )
@@ -300,8 +397,15 @@ contract RugNFTFacet is ERC721, ERC721URIStorage {
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
         LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
 
-        uint256 timeSinceCleaned = block.timestamp - aging.lastCleaned;
+        // Check if rug has a frame (Silver+ frames get dirt immunity)
+        string memory frameLevel = _getFrameLevel(tokenId);
+        if (keccak256(abi.encodePacked(frameLevel)) != keccak256(abi.encodePacked("None")) &&
+            keccak256(abi.encodePacked(frameLevel)) != keccak256(abi.encodePacked("Bronze"))) {
+            return 0; // Framed rugs don't accumulate dirt
+        }
 
+        // Normal dirt calculation for Bronze/None
+        uint256 timeSinceCleaned = block.timestamp - aging.lastCleaned;
         if (timeSinceCleaned >= rs.dirtLevel2Days) return 2;
         if (timeSinceCleaned >= rs.dirtLevel1Days) return 1;
         return 0;
@@ -311,18 +415,29 @@ contract RugNFTFacet is ERC721, ERC721URIStorage {
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
         LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
 
-        // Texture level based on time since last texture reset (totally independent of dirt maintenance)
-        uint256 timeSinceTextureReset = block.timestamp - aging.lastTextureReset;
+        // Get frame level to determine texture aging speed
+        string memory frameLevel = _getFrameLevel(tokenId);
+        uint256 agingMultiplier = _getTextureAgingMultiplier(frameLevel);
+
+        // Texture level based on time since last texture reset (adjusted by frame benefits)
+        uint256 adjustedTimeSinceReset = (block.timestamp - aging.lastTextureReset) / agingMultiplier;
 
         // Texture progression over time (longer timeline than dirt)
-        if (timeSinceTextureReset >= rs.textureLevel2Days * 10) return 10;
-        if (timeSinceTextureReset >= rs.textureLevel2Days * 8) return 8;
-        if (timeSinceTextureReset >= rs.textureLevel2Days * 6) return 6;
-        if (timeSinceTextureReset >= rs.textureLevel2Days * 4) return 4;
-        if (timeSinceTextureReset >= rs.textureLevel2Days * 2) return 2;
-        if (timeSinceTextureReset >= rs.textureLevel1Days * 2) return 1;
+        if (adjustedTimeSinceReset >= rs.textureLevel2Days * 10) return 10;
+        if (adjustedTimeSinceReset >= rs.textureLevel2Days * 8) return 8;
+        if (adjustedTimeSinceReset >= rs.textureLevel2Days * 6) return 6;
+        if (adjustedTimeSinceReset >= rs.textureLevel2Days * 4) return 4;
+        if (adjustedTimeSinceReset >= rs.textureLevel2Days * 2) return 2;
+        if (adjustedTimeSinceReset >= rs.textureLevel1Days * 2) return 1;
 
         return 0; // Fresh texture
+    }
+
+    function _getTextureAgingMultiplier(string memory frameLevel) internal pure returns (uint256) {
+        if (keccak256(abi.encodePacked(frameLevel)) == keccak256(abi.encodePacked("Diamond"))) return 4; // 75% slower
+        if (keccak256(abi.encodePacked(frameLevel)) == keccak256(abi.encodePacked("Platinum"))) return 3; // 67% slower (2/3 speed)
+        if (keccak256(abi.encodePacked(frameLevel)) == keccak256(abi.encodePacked("Gold"))) return 2; // 50% slower
+        return 1; // Normal speed for Silver, Bronze, None
     }
 
     function _calculateMaintenanceScore(uint256 tokenId) internal view returns (uint256) {
@@ -341,14 +456,85 @@ contract RugNFTFacet is ERC721, ERC721URIStorage {
         return score > 1000 ? 1000 : score;
     }
 
-    function _getFrameLevel(uint256 tokenId) internal view returns (string memory) {
-        uint256 score = _calculateMaintenanceScore(tokenId);
+    function getFrameLevel(uint256 tokenId) external view returns (string memory) {
+        LibRugStorage.AgingData storage aging = LibRugStorage.rugStorage().agingData[tokenId];
+        return aging.currentFrameLevel;
+    }
 
-        if (score >= 500) return "Diamond";
-        if (score >= 200) return "Platinum";
-        if (score >= 100) return "Gold";
-        if (score >= 50) return "Silver";
-        if (score >= 25) return "Bronze";
-        return "None";
+    function _getFrameLevel(uint256 tokenId) internal view returns (string memory) {
+        LibRugStorage.AgingData storage aging = LibRugStorage.rugStorage().agingData[tokenId];
+        return aging.currentFrameLevel;
+    }
+
+    function updateFrameLevel(uint256 tokenId) public {
+        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+        LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
+
+        uint256 score = _calculateMaintenanceScore(tokenId);
+        string memory newFrameLevel;
+
+        // Diamond frames are permanent once achieved
+        if (aging.isMuseumPiece) {
+            return; // Don't change museum pieces
+        }
+
+        // Determine new frame level based on score
+        if (score >= 500) {
+            newFrameLevel = "Diamond";
+            aging.isMuseumPiece = true; // Mark as permanent museum piece
+            aging.frameAchievedTime = block.timestamp;
+        } else if (score >= 200) {
+            newFrameLevel = "Platinum";
+        } else if (score >= 100) {
+            newFrameLevel = "Gold";
+        } else if (score >= 50) {
+            newFrameLevel = "Silver";
+        } else if (score >= 25) {
+            newFrameLevel = "Bronze";
+        } else {
+            newFrameLevel = "None";
+        }
+
+        // Check if frame level changed
+        if (keccak256(abi.encodePacked(newFrameLevel)) != keccak256(abi.encodePacked(aging.currentFrameLevel))) {
+            string memory oldFrameLevel = aging.currentFrameLevel;
+            aging.currentFrameLevel = newFrameLevel;
+
+            // If upgrading to a new frame level, record achievement time
+            if (keccak256(abi.encodePacked(oldFrameLevel)) == keccak256(abi.encodePacked("None")) ||
+                _isHigherFrameLevel(newFrameLevel, oldFrameLevel)) {
+                aging.frameAchievedTime = block.timestamp;
+                aging.gracePeriodActive = false; // Clear any grace period
+                aging.gracePeriodEnd = 0;
+            }
+            // If demoting (score dropped), start grace period unless it's a museum piece
+            else if (_isHigherFrameLevel(oldFrameLevel, newFrameLevel) && !aging.isMuseumPiece) {
+                aging.gracePeriodActive = true;
+                aging.gracePeriodEnd = block.timestamp + 30 days; // 30 day grace period
+            }
+        }
+
+        // Check if grace period expired
+        if (aging.gracePeriodActive && block.timestamp > aging.gracePeriodEnd && !aging.isMuseumPiece) {
+            // Grace period expired, demote frame
+            aging.currentFrameLevel = newFrameLevel; // Should be lower level
+            aging.gracePeriodActive = false;
+            aging.gracePeriodEnd = 0;
+        }
+    }
+
+    function _isHigherFrameLevel(string memory frame1, string memory frame2) internal pure returns (bool) {
+        uint256 level1 = _getFrameLevelValue(frame1);
+        uint256 level2 = _getFrameLevelValue(frame2);
+        return level1 > level2;
+    }
+
+    function _getFrameLevelValue(string memory frameLevel) internal pure returns (uint256) {
+        if (keccak256(abi.encodePacked(frameLevel)) == keccak256(abi.encodePacked("Diamond"))) return 6;
+        if (keccak256(abi.encodePacked(frameLevel)) == keccak256(abi.encodePacked("Platinum"))) return 5;
+        if (keccak256(abi.encodePacked(frameLevel)) == keccak256(abi.encodePacked("Gold"))) return 4;
+        if (keccak256(abi.encodePacked(frameLevel)) == keccak256(abi.encodePacked("Silver"))) return 3;
+        if (keccak256(abi.encodePacked(frameLevel)) == keccak256(abi.encodePacked("Bronze"))) return 2;
+        return 1; // None
     }
 }

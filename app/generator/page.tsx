@@ -2350,7 +2350,7 @@ export default function GeneratorPage() {
                 */}
 
                 {/* Primary Actions - Top Priority */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3">
                   <button
                     onClick={generateNew}
                     disabled={!isLoaded}
@@ -2358,14 +2358,6 @@ export default function GeneratorPage() {
                   >
                     <Shuffle className="w-4 h-4" />
                     GENERATE
-                  </button>
-                  <button
-                    onClick={saveDoormat}
-                    disabled={!isLoaded}
-                    className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 text-white px-4 py-2.5 rounded font-mono transition-all duration-200 border border-blue-400 flex items-center justify-center gap-2 text-sm"
-                  >
-                    <Download className="w-4 h-4" />
-                    SAVE
                   </button>
                 </div>
                 
@@ -2764,7 +2756,6 @@ export default function GeneratorPage() {
                   </div>
 
                   {/* NFT Exporter Component */}
-                  {false && (
                   <NFTExporter
                     currentSeed={currentSeed}
                     currentPalette={palette}
@@ -2772,7 +2763,6 @@ export default function GeneratorPage() {
                     textRows={textInputs}
                     characterMap={typeof window !== 'undefined' ? (window as any).doormatData?.characterMap || {} : {}}
                   />
-                  )}
 
                   {/* Web3 Minting Component */}
                   <Web3Minting

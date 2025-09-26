@@ -1,39 +1,39 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.22;
 
-import {Script} from "forge-std/Script.sol";
-import {console} from "forge-std/console.sol";
-
-// Diamond Core
-import {Diamond} from "../src/diamond/Diamond.sol";
-import {DiamondCutFacet} from "../src/diamond/facets/DiamondCutFacet.sol";
-import {DiamondLoupeFacet} from "../src/diamond/facets/DiamondLoupeFacet.sol";
-import {LibDiamond} from "../src/diamond/libraries/LibDiamond.sol";
-import {IDiamondCut} from "../src/diamond/interfaces/IDiamondCut.sol";
+import "forge-std/Script.sol";
+import "../src/diamond/Diamond.sol";
+import "../src/diamond/facets/DiamondCutFacet.sol";
+import "../src/diamond/facets/DiamondLoupeFacet.sol";
 
 // Rug Facets
-import {RugNFTFacet} from "../src/facets/RugNFTFacet.sol";
-import {RugAdminFacet} from "../src/facets/RugAdminFacet.sol";
-import {RugAgingFacet} from "../src/facets/RugAgingFacet.sol";
-import {RugMaintenanceFacet} from "../src/facets/RugMaintenanceFacet.sol";
-import {RugCommerceFacet} from "../src/facets/RugCommerceFacet.sol";
-import {RugLaunderingFacet} from "../src/facets/RugLaunderingFacet.sol";
+import "../src/facets/RugNFTFacet.sol";
+import "../src/facets/RugAdminFacet.sol";
+import "../src/facets/RugAgingFacet.sol";
+import "../src/facets/RugMaintenanceFacet.sol";
+import "../src/facets/RugCommerceFacet.sol";
+import "../src/facets/RugLaunderingFacet.sol";
 
-// Rug Storage Library
-import {LibRugStorage} from "../src/libraries/LibRugStorage.sol";
+// Rug Storage
+import "../src/libraries/LibRugStorage.sol";
+
+// Scripty dependencies
+import "../src/scripty/ScriptyBuilderV2.sol";
+import "../src/scripty/ScriptyStorageV2.sol";
+import "../src/scripty/dependencies/ethfs/FileStore.sol";
 
 /**
  * @title DeployRugDiamond
- * @notice Deployment script for the complete OnchainRugs diamond
- * @dev Deploys all facets and assembles the diamond with proper configuration
+ * @notice Deployment script for the complete OnchainRugs diamond contract
+ * @dev Deploys all facets and configures the diamond with proper function selectors
  */
 contract DeployRugDiamond is Script {
-    // Deployment addresses (will be set during deployment)
+    // Deployed contracts
     Diamond public diamond;
     DiamondCutFacet public diamondCutFacet;
     DiamondLoupeFacet public diamondLoupeFacet;
 
-    // Rug Facets
+    // Rug facets
     RugNFTFacet public rugNFTFacet;
     RugAdminFacet public rugAdminFacet;
     RugAgingFacet public rugAgingFacet;
@@ -41,33 +41,20 @@ contract DeployRugDiamond is Script {
     RugCommerceFacet public rugCommerceFacet;
     RugLaunderingFacet public rugLaunderingFacet;
 
-    // Configuration constants (test values)
-    uint256 constant TEST_ETH = 0.00001 ether;
+    // Configuration
+    address public constant SCRIPTY_BUILDER = 0x0000000000000000000000000000000000000000; // Will be set later
+    address public constant SCRIPTY_STORAGE = 0x0000000000000000000000000000000000000000; // Will be set later
+    address public constant HTML_GENERATOR = 0x0000000000000000000000000000000000000000; // Will be set later
 
-    function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address deployer = vm.addr(deployerPrivateKey);
+    function run() external returns (Diamond) {
+        vm.startBroadcast();
 
-        console.log("Deploying OnchainRugs Diamond...");
-        console.log("Deployer:", deployer);
-
-        vm.startBroadcast(deployerPrivateKey);
-
-        // Step 1: Deploy Diamond Core Facets
-        console.log("Step 1: Deploying Diamond Core Facets...");
+        // Deploy core diamond infrastructure
         diamondCutFacet = new DiamondCutFacet();
+        diamond = new Diamond(address(this), address(diamondCutFacet));
         diamondLoupeFacet = new DiamondLoupeFacet();
 
-        console.log("DiamondCutFacet deployed at:", address(diamondCutFacet));
-        console.log("DiamondLoupeFacet deployed at:", address(diamondLoupeFacet));
-
-        // Step 2: Deploy Diamond with DiamondCutFacet
-        console.log("Step 2: Deploying main Diamond contract...");
-        diamond = new Diamond(deployer, address(diamondCutFacet));
-        console.log("Diamond deployed at:", address(diamond));
-
-        // Step 3: Deploy Rug Facets
-        console.log("Step 3: Deploying Rug Facets...");
+        // Deploy rug facets
         rugNFTFacet = new RugNFTFacet();
         rugAdminFacet = new RugAdminFacet();
         rugAgingFacet = new RugAgingFacet();
@@ -75,211 +62,97 @@ contract DeployRugDiamond is Script {
         rugCommerceFacet = new RugCommerceFacet();
         rugLaunderingFacet = new RugLaunderingFacet();
 
-        console.log("RugNFTFacet deployed at:", address(rugNFTFacet));
-        console.log("RugAdminFacet deployed at:", address(rugAdminFacet));
-        console.log("RugAgingFacet deployed at:", address(rugAgingFacet));
-        console.log("RugMaintenanceFacet deployed at:", address(rugMaintenanceFacet));
-        console.log("RugCommerceFacet deployed at:", address(rugCommerceFacet));
-        console.log("RugLaunderingFacet deployed at:", address(rugLaunderingFacet));
+        // Build facet cuts
+        IDiamondCut.FacetCut[] memory cuts = new IDiamondCut.FacetCut[](7);
 
-        // Step 4: Add Loupe and Rug Facets to Diamond
-        console.log("Step 4: Adding facets to Diamond...");
+        // DiamondLoupe facet
+        cuts[0] = IDiamondCut.FacetCut({
+            facetAddress: address(diamondLoupeFacet),
+            action: IDiamondCut.FacetCutAction.Add,
+            functionSelectors: _getDiamondLoupeSelectors()
+        });
 
-        // Add facets one by one to avoid selector conflicts
-
-        // DiamondLoupeFacet
-        IDiamondCut.FacetCut[] memory loupeCut = new IDiamondCut.FacetCut[](1);
-        loupeCut[0] = _createFacetCut(
-            address(diamondLoupeFacet),
-            _generateSelectors("DiamondLoupeFacet")
-        );
-        IDiamondCut(address(diamond)).diamondCut(loupeCut, address(0), "");
-        console.log("Added DiamondLoupeFacet to diamond");
-
-        // RugNFTFacet - REMOVED supportsInterface to avoid conflict with DiamondLoupeFacet
-        console.log("Adding RugNFTFacet...");
-        bytes4[] memory nftSelectors = new bytes4[](22);
-        // RugNFTFacet specific functions
-        nftSelectors[0] = RugNFTFacet.mintRug.selector;
-        nftSelectors[1] = RugNFTFacet.burn.selector;
-        nftSelectors[2] = RugNFTFacet.getRugData.selector;
-        nftSelectors[3] = RugNFTFacet.getAgingData.selector;
-        nftSelectors[4] = RugNFTFacet.totalSupply.selector;
-        nftSelectors[5] = RugNFTFacet.maxSupply.selector;
-        nftSelectors[6] = RugNFTFacet.isTextAvailable.selector;
-        nftSelectors[7] = RugNFTFacet.getMintPrice.selector;
-        nftSelectors[8] = RugNFTFacet.canMint.selector;
-        nftSelectors[9] = RugNFTFacet.walletMints.selector;
-        nftSelectors[10] = RugNFTFacet.isWalletException.selector;
-        nftSelectors[11] = RugNFTFacet.tokenURI.selector;
-        // Essential ERC721 functions
-        nftSelectors[12] = bytes4(keccak256("ownerOf(uint256)"));
-        nftSelectors[13] = bytes4(keccak256("balanceOf(address)"));
-        nftSelectors[14] = bytes4(keccak256("transferFrom(address,address,uint256)"));
-        nftSelectors[15] = bytes4(keccak256("safeTransferFrom(address,address,uint256)"));
-        nftSelectors[16] = bytes4(keccak256("safeTransferFrom(address,address,uint256,bytes)"));
-        nftSelectors[17] = bytes4(keccak256("approve(address,uint256)"));
-        nftSelectors[18] = bytes4(keccak256("setApprovalForAll(address,bool)"));
-        nftSelectors[19] = bytes4(keccak256("getApproved(uint256)"));
-        nftSelectors[20] = bytes4(keccak256("isApprovedForAll(address,address)"));
-        nftSelectors[21] = bytes4(keccak256("name()"));
-        IDiamondCut.FacetCut[] memory nftCut = new IDiamondCut.FacetCut[](1);
-        nftCut[0] = IDiamondCut.FacetCut({
+        // RugNFT facet
+        cuts[1] = IDiamondCut.FacetCut({
             facetAddress: address(rugNFTFacet),
             action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: nftSelectors
+            functionSelectors: _getRugNFTSelectors()
         });
-        IDiamondCut(address(diamond)).diamondCut(nftCut, address(0), "");
-        console.log("Added RugNFTFacet to diamond");
 
-        // RugAdminFacet
-        IDiamondCut.FacetCut[] memory adminCut = new IDiamondCut.FacetCut[](1);
-        adminCut[0] = _createFacetCut(
-            address(rugAdminFacet),
-            _generateSelectors("RugAdminFacet")
-        );
-        IDiamondCut(address(diamond)).diamondCut(adminCut, address(0), "");
-        console.log("Added RugAdminFacet to diamond");
+        // RugAdmin facet
+        cuts[2] = IDiamondCut.FacetCut({
+            facetAddress: address(rugAdminFacet),
+            action: IDiamondCut.FacetCutAction.Add,
+            functionSelectors: _getRugAdminSelectors()
+        });
 
-        // RugAgingFacet
-        IDiamondCut.FacetCut[] memory agingCut = new IDiamondCut.FacetCut[](1);
-        agingCut[0] = _createFacetCut(
-            address(rugAgingFacet),
-            _generateSelectors("RugAgingFacet")
-        );
-        IDiamondCut(address(diamond)).diamondCut(agingCut, address(0), "");
-        console.log("Added RugAgingFacet to diamond");
+        // RugAging facet
+        cuts[3] = IDiamondCut.FacetCut({
+            facetAddress: address(rugAgingFacet),
+            action: IDiamondCut.FacetCutAction.Add,
+            functionSelectors: _getRugAgingSelectors()
+        });
 
-        // RugMaintenanceFacet
-        IDiamondCut.FacetCut[] memory maintenanceCut = new IDiamondCut.FacetCut[](1);
-        maintenanceCut[0] = _createFacetCut(
-            address(rugMaintenanceFacet),
-            _generateSelectors("RugMaintenanceFacet")
-        );
-        IDiamondCut(address(diamond)).diamondCut(maintenanceCut, address(0), "");
-        console.log("Added RugMaintenanceFacet to diamond");
+        // RugMaintenance facet
+        cuts[4] = IDiamondCut.FacetCut({
+            facetAddress: address(rugMaintenanceFacet),
+            action: IDiamondCut.FacetCutAction.Add,
+            functionSelectors: _getRugMaintenanceSelectors()
+        });
 
-        // RugLaunderingFacet
-        IDiamondCut.FacetCut[] memory launderingCut = new IDiamondCut.FacetCut[](1);
-        launderingCut[0] = _createFacetCut(
-            address(rugLaunderingFacet),
-            _generateSelectors("RugLaunderingFacet")
-        );
-        IDiamondCut(address(diamond)).diamondCut(launderingCut, address(0), "");
-        console.log("Added RugLaunderingFacet to diamond");
+        // RugCommerce facet
+        cuts[5] = IDiamondCut.FacetCut({
+            facetAddress: address(rugCommerceFacet),
+            action: IDiamondCut.FacetCutAction.Add,
+            functionSelectors: _getRugCommerceSelectors()
+        });
 
-        // RugCommerceFacet (add last to avoid conflicts)
-        IDiamondCut.FacetCut[] memory commerceCut = new IDiamondCut.FacetCut[](1);
-        commerceCut[0] = _createFacetCut(
-            address(rugCommerceFacet),
-            _generateSelectors("RugCommerceFacet")
-        );
-        IDiamondCut(address(diamond)).diamondCut(commerceCut, address(0), "");
-        console.log("Added RugCommerceFacet to diamond");
+        // RugLaundering facet
+        cuts[6] = IDiamondCut.FacetCut({
+            facetAddress: address(rugLaunderingFacet),
+            action: IDiamondCut.FacetCutAction.Add,
+            functionSelectors: _getRugLaunderingSelectors()
+        });
 
-        // Step 5: Initialize Rug Configuration
-        console.log("Step 5: Initializing Rug configuration...");
+        // Execute diamond cut
+        IDiamondCut(address(diamond)).diamondCut(cuts, address(0), "");
 
-        // Set initial configuration using RugAdminFacet
-        RugAdminFacet(address(diamond)).updateCollectionCap(10000); // 10k max supply
-        RugAdminFacet(address(diamond)).updateWalletLimit(7); // 7 per wallet
+        // Initialize configuration
+        _initializeConfiguration();
 
-        // Set pricing (all test values for now)
-        uint256[6] memory mintPrices = [
-            TEST_ETH, // basePrice
-            TEST_ETH, // linePrice1
-            TEST_ETH, // linePrice2
-            TEST_ETH, // linePrice3
-            TEST_ETH, // linePrice4
-            TEST_ETH  // linePrice5
-        ];
+        vm.stopBroadcast();
+
+        console.log("Diamond deployed at:", address(diamond));
+        return diamond;
+    }
+
+    function _initializeConfiguration() internal {
+        // Set initial configuration for testing
+        RugAdminFacet(address(diamond)).updateCollectionCap(10000);
+        RugAdminFacet(address(diamond)).updateWalletLimit(7);
+
+        // Set pricing (test values)
+        uint256[6] memory mintPrices = [uint256(0.00001 ether), 0.00001 ether, 0.00001 ether, 0.00001 ether, 0.00001 ether, 0.00001 ether];
         RugAdminFacet(address(diamond)).updateMintPricing(mintPrices);
 
-        // Set service pricing
-        uint256[4] memory servicePrices = [
-            TEST_ETH, // cleaningCost
-            TEST_ETH, // restorationCost
-            TEST_ETH, // masterRestorationCost
-            TEST_ETH  // launderingThreshold
-        ];
+        uint256[4] memory servicePrices = [uint256(0.00001 ether), 0.00001 ether, 0.00001 ether, 0.00001 ether];
         RugAdminFacet(address(diamond)).updateServicePricing(servicePrices);
 
-        // Set aging thresholds (in days, converted to seconds)
+        // Set aging thresholds (test values - minutes instead of days for quick testing)
         uint256[6] memory agingThresholds = [
-            uint256(3),  // dirtLevel1Days (3 days for dirt level 1)
-            uint256(7),  // dirtLevel2Days (7 days for dirt level 2)
-            uint256(30), // textureLevel1Days (30 days for texture level 1)
-            uint256(90), // textureLevel2Days (90 days for texture level 2)
-            uint256(30), // freeCleanDays (30 days free after mint)
-            uint256(11)  // freeCleanWindow (11 days free after cleaning)
+            uint256(3 minutes),    // dirt level 1 threshold (3 minutes)
+            uint256(7 minutes),    // dirt level 2 threshold (7 minutes)
+            uint256(30 minutes),   // texture level 1 threshold (30 minutes)
+            uint256(90 minutes),   // texture level 2 threshold (90 minutes)
+            uint256(30 minutes),   // free clean days (30 minutes)
+            uint256(11 minutes)    // free clean window (11 minutes)
         ];
         RugAdminFacet(address(diamond)).updateAgingThresholds(agingThresholds);
 
-        // Configure royalties (5% to deployer for testing)
-        address[] memory royaltyRecipients = new address[](1);
-        royaltyRecipients[0] = deployer;
-        uint256[] memory royaltySplits = new uint256[](1);
-        royaltySplits[0] = 500; // 5% in basis points
-        RugCommerceFacet(payable(address(diamond))).configureRoyalties(500, royaltyRecipients, royaltySplits);
+        // Add owner to exception list (no wallet limits)
+        RugAdminFacet(address(diamond)).addToExceptionList(address(this));
 
-        // Step 6: Verification
-        console.log("Step 6: Verifying deployment...");
-
-        // Test basic functionality
-        (uint256 collectionCap, uint256 walletLimit,,) = RugAdminFacet(address(diamond)).getConfig();
-        (uint256 royaltyPercent,,) = RugCommerceFacet(payable(address(diamond))).getRoyaltyConfig();
-
-        console.log("Collection cap:", collectionCap);
-        console.log("Wallet limit:", walletLimit);
-        console.log("Royalty percentage:", royaltyPercent, "basis points");
-
-        require(collectionCap == 10000, "Collection cap not set correctly");
-        require(walletLimit == 7, "Wallet limit not set correctly");
-        require(royaltyPercent == 500, "Royalty percentage not set correctly");
-
-        console.log("Diamond deployment completed successfully!");
-        console.log("Diamond address:", address(diamond));
-        console.log("All facets added and configured with test values");
-
-        vm.stopBroadcast();
-    }
-
-    /**
-     * @notice Create a facet cut struct
-     */
-    function _createFacetCut(address facetAddress, bytes4[] memory selectors)
-        internal
-        pure
-        returns (IDiamondCut.FacetCut memory)
-    {
-        return IDiamondCut.FacetCut({
-            facetAddress: facetAddress,
-            action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: selectors
-        });
-    }
-
-    /**
-     * @notice Generate function selectors for a facet by name
-     * @dev This is a simplified version - in production you'd use proper selector generation
-     */
-    function _generateSelectors(string memory facetName) internal pure returns (bytes4[] memory) {
-        if (keccak256(abi.encodePacked(facetName)) == keccak256(abi.encodePacked("DiamondLoupeFacet"))) {
-            return _getDiamondLoupeSelectors();
-        } else if (keccak256(abi.encodePacked(facetName)) == keccak256(abi.encodePacked("RugNFTFacet"))) {
-            return _getRugNFTSelectors();
-        } else if (keccak256(abi.encodePacked(facetName)) == keccak256(abi.encodePacked("RugAdminFacet"))) {
-            return _getRugAdminSelectors();
-        } else if (keccak256(abi.encodePacked(facetName)) == keccak256(abi.encodePacked("RugAgingFacet"))) {
-            return _getRugAgingSelectors();
-        } else if (keccak256(abi.encodePacked(facetName)) == keccak256(abi.encodePacked("RugMaintenanceFacet"))) {
-            return _getRugMaintenanceSelectors();
-        } else if (keccak256(abi.encodePacked(facetName)) == keccak256(abi.encodePacked("RugCommerceFacet"))) {
-            return _getRugCommerceSelectors();
-        } else if (keccak256(abi.encodePacked(facetName)) == keccak256(abi.encodePacked("RugLaunderingFacet"))) {
-            return _getRugLaunderingSelectors();
-        }
-        revert("Unknown facet name");
+        console.log("Configuration initialized with owner exceptions");
     }
 
     function _getDiamondLoupeSelectors() internal pure returns (bytes4[] memory) {
@@ -292,7 +165,7 @@ contract DeployRugDiamond is Script {
     }
 
     function _getRugNFTSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](13);
+        bytes4[] memory selectors = new bytes4[](18);
         selectors[0] = RugNFTFacet.mintRug.selector;
         selectors[1] = RugNFTFacet.burn.selector;
         selectors[2] = RugNFTFacet.getRugData.selector;
@@ -306,6 +179,11 @@ contract DeployRugDiamond is Script {
         selectors[10] = RugNFTFacet.isWalletException.selector;
         selectors[11] = RugNFTFacet.tokenURI.selector;
         selectors[12] = RugNFTFacet.supportsInterface.selector;
+        selectors[13] = RugNFTFacet.getFrameLevel.selector;
+        selectors[14] = RugNFTFacet.getFrameStatus.selector;
+        selectors[15] = RugNFTFacet.getMaintenanceHistory.selector;
+        selectors[16] = RugNFTFacet.getSaleHistory.selector;
+        selectors[17] = RugNFTFacet.updateFrameLevel.selector;
         return selectors;
     }
 
@@ -331,7 +209,7 @@ contract DeployRugDiamond is Script {
     }
 
     function _getRugAgingSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](11);
+        bytes4[] memory selectors = new bytes4[](14);
         selectors[0] = RugAgingFacet.getDirtLevel.selector;
         selectors[1] = RugAgingFacet.getTextureLevel.selector;
         selectors[2] = RugAgingFacet.getAgingState.selector;
@@ -347,7 +225,7 @@ contract DeployRugDiamond is Script {
     }
 
     function _getRugMaintenanceSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](9);
+        bytes4[] memory selectors = new bytes4[](13);
         selectors[0] = RugMaintenanceFacet.cleanRug.selector;
         selectors[1] = RugMaintenanceFacet.restoreRug.selector;
         selectors[2] = RugMaintenanceFacet.masterRestoreRug.selector;
@@ -356,12 +234,13 @@ contract DeployRugDiamond is Script {
         selectors[5] = RugMaintenanceFacet.getMasterRestorationCost.selector;
         selectors[6] = RugMaintenanceFacet.canCleanRug.selector;
         selectors[7] = RugMaintenanceFacet.canRestoreRug.selector;
-        selectors[8] = RugMaintenanceFacet.getMaintenanceOptions.selector;
+        selectors[8] = RugMaintenanceFacet.needsMasterRestoration.selector;
+        selectors[9] = RugMaintenanceFacet.getMaintenanceOptions.selector;
         return selectors;
     }
 
     function _getRugCommerceSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](10);
+        bytes4[] memory selectors = new bytes4[](9);
         selectors[0] = RugCommerceFacet.withdraw.selector;
         selectors[1] = RugCommerceFacet.withdrawTo.selector;
         selectors[2] = RugCommerceFacet.configureRoyalties.selector;
@@ -371,12 +250,11 @@ contract DeployRugDiamond is Script {
         selectors[6] = RugCommerceFacet.getRoyaltyConfig.selector;
         selectors[7] = RugCommerceFacet.calculateRoyalty.selector;
         selectors[8] = RugCommerceFacet.getRoyaltyRecipients.selector;
-        selectors[9] = RugCommerceFacet.areRoyaltiesConfigured.selector;
         return selectors;
     }
 
     function _getRugLaunderingSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](8);
+        bytes4[] memory selectors = new bytes4[](9);
         selectors[0] = RugLaunderingFacet.recordSale.selector;
         selectors[1] = RugLaunderingFacet.triggerLaundering.selector;
         selectors[2] = RugLaunderingFacet.updateLaunderingThreshold.selector;

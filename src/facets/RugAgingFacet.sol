@@ -233,8 +233,15 @@ contract RugAgingFacet {
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
         LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
 
-        uint256 timeSinceCleaned = block.timestamp - aging.lastCleaned;
+        // Check if rug has a frame (Silver+ frames get dirt immunity)
+        string memory frameLevel = RugNFTFacet(address(this)).getFrameLevel(tokenId);
+        if (keccak256(abi.encodePacked(frameLevel)) != keccak256(abi.encodePacked("None")) &&
+            keccak256(abi.encodePacked(frameLevel)) != keccak256(abi.encodePacked("Bronze"))) {
+            return 0; // Framed rugs don't accumulate dirt
+        }
 
+        // Normal dirt calculation for Bronze/None
+        uint256 timeSinceCleaned = block.timestamp - aging.lastCleaned;
         if (timeSinceCleaned >= rs.dirtLevel2Days) return 2;
         if (timeSinceCleaned >= rs.dirtLevel1Days) return 1;
         return 0;
@@ -244,18 +251,29 @@ contract RugAgingFacet {
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
         LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
 
-        // Texture level based on time since last texture reset (resets with cleaning for maintenance incentive)
-        uint256 timeSinceTextureReset = block.timestamp - aging.lastTextureReset;
+        // Get frame level to determine texture aging speed
+        string memory frameLevel = RugNFTFacet(address(this)).getFrameLevel(tokenId);
+        uint256 agingMultiplier = _getTextureAgingMultiplier(frameLevel);
+
+        // Texture level based on time since last texture reset (adjusted by frame benefits)
+        uint256 adjustedTimeSinceReset = (block.timestamp - aging.lastTextureReset) / agingMultiplier;
 
         // Texture progression over time (longer timeline than dirt)
-        if (timeSinceTextureReset >= rs.textureLevel2Days * 5) return 10;
-        if (timeSinceTextureReset >= rs.textureLevel2Days * 4) return 8;
-        if (timeSinceTextureReset >= rs.textureLevel2Days * 3) return 6;
-        if (timeSinceTextureReset >= rs.textureLevel2Days * 2) return 4;
-        if (timeSinceTextureReset >= rs.textureLevel2Days) return 2;
-        if (timeSinceTextureReset >= rs.textureLevel1Days) return 1;
+        if (adjustedTimeSinceReset >= rs.textureLevel2Days * 5) return 10;
+        if (adjustedTimeSinceReset >= rs.textureLevel2Days * 4) return 8;
+        if (adjustedTimeSinceReset >= rs.textureLevel2Days * 3) return 6;
+        if (adjustedTimeSinceReset >= rs.textureLevel2Days * 2) return 4;
+        if (adjustedTimeSinceReset >= rs.textureLevel2Days) return 2;
+        if (adjustedTimeSinceReset >= rs.textureLevel1Days) return 1;
 
         return 0; // Fresh texture
+    }
+
+    function _getTextureAgingMultiplier(string memory frameLevel) internal pure returns (uint256) {
+        if (keccak256(abi.encodePacked(frameLevel)) == keccak256(abi.encodePacked("Diamond"))) return 4; // 75% slower
+        if (keccak256(abi.encodePacked(frameLevel)) == keccak256(abi.encodePacked("Platinum"))) return 3; // 67% slower (2/3 speed)
+        if (keccak256(abi.encodePacked(frameLevel)) == keccak256(abi.encodePacked("Gold"))) return 2; // 50% slower
+        return 1; // Normal speed for Silver, Bronze, None
     }
 
     function _timeUntilNextDirt(uint256 tokenId) internal view returns (uint256) {
@@ -280,7 +298,7 @@ contract RugAgingFacet {
         LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
 
         uint8 currentTexture = _getTextureLevel(tokenId);
-        uint256 timeSinceReset = block.timestamp - aging.lastCleaned;
+        uint256 timeSinceReset = block.timestamp - aging.lastTextureReset;
 
         // Simple calculation - next level threshold
         uint256 nextThreshold;

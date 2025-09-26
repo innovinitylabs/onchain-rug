@@ -38,6 +38,11 @@ library LibRugStorage {
         uint256 restorationCount;       // Number of times restored
         uint256 masterRestorationCount; // Number of times master restored
         uint256 maintenanceScore;       // Calculated maintenance quality score
+        string currentFrameLevel;       // Current frame level ("None", "Bronze", etc.)
+        uint256 frameAchievedTime;      // When current frame was first achieved
+        bool gracePeriodActive;         // Whether frame is in grace period
+        uint256 gracePeriodEnd;         // Grace period expiration timestamp
+        bool isMuseumPiece;             // Whether this is a permanent Diamond frame
     }
 
     struct RugConfig {

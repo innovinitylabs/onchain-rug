@@ -94,11 +94,13 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
   const rugWords = [
     'WELCOME',
     'HODL ZONE',
-    'SOFT RUGS',
     'FLOOR IS LAVA',
     'HOME SWEET HOME',
     'GOOD VIBES ONLY',
-    'DIAMOND HANDS'
+    'DIAMOND HANDS',
+    'ART ON BLOCKCHAIN',
+    'DO YOUR OWN RUGS',
+    'SOFT RUGS'
   ]
 
   // Function to get a unique palette index

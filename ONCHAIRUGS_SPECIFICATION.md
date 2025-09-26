@@ -40,10 +40,22 @@ struct RugData {
 
 struct AgingData {
     uint256 lastCleaned;            // Last cleaning timestamp
+    uint256 lastTextureReset;       // Last texture reset timestamp
     uint256 lastSalePrice;          // Highest sale price
     uint256[3] recentSalePrices;    // Last 3 sale prices
-    uint8 dirtLevel;                // Current dirt (0-2)
-    uint8 textureLevel;             // Current texture aging (0-10)
+    uint8 dirtLevel;                // Current dirt (0-2) - deprecated, calculated
+    uint8 textureLevel;             // Current texture aging (0-10) - deprecated, calculated
+    uint256 launderingCount;        // Number of times laundered
+    uint256 lastLaundered;          // Last laundering timestamp
+    uint256 cleaningCount;          // Number of times cleaned
+    uint256 restorationCount;       // Number of times restored
+    uint256 masterRestorationCount; // Number of times master restored
+    uint256 maintenanceScore;       // Calculated maintenance quality score
+    string currentFrameLevel;       // Current frame level ("None", "Bronze", etc.)
+    uint256 frameAchievedTime;      // When current frame was first achieved
+    bool gracePeriodActive;         // Whether frame is in grace period
+    uint256 gracePeriodEnd;         // Grace period expiration timestamp
+    bool isMuseumPiece;             // Whether this is a permanent Diamond frame
 }
 
 struct RugConfig {
@@ -108,9 +120,10 @@ Up to 10 levels| 10 (Ancient)  | Maximum aging
 
 #### Regular Cleaning
 - **Cost**: Configurable (test: 0.00001 ETH)
-- **Effect**: Resets dirt to 0, resets texture timer
-- **Frequency**: Anytime after 3+ days dirt accumulation
-- **Free Period**: First 30 days from mint OR last cleaned within 11 days (both configurable)
+- **Effect**: Resets dirt to 0, resets texture timer, earns maintenance points
+- **Availability**: Anytime beneficial (has dirt, has texture aging, or free cleaning available)
+- **Free Conditions**: First 30 days from mint OR last cleaned within 11 days (both configurable)
+- **Frame Impact**: Required for framed rugs to reset texture timers and earn points
 
 #### Rug Restoration
 - **Cost**: Configurable (test: 0.00001 ETH per level)
@@ -130,6 +143,343 @@ Up to 10 levels| 10 (Ancient)  | Maximum aging
 - **Neglected Rugs**: Develop valuable "character" through aging
 - **Trading Benefits**: Higher sale prices trigger full rejuvenation
 - **Restoration Services**: Premium service tier for quick fixes
+
+---
+
+## 🖼️ Frame System
+
+### Frame Philosophy
+**Museum-Quality Digital Heirlooms**: Frames represent lifetime curation commitment, just like priceless art in museums. Each frame level signifies dedication to maintaining a digital masterpiece, with Diamond frames becoming permanent "museum pieces" that require ongoing stewardship.
+
+### Frame Benefits Hierarchy
+```
+Bronze (25+ points):  No special benefits (milestone achievement)
+Silver (50+ points):  🛡️ Dirt Immunity - Always pristine appearance
+Gold (100+ points):   🛡️ Dirt Immunity + 🐌 25% slower texture aging
+Platinum (200+ points): 🛡️ Dirt Immunity + 🐌 50% slower texture aging
+Diamond (500+ points):  🛡️ Dirt Immunity + 🐌 75% slower texture aging + ♾️ PERMANENT STATUS
+```
+
+### Maintenance Score Calculation
+```solidity
+maintenanceScore = (cleaningCount × 2) +
+                   (restorationCount × 5) +
+                   (masterRestorationCount × 10) +
+                   (launderingCount × 10)
+```
+
+### Frame Mechanics
+
+#### Dirt Immunity (Silver+)
+- Framed rugs (Silver+) never accumulate visible dirt
+- Dirt level is permanently set to 0
+- Still require texture maintenance (restoration services)
+
+#### Texture Aging Reduction
+- Gold: 25% slower texture progression
+- Platinum: 50% slower texture progression
+- Diamond: 75% slower texture progression
+- Still requires periodic restoration to maintain appearance
+
+#### Frame Persistence on Sale
+- Frames transfer with NFT ownership
+- New owner inherits maintenance responsibility
+- Creates heirloom trading dynamics
+
+#### Demotion Mechanics (Grace Period System)
+- Score drops below threshold → Frame enters "tarnished" state (30 days)
+- Visual frame becomes faded/translucent during grace period
+- Full benefits maintained during grace period
+- After 30 days: Frame lost unless score recovers
+- **Exception**: Diamond frames NEVER demote (museum status)
+
+#### Museum Piece Status (Diamond Frames)
+- Once achieved, Diamond frames become permanent
+- No demotion possible regardless of maintenance score
+- Represents ultimate curation achievement
+- Requires lifetime stewardship like owning fine art
+
+### Frame Visual Design
+- **Bronze**: Basic ornate border (achievement milestone)
+- **Silver**: Elegant metallic frame (dirt immunity)
+- **Gold**: Rich golden accents (enhanced preservation)
+- **Platinum**: Sleek modern design (superior preservation)
+- **Diamond**: Crystal-clear premium frame (museum quality)
+
+---
+
+## 📊 Transparent Metadata & History
+
+### TokenURI Transparency
+All game data and statistics are fully visible in NFT metadata for complete transparency:
+
+### Core Attributes (Always Visible)
+```json
+{
+  "Frame Level": "Diamond",
+  "Maintenance Score": "750",
+  "Dirt Level": "0",
+  "Texture Level": "2",
+  "Mint Time": "1640995200",
+  "Last Cleaned": "1641081600",
+  "Last Texture Reset": "1641081600"
+}
+```
+
+### Maintenance History (Complete Activity Log)
+```json
+{
+  "Cleaning Count": "45",
+  "Restoration Count": "12",
+  "Master Restoration Count": "3",
+  "Laundering Count": "8",
+  "Last Laundered": "1641168000",
+  "Maintenance Score": "750"
+}
+```
+
+### Sale History (Trading Transparency)
+```json
+{
+  "Last Sale Price": "0.05",
+  "Recent Sale Prices": ["0.03", "0.04", "0.05"],
+  "Total Sales": "5",
+  "Highest Sale Price": "0.08"
+}
+```
+
+### Frame Status Details
+```json
+{
+  "Frame Level": "Diamond",
+  "Frame Achieved Time": "1641254400",
+  "Grace Period Active": false,
+  "Grace Period End": null,
+  "Museum Piece Status": true
+}
+```
+
+### Complete Rug Data
+```json
+{
+  "Text Lines": "3",
+  "Character Count": "45",
+  "Palette Name": "Persian Heritage",
+  "Complexity": "4",
+  "Warp Thickness": "3",
+  "Stripe Count": "12",
+  "Seed": "123456789"
+}
+```
+
+### Transparency Benefits
+- **Complete Auditability**: Every maintenance action is trackable
+- **Fair Trading**: Buyers see full maintenance history
+- **Achievement Verification**: Frame levels are provably earned
+- **Museum Status Proof**: Diamond rugs have permanent certification
+- **No Hidden Mechanics**: All aging and benefits are visible
+
+---
+
+## 🎮 Complete Gamification Flow
+
+### User Journey: From Mint to Museum Piece
+
+#### **Phase 1: Fresh Rug (Days 0-30)**
+```
+🎯 Goal: Learn maintenance basics, earn first frame
+📅 Timeline: First 30 days after mint
+💰 Pricing: FREE cleaning period
+
+Daily Flow:
+├── Mint rug → Fresh, clean appearance
+├── Days 0-3: Rug stays clean (no dirt accumulation)
+├── Day 3+: Light dirt appears (level 1)
+├── CLEANING: FREE (within 30 days of mint)
+│   ├── Effect: Dirt = 0, earns 2 maintenance points
+│   ├── Frequency: As needed (dirt appears every 3-4 days)
+│   └── Result: Keeps rug looking pristine
+├── RESTORE: Paid (if texture ages, but rare in first 30 days)
+└── FRAME PROGRESSION: Bronze at 25 points (12-13 cleanings)
+
+Key Pricing Rules:
+✅ Cleaning: FREE for first 30 days
+✅ Restoration: PAID if texture ages (rare)
+✅ Laundering: FREE if sold above threshold (automatic)
+```
+
+#### **Phase 2: Active Maintenance (Days 30-200)**
+```
+🎯 Goal: Achieve Silver frame, master maintenance rhythm
+📅 Timeline: Days 30-200 after mint
+💰 Pricing: Mixed (free windows + paid services)
+
+Maintenance Rhythm:
+├── DIRT CYCLE: Every 3-7 days
+│   ├── Dirt level increases: 0 → 1 → 2
+│   └── Cleaning needed every 3-7 days
+├── TEXTURE AGING: Gradual over months
+│   ├── Texture level increases slowly: 0 → 1 → 2...
+│   └── Restoration needed every 1-2 months
+└── FREE CLEANING WINDOWS
+    ├── Available 11 days after last cleaning
+    └── Allows strategic maintenance planning
+
+Pricing Scenarios:
+✅ CLEANING:
+   ├── FREE: Within 11 days of last clean (free window)
+   ├── PAID: Outside free window (0.00001 ETH test)
+   └── ALWAYS AVAILABLE: Even for framed rugs (for timer reset)
+
+✅ RESTORATION:
+   ├── PAID: Always requires payment (0.00001 ETH test)
+   ├── AVAILABLE: When texture level > 0
+   └── EFFECT: Reduces texture by 1, sets dirt to 0
+
+✅ LAUNDERING:
+   ├── FREE: Automatic on qualifying sales
+   ├── TRIGGER: Sale price > threshold AND > highest of last 3 sales
+   └── EFFECT: Full reset (dirt=0, texture=0) + 10 maintenance points
+
+Frame Progression:
+├── Silver (50 points): ~25 cleanings + some restorations
+├── Gold (100 points): ~50 cleanings + 10-15 restorations
+└── Benefits: Dirt immunity, slower texture aging
+```
+
+#### **Phase 3: Elite Curation (200+ Days)**
+```
+🎯 Goal: Reach Platinum/Diamond status
+📅 Timeline: 200+ days, ongoing maintenance
+💰 Pricing: Premium services for high-value rugs
+
+Advanced Strategies:
+├── FRAME BENEFITS: Dirt immunity saves cleaning costs
+├── TEXTURE MANAGEMENT: Slower aging reduces restoration frequency
+│   ├── Gold: 25% slower aging
+│   ├── Platinum: 50% slower aging
+│   └── Diamond: 75% slower aging
+├── FREE CLEANING: Still available in 11-day windows
+└── LAUNDERING: More valuable for high-tier rugs
+
+Pricing Optimization:
+✅ CHEAP MAINTENANCE: Use free cleaning windows strategically
+✅ TIMING: Clean just before free window expires
+✅ BATCHING: Combine cleaning + restoration when needed
+✅ TRADING: Use laundering for free full resets
+
+Diamond Achievement:
+├── 500+ maintenance points required
+├── Permanent museum piece status
+├── Never loses frame, regardless of neglect
+└── Ultimate curation achievement
+```
+
+### Detailed Pricing Matrix
+
+#### **Cleaning Costs by Scenario**
+```
+┌─────────────────┬──────────────┬──────────────────┬─────────────┐
+│ Scenario        │ Free?        │ Cost (Test)      │ Conditions  │
+├─────────────────┼──────────────┼──────────────────┼─────────────┤
+│ Fresh Rug       │ ✅ FREE      │ 0 ETH           │ < 30 days   │
+│ Free Window     │ ✅ FREE      │ 0 ETH           │ < 11 days   │
+│ Standard        │ ❌ PAID      │ 0.00001 ETH     │ Always      │
+│ Framed Rug      │ ✅ FREE      │ 0 ETH           │ Free window │
+│ Maintenance     │ ❌ PAID      │ 0.00001 ETH     │ Timer reset │
+└─────────────────┴──────────────┴──────────────────┴─────────────┘
+```
+
+#### **Restoration Costs**
+```
+┌─────────────────┬──────────────┬──────────────────┬─────────────┐
+│ Service         │ Free?        │ Cost (Test)      │ Conditions  │
+├─────────────────┼──────────────┼──────────────────┼─────────────┤
+│ Texture Restore │ ❌ PAID      │ 0.00001 ETH     │ Level > 0   │
+│ Master Restore  │ ❌ PAID      │ 0.00001 ETH     │ Any aging   │
+│ Laundering      │ ✅ FREE      │ 0 ETH           │ Auto on sale│
+└─────────────────┴──────────────┴──────────────────┴─────────────┘
+```
+
+### Economic Strategy Guide
+
+#### **Cost Optimization Strategies**
+```
+🎯 MINIMAL MAINTENANCE (Basic Care)
+├── Clean every 3-4 days during free windows
+├── Occasional restoration when texture ages
+├── Goal: Bronze frame, basic preservation
+└── Cost: ~0.00005 ETH/month (mostly free cleanings)
+
+🎯 ACTIVE CURATION (Frame Progression)
+├── Clean regularly to maximize points
+├── Restore proactively to maintain appearance
+├── Goal: Gold/Platinum frame benefits
+└── Cost: ~0.0001-0.0002 ETH/month (mixed free/paid)
+
+🎯 ELITE STEWARDSHIP (Diamond Status)
+├── Maximize maintenance points through all services
+├── Use laundering for free resets on trades
+├── Goal: Permanent museum piece status
+└── Cost: ~0.0003-0.0005 ETH/month (premium services)
+```
+
+#### **Revenue Opportunities**
+```
+💰 MAINTENANCE FEES: Primary revenue from cleaning/restoration
+💰 ROYALTIES: 10% on secondary sales (EIP-2981)
+💰 FRAMED NFT PREMIUM: Higher value for maintained rugs
+💰 LAUNDERING INCENTIVES: Trading activity drives engagement
+💰 MUSEUM PIECE VALUE: Diamond frames become collectibles
+```
+
+### Frame Impact on Economics
+
+#### **Silver+ Frame Benefits**
+```
+✅ DIRT IMMUNITY: Eliminates cleaning costs for dirt removal
+✅ APPEARANCE: Always looks pristine (marketing value)
+✅ TIMER MANAGEMENT: Still need cleaning for texture timer reset
+❌ TEXTURE AGING: Still progresses (requires restoration)
+```
+
+#### **Gold+ Frame Benefits**
+```
+✅ SLOWER AGING: 25-75% reduction in texture progression
+✅ COST SAVINGS: Fewer restoration services needed
+✅ STATUS APPEAL: Premium appearance commands higher prices
+❌ MAINTENANCE STILL REQUIRED: Cannot ignore completely
+```
+
+#### **Diamond Museum Status**
+```
+✅ PERMANENT VALUE: Never loses frame or benefits
+✅ MARKET PREMIUM: Commands highest collector prices
+✅ LEGACY ASSET: Becomes family heirloom
+❌ LIFETIME COMMITMENT: Requires ongoing stewardship
+```
+
+---
+
+## 📈 Success Metrics & Balance
+
+### **User Engagement Targets**
+- **80%**: Users who clean at least once in first 30 days
+- **60%**: Users who achieve Bronze frame
+- **30%**: Users who reach Silver+ frames
+- **10%**: Users who achieve Diamond status
+
+### **Economic Balance**
+- **Free Actions**: 70% of maintenance should be free
+- **Paid Services**: 30% premium services for revenue
+- **Frame Incentives**: Clear value proposition for each tier
+- **Trading Activity**: Laundering drives secondary market
+
+### **Long-term Sustainability**
+- **Maintenance Revenue**: Steady income from engaged users
+- **Collector Value**: Framed rugs appreciate over time
+- **Community Building**: Shared curation culture
+- **Museum Economy**: Diamond pieces as blue-chip assets
 
 ---
 

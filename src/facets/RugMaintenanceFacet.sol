@@ -3,6 +3,7 @@ pragma solidity ^0.8.22;
 
 import {LibRugStorage} from "../libraries/LibRugStorage.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import {RugNFTFacet} from "./RugNFTFacet.sol";
 
 /**
  * @title RugMaintenanceFacet
@@ -27,9 +28,11 @@ contract RugMaintenanceFacet {
         // Verify ownership
         require(IERC721(address(this)).ownerOf(tokenId) == msg.sender, "Not token owner");
 
-        // Check if cleaning is needed
+        // Check if cleaning is beneficial (for maintenance or dirt removal)
         uint8 currentDirt = _getDirtLevel(tokenId);
-        require(currentDirt > 0, "Rug is already clean");
+        uint8 currentTexture = _getTextureLevel(tokenId);
+        bool needsCleaning = currentDirt > 0 || currentTexture > 0 || _isCleaningFree(tokenId);
+        require(needsCleaning, "Rug doesn't need cleaning right now");
 
         // Check if free cleaning is available
         bool isFree = _isCleaningFree(tokenId);
@@ -49,6 +52,9 @@ contract RugMaintenanceFacet {
         aging.lastTextureReset = block.timestamp;
         aging.cleaningCount++;
         aging.maintenanceScore = (aging.cleaningCount * 2) + (aging.restorationCount * 5) + (aging.masterRestorationCount * 10) + (aging.launderingCount * 10);
+
+        // Update frame level based on new score
+        RugNFTFacet(address(this)).updateFrameLevel(tokenId);
 
         emit RugCleaned(tokenId, msg.sender, cost, isFree);
     }
@@ -85,6 +91,9 @@ contract RugMaintenanceFacet {
         aging.restorationCount++;
         aging.maintenanceScore = (aging.cleaningCount * 2) + (aging.restorationCount * 5) + (aging.masterRestorationCount * 10) + (aging.launderingCount * 10);
 
+        // Update frame level based on new score
+        RugNFTFacet(address(this)).updateFrameLevel(tokenId);
+
         emit RugRestored(tokenId, msg.sender, previousDirt, previousTexture - 1, rs.restorationCost);
     }
 
@@ -119,13 +128,16 @@ contract RugMaintenanceFacet {
         aging.masterRestorationCount++;
         aging.maintenanceScore = (aging.cleaningCount * 2) + (aging.restorationCount * 5) + (aging.masterRestorationCount * 10) + (aging.launderingCount * 10);
 
+        // Update frame level based on new score
+        RugNFTFacet(address(this)).updateFrameLevel(tokenId);
+
         emit RugMasterRestored(tokenId, msg.sender, currentDirt, currentTexture, rs.masterRestorationCost);
     }
 
     /**
      * @notice Get cost for cleaning a specific rug
      * @param tokenId Token ID to check
-     * @return cost Cost in wei (0 if free)
+     * @return cost Cost in wei (0 if free or not beneficial)
      */
     function getCleaningCost(uint256 tokenId) external view returns (uint256) {
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
@@ -133,7 +145,15 @@ contract RugMaintenanceFacet {
         // Verify token exists and ownership
         require(IERC721(address(this)).ownerOf(tokenId) != address(0), "Token does not exist");
 
-        return _isCleaningFree(tokenId) ? 0 : rs.cleaningCost;
+        // Return 0 if cleaning is not beneficial
+        uint8 dirtLevel = _getDirtLevel(tokenId);
+        uint8 textureLevel = _getTextureLevel(tokenId);
+        bool isFreeCleaning = _isCleaningFree(tokenId);
+        bool needsCleaning = dirtLevel > 0 || textureLevel > 0 || isFreeCleaning;
+
+        if (!needsCleaning) return 0;
+
+        return isFreeCleaning ? 0 : rs.cleaningCost;
     }
 
     /**
@@ -168,13 +188,16 @@ contract RugMaintenanceFacet {
     }
 
     /**
-     * @notice Check if a rug can be cleaned (has dirt)
+     * @notice Check if a rug can be cleaned (has dirt, texture aging, or free cleaning available)
      * @param tokenId Token ID to check
-     * @return canClean True if cleaning is needed
+     * @return canClean True if cleaning is beneficial
      */
     function canCleanRug(uint256 tokenId) external view returns (bool) {
         require(IERC721(address(this)).ownerOf(tokenId) != address(0), "Token does not exist");
-        return _getDirtLevel(tokenId) > 0;
+        uint8 dirtLevel = _getDirtLevel(tokenId);
+        uint8 textureLevel = _getTextureLevel(tokenId);
+        bool isFreeCleaning = _isCleaningFree(tokenId);
+        return dirtLevel > 0 || textureLevel > 0 || isFreeCleaning;
     }
 
     /**

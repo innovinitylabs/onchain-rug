@@ -4,6 +4,7 @@ pragma solidity ^0.8.22;
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {LibRugStorage} from "../libraries/LibRugStorage.sol";
 import {LibDiamond} from "../diamond/libraries/LibDiamond.sol";
+import {RugNFTFacet} from "./RugNFTFacet.sol";
 
 /**
  * @title RugLaunderingFacet
@@ -212,6 +213,9 @@ contract RugLaunderingFacet {
         aging.launderingCount++;
         aging.lastLaundered = block.timestamp;
         aging.maintenanceScore = (aging.cleaningCount * 2) + (aging.restorationCount * 5) + (aging.masterRestorationCount * 10) + (aging.launderingCount * 10);
+
+        // Update frame level based on new score
+        RugNFTFacet(address(this)).updateFrameLevel(tokenId);
 
         (bool shouldTrigger, string memory reason) = _checkLaunderingConditions(tokenId, salePrice);
 
