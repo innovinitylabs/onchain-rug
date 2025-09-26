@@ -570,7 +570,10 @@ export default function GeneratorPage() {
     // Original doormat.js stripe generation logic
     let totalHeight = config.DOORMAT_HEIGHT
     let currentY = 0
-    
+
+    // Track previous stripe's weave type to prevent consecutive mixed stripes
+    let previousWeaveType = null
+
     // Decide stripe density pattern for this doormat
     let densityType = stripePRNG.next()
     let minHeight, maxHeight
@@ -678,13 +681,15 @@ export default function GeneratorPage() {
         console.log(`  Solid: ${(solidChance * 100).toFixed(1)}%, Textured: ${(texturedChance * 100).toFixed(1)}%, Mixed: ${(mixedChance * 100).toFixed(1)}%`)
       }
       
+      // Prevent consecutive mixed stripes to avoid text obfuscation
       if (weaveRand < solidChance) {
         weaveType = 's'  // solid
       } else if (weaveRand < solidChance + texturedChance) {
         weaveType = 't'  // textured
       } else {
-        // Only use mixed if we actually have a secondary color
-        weaveType = hasSecondaryColor ? 'm' : 's'  // mixed only if secondary color exists, otherwise fallback to solid
+        // Only use mixed if we actually have a secondary color AND previous stripe wasn't mixed
+        let wantsMixed = hasSecondaryColor && previousWeaveType !== 'm'
+        weaveType = wantsMixed ? 'm' : 's'  // mixed only if secondary color exists AND not consecutive, otherwise fallback to solid
       }
       
       // Create stripe object (original structure)
@@ -696,8 +701,9 @@ export default function GeneratorPage() {
         weaveType: weaveType,
         warpVariation: stripePRNG.next() * 0.4 + 0.1 // How much the weave varies
       }
-      
+
       stripes.push(stripe)
+      previousWeaveType = weaveType  // Track for preventing consecutive mixed stripes
       currentY += stripeHeight
     }
     
