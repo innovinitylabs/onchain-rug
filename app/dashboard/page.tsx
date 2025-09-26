@@ -360,7 +360,7 @@ export default function DashboardPage() {
                       <div
                         className="w-full bg-black/30 rounded-lg overflow-hidden"
                         style={{
-                          paddingBottom: '69.7%', // 920/1320 * 100% = 69.7% (maintains 1320:920 aspect ratio)
+                          paddingBottom: '56.25%', // 16:9 aspect ratio for landscape orientation
                           position: 'relative'
                         }}
                       >
@@ -478,7 +478,7 @@ export default function DashboardPage() {
                       <div
                         className="w-full bg-black/30 rounded-lg overflow-hidden"
                         style={{
-                          paddingBottom: '69.7%', // 920/1320 * 100% = 69.7% (maintains 1320:920 aspect ratio)
+                          paddingBottom: '56.25%', // 16:9 aspect ratio for landscape orientation
                           position: 'relative'
                         }}
                       >
