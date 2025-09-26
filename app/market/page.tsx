@@ -233,7 +233,7 @@ export default function MarketPage() {
 
   // Filter and sort NFTs
   const filteredAndSortedNFTs = useMemo(() => {
-    let filtered = nfts.filter(nft => {
+    const filtered = nfts.filter(nft => {
       // Search filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase()

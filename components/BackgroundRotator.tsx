@@ -43,6 +43,7 @@ function get42SecondBackgroundIndex(backgroundArray: string[]): number {
 export default function BackgroundRotator() {
   const [isMobile, setIsMobile] = useState(false);
   const [backgrounds, setBackgrounds] = useState(desktopBackgrounds);
+  const [selectedBg, setSelectedBg] = useState(desktopBackgrounds[0]);
 
   // Detect mobile device and set appropriate backgrounds
   useEffect(() => {
@@ -95,13 +96,27 @@ export default function BackgroundRotator() {
     }
   }, [backgrounds]);
 
-  // Generate time-based background immediately (42-second rotation)
-  const timeBasedIndex = get42SecondBackgroundIndex(backgrounds);
-  const selectedBg = backgrounds.length > 0 ? backgrounds[timeBasedIndex] : desktopBackgrounds[0];
+  // Update selected background when backgrounds change or periodically
+  useEffect(() => {
+    const updateBackground = () => {
+      const timeBasedIndex = get42SecondBackgroundIndex(backgrounds);
+      const newSelectedBg = backgrounds.length > 0 ? backgrounds[timeBasedIndex] : desktopBackgrounds[0];
+      setSelectedBg(newSelectedBg);
+    };
+
+    // Update immediately
+    updateBackground();
+
+    // Update every 42 seconds
+    const interval = setInterval(updateBackground, 42000);
+
+    return () => clearInterval(interval);
+  }, [backgrounds]);
 
   // Detailed logging for debugging time-based rotation
   const timestamp = new Date().toISOString();
   const currentWindow = Math.floor(Date.now() / (1000 * 42));
+  const timeBasedIndex = get42SecondBackgroundIndex(backgrounds);
   console.log(`🎨 Background Rotator [${timestamp}] - Window ${currentWindow}:`);
   console.log(`   Device: ${isMobile ? 'Mobile' : 'Desktop'}`);
   console.log(`   Index: ${timeBasedIndex}, Background: ${selectedBg}`);

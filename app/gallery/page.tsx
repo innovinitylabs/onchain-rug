@@ -395,7 +395,7 @@ export default function GalleryPage() {
 
   // Filtered and sorted NFTs
   const filteredAndSortedNFTs = useMemo(() => {
-    let filtered = nfts.filter(nft => {
+    const filtered = nfts.filter(nft => {
       return Object.entries(selectedTraits).every(([trait, value]) => {
         if (value === null || value === undefined || value === '') return true
         return nft.traits[trait as keyof RugTraits] === value

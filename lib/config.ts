@@ -15,20 +15,20 @@ export const config = {
   // 🔓 SAFE TO EXPOSE - Contract addresses (public blockchain data)
   contracts: {
     onchainRugs: process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT ||
-                process.env.ONCHAIN_RUGS_CONTRACT || '0x6D3ef465089f20e6933F9DAB8A35244D219F26B2',
+                process.env.ONCHAIN_RUGS_CONTRACT || '0x98bFD2a09ea2348D4DD2d1D92A9A51E3535f9376',
     scriptyStorage: process.env.NEXT_PUBLIC_SCRIPTY_STORAGE ||
-                   process.env.SCRIPTY_STORAGE || '0x6D3ef465089f20e6933F9DAB8A35244D219F26B2',
+                   process.env.SCRIPTY_STORAGE || '0xF7134668cea698fC713582B5B6bfe33Ab8227a5e',
     scriptyBuilder: process.env.NEXT_PUBLIC_SCRIPTY_BUILDER ||
-                   process.env.SCRIPTY_BUILDER || '0x6D3ef465089f20e6933F9DAB8A35244D219F26B2',
+                   process.env.SCRIPTY_BUILDER || '0x1F2b94753D5717400c6DA24D7c8058B4C20015F8',
     htmlGenerator: process.env.NEXT_PUBLIC_HTML_GENERATOR ||
-                  process.env.HTML_GENERATOR || '0x6D3ef465089f20e6933F9DAB8A35244D219F26B2',
+                  process.env.HTML_GENERATOR || '0x02998E64852C50F151d738ef486A599c796A3bc7',
   },
 
   // 🔓 SAFE TO EXPOSE - Legacy contract address references (public blockchain data)
   rugContractAddress: process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT ||
-                     process.env.ONCHAIN_RUGS_CONTRACT || '0x73db032918FAEb5c853045cF8e9F70362738a8ee',
+                     process.env.ONCHAIN_RUGS_CONTRACT || '0x98bFD2a09ea2348D4DD2d1D92A9A51E3535f9376',
   cleaningContractAddress: process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT ||
-                          process.env.ONCHAIN_RUGS_CONTRACT || '0x73db032918FAEb5c853045cF8e9F70362738a8ee',
+                          process.env.ONCHAIN_RUGS_CONTRACT || '0x98bFD2a09ea2348D4DD2d1D92A9A51E3535f9376',
   
   // Network configuration
   networks: {
@@ -87,7 +87,7 @@ export const config = {
     },
     cleaningCosts: {
       free: 0,
-      paid: 0.0009, // ETH (updated)
+      paid: '900000000000000', // 0.0009 ETH in wei
     },
   },
   

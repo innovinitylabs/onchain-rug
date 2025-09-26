@@ -56,25 +56,57 @@ export async function GET(request: NextRequest) {
         break
 
       case 'getAgingData':
-        // This endpoint doesn't exist in Alchemy - we need to call the contract directly
-        // For now, return mock data
+        // Call contract directly for aging data
         if (!tokenId) {
           return NextResponse.json(
             { error: 'tokenId required for getAgingData endpoint' },
             { status: 400 }
           )
         }
-        // Mock aging data - in production this would be a contract call
-        return NextResponse.json({
-          lastCleaned: BigInt(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000), // Random time in last week
-          lastTextureReset: BigInt(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000), // Random time in last month
-          lastSalePrice: BigInt(0),
-          recentSalePrices: [BigInt(0), BigInt(0), BigInt(0)],
-          dirtLevel: Math.floor(Math.random() * 3), // 0, 1, or 2
-          textureLevel: Math.floor(Math.random() * 3), // 0, 1, or 2
-          launderingCount: BigInt(0),
-          lastLaundered: BigInt(0)
-        })
+
+        // Import ethers for contract calls
+        const { ethers } = await import('ethers')
+
+        // Create provider for Shape Sepolia
+        const provider = new ethers.JsonRpcProvider('https://sepolia.shape.network')
+
+        // Contract ABI for getAgingData function
+        const contractAbi = [
+          "function getAgingData(uint256 tokenId) external view returns (tuple(uint256 lastCleaned, uint256 lastTextureReset, uint256 lastSalePrice, uint256[3] recentSalePrices, uint8 dirtLevel, uint8 textureLevel, uint256 launderingCount, uint256 lastLaundered, uint256 cleaningCount, uint256 restorationCount, uint256 masterRestorationCount, uint256 maintenanceScore, string currentFrameLevel, uint256 frameAchievedTime, bool gracePeriodActive, uint256 gracePeriodEnd, bool isMuseumPiece))"
+        ]
+
+        const contract = new ethers.Contract(contractAddress, contractAbi, provider)
+
+        try {
+          const agingData = await contract.getAgingData(tokenId)
+          console.log(`✅ Contract call success: getAgingData for token ${tokenId}`)
+
+          return NextResponse.json({
+            lastCleaned: agingData[0].toString(),
+            lastTextureReset: agingData[1].toString(),
+            lastSalePrice: agingData[2].toString(),
+            recentSalePrices: agingData[3].map((price: any) => price.toString()),
+            dirtLevel: Number(agingData[4]),
+            textureLevel: Number(agingData[5]),
+            launderingCount: agingData[6].toString(),
+            lastLaundered: agingData[7].toString(),
+            cleaningCount: agingData[8].toString(),
+            restorationCount: agingData[9].toString(),
+            masterRestorationCount: agingData[10].toString(),
+            maintenanceScore: agingData[11].toString(),
+            currentFrameLevel: agingData[12],
+            frameAchievedTime: agingData[13].toString(),
+            gracePeriodActive: agingData[14],
+            gracePeriodEnd: agingData[15].toString(),
+            isMuseumPiece: agingData[16]
+          })
+        } catch (error) {
+          console.error(`❌ Contract call failed for getAgingData:`, error)
+          return NextResponse.json(
+            { error: 'Failed to fetch aging data from contract' },
+            { status: 500 }
+          )
+        }
 
       default:
         return NextResponse.json(

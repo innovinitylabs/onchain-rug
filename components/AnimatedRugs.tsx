@@ -1,7 +1,7 @@
 'use client'
 
 // Global palette tracker to ensure unique palettes for each rug
-let usedPaletteIndices = new Set<number>()
+const usedPaletteIndices = new Set<number>()
 let shuffledPaletteIndices: number[] = []
 
 // Function to reset global state
@@ -138,11 +138,11 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
       warpVariation: number
     }> = []
     
-    let totalHeight = doormatHeight
+    const totalHeight = doormatHeight
     let currentY = 0
     
     // Decide stripe density pattern for this doormat (EXACTLY like your generator)
-    let densityType = random()
+    const densityType = random()
     let minHeight, maxHeight
     
     if (densityType < 0.2) {
@@ -164,7 +164,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
       let stripeHeight
       if (densityType >= 0.4) {
         // Mixed density: add more randomization within the range
-        let variationType = random()
+        const variationType = random()
         if (variationType < 0.3) {
           // 30% thin stripes within mixed
           stripeHeight = random() * 20 + minHeight
@@ -186,12 +186,12 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
       }
       
       // Select colors for this stripe (EXACTLY like your generator)
-      let primaryColor = aniSelectedPalette.colors[Math.floor(random() * aniSelectedPalette.colors.length)]
-      let hasSecondaryColor = random() < 0.15 // 15% chance of blended colors
-      let secondaryColor = hasSecondaryColor ? aniSelectedPalette.colors[Math.floor(random() * aniSelectedPalette.colors.length)] : null
+      const primaryColor = aniSelectedPalette.colors[Math.floor(random() * aniSelectedPalette.colors.length)]
+      const hasSecondaryColor = random() < 0.15 // 15% chance of blended colors
+      const secondaryColor = hasSecondaryColor ? aniSelectedPalette.colors[Math.floor(random() * aniSelectedPalette.colors.length)] : null
       
       // Determine weave pattern type with weighted probabilities (EXACTLY like your generator)
-      let weaveRand = random()
+      const weaveRand = random()
       let weaveType: 'solid' | 'textured' | 'mixed'
       if (weaveRand < 0.6) {          // 60% chance of solid (simple)
         weaveType = 'solid'
@@ -304,7 +304,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
     
     // Left selvedge edge - flowing semicircular weft threads (EXACT COPY)
     let isFirstWeft = true
-    for (let stripe of stripeData) {
+    for (const stripe of stripeData) {
       for (let y = stripe.y; y < stripe.y + stripe.height; y += animWeftSpacing) {
         // Skip the very first and very last weft threads (EXACT COPY)
         if (isFirstWeft) {
@@ -351,7 +351,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
     
     // Right selvedge edge - flowing semicircular weft threads (EXACT COPY)
     let isFirstWeftRight = true
-    for (let stripe of stripeData) {
+    for (const stripe of stripeData) {
       for (let y = stripe.y; y < stripe.y + stripe.height; y += animWeftSpacing) {
         // Skip the very first and very last weft threads (EXACT COPY)
         if (isFirstWeftRight) {
@@ -446,9 +446,9 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
       const detailRadius = radius * (0.4 + i * 0.3)
       
       // Create contrast for visibility
-      let detailR = Math.max(0, Math.min(255, r + (i % 2 === 0 ? 15 : -15)))
-      let detailG = Math.max(0, Math.min(255, g + (i % 2 === 0 ? 15 : -15)))
-      let detailB = Math.max(0, Math.min(255, b + (i % 2 === 0 ? 15 : -15)))
+      const detailR = Math.max(0, Math.min(255, r + (i % 2 === 0 ? 15 : -15)))
+      const detailG = Math.max(0, Math.min(255, g + (i % 2 === 0 ? 15 : -15)))
+      const detailB = Math.max(0, Math.min(255, b + (i % 2 === 0 ? 15 : -15)))
       
       ctx.fillStyle = `rgb(${Math.round(detailR)}, ${Math.round(detailG)}, ${Math.round(detailB)})`
       
@@ -474,8 +474,8 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
     const animWarpThickness = 2
     const animWeftThickness = 8
     
-    let animWarpSpacing = animWarpThickness + 1
-    let animWeftSpacing = animWeftThickness + 1
+    const animWarpSpacing = animWarpThickness + 1
+    const animWeftSpacing = animWeftThickness + 1
     
     // Draw warp threads (vertical) as the foundation (EXACTLY like your generator)
     for (let x = 0; x < doormatWidth; x += animWarpSpacing) {
@@ -810,14 +810,14 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
   // Adapted from https://github.com/processing/p5.js/blob/main/src/math/noise.js
   function makePerlin(seed: number) {
     // Perlin noise permutation table
-    let p = new Uint8Array(512)
-    let permutation = new Uint8Array(256)
+    const p = new Uint8Array(512)
+    const permutation = new Uint8Array(256)
     // Deterministic shuffle
-    let rand = new AniSeededRandom(seed)
+    const rand = new AniSeededRandom(seed)
     for (let i = 0; i < 256; i++) permutation[i] = i
     for (let i = 255; i > 0; i--) {
-      let j = Math.floor(rand.next() * (i + 1))
-      let temp = permutation[i]; permutation[i] = permutation[j]; permutation[j] = temp
+      const j = Math.floor(rand.next() * (i + 1))
+      const temp = permutation[i]; permutation[i] = permutation[j]; permutation[j] = temp
     }
     for (let i = 0; i < 512; i++) p[i] = permutation[i & 255]
     function fade(t: number) { return t * t * t * (t * (t * 6 - 15) + 10) }
@@ -831,16 +831,16 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
     }
     // 2D Perlin noise
     return function perlin2(x: number, y: number) {
-      let X = Math.floor(x) & 255
-      let Y = Math.floor(y) & 255
+      const X = Math.floor(x) & 255
+      const Y = Math.floor(y) & 255
       x -= Math.floor(x)
       y -= Math.floor(y)
-      let u = fade(x)
-      let v = fade(y)
-      let aa = p[p[X] + Y]
-      let ab = p[p[X] + Y + 1]
-      let ba = p[p[X + 1] + Y]
-      let bb = p[p[X + 1] + Y + 1]
+      const u = fade(x)
+      const v = fade(y)
+      const aa = p[p[X] + Y]
+      const ab = p[p[X] + Y + 1]
+      const ba = p[p[X + 1] + Y]
+      const bb = p[p[X + 1] + Y + 1]
       return lerp(
         lerp(grad(aa, x, y), grad(ba, x - 1, y), u),
         lerp(grad(ab, x, y - 1), grad(bb, x - 1, y - 1), u),
@@ -1392,8 +1392,8 @@ function drawAniStripe(ctx: CanvasRenderingContext2D, stripe: any, doormatWidth:
   const animWarpThickness = 2
   const animWeftThickness = 8
 
-  let animWarpSpacing = animWarpThickness + 1
-  let animWeftSpacing = animWeftThickness + 1
+  const animWarpSpacing = animWarpThickness + 1
+  const animWeftSpacing = animWeftThickness + 1
 
   // Draw warp threads (vertical)
   for (let x = 0; x < doormatWidth; x += animWarpSpacing) {
@@ -1484,7 +1484,7 @@ function drawAniSelvedgeEdges(ctx: CanvasRenderingContext2D, stripeData: any[], 
   const animWeftThickness = 8
   const animWeftSpacing = animWeftThickness + 1
   let isFirstWeft = true
-  for (let stripe of stripeData) {
+  for (const stripe of stripeData) {
     for (let y = stripe.y; y < stripe.y + stripe.height; y += animWeftSpacing) {
       if (isFirstWeft) {
         isFirstWeft = false
@@ -1509,7 +1509,7 @@ function drawAniSelvedgeEdges(ctx: CanvasRenderingContext2D, stripeData: any[], 
     }
   }
   let isFirstWeftRight = true
-  for (let stripe of stripeData) {
+  for (const stripe of stripeData) {
     for (let y = stripe.y; y < stripe.y + stripe.height; y += animWeftSpacing) {
       if (isFirstWeftRight) {
         isFirstWeftRight = false
@@ -1564,9 +1564,9 @@ function drawAniTextureOverlay(ctx: CanvasRenderingContext2D, centerX: number, c
   }
   for (let i = 0; i < 2; i++) {
     const detailRadius = radius * (0.4 + i * 0.3)
-    let detailR = Math.max(0, Math.min(255, r + (i % 2 === 0 ? 15 : -15)))
-    let detailG = Math.max(0, Math.min(255, g + (i % 2 === 0 ? 15 : -15)))
-    let detailB = Math.max(0, Math.min(255, b + (i % 2 === 0 ? 15 : -15)))
+    const detailR = Math.max(0, Math.min(255, r + (i % 2 === 0 ? 15 : -15)))
+    const detailG = Math.max(0, Math.min(255, g + (i % 2 === 0 ? 15 : -15)))
+    const detailB = Math.max(0, Math.min(255, b + (i % 2 === 0 ? 15 : -15)))
     ctx.fillStyle = `rgb(${Math.round(detailR)}, ${Math.round(detailG)}, ${Math.round(detailB)})`
     const detailX = centerX + random() * 1 - 0.5
     const detailY = centerY + random() * 1 - 0.5
