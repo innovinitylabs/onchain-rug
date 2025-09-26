@@ -882,15 +882,110 @@ export default function GeneratorPage() {
               return (lighter + 0.05) / (darker + 0.05)
             }
 
-            const colorDistance = (a: any, b: any) => {
-              return Math.abs(p.red(a) - p.red(b)) + Math.abs(p.green(a) - p.green(b)) + Math.abs(p.blue(a) - p.blue(b))
+            // CIE Lab color space conversion for better perceptual color differences
+            const rgbToXyz = (r: number, g: number, b: number) => {
+              // Normalize RGB to 0-1
+              r = r / 255
+              g = g / 255
+              b = b / 255
+
+              // Linearize RGB
+              r = r > 0.04045 ? Math.pow((r + 0.055) / 1.055, 2.4) : r / 12.92
+              g = g > 0.04045 ? Math.pow((g + 0.055) / 1.055, 2.4) : g / 12.92
+              b = b > 0.04045 ? Math.pow((b + 0.055) / 1.055, 2.4) : b / 12.92
+
+              // Convert to XYZ
+              const x = r * 0.4124 + g * 0.3576 + b * 0.1805
+              const y = r * 0.2126 + g * 0.7152 + b * 0.0722
+              const z = r * 0.0193 + g * 0.1192 + b * 0.9505
+
+              return { x, y, z }
+            }
+
+            const xyzToLab = (x: number, y: number, z: number) => {
+              // Normalize by D65 white point
+              x = x / 0.95047
+              y = y / 1.00000
+              z = z / 1.08883
+
+              // Lab function
+              const f = (t: number) => t > Math.pow(6/29, 3) ? Math.pow(t, 1/3) : (1/3) * Math.pow(29/6, 2) * t + 4/29
+
+              const L = 116 * f(y) - 16
+              const a = 500 * (f(x) - f(y))
+              const b_lab = 200 * (f(y) - f(z))
+
+              return { L, a, b: b_lab }
+            }
+
+            const rgbToLab = (color: any) => {
+              const { x, y, z } = rgbToXyz(p.red(color), p.green(color), p.blue(color))
+              return xyzToLab(x, y, z)
+            }
+
+            // CIEDE2000 color difference formula
+            const deltaE2000 = (lab1: any, lab2: any) => {
+              const { L: L1, a: a1, b: b1 } = lab1
+              const { L: L2, a: a2, b: b2 } = lab2
+
+              const kL = 1, kC = 1, kH = 1
+
+              const deltaLPrime = L2 - L1
+              const LBar = (L1 + L2) / 2
+
+              const C1 = Math.sqrt(a1 * a1 + b1 * b1)
+              const C2 = Math.sqrt(a2 * a2 + b2 * b2)
+              const CBar = (C1 + C2) / 2
+
+              const aPrime1 = a1 * (1 + 0.5 * (Math.sqrt(Math.pow(CBar, 7) / (Math.pow(CBar, 7) + Math.pow(25, 7)))))
+              const aPrime2 = a2 * (1 + 0.5 * (Math.sqrt(Math.pow(CBar, 7) / (Math.pow(CBar, 7) + Math.pow(25, 7)))))
+
+              const CPrime1 = Math.sqrt(aPrime1 * aPrime1 + b1 * b1)
+              const CPrime2 = Math.sqrt(aPrime2 * aPrime2 + b2 * b2)
+              const CBarPrime = (CPrime1 + CPrime2) / 2
+
+              const deltaCPrime = CPrime2 - CPrime1
+
+              const hPrime1 = Math.atan2(b1, aPrime1) * 180 / Math.PI
+              const hPrime2 = Math.atan2(b2, aPrime2) * 180 / Math.PI
+              const deltahPrime = Math.abs(hPrime1 - hPrime2) <= 180 ? hPrime2 - hPrime1 : (hPrime2 - hPrime1 > 180 ? hPrime2 - hPrime1 - 360 : hPrime2 - hPrime1 + 360)
+              const deltaHPrime = 2 * Math.sqrt(CPrime1 * CPrime2) * Math.sin(deltahPrime * Math.PI / 360)
+
+              const HBarPrime = Math.abs(hPrime1 - hPrime2) <= 180 ? (hPrime1 + hPrime2) / 2 : (hPrime1 + hPrime2 >= 360 ? (hPrime1 + hPrime2) / 2 : (hPrime1 + hPrime2 + 360) / 2)
+
+              const T = 1 - 0.17 * Math.cos(HBarPrime * Math.PI / 180 - 30) + 0.24 * Math.cos(2 * HBarPrime * Math.PI / 180) + 0.32 * Math.cos(3 * HBarPrime * Math.PI / 180 + 6) - 0.20 * Math.cos(4 * HBarPrime * Math.PI / 180 - 63)
+
+              const SL = 1 + (0.015 * Math.pow(LBar - 50, 2)) / Math.sqrt(20 + Math.pow(LBar - 50, 2))
+              const SC = 1 + 0.045 * CBarPrime
+              const SH = 1 + 0.015 * CBarPrime * T
+
+              const RT = -Math.sin(2 * (HBarPrime * Math.PI / 180 - 55) * Math.PI / 180) * (2 * Math.sqrt(Math.pow(CBarPrime, 7) / (Math.pow(CBarPrime, 7) + Math.pow(25, 7))))
+
+              const kL_SL = kL * SL
+              const kC_SC = kC * SC
+              const kH_SH = kH * SH
+
+              const termL = deltaLPrime / kL_SL
+              const termC = deltaCPrime / kC_SC
+              const termH = deltaHPrime / kH_SH
+
+              return Math.sqrt(termL * termL + termC * termC + termH * termH + RT * termC * termH)
+            }
+
+            const perceptualColorDistance = (a: any, b: any) => {
+              const lab1 = rgbToLab(a)
+              const lab2 = rgbToLab(b)
+              return deltaE2000(lab1, lab2)
             }
 
             const primaryColor = p.color(stripe.primaryColor)
             const secondaryColor = p.color(stripe.secondaryColor)
-            const distinctThreshold = 90
+
+            // Use perceptual distance threshold (delta E > 20 is considered different colors)
+            const distinctThreshold = 20
             const isDistinct = (candidate: any) => {
-              return colorDistance(candidate, primaryColor) > distinctThreshold && colorDistance(candidate, secondaryColor) > distinctThreshold
+              return perceptualColorDistance(candidate, primaryColor) > distinctThreshold &&
+                     perceptualColorDistance(candidate, secondaryColor) > distinctThreshold
             }
 
             // BULLETPROOF SOLUTION: For mixed weaves, use palette colors NOT used in stripe
@@ -944,20 +1039,48 @@ export default function GeneratorPage() {
               }
             }
 
-            // Evaluate candidates using WCAG contrast ratio against all sampled backgrounds
+            // Enhanced evaluation using multiple contrast metrics
             const evaluateCandidates = (pool: any[]) => {
               let bestCandidate = pool[0]
               let bestScore = -1
+
               for (const candidate of pool) {
-                let minContrast = Infinity
+                // Calculate multiple contrast metrics
+                let minContrastRatio = Infinity
+                let avgColorDistance = 0
+                let minPerceptualDistance = Infinity
+
                 for (const sampleColor of sampleColors) {
+                  // WCAG contrast ratio (brightness-based)
                   const ratio = contrastRatio(candidate, sampleColor)
-                  if (ratio < minContrast) {
-                    minContrast = ratio
+                  if (ratio < minContrastRatio) {
+                    minContrastRatio = ratio
                   }
+
+                  // Perceptual color distance (CIEDE2000)
+                  const perceptualDist = perceptualColorDistance(candidate, sampleColor)
+                  if (perceptualDist < minPerceptualDistance) {
+                    minPerceptualDistance = perceptualDist
+                  }
+
+                  avgColorDistance += perceptualDist
                 }
-                if (minContrast > bestScore) {
-                  bestScore = minContrast
+                avgColorDistance /= sampleColors.length
+
+                // Combined score: prioritize perceptual distance, then WCAG contrast
+                // Weight perceptual distance more heavily as it's more accurate
+                const perceptualWeight = 0.7
+                const contrastWeight = 0.3
+
+                // Normalize perceptual distance (higher is better for contrast)
+                const normalizedPerceptual = Math.min(minPerceptualDistance / 50, 1)
+                // Normalize contrast ratio (WCAG AA requires 4.5:1, AAA requires 7:1)
+                const normalizedContrast = Math.min(minContrastRatio / 7, 1)
+
+                const combinedScore = perceptualWeight * normalizedPerceptual + contrastWeight * normalizedContrast
+
+                if (combinedScore > bestScore) {
+                  bestScore = combinedScore
                   bestCandidate = candidate
                 }
               }
@@ -968,14 +1091,37 @@ export default function GeneratorPage() {
             // Just evaluate what we have
             let { bestCandidate, bestScore } = evaluateCandidates(candidateColors)
 
-            // If still no good contrast, use ALL palette colors (darkened) as final fallback
-            const desiredContrast = 4.5
-            if (bestScore < desiredContrast && allPaletteColors.length > 0) {
+            // Enhanced fallback logic: If still no good contrast, use ALL palette colors with multiple variations
+            const desiredCombinedScore = 0.6 // Require at least 60% of maximum possible contrast
+            if (bestScore < desiredCombinedScore && allPaletteColors.length > 0) {
               const allPaletteCandidates: any[] = []
+
+              // Try multiple variations of palette colors
               for (const paletteColor of allPaletteColors) {
+                // Darkened version (for light backgrounds)
                 const darkenedColor = p.lerpColor(paletteColor, p.color(0, 0, 0), 0.4)
                 allPaletteCandidates.push(darkenedColor)
+
+                // Lightened version (for dark backgrounds)
+                const lightenedColor = p.lerpColor(paletteColor, p.color(255, 255, 255), 0.6)
+                allPaletteCandidates.push(lightenedColor)
+
+                // High contrast colors using simple HSV-based complementary approach
+                const r = p.red(paletteColor) / 255
+                const g = p.green(paletteColor) / 255
+                const b = p.blue(paletteColor) / 255
+
+                // Calculate brightness and create high contrast alternatives
+                const brightness = (r + g + b) / 3
+
+                // Create high contrast color by inverting brightness while keeping hue
+                const contrastR = brightness > 0.5 ? Math.max(0, r - 0.4) : Math.min(1, r + 0.4)
+                const contrastG = brightness > 0.5 ? Math.max(0, g - 0.4) : Math.min(1, g + 0.4)
+                const contrastB = brightness > 0.5 ? Math.max(0, b - 0.4) : Math.min(1, b + 0.4)
+
+                allPaletteCandidates.push(p.color(contrastR * 255, contrastG * 255, contrastB * 255))
               }
+
               ;({ bestCandidate } = evaluateCandidates(allPaletteCandidates))
             }
 
