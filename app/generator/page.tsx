@@ -1135,25 +1135,10 @@ export default function GeneratorPage() {
               ;({ bestCandidate } = evaluateCandidates(allPaletteCandidates))
             }
 
-            // For mixed weaves: Use moderate outline/border effect for readability
-            const mainTextColor = bestCandidate
-            const outlineColor = p.color(0, 0, 0) // Black outline
-
-            // Draw moderate outline first (offset by 1 pixel)
-            p.fill(outlineColor)
-            p.noStroke()
-            let outlineCurve = p.cos(x * 0.05) * 0.5
-
-            // Draw border in 4 diagonal directions for balanced thickness
-            p.rect(x + 0.5 + 1, y + outlineCurve + 0.5 + 1, warpSpacing, config.WEFT_THICKNESS)
-            p.rect(x + 0.5 - 1, y + outlineCurve + 0.5 - 1, warpSpacing, config.WEFT_THICKNESS)
-            p.rect(x + 0.5 + 1, y + outlineCurve + 0.5 - 1, warpSpacing, config.WEFT_THICKNESS)
-            p.rect(x + 0.5 - 1, y + outlineCurve + 0.5 + 1, warpSpacing, config.WEFT_THICKNESS)
-
-            // Now draw main text color on top
-            r = p.red(mainTextColor)
-            g = p.green(mainTextColor)
-            b = p.blue(mainTextColor)
+            // For mixed weaves: Use shadow effect (matching rug-algo.js)
+            r = p.red(bestCandidate)
+            g = p.green(bestCandidate)
+            b = p.blue(bestCandidate)
           } else {
             // For solid and textured weaves, use current logic
             const bgBrightness = (p.red(weftColor) + p.green(weftColor) + p.blue(weftColor)) / 3
