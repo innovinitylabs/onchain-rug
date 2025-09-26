@@ -636,13 +636,17 @@ export default function MarketPage() {
                                   outline: 'none',
                                   margin: 0,
                                   padding: 0,
-                                  fontFamily: 'inherit',
-                                  fontSize: 'inherit',
-                                  fontWeight: 'inherit',
-                                  lineHeight: 'inherit',
-                                  letterSpacing: 'inherit',
+                                  fontFamily: 'unset',
+                                  fontSize: 'unset',
+                                  fontWeight: 'unset',
+                                  lineHeight: 'unset',
+                                  letterSpacing: 'unset',
                                   textDecoration: 'none',
-                                  boxShadow: 'none'
+                                  boxShadow: 'none',
+                                  fontVariant: 'unset',
+                                  fontFeatureSettings: 'unset',
+                                  textRendering: 'auto',
+                                  WebkitFontSmoothing: 'unset'
                                 }}
                               />
                             ) : (
@@ -669,13 +673,17 @@ export default function MarketPage() {
                                   outline: 'none',
                                   margin: 0,
                                   padding: 0,
-                                  fontFamily: 'inherit',
-                                  fontSize: 'inherit',
-                                  fontWeight: 'inherit',
-                                  lineHeight: 'inherit',
-                                  letterSpacing: 'inherit',
+                                  fontFamily: 'unset',
+                                  fontSize: 'unset',
+                                  fontWeight: 'unset',
+                                  lineHeight: 'unset',
+                                  letterSpacing: 'unset',
                                   textDecoration: 'none',
-                                  boxShadow: 'none'
+                                  boxShadow: 'none',
+                                  fontVariant: 'unset',
+                                  fontFeatureSettings: 'unset',
+                                  textRendering: 'auto',
+                                  WebkitFontSmoothing: 'unset'
                                 }}
                               />
                             ) : (
