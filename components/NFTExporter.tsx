@@ -41,7 +41,7 @@ const NFTExporter: React.FC<NFTExporterProps> = ({
     // Calculate stripe complexity
     let complexityScore = 0;
     let solidCount = 0;
-    for (let stripe of stripeData) {
+    for (const stripe of stripeData) {
       if (stripe.weaveType === 'mixed') complexityScore += 2;
       else if (stripe.weaveType === 'textured') complexityScore += 1.5;
       else solidCount++;
@@ -119,14 +119,18 @@ const NFTExporter: React.FC<NFTExporterProps> = ({
 
     // Create minimal character map with only used characters
     const optimizedCharacterMap: any = {};
-    usedChars.forEach(char => {
-      if (characterMap[char]) {
-        optimizedCharacterMap[char] = characterMap[char];
+
+    // Only create character map if there are actually used characters
+    if (usedChars.size > 0) {
+      usedChars.forEach(char => {
+        if (characterMap[char]) {
+          optimizedCharacterMap[char] = characterMap[char];
+        }
+      });
+      // Include space as fallback only when there are text characters
+      if (characterMap[' ']) {
+        optimizedCharacterMap[' '] = characterMap[' '];
       }
-    });
-    // Always include space as fallback
-    if (characterMap[' ']) {
-      optimizedCharacterMap[' '] = characterMap[' '];
     }
 
     const optimizedCharacterMapFinal = optimizedCharacterMap;
