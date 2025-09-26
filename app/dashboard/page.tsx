@@ -270,7 +270,7 @@ export default function DashboardPage() {
       <Navigation />
 
       <main className="flex-grow">
-        <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -334,7 +334,7 @@ export default function DashboardPage() {
             </a>
           </motion.div>
         ) : (
-          <div className="grid grid-cols-1 gap-6 max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 gap-6">
             {userRugs.map((rug) => {
               const dirtLevel = rug.aging.dirtLevel || 0
               const textureLevel = rug.aging.textureLevel || 0
