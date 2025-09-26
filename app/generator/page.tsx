@@ -1026,17 +1026,22 @@ export default function GeneratorPage() {
               }
             }
 
-            // Use unused colors (darkened) as primary choice
+            // Use unused colors with subtle adjustment for contrast
             for (const unusedColor of unusedPaletteColors) {
-              const darkened = p.lerpColor(unusedColor, p.color(0, 0, 0), 0.4)
-              addColor(darkened)
+              // Use much more subtle darkening to preserve color identity
+              const lightness = (p.red(unusedColor) + p.green(unusedColor) + p.blue(unusedColor)) / (3 * 255)
+              const darkenAmount = lightness > 0.7 ? 0.15 : lightness > 0.4 ? 0.2 : 0.25 // Less darkening for lighter colors
+              const adjusted = p.lerpColor(unusedColor, p.color(0, 0, 0), darkenAmount)
+              addColor(adjusted)
             }
 
-            // If no unused colors, use ALL palette colors (darkened) as fallback
+            // If no unused colors, use ALL palette colors with subtle adjustment as fallback
             if (candidateColors.length === 0) {
               for (const paletteColor of allPaletteColors) {
-                const darkened = p.lerpColor(paletteColor, p.color(0, 0, 0), 0.4)
-                addColor(darkened)
+                const lightness = (p.red(paletteColor) + p.green(paletteColor) + p.blue(paletteColor)) / (3 * 255)
+                const darkenAmount = lightness > 0.7 ? 0.15 : lightness > 0.4 ? 0.2 : 0.25
+                const adjusted = p.lerpColor(paletteColor, p.color(0, 0, 0), darkenAmount)
+                addColor(adjusted)
               }
             }
 
@@ -1097,14 +1102,18 @@ export default function GeneratorPage() {
             if (bestScore < desiredCombinedScore && allPaletteColors.length > 0) {
               const allPaletteCandidates: any[] = []
 
-              // Try multiple variations of palette colors
+              // Try multiple variations of palette colors with subtle adjustments
               for (const paletteColor of allPaletteColors) {
-                // Darkened version (for light backgrounds)
-                const darkenedColor = p.lerpColor(paletteColor, p.color(0, 0, 0), 0.4)
+                const lightness = (p.red(paletteColor) + p.green(paletteColor) + p.blue(paletteColor)) / (3 * 255)
+
+                // Darkened version (for light backgrounds) - much more subtle
+                const darkenAmount = lightness > 0.7 ? 0.15 : lightness > 0.4 ? 0.2 : 0.25
+                const darkenedColor = p.lerpColor(paletteColor, p.color(0, 0, 0), darkenAmount)
                 allPaletteCandidates.push(darkenedColor)
 
-                // Lightened version (for dark backgrounds)
-                const lightenedColor = p.lerpColor(paletteColor, p.color(255, 255, 255), 0.6)
+                // Lightened version (for dark backgrounds) - subtle lightening
+                const lightenAmount = lightness < 0.3 ? 0.2 : lightness < 0.6 ? 0.15 : 0.1
+                const lightenedColor = p.lerpColor(paletteColor, p.color(255, 255, 255), lightenAmount)
                 allPaletteCandidates.push(lightenedColor)
 
                 // High contrast colors using simple HSV-based complementary approach
