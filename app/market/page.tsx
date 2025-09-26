@@ -53,6 +53,43 @@ interface AgingData {
   textureLevel: number
   launderingCount: bigint
   lastLaundered: bigint
+  cleaningCount: bigint
+  restorationCount: bigint
+  masterRestorationCount: bigint
+  maintenanceScore: bigint
+  currentFrameLevel: string
+  frameAchievedTime: bigint
+  gracePeriodActive: boolean
+  gracePeriodEnd: bigint
+  isMuseumPiece: boolean
+}
+
+// Parse aging data from tokenURI attributes
+function parseAgingDataFromAttributes(attributes: any[]): AgingData {
+  const getAttributeValue = (traitType: string) => {
+    const attr = attributes.find((a: any) => a.trait_type === traitType)
+    return attr ? attr.value : 0
+  }
+
+  return {
+    lastCleaned: BigInt(0), // Not in tokenURI
+    lastTextureReset: BigInt(0), // Not in tokenURI
+    lastSalePrice: BigInt(getAttributeValue('Last Sale Price') || 0),
+    recentSalePrices: [BigInt(0), BigInt(0), BigInt(0)], // Not in tokenURI
+    dirtLevel: parseInt(getAttributeValue('Dirt Level') || '0'),
+    textureLevel: parseInt(getAttributeValue('Texture Level') || '0'),
+    launderingCount: BigInt(getAttributeValue('Laundering Count') || '0'),
+    lastLaundered: BigInt(0), // Not in tokenURI
+    cleaningCount: BigInt(getAttributeValue('Cleaning Count') || '0'),
+    restorationCount: BigInt(getAttributeValue('Restoration Count') || '0'),
+    masterRestorationCount: BigInt(getAttributeValue('Master Restoration Count') || '0'),
+    maintenanceScore: BigInt(getAttributeValue('Maintenance Score') || '0'),
+    currentFrameLevel: getAttributeValue('Frame Level') || 'None',
+    frameAchievedTime: BigInt(0), // Not in tokenURI
+    gracePeriodActive: false, // Not in tokenURI
+    gracePeriodEnd: BigInt(0), // Not in tokenURI
+    isMuseumPiece: (getAttributeValue('Museum Piece') || 'false') === 'true'
+  }
 }
 
 interface RugData {
@@ -131,33 +168,28 @@ export default function MarketPage() {
             if (metadataResponse.ok) {
               const metadata = await metadataResponse.json()
 
-              // Get aging data
-              const agingResponse = await fetch(
-                `/api/alchemy?endpoint=getAgingData&contractAddress=${contractAddress}&tokenId=${nft.tokenId}`
-              )
-              const agingData = agingResponse.ok ? await agingResponse.json() : null
+              // Parse aging data from tokenURI attributes (all data is baked into the NFT metadata)
+              const agingData = parseAgingDataFromAttributes(metadata.raw?.metadata?.attributes || metadata.attributes || [])
 
               // Calculate rarity score (simple implementation)
               const rarityScore = calculateRarityScore(metadata.rugData)
 
+              // Try multiple possible paths for animation_url in Alchemy response
+              const animationUrl = metadata.animation_url ||
+                                 metadata.raw?.metadata?.animation_url ||
+                                 metadata.metadata?.animation_url ||
+                                 metadata.contractMetadata?.animation_url ||
+                                 metadata.nft?.metadata?.animation_url;
+
               processedNfts.push({
                 tokenId: nft.tokenId,
                 traits: metadata.rugData || {},
-                  aging: agingData || {
-                    lastCleaned: BigInt(0),
-                    lastTextureReset: BigInt(0),
-                    lastSalePrice: BigInt(0),
-                    recentSalePrices: [BigInt(0), BigInt(0), BigInt(0)],
-                    dirtLevel: 0,
-                    textureLevel: 0,
-                    launderingCount: BigInt(0),
-                    lastLaundered: BigInt(0)
-                  },
+                aging: agingData,
                 owner: nft.owner,
                 name: metadata.name,
                 description: metadata.description,
                 image: metadata.image,
-                animation_url: metadata.animation_url,
+                animation_url: animationUrl,
                 rarityScore,
                 price: getEstimatedPrice(metadata.rugData),
                 isListed: Math.random() > 0.7, // Mock listing status
