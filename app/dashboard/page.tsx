@@ -138,27 +138,13 @@ export default function DashboardPage() {
             try {
               const tokenId = parseInt(nft.tokenId)
 
-              // Get tokenURI directly from contract using RPC call (no caching)
-              const tokenURIRaw = await publicClient.call({
-                to: contractAddress as `0x${string}`,
-                data: `0xc87b56dd${tokenId.toString(16).padStart(64, '0')}` // tokenURI(uint256) encoded
-              })
-
-              // Decode the returned bytes to string
-              const tokenURIHex = tokenURIRaw.data
-              if (!tokenURIHex || tokenURIHex === '0x') {
-                console.warn(`Empty tokenURI for rug #${tokenId}`)
-                continue
-              }
-
-              // Decode hex to string (skip first 64 chars for length prefix)
-              const hexData = tokenURIHex.slice(2)
-              let tokenURI = ''
-              for (let i = 64; i < hexData.length; i += 2) {
-                const byte = parseInt(hexData.slice(i, i + 2), 16)
-                if (byte === 0) break // null terminator
-                tokenURI += String.fromCharCode(byte)
-              }
+              // Get tokenURI directly from contract (no caching)
+              const tokenURI = await publicClient.readContract({
+                address: contractAddress as `0x${string}`,
+                abi: onchainRugsABI,
+                functionName: 'tokenURI',
+                args: [BigInt(tokenId)]
+              } as any) as string
 
               if (tokenURI) {
                 // Parse the tokenURI JSON data
