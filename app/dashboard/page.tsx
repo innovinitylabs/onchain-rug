@@ -598,9 +598,18 @@ export default function DashboardPage() {
                             <div className="bg-black/50 rounded p-2 text-xs font-mono text-yellow-400 max-h-48 overflow-y-auto">
                               <pre>{JSON.stringify({
                                 name: selectedRug.name,
-                                tokenId: selectedRug.tokenId,
+                                tokenId: selectedRug.tokenId?.toString(),
                                 traits: selectedRug.traits,
-                                aging: selectedRug.aging,
+                                aging: {
+                                  ...selectedRug.aging,
+                                  cleaningCount: selectedRug.aging.cleaningCount?.toString(),
+                                  restorationCount: selectedRug.aging.restorationCount?.toString(),
+                                  masterRestorationCount: selectedRug.aging.masterRestorationCount?.toString(),
+                                  launderingCount: selectedRug.aging.launderingCount?.toString(),
+                                  maintenanceScore: selectedRug.aging.maintenanceScore?.toString(),
+                                  lastSalePrice: selectedRug.aging.lastSalePrice?.toString(),
+                                  recentSalePrices: selectedRug.aging.recentSalePrices?.map(p => p?.toString())
+                                },
                                 owner: selectedRug.owner
                               }, null, 2)}</pre>
                             </div>
