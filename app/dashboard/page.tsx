@@ -28,6 +28,34 @@ interface RugTraits {
   stripeCount: bigint
 }
 
+// Parse aging data from tokenURI attributes
+function parseAgingDataFromAttributes(attributes: any[]): AgingData {
+  const getAttributeValue = (traitType: string) => {
+    const attr = attributes.find((a: any) => a.trait_type === traitType)
+    return attr ? attr.value : 0
+  }
+
+  return {
+    lastCleaned: BigInt(0), // Not stored in attributes, can be calculated if needed
+    lastTextureReset: BigInt(0), // Not stored in attributes, can be calculated if needed
+    lastSalePrice: BigInt(getAttributeValue('Last Sale Price') || 0),
+    recentSalePrices: [BigInt(0), BigInt(0), BigInt(0)], // Not stored in attributes
+    dirtLevel: parseInt(getAttributeValue('Dirt Level')) || 0,
+    textureLevel: parseInt(getAttributeValue('Texture Level')) || 0,
+    launderingCount: BigInt(getAttributeValue('Laundering Count') || 0),
+    lastLaundered: BigInt(0), // Not stored in attributes
+    cleaningCount: BigInt(getAttributeValue('Cleaning Count') || 0),
+    restorationCount: BigInt(getAttributeValue('Restoration Count') || 0),
+    masterRestorationCount: BigInt(getAttributeValue('Master Restoration Count') || 0),
+    maintenanceScore: BigInt(getAttributeValue('Maintenance Score') || 0),
+    currentFrameLevel: getAttributeValue('Frame Level') || 'None',
+    frameAchievedTime: BigInt(0), // Not stored in attributes
+    gracePeriodActive: false, // Not stored in attributes
+    gracePeriodEnd: BigInt(0), // Not stored in attributes
+    isMuseumPiece: getAttributeValue('Museum Piece') === 'true'
+  }
+}
+
 interface AgingData {
   lastCleaned: bigint
   lastTextureReset: bigint
@@ -37,6 +65,15 @@ interface AgingData {
   textureLevel: number
   launderingCount: bigint
   lastLaundered: bigint
+  cleaningCount: bigint
+  restorationCount: bigint
+  masterRestorationCount: bigint
+  maintenanceScore: bigint
+  currentFrameLevel: string
+  frameAchievedTime: bigint
+  gracePeriodActive: boolean
+  gracePeriodEnd: bigint
+  isMuseumPiece: boolean
 }
 
 interface RugData {
@@ -105,23 +142,13 @@ export default function DashboardPage() {
               const rugData = await rugResponse.json()
 
               if (rugData) {
-                // Get aging data from contract (mock for now)
-                const agingResponse = await fetch(`${window.location.origin}/api/alchemy?endpoint=getAgingData&contractAddress=${contractAddress}&tokenId=${tokenId}`)
-                const agingData = agingResponse.ok ? await agingResponse.json() : null
+                // Parse aging data from tokenURI attributes (all data is baked into the NFT metadata)
+                const agingData = parseAgingDataFromAttributes(rugData.raw?.metadata?.attributes || rugData.attributes || [])
 
                 rugs.push({
                   tokenId,
                   traits: rugData.rugData || {},
-                  aging: agingData || {
-                    lastCleaned: BigInt(0),
-                    lastTextureReset: BigInt(0),
-                    lastSalePrice: BigInt(0),
-                    recentSalePrices: [BigInt(0), BigInt(0), BigInt(0)],
-                    dirtLevel: 0,
-                    textureLevel: 0,
-                    launderingCount: BigInt(0),
-                    lastLaundered: BigInt(0)
-                  },
+                  aging: agingData,
                   owner: address,
                   name: rugData.name,
                   image: rugData.image,
@@ -490,56 +517,33 @@ export default function DashboardPage() {
                             </div>
                           </div>
 
-                          {/* HTML Preview Debug */}
-                          {selectedRug.animation_url && selectedRug.animation_url.startsWith('data:text/html') && (
-                            <div>
-                              <div className="text-sm font-medium text-blue-300 mb-1">HTML Content Preview:</div>
-                              <div className="bg-black/50 rounded p-2 text-xs font-mono text-cyan-400 max-h-64 overflow-y-auto">
-                                {(() => {
-                                  try {
-                                    const htmlContent = selectedRug.animation_url.split(',')[1];
-                                    const decoded = decodeURIComponent(atob(htmlContent));
-                                    // Show first 1000 chars and indicate if truncated
-                                    const truncated = decoded.length > 1000;
-                                    const preview = truncated ? decoded.substring(0, 1000) + '...' : decoded;
-                                    return (
-                                      <div>
-                                        <div className="mb-2 text-yellow-300">Length: {decoded.length} characters</div>
-                                        <pre className="whitespace-pre-wrap">{preview}</pre>
-                                        {truncated && (
-                                          <div className="mt-2 text-orange-300">
-                                            ... ({decoded.length - 1000} more characters)
-                                          </div>
-                                        )}
-                                      </div>
-                                    );
-                                  } catch (e) {
-                                    return `Error decoding HTML content: ${e.message}`;
-                                  }
-                                })()}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* API Test Button */}
+                          {/* Parsed Aging Data */}
                           <div>
-                            <button
-                              onClick={async () => {
-                                try {
-                                  console.log('Testing API call...');
-                                  const response = await fetch(`/api/alchemy?endpoint=getNFTMetadata&contractAddress=${config.contracts.onchainRugs}&tokenId=${selectedRug.tokenId}`);
-                                  const data = await response.json();
-                                  console.log('API Response:', data);
-                                  alert(`API Response:\n${JSON.stringify(data, null, 2)}`);
-                                } catch (error) {
-                                  console.error('API Test failed:', error);
-                                  alert(`API Test failed: ${error}`);
-                                }
-                              }}
-                              className="px-3 py-2 bg-green-500/20 hover:bg-green-500/30 text-green-300 rounded text-sm transition-colors duration-200"
-                            >
-                              Test API Call
-                            </button>
+                            <div className="text-sm font-medium text-blue-300 mb-1">Parsed Aging Data:</div>
+                            <div className="bg-black/50 rounded p-2 text-xs font-mono text-green-400 max-h-48 overflow-y-auto">
+                              <pre>{JSON.stringify({
+                                dirtLevel: selectedRug.aging.dirtLevel,
+                                textureLevel: selectedRug.aging.textureLevel,
+                                cleaningCount: selectedRug.aging.cleaningCount.toString(),
+                                restorationCount: selectedRug.aging.restorationCount.toString(),
+                                masterRestorationCount: selectedRug.aging.masterRestorationCount.toString(),
+                                launderingCount: selectedRug.aging.launderingCount.toString(),
+                                maintenanceScore: selectedRug.aging.maintenanceScore.toString(),
+                                currentFrameLevel: selectedRug.aging.currentFrameLevel,
+                                isMuseumPiece: selectedRug.aging.isMuseumPiece,
+                                lastSalePrice: selectedRug.aging.lastSalePrice.toString()
+                              }, null, 2)}</pre>
+                            </div>
+                          </div>
+
+                          {/* Data Source Info */}
+                          <div>
+                            <div className="text-sm font-medium text-blue-300 mb-1">Data Sources:</div>
+                            <div className="bg-black/50 rounded p-2 text-xs font-mono text-purple-300">
+                              <div>• NFT Metadata: Alchemy API</div>
+                              <div>• Aging Data: Parsed from tokenURI attributes</div>
+                              <div>• Contract: Diamond Proxy (0xa7e2c645...)</div>
+                            </div>
                           </div>
                         </div>
                       </div>
