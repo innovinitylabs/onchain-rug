@@ -357,7 +357,7 @@ export default function DashboardPage() {
                   >
                     <div className="p-6">
                       {/* Rug Header */}
-                      <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center justify-between mb-6">
                         <h3 className="text-xl font-bold text-white">
                           Rug #{rug.tokenId}
                         </h3>
@@ -380,83 +380,103 @@ export default function DashboardPage() {
                         </div>
                       </div>
 
-                      {/* Rug Preview */}
-                      <div
-                        className="w-full bg-black/30 rounded-lg overflow-hidden mb-6"
-                        style={{
-                          paddingBottom: '69.7%', // 920/1320 * 100% = 69.7% (maintains 1320:920 aspect ratio)
-                          position: 'relative'
-                        }}
-                      >
-                        <div className="absolute inset-0">
-                          {rug.animation_url ? (
-                            <iframe
-                              src={rug.animation_url}
-                              className="w-full h-full"
-                              title={`Rug #${rug.tokenId}`}
-                              sandbox="allow-scripts"
-                              style={{ border: 'none' }}
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-white/50">
-                              <div className="text-center">
-                                <div className="text-4xl mb-2">🧵</div>
-                                <div>Rug #{rug.tokenId}</div>
-                                <div className="text-xs mt-1">No preview</div>
-                              </div>
+                      {/* Main Content - Landscape Layout */}
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        {/* Rug Preview - Left Side (Larger) */}
+                        <div className="lg:col-span-1">
+                          <div
+                            className="w-full bg-black/30 rounded-lg overflow-hidden"
+                            style={{
+                              paddingBottom: '69.7%', // 920/1320 * 100% = 69.7% (maintains 1320:920 aspect ratio)
+                              position: 'relative'
+                            }}
+                          >
+                            <div className="absolute inset-0">
+                              {rug.animation_url ? (
+                                <iframe
+                                  src={rug.animation_url}
+                                  className="w-full h-full"
+                                  title={`Rug #${rug.tokenId}`}
+                                  sandbox="allow-scripts"
+                                  style={{ border: 'none' }}
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-white/50">
+                                  <div className="text-center">
+                                    <div className="text-4xl mb-2">🧵</div>
+                                    <div>Rug #{rug.tokenId}</div>
+                                    <div className="text-xs mt-1">No preview</div>
+                                  </div>
+                                </div>
+                              )}
                             </div>
-                          )}
+                          </div>
                         </div>
-                      </div>
 
-                      {/* Status Indicators */}
-                      <div className="grid grid-cols-2 gap-4 mb-6">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-3 h-3 rounded-full ${
-                            dirtLevel === 0 ? 'bg-green-500' :
-                            dirtLevel === 1 ? 'bg-yellow-500' : 'bg-red-500'
-                          }`} />
-                          <span className="text-sm text-white/70">
-                            {dirtLevel === 0 ? 'Clean' : dirtLevel === 1 ? 'Light Dirt' : 'Heavy Dirt'}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className={`w-3 h-3 rounded-full ${
-                            textureLevel === 0 ? 'bg-blue-500' :
-                            textureLevel === 1 ? 'bg-orange-500' : 'bg-red-500'
-                          }`} />
-                          <span className="text-sm text-white/70">
-                            {textureLevel === 0 ? 'Fresh' : textureLevel === 1 ? 'Aged' : 'Worn'}
-                          </span>
-                        </div>
-                      </div>
+                        {/* Stats and Actions - Right Side (Wider) */}
+                        <div className="lg:col-span-2 space-y-6">
+                          {/* Status Indicators */}
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-4 h-4 rounded-full ${
+                                dirtLevel === 0 ? 'bg-green-500' :
+                                dirtLevel === 1 ? 'bg-yellow-500' : 'bg-red-500'
+                              }`} />
+                              <span className="text-sm text-white/70">
+                                {dirtLevel === 0 ? 'Clean' : dirtLevel === 1 ? 'Light Dirt' : 'Heavy Dirt'}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <div className={`w-4 h-4 rounded-full ${
+                                textureLevel === 0 ? 'bg-blue-500' :
+                                textureLevel === 1 ? 'bg-orange-500' : 'bg-red-500'
+                              }`} />
+                              <span className="text-sm text-white/70">
+                                {textureLevel === 0 ? 'Fresh' : textureLevel === 1 ? 'Aged' : 'Worn'}
+                              </span>
+                            </div>
+                          </div>
 
-                      {/* Maintenance Stats */}
-                      <div className="grid grid-cols-3 gap-4 mb-6">
-                        <div className="text-center">
-                          <div className="text-lg font-bold text-blue-400">{rug.aging.cleaningCount.toString()}</div>
-                          <div className="text-xs text-white/60">Cleanings</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-lg font-bold text-green-400">{rug.aging.restorationCount.toString()}</div>
-                          <div className="text-xs text-white/60">Restorations</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-lg font-bold text-purple-400">{rug.aging.maintenanceScore.toString()}</div>
-                          <div className="text-xs text-white/60">Score</div>
-                        </div>
-                      </div>
+                          {/* Maintenance Stats */}
+                          <div className="grid grid-cols-3 gap-6">
+                            <div className="text-center">
+                              <div className="text-2xl font-bold text-blue-400">{rug.aging.cleaningCount.toString()}</div>
+                              <div className="text-sm text-white/60">Cleanings</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-2xl font-bold text-green-400">{rug.aging.restorationCount.toString()}</div>
+                              <div className="text-sm text-white/60">Restorations</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-2xl font-bold text-purple-400">{rug.aging.maintenanceScore.toString()}</div>
+                              <div className="text-sm text-white/60">Score</div>
+                            </div>
+                          </div>
 
-                      {/* Quick Actions */}
-                      <div className="grid grid-cols-2 gap-3">
-                        <button className="px-4 py-3 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded-lg transition-colors duration-200">
-                          <ExternalLink className="w-4 h-4 inline mr-2" />
-                          View on OpenSea
-                        </button>
-                        <button className="px-4 py-3 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 rounded-lg transition-colors duration-200">
-                          <TrendingUp className="w-4 h-4 inline mr-2" />
-                          List for Sale
-                        </button>
+                          {/* Additional Stats */}
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="bg-white/5 rounded-lg p-4">
+                              <div className="text-sm text-white/60 mb-1">Master Restorations</div>
+                              <div className="text-lg font-bold text-cyan-400">{rug.aging.masterRestorationCount.toString()}</div>
+                            </div>
+                            <div className="bg-white/5 rounded-lg p-4">
+                              <div className="text-sm text-white/60 mb-1">Laundered</div>
+                              <div className="text-lg font-bold text-orange-400">{rug.aging.launderingCount.toString()}</div>
+                            </div>
+                          </div>
+
+                          {/* Quick Actions */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <button className="px-4 py-3 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded-lg transition-colors duration-200 flex items-center justify-center">
+                              <ExternalLink className="w-4 h-4 mr-2" />
+                              View on OpenSea
+                            </button>
+                            <button className="px-4 py-3 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 rounded-lg transition-colors duration-200 flex items-center justify-center">
+                              <TrendingUp className="w-4 h-4 mr-2" />
+                              List for Sale
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </LiquidGlass>
