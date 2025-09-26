@@ -513,11 +513,11 @@ export default function DashboardPage() {
                     </button>
                   </div>
 
-                  <div className="grid md:grid-cols-2 gap-6">
-                    {/* Rug Display */}
-                    <div className="space-y-4">
+                  <div className="space-y-6">
+                    {/* Large Rug Display - Top */}
+                    <div className="w-full">
                       <div
-                        className="w-full bg-black/30 rounded-lg overflow-hidden"
+                        className="w-full max-w-4xl mx-auto bg-black/30 rounded-lg overflow-hidden"
                         style={{
                           paddingBottom: '69.7%', // 920/1320 * 100% = 69.7% (maintains 1320:920 aspect ratio)
                           position: 'relative'
@@ -550,21 +550,21 @@ export default function DashboardPage() {
                           )}
                         </div>
                       </div>
-
-                      {/* Quick Actions */}
-                      <div className="grid grid-cols-2 gap-3">
-                        <button className="px-4 py-3 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded-lg transition-colors duration-200">
-                          <ExternalLink className="w-4 h-4 inline mr-2" />
-                          View on OpenSea
-                        </button>
-                        <button className="px-4 py-3 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 rounded-lg transition-colors duration-200">
-                          <TrendingUp className="w-4 h-4 inline mr-2" />
-                          List for Sale
-                        </button>
-                      </div>
                     </div>
 
-                    {/* Management Panel */}
+                    {/* Quick Actions */}
+                    <div className="grid grid-cols-2 gap-3 max-w-md mx-auto">
+                      <button className="px-4 py-3 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded-lg transition-colors duration-200">
+                        <ExternalLink className="w-4 h-4 inline mr-2" />
+                        View on OpenSea
+                      </button>
+                      <button className="px-4 py-3 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 rounded-lg transition-colors duration-200">
+                        <TrendingUp className="w-4 h-4 inline mr-2" />
+                        List for Sale
+                      </button>
+                    </div>
+
+                    {/* Management Panel - Below Art */}
                     <div className="space-y-6">
                       {/* Rug Stats */}
                       <div className="bg-slate-700/50 rounded-lg p-4">
