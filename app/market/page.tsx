@@ -629,7 +629,6 @@ export default function MarketPage() {
                                 src={nft.animation_url}
                                 className="w-full h-full"
                                 title={`Rug #${nft.tokenId}`}
-                                sandbox="allow-scripts"
                                 style={{
                                   border: 'none',
                                   background: 'transparent',
@@ -658,7 +657,6 @@ export default function MarketPage() {
                                 src={nft.animation_url}
                                 className="w-full h-full"
                                 title={`Rug #${nft.tokenId}`}
-                                sandbox="allow-scripts"
                                 style={{
                                   border: 'none',
                                   background: 'transparent',

@@ -389,7 +389,6 @@ export default function DashboardPage() {
                               src={rug.animation_url}
                               className="w-full h-full"
                               title={`Rug #${rug.tokenId}`}
-                              sandbox="allow-scripts"
                               style={{
                                 border: 'none',
                                 background: 'transparent',
@@ -527,7 +526,6 @@ export default function DashboardPage() {
                               src={selectedRug.animation_url}
                               className="w-full h-full"
                               title={`Rug #${selectedRug.tokenId}`}
-                              sandbox="allow-scripts"
                               style={{
                                 border: 'none',
                                 background: 'transparent',
