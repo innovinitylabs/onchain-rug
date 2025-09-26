@@ -353,12 +353,36 @@ export default function DashboardPage() {
                     aberrationIntensity={2}
                     elasticity={0.1}
                     cornerRadius={12}
-                    className="p-4"
+                    className="overflow-hidden"
                   >
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      {/* Rug Preview - Takes up 1/3 of space */}
+                    <div className="p-6">
+                      {/* Rug Header */}
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-xl font-bold text-white">
+                          Rug #{rug.tokenId}
+                        </h3>
+                        <div className="flex items-center gap-2">
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            rug.aging.currentFrameLevel === 'None' ? 'bg-gray-500/20 text-gray-300' :
+                            rug.aging.currentFrameLevel === 'Bronze' ? 'bg-amber-500/20 text-amber-300' :
+                            rug.aging.currentFrameLevel === 'Silver' ? 'bg-slate-400/20 text-slate-300' :
+                            rug.aging.currentFrameLevel === 'Gold' ? 'bg-yellow-500/20 text-yellow-300' :
+                            rug.aging.currentFrameLevel === 'Platinum' ? 'bg-cyan-500/20 text-cyan-300' :
+                            'bg-purple-500/20 text-purple-300'
+                          }`}>
+                            {rug.aging.currentFrameLevel === 'None' ? 'No Frame' : rug.aging.currentFrameLevel}
+                          </span>
+                          {rug.aging.isMuseumPiece && (
+                            <span className="px-3 py-1 bg-red-500/20 text-red-300 rounded-full text-xs font-medium">
+                              Museum Piece
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Rug Preview */}
                       <div
-                        className="md:col-span-1 bg-black/30 rounded-lg overflow-hidden"
+                        className="w-full bg-black/30 rounded-lg overflow-hidden mb-6"
                         style={{
                           paddingBottom: '69.7%', // 920/1320 * 100% = 69.7% (maintains 1320:920 aspect ratio)
                           position: 'relative'
@@ -385,53 +409,53 @@ export default function DashboardPage() {
                         </div>
                       </div>
 
-                      {/* Rug Info - Takes up 2/3 of space */}
-                      <div className="md:col-span-2">
-                        <h3 className="text-lg font-bold text-white mb-2">
-                          Rug #{rug.tokenId}
-                        </h3>
-
-                        {/* Status Indicators */}
-                        <div className="flex items-center gap-2 mb-3">
-                          <div className="flex items-center gap-1">
-                            <div className={`w-2 h-2 rounded-full ${
-                              dirtLevel === 0 ? 'bg-green-500' :
-                              dirtLevel === 1 ? 'bg-yellow-500' : 'bg-red-500'
-                            }`} />
-                            <span className="text-xs text-white/70">
-                              {dirtLevel === 0 ? 'Clean' : dirtLevel === 1 ? 'Light Dirt' : 'Heavy Dirt'}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <div className={`w-2 h-2 rounded-full ${
-                              textureLevel === 0 ? 'bg-blue-500' :
-                              textureLevel === 1 ? 'bg-purple-500' : 'bg-indigo-500'
-                            }`} />
-                            <span className="text-xs text-white/70">
-                              {textureLevel === 0 ? 'Fresh' : textureLevel === 1 ? 'Aged' : 'Ancient'}
-                            </span>
-                          </div>
+                      {/* Status Indicators */}
+                      <div className="grid grid-cols-2 gap-4 mb-6">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-3 h-3 rounded-full ${
+                            dirtLevel === 0 ? 'bg-green-500' :
+                            dirtLevel === 1 ? 'bg-yellow-500' : 'bg-red-500'
+                          }`} />
+                          <span className="text-sm text-white/70">
+                            {dirtLevel === 0 ? 'Clean' : dirtLevel === 1 ? 'Light Dirt' : 'Heavy Dirt'}
+                          </span>
                         </div>
-
-                        {/* Quick Stats */}
-                        <div className="text-xs text-white/60 space-y-1">
-                          <div>Minted: {getTimeSinceEvent(rug.traits.mintTime)}</div>
-                          {rug.aging.launderingCount > BigInt(0) && (
-                            <div>Laundered: {Number(rug.aging.launderingCount)} times</div>
-                          )}
-                          {rug.aging.lastSalePrice > BigInt(0) && (
-                            <div>Last Sale: {formatEther(rug.aging.lastSalePrice)} ETH</div>
-                          )}
+                        <div className="flex items-center gap-2">
+                          <div className={`w-3 h-3 rounded-full ${
+                            textureLevel === 0 ? 'bg-blue-500' :
+                            textureLevel === 1 ? 'bg-orange-500' : 'bg-red-500'
+                          }`} />
+                          <span className="text-sm text-white/70">
+                            {textureLevel === 0 ? 'Fresh' : textureLevel === 1 ? 'Aged' : 'Worn'}
+                          </span>
                         </div>
                       </div>
 
-                      {/* Actions */}
-                      <div className="flex gap-2">
-                        <button className="flex-1 px-3 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 rounded text-sm transition-colors duration-200">
-                          Manage
+                      {/* Maintenance Stats */}
+                      <div className="grid grid-cols-3 gap-4 mb-6">
+                        <div className="text-center">
+                          <div className="text-lg font-bold text-blue-400">{rug.aging.cleaningCount.toString()}</div>
+                          <div className="text-xs text-white/60">Cleanings</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-lg font-bold text-green-400">{rug.aging.restorationCount.toString()}</div>
+                          <div className="text-xs text-white/60">Restorations</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-lg font-bold text-purple-400">{rug.aging.maintenanceScore.toString()}</div>
+                          <div className="text-xs text-white/60">Score</div>
+                        </div>
+                      </div>
+
+                      {/* Quick Actions */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <button className="px-4 py-3 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded-lg transition-colors duration-200">
+                          <ExternalLink className="w-4 h-4 inline mr-2" />
+                          View on OpenSea
                         </button>
-                        <button className="px-3 py-2 bg-green-500/20 hover:bg-green-500/30 text-green-300 rounded text-sm transition-colors duration-200">
-                          <ExternalLink className="w-4 h-4" />
+                        <button className="px-4 py-3 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 rounded-lg transition-colors duration-200">
+                          <TrendingUp className="w-4 h-4 inline mr-2" />
+                          List for Sale
                         </button>
                       </div>
                     </div>
