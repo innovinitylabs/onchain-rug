@@ -390,7 +390,13 @@ export default function DashboardPage() {
                               className="w-full h-full"
                               title={`Rug #${rug.tokenId}`}
                               sandbox="allow-scripts"
-                              style={{ border: 'none' }}
+                              style={{
+                                border: 'none',
+                                background: 'transparent',
+                                outline: 'none',
+                                margin: 0,
+                                padding: 0
+                              }}
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-white/50">
@@ -519,7 +525,13 @@ export default function DashboardPage() {
                               className="w-full h-full"
                               title={`Rug #${selectedRug.tokenId}`}
                               sandbox="allow-scripts"
-                              style={{ border: 'none' }}
+                              style={{
+                                border: 'none',
+                                background: 'transparent',
+                                outline: 'none',
+                                margin: 0,
+                                padding: 0
+                              }}
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-white/50">
