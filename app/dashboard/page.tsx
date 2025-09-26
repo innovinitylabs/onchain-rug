@@ -10,6 +10,7 @@ import Footer from '@/components/Footer'
 import { RugCleaning } from '@/components/RugCleaning'
 import { RugMarketplace } from '@/components/RugMarketplace'
 import { LiveRugStatus } from '@/components/LiveRugStatus'
+import { ManualTokenURIFetch } from '@/components/ManualTokenURIFetch'
 import LiquidGlass from '@/components/LiquidGlass'
 import { config } from '@/lib/config'
 import { formatEther } from 'viem'
@@ -670,6 +671,11 @@ export default function DashboardPage() {
                       {/* Live Status Check */}
                       <div className="flex justify-center">
                         <LiveRugStatus tokenId={selectedRug.tokenId.toString()} />
+                      </div>
+
+                      {/* Manual TokenURI Fetch Demo */}
+                      <div className="flex justify-center mt-6">
+                        <ManualTokenURIFetch />
                       </div>
 
                       {/* Marketplace */}
