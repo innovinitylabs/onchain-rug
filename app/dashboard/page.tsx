@@ -497,10 +497,10 @@ export default function DashboardPage() {
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.9, opacity: 0 }}
-                className="bg-slate-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden"
+                className="bg-slate-800 rounded-lg max-w-4xl w-full max-h-[90vh]"
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="p-6">
+                <div className="p-6 max-h-[calc(90vh-3rem)] overflow-y-auto">
                   <div className="flex items-center justify-between mb-6">
                     <h2 className="text-2xl font-bold text-white">
                       Rug #{selectedRug.tokenId}
