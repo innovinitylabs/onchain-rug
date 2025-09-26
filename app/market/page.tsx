@@ -685,21 +685,21 @@ export default function MarketPage() {
                         {/* Status Indicators */}
                         <div className="flex items-center gap-2 mb-3">
                           <div className="flex items-center gap-1">
-                            <div className={`w-2 h-2 rounded-full ${
-                              dirtLevel === 0 ? 'bg-green-500' :
-                              dirtLevel === 1 ? 'bg-yellow-500' : 'bg-red-500'
+                            <div className={`w-3 h-3 rounded-full ${
+                              textureLevel === 0 ? 'bg-emerald-400' :
+                              textureLevel === 1 ? 'bg-amber-400' : 'bg-red-400'
                             }`} />
-                            <span className="text-xs text-white/70">
-                              {dirtLevel === 0 ? 'Clean' : dirtLevel === 1 ? 'Light Dirt' : 'Heavy Dirt'}
+                            <span className="text-xs text-white/70 font-medium">
+                              {textureLevel === 0 ? 'Brand New' : textureLevel === 1 ? 'Well Used' : 'Vintage'}
                             </span>
                           </div>
                           <div className="flex items-center gap-1">
                             <div className={`w-2 h-2 rounded-full ${
-                              textureLevel === 0 ? 'bg-blue-500' :
-                              textureLevel === 1 ? 'bg-purple-500' : 'bg-indigo-500'
+                              dirtLevel === 0 ? 'bg-slate-400' :
+                              dirtLevel === 1 ? 'bg-yellow-500' : 'bg-red-500'
                             }`} />
                             <span className="text-xs text-white/70">
-                              {textureLevel === 0 ? 'Fresh' : textureLevel === 1 ? 'Aged' : 'Ancient'}
+                              {dirtLevel === 0 ? 'Clean' : dirtLevel === 1 ? 'Needs Cleaning' : 'Very Dirty'}
                             </span>
                           </div>
                         </div>

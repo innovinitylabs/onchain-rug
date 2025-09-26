@@ -420,29 +420,31 @@ export default function DashboardPage() {
                         {/* Status and Stats */}
                         <div className="space-y-4">
                           {/* Status Indicators */}
+                          {/* Aging Level (Texture-based) */}
                           <div className="space-y-2">
                             <div className="flex items-center justify-between">
-                              <span className="text-xs text-white/60">Condition</span>
+                              <span className="text-xs text-white/60">Aging Level</span>
+                              <div className={`w-3 h-3 rounded-full ${
+                                textureLevel === 0 ? 'bg-emerald-400' :
+                                textureLevel === 1 ? 'bg-amber-400' : 'bg-red-400'
+                              }`} />
+                            </div>
+                            <div className="text-xs text-white/70 text-center font-medium">
+                              {textureLevel === 0 ? 'Brand New' : textureLevel === 1 ? 'Well Used' : 'Vintage'}
+                            </div>
+                          </div>
+
+                          {/* Dirt Condition */}
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-white/60">Dirt Level</span>
                               <div className={`w-2 h-2 rounded-full ${
-                                dirtLevel === 0 ? 'bg-green-500' :
+                                dirtLevel === 0 ? 'bg-slate-400' :
                                 dirtLevel === 1 ? 'bg-yellow-500' : 'bg-red-500'
                               }`} />
                             </div>
                             <div className="text-xs text-white/70 text-center">
-                              {dirtLevel === 0 ? 'Clean' : dirtLevel === 1 ? 'Light Dirt' : 'Heavy Dirt'}
-                            </div>
-                          </div>
-
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs text-white/60">Texture</span>
-                              <div className={`w-2 h-2 rounded-full ${
-                                textureLevel === 0 ? 'bg-blue-500' :
-                                textureLevel === 1 ? 'bg-orange-500' : 'bg-red-500'
-                              }`} />
-                            </div>
-                            <div className="text-xs text-white/70 text-center">
-                              {textureLevel === 0 ? 'Fresh' : textureLevel === 1 ? 'Aged' : 'Worn'}
+                              {dirtLevel === 0 ? 'Clean' : dirtLevel === 1 ? 'Needs Cleaning' : 'Very Dirty'}
                             </div>
                           </div>
 
