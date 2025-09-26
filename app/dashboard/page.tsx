@@ -355,16 +355,16 @@ export default function DashboardPage() {
                     cornerRadius={12}
                     className="overflow-hidden"
                   >
-                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 p-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 p-4">
                       {/* Main Preview - Takes up 3/4 of space */}
                       <div className="lg:col-span-3">
                         {/* Rug Header */}
-                        <div className="flex items-center justify-between mb-4">
-                          <h3 className="text-xl font-bold text-white">
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="text-lg font-bold text-white">
                             Rug #{rug.tokenId}
                           </h3>
                           <div className="flex items-center gap-2">
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                               rug.aging.currentFrameLevel === 'None' ? 'bg-gray-500/20 text-gray-300' :
                               rug.aging.currentFrameLevel === 'Bronze' ? 'bg-amber-500/20 text-amber-300' :
                               rug.aging.currentFrameLevel === 'Silver' ? 'bg-slate-400/20 text-slate-300' :
@@ -375,92 +375,92 @@ export default function DashboardPage() {
                               {rug.aging.currentFrameLevel === 'None' ? 'No Frame' : rug.aging.currentFrameLevel}
                             </span>
                             {rug.aging.isMuseumPiece && (
-                              <span className="px-3 py-1 bg-red-500/20 text-red-300 rounded-full text-xs font-medium">
-                                Museum Piece
+                              <span className="px-2 py-1 bg-red-500/20 text-red-300 rounded-full text-xs font-medium">
+                                Museum
                               </span>
                             )}
                           </div>
                         </div>
 
                         {/* Full-size Rug Preview */}
-                        <div
-                          className="w-full bg-black/30 rounded-lg overflow-hidden"
-                          style={{
-                            paddingBottom: '69.7%', // 920/1320 * 100% = 69.7% (maintains 1320:920 aspect ratio)
-                            position: 'relative'
-                          }}
-                        >
-                          <div className="absolute inset-0">
-                            {rug.animation_url ? (
-                              <iframe
-                                src={rug.animation_url}
-                                className="w-full h-full"
-                                title={`Rug #${rug.tokenId}`}
-                                sandbox="allow-scripts"
-                                style={{ border: 'none' }}
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-white/50">
-                                <div className="text-center">
-                                  <div className="text-4xl mb-2">🧵</div>
-                                  <div>Rug #{rug.tokenId}</div>
-                                  <div className="text-xs mt-1">No preview</div>
-                                </div>
+                        <div className="w-full bg-black/30 rounded-lg overflow-hidden" style={{ aspectRatio: '1320/920' }}>
+                          {rug.animation_url ? (
+                            <iframe
+                              src={rug.animation_url}
+                              className="w-full h-full"
+                              title={`Rug #${rug.tokenId}`}
+                              sandbox="allow-scripts"
+                              style={{ border: 'none' }}
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-white/50">
+                              <div className="text-center">
+                                <div className="text-3xl mb-2">🧵</div>
+                                <div>Rug #{rug.tokenId}</div>
+                                <div className="text-xs mt-1">No preview</div>
                               </div>
-                            )}
-                          </div>
+                            </div>
+                          )}
                         </div>
                       </div>
 
                       {/* Compact Stats Sidebar - Takes up 1/4 of space */}
-                      <div className="lg:col-span-1 space-y-4">
-                        {/* Status Indicators */}
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-2">
-                            <div className={`w-3 h-3 rounded-full ${
-                              dirtLevel === 0 ? 'bg-green-500' :
-                              dirtLevel === 1 ? 'bg-yellow-500' : 'bg-red-500'
-                            }`} />
-                            <span className="text-sm text-white/70">
+                      <div className="lg:col-span-1 flex flex-col justify-between h-full">
+                        {/* Status and Stats */}
+                        <div className="space-y-4">
+                          {/* Status Indicators */}
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-white/60">Condition</span>
+                              <div className={`w-2 h-2 rounded-full ${
+                                dirtLevel === 0 ? 'bg-green-500' :
+                                dirtLevel === 1 ? 'bg-yellow-500' : 'bg-red-500'
+                              }`} />
+                            </div>
+                            <div className="text-xs text-white/70 text-center">
                               {dirtLevel === 0 ? 'Clean' : dirtLevel === 1 ? 'Light Dirt' : 'Heavy Dirt'}
-                            </span>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <div className={`w-3 h-3 rounded-full ${
-                              textureLevel === 0 ? 'bg-blue-500' :
-                              textureLevel === 1 ? 'bg-orange-500' : 'bg-red-500'
-                            }`} />
-                            <span className="text-sm text-white/70">
+
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-white/60">Texture</span>
+                              <div className={`w-2 h-2 rounded-full ${
+                                textureLevel === 0 ? 'bg-blue-500' :
+                                textureLevel === 1 ? 'bg-orange-500' : 'bg-red-500'
+                              }`} />
+                            </div>
+                            <div className="text-xs text-white/70 text-center">
                               {textureLevel === 0 ? 'Fresh' : textureLevel === 1 ? 'Aged' : 'Worn'}
-                            </span>
+                            </div>
+                          </div>
+
+                          {/* Maintenance Stats */}
+                          <div className="space-y-3 pt-2 border-t border-white/10">
+                            <div className="text-center">
+                              <div className="text-lg font-bold text-blue-400">{rug.aging.cleaningCount.toString()}</div>
+                              <div className="text-xs text-white/60">Cleanings</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-lg font-bold text-green-400">{rug.aging.restorationCount.toString()}</div>
+                              <div className="text-xs text-white/60">Restorations</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-lg font-bold text-purple-400">{rug.aging.maintenanceScore.toString()}</div>
+                              <div className="text-xs text-white/60">Score</div>
+                            </div>
                           </div>
                         </div>
 
-                        {/* Maintenance Stats */}
-                        <div className="space-y-3">
-                          <div className="text-center">
-                            <div className="text-lg font-bold text-blue-400">{rug.aging.cleaningCount.toString()}</div>
-                            <div className="text-xs text-white/60">Cleanings</div>
-                          </div>
-                          <div className="text-center">
-                            <div className="text-lg font-bold text-green-400">{rug.aging.restorationCount.toString()}</div>
-                            <div className="text-xs text-white/60">Restorations</div>
-                          </div>
-                          <div className="text-center">
-                            <div className="text-lg font-bold text-purple-400">{rug.aging.maintenanceScore.toString()}</div>
-                            <div className="text-xs text-white/60">Score</div>
-                          </div>
-                        </div>
-
-                        {/* Quick Actions */}
-                        <div className="space-y-2">
-                          <button className="w-full px-3 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded-lg transition-colors duration-200 text-sm">
+                        {/* Quick Actions - Bottom */}
+                        <div className="space-y-2 pt-4 border-t border-white/10">
+                          <button className="w-full px-3 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded transition-colors duration-200 text-sm">
                             <ExternalLink className="w-3 h-3 inline mr-1" />
-                            View on OpenSea
+                            OpenSea
                           </button>
-                          <button className="w-full px-3 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 rounded-lg transition-colors duration-200 text-sm">
+                          <button className="w-full px-3 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 rounded transition-colors duration-200 text-sm">
                             <TrendingUp className="w-3 h-3 inline mr-1" />
-                            List for Sale
+                            List
                           </button>
                         </div>
                       </div>
