@@ -1125,31 +1125,20 @@ export default function GeneratorPage() {
               ;({ bestCandidate } = evaluateCandidates(allPaletteCandidates))
             }
 
-            // For mixed weaves: Use thicker outline/border effect for maximum readability
+            // For mixed weaves: Use moderate outline/border effect for readability
             const mainTextColor = bestCandidate
             const outlineColor = p.color(0, 0, 0) // Black outline
 
-            // Draw thicker outline first (offset by 1-2 pixels)
+            // Draw moderate outline first (offset by 1 pixel)
             p.fill(outlineColor)
             p.noStroke()
             let outlineCurve = p.cos(x * 0.05) * 0.5
 
-            // Draw border in all 8 directions for thicker outline
-            // Primary offsets (±1, ±1)
+            // Draw border in 4 diagonal directions for balanced thickness
             p.rect(x + 0.5 + 1, y + outlineCurve + 0.5 + 1, warpSpacing, config.WEFT_THICKNESS)
             p.rect(x + 0.5 - 1, y + outlineCurve + 0.5 - 1, warpSpacing, config.WEFT_THICKNESS)
             p.rect(x + 0.5 + 1, y + outlineCurve + 0.5 - 1, warpSpacing, config.WEFT_THICKNESS)
             p.rect(x + 0.5 - 1, y + outlineCurve + 0.5 + 1, warpSpacing, config.WEFT_THICKNESS)
-
-            // Additional border pixels for extra thickness (±2, ±0), (±0, ±2), (±2, ±2)
-            p.rect(x + 0.5 + 2, y + outlineCurve + 0.5, warpSpacing, config.WEFT_THICKNESS)
-            p.rect(x + 0.5 - 2, y + outlineCurve + 0.5, warpSpacing, config.WEFT_THICKNESS)
-            p.rect(x + 0.5, y + outlineCurve + 0.5 + 2, warpSpacing, config.WEFT_THICKNESS)
-            p.rect(x + 0.5, y + outlineCurve + 0.5 - 2, warpSpacing, config.WEFT_THICKNESS)
-            p.rect(x + 0.5 + 2, y + outlineCurve + 0.5 + 2, warpSpacing, config.WEFT_THICKNESS)
-            p.rect(x + 0.5 - 2, y + outlineCurve + 0.5 - 2, warpSpacing, config.WEFT_THICKNESS)
-            p.rect(x + 0.5 + 2, y + outlineCurve + 0.5 - 2, warpSpacing, config.WEFT_THICKNESS)
-            p.rect(x + 0.5 - 2, y + outlineCurve + 0.5 + 2, warpSpacing, config.WEFT_THICKNESS)
 
             // Now draw main text color on top
             r = p.red(mainTextColor)
