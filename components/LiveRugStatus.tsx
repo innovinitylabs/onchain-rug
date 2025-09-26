@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { ethers } from 'ethers'
+import { useChainId } from 'wagmi'
 
 // Contract ABI - replace with your actual ABI
 const CONTRACT_ABI = [
@@ -14,22 +15,51 @@ const CONTRACT_ABI = [
   }
 ]
 
-// Configuration - replace with your values
-const RPC_URL = process.env.NEXT_PUBLIC_ALCHEMY_RPC_URL || 'https://shape-sepolia.g.alchemy.com/v2/YOUR_API_KEY'
-const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '0xa7e2c645E9332900b09c627c88b15Cc0b0fAcDc0'
+// Configuration
+const ALCHEMY_API_KEY = process.env.ALCHEMY_API_KEY || process.env.NEXT_PUBLIC_ALCHEMY_API_KEY
+const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT ||
+                        process.env.ONCHAIN_RUGS_CONTRACT ||
+                        '0xa7e2c645E9332900b09c627c88b15Cc0b0fAcDc0'
 
 interface LiveRugStatusProps {
   tokenId: string
 }
 
 export function LiveRugStatus({ tokenId }: LiveRugStatusProps) {
+  const chainId = useChainId()
   const [rugStatus, setRugStatus] = useState<'clean' | 'dirty' | 'unknown'>('unknown')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Choose RPC URL based on network
+  const getRpcUrl = () => {
+    if (!ALCHEMY_API_KEY) {
+      return null
+    }
+
+    // Shape Sepolia (testnet)
+    if (chainId === 11011) {
+      return `https://shape-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}`
+    }
+
+    // Shape Mainnet
+    if (chainId === 360) {
+      return `https://shape-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`
+    }
+
+    // Default to Sepolia if unknown network
+    return `https://shape-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}`
+  }
+
   const checkRugStatus = async () => {
     if (!tokenId) {
       setError('Please provide a valid token ID')
+      return
+    }
+
+    const rpcUrl = getRpcUrl()
+    if (!rpcUrl) {
+      setError('Alchemy API key not configured')
       return
     }
 
@@ -38,7 +68,7 @@ export function LiveRugStatus({ tokenId }: LiveRugStatusProps) {
 
     try {
       // Create ethers provider with Alchemy RPC
-      const provider = new ethers.JsonRpcProvider(RPC_URL)
+      const provider = new ethers.JsonRpcProvider(rpcUrl)
 
       // Create contract instance
       const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
@@ -74,6 +104,17 @@ export function LiveRugStatus({ tokenId }: LiveRugStatusProps) {
       case 'dirty': return 'Rug Needs Cleaning'
       default: return 'Status Unknown'
     }
+  }
+
+  // Don't render if configuration is missing
+  if (!ALCHEMY_API_KEY) {
+    return (
+      <div className="w-full max-w-md bg-gray-900/50 border border-red-500/30 rounded-lg p-6">
+        <div className="text-center">
+          <p className="text-red-400 text-sm">Alchemy API key not configured</p>
+        </div>
+      </div>
+    )
   }
 
   return (
