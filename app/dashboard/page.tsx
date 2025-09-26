@@ -161,8 +161,9 @@ export default function DashboardPage() {
               console.log(`Got tokenURI for rug #${tokenId}:`, tokenURI ? 'success' : 'empty')
 
               if (tokenURI) {
-                // Parse the tokenURI JSON data
-                const metadata = JSON.parse(tokenURI.replace('data:application/json,', ''))
+                // Parse the tokenURI JSON data (base64 encoded)
+                const jsonString = tokenURI.replace('data:application/json;base64,', '')
+                const metadata = JSON.parse(atob(jsonString))
 
                 // Parse aging data from tokenURI attributes - contains real-time contract state
                 const agingData = parseAgingDataFromAttributes(metadata.attributes || [])
@@ -226,7 +227,9 @@ export default function DashboardPage() {
                 } as any) as string
 
                 if (tokenURI) {
-                  const metadata = JSON.parse(tokenURI.replace('data:application/json,', ''))
+                  // Parse the tokenURI JSON data (base64 encoded)
+                  const jsonString = tokenURI.replace('data:application/json;base64,', '')
+                  const metadata = JSON.parse(atob(jsonString))
                   const agingData = parseAgingDataFromAttributes(metadata.attributes || [])
 
                   rugs.push({
