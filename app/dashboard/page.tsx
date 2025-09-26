@@ -9,6 +9,7 @@ import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
 import { RugCleaning } from '@/components/RugCleaning'
 import { RugMarketplace } from '@/components/RugMarketplace'
+import { LiveRugStatus } from '@/components/LiveRugStatus'
 import LiquidGlass from '@/components/LiquidGlass'
 import { config } from '@/lib/config'
 import { formatEther } from 'viem'
@@ -596,6 +597,11 @@ export default function DashboardPage() {
 
                       {/* Maintenance */}
                       <RugCleaning tokenId={BigInt(selectedRug.tokenId)} />
+
+                      {/* Live Status Check */}
+                      <div className="flex justify-center">
+                        <LiveRugStatus tokenId={selectedRug.tokenId.toString()} />
+                      </div>
 
                       {/* Marketplace */}
                       <div className="bg-slate-700/50 rounded-lg p-4">
