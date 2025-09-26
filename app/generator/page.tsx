@@ -338,21 +338,25 @@ export default function GeneratorPage() {
             // Create derived PRNG for drawing operations
             const drawingPRNG = createDerivedPRNG(2000)
             
+            // Draw fringe before rotation (to avoid coordinate transformation issues)
+            drawFringeOriginal(p, doormatData, drawingPRNG)
+            drawSelvedgeEdgesOriginal(p, doormatData, drawingPRNG)
+
             // Rotate canvas 90 degrees clockwise (original)
             p.push()
             p.translate(p.width/2, p.height/2)
             p.rotate(p.PI/2)
             p.translate(-p.height/2, -p.width/2)
-            
+
             // Draw the main doormat area
             p.push()
             p.translate(doormatData.config.FRINGE_LENGTH * 2, doormatData.config.FRINGE_LENGTH * 2)
-            
+
             // Draw stripes using original logic
             for (const stripe of doormatData.stripeData) {
               drawStripeOriginal(p, stripe, doormatData, drawingPRNG)
             }
-            
+
             // Add overall texture overlay if enabled
             const currentShowTexture = (window as any).showTexture || false
             const currentTextureLevel = (window as any).textureLevel || 0
@@ -360,10 +364,6 @@ export default function GeneratorPage() {
               drawTextureOverlayWithLevel(p, doormatData, currentTextureLevel)
             }
             p.pop()
-            
-            // Draw fringe with adjusted positioning
-            drawFringeOriginal(p, doormatData, drawingPRNG)
-            drawSelvedgeEdgesOriginal(p, doormatData, drawingPRNG)
             
             // Draw dirt overlay if enabled
             const currentShowDirt = (window as any).showDirt || false
