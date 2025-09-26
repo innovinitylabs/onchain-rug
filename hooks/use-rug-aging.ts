@@ -28,20 +28,25 @@ export function useRugAging(tokenId?: bigint) {
     const fetchTokenURI = async () => {
       try {
         setIsLoading(true)
-        const uri = await publicClient.readContract({
-          address: contractAddress as `0x${string}`,
-          abi: [
-            {
-              inputs: [{ name: 'tokenId', type: 'uint256' }],
-              name: 'tokenURI',
-              outputs: [{ name: '', type: 'string' }],
-              stateMutability: 'view',
-              type: 'function',
-            },
-          ] as const,
-          functionName: 'tokenURI',
-          args: [tokenId],
-        }) as string
+        const tokenURIRaw = await publicClient.call({
+          to: contractAddress as `0x${string}`,
+          data: `0xc87b56dd${tokenId.toString(16).padStart(64, '0')}` // tokenURI(uint256) encoded
+        })
+
+        // Decode the returned bytes to string
+        const tokenURIHex = tokenURIRaw.data
+        if (!tokenURIHex || tokenURIHex === '0x') {
+          throw new Error('Empty tokenURI')
+        }
+
+        // Decode hex to string (skip first 64 chars for length prefix)
+        const hexData = tokenURIHex.slice(2)
+        let uri = ''
+        for (let i = 64; i < hexData.length; i += 2) {
+          const byte = parseInt(hexData.slice(i, i + 2), 16)
+          if (byte === 0) break // null terminator
+          uri += String.fromCharCode(byte)
+        }
 
         setTokenURI(uri)
       } catch (error) {
@@ -55,26 +60,32 @@ export function useRugAging(tokenId?: bigint) {
     fetchTokenURI()
   }, [tokenId, publicClient, contractAddress])
 
-  const refetch = () => {
+  const refetch = async () => {
     if (tokenId && publicClient) {
-      publicClient.readContract({
-        address: contractAddress as `0x${string}`,
-        abi: [
-          {
-            inputs: [{ name: 'tokenId', type: 'uint256' }],
-            name: 'tokenURI',
-            outputs: [{ name: '', type: 'string' }],
-            stateMutability: 'view',
-            type: 'function',
-          },
-        ] as const,
-        functionName: 'tokenURI',
-        args: [tokenId],
-      }).then((uri) => {
-        setTokenURI(uri as string)
-      }).catch((error) => {
+      try {
+        const tokenURIRaw = await publicClient.call({
+          to: contractAddress as `0x${string}`,
+          data: `0xc87b56dd${tokenId.toString(16).padStart(64, '0')}` // tokenURI(uint256) encoded
+        })
+
+        // Decode the returned bytes to string
+        const tokenURIHex = tokenURIRaw.data
+        if (tokenURIHex && tokenURIHex !== '0x') {
+          const hexData = tokenURIHex.slice(2)
+          let uri = ''
+          for (let i = 64; i < hexData.length; i += 2) {
+            const byte = parseInt(hexData.slice(i, i + 2), 16)
+            if (byte === 0) break // null terminator
+            uri += String.fromCharCode(byte)
+          }
+          setTokenURI(uri)
+        } else {
+          setTokenURI(null)
+        }
+      } catch (error) {
         console.warn('Failed to refetch tokenURI:', error)
-      })
+        setTokenURI(null)
+      }
     }
   }
 
