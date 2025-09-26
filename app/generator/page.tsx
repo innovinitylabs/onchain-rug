@@ -1293,8 +1293,8 @@ export default function GeneratorPage() {
     // Top fringe (warp ends) - relative to rug translation
     drawFringeSectionOriginal(p, 0, -config.FRINGE_LENGTH, config.DOORMAT_WIDTH, config.FRINGE_LENGTH, 'top', doormatData, drawingPRNG)
 
-    // Bottom fringe (warp ends) - relative to rug translation
-    drawFringeSectionOriginal(p, 0, config.DOORMAT_HEIGHT, config.DOORMAT_WIDTH, config.FRINGE_LENGTH, 'bottom', doormatData, drawingPRNG)
+    // Bottom fringe (warp ends) - relative to rug translation, with small gap to avoid overlay
+    drawFringeSectionOriginal(p, 0, config.DOORMAT_HEIGHT + 5, config.DOORMAT_WIDTH, config.FRINGE_LENGTH, 'bottom', doormatData, drawingPRNG)
   }
 
   // Original doormat.js drawFringeSection function
