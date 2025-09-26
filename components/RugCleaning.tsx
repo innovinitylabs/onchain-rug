@@ -28,28 +28,28 @@ export function RugCleaning({ tokenId }: RugCleaningProps) {
   const needsCleaning = dirtLevel > 0
 
   const getCleaningCost = () => {
-    // Check if rug is within free cleaning period (30 days)
+    // Check if rug is within free cleaning period (30 minutes)
     const now = Math.floor(Date.now() / 1000)
     const timeSinceMint = lastCleaned ? now - (lastCleaned.getTime() / 1000) : 0
-    
+
     if (timeSinceMint < agingConfig.textureAging.intense) {
-      return agingConfig.cleaningCosts.free // Free for first 30 days
+      return agingConfig.cleaningCosts.free // Free for first 30 minutes
     }
-    
-    return agingConfig.cleaningCosts.paid // Paid after 30 days
+
+    return agingConfig.cleaningCosts.paid // Paid after 30 minutes
   }
 
   const getDirtDescription = () => {
     if (dirtLevel === 0) return 'Clean'
-    if (dirtLevel === 1) return 'Lightly Dirty (3+ days)'
-    if (dirtLevel === 2) return 'Heavily Dirty (7+ days)'
+    if (dirtLevel === 1) return 'Lightly Dirty (3+ minutes)'
+    if (dirtLevel === 2) return 'Heavily Dirty (7+ minutes)'
     return 'Unknown'
   }
 
   const getTextureDescription = () => {
     if (textureLevel === 0) return 'Smooth'
-    if (textureLevel === 1) return 'Moderate Wear (7+ days)'
-    if (textureLevel === 2) return 'Heavy Wear (30+ days)'
+    if (textureLevel === 1) return 'Moderate Wear (30+ minutes)'
+    if (textureLevel === 2) return 'Heavy Wear (90+ minutes)'
     return 'Unknown'
   }
 

@@ -70,20 +70,20 @@ export const config = {
     defaultWarpThickness: 8,
   },
   
-  // Aging system
+  // Aging system (now using minutes instead of days for faster testing)
   aging: {
     dirtAppearanceDays: 3,
     fullDirtDays: 7,
-    textureAppearanceDays: 30, // Updated: moderate texture at 30 days
-    fullTextureDays: 90, // Updated: full texture at 90 days
+    textureAppearanceDays: 30, // Updated: moderate texture at 30 minutes
+    fullTextureDays: 90, // Updated: full texture at 90 minutes
     freeCleaningDays: 30,
     dirtAccumulation: {
-      light: 3 * 24 * 60 * 60, // 3 days in seconds
-      heavy: 7 * 24 * 60 * 60, // 7 days in seconds
+      light: 3 * 60, // 3 minutes in seconds (changed from 3 days)
+      heavy: 7 * 60, // 7 minutes in seconds (changed from 7 days)
     },
     textureAging: {
-      moderate: 30 * 24 * 60 * 60, // 30 days in seconds (updated)
-      intense: 90 * 24 * 60 * 60, // 90 days in seconds (updated)
+      moderate: 30 * 60, // 30 minutes in seconds (changed from 30 days)
+      intense: 90 * 60, // 90 minutes in seconds (changed from 90 days)
     },
     cleaningCosts: {
       free: 0,

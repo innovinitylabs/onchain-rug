@@ -144,7 +144,8 @@ export default function DashboardPage() {
               console.log(`Rug #${tokenId} full API response:`, JSON.stringify(rugData, null, 2));
 
               if (rugData) {
-                // Parse aging data from tokenURI attributes (all data is baked into the NFT metadata)
+                // Parse aging data from tokenURI attributes - contains real-time contract state
+                // The tokenURI is generated on-chain and includes current dirt/texture levels
                 const agingData = parseAgingDataFromAttributes(rugData.raw?.metadata?.attributes || rugData.attributes || [])
 
                 // Try multiple possible paths for animation_url in Alchemy response

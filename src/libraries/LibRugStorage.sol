@@ -65,12 +65,12 @@ library LibRugStorage {
         uint256 linePrice4;            // Additional for line 4
         uint256 linePrice5;            // Additional for line 5
         // Aging configuration
-        uint256 dirtLevel1Days;        // Days for dirt level 1
-        uint256 dirtLevel2Days;        // Days for dirt level 2
-        uint256 textureLevel1Days;     // Days for texture level 1
-        uint256 textureLevel2Days;     // Days for texture level 2
-        uint256 freeCleanDays;         // Days after mint for free cleaning
-        uint256 freeCleanWindow;       // Days after cleaning for free cleaning
+        uint256 dirtLevel1Days;        // Minutes for dirt level 1
+        uint256 dirtLevel2Days;        // Minutes for dirt level 2
+        uint256 textureLevel1Days;     // Minutes for texture level 1
+        uint256 textureLevel2Days;     // Minutes for texture level 2
+        uint256 freeCleanDays;         // Minutes after mint for free cleaning
+        uint256 freeCleanWindow;       // Minutes after cleaning for free cleaning
         // Maintenance pricing
         uint256 cleaningCost;          // Regular cleaning cost
         uint256 restorationCost;       // Per level restoration cost

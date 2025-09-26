@@ -55,7 +55,6 @@ export async function GET(request: NextRequest) {
         url = `https://shape-sepolia.g.alchemy.com/nft/v3/${alchemyApiKey}/getNFTsForOwner?owner=${owner}&contractAddresses[]=${contractAddress}&withMetadata=false`
         break
 
-
       default:
         return NextResponse.json(
           { error: 'Invalid endpoint' },

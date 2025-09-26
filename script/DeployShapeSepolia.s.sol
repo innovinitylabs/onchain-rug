@@ -279,14 +279,14 @@ contract DeployShapeSepolia is Script {
             htmlGeneratorAddr
         );
 
-        // Configure aging thresholds (30 days free, 3 days level 1, 7 days level 2, etc.)
+        // Configure aging thresholds (30 minutes free, 3 minutes level 1, 7 minutes level 2, etc.)
         uint256[6] memory agingThresholds = [
-            uint256(3),  // dirtLevel1Days (3 days)
-            uint256(7),  // dirtLevel2Days (7 days)
-            uint256(30), // textureLevel1Days (30 days)
-            uint256(90), // textureLevel2Days (90 days)
-            uint256(30), // freeCleanDays (30 days free after mint)
-            uint256(11)  // freeCleanWindow (11 days free after cleaning)
+            uint256(1),  // dirtLevel1Days (3 minutes)
+            uint256(2),  // dirtLevel2Days (7 minutes)
+            uint256(3), // textureLevel1Days (30 minutes)
+            uint256(4), // textureLevel2Days (90 minutes)
+            uint256(30), // freeCleanDays (30 minutes free after mint)
+            uint256(11)  // freeCleanWindow (11 minutes free after cleaning)
         ];
 
         RugAdminFacet(diamondAddr).updateAgingThresholds(agingThresholds);

@@ -114,19 +114,19 @@ contract RugAdminFacet {
 
     /**
      * @notice Update aging thresholds (owner only)
-     * @param thresholds Array of 6 time periods in days: [dirt1, dirt2, texture1, texture2, freeCleanDays, freeCleanWindow]
+     * @param thresholds Array of 6 time periods in minutes: [dirt1, dirt2, texture1, texture2, freeCleanDays, freeCleanWindow]
      */
     function updateAgingThresholds(uint256[6] calldata thresholds) external {
         LibDiamond.enforceIsContractOwner();
 
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
 
-        rs.dirtLevel1Days = thresholds[0] * 1 days;
-        rs.dirtLevel2Days = thresholds[1] * 1 days;
-        rs.textureLevel1Days = thresholds[2] * 1 days;
-        rs.textureLevel2Days = thresholds[3] * 1 days;
-        rs.freeCleanDays = thresholds[4] * 1 days;
-        rs.freeCleanWindow = thresholds[5] * 1 days;
+        rs.dirtLevel1Days = thresholds[0] * 1 minutes;
+        rs.dirtLevel2Days = thresholds[1] * 1 minutes;
+        rs.textureLevel1Days = thresholds[2] * 1 minutes;
+        rs.textureLevel2Days = thresholds[3] * 1 minutes;
+        rs.freeCleanDays = thresholds[4] * 1 minutes;
+        rs.freeCleanWindow = thresholds[5] * 1 minutes;
 
         emit AgingThresholdsUpdated();
     }
@@ -231,18 +231,18 @@ contract RugAdminFacet {
     }
 
     /**
-     * @notice Get aging thresholds in days
+     * @notice Get aging thresholds in minutes
      * @return dirt1, dirt2, texture1, texture2, freeCleanDays, freeCleanWindow
      */
     function getAgingThresholds() external view returns (uint256, uint256, uint256, uint256, uint256, uint256) {
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
         return (
-            rs.dirtLevel1Days / 1 days,
-            rs.dirtLevel2Days / 1 days,
-            rs.textureLevel1Days / 1 days,
-            rs.textureLevel2Days / 1 days,
-            rs.freeCleanDays / 1 days,
-            rs.freeCleanWindow / 1 days
+            rs.dirtLevel1Days / 1 minutes,
+            rs.dirtLevel2Days / 1 minutes,
+            rs.textureLevel1Days / 1 minutes,
+            rs.textureLevel2Days / 1 minutes,
+            rs.freeCleanDays / 1 minutes,
+            rs.freeCleanWindow / 1 minutes
         );
     }
 
