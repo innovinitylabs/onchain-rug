@@ -369,8 +369,24 @@ export default function DashboardPage() {
                             if (rug.animation_url.startsWith('data:text/html')) {
                               try {
                                 const htmlContent = rug.animation_url.split(',')[1];
-                                const decodedHtml = decodeURIComponent(atob(htmlContent));
-                                console.log(`Decoded HTML for rug #${rug.tokenId}:`, decodedHtml.substring(0, 100) + '...');
+                                console.log(`Base64 length for rug #${rug.tokenId}:`, htmlContent.length);
+                                console.log(`Base64 preview:`, htmlContent.substring(0, 100) + '...');
+
+                                // First decode base64
+                                const decodedBase64 = atob(htmlContent);
+                                console.log(`Decoded base64 length:`, decodedBase64.length);
+                                console.log(`Decoded base64 preview:`, decodedBase64.substring(0, 100) + '...');
+
+                                // Then decode URI component
+                                const decodedHtml = decodeURIComponent(decodedBase64);
+                                console.log(`Final HTML length:`, decodedHtml.length);
+                                console.log(`Final HTML preview:`, decodedHtml.substring(0, 100) + '...');
+
+                                // Check if HTML contains expected elements
+                                const hasCanvas = decodedHtml.includes('defaultCanvas0');
+                                const hasScript = decodedHtml.includes('<script>');
+                                console.log(`HTML validation - hasCanvas: ${hasCanvas}, hasScript: ${hasScript}`);
+
                                 return (
                                   <div
                                     className="w-full h-full"
@@ -379,10 +395,12 @@ export default function DashboardPage() {
                                 );
                               } catch (e) {
                                 console.error('Failed to decode HTML for rug', rug.tokenId, e);
+                                console.error('Error details:', e.message);
                                 return (
                                   <div className="w-full h-full flex items-center justify-center text-white/50">
                                     <div>🧵</div>
                                     <div>Error loading #{rug.tokenId}</div>
+                                    <div className="text-xs mt-1">Decode error</div>
                                   </div>
                                 );
                               }
@@ -513,8 +531,24 @@ export default function DashboardPage() {
                             if (selectedRug.animation_url.startsWith('data:text/html')) {
                               try {
                                 const htmlContent = selectedRug.animation_url.split(',')[1];
-                                const decodedHtml = decodeURIComponent(atob(htmlContent));
-                                console.log(`Decoded HTML for selected rug #${selectedRug.tokenId}:`, decodedHtml.substring(0, 100) + '...');
+                                console.log(`Base64 length for selected rug #${selectedRug.tokenId}:`, htmlContent.length);
+                                console.log(`Base64 preview:`, htmlContent.substring(0, 100) + '...');
+
+                                // First decode base64
+                                const decodedBase64 = atob(htmlContent);
+                                console.log(`Decoded base64 length:`, decodedBase64.length);
+                                console.log(`Decoded base64 preview:`, decodedBase64.substring(0, 100) + '...');
+
+                                // Then decode URI component
+                                const decodedHtml = decodeURIComponent(decodedBase64);
+                                console.log(`Final HTML length:`, decodedHtml.length);
+                                console.log(`Final HTML preview:`, decodedHtml.substring(0, 100) + '...');
+
+                                // Check if HTML contains expected elements
+                                const hasCanvas = decodedHtml.includes('defaultCanvas0');
+                                const hasScript = decodedHtml.includes('<script>');
+                                console.log(`HTML validation - hasCanvas: ${hasCanvas}, hasScript: ${hasScript}`);
+
                                 return (
                                   <div
                                     className="w-full h-full"
@@ -523,6 +557,7 @@ export default function DashboardPage() {
                                 );
                               } catch (e) {
                                 console.error('Failed to decode HTML for selected rug', selectedRug.tokenId, e);
+                                console.error('Error details:', e.message);
                                 return (
                                   <div className="w-full h-full flex items-center justify-center text-white/50">
                                     Error loading preview
