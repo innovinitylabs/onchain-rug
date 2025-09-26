@@ -357,24 +357,32 @@ export default function DashboardPage() {
                   >
                     <div className="space-y-4">
                       {/* Rug Preview */}
-                      <div className="aspect-square bg-black/30 rounded-lg overflow-hidden">
-                        {rug.animation_url ? (
-                          <iframe
-                            src={rug.animation_url}
-                            className="w-full h-full"
-                            title={`Rug #${rug.tokenId}`}
-                            sandbox="allow-scripts"
-                            style={{ border: 'none' }}
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-white/50">
-                            <div className="text-center">
-                              <div className="text-4xl mb-2">🧵</div>
-                              <div>Rug #{rug.tokenId}</div>
-                              <div className="text-xs mt-1">No preview</div>
+                      <div
+                        className="w-full bg-black/30 rounded-lg overflow-hidden"
+                        style={{
+                          paddingBottom: '69.7%', // 920/1320 * 100% = 69.7% (maintains 1320:920 aspect ratio)
+                          position: 'relative'
+                        }}
+                      >
+                        <div className="absolute inset-0">
+                          {rug.animation_url ? (
+                            <iframe
+                              src={rug.animation_url}
+                              className="w-full h-full"
+                              title={`Rug #${rug.tokenId}`}
+                              sandbox="allow-scripts"
+                              style={{ border: 'none' }}
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-white/50">
+                              <div className="text-center">
+                                <div className="text-4xl mb-2">🧵</div>
+                                <div>Rug #{rug.tokenId}</div>
+                                <div className="text-xs mt-1">No preview</div>
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </div>
 
                       {/* Rug Info */}
@@ -467,20 +475,28 @@ export default function DashboardPage() {
                   <div className="grid md:grid-cols-2 gap-6">
                     {/* Rug Display */}
                     <div className="space-y-4">
-                      <div className="aspect-square bg-black/30 rounded-lg overflow-hidden">
-                        {selectedRug.animation_url ? (
-                          <iframe
-                            src={selectedRug.animation_url}
-                            className="w-full h-full"
-                            title={`Rug #${selectedRug.tokenId}`}
-                            sandbox="allow-scripts"
-                            style={{ border: 'none' }}
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-white/50">
-                            Rug Preview
-                          </div>
-                        )}
+                      <div
+                        className="w-full bg-black/30 rounded-lg overflow-hidden"
+                        style={{
+                          paddingBottom: '69.7%', // 920/1320 * 100% = 69.7% (maintains 1320:920 aspect ratio)
+                          position: 'relative'
+                        }}
+                      >
+                        <div className="absolute inset-0">
+                          {selectedRug.animation_url ? (
+                            <iframe
+                              src={selectedRug.animation_url}
+                              className="w-full h-full"
+                              title={`Rug #${selectedRug.tokenId}`}
+                              sandbox="allow-scripts"
+                              style={{ border: 'none' }}
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-white/50">
+                              Rug Preview
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                       {/* Quick Actions */}

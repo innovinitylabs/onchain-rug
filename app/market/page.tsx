@@ -582,22 +582,53 @@ export default function MarketPage() {
                       </div>
 
                       {/* Rug Preview */}
-                      <div className={`aspect-square bg-black/30 rounded-lg overflow-hidden mb-4 ${
-                        viewMode === 'list' ? 'w-32 h-32 float-left mr-4' : ''
-                      }`}>
-                        {nft.animation_url ? (
-                          <iframe
-                            src={nft.animation_url}
-                            className="w-full h-full"
-                            title={`Rug #${nft.tokenId}`}
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-white/50">
-                            <div className="text-center">
-                              <div className="text-2xl mb-1">🧵</div>
-                              <div className="text-xs">#{nft.tokenId}</div>
-                            </div>
+                      <div className={`bg-black/30 rounded-lg overflow-hidden mb-4 ${
+                        viewMode === 'list' ? 'w-32 h-32 float-left mr-4' : 'w-full'
+                      }`} style={
+                        viewMode === 'grid' ? {
+                          paddingBottom: '69.7%', // 920/1320 * 100% = 69.7% (maintains 1320:920 aspect ratio)
+                          position: 'relative'
+                        } : {}
+                      }>
+                        {viewMode === 'grid' ? (
+                          <div className="absolute inset-0">
+                            {nft.animation_url ? (
+                              <iframe
+                                src={nft.animation_url}
+                                className="w-full h-full"
+                                title={`Rug #${nft.tokenId}`}
+                                sandbox="allow-scripts"
+                                style={{ border: 'none' }}
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-white/50">
+                                <div className="text-center">
+                                  <div className="text-2xl mb-1">🧵</div>
+                                  <div className="text-xs">#{nft.tokenId}</div>
+                                </div>
+                              </div>
+                            )}
                           </div>
+                        ) : (
+                          // List view - use fixed size
+                          <>
+                            {nft.animation_url ? (
+                              <iframe
+                                src={nft.animation_url}
+                                className="w-full h-full"
+                                title={`Rug #${nft.tokenId}`}
+                                sandbox="allow-scripts"
+                                style={{ border: 'none' }}
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-white/50">
+                                <div className="text-center">
+                                  <div className="text-2xl mb-1">🧵</div>
+                                  <div className="text-xs">#{nft.tokenId}</div>
+                                </div>
+                              </div>
+                            )}
+                          </>
                         )}
                       </div>
 
