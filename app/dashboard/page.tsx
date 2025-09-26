@@ -334,7 +334,7 @@ export default function DashboardPage() {
             </a>
           </motion.div>
         ) : (
-          <div className="grid grid-cols-1 gap-6">
+          <div className="grid grid-cols-1 gap-6 max-w-4xl mx-auto">
             {userRugs.map((rug) => {
               const dirtLevel = rug.aging.dirtLevel || 0
               const textureLevel = rug.aging.textureLevel || 0
