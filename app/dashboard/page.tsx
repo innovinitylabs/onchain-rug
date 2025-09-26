@@ -147,8 +147,22 @@ export default function DashboardPage() {
                 // Parse aging data from tokenURI attributes (all data is baked into the NFT metadata)
                 const agingData = parseAgingDataFromAttributes(rugData.raw?.metadata?.attributes || rugData.attributes || [])
 
-                const animationUrl = rugData.animation_url || rugData.raw?.metadata?.animation_url;
-                console.log(`Rug #${tokenId} animation_url:`, animationUrl ? animationUrl.substring(0, 50) + '...' : 'undefined');
+                // Try multiple possible paths for animation_url in Alchemy response
+                const animationUrl = rugData.animation_url ||
+                                   rugData.raw?.metadata?.animation_url ||
+                                   rugData.metadata?.animation_url ||
+                                   rugData.contractMetadata?.animation_url ||
+                                   rugData.nft?.metadata?.animation_url;
+
+                // Debug logging
+                console.log(`Rug #${tokenId} animation_url extraction:`, {
+                  direct: rugData.animation_url,
+                  rawMetadata: rugData.raw?.metadata?.animation_url,
+                  metadata: rugData.metadata?.animation_url,
+                  contractMetadata: rugData.contractMetadata?.animation_url,
+                  nftMetadata: rugData.nft?.metadata?.animation_url,
+                  final: animationUrl ? animationUrl.substring(0, 50) + '...' : 'undefined'
+                });
 
                 rugs.push({
                   tokenId,
@@ -344,40 +358,57 @@ export default function DashboardPage() {
                     <div className="space-y-4">
                       {/* Rug Preview */}
                       <div className="aspect-square bg-black/30 rounded-lg overflow-hidden">
-                        {rug.animation_url ? (
-                          rug.animation_url.startsWith('data:text/html') ? (
-                            <div
-                              className="w-full h-full"
-                              dangerouslySetInnerHTML={{
-                                __html: (() => {
-                                  try {
-                                    const htmlContent = rug.animation_url.split(',')[1];
-                                    return decodeURIComponent(atob(htmlContent));
-                                  } catch (e) {
-                                    console.error('Failed to decode HTML for rug', rug.tokenId, e);
-                                    return `<div class="w-full h-full flex items-center justify-center text-white/50"><div>🧵</div><div>Error loading #${rug.tokenId}</div></div>`;
-                                  }
-                                })()
-                              }}
-                            />
-                          ) : (
-                            <iframe
-                              src={rug.animation_url}
-                              className="w-full h-full"
-                              title={`Rug #${rug.tokenId}`}
-                              sandbox="allow-scripts allow-same-origin"
-                              style={{ border: 'none' }}
-                            />
-                          )
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-white/50">
-                            <div className="text-center">
-                              <div className="text-4xl mb-2">🧵</div>
-                              <div>Rug #{rug.tokenId}</div>
-                              <div className="text-xs mt-1">No preview</div>
-                            </div>
-                          </div>
-                        )}
+                        {(() => {
+                          console.log(`Rendering rug #${rug.tokenId}:`, {
+                            hasAnimationUrl: !!rug.animation_url,
+                            animationUrlType: rug.animation_url ? (rug.animation_url.startsWith('data:text/html') ? 'data-html' : 'other') : 'none',
+                            animationUrlLength: rug.animation_url?.length
+                          });
+
+                          if (rug.animation_url) {
+                            if (rug.animation_url.startsWith('data:text/html')) {
+                              try {
+                                const htmlContent = rug.animation_url.split(',')[1];
+                                const decodedHtml = decodeURIComponent(atob(htmlContent));
+                                console.log(`Decoded HTML for rug #${rug.tokenId}:`, decodedHtml.substring(0, 100) + '...');
+                                return (
+                                  <div
+                                    className="w-full h-full"
+                                    dangerouslySetInnerHTML={{ __html: decodedHtml }}
+                                  />
+                                );
+                              } catch (e) {
+                                console.error('Failed to decode HTML for rug', rug.tokenId, e);
+                                return (
+                                  <div className="w-full h-full flex items-center justify-center text-white/50">
+                                    <div>🧵</div>
+                                    <div>Error loading #{rug.tokenId}</div>
+                                  </div>
+                                );
+                              }
+                            } else {
+                              return (
+                                <iframe
+                                  src={rug.animation_url}
+                                  className="w-full h-full"
+                                  title={`Rug #${rug.tokenId}`}
+                                  sandbox="allow-scripts allow-same-origin"
+                                  style={{ border: 'none' }}
+                                />
+                              );
+                            }
+                          } else {
+                            return (
+                              <div className="w-full h-full flex items-center justify-center text-white/50">
+                                <div className="text-center">
+                                  <div className="text-4xl mb-2">🧵</div>
+                                  <div>Rug #{rug.tokenId}</div>
+                                  <div className="text-xs mt-1">No preview</div>
+                                </div>
+                              </div>
+                            );
+                          }
+                        })()}
                       </div>
 
                       {/* Rug Info */}
@@ -471,36 +502,52 @@ export default function DashboardPage() {
                     {/* Rug Display */}
                     <div className="space-y-4">
                       <div className="aspect-square bg-black/30 rounded-lg overflow-hidden">
-                        {selectedRug.animation_url ? (
-                          selectedRug.animation_url.startsWith('data:text/html') ? (
-                            <div
-                              className="w-full h-full"
-                              dangerouslySetInnerHTML={{
-                                __html: (() => {
-                                  try {
-                                    const htmlContent = selectedRug.animation_url.split(',')[1];
-                                    return decodeURIComponent(atob(htmlContent));
-                                  } catch (e) {
-                                    console.error('Failed to decode HTML for selected rug', selectedRug.tokenId, e);
-                                    return '<div class="w-full h-full flex items-center justify-center text-white/50">Error loading preview</div>';
-                                  }
-                                })()
-                              }}
-                            />
-                          ) : (
-                            <iframe
-                              src={selectedRug.animation_url}
-                              className="w-full h-full"
-                              title={`Rug #${selectedRug.tokenId}`}
-                              sandbox="allow-scripts allow-same-origin"
-                              style={{ border: 'none' }}
-                            />
-                          )
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-white/50">
-                            Rug Preview
-                          </div>
-                        )}
+                        {(() => {
+                          console.log(`Rendering selected rug #${selectedRug.tokenId}:`, {
+                            hasAnimationUrl: !!selectedRug.animation_url,
+                            animationUrlType: selectedRug.animation_url ? (selectedRug.animation_url.startsWith('data:text/html') ? 'data-html' : 'other') : 'none',
+                            animationUrlLength: selectedRug.animation_url?.length
+                          });
+
+                          if (selectedRug.animation_url) {
+                            if (selectedRug.animation_url.startsWith('data:text/html')) {
+                              try {
+                                const htmlContent = selectedRug.animation_url.split(',')[1];
+                                const decodedHtml = decodeURIComponent(atob(htmlContent));
+                                console.log(`Decoded HTML for selected rug #${selectedRug.tokenId}:`, decodedHtml.substring(0, 100) + '...');
+                                return (
+                                  <div
+                                    className="w-full h-full"
+                                    dangerouslySetInnerHTML={{ __html: decodedHtml }}
+                                  />
+                                );
+                              } catch (e) {
+                                console.error('Failed to decode HTML for selected rug', selectedRug.tokenId, e);
+                                return (
+                                  <div className="w-full h-full flex items-center justify-center text-white/50">
+                                    Error loading preview
+                                  </div>
+                                );
+                              }
+                            } else {
+                              return (
+                                <iframe
+                                  src={selectedRug.animation_url}
+                                  className="w-full h-full"
+                                  title={`Rug #${selectedRug.tokenId}`}
+                                  sandbox="allow-scripts allow-same-origin"
+                                  style={{ border: 'none' }}
+                                />
+                              );
+                            }
+                          } else {
+                            return (
+                              <div className="w-full h-full flex items-center justify-center text-white/50">
+                                Rug Preview
+                              </div>
+                            );
+                          }
+                        })()}
                       </div>
 
                       {/* Quick Actions */}
