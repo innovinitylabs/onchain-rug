@@ -313,11 +313,30 @@ export default function DashboardPage() {
                       {/* Rug Preview */}
                       <div className="aspect-square bg-black/30 rounded-lg overflow-hidden">
                         {rug.animation_url ? (
-                          <iframe
-                            src={rug.animation_url}
-                            className="w-full h-full"
-                            title={`Rug #${rug.tokenId}`}
-                          />
+                          rug.animation_url.startsWith('data:text/html') ? (
+                            // For data URIs, render directly instead of using iframe
+                            <div
+                              className="w-full h-full"
+                              dangerouslySetInnerHTML={{
+                                __html: (() => {
+                                  try {
+                                    const htmlContent = rug.animation_url.split(',')[1];
+                                    return decodeURIComponent(atob(htmlContent));
+                                  } catch (e) {
+                                    console.error('Failed to decode HTML content:', e);
+                                    return '<div class="w-full h-full flex items-center justify-center text-white/50"><div>🧵</div></div>';
+                                  }
+                                })()
+                              }}
+                            />
+                          ) : (
+                            <iframe
+                              src={rug.animation_url}
+                              className="w-full h-full"
+                              title={`Rug #${rug.tokenId}`}
+                              sandbox="allow-scripts"
+                            />
+                          )
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-white/50">
                             <div className="text-center">
@@ -420,11 +439,30 @@ export default function DashboardPage() {
                     <div className="space-y-4">
                       <div className="aspect-square bg-black/30 rounded-lg overflow-hidden">
                         {selectedRug.animation_url ? (
-                          <iframe
-                            src={selectedRug.animation_url}
-                            className="w-full h-full"
-                            title={`Rug #${selectedRug.tokenId}`}
-                          />
+                          selectedRug.animation_url.startsWith('data:text/html') ? (
+                            // For data URIs, render directly instead of using iframe
+                            <div
+                              className="w-full h-full"
+                              dangerouslySetInnerHTML={{
+                                __html: (() => {
+                                  try {
+                                    const htmlContent = selectedRug.animation_url.split(',')[1];
+                                    return decodeURIComponent(atob(htmlContent));
+                                  } catch (e) {
+                                    console.error('Failed to decode HTML content:', e);
+                                    return '<div class="w-full h-full flex items-center justify-center text-white/50">Error loading preview</div>';
+                                  }
+                                })()
+                              }}
+                            />
+                          ) : (
+                            <iframe
+                              src={selectedRug.animation_url}
+                              className="w-full h-full"
+                              title={`Rug #${selectedRug.tokenId}`}
+                              sandbox="allow-scripts"
+                            />
+                          )
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-white/50">
                             Rug Preview
@@ -442,6 +480,89 @@ export default function DashboardPage() {
                           <TrendingUp className="w-4 h-4 inline mr-2" />
                           List for Sale
                         </button>
+                      </div>
+                    </div>
+
+                    {/* Raw Blockchain Data Debug Section */}
+                    <div className="space-y-4">
+                      <div className="bg-gray-900/50 border border-gray-700/50 rounded-lg p-4">
+                        <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+                          <span className="text-blue-400">🔍</span>
+                          Raw Blockchain Data
+                        </h3>
+
+                        <div className="space-y-3">
+                          {/* Animation URL Debug */}
+                          <div>
+                            <div className="text-sm font-medium text-blue-300 mb-1">Animation URL:</div>
+                            <div className="bg-black/50 rounded p-2 text-xs font-mono text-green-400 break-all max-h-32 overflow-y-auto">
+                              {selectedRug.animation_url || 'No animation URL'}
+                            </div>
+                            {selectedRug.animation_url && (
+                              <div className="mt-2">
+                                <div className="text-sm font-medium text-blue-300 mb-1">Animation URL Type:</div>
+                                <div className="text-xs font-mono text-purple-300">
+                                  {selectedRug.animation_url.startsWith('data:') ? 'Data URI' :
+                                   selectedRug.animation_url.startsWith('http') ? 'HTTP URL' :
+                                   'Unknown format'}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Metadata Debug */}
+                          <div>
+                            <div className="text-sm font-medium text-blue-300 mb-1">Metadata:</div>
+                            <div className="bg-black/50 rounded p-2 text-xs font-mono text-yellow-400 max-h-48 overflow-y-auto">
+                              <pre>{JSON.stringify({
+                                name: selectedRug.name,
+                                tokenId: selectedRug.tokenId,
+                                traits: selectedRug.traits,
+                                aging: selectedRug.aging,
+                                owner: selectedRug.owner
+                              }, null, 2)}</pre>
+                            </div>
+                          </div>
+
+                          {/* HTML Preview Debug */}
+                          {selectedRug.animation_url && selectedRug.animation_url.startsWith('data:text/html') && (
+                            <div>
+                              <div className="text-sm font-medium text-blue-300 mb-1">HTML Content Preview:</div>
+                              <div className="bg-black/50 rounded p-2 text-xs font-mono text-cyan-400 max-h-64 overflow-y-auto">
+                                {(() => {
+                                  try {
+                                    const htmlContent = selectedRug.animation_url.split(',')[1];
+                                    const decoded = decodeURIComponent(atob(htmlContent));
+                                    return decoded.length > 500 ? decoded.substring(0, 500) + '...' : decoded;
+                                  } catch (e) {
+                                    return 'Error decoding HTML content';
+                                  }
+                                })()}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* API Test Button */}
+                          <div>
+                            <button
+                              onClick={async () => {
+                                try {
+                                  console.log('Testing API call...');
+                                  const response = await fetch(`/api/alchemy?endpoint=getNFTMetadata&contractAddress=${config.contracts.onchainRugs}&tokenId=${selectedRug.tokenId}`);
+                                  const data = await response.json();
+                                  console.log('API Response:', data);
+                                  alert(`API Response:\n${JSON.stringify(data, null, 2)}`);
+                                } catch (error) {
+                                  console.error('API Test failed:', error);
+                                  alert(`API Test failed: ${error}`);
+                                }
+                              }}
+                              className="px-3 py-2 bg-green-500/20 hover:bg-green-500/30 text-green-300 rounded text-sm transition-colors duration-200"
+                            >
+                              Test API Call
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
