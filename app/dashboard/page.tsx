@@ -130,22 +130,34 @@ export default function DashboardPage() {
         setLoading(true)
         const rugs: RugData[] = []
 
+        console.log('Fetching rugs for address:', address)
+        console.log('Using contract address:', contractAddress)
+        console.log('Current chain ID:', chainId)
+
         // Get NFTs owned by user from Alchemy
         const ownerResponse = await fetch(`${window.location.origin}/api/alchemy?endpoint=getTokenIdByIndex&contractAddress=${contractAddress}&owner=${address}&index=0`)
         const ownerData = await ownerResponse.json()
 
+        console.log('Owner data response:', ownerData)
+
         if (ownerData.ownedNfts && ownerData.ownedNfts.length > 0) {
+          console.log(`Found ${ownerData.ownedNfts.length} NFTs from Alchemy`)
+
           for (const nft of ownerData.ownedNfts) {
             try {
               const tokenId = parseInt(nft.tokenId)
+              console.log(`Processing rug #${tokenId}`)
 
               // Get tokenURI directly from contract (no caching)
+              console.log(`Fetching tokenURI for rug #${tokenId}...`)
               const tokenURI = await publicClient.readContract({
                 address: contractAddress as `0x${string}`,
                 abi: onchainRugsABI,
                 functionName: 'tokenURI',
                 args: [BigInt(tokenId)]
               } as any) as string
+
+              console.log(`Got tokenURI for rug #${tokenId}:`, tokenURI ? 'success' : 'empty')
 
               if (tokenURI) {
                 // Parse the tokenURI JSON data
@@ -173,13 +185,70 @@ export default function DashboardPage() {
                   image: metadata.image,
                   animation_url: animationUrl
                 })
+
+                console.log(`Successfully added rug #${tokenId} to list`)
+              } else {
+                console.warn(`Empty tokenURI for rug #${tokenId}`)
               }
             } catch (error) {
-              console.warn(`Failed to fetch rug data:`, error)
+              console.error(`Failed to fetch rug data for token ${nft.tokenId}:`, error)
+            }
+          }
+        } else {
+          console.log('No owned NFTs found from Alchemy')
+
+          // Fallback: Try to check a few common token IDs for testing
+          console.log('Trying fallback token ID check...')
+          const testTokenIds = [1, 2, 3, 4, 5] // Common test token IDs
+
+          for (const testTokenId of testTokenIds) {
+            try {
+              console.log(`Testing token ID ${testTokenId}...`)
+
+              // Check if this token exists and is owned by the user
+              const ownerOf = await publicClient.readContract({
+                address: contractAddress as `0x${string}`,
+                abi: onchainRugsABI,
+                functionName: 'ownerOf',
+                args: [BigInt(testTokenId)]
+              } as any) as string
+
+              if (ownerOf && ownerOf.toLowerCase() === address?.toLowerCase()) {
+                console.log(`Found owned token #${testTokenId}, fetching metadata...`)
+
+                // Get tokenURI directly from contract
+                const tokenURI = await publicClient.readContract({
+                  address: contractAddress as `0x${string}`,
+                  abi: onchainRugsABI,
+                  functionName: 'tokenURI',
+                  args: [BigInt(testTokenId)]
+                } as any) as string
+
+                if (tokenURI) {
+                  const metadata = JSON.parse(tokenURI.replace('data:application/json,', ''))
+                  const agingData = parseAgingDataFromAttributes(metadata.attributes || [])
+
+                  rugs.push({
+                    tokenId: testTokenId,
+                    traits: metadata.rugData || {},
+                    aging: agingData,
+                    owner: address,
+                    name: metadata.name || `Rug #${testTokenId}`,
+                    image: metadata.image,
+                    animation_url: metadata.animation_url
+                  })
+
+                  console.log(`Successfully added test rug #${testTokenId}`)
+                }
+              }
+            } catch (error) {
+              // Token doesn't exist or not owned by user, skip
+              console.log(`Token ${testTokenId} not found or not owned`)
             }
           }
         }
 
+        console.log(`Final rug count: ${rugs.length}`)
         setUserRugs(rugs)
       } catch (error) {
         console.error('Failed to fetch user rugs:', error)
