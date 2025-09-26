@@ -389,6 +389,7 @@ export default function DashboardPage() {
                               src={rug.animation_url}
                               className="w-full h-full"
                               title={`Rug #${rug.tokenId}`}
+                              scrolling="no"
                               style={{
                                 border: 'none',
                                 background: 'transparent',
@@ -397,7 +398,9 @@ export default function DashboardPage() {
                                 padding: 0,
                                 textDecoration: 'none',
                                 boxShadow: 'none',
-                                fontFamily: 'monospace'
+                                fontFamily: 'monospace',
+                                overflow: 'hidden',
+                                display: 'block'
                               }}
                             />
                           ) : (
@@ -526,6 +529,7 @@ export default function DashboardPage() {
                               src={selectedRug.animation_url}
                               className="w-full h-full"
                               title={`Rug #${selectedRug.tokenId}`}
+                              scrolling="no"
                               style={{
                                 border: 'none',
                                 background: 'transparent',
@@ -534,7 +538,9 @@ export default function DashboardPage() {
                                 padding: 0,
                                 textDecoration: 'none',
                                 boxShadow: 'none',
-                                fontFamily: 'monospace'
+                                fontFamily: 'monospace',
+                                overflow: 'hidden',
+                                display: 'block'
                               }}
                             />
                           ) : (
