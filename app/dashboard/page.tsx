@@ -313,30 +313,13 @@ export default function DashboardPage() {
                       {/* Rug Preview */}
                       <div className="aspect-square bg-black/30 rounded-lg overflow-hidden">
                         {rug.animation_url ? (
-                          rug.animation_url.startsWith('data:text/html') ? (
-                            // For data URIs, render directly instead of using iframe
-                            <div
-                              className="w-full h-full"
-                              dangerouslySetInnerHTML={{
-                                __html: (() => {
-                                  try {
-                                    const htmlContent = rug.animation_url.split(',')[1];
-                                    return decodeURIComponent(atob(htmlContent));
-                                  } catch (e) {
-                                    console.error('Failed to decode HTML content:', e);
-                                    return '<div class="w-full h-full flex items-center justify-center text-white/50"><div>🧵</div></div>';
-                                  }
-                                })()
-                              }}
-                            />
-                          ) : (
-                            <iframe
-                              src={rug.animation_url}
-                              className="w-full h-full"
-                              title={`Rug #${rug.tokenId}`}
-                              sandbox="allow-scripts"
-                            />
-                          )
+                          <iframe
+                            src={rug.animation_url}
+                            className="w-full h-full"
+                            title={`Rug #${rug.tokenId}`}
+                            sandbox="allow-scripts allow-same-origin"
+                            style={{ border: 'none' }}
+                          />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-white/50">
                             <div className="text-center">
@@ -439,30 +422,13 @@ export default function DashboardPage() {
                     <div className="space-y-4">
                       <div className="aspect-square bg-black/30 rounded-lg overflow-hidden">
                         {selectedRug.animation_url ? (
-                          selectedRug.animation_url.startsWith('data:text/html') ? (
-                            // For data URIs, render directly instead of using iframe
-                            <div
-                              className="w-full h-full"
-                              dangerouslySetInnerHTML={{
-                                __html: (() => {
-                                  try {
-                                    const htmlContent = selectedRug.animation_url.split(',')[1];
-                                    return decodeURIComponent(atob(htmlContent));
-                                  } catch (e) {
-                                    console.error('Failed to decode HTML content:', e);
-                                    return '<div class="w-full h-full flex items-center justify-center text-white/50">Error loading preview</div>';
-                                  }
-                                })()
-                              }}
-                            />
-                          ) : (
-                            <iframe
-                              src={selectedRug.animation_url}
-                              className="w-full h-full"
-                              title={`Rug #${selectedRug.tokenId}`}
-                              sandbox="allow-scripts"
-                            />
-                          )
+                          <iframe
+                            src={selectedRug.animation_url}
+                            className="w-full h-full"
+                            title={`Rug #${selectedRug.tokenId}`}
+                            sandbox="allow-scripts allow-same-origin"
+                            style={{ border: 'none' }}
+                          />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-white/50">
                             Rug Preview
@@ -533,9 +499,22 @@ export default function DashboardPage() {
                                   try {
                                     const htmlContent = selectedRug.animation_url.split(',')[1];
                                     const decoded = decodeURIComponent(atob(htmlContent));
-                                    return decoded.length > 500 ? decoded.substring(0, 500) + '...' : decoded;
+                                    // Show first 1000 chars and indicate if truncated
+                                    const truncated = decoded.length > 1000;
+                                    const preview = truncated ? decoded.substring(0, 1000) + '...' : decoded;
+                                    return (
+                                      <div>
+                                        <div className="mb-2 text-yellow-300">Length: {decoded.length} characters</div>
+                                        <pre className="whitespace-pre-wrap">{preview}</pre>
+                                        {truncated && (
+                                          <div className="mt-2 text-orange-300">
+                                            ... ({decoded.length - 1000} more characters)
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
                                   } catch (e) {
-                                    return 'Error decoding HTML content';
+                                    return `Error decoding HTML content: ${e.message}`;
                                   }
                                 })()}
                               </div>
