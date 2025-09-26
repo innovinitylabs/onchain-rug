@@ -591,35 +591,6 @@ export default function DashboardPage() {
                               </div>
                             </div>
                           </div>
-
-                          {/* Parsed Aging Data */}
-                          <div>
-                            <div className="text-sm font-medium text-blue-300 mb-1">Parsed Aging Data:</div>
-                            <div className="bg-black/50 rounded p-2 text-xs font-mono text-green-400 max-h-48 overflow-y-auto">
-                              <pre>{JSON.stringify({
-                                dirtLevel: selectedRug.aging.dirtLevel,
-                                textureLevel: selectedRug.aging.textureLevel,
-                                cleaningCount: selectedRug.aging.cleaningCount.toString(),
-                                restorationCount: selectedRug.aging.restorationCount.toString(),
-                                masterRestorationCount: selectedRug.aging.masterRestorationCount.toString(),
-                                launderingCount: selectedRug.aging.launderingCount.toString(),
-                                maintenanceScore: selectedRug.aging.maintenanceScore.toString(),
-                                currentFrameLevel: selectedRug.aging.currentFrameLevel,
-                                isMuseumPiece: selectedRug.aging.isMuseumPiece,
-                                lastSalePrice: selectedRug.aging.lastSalePrice.toString()
-                              }, null, 2)}</pre>
-                            </div>
-                          </div>
-
-                          {/* Data Source Info */}
-                          <div>
-                            <div className="text-sm font-medium text-blue-300 mb-1">Data Sources:</div>
-                            <div className="bg-black/50 rounded p-2 text-xs font-mono text-purple-300">
-                              <div>• NFT Metadata: Alchemy API</div>
-                              <div>• Aging Data: Parsed from tokenURI attributes</div>
-                              <div>• Contract: Diamond Proxy (0xa7e2c645...)</div>
-                            </div>
-                          </div>
                         </div>
                       </div>
                     </div>
