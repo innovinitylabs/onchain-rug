@@ -3,7 +3,7 @@
  * Single source of truth for all blockchain interactions
  */
 
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useRef } from 'react'
 import { useChainId, usePublicClient } from 'wagmi'
 import { ethers } from 'ethers'
 import {
@@ -18,8 +18,122 @@ import {
   handleContractError,
   logContractError,
   withRetry,
-  ContractError
+  ContractError,
+  ContractErrorType
 } from '@/utils/error-utils'
+
+// Request throttling and deduplication
+interface PendingRequest<T> {
+  promise: Promise<T>
+  resolve: (value: T) => void
+  reject: (error: any) => void
+  timestamp: number
+}
+
+class RequestManager {
+  private pendingRequests = new Map<string, PendingRequest<any>>()
+  private lastRequestTime = 0
+  private minRequestInterval = 200 // Minimum 200ms between requests
+
+  async throttle<T>(key: string, fn: () => Promise<T>): Promise<T> {
+    // Check for duplicate request
+    const existing = this.pendingRequests.get(key)
+    if (existing) {
+      console.log(`[RequestManager] Using cached request for ${key}`)
+      return existing.promise
+    }
+
+    // Create new request promise
+    let resolve: (value: T) => void
+    let reject: (error: any) => void
+    const promise = new Promise<T>((res, rej) => {
+      resolve = res
+      reject = rej
+    })
+
+    this.pendingRequests.set(key, {
+      promise,
+      resolve: resolve!,
+      reject: reject!,
+      timestamp: Date.now()
+    })
+
+    try {
+      // Throttle requests
+      const now = Date.now()
+      const timeSinceLastRequest = now - this.lastRequestTime
+      if (timeSinceLastRequest < this.minRequestInterval) {
+        const delay = this.minRequestInterval - timeSinceLastRequest
+        console.log(`[RequestManager] Throttling request for ${delay}ms`)
+        await new Promise(resolve => setTimeout(resolve, delay))
+      }
+
+      const result = await fn()
+      this.lastRequestTime = Date.now()
+      resolve!(result)
+      return result
+    } catch (error) {
+      reject!(error)
+      throw error
+    } finally {
+      // Clean up after a short delay to allow other requests to reuse if needed
+      setTimeout(() => {
+        this.pendingRequests.delete(key)
+      }, 100)
+    }
+  }
+
+  // Enhanced retry with rate limit handling
+  async withRateLimitRetry<T>(
+    fn: () => Promise<T>,
+    maxRetries: number = 3,
+    baseDelay: number = 1000
+  ): Promise<T> {
+    let lastError: any
+
+    for (let i = 0; i <= maxRetries; i++) {
+      try {
+        return await fn()
+      } catch (error) {
+        lastError = error
+
+        // Check if it's a rate limit error
+        const isRateLimit = error?.message?.includes('429') ||
+                           error?.message?.includes('Too Many Requests') ||
+                           error?.code === 429
+
+        if (isRateLimit) {
+          console.warn(`[RequestManager] Rate limit hit, attempt ${i + 1}/${maxRetries + 1}`)
+          if (i < maxRetries) {
+            // Exponential backoff for rate limits (longer delays)
+            const delay = baseDelay * Math.pow(2, i) * 2 // Extra multiplier for rate limits
+            console.log(`[RequestManager] Waiting ${delay}ms before retry`)
+            await new Promise(resolve => setTimeout(resolve, delay))
+            continue
+          }
+        }
+
+        // For non-rate-limit errors, use normal retry logic
+        if (error instanceof Error) {
+          const contractError = handleContractError(error)
+          if (contractError.type === ContractErrorType.VALIDATION_ERROR) {
+            throw contractError
+          }
+        }
+
+        if (i < maxRetries) {
+          const delay = baseDelay * (i + 1)
+          await new Promise(resolve => setTimeout(resolve, delay))
+        }
+      }
+    }
+
+    throw handleContractError(lastError, 'withRateLimitRetry')
+  }
+}
+
+// Global request manager instance
+const requestManager = new RequestManager()
 
 // Types
 export interface ContractCallOptions {
@@ -44,7 +158,7 @@ export function useContractInteraction() {
   // Get contract address for current chain
   const contractAddress = getContractAddress(chainId)
 
-  // Manual eth_call using ethers
+  // Manual eth_call using ethers with throttling
   const callManual = useCallback(async <T>(
     functionName: keyof typeof FUNCTION_SELECTORS,
     tokenId: number,
@@ -55,13 +169,18 @@ export function useContractInteraction() {
       throw new Error('ALCHEMY_API_KEY not configured')
     }
 
-    return withRetry(async () => {
-      const result = await manualEthCall(functionName, tokenId, chainId, apiKey)
-      return decodeContractResult(functionName, result) as T
-    }, options.retries || 3)
+    // Create request key for deduplication
+    const requestKey = `manual-${functionName}-${tokenId}-${chainId}`
+
+    return requestManager.throttle(requestKey, () =>
+      requestManager.withRateLimitRetry(async () => {
+        const result = await manualEthCall(functionName, tokenId, chainId, apiKey)
+        return decodeContractResult(functionName, result) as T
+      }, options.retries || 2, 2000)
+    )
   }, [chainId])
 
-  // Wagmi contract call
+  // Wagmi contract call with throttling and rate limit handling
   const callWagmi = useCallback(async <T>(
     functionName: keyof typeof FUNCTION_SELECTORS,
     tokenId: number,
@@ -71,16 +190,21 @@ export function useContractInteraction() {
       throw new Error('Public client or contract address not available')
     }
 
-    return withRetry(async () => {
-      const result = await publicClient.readContract({
-        address: contractAddress as `0x${string}`,
-        abi: CONTRACT_ABIS[functionName] as any,
-        functionName,
-        args: [BigInt(tokenId)],
-      } as any)
-      return result as T
-    }, options.retries || 3)
-  }, [publicClient, contractAddress])
+    // Create request key for deduplication
+    const requestKey = `${functionName}-${tokenId}-${chainId}`
+
+    return requestManager.throttle(requestKey, () =>
+      requestManager.withRateLimitRetry(async () => {
+        const result = await publicClient.readContract({
+          address: contractAddress as `0x${string}`,
+          abi: CONTRACT_ABIS[functionName] as any,
+          functionName,
+          args: [BigInt(tokenId)],
+        } as any)
+        return result as T
+      }, options.retries || 2, 2000) // Longer base delay for rate limits
+    )
+  }, [publicClient, contractAddress, chainId])
 
   // Unified contract call function
   const callContract = useCallback(async <T>(

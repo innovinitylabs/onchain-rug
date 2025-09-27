@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useAccount, useChainId } from 'wagmi'
-import { estimateContractGasWithRetry, getRecommendedGasOptions, formatGasEstimate } from '@/utils/gas-estimation'
 import { useRugAging, useCleanRug } from '@/hooks/use-rug-aging'
 import { motion } from 'framer-motion'
 import { Droplets, AlertCircle, CheckCircle, Clock } from 'lucide-react'
@@ -64,28 +63,40 @@ export function RugCleaning({ tokenId }: RugCleaningProps) {
     setGasEstimate('')
 
     try {
-      // First estimate gas for better UX
-      const apiKey = process.env.ALCHEMY_API_KEY || process.env.NEXT_PUBLIC_ALCHEMY_API_KEY || ''
+      // First estimate gas using secure server-side API
       const cleaningCost = getCleaningCost()
-      const gasOptions = getRecommendedGasOptions('cleanRug')
 
-      const estimate = await estimateContractGasWithRetry(
-        'cleanRug',
-        [tokenId],
-        gasOptions,
-        chainId,
-        apiKey,
-        BigInt(cleaningCost)
-      )
+      const response = await fetch('/api/gas-estimate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          functionName: 'cleanRug',
+          args: [tokenId.toString()],
+          chainId,
+          value: cleaningCost.toString()
+        })
+      })
 
-      const formatted = formatGasEstimate(estimate)
-      setGasEstimate(formatted.readable)
+      const estimate = await response.json()
+
+      if (!estimate.success) {
+        console.warn('Gas estimation failed, using fallback:', estimate.error)
+      }
+
+      setGasEstimate(estimate.readable)
       setEstimatingGas(false)
 
-      console.log('Gas estimate for cleaning:', formatted)
+      console.log('Gas estimate for cleaning:', estimate)
 
       // Now execute the transaction with estimated gas
-      await cleanRug(tokenId, dirtLevel, lastCleaned ? BigInt(Math.floor(lastCleaned.getTime() / 1000)) : undefined)
+      await cleanRug(
+        tokenId,
+        dirtLevel,
+        lastCleaned ? BigInt(Math.floor(lastCleaned.getTime() / 1000)) : undefined,
+        { gasLimit: BigInt(estimate.gasLimit) }
+      )
       await refetch()
     } catch (err) {
       console.error('Clean rug failed:', err)

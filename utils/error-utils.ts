@@ -9,6 +9,7 @@ export enum ContractErrorType {
   PARSING_ERROR = 'PARSING_ERROR',
   VALIDATION_ERROR = 'VALIDATION_ERROR',
   TIMEOUT_ERROR = 'TIMEOUT_ERROR',
+  RATE_LIMIT_ERROR = 'RATE_LIMIT_ERROR',
   UNKNOWN_ERROR = 'UNKNOWN_ERROR',
 }
 
@@ -83,6 +84,20 @@ export function handleContractError(error: any, context?: string): ContractError
     )
   }
 
+  // Rate limit errors
+  if (error?.code === 429 ||
+      error?.message?.includes('429') ||
+      error?.message?.includes('Too Many Requests') ||
+      error?.message?.includes('rate limit')) {
+    return createContractError(
+      ContractErrorType.RATE_LIMIT_ERROR,
+      'Too many requests. Please wait and try again.',
+      error,
+      context,
+      429
+    )
+  }
+
   // Unknown errors
   return createContractError(
     ContractErrorType.UNKNOWN_ERROR,
@@ -105,6 +120,8 @@ export function getErrorMessage(error: ContractError): string {
       return error.message
     case ContractErrorType.TIMEOUT_ERROR:
       return 'Request timed out. Please try again.'
+    case ContractErrorType.RATE_LIMIT_ERROR:
+      return 'Too many requests to the blockchain network. Please wait a moment and try again.'
     default:
       return 'An unexpected error occurred. Please try again.'
   }

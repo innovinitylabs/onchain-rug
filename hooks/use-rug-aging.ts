@@ -85,7 +85,7 @@ export function useCleanRug() {
 
   const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
 
-  const cleanRug = async (tokenId: bigint, dirtLevel: number, mintTime?: bigint) => {
+  const cleanRug = async (tokenId: bigint, dirtLevel: number, mintTime?: bigint, providedGasEstimate?: { gasLimit: bigint }) => {
     if (!writeContract) return
 
     // Calculate cleaning cost based on age (free for first 30 minutes)
@@ -96,19 +96,33 @@ export function useCleanRug() {
       : agingConfig.cleaningCosts.paid
 
     try {
-      // Get custom gas estimation for complex cleanRug function
-      const apiKey = process.env.ALCHEMY_API_KEY || process.env.NEXT_PUBLIC_ALCHEMY_API_KEY || ''
-      const gasOptions = getRecommendedGasOptions('cleanRug')
-      const gasEstimate = await estimateContractGasWithRetry(
-        'cleanRug',
-        [tokenId],
-        gasOptions,
-        chainId,
-        apiKey,
-        BigInt(cleaningCost)
-      )
+      let gasLimit: bigint
 
-      console.log('CleanRug gas estimation:', formatGasEstimate(gasEstimate))
+      // Use provided gas estimate if available, otherwise do client-side estimation
+      if (providedGasEstimate?.gasLimit) {
+        gasLimit = providedGasEstimate.gasLimit
+        console.log('Using provided gas estimate:', gasLimit.toString())
+      } else {
+        // Fallback: Get custom gas estimation for complex cleanRug function
+        console.warn('No gas estimate provided, falling back to client-side estimation')
+        const apiKey = process.env.ALCHEMY_API_KEY || process.env.NEXT_PUBLIC_ALCHEMY_API_KEY || ''
+        if (!apiKey) {
+          throw new Error('ALCHEMY_API_KEY not configured - gas estimation failed')
+        }
+
+        const gasOptions = getRecommendedGasOptions('cleanRug')
+        const gasEstimate = await estimateContractGasWithRetry(
+          'cleanRug',
+          [tokenId],
+          gasOptions,
+          chainId,
+          apiKey,
+          BigInt(cleaningCost)
+        )
+
+        gasLimit = gasEstimate.gasLimit
+        console.log('CleanRug gas estimation:', formatGasEstimate(gasEstimate))
+      }
 
       const chain = chainId === 360 ? shapeMainnet : shapeSepolia
       await writeContract({
@@ -125,7 +139,7 @@ export function useCleanRug() {
         functionName: 'cleanRug',
         args: [tokenId],
         value: BigInt(cleaningCost),
-        gas: gasEstimate.gasLimit,
+        gas: gasLimit,
         chain,
         account: address,
       })

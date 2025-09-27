@@ -4,10 +4,16 @@
 const usedPaletteIndices = new Set<number>()
 let shuffledPaletteIndices: number[] = []
 
+// Global word tracker to ensure unique words for each rug (excluding WELCOME)
+const usedWordIndices = new Set<number>()
+let shuffledWordIndices: number[] = []
+
 // Function to reset global state
 const resetGlobalState = () => {
   usedPaletteIndices.clear()
   shuffledPaletteIndices = []
+  usedWordIndices.clear()
+  shuffledWordIndices = []
 }
 
 // --- ani-seeded RNG utilities ---
@@ -110,7 +116,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
       usedPaletteIndices.clear()
       shuffledPaletteIndices = []
     }
-    
+
     // If we need to shuffle, create a new shuffled array
     if (shuffledPaletteIndices.length === 0) {
       shuffledPaletteIndices = Array.from({ length: totalPalettes }, (_, i) => i)
@@ -120,10 +126,44 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
         [shuffledPaletteIndices[i], shuffledPaletteIndices[j]] = [shuffledPaletteIndices[j], shuffledPaletteIndices[i]]
       }
     }
-    
+
     // Get the next unused palette index
     const nextIndex = shuffledPaletteIndices[usedPaletteIndices.size]
     usedPaletteIndices.add(nextIndex)
+    return nextIndex
+  }
+
+  // Function to get a unique word index (excluding WELCOME for non-first rugs)
+  const getUniqueWordIndex = (rugWords: string[], isFirstRug: boolean): number => {
+    const totalWords = rugWords.length
+
+    // If this is the first rug, always return WELCOME (index 0)
+    if (isFirstRug) {
+      return 0
+    }
+
+    // For non-first rugs, work with words excluding WELCOME
+    const availableWords = totalWords - 1 // Exclude WELCOME
+
+    // If we've used all available words, reset and shuffle again
+    if (usedWordIndices.size >= availableWords) {
+      usedWordIndices.clear()
+      shuffledWordIndices = []
+    }
+
+    // If we need to shuffle, create a new shuffled array of indices 1+ (excluding WELCOME)
+    if (shuffledWordIndices.length === 0) {
+      shuffledWordIndices = Array.from({ length: availableWords }, (_, i) => i + 1) // Start from index 1
+      // Fisher-Yates shuffle
+      for (let i = shuffledWordIndices.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffledWordIndices[i], shuffledWordIndices[j]] = [shuffledWordIndices[j], shuffledWordIndices[i]]
+      }
+    }
+
+    // Get the next unused word index
+    const nextIndex = shuffledWordIndices[usedWordIndices.size]
+    usedWordIndices.add(nextIndex)
     return nextIndex
   }
   
@@ -937,10 +977,9 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
     const lightTextColor = lerpColorP5(lightest, '#ffffff', 0.3)
     const darkTextColor = lerpColorP5(darkest, '#000000', 0.4)
 
-    // Use deterministic word selection
-    const aniSelectedWord = isFirstRug
-      ? 'WELCOME'
-      : rugWords[aniRandom.nextInt(0, rugWords.length)]
+    // Use deterministic word selection with unique word tracking
+    const wordIndex = getUniqueWordIndex(rugWords, isFirstRug)
+    const aniSelectedWord = rugWords[wordIndex]
     const aniTextData = generateTextDataForRug(aniSelectedWord, 800, doormatHeight, fringeLength)
 
     // --- Draw text with per-pixel coloring and shadow using doormat.js logic ---

@@ -303,6 +303,11 @@ export default function DashboardPage() {
                 rugs.push(rugData)
                 console.log(`Successfully added rug #${tokenId} to list`)
               }
+
+              // Add delay between requests to avoid rate limiting
+              if (ownerData.ownedNfts.indexOf(nft) < ownerData.ownedNfts.length - 1) {
+                await new Promise(resolve => setTimeout(resolve, 500)) // 500ms delay
+              }
             } catch (error) {
               console.error(`Failed to fetch rug data for token ${nft.tokenId}:`, error)
             }
@@ -335,6 +340,11 @@ export default function DashboardPage() {
                   rugs.push(rugData)
                   console.log(`Successfully added test rug #${testTokenId}`)
                 }
+              }
+
+              // Add delay between requests to avoid rate limiting
+              if (testTokenIds.indexOf(testTokenId) < testTokenIds.length - 1) {
+                await new Promise(resolve => setTimeout(resolve, 500)) // 500ms delay
               }
             } catch (error) {
               // Token doesn't exist or not owned by user, skip
