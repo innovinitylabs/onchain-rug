@@ -10,7 +10,6 @@ import Footer from '@/components/Footer'
 import { RugCleaning } from '@/components/RugCleaning'
 import { RugMarketplace } from '@/components/RugMarketplace'
 import { LiveRugStatus } from '@/components/LiveRugStatus'
-import { ManualTokenURIFetch } from '@/components/ManualTokenURIFetch'
 import { useRugData } from '@/hooks/use-rug-data'
 import LiquidGlass from '@/components/LiquidGlass'
 import { config } from '@/lib/config'
@@ -752,10 +751,6 @@ export default function DashboardPage() {
                         <LiveRugStatus tokenId={selectedRug.tokenId.toString()} />
                       </div>
 
-                      {/* Manual TokenURI Fetch Demo */}
-                      <div className="flex justify-center mt-6">
-                        <ManualTokenURIFetch />
-                      </div>
 
                       {/* Marketplace */}
                       <div className="bg-slate-700/50 rounded-lg p-4">
