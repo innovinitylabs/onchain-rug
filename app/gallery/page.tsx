@@ -568,7 +568,7 @@ export default function GalleryPage() {
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-2xl mx-auto">
           <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 border border-blue-200/50">
-            <div className="text-2xl font-bold text-blue-600">{totalSupply ? Number(totalSupply) : 1111}</div>
+            <div className="text-2xl font-bold text-blue-600">{totalSupply ? Number(totalSupply) : 10000}</div>
             <div className="text-sm text-blue-700">Total Supply</div>
           </div>
           <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 border border-indigo-200/50">

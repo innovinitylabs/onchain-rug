@@ -2,13 +2,14 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Shuffle, Download, FileText, Plus, X } from 'lucide-react'
+import { Shuffle, Download, FileText, Plus, X, Copy } from 'lucide-react'
 import Navigation from '@/components/Navigation'
 import NFTExporter from '@/components/NFTExporter'
 import Web3Minting from '@/components/Web3Minting'
 import SimpleMinting from '@/components/SimpleMinting'
 import Footer from '@/components/Footer'
 import { initPRNG, getPRNG, createDerivedPRNG } from '@/lib/DeterministicPRNG'
+import { config } from '@/lib/config'
 
 export default function GeneratorPage() {
   const [isLoaded, setIsLoaded] = useState(false)
@@ -267,7 +268,9 @@ export default function GeneratorPage() {
       '=': ["00000","00000","11111","00000","11111","00000","00000"],
       "'": ["00100","00100","00100","00000","00000","00000","00000"],
       '"': ["01010","01010","01010","00000","00000","00000","00000"],
-      '.': ["00000","00000","00000","00000","00000","00100","00100"]
+      '.': ["00000","00000","00000","00000","00000","00100","00100"],
+      '<': ["00010","00100","01000","10000","01000","00100","00010"],
+      '>': ["01000","00100","00010","00001","00010","00100","01000"]
     }
     
     // Global variables for NFTExporter
@@ -2026,7 +2029,7 @@ export default function GeneratorPage() {
   // Generate new doormat
   const generateNew = () => {
     // Generate a random seed like before
-    const seed = Math.floor(Math.random() * 10000)
+    const seed = Math.floor(Math.random() * 1000000)
     setCurrentSeed(seed)
     
     if (typeof window !== 'undefined' && (window as any).p5Instance) {
@@ -2121,8 +2124,8 @@ export default function GeneratorPage() {
   // Update text input with automatic embedding
   const updateTextInput = (index: number, value: string) => {
     const newInputs = [...textInputs]
-    // Allow all characters from the characterMap: A-Z, 0-9, space, ?, _, !, @, #, $, &, %, +, -, (, ), [, ], *, =, ', ", .
-    const allowedChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ?_!@#$&%+-()[]*=\'"\\.'.split('')
+    // Allow all characters from the characterMap: A-Z, 0-9, space, ?, _, !, @, #, $, &, %, +, -, (, ), [, ], *, =, ', ", ., <, >
+    const allowedChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ?_!@#$&%+-()[]*=\'"\\.><'.split('')
     newInputs[index] = value.toUpperCase()
       .split('')
       .filter(char => allowedChars.includes(char))
@@ -2399,7 +2402,7 @@ export default function GeneratorPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="w-full"
+            className="w-full pb-8"
           >
             <div className="relative mx-auto w-full max-w-6xl px-4 md:px-6 lg:px-8">
               <div className="bg-black text-green-400 font-mono border-t-2 border-green-500 py-3 md:py-4 px-4 md:px-6">
@@ -2498,6 +2501,23 @@ export default function GeneratorPage() {
                   </button>
                 </div>
                 
+                {/* Contract Address Display */}
+                <div className="space-y-2">
+                  <h4 className="text-green-300 text-sm font-mono font-medium">CONTRACT ADDRESS</h4>
+                  <div className="bg-gray-900/50 p-3 rounded">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="text-green-400 text-xs font-mono break-all flex-1">
+                        {config.rugContractAddress}
+                      </div>
+                      <Copy
+                        onClick={() => copyToClipboard(config.rugContractAddress, 'contract address')}
+                        className="text-green-500 hover:text-green-300 cursor-pointer transition-colors w-4 h-4"
+                        title="Copy contract address"
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 {/* Text Input Section */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
@@ -2505,8 +2525,8 @@ export default function GeneratorPage() {
                     <span className="text-green-500 text-xs font-mono">{currentRowCount}/5 rows</span>
                   </div>
                   
-                  <div className="text-green-400 text-xs font-mono bg-gray-900/50 p-2 rounded border border-green-500/30">
-                    Allowed: A-Z, 0-9, space, ? _ ! @ # $ & % + - ( ) [ ] * = &apos; &quot;
+                  <div className="text-green-400 text-xs font-mono bg-gray-900/50 p-2 rounded">
+                    Allowed: A-Z, 0-9, space, ? _ ! @ # $ & % + - ( ) [ ] * = &apos; &quot; . &lt; &gt;
                   </div>
 
                   {/* Compact Text Inputs */}
@@ -2520,7 +2540,7 @@ export default function GeneratorPage() {
                         onChange={(e) => updateTextInput(index, e.target.value)}
                           placeholder={`Row ${index + 1}`}
                         maxLength={11}
-                          className="flex-1 px-2 py-1.5 bg-gray-900 border border-green-500/50 text-green-400 rounded text-sm font-mono focus:ring-1 focus:ring-green-500 focus:border-transparent transition-all"
+                          className="flex-1 px-2 py-1.5 bg-gray-900 text-green-400 rounded text-sm font-mono focus:ring-1 focus:ring-green-500 transition-all"
                       />
                       {index > 0 && (
                         <button
@@ -2564,7 +2584,7 @@ export default function GeneratorPage() {
                     </span>
                   </div>
                   
-                  <div className="text-green-400 text-xs font-mono bg-gray-900/50 p-2 rounded border border-green-500/30">
+                  <div className="text-green-400 text-xs font-mono bg-gray-900/50 p-2 rounded">
                     Dynamic dirt accumulation: 50% after 3 days, 100% after 7 days. Clean with onchain transaction.
                   </div>
 
@@ -2617,7 +2637,7 @@ export default function GeneratorPage() {
                     </span>
                   </div>
                   
-                  <div className="text-green-400 text-xs font-mono bg-gray-900/50 p-2 rounded border border-green-500/30">
+                  <div className="text-green-400 text-xs font-mono bg-gray-900/50 p-2 rounded">
                     Time-based texture wear: appears after 7 days, intensifies after 30 days. Creates realistic fabric aging.
                   </div>
 
@@ -2900,7 +2920,8 @@ export default function GeneratorPage() {
                     </div>
                   </div>
 
-                  {/* NFT Exporter Component */}
+                  {/* NFT Exporter Component - Hidden */}
+                  {false && (
                   <NFTExporter
                     currentSeed={currentSeed}
                     currentPalette={palette}
@@ -2908,6 +2929,7 @@ export default function GeneratorPage() {
                     textRows={textInputs}
                     characterMap={typeof window !== 'undefined' ? (window as any).doormatData?.characterMap || {} : {}}
                   />
+                  )}
 
                   {/* Web3 Minting Component */}
                   <Web3Minting

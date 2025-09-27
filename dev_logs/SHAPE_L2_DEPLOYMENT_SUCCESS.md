@@ -8,7 +8,7 @@
 ## Contract Details
 - **Name:** Onchain Rugs
 - **Symbol:** RUGS  
-- **Max Supply:** 1111
+- **Max Supply:** 10000
 - **Owner:** 0x7Bc9427C8730b87Ab3faD10DA63F0C4b9e9E0A5F
 
 ## Features Working

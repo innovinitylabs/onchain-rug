@@ -154,7 +154,7 @@ export default function Features() {
             <div className="relative p-8 md:p-12">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
                 <div>
-                  <div className="text-4xl md:text-5xl font-bold text-cyan-400 mb-2">1111</div>
+                  <div className="text-4xl md:text-5xl font-bold text-cyan-400 mb-2">10K</div>
                   <div className="text-gray-300 font-medium">Max Supply</div>
                 </div>
                 <div>

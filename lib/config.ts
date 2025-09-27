@@ -49,7 +49,7 @@ export const config = {
   
   // Minting configuration
   minting: {
-    maxSupply: 1111,
+    maxSupply: 10000,
     basePrice: '100000000000', // 0.0000001 ETH in wei (base price for any mint)
     additionalLinePrices: {
       lines2to3: 0.0000001, // ETH (additional for lines 2-3)

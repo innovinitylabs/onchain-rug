@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Onchain Rugs - Generative NFT Art on the Blockchain",
-  description: "Create unique, woven onchain rugs NFTs with 102 color palettes, custom text embedding, and authentic cloth physics. Max supply: 1111 rugs.",
+  description: "Create unique, woven onchain rugs NFTs with 102 color palettes, custom text embedding, and authentic cloth physics. Max supply: 10000 rugs.",
   icons: {
     icon: '/valipokkann.svg',
     shortcut: '/valipokkann.svg',
