@@ -159,7 +159,7 @@ contract DeployShapeSepolia is Script {
             functionSelectors: _getRugNFTSelectors()
         });
         IDiamondCut(diamondAddr).diamondCut(nftCut, address(0), "");
-        console.log("   Added RugNFTFacet");
+        console.log("   Added RugNFTFacet with all ERC721 functions");
 
         // Add RugAdminFacet
         IDiamondCut.FacetCut[] memory adminCut = new IDiamondCut.FacetCut[](1);
@@ -325,13 +325,36 @@ contract DeployShapeSepolia is Script {
     }
 
     function _getRugNFTSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](6);
-        selectors[0] = RugNFTFacet.mintRug.selector;
-        selectors[1] = RugNFTFacet.burn.selector;
-        selectors[2] = RugNFTFacet.getRugData.selector;
-        selectors[3] = RugNFTFacet.getAgingData.selector;
-        selectors[4] = RugNFTFacet.tokenURI.selector;
-        selectors[5] = RugNFTFacet.getMintPrice.selector;
+        bytes4[] memory selectors = new bytes4[](25);
+        // ERC721 Standard Functions (hardcoded selectors from forge inspect)
+        selectors[0] = bytes4(0x70a08231); // balanceOf(address)
+        selectors[1] = bytes4(0x6352211e); // ownerOf(uint256)
+        selectors[2] = bytes4(0x42842e0e); // safeTransferFrom(address,address,uint256)
+        selectors[3] = bytes4(0x23b872dd); // transferFrom(address,address,uint256)
+        selectors[4] = bytes4(0x095ea7b3); // approve(address,uint256)
+        selectors[5] = bytes4(0xa22cb465); // setApprovalForAll(address,bool)
+        selectors[6] = bytes4(0x081812fc); // getApproved(uint256)
+        selectors[7] = bytes4(0xe985e9c5); // isApprovedForAll(address,address)
+        selectors[8] = bytes4(0x06fdde03); // name()
+        selectors[9] = bytes4(0x95d89b41); // symbol()
+        selectors[10] = bytes4(0xc87b56dd); // tokenURI(uint256)
+        selectors[11] = bytes4(0x18160ddd); // totalSupply()
+        selectors[12] = bytes4(0x01ffc9a7); // supportsInterface(bytes4)
+        selectors[13] = bytes4(0xb88d4fde); // safeTransferFrom(address,address,uint256,bytes)
+
+        // Rug-specific functions
+        selectors[14] = RugNFTFacet.mintRug.selector;             // 0f495d0c
+        selectors[15] = RugNFTFacet.burn.selector;                // 42966c68
+        selectors[16] = RugNFTFacet.getRugData.selector;          // 2e99fe3f
+        selectors[17] = RugNFTFacet.getAgingData.selector;        // a8accc46
+        selectors[18] = RugNFTFacet.getMintPrice.selector;        // 559e775b
+        selectors[19] = RugNFTFacet.canMint.selector;             // c2ba4744
+        selectors[20] = RugNFTFacet.isTextAvailable.selector;     // fdd9d9e8
+        selectors[21] = RugNFTFacet.maxSupply.selector;           // d5abeb01
+        selectors[22] = RugNFTFacet.walletMints.selector;         // f0293fd3
+        selectors[23] = RugNFTFacet.isWalletException.selector;   // 2d2bf633
+        selectors[24] = RugNFTFacet.getFrameLevel.selector;       // ceffb063
+
         return selectors;
     }
 
