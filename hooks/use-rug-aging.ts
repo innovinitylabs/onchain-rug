@@ -4,6 +4,7 @@ import { config, agingConfig } from '@/lib/config'
 import { shapeSepolia, shapeMainnet, contractAddresses } from '@/lib/web3'
 import { useTokenURI } from './use-token-uri'
 import { getDirtDescription, getTextureDescription } from '@/utils/parsing-utils'
+import { estimateContractGasWithRetry, getRecommendedGasOptions, formatGasEstimate } from '@/utils/gas-estimation'
 
 // Rug aging hook for managing dirt and texture states
 export function useRugAging(tokenId?: bigint) {
@@ -95,6 +96,20 @@ export function useCleanRug() {
       : agingConfig.cleaningCosts.paid
 
     try {
+      // Get custom gas estimation for complex cleanRug function
+      const apiKey = process.env.ALCHEMY_API_KEY || process.env.NEXT_PUBLIC_ALCHEMY_API_KEY || ''
+      const gasOptions = getRecommendedGasOptions('cleanRug')
+      const gasEstimate = await estimateContractGasWithRetry(
+        'cleanRug',
+        [tokenId],
+        gasOptions,
+        chainId,
+        apiKey,
+        BigInt(cleaningCost)
+      )
+
+      console.log('CleanRug gas estimation:', formatGasEstimate(gasEstimate))
+
       const chain = chainId === 360 ? shapeMainnet : shapeSepolia
       await writeContract({
         address: contractAddress as `0x${string}`,
@@ -110,6 +125,7 @@ export function useCleanRug() {
         functionName: 'cleanRug',
         args: [tokenId],
         value: BigInt(cleaningCost),
+        gas: gasEstimate.gasLimit,
         chain,
         account: address,
       })

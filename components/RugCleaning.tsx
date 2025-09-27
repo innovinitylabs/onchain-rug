@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useAccount, useChainId } from 'wagmi'
+import { estimateContractGasWithRetry, getRecommendedGasOptions, formatGasEstimate } from '@/utils/gas-estimation'
 import { useRugAging, useCleanRug } from '@/hooks/use-rug-aging'
 import { motion } from 'framer-motion'
 import { Droplets, AlertCircle, CheckCircle, Clock } from 'lucide-react'
@@ -16,13 +17,16 @@ export function RugCleaning({ tokenId }: RugCleaningProps) {
   const { address, isConnected } = useAccount()
   const chainId = useChainId()
   const { dirtLevel, textureLevel, lastCleaned, refetch } = useRugAging(tokenId)
-  const { 
-    cleanRug, 
-    isPending, 
-    isConfirming, 
-    isSuccess, 
-    error 
+  const {
+    cleanRug,
+    isPending,
+    isConfirming,
+    isSuccess,
+    error
   } = useCleanRug()
+
+  const [gasEstimate, setGasEstimate] = useState<string>('')
+  const [estimatingGas, setEstimatingGas] = useState(false)
 
   const isCorrectChain = chainId === config.chainId
   const needsCleaning = dirtLevel > 0
@@ -55,13 +59,46 @@ export function RugCleaning({ tokenId }: RugCleaningProps) {
 
   const handleClean = async () => {
     if (!isConnected || !isCorrectChain || !needsCleaning) return
-    await cleanRug(tokenId, dirtLevel)
+
+    setEstimatingGas(true)
+    setGasEstimate('')
+
+    try {
+      // First estimate gas for better UX
+      const apiKey = process.env.ALCHEMY_API_KEY || process.env.NEXT_PUBLIC_ALCHEMY_API_KEY || ''
+      const cleaningCost = getCleaningCost()
+      const gasOptions = getRecommendedGasOptions('cleanRug')
+
+      const estimate = await estimateContractGasWithRetry(
+        'cleanRug',
+        [tokenId],
+        gasOptions,
+        chainId,
+        apiKey,
+        BigInt(cleaningCost)
+      )
+
+      const formatted = formatGasEstimate(estimate)
+      setGasEstimate(formatted.readable)
+      setEstimatingGas(false)
+
+      console.log('Gas estimate for cleaning:', formatted)
+
+      // Now execute the transaction with estimated gas
+      await cleanRug(tokenId, dirtLevel, lastCleaned ? BigInt(Math.floor(lastCleaned.getTime() / 1000)) : undefined)
+      await refetch()
+    } catch (err) {
+      console.error('Clean rug failed:', err)
+      setEstimatingGas(false)
+      setGasEstimate('')
+    }
   }
 
   const getCleanButtonText = () => {
     if (!isConnected) return 'Connect Wallet to Clean'
     if (!isCorrectChain) return `Switch to ${config.chainId === 360 ? 'Shape Mainnet' : 'Shape Sepolia'}`
     if (!needsCleaning) return 'Rug is Already Clean'
+    if (estimatingGas) return 'Estimating Gas...'
     if (isPending) return 'Cleaning...'
     if (isConfirming) return 'Confirming...'
     return `Clean Rug (${formatEther(BigInt(getCleaningCost()))} ETH)`
@@ -141,6 +178,18 @@ export function RugCleaning({ tokenId }: RugCleaningProps) {
           <div className="flex items-center gap-2 text-green-400 text-sm font-mono">
             <CheckCircle className="w-4 h-4" />
             Rug cleaned successfully! Refreshing status...
+          </div>
+        </div>
+      )}
+
+      {/* Gas Estimation Display */}
+      {gasEstimate && (
+        <div className="bg-blue-900/50 border border-blue-500/30 rounded p-3">
+          <div className="flex items-center gap-2 text-blue-400 text-sm font-mono mb-1">
+            ⛽ Gas Estimate
+          </div>
+          <div className="text-blue-300 text-xs font-mono break-all">
+            {gasEstimate}
           </div>
         </div>
       )}
