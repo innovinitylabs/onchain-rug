@@ -4,8 +4,7 @@ import { useEffect, useState } from 'react';
 
 // Available background images for desktop
 const desktopBackgrounds = [
-  '/backgrounds/anime-style-clouds-1.jpg',
-  '/backgrounds/anime-style-clouds-2.jpg'
+  '/backgrounds/anime-style-clouds-1.jpg'
 ];
 
 // Available background images for mobile (vertical)
