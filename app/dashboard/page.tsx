@@ -15,20 +15,20 @@ import { useRugData } from '@/hooks/use-rug-data'
 import LiquidGlass from '@/components/LiquidGlass'
 import { config } from '@/lib/config'
 import { formatEther } from 'viem'
+import { parseTokenURIData } from '@/utils/parsing-utils'
 
 // Types for our NFT data
 interface RugTraits {
-  seed: bigint
-  paletteName: string
-  minifiedPalette: string
-  minifiedStripeData: string
-  textRows: string[]
-  warpThickness: number
-  mintTime: bigint
-  filteredCharacterMap: string
-  complexity: number
-  characterCount: bigint
-  stripeCount: bigint
+  seed?: string
+  paletteName?: string
+  minifiedPalette?: string
+  minifiedStripeData?: string
+  textRows?: string[]
+  warpThickness?: number
+  complexity?: number
+  characterCount?: number
+  stripeCount?: number
+  mintTime?: number
 }
 
 // Parse aging data from tokenURI attributes
@@ -157,11 +157,85 @@ export default function DashboardPage() {
       console.log(`Got tokenURI for rug #${tokenId}:`, tokenURI ? 'success' : 'empty')
 
       if (tokenURI) {
-        // Parse the tokenURI JSON data using new utilities
-        const { parseTokenURIData } = await import('@/utils/parsing-utils')
-        const parsedData = parseTokenURIData(tokenURI)
+        try {
+          // Parse the tokenURI JSON data using new utilities
+          const parsedData = parseTokenURIData(tokenURI)
+          console.log(`Parsed data for rug #${tokenId}:`, {
+            name: parsedData.name,
+            dirtLevel: parsedData.aging.dirtLevel,
+            textureLevel: parsedData.aging.textureLevel,
+          })
 
-        // Get owner
+          // Get owner
+          const ownerOf = await publicClient.readContract({
+            address: contractAddress as `0x${string}`,
+            abi: onchainRugsABI,
+            functionName: 'ownerOf',
+            args: [BigInt(tokenId)]
+          } as any) as string
+
+          // Create rug data object
+          const rugData: RugData = {
+            tokenId,
+            tokenURI,
+            metadata: parsedData.metadata,
+            aging: parsedData.aging,
+            traits: parsedData.traits,
+            animation_url: parsedData.animationUrl,
+            image: parsedData.image,
+            name: parsedData.name,
+            owner: ownerOf,
+            dirtDescription: parsedData.aging.dirtLevel === 0 ? 'Clean' : 'Dirty',
+            textureDescription: parsedData.aging.textureLevel === 0 ? 'Smooth' : 'Worn',
+            isClean: parsedData.aging.dirtLevel === 0,
+            needsCleaning: parsedData.aging.dirtLevel > 0,
+            cleaningCost: parsedData.aging.dirtLevel > 0 ? 0.01 : 0,
+          }
+
+          return rugData
+        } catch (parseError) {
+          console.error(`Failed to parse tokenURI for rug #${tokenId}:`, parseError)
+          // If parsing fails, try the fallback approach
+          return await fetchRugDataFallback(tokenId)
+        }
+      } else {
+        console.warn(`Empty tokenURI for rug #${tokenId}`)
+        return null
+      }
+    } catch (error) {
+      console.error(`Failed to fetch rug data for token ${tokenId}:`, error)
+      return null
+    }
+  }
+
+  // Fallback function for parsing tokenURI
+  const fetchRugDataFallback = async (tokenId: number): Promise<RugData | null> => {
+    try {
+      const tokenURI = await publicClient.readContract({
+        address: contractAddress as `0x${string}`,
+        abi: onchainRugsABI,
+        functionName: 'tokenURI',
+        args: [BigInt(tokenId)]
+      } as any) as string
+
+      if (tokenURI && tokenURI.startsWith('data:application/json;base64,')) {
+        // Manual parsing as fallback
+        const jsonString = tokenURI.replace('data:application/json;base64,', '')
+        const metadata = JSON.parse(atob(jsonString))
+
+        const attributes = metadata.attributes || []
+        const getAttributeValue = (traitType: string) => {
+          const attr = attributes.find((a: any) => a.trait_type === traitType)
+          return attr ? attr.value : 0
+        }
+
+        const aging = {
+          dirtLevel: parseInt(getAttributeValue('Dirt Level')) || 0,
+          textureLevel: parseInt(getAttributeValue('Texture Level')) || 0,
+          lastCleaned: BigInt(0), // Not available in attributes
+          mintTime: parseInt(getAttributeValue('Mint Time')) || 0,
+        }
+
         const ownerOf = await publicClient.readContract({
           address: contractAddress as `0x${string}`,
           abi: onchainRugsABI,
@@ -169,31 +243,26 @@ export default function DashboardPage() {
           args: [BigInt(tokenId)]
         } as any) as string
 
-        // Create rug data object
-        const rugData: RugData = {
+        return {
           tokenId,
           tokenURI,
-          metadata: parsedData.metadata,
-          aging: parsedData.aging,
-          traits: parsedData.traits,
-          animation_url: parsedData.animationUrl,
-          image: parsedData.image,
-          name: parsedData.name,
+          metadata,
+          aging,
+          traits: metadata.rugData || {},
+          animation_url: metadata.animation_url,
+          image: metadata.image,
+          name: metadata.name,
           owner: ownerOf,
-          dirtDescription: parsedData.aging.dirtLevel === 0 ? 'Clean' : 'Dirty',
-          textureDescription: parsedData.aging.textureLevel === 0 ? 'Smooth' : 'Worn',
-          isClean: parsedData.aging.dirtLevel === 0,
-          needsCleaning: parsedData.aging.dirtLevel > 0,
-          cleaningCost: parsedData.aging.dirtLevel > 0 ? 0.01 : 0,
+          dirtDescription: aging.dirtLevel === 0 ? 'Clean' : 'Dirty',
+          textureDescription: aging.textureLevel === 0 ? 'Smooth' : 'Worn',
+          isClean: aging.dirtLevel === 0,
+          needsCleaning: aging.dirtLevel > 0,
+          cleaningCost: aging.dirtLevel > 0 ? 0.01 : 0,
         }
-
-        return rugData
-      } else {
-        console.warn(`Empty tokenURI for rug #${tokenId}`)
-        return null
       }
+      return null
     } catch (error) {
-      console.error(`Failed to fetch rug data for token ${tokenId}:`, error)
+      console.error(`Fallback parsing failed for rug #${tokenId}:`, error)
       return null
     }
   }
