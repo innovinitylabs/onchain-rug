@@ -2460,13 +2460,13 @@ export default function GeneratorPage() {
               {/* Revamped Terminal Interface */}
               <div className="space-y-4">
                 {/* Seed Input Section - Hidden but can be restored */}
-                {/* 
+                {/*
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <h4 className="text-green-300 text-sm font-mono font-medium">SEED</h4>
                     <span className="text-green-500 text-xs font-mono">Deterministic generation</span>
                   </div>
-                  
+
                   <div className="flex gap-2">
                     <input
                       type="number"
@@ -2482,7 +2482,7 @@ export default function GeneratorPage() {
                       RANDOM
                     </button>
                   </div>
-                  
+
                   <div className="text-green-400 text-xs font-mono bg-gray-900/50 p-2 rounded border border-green-500/30">
                     Same seed = identical doormat. Try: 4241, 1234, 9999
                   </div>
@@ -2500,7 +2500,7 @@ export default function GeneratorPage() {
                     GENERATE
                   </button>
                 </div>
-                
+
                 {/* Contract Address Display */}
                 <div className="space-y-2">
                   <h4 className="text-green-300 text-sm font-mono font-medium">CONTRACT ADDRESS</h4>
@@ -2518,166 +2518,172 @@ export default function GeneratorPage() {
                   </div>
                 </div>
 
-                {/* Text Input Section */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-green-300 text-sm font-mono font-medium">TEXT EMBEDDING</h4>
-                    <span className="text-green-500 text-xs font-mono">{currentRowCount}/5 rows</span>
-                  </div>
-                  
-                  <div className="text-green-400 text-xs font-mono bg-gray-900/50 p-2 rounded">
-                    Allowed: A-Z, 0-9, space, ? _ ! @ # $ & % + - ( ) [ ] * = &apos; &quot; . &lt; &gt;
-                  </div>
+                {/* Two-Panel Layout: Text Embedding (Left) | Systems (Right) */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Left Panel - Text Embedding */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-green-300 text-sm font-mono font-medium">TEXT EMBEDDING</h4>
+                      <span className="text-green-500 text-xs font-mono">{currentRowCount}/5 rows</span>
+                    </div>
 
-                  {/* Compact Text Inputs */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                  {textInputs.map((text, index) => (
-                      <div key={index} className="flex items-center gap-2">
-                        <span className="text-green-400 font-mono text-sm min-w-[20px]">{index + 1}.</span>
-                      <input
-                        type="text"
-                        value={text}
-                        onChange={(e) => updateTextInput(index, e.target.value)}
-                          placeholder={`Row ${index + 1}`}
-                        maxLength={11}
-                          className="flex-1 px-2 py-1.5 bg-gray-900 text-green-400 rounded text-sm font-mono focus:ring-1 focus:ring-green-500 transition-all"
-                      />
-                      {index > 0 && (
+                    <div className="text-green-400 text-xs font-mono bg-gray-900/50 p-2 rounded">
+                      Allowed: A-Z, 0-9, space, ? _ ! @ # $ & % + - ( ) [ ] * = &apos; &quot; . &lt; &gt;
+                    </div>
+
+                    {/* Compact Text Inputs */}
+                    <div className="space-y-2">
+                      {textInputs.map((text, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                          <span className="text-green-400 font-mono text-sm min-w-[20px]">{index + 1}.</span>
+                          <input
+                            type="text"
+                            value={text}
+                            onChange={(e) => updateTextInput(index, e.target.value)}
+                            placeholder={`Row ${index + 1}`}
+                            maxLength={11}
+                            className="flex-1 px-2 py-1.5 bg-gray-900 text-green-400 rounded text-sm font-mono focus:ring-1 focus:ring-green-500 transition-all"
+                          />
+                          {index > 0 && (
+                            <button
+                              onClick={() => removeTextRow(index)}
+                              className="bg-red-600/80 hover:bg-red-600 text-white p-1 rounded transition-colors"
+                              title="Remove row"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Text Control Actions */}
+                    <div className="flex flex-wrap gap-2">
+                      {currentRowCount < 5 && (
                         <button
-                          onClick={() => removeTextRow(index)}
-                            className="bg-red-600/80 hover:bg-red-600 text-white p-1 rounded transition-colors"
-                            title="Remove row"
+                          onClick={addTextRow}
+                          className="bg-green-600/80 hover:bg-green-600 text-black font-bold px-3 py-1.5 rounded font-mono transition-all duration-200 border border-green-400 flex items-center gap-1.5 text-xs"
                         >
-                            <X className="w-3 h-3" />
+                          <Plus className="w-3 h-3" />
+                          ADD ROW
                         </button>
                       )}
-                    </div>
-                  ))}
-                  </div>
-                  
-                  {/* Text Control Actions */}
-                  <div className="flex flex-wrap gap-2">
-                    {currentRowCount < 5 && (
                       <button
-                        onClick={addTextRow}
-                        className="bg-green-600/80 hover:bg-green-600 text-black font-bold px-3 py-1.5 rounded font-mono transition-all duration-200 border border-green-400 flex items-center gap-1.5 text-xs"
+                        onClick={clearText}
+                        className="bg-gray-600/80 hover:bg-gray-600 text-white px-3 py-1.5 rounded font-mono transition-all duration-200 border border-gray-400 text-xs"
                       >
-                        <Plus className="w-3 h-3" />
-                        ADD ROW
+                        CLEAR
                       </button>
-                    )}
-                    <button
-                      onClick={clearText}
-                      className="bg-gray-600/80 hover:bg-gray-600 text-white px-3 py-1.5 rounded font-mono transition-all duration-200 border border-gray-400 text-xs"
-                    >
-                      CLEAR
-                    </button>
-                  </div>
-                </div>
-
-                {/* Dirt System Controls */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-green-300 text-sm font-mono font-medium">DIRT SYSTEM</h4>
-                    <span className="text-green-500 text-xs font-mono">
-                      {showDirt ? `${dirtLevel === 1 ? '50%' : '100%'} dirty` : 'Clean'}
-                    </span>
-                  </div>
-                  
-                  <div className="text-green-400 text-xs font-mono bg-gray-900/50 p-2 rounded">
-                    Dynamic dirt accumulation: 50% after 3 days, 100% after 7 days. Clean with onchain transaction.
+                    </div>
                   </div>
 
-                  {/* Dirt Toggle */}
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => updateDirtState(!showDirt, dirtLevel)}
-                      className={`px-3 py-1.5 rounded font-mono text-xs transition-all duration-200 border ${
-                        showDirt 
-                          ? 'bg-orange-600/80 hover:bg-orange-600 text-white border-orange-400' 
-                          : 'bg-gray-600/80 hover:bg-gray-600 text-white border-gray-400'
-                      }`}
-                    >
-                      {showDirt ? 'HIDE DIRT' : 'SHOW DIRT'}
-                    </button>
-                    
-                    {showDirt && (
-                      <div className="flex gap-1">
-                        <button
-                          onClick={() => updateDirtState(showDirt, 1)}
-                          className={`px-2 py-1 rounded font-mono text-xs transition-all duration-200 border ${
-                            dirtLevel === 1 
-                              ? 'bg-yellow-600 text-white border-yellow-400' 
-                              : 'bg-gray-700 text-gray-300 border-gray-500 hover:bg-gray-600'
-                          }`}
-                        >
-                          50%
-                        </button>
-                        <button
-                          onClick={() => updateDirtState(showDirt, 2)}
-                          className={`px-2 py-1 rounded font-mono text-xs transition-all duration-200 border ${
-                            dirtLevel === 2 
-                              ? 'bg-red-600 text-white border-red-400' 
-                              : 'bg-gray-700 text-gray-300 border-gray-500 hover:bg-gray-600'
-                          }`}
-                        >
-                          100%
-                        </button>
+                  {/* Right Panel - Dirt & Texture Systems */}
+                  <div className="space-y-4">
+                    {/* Dirt System Controls */}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-green-300 text-sm font-mono font-medium">DIRT SYSTEM</h4>
+                        <span className="text-green-500 text-xs font-mono">
+                          {showDirt ? `${dirtLevel === 1 ? '50%' : '100%'} dirty` : 'Clean'}
+                        </span>
                       </div>
-                    )}
-                  </div>
-                </div>
 
-                {/* Texture System Controls */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-green-300 text-sm font-mono font-medium">TEXTURE SYSTEM</h4>
-                    <span className="text-green-500 text-xs font-mono">
-                      {showTexture ? `${textureLevel === 1 ? '7 days' : '30 days'} wear` : 'Smooth'}
-                    </span>
-                  </div>
-                  
-                  <div className="text-green-400 text-xs font-mono bg-gray-900/50 p-2 rounded">
-                    Time-based texture wear: appears after 7 days, intensifies after 30 days. Creates realistic fabric aging.
-                  </div>
-
-                  {/* Texture Toggle */}
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => updateTextureState(!showTexture, textureLevel)}
-                      className={`px-3 py-1.5 rounded font-mono text-xs transition-all duration-200 border ${
-                        showTexture 
-                          ? 'bg-purple-600/80 hover:bg-purple-600 text-white border-purple-400' 
-                          : 'bg-gray-600/80 hover:bg-gray-600 text-white border-gray-400'
-                      }`}
-                    >
-                      {showTexture ? 'HIDE TEXTURE' : 'SHOW TEXTURE'}
-                    </button>
-                    
-                    {showTexture && (
-                      <div className="flex gap-1">
-                        <button
-                          onClick={() => updateTextureState(showTexture, 1)}
-                          className={`px-2 py-1 rounded font-mono text-xs transition-all duration-200 border ${
-                            textureLevel === 1 
-                              ? 'bg-blue-600 text-white border-blue-400' 
-                              : 'bg-gray-700 text-gray-300 border-gray-500 hover:bg-gray-600'
-                          }`}
-                        >
-                          7 DAYS
-                        </button>
-                        <button
-                          onClick={() => updateTextureState(showTexture, 2)}
-                          className={`px-2 py-1 rounded font-mono text-xs transition-all duration-200 border ${
-                            textureLevel === 2 
-                              ? 'bg-purple-600 text-white border-purple-400' 
-                              : 'bg-gray-700 text-gray-300 border-gray-500 hover:bg-gray-600'
-                          }`}
-                        >
-                          30 DAYS
-                        </button>
+                      <div className="text-green-400 text-xs font-mono bg-gray-900/50 p-2 rounded">
+                        Dynamic dirt accumulation: 50% after 3 days, 100% after 7 days. Clean with onchain transaction.
                       </div>
-                    )}
+
+                      {/* Dirt Toggle */}
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => updateDirtState(!showDirt, dirtLevel)}
+                          className={`px-3 py-1.5 rounded font-mono text-xs transition-all duration-200 border ${
+                            showDirt
+                              ? 'bg-orange-600/80 hover:bg-orange-600 text-white border-orange-400'
+                              : 'bg-gray-600/80 hover:bg-gray-600 text-white border-gray-400'
+                          }`}
+                        >
+                          {showDirt ? 'HIDE DIRT' : 'SHOW DIRT'}
+                        </button>
+
+                        {showDirt && (
+                          <div className="flex gap-1">
+                            <button
+                              onClick={() => updateDirtState(showDirt, 1)}
+                              className={`px-2 py-1 rounded font-mono text-xs transition-all duration-200 border ${
+                                dirtLevel === 1
+                                  ? 'bg-yellow-600 text-white border-yellow-400'
+                                  : 'bg-gray-700 text-gray-300 border-gray-500 hover:bg-gray-600'
+                              }`}
+                            >
+                              50%
+                            </button>
+                            <button
+                              onClick={() => updateDirtState(showDirt, 2)}
+                              className={`px-2 py-1 rounded font-mono text-xs transition-all duration-200 border ${
+                                dirtLevel === 2
+                                  ? 'bg-red-600 text-white border-red-400'
+                                  : 'bg-gray-700 text-gray-300 border-gray-500 hover:bg-gray-600'
+                              }`}
+                            >
+                              100%
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Texture System Controls */}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-green-300 text-sm font-mono font-medium">TEXTURE SYSTEM</h4>
+                        <span className="text-green-500 text-xs font-mono">
+                          {showTexture ? `${textureLevel === 1 ? '7 days' : '30 days'} wear` : 'Smooth'}
+                        </span>
+                      </div>
+
+                      <div className="text-green-400 text-xs font-mono bg-gray-900/50 p-2 rounded">
+                        Time-based texture wear: appears after 7 days, intensifies after 30 days. Creates realistic fabric aging.
+                      </div>
+
+                      {/* Texture Toggle */}
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => updateTextureState(!showTexture, textureLevel)}
+                          className={`px-3 py-1.5 rounded font-mono text-xs transition-all duration-200 border ${
+                            showTexture
+                              ? 'bg-purple-600/80 hover:bg-purple-600 text-white border-purple-400'
+                              : 'bg-gray-600/80 hover:bg-gray-600 text-white border-gray-400'
+                          }`}
+                        >
+                          {showTexture ? 'HIDE TEXTURE' : 'SHOW TEXTURE'}
+                        </button>
+
+                        {showTexture && (
+                          <div className="flex gap-1">
+                            <button
+                              onClick={() => updateTextureState(showTexture, 1)}
+                              className={`px-2 py-1 rounded font-mono text-xs transition-all duration-200 border ${
+                                textureLevel === 1
+                                  ? 'bg-blue-600 text-white border-blue-400'
+                                  : 'bg-gray-700 text-gray-300 border-gray-500 hover:bg-gray-600'
+                              }`}
+                            >
+                              7 DAYS
+                            </button>
+                            <button
+                              onClick={() => updateTextureState(showTexture, 2)}
+                              className={`px-2 py-1 rounded font-mono text-xs transition-all duration-200 border ${
+                                textureLevel === 2
+                                  ? 'bg-purple-600 text-white border-purple-400'
+                                  : 'bg-gray-700 text-gray-300 border-gray-500 hover:bg-gray-600'
+                              }`}
+                            >
+                              30 DAYS
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
