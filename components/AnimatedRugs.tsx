@@ -1072,19 +1072,27 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
       }
     }
 
-    // --- 180-degree rotation before creating the THREE.CanvasTexture ---
-    ctx.save()
-    ctx.translate(canvas.width / 2, canvas.height / 2)
-    ctx.rotate(Math.PI)
-    ctx.translate(-canvas.width / 2, -canvas.height / 2)
-    ctx.drawImage(canvas, 0, 0)
-    ctx.restore()
+    // --- 180-degree rotation for THREE.js scene orientation ---
+    // Create a new canvas with rotated content instead of drawing on top
+    const rotatedCanvas = document.createElement('canvas')
+    const rotatedCtx = rotatedCanvas.getContext('2d', { willReadFrequently: true })!
+    rotatedCanvas.width = canvas.width
+    rotatedCanvas.height = canvas.height
 
-    canvasRef.current = canvas
+    // Rotate and copy the content
+    rotatedCtx.save()
+    rotatedCtx.translate(rotatedCanvas.width / 2, rotatedCanvas.height / 2)
+    rotatedCtx.rotate(Math.PI)
+    rotatedCtx.translate(-rotatedCanvas.width / 2, -rotatedCanvas.height / 2)
+    rotatedCtx.drawImage(canvas, 0, 0)
+    rotatedCtx.restore()
+
+    // Use the rotated canvas for the texture
+    canvasRef.current = rotatedCanvas
     if (textureRef.current) {
       textureRef.current.dispose()
     }
-    const texture = new THREE.CanvasTexture(canvas)
+    const texture = new THREE.CanvasTexture(rotatedCanvas)
     texture.wrapS = texture.wrapT = THREE.RepeatWrapping
     textureRef.current = texture
     return texture
