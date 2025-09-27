@@ -2512,7 +2512,6 @@ export default function GeneratorPage() {
                       <Copy
                         onClick={() => copyToClipboard(config.rugContractAddress, 'contract address')}
                         className="text-green-500 hover:text-green-300 cursor-pointer transition-colors w-4 h-4"
-                        title="Copy contract address"
                       />
                     </div>
                   </div>

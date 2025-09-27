@@ -36,7 +36,7 @@ export function parseAgingDataFromAttributes(attributes: any[]): {
 
   let dirtLevel = 0
   let textureLevel = 0
-  let lastCleaned: number | null = null
+  let lastCleaned: bigint | null = null
   let mintTime = 0
 
   for (const attr of attributes) {
@@ -99,6 +99,7 @@ export function parseRugTraits(metadata: any): {
 
 // Complete tokenURI data parsing
 export function parseTokenURIData(tokenURI: string): {
+  tokenURI: string
   metadata: any
   aging: ReturnType<typeof parseAgingDataFromAttributes>
   traits: ReturnType<typeof parseRugTraits>
@@ -111,6 +112,7 @@ export function parseTokenURIData(tokenURI: string): {
   const traits = parseRugTraits(metadata.rugData || metadata)
 
   return {
+    tokenURI,
     metadata,
     aging,
     traits,

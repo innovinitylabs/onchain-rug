@@ -13,7 +13,7 @@ export interface TokenURIData {
   aging: {
     dirtLevel: number
     textureLevel: number
-    lastCleaned: number | null
+    lastCleaned: bigint | null
     mintTime: number
   }
   traits: {
@@ -26,6 +26,7 @@ export interface TokenURIData {
     complexity?: number
     characterCount?: number
     stripeCount?: number
+    mintTime?: number
   }
   animationUrl?: string
   image?: string

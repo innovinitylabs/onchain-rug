@@ -74,7 +74,7 @@ export function ManualTokenURIFetch({ onResult }: ManualTokenURIFetchProps) {
           <div className="text-cyan-300 mb-1">Function Call:</div>
           <div className="text-gray-300">tokenURI(uint256)</div>
           <div className="text-gray-300">Token ID: {DEMO_TOKEN_ID}</div>
-          <div className="text-gray-300">Selector: {TOKENURI_SELECTOR}</div>
+          <div className="text-gray-300">Selector: 0xc87b56dd</div>
         </div>
 
         <button
