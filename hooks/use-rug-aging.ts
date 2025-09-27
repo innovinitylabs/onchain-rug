@@ -1,7 +1,9 @@
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt, useChainId, usePublicClient } from 'wagmi'
 import { useState, useEffect, useMemo } from 'react'
 import { config, agingConfig } from '@/lib/config'
-import { shapeSepolia, shapeMainnet, contractAddresses, onchainRugsABI } from '@/lib/web3'
+import { shapeSepolia, shapeMainnet, contractAddresses } from '@/lib/web3'
+import { useTokenURI } from './use-token-uri'
+import { getDirtDescription, getTextureDescription } from '@/utils/parsing-utils'
 
 // Rug aging hook for managing dirt and texture states
 export function useRugAging(tokenId?: bigint) {
@@ -15,77 +17,28 @@ export function useRugAging(tokenId?: bigint) {
 
   const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
 
-  // Read rug aging data directly from contract using public client
-  const [tokenURI, setTokenURI] = useState<string | null>(null)
+  // Use the new consolidated tokenURI hook
+  const tokenURI = useTokenURI(tokenId ? Number(tokenId) : null)
 
-  // Fetch tokenURI when tokenId changes
-  useEffect(() => {
-    if (!tokenId || !publicClient) {
-      setTokenURI(null)
-      return
-    }
-
-    const fetchTokenURI = async () => {
-      try {
-        setIsLoading(true)
-        const uri = await publicClient.readContract({
-          address: contractAddress as `0x${string}`,
-          abi: onchainRugsABI,
-          functionName: 'tokenURI',
-          args: [tokenId],
-        } as any) as string
-
-        setTokenURI(uri)
-      } catch (error) {
-        console.warn('Failed to fetch tokenURI:', error)
-        setTokenURI(null)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchTokenURI()
-  }, [tokenId, publicClient, contractAddress])
-
+  // Legacy refetch function for backward compatibility
   const refetch = async () => {
-    if (tokenId && publicClient) {
-      try {
-        const uri = await publicClient.readContract({
-          address: contractAddress as `0x${string}`,
-          abi: onchainRugsABI,
-          functionName: 'tokenURI',
-          args: [tokenId],
-        } as any) as string
-        setTokenURI(uri)
-      } catch (error) {
-        console.warn('Failed to refetch tokenURI:', error)
-        setTokenURI(null)
-      }
-    }
+    await tokenURI.refetch()
   }
 
   // Parse aging data from tokenURI
   const agingData = useMemo(() => {
-    if (!tokenURI) return null
+    if (!tokenURI.data) return null
 
     try {
-      const metadata = JSON.parse(
-        tokenURI.replace('data:application/json,', '')
-      )
-
-      const attributes = metadata.attributes || []
-      const getAttributeValue = (traitType: string) => {
-        const attr = attributes.find((a: any) => a.trait_type === traitType)
-        return attr ? attr.value : 0
-      }
+      const { aging } = tokenURI.data
 
       return {
-        dirtLevel: parseInt(getAttributeValue('Dirt Level')) || 0,
-        textureLevel: parseInt(getAttributeValue('Texture Level')) || 0,
-        showDirt: (parseInt(getAttributeValue('Dirt Level')) || 0) > 0,
-        showTexture: (parseInt(getAttributeValue('Texture Level')) || 0) > 0,
-        timeSinceCleaned: BigInt(0), // Not directly available in attributes
-        timeSinceMint: BigInt(0), // Not directly available in attributes
+        dirtLevel: aging.dirtLevel,
+        textureLevel: aging.textureLevel,
+        showDirt: aging.dirtLevel > 0,
+        showTexture: aging.textureLevel > 0,
+        timeSinceCleaned: BigInt(0), // Not directly available in tokenURI
+        timeSinceMint: BigInt(0), // Not directly available in tokenURI
       }
     } catch (error) {
       console.warn('Failed to parse tokenURI for aging data:', error)
@@ -105,6 +58,11 @@ export function useRugAging(tokenId?: bigint) {
       setLastCleaned(null)
     }
   }, [agingData, tokenId])
+
+  // Update loading state
+  useEffect(() => {
+    setIsLoading(tokenURI.loading)
+  }, [tokenURI.loading])
 
   return {
     dirtLevel,

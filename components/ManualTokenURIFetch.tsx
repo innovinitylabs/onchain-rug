@@ -2,15 +2,9 @@
 
 import { useState } from 'react'
 import { ethers } from 'ethers'
-
-// Configuration - using your existing env vars
-const ALCHEMY_API_KEY = process.env.ALCHEMY_API_KEY || process.env.NEXT_PUBLIC_ALCHEMY_API_KEY
-const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT ||
-                        process.env.ONCHAIN_RUGS_CONTRACT ||
-                        '0xa7e2c645E9332900b09c627c88b15Cc0b0fAcDc0'
-
-// Function selector for tokenURI(uint256)
-const TOKENURI_SELECTOR = '0xc87b56dd'
+import { manualEthCall, decodeContractResult, getContractAddress, getAlchemyRpcUrl } from '@/utils/contract-utils'
+import { parseTokenURIData } from '@/utils/parsing-utils'
+import { handleContractError, logContractError } from '@/utils/error-utils'
 
 // Demo tokenId = 1
 const DEMO_TOKEN_ID = 1
@@ -25,44 +19,32 @@ export function ManualTokenURIFetch({ onResult }: ManualTokenURIFetchProps) {
   const [error, setError] = useState<string>('')
 
   const fetchTokenURIManual = async () => {
-    if (!ALCHEMY_API_KEY) {
-      setError('ALCHEMY_API_KEY not configured')
-      return
-    }
-
     setIsLoading(true)
     setError('')
     setTokenURI('')
 
     try {
-      // Connect to Alchemy RPC (use Shape Sepolia for your project)
-      const provider = new ethers.JsonRpcProvider(`https://shape-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}`)
+      // Use the new consolidated manual eth_call utility
+      const rawResult = await manualEthCall('tokenURI', DEMO_TOKEN_ID, 11011, process.env.ALCHEMY_API_KEY || process.env.NEXT_PUBLIC_ALCHEMY_API_KEY || '')
 
-      // Manually encode the function call
-      // tokenURI(uint256) selector: 0xc87b56dd
-      // Pad tokenId to 32 bytes
-      const paddedTokenId = ethers.zeroPadValue(ethers.toBeHex(DEMO_TOKEN_ID), 32).slice(2)
-      const data = TOKENURI_SELECTOR + paddedTokenId
+      // Decode the result using new utilities
+      const uri = decodeContractResult('tokenURI', rawResult)
 
-      console.log('Manual eth_call data:', data)
-      console.log('Contract address:', CONTRACT_ADDRESS)
-
-      // Perform manual eth_call
-      const result = await provider.call({
-        to: CONTRACT_ADDRESS,
-        data: data
-      })
-
-      console.log('Raw eth_call result:', result)
-
-      // Decode the returned hex string using AbiCoder
-      // tokenURI returns a string, so decode as ["string"]
-      const decoded = ethers.AbiCoder.defaultAbiCoder().decode(['string'], result)
-      const uri = decoded[0]
-
-      console.log('Decoded tokenURI:', uri)
+      console.log('Manual tokenURI fetch result:', uri)
 
       setTokenURI(uri)
+
+      // Parse the tokenURI to show structured data
+      try {
+        const parsedData = parseTokenURIData(uri)
+        console.log('Parsed tokenURI data:', {
+          name: parsedData.name,
+          dirtLevel: parsedData.aging.dirtLevel,
+          textureLevel: parsedData.aging.textureLevel,
+        })
+      } catch (parseError) {
+        console.warn('Failed to parse tokenURI data:', parseError)
+      }
 
       // Call optional callback
       if (onResult) {
@@ -70,8 +52,9 @@ export function ManualTokenURIFetch({ onResult }: ManualTokenURIFetchProps) {
       }
 
     } catch (err) {
-      console.error('Manual tokenURI fetch failed:', err)
-      setError(`Failed to fetch tokenURI: ${err instanceof Error ? err.message : 'Unknown error'}`)
+      const contractError = handleContractError(err, 'ManualTokenURIFetch.fetchTokenURIManual')
+      logContractError(contractError, 'ManualTokenURIFetch')
+      setError(`Failed to fetch tokenURI: ${contractError.message}`)
     } finally {
       setIsLoading(false)
     }

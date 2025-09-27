@@ -11,6 +11,7 @@ import { RugCleaning } from '@/components/RugCleaning'
 import { RugMarketplace } from '@/components/RugMarketplace'
 import { LiveRugStatus } from '@/components/LiveRugStatus'
 import { ManualTokenURIFetch } from '@/components/ManualTokenURIFetch'
+import { useRugData } from '@/hooks/use-rug-data'
 import LiquidGlass from '@/components/LiquidGlass'
 import { config } from '@/lib/config'
 import { formatEther } from 'viem'
@@ -80,12 +81,35 @@ interface AgingData {
 
 interface RugData {
   tokenId: number
-  traits: RugTraits
-  aging: AgingData
+  traits: {
+    seed?: string
+    paletteName?: string
+    minifiedPalette?: string
+    minifiedStripeData?: string
+    textRows?: string[]
+    warpThickness?: number
+    complexity?: number
+    characterCount?: number
+    stripeCount?: number
+    mintTime?: number
+  }
+  aging: {
+    dirtLevel: number
+    textureLevel: number
+    lastCleaned: bigint | null
+    mintTime: number
+  }
   owner: string
   name?: string
   image?: string
   animation_url?: string
+  tokenURI?: string
+  metadata?: any
+  dirtDescription?: string
+  textureDescription?: string
+  isClean?: boolean
+  needsCleaning?: boolean
+  cleaningCost?: number
 }
 
 export default function DashboardPage() {
@@ -118,6 +142,62 @@ export default function DashboardPage() {
     },
   })
 
+  // Helper function to fetch rug data using new utilities
+  const fetchRugData = async (tokenId: number): Promise<RugData | null> => {
+    try {
+      // Get tokenURI directly from contract (no caching)
+      console.log(`Fetching tokenURI for rug #${tokenId}...`)
+      const tokenURI = await publicClient.readContract({
+        address: contractAddress as `0x${string}`,
+        abi: onchainRugsABI,
+        functionName: 'tokenURI',
+        args: [BigInt(tokenId)]
+      } as any) as string
+
+      console.log(`Got tokenURI for rug #${tokenId}:`, tokenURI ? 'success' : 'empty')
+
+      if (tokenURI) {
+        // Parse the tokenURI JSON data using new utilities
+        const { parseTokenURIData } = await import('@/utils/parsing-utils')
+        const parsedData = parseTokenURIData(tokenURI)
+
+        // Get owner
+        const ownerOf = await publicClient.readContract({
+          address: contractAddress as `0x${string}`,
+          abi: onchainRugsABI,
+          functionName: 'ownerOf',
+          args: [BigInt(tokenId)]
+        } as any) as string
+
+        // Create rug data object
+        const rugData: RugData = {
+          tokenId,
+          tokenURI,
+          metadata: parsedData.metadata,
+          aging: parsedData.aging,
+          traits: parsedData.traits,
+          animation_url: parsedData.animationUrl,
+          image: parsedData.image,
+          name: parsedData.name,
+          owner: ownerOf,
+          dirtDescription: parsedData.aging.dirtLevel === 0 ? 'Clean' : 'Dirty',
+          textureDescription: parsedData.aging.textureLevel === 0 ? 'Smooth' : 'Worn',
+          isClean: parsedData.aging.dirtLevel === 0,
+          needsCleaning: parsedData.aging.dirtLevel > 0,
+          cleaningCost: parsedData.aging.dirtLevel > 0 ? 0.01 : 0,
+        }
+
+        return rugData
+      } else {
+        console.warn(`Empty tokenURI for rug #${tokenId}`)
+        return null
+      }
+    } catch (error) {
+      console.error(`Failed to fetch rug data for token ${tokenId}:`, error)
+      return null
+    }
+  }
+
   // Fetch user's rugs
   useEffect(() => {
     const fetchUserRugs = async () => {
@@ -149,48 +229,11 @@ export default function DashboardPage() {
               const tokenId = parseInt(nft.tokenId)
               console.log(`Processing rug #${tokenId}`)
 
-              // Get tokenURI directly from contract (no caching)
-              console.log(`Fetching tokenURI for rug #${tokenId}...`)
-              const tokenURI = await publicClient.readContract({
-                address: contractAddress as `0x${string}`,
-                abi: onchainRugsABI,
-                functionName: 'tokenURI',
-                args: [BigInt(tokenId)]
-              } as any) as string
-
-              console.log(`Got tokenURI for rug #${tokenId}:`, tokenURI ? 'success' : 'empty')
-
-              if (tokenURI) {
-                // Parse the tokenURI JSON data (base64 encoded)
-                const jsonString = tokenURI.replace('data:application/json;base64,', '')
-                const metadata = JSON.parse(atob(jsonString))
-
-                // Parse aging data from tokenURI attributes - contains real-time contract state
-                const agingData = parseAgingDataFromAttributes(metadata.attributes || [])
-
-                // Get animation URL from metadata
-                const animationUrl = metadata.animation_url
-
-                console.log(`Rug #${tokenId} real-time metadata:`, {
-                  name: metadata.name,
-                  dirtLevel: agingData.dirtLevel,
-                  textureLevel: agingData.textureLevel,
-                  animationUrl: animationUrl ? animationUrl.substring(0, 50) + '...' : 'undefined'
-                });
-
-                rugs.push({
-                  tokenId,
-                  traits: metadata.rugData || {},
-                  aging: agingData,
-                  owner: address,
-                  name: metadata.name,
-                  image: metadata.image,
-                  animation_url: animationUrl
-                })
-
+              // Use the new consolidated rug data fetching
+              const rugData = await fetchRugData(tokenId)
+              if (rugData) {
+                rugs.push(rugData)
                 console.log(`Successfully added rug #${tokenId} to list`)
-              } else {
-                console.warn(`Empty tokenURI for rug #${tokenId}`)
               }
             } catch (error) {
               console.error(`Failed to fetch rug data for token ${nft.tokenId}:`, error)
@@ -218,30 +261,10 @@ export default function DashboardPage() {
               if (ownerOf && ownerOf.toLowerCase() === address?.toLowerCase()) {
                 console.log(`Found owned token #${testTokenId}, fetching metadata...`)
 
-                // Get tokenURI directly from contract
-                const tokenURI = await publicClient.readContract({
-                  address: contractAddress as `0x${string}`,
-                  abi: onchainRugsABI,
-                  functionName: 'tokenURI',
-                  args: [BigInt(testTokenId)]
-                } as any) as string
-
-                if (tokenURI) {
-                  // Parse the tokenURI JSON data (base64 encoded)
-                  const jsonString = tokenURI.replace('data:application/json;base64,', '')
-                  const metadata = JSON.parse(atob(jsonString))
-                  const agingData = parseAgingDataFromAttributes(metadata.attributes || [])
-
-                  rugs.push({
-                    tokenId: testTokenId,
-                    traits: metadata.rugData || {},
-                    aging: agingData,
-                    owner: address,
-                    name: metadata.name || `Rug #${testTokenId}`,
-                    image: metadata.image,
-                    animation_url: metadata.animation_url
-                  })
-
+                // Use the new consolidated rug data fetching
+                const rugData = await fetchRugData(testTokenId)
+                if (rugData) {
+                  rugs.push(rugData)
                   console.log(`Successfully added test rug #${testTokenId}`)
                 }
               }
@@ -289,7 +312,7 @@ export default function DashboardPage() {
     return 0
   }
 
-  const getTimeSinceEvent = (timestamp: bigint) => {
+  const getTimeSinceEvent = (timestamp: number | bigint) => {
     const now = Math.floor(Date.now() / 1000)
     const diff = now - Number(timestamp)
 
@@ -364,13 +387,13 @@ export default function DashboardPage() {
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-green-400">
-                {userRugs.filter(rug => getDirtLevel(rug.aging.lastCleaned) === 0).length}
+                {userRugs.filter(rug => rug.isClean).length}
               </div>
               <div className="text-sm text-white/60">Clean Rugs</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-yellow-400">
-                {userRugs.filter(rug => rug.aging.launderingCount > BigInt(0)).length}
+                {userRugs.filter(rug => rug.needsCleaning).length}
               </div>
               <div className="text-sm text-white/60">Laundered</div>
             </div>
@@ -438,20 +461,10 @@ export default function DashboardPage() {
                           </h3>
                           <div className="flex items-center gap-2">
                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              rug.aging.currentFrameLevel === 'None' ? 'bg-gray-500/20 text-gray-300' :
-                              rug.aging.currentFrameLevel === 'Bronze' ? 'bg-amber-500/20 text-amber-300' :
-                              rug.aging.currentFrameLevel === 'Silver' ? 'bg-slate-400/20 text-slate-300' :
-                              rug.aging.currentFrameLevel === 'Gold' ? 'bg-yellow-500/20 text-yellow-300' :
-                              rug.aging.currentFrameLevel === 'Platinum' ? 'bg-cyan-500/20 text-cyan-300' :
-                              'bg-purple-500/20 text-purple-300'
+                              rug.isClean ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'
                             }`}>
-                              {rug.aging.currentFrameLevel === 'None' ? 'No Frame' : rug.aging.currentFrameLevel}
+                              {rug.isClean ? 'Clean' : 'Dirty'}
                             </span>
-                            {rug.aging.isMuseumPiece && (
-                              <span className="px-2 py-1 bg-red-500/20 text-red-300 rounded-full text-xs font-medium">
-                                Museum
-                              </span>
-                            )}
                           </div>
                         </div>
 
@@ -524,16 +537,16 @@ export default function DashboardPage() {
                           {/* Maintenance Stats */}
                           <div className="space-y-3 pt-2 border-t border-white/10">
                             <div className="text-center">
-                              <div className="text-lg font-bold text-blue-400">{rug.aging.cleaningCount.toString()}</div>
-                              <div className="text-xs text-white/60">Cleanings</div>
+                              <div className="text-lg font-bold text-blue-400">{rug.isClean ? '✓' : '✗'}</div>
+                              <div className="text-xs text-white/60">Status</div>
                             </div>
                             <div className="text-center">
-                              <div className="text-lg font-bold text-green-400">{rug.aging.restorationCount.toString()}</div>
-                              <div className="text-xs text-white/60">Restorations</div>
+                              <div className="text-lg font-bold text-green-400">{rug.aging.dirtLevel}</div>
+                              <div className="text-xs text-white/60">Dirt Level</div>
                             </div>
                             <div className="text-center">
-                              <div className="text-lg font-bold text-purple-400">{rug.aging.maintenanceScore.toString()}</div>
-                              <div className="text-xs text-white/60">Score</div>
+                              <div className="text-lg font-bold text-purple-400">{rug.aging.textureLevel}</div>
+                              <div className="text-xs text-white/60">Wear Level</div>
                             </div>
                           </div>
                         </div>
@@ -656,15 +669,9 @@ export default function DashboardPage() {
                             </span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-white/70">Laundering Count:</span>
-                            <span className="text-white">{Number(selectedRug.aging.launderingCount)}</span>
+                            <span className="text-white/70">Status:</span>
+                            <span className="text-white">{selectedRug.isClean ? 'Clean' : 'Needs Cleaning'}</span>
                           </div>
-                          {selectedRug.aging.lastSalePrice > BigInt(0) && (
-                            <div className="flex justify-between">
-                              <span className="text-white/70">Last Sale Price:</span>
-                              <span className="text-white">{formatEther(selectedRug.aging.lastSalePrice)} ETH</span>
-                            </div>
-                          )}
                         </div>
                       </div>
 
@@ -687,7 +694,7 @@ export default function DashboardPage() {
                         <RugMarketplace
                           tokenId={selectedRug.tokenId}
                           isOwner={true}
-                          currentPrice={selectedRug.aging.lastSalePrice > BigInt(0) ? formatEther(selectedRug.aging.lastSalePrice) : undefined}
+                          currentPrice={undefined}
                         />
                       </div>
 

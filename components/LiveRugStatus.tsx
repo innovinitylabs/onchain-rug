@@ -3,23 +3,11 @@
 import { useState } from 'react'
 import { ethers } from 'ethers'
 import { useChainId } from 'wagmi'
-
-// Contract ABI - replace with your actual ABI
-const CONTRACT_ABI = [
-  {
-    "inputs": [{ "name": "tokenId", "type": "uint256" }],
-    "name": "getDirtLevel",
-    "outputs": [{ "name": "", "type": "uint8" }],
-    "stateMutability": "view",
-    "type": "function"
-  }
-]
+import { manualEthCall, decodeContractResult, getContractAddress, getAlchemyRpcUrl } from '@/utils/contract-utils'
+import { handleContractError, logContractError } from '@/utils/error-utils'
 
 // Configuration
 const ALCHEMY_API_KEY = process.env.ALCHEMY_API_KEY || process.env.NEXT_PUBLIC_ALCHEMY_API_KEY
-const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT ||
-                        process.env.ONCHAIN_RUGS_CONTRACT ||
-                        '0xa7e2c645E9332900b09c627c88b15Cc0b0fAcDc0'
 
 interface LiveRugStatusProps {
   tokenId: string
@@ -67,14 +55,11 @@ export function LiveRugStatus({ tokenId }: LiveRugStatusProps) {
     setError(null)
 
     try {
-      // Create ethers provider with Alchemy RPC
-      const provider = new ethers.JsonRpcProvider(rpcUrl)
+      // Use the new consolidated manual eth_call utility
+      const rawResult = await manualEthCall('getDirtLevel', parseInt(tokenId), chainId, ALCHEMY_API_KEY || '')
 
-      // Create contract instance
-      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
-
-      // Call getDirtLevel function directly
-      const dirtLevel = await contract.getDirtLevel(tokenId)
+      // Decode the result using new utilities
+      const dirtLevel = decodeContractResult('getDirtLevel', rawResult)
 
       // Determine status based on dirt level
       // 0 = clean, 1+ = dirty
@@ -82,8 +67,9 @@ export function LiveRugStatus({ tokenId }: LiveRugStatusProps) {
       setRugStatus(isClean ? 'clean' : 'dirty')
 
     } catch (err) {
-      console.error('Error checking rug status:', err)
-      setError('Failed to check rug status. Please try again.')
+      const contractError = handleContractError(err, 'LiveRugStatus.checkRugStatus')
+      logContractError(contractError, 'LiveRugStatus')
+      setError(contractError.message)
       setRugStatus('unknown')
     } finally {
       setIsLoading(false)
