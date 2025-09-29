@@ -205,7 +205,9 @@ contract RugLaunderingFacet {
 
         // Reset all aging (laundering resets everything to level 0)
         aging.lastCleaned = block.timestamp;
-        aging.lastTextureReset = block.timestamp;
+        aging.lastTextureReset = block.timestamp; // DEPRECATED - kept for compatibility
+        aging.maxTextureLevel = 0; // Reset all texture wear to pristine
+        aging.textureProgressTimer = block.timestamp; // Reset progress timer
         aging.dirtLevel = 0; // deprecated
         aging.textureLevel = 0; // deprecated
 

@@ -27,11 +27,13 @@ library LibRugStorage {
 
     struct AgingData {
         uint256 lastCleaned;            // Last cleaning timestamp
-        uint256 lastTextureReset;       // Last texture reset timestamp (mint time initially)
+        uint256 lastTextureReset;       // Last texture reset timestamp (mint time initially) - DEPRECATED
         uint256 lastSalePrice;          // Highest sale price
         uint256[3] recentSalePrices;    // Last 3 sale prices
         uint8 dirtLevel;                // Current dirt (0-2) - deprecated, calculated
         uint8 textureLevel;             // Current texture aging (0-10) - deprecated, calculated
+        uint8 maxTextureLevel;          // MAX texture level ever reached (0-10, persistent)
+        uint256 textureProgressTimer;   // Timer for advancing texture level (replaces lastTextureReset)
         uint256 launderingCount;        // Number of times laundered
         uint256 lastLaundered;          // Last laundering timestamp
         uint256 cleaningCount;          // Number of times cleaned

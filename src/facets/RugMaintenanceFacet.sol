@@ -47,9 +47,10 @@ contract RugMaintenanceFacet {
             require(success, "Refund transfer failed");
         }
 
-        // Update aging data - reset dirt timer only (texture wear is permanent until restored)
+        // Update aging data - reset dirt timer and texture progress timer
+        // This delays further texture wear but preserves existing max texture level
         aging.lastCleaned = block.timestamp;
-        // Note: Texture timer is NOT reset during cleaning - texture wear is permanent
+        aging.textureProgressTimer = block.timestamp;
         aging.cleaningCount++;
         aging.maintenanceScore = (aging.cleaningCount * 2) + (aging.restorationCount * 5) + (aging.masterRestorationCount * 10) + (aging.launderingCount * 10);
 
@@ -83,11 +84,18 @@ contract RugMaintenanceFacet {
             require(success, "Refund transfer failed");
         }
 
-        // Reset both dirt and texture timers (full restoration as per spec)
+        // Restore texture by reducing max level and resetting progress timer
         uint8 previousDirt = _getDirtLevel(tokenId);
         uint8 previousTexture = currentTexture;
         aging.lastCleaned = block.timestamp;
-        aging.lastTextureReset = block.timestamp;
+
+        // Reduce max texture level by 1 (actual repair of existing wear)
+        if (aging.maxTextureLevel > 0) {
+            aging.maxTextureLevel -= 1;
+        }
+
+        // Reset texture progress timer (delays further wear)
+        aging.textureProgressTimer = block.timestamp;
         aging.restorationCount++;
         aging.maintenanceScore = (aging.cleaningCount * 2) + (aging.restorationCount * 5) + (aging.masterRestorationCount * 10) + (aging.launderingCount * 10);
 
@@ -122,9 +130,10 @@ contract RugMaintenanceFacet {
             require(success, "Refund transfer failed");
         }
 
-        // Reset aging timers (resets both dirt and texture levels to 0)
+        // Reset aging timers and max texture level (complete rejuvenation)
         aging.lastCleaned = block.timestamp;
-        aging.lastTextureReset = block.timestamp;
+        aging.maxTextureLevel = 0; // Reset all texture wear to pristine condition
+        aging.textureProgressTimer = block.timestamp;
         aging.masterRestorationCount++;
         aging.maintenanceScore = (aging.cleaningCount * 2) + (aging.restorationCount * 5) + (aging.masterRestorationCount * 10) + (aging.launderingCount * 10);
 

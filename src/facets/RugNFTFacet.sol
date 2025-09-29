@@ -96,11 +96,13 @@ contract RugNFTFacet is ERC721, ERC721URIStorage {
         // Initialize aging data
         rs.agingData[tokenId] = LibRugStorage.AgingData({
             lastCleaned: block.timestamp,
-            lastTextureReset: block.timestamp, // Initialize texture timer to mint time
+            lastTextureReset: block.timestamp, // DEPRECATED - kept for backward compatibility
             lastSalePrice: 0,
             recentSalePrices: [uint256(0), 0, 0],
             dirtLevel: 0, // deprecated, will be calculated
             textureLevel: 0, // deprecated, will be calculated
+            maxTextureLevel: 0, // Fresh rug starts with no texture wear
+            textureProgressTimer: block.timestamp, // Start progress timer at mint time
             launderingCount: 0, // Never laundered initially
             lastLaundered: 0, // Never laundered initially
             cleaningCount: 0, // Never cleaned initially
@@ -439,18 +441,22 @@ contract RugNFTFacet is ERC721, ERC721URIStorage {
         string memory frameLevel = _getFrameLevel(tokenId);
         uint256 agingMultiplier = _getTextureAgingMultiplier(frameLevel);
 
-        // Texture level based on time since last texture reset (adjusted by frame benefits)
-        uint256 adjustedTimeSinceReset = (block.timestamp - aging.lastTextureReset) / agingMultiplier;
+        // Calculate current advancement level based on progress timer
+        uint256 timeSinceProgressStart = (block.timestamp - aging.textureProgressTimer) / agingMultiplier;
+        uint8 currentAdvancementLevel;
 
         // Texture progression over time (longer timeline than dirt)
-        if (adjustedTimeSinceReset >= rs.textureLevel2Days * 10) return 10;
-        if (adjustedTimeSinceReset >= rs.textureLevel2Days * 8) return 8;
-        if (adjustedTimeSinceReset >= rs.textureLevel2Days * 6) return 6;
-        if (adjustedTimeSinceReset >= rs.textureLevel2Days * 4) return 4;
-        if (adjustedTimeSinceReset >= rs.textureLevel2Days * 2) return 2;
-        if (adjustedTimeSinceReset >= rs.textureLevel1Days * 2) return 1;
+        if (timeSinceProgressStart >= rs.textureLevel2Days * 10) currentAdvancementLevel = 10;
+        else if (timeSinceProgressStart >= rs.textureLevel2Days * 8) currentAdvancementLevel = 8;
+        else if (timeSinceProgressStart >= rs.textureLevel2Days * 6) currentAdvancementLevel = 6;
+        else if (timeSinceProgressStart >= rs.textureLevel2Days * 4) currentAdvancementLevel = 4;
+        else if (timeSinceProgressStart >= rs.textureLevel2Days * 2) currentAdvancementLevel = 2;
+        else if (timeSinceProgressStart >= rs.textureLevel1Days * 2) currentAdvancementLevel = 1;
+        else currentAdvancementLevel = 0;
 
-        return 0; // Fresh texture
+        // Texture level = MAX(current advancement, max texture level ever reached)
+        // This ensures texture wear is persistent once achieved
+        return currentAdvancementLevel > aging.maxTextureLevel ? currentAdvancementLevel : aging.maxTextureLevel;
     }
 
     function _getTextureAgingMultiplier(string memory frameLevel) internal pure returns (uint256) {
