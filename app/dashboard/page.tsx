@@ -3,13 +3,12 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAccount, useReadContract, useChainId, usePublicClient } from 'wagmi'
-import { onchainRugsABI, contractAddresses } from '@/lib/web3'
+import { onchainRugsABI, contractAddresses, callContractMultiFallback } from '@/lib/web3'
 import { Wallet, AlertCircle, RefreshCw, Droplets, Sparkles, Crown, TrendingUp, Clock, ExternalLink, Copy, CheckCircle } from 'lucide-react'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
 import { RugCleaning } from '@/components/RugCleaning'
 import { RugMarketplace } from '@/components/RugMarketplace'
-import { LiveRugStatus } from '@/components/LiveRugStatus'
 import { useRugData } from '@/hooks/use-rug-data'
 import LiquidGlass from '@/components/LiquidGlass'
 import { config } from '@/lib/config'
@@ -144,14 +143,15 @@ export default function DashboardPage() {
   // Helper function to fetch rug data using new utilities
   const fetchRugData = async (tokenId: number): Promise<RugData | null> => {
     try {
-      // Get tokenURI directly from contract (no caching)
+      // Get tokenURI directly from contract with Alchemy fallback
       console.log(`Fetching tokenURI for rug #${tokenId}...`)
-      const tokenURI = await publicClient.readContract({
-        address: contractAddress as `0x${string}`,
-        abi: onchainRugsABI,
-        functionName: 'tokenURI',
-        args: [BigInt(tokenId)]
-      } as any) as string
+      const tokenURI = await callContractMultiFallback(
+        contractAddress,
+        onchainRugsABI,
+        'tokenURI',
+        [BigInt(tokenId)],
+        { chainId }
+      ) as unknown as string
 
       console.log(`Got tokenURI for rug #${tokenId}:`, tokenURI ? 'success' : 'empty')
 
@@ -165,13 +165,14 @@ export default function DashboardPage() {
             textureLevel: parsedData.aging.textureLevel,
           })
 
-          // Get owner
-          const ownerOf = await publicClient.readContract({
-            address: contractAddress as `0x${string}`,
-            abi: onchainRugsABI,
-            functionName: 'ownerOf',
-            args: [BigInt(tokenId)]
-          } as any) as string
+          // Get owner with Alchemy fallback
+          const ownerOf = await callContractMultiFallback(
+            contractAddress,
+            onchainRugsABI,
+            'ownerOf',
+            [BigInt(tokenId)],
+            { chainId }
+          ) as unknown as string
 
           // Create rug data object
           const rugData: RugData = {
@@ -210,12 +211,13 @@ export default function DashboardPage() {
   // Fallback function for parsing tokenURI
   const fetchRugDataFallback = async (tokenId: number): Promise<RugData | null> => {
     try {
-      const tokenURI = await publicClient.readContract({
-        address: contractAddress as `0x${string}`,
-        abi: onchainRugsABI,
-        functionName: 'tokenURI',
-        args: [BigInt(tokenId)]
-      } as any) as string
+      const tokenURI = await callContractMultiFallback(
+        contractAddress,
+        onchainRugsABI,
+        'tokenURI',
+        [BigInt(tokenId)],
+        { chainId }
+      ) as unknown as string
 
       if (tokenURI && tokenURI.startsWith('data:application/json;base64,')) {
         // Manual parsing as fallback
@@ -235,12 +237,13 @@ export default function DashboardPage() {
           mintTime: parseInt(getAttributeValue('Mint Time')) || 0,
         }
 
-        const ownerOf = await publicClient.readContract({
-          address: contractAddress as `0x${string}`,
-          abi: onchainRugsABI,
-          functionName: 'ownerOf',
-          args: [BigInt(tokenId)]
-        } as any) as string
+        const ownerOf = await callContractMultiFallback(
+          contractAddress,
+          onchainRugsABI,
+          'ownerOf',
+          [BigInt(tokenId)],
+          { chainId }
+        ) as unknown as string
 
         return {
           tokenId,
@@ -323,13 +326,14 @@ export default function DashboardPage() {
             try {
               console.log(`Testing token ID ${testTokenId}...`)
 
-              // Check if this token exists and is owned by the user
-              const ownerOf = await publicClient.readContract({
-                address: contractAddress as `0x${string}`,
-                abi: onchainRugsABI,
-                functionName: 'ownerOf',
-                args: [BigInt(testTokenId)]
-              } as any) as string
+              // Check if this token exists and is owned by the user with Alchemy fallback
+              const ownerOf = await callContractMultiFallback(
+                contractAddress,
+                onchainRugsABI,
+                'ownerOf',
+                [BigInt(testTokenId)],
+                { chainId }
+              ) as unknown as string
 
               if (ownerOf && ownerOf.toLowerCase() === address?.toLowerCase()) {
                 console.log(`Found owned token #${testTokenId}, fetching metadata...`)
@@ -781,12 +785,6 @@ export default function DashboardPage() {
                         mintTime={selectedRug.aging.mintTime}
                         lastCleaned={selectedRug.aging.lastCleaned}
                       />
-
-                      {/* Live Status Check */}
-                      <div className="flex justify-center">
-                        <LiveRugStatus tokenId={selectedRug.tokenId.toString()} />
-                      </div>
-
 
                       {/* Marketplace */}
                       <div className="bg-slate-700/50 rounded-lg p-4">

@@ -3,6 +3,7 @@
  */
 
 import { createConfig, http } from 'wagmi'
+import { createPublicClient, encodeFunctionData, decodeFunctionResult } from 'viem'
 import { config as appConfig } from './config'
 
 // Chain configurations
@@ -179,6 +180,128 @@ export function getChainName(chainId: number): string {
       return 'Shape Mainnet'
     default:
       return 'Unknown'
+  }
+}
+
+// Alchemy RPC utilities for direct contract calls (Shape RPC as fallback)
+export async function callContractWithAlchemyFallback(
+  contractAddress: string,
+  abi: readonly any[],
+  functionName: string,
+  args: any[] = [],
+  chainId: number = shapeSepolia.id
+) {
+  // First try Alchemy RPC (primary)
+  try {
+    // Use public Alchemy RPC endpoint for Shape Sepolia (no API key needed)
+    const alchemyRpcUrl = chainId === shapeSepolia.id
+      ? 'https://shape-sepolia.g.alchemy.com/public'
+      : `https://shape-mainnet.g.alchemy.com/v2/${appConfig.alchemyApiKey}`
+
+    const response = await fetch(alchemyRpcUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'eth_call',
+        params: [{
+          to: contractAddress,
+          data: encodeFunctionData({
+            abi,
+            functionName,
+            args
+          })
+        }, 'latest']
+      })
+    })
+
+    if (!response.ok) {
+      throw new Error(`Alchemy RPC error: ${response.status}`)
+    }
+
+    const result = await response.json()
+    if (result.error) {
+      throw new Error(`Alchemy RPC contract error: ${result.error.message}`)
+    }
+
+    // Decode the result based on the function's return type
+    const functionAbi = abi.find(item => item.name === functionName && item.type === 'function')
+    if (!functionAbi) {
+      throw new Error(`Function ${functionName} not found in ABI`)
+    }
+
+    return decodeFunctionResult({
+      abi: [functionAbi],
+      functionName,
+      data: result.result
+    })
+  } catch (alchemyError) {
+    console.warn(`Alchemy RPC failed for ${functionName}, trying Shape fallback:`, alchemyError)
+
+    // Fallback to Shape RPC
+    try {
+      const publicClient = createPublicClient({
+        chain: chainId === shapeSepolia.id ? shapeSepolia : shapeMainnet,
+        transport: http()
+      })
+
+      const data = encodeFunctionData({
+        abi,
+        functionName,
+        args
+      })
+
+      const result = await publicClient.call({
+        to: contractAddress as `0x${string}`,
+        data
+      })
+
+      // Decode the result
+      const functionAbi = abi.find(item => item.name === functionName && item.type === 'function')
+      if (!functionAbi) {
+        throw new Error(`Function ${functionName} not found in ABI`)
+      }
+
+      return decodeFunctionResult({
+        abi: [functionAbi],
+        functionName,
+        data: result.data
+      })
+    } catch (shapeError) {
+      console.error(`Both Alchemy RPC and Shape RPC failed for ${functionName}:`, { alchemyError, shapeError })
+      throw new Error(`All RPC endpoints failed: ${alchemyError.message} | ${shapeError.message}`)
+    }
+  }
+}
+
+// Enhanced contract call with multiple fallback options
+export async function callContractMultiFallback(
+  contractAddress: string,
+  abi: readonly any[],
+  functionName: string,
+  args: any[] = [],
+  options: {
+    chainId?: number
+    maxRetries?: number
+    retryDelay?: number
+  } = {}
+) {
+  const { chainId = shapeSepolia.id, maxRetries = 2, retryDelay = 1000 } = options
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await callContractWithAlchemyFallback(contractAddress, abi, functionName, args, chainId)
+    } catch (error) {
+      if (attempt === maxRetries) {
+        throw error
+      }
+      console.warn(`Contract call attempt ${attempt + 1} failed for ${functionName}, retrying in ${retryDelay}ms:`, error)
+      await new Promise(resolve => setTimeout(resolve, retryDelay))
+    }
   }
 }
 

@@ -1,0 +1,4 @@
+---
+description: dont use emoji in (console.log of) solidity scripts
+alwaysApply: true
+---
