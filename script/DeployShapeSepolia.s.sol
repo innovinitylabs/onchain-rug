@@ -325,8 +325,9 @@ contract DeployShapeSepolia is Script {
     }
 
     function _getRugNFTSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](26);
+        bytes4[] memory selectors = new bytes4[](28);
         // ERC721 Standard Functions (hardcoded selectors from forge inspect)
+        // Note: supportsInterface(bytes4) is already registered by DiamondLoupeFacet, so we skip it
         selectors[0] = bytes4(0x70a08231); // balanceOf(address)
         selectors[1] = bytes4(0x6352211e); // ownerOf(uint256)
         selectors[2] = bytes4(0x42842e0e); // safeTransferFrom(address,address,uint256)
@@ -339,28 +340,30 @@ contract DeployShapeSepolia is Script {
         selectors[9] = bytes4(0x95d89b41); // symbol()
         selectors[10] = bytes4(0xc87b56dd); // tokenURI(uint256)
         selectors[11] = bytes4(0x18160ddd); // totalSupply()
-        selectors[12] = bytes4(0x01ffc9a7); // supportsInterface(bytes4)
-        selectors[13] = bytes4(0xb88d4fde); // safeTransferFrom(address,address,uint256,bytes)
+        selectors[12] = bytes4(0xb88d4fde); // safeTransferFrom(address,address,uint256,bytes)
 
         // Rug-specific functions
-        selectors[14] = RugNFTFacet.mintRug.selector;             // 0f495d0c
-        selectors[15] = RugNFTFacet.burn.selector;                // 42966c68
-        selectors[16] = RugNFTFacet.getRugData.selector;          // 2e99fe3f
-        selectors[17] = RugNFTFacet.getAgingData.selector;        // a8accc46
-        selectors[18] = RugNFTFacet.getMintPrice.selector;        // 559e775b
-        selectors[19] = RugNFTFacet.canMint.selector;             // c2ba4744
-        selectors[20] = RugNFTFacet.isTextAvailable.selector;     // fdd9d9e8
-        selectors[21] = RugNFTFacet.maxSupply.selector;           // d5abeb01
-        selectors[22] = RugNFTFacet.walletMints.selector;         // f0293fd3
-        selectors[23] = RugNFTFacet.isWalletException.selector;   // 2d2bf633
-        selectors[24] = RugNFTFacet.getFrameLevel.selector;       // ceffb063
-        selectors[25] = RugNFTFacet.updateFrameLevel.selector;    // 650def5b
+        selectors[13] = RugNFTFacet.mintRug.selector;             // 0f495d0c
+        selectors[14] = RugNFTFacet.burn.selector;                // 42966c68
+        selectors[15] = RugNFTFacet.getRugData.selector;          // 2e99fe3f
+        selectors[16] = RugNFTFacet.getAgingData.selector;        // a8accc46
+        selectors[17] = RugNFTFacet.getMintPrice.selector;        // 559e775b
+        selectors[18] = RugNFTFacet.canMint.selector;             // c2ba4744
+        selectors[19] = RugNFTFacet.isTextAvailable.selector;     // fdd9d9e8
+        selectors[20] = RugNFTFacet.maxSupply.selector;           // d5abeb01
+        selectors[21] = RugNFTFacet.walletMints.selector;         // f0293fd3
+        selectors[22] = RugNFTFacet.isWalletException.selector;   // 2d2bf633
+        selectors[23] = RugNFTFacet.getFrameLevel.selector;       // ceffb063
+        selectors[24] = RugNFTFacet.updateFrameLevel.selector;    // 650def5b
+        selectors[25] = RugNFTFacet.getFrameStatus.selector;      // b3e50020
+        selectors[26] = RugNFTFacet.getMaintenanceHistory.selector; // 65b79c85
+        selectors[27] = RugNFTFacet.getSaleHistory.selector;      // e05d541d
 
         return selectors;
     }
 
     function _getRugAdminSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](14);
+        bytes4[] memory selectors = new bytes4[](16);
         selectors[0] = RugAdminFacet.updateMintPricing.selector;
         selectors[1] = RugAdminFacet.updateCollectionCap.selector;
         selectors[2] = RugAdminFacet.updateWalletLimit.selector;
@@ -374,12 +377,14 @@ contract DeployShapeSepolia is Script {
         selectors[10] = RugAdminFacet.addToExceptionList.selector;
         selectors[11] = RugAdminFacet.removeFromExceptionList.selector;
         selectors[12] = RugAdminFacet.getExceptionList.selector;
-        selectors[13] = RugAdminFacet.isWalletException.selector;
+        selectors[13] = RugAdminFacet.getServicePricing.selector;
+        selectors[14] = RugAdminFacet.updateServicePricing.selector;
+        selectors[15] = RugAdminFacet.isConfigured.selector;
         return selectors;
     }
 
     function _getRugAgingSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](10);
+        bytes4[] memory selectors = new bytes4[](11);
         selectors[0] = RugAgingFacet.getDirtLevel.selector;
         selectors[1] = RugAgingFacet.getTextureLevel.selector;
         selectors[2] = RugAgingFacet.getAgingState.selector;
@@ -390,11 +395,12 @@ contract DeployShapeSepolia is Script {
         selectors[7] = RugAgingFacet.timeUntilNextTexture.selector;
         selectors[8] = RugAgingFacet.getAgingStats.selector;
         selectors[9] = RugAgingFacet.getProgressionInfo.selector;
+        selectors[10] = RugAgingFacet.isWellMaintained.selector;
         return selectors;
     }
 
     function _getRugMaintenanceSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](7);
+        bytes4[] memory selectors = new bytes4[](10);
         selectors[0] = RugMaintenanceFacet.cleanRug.selector;
         selectors[1] = RugMaintenanceFacet.restoreRug.selector;
         selectors[2] = RugMaintenanceFacet.masterRestoreRug.selector;
@@ -402,6 +408,9 @@ contract DeployShapeSepolia is Script {
         selectors[4] = RugMaintenanceFacet.getRestorationCost.selector;
         selectors[5] = RugMaintenanceFacet.getMasterRestorationCost.selector;
         selectors[6] = RugMaintenanceFacet.getMaintenanceOptions.selector;
+        selectors[7] = RugMaintenanceFacet.canCleanRug.selector;
+        selectors[8] = RugMaintenanceFacet.canRestoreRug.selector;
+        selectors[9] = RugMaintenanceFacet.needsMasterRestoration.selector;
         return selectors;
     }
 
@@ -426,7 +435,7 @@ contract DeployShapeSepolia is Script {
         selectors[1] = RugLaunderingFacet.triggerLaundering.selector;
         selectors[2] = RugLaunderingFacet.updateLaunderingThreshold.selector;
         selectors[3] = RugLaunderingFacet.wouldTriggerLaundering.selector;
-        selectors[4] = RugLaunderingFacet.getSaleHistory.selector;
+        selectors[4] = RugLaunderingFacet.getLaunderingSaleHistory.selector;
         selectors[5] = RugLaunderingFacet.getMaxRecentSalePrice.selector;
         selectors[6] = RugLaunderingFacet.getLaunderingConfig.selector;
         selectors[7] = RugLaunderingFacet.getLaunderingStats.selector;

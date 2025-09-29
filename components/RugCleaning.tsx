@@ -13,9 +13,10 @@ interface RugCleaningProps {
   tokenId: bigint
   mintTime?: number
   lastCleaned?: bigint | Date | null
+  onRefreshNFT?: (tokenId: number) => void | Promise<void>
 }
 
-export function RugCleaning({ tokenId, mintTime, lastCleaned: propLastCleaned }: RugCleaningProps) {
+export function RugCleaning({ tokenId, mintTime, lastCleaned: propLastCleaned, onRefreshNFT }: RugCleaningProps) {
   const { address, isConnected } = useAccount()
   const chainId = useChainId()
   const { switchChain } = useSwitchChain()
@@ -63,12 +64,16 @@ export function RugCleaning({ tokenId, mintTime, lastCleaned: propLastCleaned }:
     if (cleanSuccess || restoreSuccess || masterRestoreSuccess) {
       console.log('Transaction confirmed, refetching data...')
       refetch()
+      // Also refresh this specific NFT in the parent collection
+      if (onRefreshNFT) {
+        onRefreshNFT(Number(tokenId))
+      }
     }
     if (cleanError || restoreError || masterRestoreError) {
       console.error('Transaction error:', cleanError || restoreError || masterRestoreError)
       // Error is already displayed in the UI, no need for alert here
     }
-  }, [cleanSuccess, restoreSuccess, masterRestoreSuccess, cleanError, restoreError, masterRestoreError, refetch])
+  }, [cleanSuccess, restoreSuccess, masterRestoreSuccess, cleanError, restoreError, masterRestoreError, refetch, onRefreshNFT, tokenId])
 
   const [gasEstimate, setGasEstimate] = useState<string>('')
   const [estimatingGas, setEstimatingGas] = useState(false)
@@ -139,16 +144,17 @@ export function RugCleaning({ tokenId, mintTime, lastCleaned: propLastCleaned }:
       const apiKey = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY
 
       if (!apiKey) {
-        console.warn('NEXT_PUBLIC_ALCHEMY_API_KEY not found, using wagmi default')
-        setGasEstimate('Using automatic gas estimation...')
+        console.warn('NEXT_PUBLIC_ALCHEMY_API_KEY not found, using fallback gas estimation')
+        setGasEstimate('Using fallback gas estimation (8M gas)...')
         setEstimatingGas(false)
 
         const cleanResult = await cleanRug(
           tokenId,
           dirtLevel,
-          actualLastCleaned ? actualLastCleaned : undefined
+          actualLastCleaned ? actualLastCleaned : undefined,
+          { gasLimit: BigInt(8_000_000) } // 8M gas fallback
         )
-        console.log('Clean transaction submitted (wagmi gas estimation):', cleanResult)
+        console.log('Clean transaction submitted (fallback gas estimation):', cleanResult)
       } else {
         // Use client-side gas estimation with domain-restricted API key
         const gasOptions = getRecommendedGasOptions('cleanRug')
@@ -237,15 +243,16 @@ export function RugCleaning({ tokenId, mintTime, lastCleaned: propLastCleaned }:
       const apiKey = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY
 
       if (!apiKey) {
-        console.warn('NEXT_PUBLIC_ALCHEMY_API_KEY not found, using wagmi default')
-        setRestoreGasEstimate('Using automatic gas estimation...')
+        console.warn('NEXT_PUBLIC_ALCHEMY_API_KEY not found, using fallback gas estimation')
+        setRestoreGasEstimate('Using fallback gas estimation (12M gas)...')
         setEstimatingRestoreGas(false)
 
         const restoreResult = await restoreRug(
           tokenId,
-          textureLevel
+          textureLevel,
+          { gasLimit: BigInt(12_000_000) } // 12M gas fallback
         )
-        console.log('Restore transaction submitted (wagmi gas estimation):', restoreResult)
+        console.log('Restore transaction submitted (fallback gas estimation):', restoreResult)
       } else {
         // Use client-side gas estimation with domain-restricted API key
         const gasOptions = getRecommendedGasOptions('restoreRug')
@@ -311,7 +318,7 @@ export function RugCleaning({ tokenId, mintTime, lastCleaned: propLastCleaned }:
   }
 
   const handleMasterRestore = async () => {
-    if (!isConnected || !isCorrectChain || (dirtLevel === 0 && textureLevel === 0)) return
+    if (!isConnected || !isCorrectChain || textureLevel === 0) return
 
     console.log('Starting master restore process for token:', tokenId.toString())
     console.log('User address:', address)
@@ -333,16 +340,17 @@ export function RugCleaning({ tokenId, mintTime, lastCleaned: propLastCleaned }:
       const apiKey = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY
 
       if (!apiKey) {
-        console.warn('NEXT_PUBLIC_ALCHEMY_API_KEY not found, using wagmi default')
-        setMasterRestoreGasEstimate('Using automatic gas estimation...')
+        console.warn('NEXT_PUBLIC_ALCHEMY_API_KEY not found, using fallback gas estimation')
+        setMasterRestoreGasEstimate('Using fallback gas estimation (12M gas)...')
         setEstimatingMasterRestoreGas(false)
 
         const masterRestoreResult = await masterRestoreRug(
           tokenId,
           dirtLevel,
-          textureLevel
+          textureLevel,
+          { gasLimit: BigInt(12_000_000) } // 12M gas fallback
         )
-        console.log('Master restore transaction submitted (wagmi gas estimation):', masterRestoreResult)
+        console.log('Master restore transaction submitted (fallback gas estimation):', masterRestoreResult)
       } else {
         // Use client-side gas estimation with domain-restricted API key
         const gasOptions = getRecommendedGasOptions('masterRestoreRug')
@@ -451,7 +459,7 @@ export function RugCleaning({ tokenId, mintTime, lastCleaned: propLastCleaned }:
   const getMasterRestoreButtonText = () => {
     if (!isConnected) return 'Connect Wallet to Restore'
     if (!isCorrectChain) return `Switch to ${config.chainId === 360 ? 'Shape Mainnet' : 'Shape Sepolia'}`
-    if (dirtLevel === 0 && textureLevel === 0) return 'Rug is Already Pristine'
+    if (textureLevel === 0) return 'No Texture Wear to Restore'
     if (estimatingMasterRestoreGas) return 'Estimating Gas...'
     if (masterRestorePending) return 'Restoring...'
     if (masterRestoreConfirming) return 'Confirming...'
@@ -459,7 +467,7 @@ export function RugCleaning({ tokenId, mintTime, lastCleaned: propLastCleaned }:
   }
 
   const getMasterRestoreButtonClass = () => {
-    if (!isConnected || !isCorrectChain || (dirtLevel === 0 && textureLevel === 0)) {
+    if (!isConnected || !isCorrectChain || textureLevel === 0) {
       return 'bg-gray-400 text-gray-200 cursor-not-allowed'
     }
     if (masterRestorePending || masterRestoreConfirming) {
@@ -651,10 +659,10 @@ export function RugCleaning({ tokenId, mintTime, lastCleaned: propLastCleaned }:
       {/* Master Restore Button */}
       <motion.button
         onClick={handleMasterRestore}
-        disabled={!isConnected || !isCorrectChain || (dirtLevel === 0 && textureLevel === 0) || masterRestorePending || masterRestoreConfirming}
+        disabled={!isConnected || !isCorrectChain || textureLevel === 0 || masterRestorePending || masterRestoreConfirming}
         className={`w-full px-4 py-3 rounded font-mono transition-all duration-200 border flex items-center justify-center gap-2 text-sm ${getMasterRestoreButtonClass()}`}
-        whileHover={{ scale: isConnected && isCorrectChain && (dirtLevel > 0 || textureLevel > 0) ? 1.02 : 1 }}
-        whileTap={{ scale: isConnected && isCorrectChain && (dirtLevel > 0 || textureLevel > 0) ? 0.98 : 1 }}
+        whileHover={{ scale: isConnected && isCorrectChain && textureLevel > 0 ? 1.02 : 1 }}
+        whileTap={{ scale: isConnected && isCorrectChain && textureLevel > 0 ? 0.98 : 1 }}
       >
         <Crown className="w-4 h-4" />
         {getMasterRestoreButtonText()}
@@ -679,10 +687,10 @@ export function RugCleaning({ tokenId, mintTime, lastCleaned: propLastCleaned }:
         <div className="text-blue-300 text-xs font-mono space-y-1">
           <div>• <strong>Clean:</strong> Removes dirt and delays texture wear progression</div>
           <div>• <strong>Restore Texture:</strong> Repairs texture wear (reduces wear level by 1)</div>
-          <div>• <strong>Master Restore:</strong> Complete rejuvenation (resets all aging to pristine)</div>
+          <div>• <strong>Master Restore:</strong> Complete texture restoration (resets texture to pristine)</div>
           <div>• Cleaning: Free for first 30 minutes, then {formatEther(BigInt(agingConfig.cleaningCosts.paid))} ETH</div>
-          <div>• Restoration: {formatEther(BigInt(agingConfig.restorationCosts.paid))} ETH</div>
-          <div>• Master Restoration: {formatEther(BigInt(agingConfig.masterRestorationCosts.paid))} ETH</div>
+          <div>• Texture Restoration: {formatEther(BigInt(agingConfig.restorationCosts.paid))} ETH</div>
+          <div>• Master Texture Restoration: {formatEther(BigInt(agingConfig.masterRestorationCosts.paid))} ETH</div>
         </div>
       </div>
     </div>

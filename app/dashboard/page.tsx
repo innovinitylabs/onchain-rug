@@ -377,6 +377,43 @@ export default function DashboardPage() {
     setTimeout(() => setRefreshing(false), 2000)
   }
 
+  // Function to refresh a specific NFT in the collection
+  const handleRefreshNFT = async (tokenId: number) => {
+    console.log(`Refreshing specific NFT #${tokenId}...`)
+
+    try {
+      // Find the NFT in the current collection
+      const existingIndex = userRugs.findIndex(rug => rug.tokenId === tokenId)
+
+      if (existingIndex === -1) {
+        console.warn(`NFT #${tokenId} not found in current collection`)
+        return
+      }
+
+      // Fetch updated data for this specific NFT
+      const updatedRugData = await fetchRugData(tokenId)
+
+      if (updatedRugData) {
+        // Update the specific NFT in the state
+        setUserRugs(prevRugs => {
+          const newRugs = [...prevRugs]
+          newRugs[existingIndex] = updatedRugData
+          console.log(`Updated NFT #${tokenId} with fresh blockchain data`)
+          return newRugs
+        })
+
+        // Also update selectedRug if it's the one being refreshed
+        if (selectedRug && selectedRug.tokenId === tokenId) {
+          setSelectedRug(updatedRugData)
+        }
+      } else {
+        console.error(`Failed to fetch updated data for NFT #${tokenId}`)
+      }
+    } catch (error) {
+      console.error(`Failed to refresh NFT #${tokenId}:`, error)
+    }
+  }
+
   const getDirtLevel = (lastCleaned: bigint) => {
     const now = Math.floor(Date.now() / 1000)
     const timeSinceCleaned = now - Number(lastCleaned)
@@ -784,6 +821,7 @@ export default function DashboardPage() {
                         tokenId={BigInt(selectedRug.tokenId)}
                         mintTime={selectedRug.aging.mintTime}
                         lastCleaned={selectedRug.aging.lastCleaned}
+                        onRefreshNFT={handleRefreshNFT}
                       />
 
                       {/* Marketplace */}

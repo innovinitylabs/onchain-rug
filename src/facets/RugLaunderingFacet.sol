@@ -96,7 +96,7 @@ contract RugLaunderingFacet {
      * @return lastSalePrice Most recent sale price
      * @return recentPrices Last 3 sale prices
      */
-    function getSaleHistory(uint256 tokenId) external view returns (uint256 lastSalePrice, uint256[3] memory recentPrices) {
+    function getLaunderingSaleHistory(uint256 tokenId) external view returns (uint256 lastSalePrice, uint256[3] memory recentPrices) {
         LibRugStorage.AgingData storage aging = LibRugStorage.rugStorage().agingData[tokenId];
         return (aging.lastSalePrice, aging.recentSalePrices);
     }

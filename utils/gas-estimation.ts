@@ -82,6 +82,51 @@ function getFunctionABI(functionName: string): any[] {
         type: 'function',
       },
     ],
+    'restoreRug': [
+      {
+        inputs: [{ name: 'tokenId', type: 'uint256' }],
+        name: 'restoreRug',
+        outputs: [],
+        stateMutability: 'payable',
+        type: 'function',
+      },
+    ],
+    'masterRestoreRug': [
+      {
+        inputs: [{ name: 'tokenId', type: 'uint256' }],
+        name: 'masterRestoreRug',
+        outputs: [],
+        stateMutability: 'payable',
+        type: 'function',
+      },
+    ],
+    'canCleanRug': [
+      {
+        inputs: [{ name: 'tokenId', type: 'uint256' }],
+        name: 'canCleanRug',
+        outputs: [{ name: '', type: 'bool' }],
+        stateMutability: 'view',
+        type: 'function',
+      },
+    ],
+    'canRestoreRug': [
+      {
+        inputs: [{ name: 'tokenId', type: 'uint256' }],
+        name: 'canRestoreRug',
+        outputs: [{ name: '', type: 'bool' }],
+        stateMutability: 'view',
+        type: 'function',
+      },
+    ],
+    'needsMasterRestoration': [
+      {
+        inputs: [{ name: 'tokenId', type: 'uint256' }],
+        name: 'needsMasterRestoration',
+        outputs: [{ name: '', type: 'bool' }],
+        stateMutability: 'view',
+        type: 'function',
+      },
+    ],
   }
 
   return functionABIs[functionName] || [
@@ -192,9 +237,12 @@ export async function estimateContractGas(
 function getFallbackGasLimit(functionName: string): bigint {
   const gasLimits: Record<string, bigint> = {
     // TEMPORARY: Using maximum gas to bypass estimation issues
-    'cleanRug': BigInt(8_000_000),      // 8M gas: Maximum to ensure it works
-    'restoreRug': BigInt(8_000_000),    // 8M gas: Maximum to ensure it works
-    'masterRestoreRug': BigInt(8_000_000),// 8M gas: Maximum to ensure it works
+    'cleanRug': BigInt(12_000_000),     // 12M gas: Maximum to ensure it works
+    'restoreRug': BigInt(12_000_000),   // 12M gas: Maximum to ensure it works
+    'masterRestoreRug': BigInt(12_000_000),// 12M gas: Maximum to ensure it works
+    'canCleanRug': BigInt(500_000),     // View function
+    'canRestoreRug': BigInt(500_000),   // View function
+    'needsMasterRestoration': BigInt(500_000), // View function
 
     // Minting operations
     'mintRug': BigInt(8_000_000),       // 8M gas: Maximum to ensure it works
@@ -232,10 +280,13 @@ export async function estimateContractGasWithRetry(
   // This will be fixed later with proper gas estimation
   // ============================================================================
   console.log(`TEMPORARY: Using maximum gas for ${functionName} (bypassing estimation)`)
+  const gasLimit = functionName.includes('restore') || functionName.includes('masterRestore') ? BigInt(12_000_000) :
+                      functionName.startsWith('can') || functionName.startsWith('needs') ? BigInt(500_000) :
+                      BigInt(8_000_000)
   return {
-    gasLimit: BigInt(8_000_000), // 8M gas maximum
+    gasLimit: gasLimit, // 12M gas for restore functions, 8M for others
     gasPrice: ethers.parseUnits('1', 'gwei'), // 1 gwei
-    estimatedCost: BigInt(8_000_000) * ethers.parseUnits('1', 'gwei'),
+    estimatedCost: gasLimit * ethers.parseUnits('1', 'gwei'),
     success: true
   }
   let lastError: string = ''

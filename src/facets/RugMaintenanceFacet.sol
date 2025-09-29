@@ -54,8 +54,8 @@ contract RugMaintenanceFacet {
         aging.cleaningCount++;
         aging.maintenanceScore = (aging.cleaningCount * 2) + (aging.restorationCount * 5) + (aging.masterRestorationCount * 10) + (aging.launderingCount * 10);
 
-        // Update frame level based on new score
-        RugNFTFacet(address(this)).updateFrameLevel(tokenId);
+        // Frame level updates are handled by the NFT facet when tokenURI is requested
+        // No cross-facet calls needed here
 
         emit RugCleaned(tokenId, msg.sender, cost, isFree);
     }
@@ -94,13 +94,13 @@ contract RugMaintenanceFacet {
             aging.maxTextureLevel -= 1;
         }
 
-        // Reset texture progress timer (delays further wear)
+        // Reset texture progress timer to ensure immediate texture level reduction
         aging.textureProgressTimer = block.timestamp;
         aging.restorationCount++;
         aging.maintenanceScore = (aging.cleaningCount * 2) + (aging.restorationCount * 5) + (aging.masterRestorationCount * 10) + (aging.launderingCount * 10);
 
-        // Update frame level based on new score
-        RugNFTFacet(address(this)).updateFrameLevel(tokenId);
+        // Frame level updates are handled by the NFT facet when tokenURI is requested
+        // No cross-facet calls needed here
 
         emit RugRestored(tokenId, msg.sender, previousDirt, previousTexture - 1, rs.restorationCost);
     }
@@ -132,13 +132,14 @@ contract RugMaintenanceFacet {
 
         // Reset aging timers and max texture level (complete rejuvenation)
         aging.lastCleaned = block.timestamp;
+        aging.lastTextureReset = block.timestamp; // Reset texture aging completely
         aging.maxTextureLevel = 0; // Reset all texture wear to pristine condition
         aging.textureProgressTimer = block.timestamp;
         aging.masterRestorationCount++;
         aging.maintenanceScore = (aging.cleaningCount * 2) + (aging.restorationCount * 5) + (aging.masterRestorationCount * 10) + (aging.launderingCount * 10);
 
-        // Update frame level based on new score
-        RugNFTFacet(address(this)).updateFrameLevel(tokenId);
+        // Frame level updates are handled by the NFT facet when tokenURI is requested
+        // No cross-facet calls needed here
 
         emit RugMasterRestored(tokenId, msg.sender, currentDirt, currentTexture, rs.masterRestorationCost);
     }
@@ -210,13 +211,13 @@ contract RugMaintenanceFacet {
     }
 
     /**
-     * @notice Check if a rug can be restored (has dirt that can be reset)
+     * @notice Check if a rug can be restored (has texture wear that can be reduced)
      * @param tokenId Token ID to check
      * @return canRestore True if restoration is available
      */
     function canRestoreRug(uint256 tokenId) external view returns (bool) {
         require(IERC721(address(this)).ownerOf(tokenId) != address(0), "Token does not exist");
-        return _getDirtLevel(tokenId) > 0;
+        return _getTextureLevel(tokenId) > 0;
     }
 
     /**
@@ -277,16 +278,33 @@ contract RugMaintenanceFacet {
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
         LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
 
-        uint256 timeSinceLastReset = block.timestamp - aging.lastTextureReset;
+        // Get frame level to determine texture aging speed
+        string memory frameLevel = aging.currentFrameLevel;
+        uint256 agingMultiplier = _getTextureAgingMultiplier(frameLevel);
 
-        if (timeSinceLastReset >= rs.textureLevel2Days * 5) return 10;
-        if (timeSinceLastReset >= rs.textureLevel2Days * 4) return 8;
-        if (timeSinceLastReset >= rs.textureLevel2Days * 3) return 6;
-        if (timeSinceLastReset >= rs.textureLevel2Days * 2) return 4;
-        if (timeSinceLastReset >= rs.textureLevel2Days) return 2;
-        if (timeSinceLastReset >= rs.textureLevel1Days) return 1;
+        // Calculate current advancement level based on progress timer
+        uint256 timeSinceProgressStart = (block.timestamp - aging.textureProgressTimer) / agingMultiplier;
+        uint8 currentAdvancementLevel;
 
-        return 0;
+        // Texture progression over time (longer timeline than dirt)
+        if (timeSinceProgressStart >= rs.textureLevel2Days * 10) currentAdvancementLevel = 10;
+        else if (timeSinceProgressStart >= rs.textureLevel2Days * 8) currentAdvancementLevel = 8;
+        else if (timeSinceProgressStart >= rs.textureLevel2Days * 6) currentAdvancementLevel = 6;
+        else if (timeSinceProgressStart >= rs.textureLevel2Days * 4) currentAdvancementLevel = 4;
+        else if (timeSinceProgressStart >= rs.textureLevel2Days * 2) currentAdvancementLevel = 2;
+        else if (timeSinceProgressStart >= rs.textureLevel1Days * 2) currentAdvancementLevel = 1;
+        else currentAdvancementLevel = 0;
+
+        // Texture level = MAX(current advancement, max texture level ever reached)
+        // This ensures texture wear is persistent once achieved
+        return currentAdvancementLevel > aging.maxTextureLevel ? currentAdvancementLevel : aging.maxTextureLevel;
+    }
+
+    function _getTextureAgingMultiplier(string memory frameLevel) internal pure returns (uint256) {
+        if (keccak256(abi.encodePacked(frameLevel)) == keccak256(abi.encodePacked("Diamond"))) return 4; // 75% slower
+        if (keccak256(abi.encodePacked(frameLevel)) == keccak256(abi.encodePacked("Platinum"))) return 3; // 67% slower (2/3 speed)
+        if (keccak256(abi.encodePacked(frameLevel)) == keccak256(abi.encodePacked("Gold"))) return 2; // 50% slower
+        return 1; // Normal speed for Silver, Bronze, None
     }
 
     function _isCleaningFree(uint256 tokenId) internal view returns (bool) {
