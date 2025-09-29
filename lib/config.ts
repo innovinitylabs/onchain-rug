@@ -89,6 +89,14 @@ export const config = {
       free: 0,
       paid: '900000000000000', // 0.0009 ETH in wei
     },
+    restorationCosts: {
+      free: 0,
+      paid: '2000000000000000', // 0.002 ETH in wei (texture restoration)
+    },
+    masterRestorationCosts: {
+      free: 0,
+      paid: '5000000000000000', // 0.005 ETH in wei (complete restoration)
+    },
   },
   
   // 🔓 SAFE TO EXPOSE - Royalties (public wallet address)

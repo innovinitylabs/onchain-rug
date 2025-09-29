@@ -25,6 +25,7 @@ import { onchainRugsABI, contractAddresses } from '@/lib/web3'
 import { config } from '@/lib/config'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
+import LoadingAnimation from '@/components/LoadingAnimation'
 import LiquidGlass from '@/components/LiquidGlass'
 import { MarketplaceStats, RugMarketplace } from '@/components/RugMarketplace'
 import { formatEther } from 'viem'
@@ -373,8 +374,7 @@ export default function MarketPage() {
         <main className="flex-grow">
           <div className="container mx-auto px-4 py-20">
             <div className="text-center">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400 mb-4"></div>
-              <p className="text-white/70">Loading the rug market...</p>
+              <LoadingAnimation message="Loading the rug market..." />
             </div>
           </div>
         </main>

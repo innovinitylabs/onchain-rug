@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import LiquidGlass from '@/components/LiquidGlass'
+import LoadingAnimation from '@/components/LoadingAnimation'
 import { Settings, Shield, DollarSign, Clock, Users, Code, AlertCircle, Calculator, ArrowUpDown } from 'lucide-react'
 
 export default function AdminPage() {
@@ -23,7 +24,7 @@ export default function AdminPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
+        <LoadingAnimation message="Loading..." />
       </div>
     )
   }

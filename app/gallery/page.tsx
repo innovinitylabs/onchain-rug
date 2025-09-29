@@ -8,6 +8,7 @@ import { onchainRugsABI, contractAddresses } from '@/lib/web3'
 import { config } from '@/lib/config'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
+import LoadingAnimation from '@/components/LoadingAnimation'
 
 // Types for our NFT data
 interface RugTraits {
@@ -480,18 +481,9 @@ export default function GalleryPage() {
     setTimeout(() => setRefreshing(false), 1000)
   }
 
-  // Loading component with rotating valipokkann.svg
+  // Loading component with rug-loading-smol.webp
   const LoadingSpinner = () => (
-    <div className="flex items-center justify-center py-12">
-      <motion.img
-        src="/valipokkann.svg"
-        alt="Loading"
-        className="w-8 h-8"
-        animate={{ rotate: 360 }}
-        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-      />
-      <span className="ml-3 text-blue-600">Loading NFTs...</span>
-    </div>
+    <LoadingAnimation message="Loading NFTs..." />
   )
 
   return (

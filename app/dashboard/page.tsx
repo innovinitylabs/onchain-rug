@@ -7,6 +7,7 @@ import { onchainRugsABI, contractAddresses, callContractMultiFallback } from '@/
 import { Wallet, AlertCircle, RefreshCw, Droplets, Sparkles, Crown, TrendingUp, Clock, ExternalLink, Copy, CheckCircle } from 'lucide-react'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
+import LoadingAnimation from '@/components/LoadingAnimation'
 import { RugCleaning } from '@/components/RugCleaning'
 import { RugMarketplace } from '@/components/RugMarketplace'
 import { useRugData } from '@/hooks/use-rug-data'
@@ -455,8 +456,7 @@ export default function DashboardPage() {
         <main className="flex-grow">
           <div className="container mx-auto px-4 py-20">
             <div className="text-center">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400 mb-4"></div>
-              <p className="text-white/70">Loading your rugs...</p>
+              <LoadingAnimation message="Loading your rugs..." />
             </div>
           </div>
         </main>
