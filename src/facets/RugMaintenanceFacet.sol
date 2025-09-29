@@ -47,9 +47,9 @@ contract RugMaintenanceFacet {
             require(success, "Refund transfer failed");
         }
 
-        // Update aging data - reset both dirt and texture timers (spec-compliant maintenance)
+        // Update aging data - reset dirt timer only (texture wear is permanent until restored)
         aging.lastCleaned = block.timestamp;
-        aging.lastTextureReset = block.timestamp;
+        // Note: Texture timer is NOT reset during cleaning - texture wear is permanent
         aging.cleaningCount++;
         aging.maintenanceScore = (aging.cleaningCount * 2) + (aging.restorationCount * 5) + (aging.masterRestorationCount * 10) + (aging.launderingCount * 10);
 

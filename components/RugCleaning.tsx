@@ -366,9 +366,9 @@ export function RugCleaning({ tokenId, mintTime, lastCleaned: propLastCleaned }:
           Cleaning Info
         </div>
         <div className="text-blue-300 text-xs font-mono space-y-1">
-          <div>• Cleaning removes all dirt and resets aging timer</div>
-          <div>• Cost: Free for first 30 days, then {formatEther(BigInt(agingConfig.cleaningCosts.paid))} ETH</div>
-          <div>• Texture wear cannot be cleaned (permanent aging)</div>
+          <div>• Cleaning removes dirt and slows texture wear progression</div>
+          <div>• Cost: Free for first 30 minutes, then {formatEther(BigInt(agingConfig.cleaningCosts.paid))} ETH</div>
+          <div>• Texture wear is permanent until restored or laundered</div>
         </div>
       </div>
     </div>
