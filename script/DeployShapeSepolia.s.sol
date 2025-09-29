@@ -360,7 +360,7 @@ contract DeployShapeSepolia is Script {
     }
 
     function _getRugAdminSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](10);
+        bytes4[] memory selectors = new bytes4[](14);
         selectors[0] = RugAdminFacet.updateMintPricing.selector;
         selectors[1] = RugAdminFacet.updateCollectionCap.selector;
         selectors[2] = RugAdminFacet.updateWalletLimit.selector;
@@ -371,6 +371,10 @@ contract DeployShapeSepolia is Script {
         selectors[7] = RugAdminFacet.getMintPricing.selector;
         selectors[8] = RugAdminFacet.getConfig.selector;
         selectors[9] = RugAdminFacet.setScriptyContracts.selector;
+        selectors[10] = RugAdminFacet.addToExceptionList.selector;
+        selectors[11] = RugAdminFacet.removeFromExceptionList.selector;
+        selectors[12] = RugAdminFacet.getExceptionList.selector;
+        selectors[13] = RugAdminFacet.isWalletException.selector;
         return selectors;
     }
 
