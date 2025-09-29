@@ -350,38 +350,58 @@ contract RugNFTFacet is ERC721, ERC721URIStorage {
             rs.rugEthFSStorage
         );
 
-        // Create JSON metadata
-        string memory json = Base64.encode(
-            bytes(
-                string(
-                    abi.encodePacked(
-                        '{"name":"OnchainRug #', tokenId.toString(),
-                        '","description":"OnchainRugs by valipokkann","image":"https://onchainrugs.xyz/logo.png","animation_url":"',
-                        html,  // HTML generator now returns complete data URI
-                        '","attributes":[{"trait_type":"Text Lines","value":"', rug.textRows.length.toString(),
-                        '"},{"trait_type":"Character Count","value":"', rug.characterCount.toString(),
-                        '"},{"trait_type":"Palette Name","value":"', rug.paletteName,
-                        '"},{"trait_type":"Stripe Count","value":"', rug.stripeCount.toString(),
-                        '"},{"trait_type":"Complexity","value":"', uint256(rug.complexity).toString(),
-                        '"},{"trait_type":"Warp Thickness","value":"', uint256(rug.warpThickness).toString(),
-                        '"},{"trait_type":"Dirt Level","value":"', uint256(dirtLevel).toString(),
-                        '"},{"trait_type":"Texture Level","value":"', uint256(textureLevel).toString(),
-                        '"},{"trait_type":"Cleaning Count","value":"', aging.cleaningCount.toString(),
-                        '"},{"trait_type":"Restoration Count","value":"', aging.restorationCount.toString(),
-                        '"},{"trait_type":"Master Restoration Count","value":"', aging.masterRestorationCount.toString(),
-                        '"},{"trait_type":"Laundering Count","value":"', aging.launderingCount.toString(),
-                        '"},{"trait_type":"Maintenance Score","value":"', _calculateMaintenanceScore(tokenId).toString(),
-                        '"},{"trait_type":"Frame Level","value":"', _getFrameLevel(tokenId),
-                        '"},{"trait_type":"Museum Piece","value":"', aging.isMuseumPiece ? 'true' : 'false',
-                        '"},{"trait_type":"Last Sale Price","value":"', aging.lastSalePrice.toString(),
-                        '"},{"trait_type":"Mint Time","value":"', rug.mintTime.toString(),
-                        '"}]}'
-                    )
-                )
-            )
-        );
+        // Create JSON metadata (build in chunks to avoid stack depth issues)
+        string memory startJson = string(abi.encodePacked(
+            '{"name":"OnchainRug #', tokenId.toString(),
+            '","description":"OnchainRugs by valipokkann","image":"https://onchainrugs.xyz/logo.png","animation_url":"',
+            html,  // HTML generator now returns complete data URI
+            '","attributes":['
+        ));
+
+        string memory attrs1 = string(abi.encodePacked(
+            '{"trait_type":"Text Lines","value":"', rug.textRows.length.toString(),
+            '"},{"trait_type":"Character Count","value":"', rug.characterCount.toString(),
+            '"},{"trait_type":"Palette Name","value":"', rug.paletteName,
+            '"},{"trait_type":"Stripe Count","value":"', rug.stripeCount.toString(),
+            '"},{"trait_type":"Complexity","value":"', uint256(rug.complexity).toString(),
+            '"},{"trait_type":"Warp Thickness","value":"', uint256(rug.warpThickness).toString()
+        ));
+
+        string memory attrs2 = string(abi.encodePacked(
+            '"},{"trait_type":"Dirt Level","value":"', uint256(dirtLevel).toString(),
+            '"},{"trait_type":"Texture Level","value":"', uint256(textureLevel).toString(),
+            '"},{"trait_type":"Cleaning Count","value":"', aging.cleaningCount.toString(),
+            '"},{"trait_type":"Restoration Count","value":"', aging.restorationCount.toString()
+        ));
+
+        string memory attrs3 = string(abi.encodePacked(
+            '"},{"trait_type":"Master Restoration Count","value":"', aging.masterRestorationCount.toString(),
+            '"},{"trait_type":"Laundering Count","value":"', aging.launderingCount.toString(),
+            '"},{"trait_type":"Maintenance Score","value":"', _calculateMaintenanceScore(tokenId).toString(),
+            '"},{"trait_type":"Frame Level","value":"', _getFrameLevel(tokenId)
+        ));
+
+        string memory attrs4 = string(abi.encodePacked(
+            '"},{"trait_type":"Museum Piece","value":"', aging.isMuseumPiece ? 'true' : 'false',
+            '"},{"trait_type":"Last Sale Price","value":"', aging.lastSalePrice.toString(),
+            '"},{"trait_type":"Mint Time","value":"', rug.mintTime.toString(),
+            '"},{"trait_type":"Last Cleaned","value":"', aging.lastCleaned.toString(),
+            '"}]}'
+        ));
+
+        string memory fullJson = string(abi.encodePacked(startJson, attrs1, attrs2, attrs3, attrs4));
+        string memory json = Base64.encode(bytes(fullJson));
 
         return string.concat("data:application/json;base64,", json);
+    }
+
+    // ERC721 Metadata overrides
+    function name() public pure override(ERC721) returns (string memory) {
+        return "OnchainRugs";
+    }
+
+    function symbol() public pure override(ERC721) returns (string memory) {
+        return "RUGS";
     }
 
     function supportsInterface(bytes4 interfaceId) public view override(ERC721, ERC721URIStorage) returns (bool) {

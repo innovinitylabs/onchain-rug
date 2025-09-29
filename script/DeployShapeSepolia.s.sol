@@ -325,7 +325,7 @@ contract DeployShapeSepolia is Script {
     }
 
     function _getRugNFTSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](25);
+        bytes4[] memory selectors = new bytes4[](26);
         // ERC721 Standard Functions (hardcoded selectors from forge inspect)
         selectors[0] = bytes4(0x70a08231); // balanceOf(address)
         selectors[1] = bytes4(0x6352211e); // ownerOf(uint256)
@@ -354,6 +354,7 @@ contract DeployShapeSepolia is Script {
         selectors[22] = RugNFTFacet.walletMints.selector;         // f0293fd3
         selectors[23] = RugNFTFacet.isWalletException.selector;   // 2d2bf633
         selectors[24] = RugNFTFacet.getFrameLevel.selector;       // ceffb063
+        selectors[25] = RugNFTFacet.updateFrameLevel.selector;    // 650def5b
 
         return selectors;
     }
