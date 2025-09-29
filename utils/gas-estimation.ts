@@ -8,7 +8,6 @@
 
 import { ethers } from 'ethers'
 import { getAlchemyRpcUrl, getContractAddress } from './contract-utils'
-import { onchainRugsABI } from '@/lib/web3'
 import { handleContractError, logContractError } from './error-utils'
 
 export interface GasEstimationOptions {
@@ -29,9 +28,71 @@ export interface GasEstimateResult {
  * Default gas estimation options
  */
 export const DEFAULT_GAS_OPTIONS: GasEstimationOptions = {
-  gasLimitMultiplier: 1.2, // 20% buffer
+  gasLimitMultiplier: 1.25, // 25% buffer
   maxGasLimit: BigInt(5_000_000), // 5M gas max
   minGasLimit: BigInt(21_000), // Minimum transaction gas
+}
+
+/**
+ * Get ABI for specific contract functions
+ */
+function getFunctionABI(functionName: string): any[] {
+  const functionABIs: Record<string, any> = {
+    // Rug maintenance functions
+    'mintRug': [
+      {
+        inputs: [
+          { name: 'textRows', type: 'string[]' },
+          { name: 'palette', type: 'string' },
+          { name: 'stripeData', type: 'string' },
+          { name: 'characterMap', type: 'string' },
+          { name: 'warpThickness', type: 'uint256' }
+        ],
+        name: 'mintWithText',
+        outputs: [],
+        stateMutability: 'payable',
+        type: 'function',
+      },
+    ],
+    // ERC721 functions (from onchainRugsABI)
+    'ownerOf': [
+      {
+        inputs: [{ name: 'tokenId', type: 'uint256' }],
+        name: 'ownerOf',
+        outputs: [{ name: '', type: 'address' }],
+        stateMutability: 'view',
+        type: 'function',
+      },
+    ],
+    'tokenURI': [
+      {
+        inputs: [{ name: 'tokenId', type: 'uint256' }],
+        name: 'tokenURI',
+        outputs: [{ name: '', type: 'string' }],
+        stateMutability: 'view',
+        type: 'function',
+      },
+    ],
+    'cleanRug': [
+      {
+        inputs: [{ name: 'tokenId', type: 'uint256' }],
+        name: 'cleanRug',
+        outputs: [],
+        stateMutability: 'payable',
+        type: 'function',
+      },
+    ],
+  }
+
+  return functionABIs[functionName] || [
+    {
+      inputs: [{ name: '', type: 'uint256' }],
+      name: functionName,
+      outputs: [],
+      stateMutability: 'view',
+      type: 'function',
+    },
+  ]
 }
 
 /**
@@ -43,7 +104,8 @@ export async function estimateContractGas(
   options: GasEstimationOptions = DEFAULT_GAS_OPTIONS,
   chainId: number,
   apiKey: string,
-  value?: bigint // For payable functions
+  value?: bigint, // For payable functions
+  fromAddress?: string // For ownership simulation
 ): Promise<GasEstimateResult> {
   try {
     const contractAddress = getContractAddress(chainId)
@@ -54,14 +116,17 @@ export async function estimateContractGas(
     const rpcUrl = getAlchemyRpcUrl(chainId, apiKey)
     const provider = new ethers.JsonRpcProvider(rpcUrl)
 
-    // Create contract instance for estimation
-    const contract = new ethers.Contract(contractAddress, onchainRugsABI, provider)
+    // Create contract instance with ABI that includes the requested function
+    // For functions that require ownership/state checks, provide basic ABI
+    const contractABI = getFunctionABI(functionName)
+    const contract = new ethers.Contract(contractAddress, contractABI, provider)
 
     // Prepare transaction data
     const txData = {
       to: contractAddress,
       data: contract.interface.encodeFunctionData(functionName, args),
       value: value || BigInt(0),
+      ...(fromAddress && { from: fromAddress }), // Include from address for ownership simulation
     }
 
     // Estimate gas limit
@@ -84,7 +149,13 @@ export async function estimateContractGas(
 
     // Get current gas price
     const feeData = await provider.getFeeData()
-    const gasPrice = feeData.gasPrice || feeData.maxFeePerGas || BigInt(1_000_000_000) // 1 gwei fallback
+    let gasPrice = feeData.gasPrice || feeData.maxFeePerGas || ethers.parseUnits('2', 'gwei') // 2 gwei fallback
+
+    // Ensure minimum gas price for testnets (prevent extremely low gas prices)
+    const minGasPrice = ethers.parseUnits('1', 'gwei') // 1 gwei minimum
+    if (gasPrice < minGasPrice) {
+      gasPrice = minGasPrice
+    }
 
     // Calculate estimated cost
     const estimatedCost = gasLimit * gasPrice + (value || BigInt(0))
@@ -120,13 +191,13 @@ export async function estimateContractGas(
  */
 function getFallbackGasLimit(functionName: string): bigint {
   const gasLimits: Record<string, bigint> = {
-    // Maintenance operations (complex with cross-facet calls)
-    'cleanRug': BigInt(500_000),        // Complex: checks + updates + frame level update
-    'restoreRug': BigInt(400_000),      // Texture restoration
-    'masterRestoreRug': BigInt(600_000),// Full restoration
+    // TEMPORARY: Using maximum gas to bypass estimation issues
+    'cleanRug': BigInt(8_000_000),      // 8M gas: Maximum to ensure it works
+    'restoreRug': BigInt(8_000_000),    // 8M gas: Maximum to ensure it works
+    'masterRestoreRug': BigInt(8_000_000),// 8M gas: Maximum to ensure it works
 
     // Minting operations
-    'mintRug': BigInt(800_000),         // Complex minting with data storage
+    'mintRug': BigInt(8_000_000),       // 8M gas: Maximum to ensure it works
 
     // Commerce operations
     'buyRug': BigInt(350_000),          // Transfer + payment
@@ -153,13 +224,25 @@ export async function estimateContractGasWithRetry(
   chainId: number,
   apiKey: string,
   value?: bigint,
+  fromAddress?: string,
   retries: number = 2
 ): Promise<GasEstimateResult> {
+  // ============================================================================
+  // TEMPORARY SOLUTION: Using maximum gas to bypass estimation issues
+  // This will be fixed later with proper gas estimation
+  // ============================================================================
+  console.log(`TEMPORARY: Using maximum gas for ${functionName} (bypassing estimation)`)
+  return {
+    gasLimit: BigInt(8_000_000), // 8M gas maximum
+    gasPrice: ethers.parseUnits('1', 'gwei'), // 1 gwei
+    estimatedCost: BigInt(8_000_000) * ethers.parseUnits('1', 'gwei'),
+    success: true
+  }
   let lastError: string = ''
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      const result = await estimateContractGas(functionName, args, options, chainId, apiKey, value)
+      const result = await estimateContractGas(functionName, args, options, chainId, apiKey, value, fromAddress)
 
       // If we got a successful estimate or this is our last attempt, return it
       if (result.success || attempt === retries) {

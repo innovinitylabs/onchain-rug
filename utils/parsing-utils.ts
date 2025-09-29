@@ -50,10 +50,10 @@ export function parseAgingDataFromAttributes(attributes: any[]): {
         textureLevel = parseInt(attr.value) || 0
         break
       case 'Last Cleaned':
-        lastCleaned = attr.value ? BigInt(Math.floor(new Date(attr.value).getTime() / 1000)) : null
+        lastCleaned = attr.value ? BigInt(attr.value) : null
         break
       case 'Mint Time':
-        mintTime = attr.value ? new Date(attr.value).getTime() / 1000 : 0
+        mintTime = attr.value ? parseInt(attr.value) : 0
         break
     }
   }
@@ -115,7 +115,10 @@ export function parseTokenURIData(tokenURI: string): {
     tokenURI,
     metadata,
     aging,
-    traits,
+    traits: {
+      ...traits,
+      mintTime: aging.mintTime, // Include mintTime from aging data in traits
+    },
     animationUrl: metadata.animation_url,
     image: metadata.image,
     name: metadata.name,

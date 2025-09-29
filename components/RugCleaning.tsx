@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
-import { useAccount, useChainId } from 'wagmi'
+import { useState, useEffect } from 'react'
+import { useAccount, useChainId, useSwitchChain, useSendTransaction } from 'wagmi'
+import { estimateContractGasWithRetry, getRecommendedGasOptions, formatGasEstimate } from '@/utils/gas-estimation'
 import { useRugAging, useCleanRug } from '@/hooks/use-rug-aging'
 import { motion } from 'framer-motion'
 import { Droplets, AlertCircle, CheckCircle, Clock } from 'lucide-react'
@@ -10,12 +11,29 @@ import { formatEther } from 'viem'
 
 interface RugCleaningProps {
   tokenId: bigint
+  mintTime?: number
+  lastCleaned?: bigint | Date | null
 }
 
-export function RugCleaning({ tokenId }: RugCleaningProps) {
+export function RugCleaning({ tokenId, mintTime, lastCleaned: propLastCleaned }: RugCleaningProps) {
   const { address, isConnected } = useAccount()
   const chainId = useChainId()
-  const { dirtLevel, textureLevel, lastCleaned, refetch } = useRugAging(tokenId)
+  const { switchChain } = useSwitchChain()
+  const { sendTransaction } = useSendTransaction()
+  const { dirtLevel, textureLevel, lastCleaned: hookLastCleaned, refetch } = useRugAging(tokenId)
+
+  // Use prop data if available, otherwise fall back to hook data
+  const actualMintTime = mintTime
+
+  // Normalize lastCleaned to bigint timestamp in seconds
+  const normalizeLastCleaned = (value: bigint | Date | null | undefined): bigint | undefined => {
+    if (value === null || value === undefined) return undefined
+    if (typeof value === 'bigint') return value
+    if (value instanceof Date) return BigInt(Math.floor(value.getTime() / 1000))
+    return undefined
+  }
+
+  const actualLastCleaned = normalizeLastCleaned(propLastCleaned !== undefined ? propLastCleaned : hookLastCleaned)
   const {
     cleanRug,
     isPending,
@@ -24,6 +42,18 @@ export function RugCleaning({ tokenId }: RugCleaningProps) {
     error
   } = useCleanRug()
 
+  // Monitor transaction completion and refetch data
+  useEffect(() => {
+    if (isSuccess) {
+      console.log('Transaction confirmed, refetching data...')
+      refetch()
+    }
+    if (error) {
+      console.error('Transaction error:', error)
+      // Error is already displayed in the UI, no need for alert here
+    }
+  }, [isSuccess, error, refetch])
+
   const [gasEstimate, setGasEstimate] = useState<string>('')
   const [estimatingGas, setEstimatingGas] = useState(false)
 
@@ -31,15 +61,22 @@ export function RugCleaning({ tokenId }: RugCleaningProps) {
   const needsCleaning = dirtLevel > 0
 
   const getCleaningCost = () => {
-    // Check if rug is within free cleaning period (30 minutes)
+    // Check if rug is within free cleaning periods (matching contract logic)
     const now = Math.floor(Date.now() / 1000)
-    const timeSinceMint = lastCleaned ? now - (lastCleaned.getTime() / 1000) : 0
 
-    if (timeSinceMint < agingConfig.textureAging.intense) {
+    // Free if within initial period from mint (30 minutes)
+    const timeSinceMint = actualMintTime ? now - actualMintTime : 0
+    if (timeSinceMint <= 30 * 60) { // 30 minutes in seconds
       return agingConfig.cleaningCosts.free // Free for first 30 minutes
     }
 
-    return agingConfig.cleaningCosts.paid // Paid after 30 minutes
+    // Free if recently cleaned (within 11 minutes of last clean)
+    const timeSinceLastClean = actualLastCleaned ? now - Number(actualLastCleaned) : 0
+    if (timeSinceLastClean <= 11 * 60) { // 11 minutes in seconds
+      return agingConfig.cleaningCosts.free // Free within 11 minutes of cleaning
+    }
+
+    return agingConfig.cleaningCosts.paid // Paid otherwise
   }
 
   const getDirtDescription = () => {
@@ -59,49 +96,99 @@ export function RugCleaning({ tokenId }: RugCleaningProps) {
   const handleClean = async () => {
     if (!isConnected || !isCorrectChain || !needsCleaning) return
 
+    console.log('Starting clean process for token:', tokenId.toString())
+    console.log('User address:', address)
+    console.log('Chain ID:', chainId)
+    console.log('Dirt level:', dirtLevel)
+
+    // Validate that the user owns this token before proceeding
+    if (!address) {
+      console.error('No user address available')
+      return
+    }
+
     setEstimatingGas(true)
-    setGasEstimate('')
+    // Don't clear gas estimate - keep previous estimate visible
+    // setGasEstimate('')
 
     try {
-      // First estimate gas using secure server-side API
+      // Estimate gas using client-side API with domain-restricted key
       const cleaningCost = getCleaningCost()
+      const apiKey = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY
 
-      const response = await fetch('/api/gas-estimate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          functionName: 'cleanRug',
-          args: [tokenId.toString()],
-          chainId,
-          value: cleaningCost.toString()
-        })
-      })
+      if (!apiKey) {
+        console.warn('NEXT_PUBLIC_ALCHEMY_API_KEY not found, using wagmi default')
+        setGasEstimate('Using automatic gas estimation...')
+        setEstimatingGas(false)
 
-      const estimate = await response.json()
+        const cleanResult = await cleanRug(
+          tokenId,
+          dirtLevel,
+          actualLastCleaned ? actualLastCleaned : undefined
+        )
+        console.log('Clean transaction submitted (wagmi gas estimation):', cleanResult)
+      } else {
+        // Use client-side gas estimation with domain-restricted API key
+        const gasOptions = getRecommendedGasOptions('cleanRug')
+        let estimate
+        try {
+          estimate = await estimateContractGasWithRetry(
+            'cleanRug',
+            [tokenId],
+            gasOptions,
+            chainId,
+            apiKey,
+            BigInt(cleaningCost),
+            address // Pass user address for ownership simulation
+          )
+        } catch (gasError) {
+          console.warn('Client-side gas estimation failed, using fallback:', gasError)
+          // Use fallback gas estimate
+          const fallbackGasPrice = '1000000000' // 1 gwei
+          const fallbackGasLimit = '500000' // 500K gas
+          const fallbackCost = (BigInt(fallbackGasLimit) * BigInt(fallbackGasPrice)).toString()
 
-      if (!estimate.success) {
-        console.warn('Gas estimation failed, using fallback:', estimate.error)
+          estimate = {
+            gasLimit: fallbackGasLimit,
+            gasPrice: fallbackGasPrice,
+            estimatedCost: fallbackCost,
+            readable: `${fallbackGasLimit} gas @ 1.0 gwei = 0.0005 ETH (fallback)`,
+            success: true
+          }
+          console.log('Using fallback estimate:', estimate)
+        }
+
+        const formatted = formatGasEstimate(estimate)
+        setGasEstimate(`TEMPORARY MAX GAS: ${formatted.readable}`)
+        setEstimatingGas(false)
+
+        console.log('Gas estimate for cleaning:', formatted)
+
+        // Now execute the transaction with estimated gas
+        const gasLimit = BigInt(estimate.gasLimit)
+        console.log('Passing gasLimit to cleanRug:', gasLimit.toString(), 'type:', typeof gasLimit)
+
+        const cleanResult = await cleanRug(
+          tokenId,
+          dirtLevel,
+          actualLastCleaned ? actualLastCleaned : undefined,
+          { gasLimit }
+        )
+        console.log('Clean transaction submitted (client-side gas estimate):', cleanResult)
+
+        // The transaction is now pending - UI will monitor hook states
       }
-
-      setGasEstimate(estimate.readable)
-      setEstimatingGas(false)
-
-      console.log('Gas estimate for cleaning:', estimate)
-
-      // Now execute the transaction with estimated gas
-      await cleanRug(
-        tokenId,
-        dirtLevel,
-        lastCleaned ? BigInt(Math.floor(lastCleaned.getTime() / 1000)) : undefined,
-        { gasLimit: BigInt(estimate.gasLimit) }
-      )
-      await refetch()
     } catch (err) {
       console.error('Clean rug failed:', err)
       setEstimatingGas(false)
-      setGasEstimate('')
+      // Show alert for critical errors
+      if (err instanceof Error) {
+        alert(`Transaction failed: ${err.message}`)
+      } else {
+        alert('Transaction failed with unknown error')
+      }
+      // Don't clear gas estimate on error - keep it visible for debugging
+      // setGasEstimate('')
     }
   }
 
@@ -140,8 +227,8 @@ export function RugCleaning({ tokenId }: RugCleaningProps) {
           <div>Token ID: {tokenId.toString()}</div>
           <div>Dirt Level: {getDirtDescription()}</div>
           <div>Texture: {getTextureDescription()}</div>
-          {lastCleaned && (
-            <div>Last Cleaned: {lastCleaned.toLocaleDateString()}</div>
+          {actualLastCleaned && (
+            <div>Last Cleaned: {new Date(Number(actualLastCleaned) * 1000).toLocaleDateString()}</div>
           )}
         </div>
       </div>
@@ -171,6 +258,51 @@ export function RugCleaning({ tokenId }: RugCleaningProps) {
             Texture: {textureLevel}/2
           </span>
         </div>
+      </div>
+
+      {/* Debug Info */}
+      <div className="bg-gray-900/50 border border-gray-600/30 rounded p-2 text-xs font-mono">
+        <div className="text-gray-300">🔍 Debug Info:</div>
+        <div className="text-cyan-400">Connected: {isConnected ? '✅' : '❌'}</div>
+        <div className="text-cyan-400">Chain ID: {chainId} (Expected: 11011/360)</div>
+        <div className="text-cyan-400">Address: {address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'None'}</div>
+        <div className="text-cyan-400">Token ID: {tokenId.toString()}</div>
+        {chainId !== 11011 && chainId !== 360 && (
+          <div className="text-yellow-400 mt-1">
+            ⚠️ Wrong network! Need Shape Sepolia (11011) or Shape Mainnet (360)
+            <button
+              onClick={() => switchChain({ chainId: 11011 })}
+              className="ml-2 px-2 py-1 bg-yellow-600 hover:bg-yellow-500 text-black text-xs rounded"
+            >
+              Switch to Shape Sepolia
+            </button>
+          </div>
+        )}
+        <div className="text-cyan-400 mt-1">
+          RainbowKit Status: Connected via {isConnected ? 'Wallet' : 'None'}
+        </div>
+        {isConnected && (
+          <button
+            onClick={async () => {
+              try {
+                console.log('Testing wallet connection with 0 ETH transaction...')
+                const result = await sendTransaction({
+                  to: address as `0x${string}`,
+                  value: BigInt(0),
+                  gas: BigInt(21000), // Standard ETH transfer gas
+                })
+                console.log('Test transaction result:', result)
+                alert('Test transaction sent! Check wallet for confirmation.')
+              } catch (e) {
+                console.error('Test transaction failed:', e)
+                alert('Test transaction failed: ' + (e as Error).message)
+              }
+            }}
+            className="mt-2 px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded"
+          >
+            Test Wallet (0 ETH)
+          </button>
+        )}
       </div>
 
       {/* Error Display */}

@@ -394,10 +394,32 @@ export default function DashboardPage() {
     const now = Math.floor(Date.now() / 1000)
     const diff = now - Number(timestamp)
 
-    if (diff < 60) return `${diff}s ago`
-    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
-    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
-    return `${Math.floor(diff / 86400)}d ago`
+    // Format absolute date/time
+    const date = new Date(Number(timestamp) * 1000)
+    const dateStr = date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    })
+    const timeStr = date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    })
+
+    // Calculate relative time
+    let relativeTime
+    if (diff < 60) {
+      relativeTime = `${diff}s ago`
+    } else if (diff < 3600) {
+      relativeTime = `${Math.floor(diff / 60)}m ago`
+    } else if (diff < 86400) {
+      relativeTime = `${Math.floor(diff / 3600)}h ago`
+    } else {
+      relativeTime = `${Math.floor(diff / 86400)}d ago`
+    }
+
+    return `${dateStr} ${timeStr} (${relativeTime})`
   }
 
   if (!isConnected) {
@@ -754,7 +776,11 @@ export default function DashboardPage() {
                       </div>
 
                       {/* Maintenance */}
-                      <RugCleaning tokenId={BigInt(selectedRug.tokenId)} />
+                      <RugCleaning
+                        tokenId={BigInt(selectedRug.tokenId)}
+                        mintTime={selectedRug.aging.mintTime}
+                        lastCleaned={selectedRug.aging.lastCleaned}
+                      />
 
                       {/* Live Status Check */}
                       <div className="flex justify-center">

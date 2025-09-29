@@ -106,7 +106,8 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
     'DIAMOND HANDS',
     'ART ON BLOCKCHAIN',
     'DO YOUR OWN RUGS',
-    'SOFT RUGS'
+    'SOFT RUGS',
+    'THREE JS'
   ]
 
   // Function to get a unique palette index

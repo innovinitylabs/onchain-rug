@@ -1,7 +1,8 @@
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt, useChainId, usePublicClient } from 'wagmi'
 import { useState, useEffect, useMemo } from 'react'
+import { ethers } from 'ethers'
 import { config, agingConfig } from '@/lib/config'
-import { shapeSepolia, shapeMainnet, contractAddresses } from '@/lib/web3'
+import { shapeSepolia, shapeMainnet, contractAddresses, onchainRugsABI } from '@/lib/web3'
 import { useTokenURI } from './use-token-uri'
 import { getDirtDescription, getTextureDescription } from '@/utils/parsing-utils'
 import { estimateContractGasWithRetry, getRecommendedGasOptions, formatGasEstimate } from '@/utils/gas-estimation'
@@ -86,7 +87,35 @@ export function useCleanRug() {
   const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
 
   const cleanRug = async (tokenId: bigint, dirtLevel: number, mintTime?: bigint, providedGasEstimate?: { gasLimit: bigint }) => {
-    if (!writeContract) return
+    console.log('🔍 DEBUG: Wallet connection check')
+    console.log('Address:', address)
+    console.log('Chain ID:', chainId)
+    console.log('writeContract available:', !!writeContract)
+
+    if (!address) {
+      console.error('❌ No wallet connected')
+      throw new Error('Please connect your wallet first')
+    }
+
+    // Check if on correct network
+    const expectedChainIds = [11011, 360] // Shape Sepolia and Shape Mainnet
+    if (!expectedChainIds.includes(chainId)) {
+      console.error('❌ Wrong network:', chainId, 'Expected:', expectedChainIds)
+      throw new Error(`Please switch to Shape Sepolia (${11011}) or Shape Mainnet (${360}) network`)
+    }
+
+    if (!writeContract) {
+      console.error('❌ writeContract function not available')
+      return
+    }
+
+    // Check for existing error
+    if (error) {
+      console.error('❌ Existing transaction error:', error)
+      throw new Error(`Cannot proceed with transaction: ${error.message}`)
+    }
+
+    console.log('cleanRug called with:', { tokenId: tokenId.toString(), dirtLevel, mintTime, providedGasEstimate })
 
     // Calculate cleaning cost based on age (free for first 30 minutes)
     const now = Math.floor(Date.now() / 1000)
@@ -95,19 +124,30 @@ export function useCleanRug() {
       ? agingConfig.cleaningCosts.free
       : agingConfig.cleaningCosts.paid
 
-    try {
-      let gasLimit: bigint
+    console.log('Cleaning cost calculation:', { now, timeSinceMint, cleaningCost })
 
-      // Use provided gas estimate if available, otherwise do client-side estimation
+    try {
+      const chain = chainId === 360 ? shapeMainnet : shapeSepolia
+
+      // Prepare transaction parameters
+      const txParams: any = {
+        address: contractAddress as `0x${string}`,
+        abi: onchainRugsABI,
+        functionName: 'cleanRug',
+        args: [tokenId],
+        value: BigInt(cleaningCost),
+        account: address,
+      }
+
+      // Add gas estimate if provided, otherwise do client-side estimation
       if (providedGasEstimate?.gasLimit) {
-        gasLimit = providedGasEstimate.gasLimit
-        console.log('Using provided gas estimate:', gasLimit.toString())
+        txParams.gasLimit = BigInt(providedGasEstimate.gasLimit)
+        console.log('Using provided gas estimate:', providedGasEstimate.gasLimit.toString())
       } else {
-        // Fallback: Get custom gas estimation for complex cleanRug function
-        console.warn('No gas estimate provided, falling back to client-side estimation')
-        const apiKey = process.env.ALCHEMY_API_KEY || process.env.NEXT_PUBLIC_ALCHEMY_API_KEY || ''
+        // Get client-side gas estimation with domain-restricted API key
+        const apiKey = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY
         if (!apiKey) {
-          throw new Error('ALCHEMY_API_KEY not configured - gas estimation failed')
+          throw new Error('NEXT_PUBLIC_ALCHEMY_API_KEY not configured - gas estimation failed')
         }
 
         const gasOptions = getRecommendedGasOptions('cleanRug')
@@ -117,34 +157,114 @@ export function useCleanRug() {
           gasOptions,
           chainId,
           apiKey,
-          BigInt(cleaningCost)
+          BigInt(cleaningCost),
+          address // Pass user address for ownership simulation
         )
 
-        gasLimit = gasEstimate.gasLimit
+        txParams.gasLimit = gasEstimate.gasLimit
         console.log('CleanRug gas estimation:', formatGasEstimate(gasEstimate))
       }
 
-      const chain = chainId === 360 ? shapeMainnet : shapeSepolia
-      await writeContract({
+      console.log('Submitting cleanRug transaction with params:', {
+        address: txParams.address,
+        functionName: txParams.functionName,
+        args: txParams.args,
+        value: txParams.value?.toString(),
+        gasLimit: txParams.gasLimit?.toString(),
+        gasLimitType: typeof txParams.gasLimit,
+        chain: txParams.chain?.id
+      })
+
+      // Additional validation
+      if (!txParams.gasLimit || txParams.gasLimit === BigInt(0)) {
+        console.error('CRITICAL: gasLimit is invalid!', txParams.gasLimit)
+        throw new Error('Invalid gas limit for transaction')
+      }
+
+      // Calculate intrinsic gas for the transaction
+      // Base gas: 21,000 for transaction
+      // Data gas: 16 gas per non-zero byte, 4 gas per zero byte
+      const BASE_GAS = BigInt(21000)
+      const NON_ZERO_BYTE_GAS = BigInt(16)
+      const ZERO_BYTE_GAS = BigInt(4)
+
+      // Encode the data to calculate intrinsic gas
+      const contract = new ethers.Contract(contractAddress, onchainRugsABI)
+      const callData = contract.interface.encodeFunctionData('cleanRug', [tokenId])
+
+      // Count zero and non-zero bytes in the data
+      let zeroBytes = BigInt(0)
+      let nonZeroBytes = BigInt(0)
+      for (let i = 2; i < callData.length; i += 2) { // Skip '0x' prefix
+        const byte = parseInt(callData.slice(i, i + 2), 16)
+        if (byte === 0) {
+          zeroBytes++
+        } else {
+          nonZeroBytes++
+        }
+      }
+
+      const dataGas = (zeroBytes * ZERO_BYTE_GAS) + (nonZeroBytes * NON_ZERO_BYTE_GAS)
+      const intrinsicGas = BASE_GAS + dataGas
+
+      console.log('Intrinsic gas calculation:', {
+        baseGas: BASE_GAS.toString(),
+        zeroBytes: zeroBytes.toString(),
+        nonZeroBytes: nonZeroBytes.toString(),
+        dataGas: dataGas.toString(),
+        intrinsicGas: intrinsicGas.toString(),
+        callDataLength: callData.length,
+        callDataSample: callData.slice(0, 66) + '...'
+      })
+
+      // Ensure gas limit is at least intrinsic gas + buffer for execution
+      const executionBuffer = BigInt(50000) // Buffer for contract execution
+      const recommendedGas = intrinsicGas + executionBuffer
+      const finalGasLimit = txParams.gasLimit > recommendedGas ? txParams.gasLimit : recommendedGas
+
+      console.log('Gas limit calculation:', {
+        providedGas: txParams.gasLimit.toString(),
+        recommendedGas: recommendedGas.toString(),
+        finalGasLimit: finalGasLimit.toString()
+      })
+
+      // Trigger the transaction using writeContract (now that ABI includes cleanRug)
+      console.log('Sending transaction with writeContract...')
+      console.log('Final gas limit:', finalGasLimit, 'type:', typeof finalGasLimit)
+
+      const writeContractParams = {
         address: contractAddress as `0x${string}`,
-        abi: [
-          {
-            inputs: [{ name: 'tokenId', type: 'uint256' }],
-            name: 'cleanRug',
-            outputs: [],
-            stateMutability: 'payable',
-            type: 'function',
-          },
-        ] as const,
+        abi: onchainRugsABI as any, // Cast to any to bypass strict typing
         functionName: 'cleanRug',
         args: [tokenId],
         value: BigInt(cleaningCost),
-        gas: gasLimit,
+        gas: Number(finalGasLimit), // Use calculated gas limit that meets intrinsic gas requirements
         chain,
-        account: address,
+        account: address as `0x${string}`,
+      }
+
+      console.log('writeContract parameters:', {
+        address: writeContractParams.address,
+        functionName: writeContractParams.functionName,
+        args: writeContractParams.args,
+        value: writeContractParams.value?.toString(),
+        gas: writeContractParams.gas?.toString(),
+        gasType: typeof writeContractParams.gas,
+        chainId: writeContractParams.chain?.id,
+        account: writeContractParams.account
       })
+
+      try {
+        const result = await writeContract(writeContractParams)
+        console.log('writeContract result:', result)
+        return { success: true, result }
+      } catch (writeError) {
+        console.error('writeContract failed:', writeError)
+        throw writeError
+      }
     } catch (err) {
       console.error('Failed to clean rug:', err)
+      throw err // Re-throw so the UI can handle it
     }
   }
 

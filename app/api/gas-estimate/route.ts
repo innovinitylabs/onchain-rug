@@ -28,6 +28,23 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // For functions that require ownership/state checks, return fallback
+    // Gas estimation will fail because we can't simulate with proper ownership
+    if (functionName === 'cleanRug' || functionName === 'mintRug' || functionName === 'transferFrom') {
+        console.log(`Using fallback gas estimation for ${functionName} (requires ownership checks)`)
+        const fallbackGasLimit = '8000000' // 8M gas for complex operations
+      const fallbackGasPrice = ethers.parseUnits('2', 'gwei').toString()
+
+      return NextResponse.json({
+        success: true,
+        gasLimit: fallbackGasLimit,
+        gasPrice: fallbackGasPrice,
+        estimatedCost: (BigInt(fallbackGasLimit) * BigInt(fallbackGasPrice)).toString(),
+        readable: `${fallbackGasLimit} gas @ ${ethers.formatUnits(fallbackGasPrice, 'gwei')} gwei = ${ethers.formatEther(BigInt(fallbackGasLimit) * BigInt(fallbackGasPrice))} ETH (fallback)`,
+        fallback: true // Indicate this is a fallback estimate
+      })
+    }
+
     const contractAddress = getContractAddress(chainId)
     if (!contractAddress) {
       return NextResponse.json(
@@ -67,7 +84,13 @@ export async function POST(request: NextRequest) {
 
     // Get current gas price
     const feeData = await provider.getFeeData()
-    const gasPrice = feeData.gasPrice || feeData.maxFeePerGas || ethers.parseUnits('2', 'gwei')
+    let gasPrice = feeData.gasPrice || feeData.maxFeePerGas || ethers.parseUnits('2', 'gwei')
+
+    // Ensure minimum gas price for testnets
+    const minGasPrice = ethers.parseUnits('1', 'gwei')
+    if (gasPrice < minGasPrice) {
+      gasPrice = minGasPrice
+    }
 
     // Calculate estimated cost
     const estimatedCost = bufferedGasLimit * gasPrice
@@ -83,8 +106,8 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Gas estimation error:', error)
 
-    // Return fallback values on error
-    const fallbackGasLimit = '500000' // 500K gas for complex operations
+        // Return fallback values on error
+        const fallbackGasLimit = '8000000' // 8M gas for complex operations
     const fallbackGasPrice = ethers.parseUnits('2', 'gwei').toString()
 
     return NextResponse.json({

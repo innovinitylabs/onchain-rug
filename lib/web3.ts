@@ -130,6 +130,13 @@ export const onchainRugsABI = [
     stateMutability: 'payable',
     type: 'function',
   },
+  {
+    inputs: [{ name: 'tokenId', type: 'uint256' }],
+    name: 'cleanRug',
+    outputs: [],
+    stateMutability: 'payable',
+    type: 'function',
+  },
   // Events for listening to new mints
   {
     anonymous: false,
