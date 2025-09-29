@@ -76,10 +76,9 @@ class RequestManager {
       reject!(error)
       throw error
     } finally {
-      // Clean up after a short delay to allow other requests to reuse if needed
-      setTimeout(() => {
-        this.pendingRequests.delete(key)
-      }, 100)
+      // Clean up immediately to prevent memory leaks
+      // The singleton nature of RequestManager means cleanup happens for the app lifetime
+      this.pendingRequests.delete(key)
     }
   }
 
@@ -237,8 +236,22 @@ export function useContractInteraction() {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<ContractError | null>(null)
 
+    // Use refs to avoid dependency cycles that cause infinite re-renders
+    const functionNameRef = React.useRef(functionName)
+    const tokenIdRef = React.useRef(tokenId)
+    const optionsRef = React.useRef(options)
+
+    // Update refs when values change
+    functionNameRef.current = functionName
+    tokenIdRef.current = tokenId
+    optionsRef.current = options
+
     const execute = useCallback(async () => {
-      if (tokenId === null || tokenId === undefined) {
+      const currentTokenId = tokenIdRef.current
+      const currentFunctionName = functionNameRef.current
+      const currentOptions = optionsRef.current
+
+      if (currentTokenId === null || currentTokenId === undefined) {
         setData(null)
         setError(null)
         return
@@ -248,20 +261,20 @@ export function useContractInteraction() {
       setError(null)
 
       try {
-        const result = await callContract<T>(functionName, tokenId, options)
+        const result = await callContract<T>(currentFunctionName, currentTokenId, currentOptions)
         setData(result)
       } catch (err) {
-        const contractError = err instanceof Error ? handleContractError(err, `useContractCall(${functionName})`) : null
+        const contractError = err instanceof Error ? handleContractError(err, `useContractCall(${currentFunctionName})`) : null
         setError(contractError || handleContractError(new Error('Unknown error')))
       } finally {
         setLoading(false)
       }
-    }, [functionName, tokenId, callContract, options])
+    }, [callContract]) // Only depend on callContract, which is stable
 
-    // Auto-execute on mount and when dependencies change
+    // Auto-execute on mount and when core dependencies change
     React.useEffect(() => {
       execute()
-    }, [execute])
+    }, [functionName, tokenId]) // Only re-run when these actually change
 
     return {
       data,

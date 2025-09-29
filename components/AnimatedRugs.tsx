@@ -1100,11 +1100,14 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
   }
 
 
-  // Cleanup textures on unmount
+  // Cleanup textures and canvas elements on unmount
   useEffect(() => {
     return () => {
       if (textureRef.current) {
         textureRef.current.dispose()
+      }
+      if (canvasRef.current && canvasRef.current.parentNode) {
+        canvasRef.current.parentNode.removeChild(canvasRef.current)
       }
     }
   }, [])
