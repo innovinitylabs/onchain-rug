@@ -429,7 +429,7 @@ const GlassContainer = forwardRef<
 
           {/* Content layer - stays sharp */}
           <div
-            className="liquid-glass__content transition-all duration-300 ease-out text-white"
+            className="liquid-glass__content transition-all duration-300 ease-out"
             style={{
               position: "relative",
               zIndex: 2,
@@ -438,6 +438,7 @@ const GlassContainer = forwardRef<
                 ? "0px 2px 12px rgba(0, 0, 0, 0)"
                 : "0px 2px 12px rgba(0, 0, 0, 0.4)",
               mixBlendMode: overLight ? "screen" : "normal",
+              color: "inherit", // Allow child elements to control their own text color
             }}
           >
             {children}

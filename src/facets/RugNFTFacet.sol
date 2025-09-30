@@ -507,7 +507,7 @@ contract RugNFTFacet is ERC721, ERC721URIStorage {
         }
 
         // Determine new frame level based on score
-        if (score >= 500) {
+        if (score >= 420) {
             newFrameLevel = "Diamond";
             aging.isMuseumPiece = true; // Mark as permanent museum piece
             aging.frameAchievedTime = block.timestamp;

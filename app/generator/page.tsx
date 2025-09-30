@@ -1232,31 +1232,37 @@ export default function GeneratorPage() {
     p.pop()
   }
 
-  // Enhanced texture overlay with time-based intensity levels
+  // Enhanced texture overlay with 10-level intensity progression
   const drawTextureOverlayWithLevel = (p: any, doormatData: any, textureLevel: number) => {
     const config = doormatData.config
-    
-    // Texture intensity based on level (1 = 7 days, 2 = 30 days)
-    const hatchingIntensity = textureLevel === 1 ? 30 : 80  // More intense after 30 days
-    const reliefIntensity = textureLevel === 1 ? 20 : 40    // More relief after 30 days
-    const reliefThreshold = textureLevel === 1 ? 0.6 : 0.5  // Lower threshold = more relief
-    
+
+    // Scale all effects based on 10-level system (0-10)
+    const intensityMultiplier = textureLevel / 10 // 0.0 to 1.0
+
+    // Progressive intensity scaling
+    const hatchingIntensity = p.map(intensityMultiplier, 0, 1, 0, 120)  // 0 to 120 opacity
+    const reliefIntensity = p.map(intensityMultiplier, 0, 1, 0, 60)     // 0 to 60 opacity
+    const reliefThreshold = p.map(intensityMultiplier, 0, 1, 0.8, 0.3)  // 0.8 to 0.3 (more relief as wear increases)
+    const wearLineDensity = p.map(intensityMultiplier, 0, 1, 0.9, 0.4)   // 0.9 to 0.4 (more wear lines)
+    const fringeWear = textureLevel >= 5 // Fringe wear starts at level 5
+    const cornerDamage = textureLevel >= 8 // Corner damage starts at level 8
+
     p.push()
     p.blendMode(p.MULTIPLY)
-    
-    // Create hatching effect with variable intensity
+
+    // Base hatching effect - scales with level
     for (let x = 0; x < config.DOORMAT_WIDTH; x += 2) {
       for (let y = 0; y < config.DOORMAT_HEIGHT; y += 2) {
         const noiseVal = p.noise(x * 0.02, y * 0.02)
         const intensity = p.map(noiseVal, 0, 1, 0, hatchingIntensity)
-        
+
         p.fill(0, 0, 0, intensity)
         p.noStroke()
         p.rect(x, y, 2, 2)
       }
     }
-    
-    // Add relief effect with variable intensity
+
+    // Relief effect - more prominent with higher levels
     for (let x = 0; x < config.DOORMAT_WIDTH; x += 6) {
       for (let y = 0; y < config.DOORMAT_HEIGHT; y += 6) {
         const reliefNoise = p.noise(x * 0.03, y * 0.03)
@@ -1271,22 +1277,102 @@ export default function GeneratorPage() {
         }
       }
     }
-    
-    // Add additional wear patterns for 30-day level
-    if (textureLevel === 2) {
-      // Add more pronounced wear lines
-      for (let x = 0; x < config.DOORMAT_WIDTH; x += 8) {
-        for (let y = 0; y < config.DOORMAT_HEIGHT; y += 8) {
-          const wearNoise = p.noise(x * 0.01, y * 0.01)
-          if (wearNoise > 0.7) {
-            p.fill(0, 0, 0, 15)
+
+    // Progressive wear patterns based on level
+    if (textureLevel >= 1) {
+      // Level 1+: Basic wear lines
+      for (let x = 0; x < config.DOORMAT_WIDTH; x += 12) {
+        for (let y = 0; y < config.DOORMAT_HEIGHT; y += 12) {
+          const wearNoise = p.noise(x * 0.008, y * 0.008)
+          if (wearNoise > wearLineDensity) {
+            const lineOpacity = p.map(textureLevel, 1, 10, 8, 25)
+            p.fill(0, 0, 0, lineOpacity)
             p.noStroke()
-            p.rect(x, y, 8, 2) // Horizontal wear lines
+            p.rect(x, y, 12, 1) // Horizontal wear lines
           }
         }
       }
     }
-    
+
+    if (textureLevel >= 3) {
+      // Level 3+: Vertical wear patterns
+      for (let x = 0; x < config.DOORMAT_WIDTH; x += 15) {
+        for (let y = 0; y < config.DOORMAT_HEIGHT; y += 15) {
+          const verticalNoise = p.noise(x * 0.006, y * 0.006)
+          if (verticalNoise > wearLineDensity + 0.1) {
+            const lineOpacity = p.map(textureLevel, 3, 10, 6, 20)
+            p.fill(0, 0, 0, lineOpacity)
+            p.noStroke()
+            p.rect(x, y, 1, 15) // Vertical wear lines
+          }
+        }
+      }
+    }
+
+    if (textureLevel >= 5) {
+      // Level 5+: Fringe wear (edges of rug)
+      const fringeWidth = 20
+      for (let x = 0; x < config.DOORMAT_WIDTH; x += 4) {
+        // Top fringe
+        if (p.noise(x * 0.05) > 0.6) {
+          p.fill(0, 0, 0, p.map(textureLevel, 5, 10, 10, 35))
+          p.noStroke()
+          p.rect(x, 0, 4, p.random(2, 6))
+        }
+        // Bottom fringe
+        if (p.noise(x * 0.05, 100) > 0.6) {
+          p.fill(0, 0, 0, p.map(textureLevel, 5, 10, 10, 35))
+          p.noStroke()
+          p.rect(x, config.DOORMAT_HEIGHT - 8, 4, p.random(2, 6))
+        }
+      }
+    }
+
+    if (textureLevel >= 7) {
+      // Level 7+: Patchy wear areas
+      for (let x = 0; x < config.DOORMAT_WIDTH; x += 25) {
+        for (let y = 0; y < config.DOORMAT_HEIGHT; y += 25) {
+          const patchNoise = p.noise(x * 0.004, y * 0.004)
+          if (patchNoise > 0.75) {
+            const patchOpacity = p.map(textureLevel, 7, 10, 15, 40)
+            p.fill(0, 0, 0, patchOpacity)
+            p.noStroke()
+            p.rect(x, y, 25, 25)
+          }
+        }
+      }
+    }
+
+    if (textureLevel >= 9) {
+      // Level 9+: Heavy concentrated wear
+      for (let x = 0; x < config.DOORMAT_WIDTH; x += 30) {
+        for (let y = 0; y < config.DOORMAT_HEIGHT; y += 30) {
+          const heavyNoise = p.noise(x * 0.003, y * 0.003)
+          if (heavyNoise > 0.8) {
+            const heavyOpacity = p.map(textureLevel, 9, 10, 20, 50)
+            p.fill(0, 0, 0, heavyOpacity)
+            p.noStroke()
+            p.rect(x, y, 30, 30)
+          }
+        }
+      }
+    }
+
+    if (textureLevel === 10) {
+      // Level 10: Maximum degradation - add some highlight damage
+      for (let x = 0; x < config.DOORMAT_WIDTH; x += 20) {
+        for (let y = 0; y < config.DOORMAT_HEIGHT; y += 20) {
+          const damageNoise = p.noise(x * 0.02, y * 0.02)
+          if (damageNoise > 0.85) {
+            // Add some white highlights for extreme wear
+            p.fill(255, 255, 255, 30)
+            p.noStroke()
+            p.rect(x, y, 20, 20)
+          }
+        }
+      }
+    }
+
     p.pop()
   }
 
@@ -2636,12 +2722,12 @@ export default function GeneratorPage() {
                       <div className="flex items-center justify-between">
                         <h4 className="text-green-300 text-sm font-mono font-medium">TEXTURE SYSTEM</h4>
                         <span className="text-green-500 text-xs font-mono">
-                          {showTexture ? `${textureLevel === 1 ? '7 days' : '30 days'} wear` : 'Smooth'}
+                          {showTexture ? `Level ${textureLevel}/10 wear` : 'Smooth'}
                         </span>
                       </div>
 
                       <div className="text-green-400 text-xs font-mono bg-gray-900/50 p-2 rounded">
-                        Time-based texture wear: appears after 7 days, intensifies after 30 days. Creates realistic fabric aging.
+                        10-level texture progression: Level 1 (fresh wear) to Level 10 (maximum wear). Each level represents increasing fabric degradation.
                       </div>
 
                       {/* Texture Toggle */}
@@ -2656,32 +2742,47 @@ export default function GeneratorPage() {
                         >
                           {showTexture ? 'HIDE TEXTURE' : 'SHOW TEXTURE'}
                         </button>
-
-                        {showTexture && (
-                          <div className="flex gap-1">
-                            <button
-                              onClick={() => updateTextureState(showTexture, 1)}
-                              className={`px-2 py-1 rounded font-mono text-xs transition-all duration-200 border ${
-                                textureLevel === 1
-                                  ? 'bg-blue-600 text-white border-blue-400'
-                                  : 'bg-gray-700 text-gray-300 border-gray-500 hover:bg-gray-600'
-                              }`}
-                            >
-                              7 DAYS
-                            </button>
-                            <button
-                              onClick={() => updateTextureState(showTexture, 2)}
-                              className={`px-2 py-1 rounded font-mono text-xs transition-all duration-200 border ${
-                                textureLevel === 2
-                                  ? 'bg-purple-600 text-white border-purple-400'
-                                  : 'bg-gray-700 text-gray-300 border-gray-500 hover:bg-gray-600'
-                              }`}
-                            >
-                              30 DAYS
-                            </button>
-                          </div>
-                        )}
                       </div>
+
+                      {showTexture && (
+                        <div className="space-y-3">
+                          {/* Texture Level Slider */}
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <label className="text-green-300 text-xs font-mono">Wear Level</label>
+                              <span className="text-green-500 text-xs font-mono">{textureLevel}/10</span>
+                            </div>
+                            <input
+                              type="range"
+                              min="0"
+                              max="10"
+                              value={textureLevel}
+                              onChange={(e) => updateTextureState(showTexture, parseInt(e.target.value))}
+                              className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-green"
+                            />
+                            <div className="flex justify-between text-xs text-gray-400 font-mono">
+                              <span>0 (Fresh)</span>
+                              <span>5 (Moderate)</span>
+                              <span>10 (Maximum)</span>
+                            </div>
+                          </div>
+
+                          {/* Texture Level Descriptions */}
+                          <div className="text-xs text-green-400 font-mono bg-gray-900/30 p-2 rounded">
+                            {textureLevel === 0 && "✨ Fresh from the loom - pristine condition"}
+                            {textureLevel === 1 && "🧵 Subtle signs of use - barely noticeable wear"}
+                            {textureLevel === 2 && "📅 Light wear - 2 minutes of normal use"}
+                            {textureLevel === 3 && "🏠 Moderate wear - well-used but functional"}
+                            {textureLevel === 4 && "📆 Significant wear - shows character"}
+                            {textureLevel === 5 && "🪶 Heavy wear - vintage appearance"}
+                            {textureLevel === 6 && "🎭 Very worn - distinctive patina"}
+                            {textureLevel === 7 && "🏺 Antique look - rich texture"}
+                            {textureLevel === 8 && "🏛️ Museum quality - extreme character"}
+                            {textureLevel === 9 && "🎨 Masterpiece wear - legendary status"}
+                            {textureLevel === 10 && "💎 Ultimate wear - maximum degradation"}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

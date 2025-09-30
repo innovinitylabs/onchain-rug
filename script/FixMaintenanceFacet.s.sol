@@ -6,18 +6,18 @@ import "../src/facets/RugMaintenanceFacet.sol";
 import "../src/diamond/interfaces/IDiamondCut.sol";
 
 /**
- * @dev Updates RugMaintenanceFacet with restorable wear system
- * - Fixes texture restoration to always reduce level by 1
- * - Implements restorable wear (can fully restore rugs)
- * - Uses lastTextureReset for accurate progression timing
- * - Fixes cleaning to only reset dirt timer (not texture timer)
+ * @dev Updates RugMaintenanceFacet with texture restoration timer fix
+ * - Fixes texture restoration timer synchronization bug
+ * - Ensures lastTextureReset = textureProgressTimer for consistent -1 level reduction
+ * - Eliminates unpredictable restoration behavior
+ * - Maintains restorable wear system (can fully restore rugs)
  */
 contract FixMaintenanceFacet is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
-        address diamondAddr = 0x6F7D033F046eE9c41A73713Fe5620D8f64C3BbAd;
+        address diamondAddr = 0xb39093648309694438E2c3FdF4a8b952C13df070;
 
         // Deploy new RugMaintenanceFacet with fixed frame level access
         RugMaintenanceFacet newRugMaintenanceFacet = new RugMaintenanceFacet();

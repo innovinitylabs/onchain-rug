@@ -106,14 +106,37 @@ library LibRugStorage {
 
     function isTextAvailable(string[] memory textLines) internal view returns (bool) {
         RugConfig storage rs = rugStorage();
+
+        // Allow unlimited mints of empty text (no uniqueness restriction)
+        if (isEmptyText(textLines)) {
+            return true;
+        }
+
         bytes32 textHash = hashTextLines(textLines);
         return !rs.usedTextHashes[textHash];
     }
 
     function markTextAsUsed(string[] memory textLines) internal {
         RugConfig storage rs = rugStorage();
+
+        // Don't mark empty text as used (allow unlimited mints)
+        if (isEmptyText(textLines)) {
+            return;
+        }
+
         bytes32 textHash = hashTextLines(textLines);
         rs.usedTextHashes[textHash] = true;
+    }
+
+    function isEmptyText(string[] memory textLines) internal pure returns (bool) {
+        if (textLines.length == 0) return true;
+
+        for (uint256 i = 0; i < textLines.length; i++) {
+            if (bytes(textLines[i]).length > 0) {
+                return false;
+            }
+        }
+        return true;
     }
 
     // Utility functions for wallet limits

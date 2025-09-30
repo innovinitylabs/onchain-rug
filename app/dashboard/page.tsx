@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAccount, useReadContract, useChainId, usePublicClient } from 'wagmi'
 import { onchainRugsABI, contractAddresses, callContractMultiFallback } from '@/lib/web3'
-import { Wallet, AlertCircle, RefreshCw, Droplets, Sparkles, Crown, TrendingUp, Clock, ExternalLink, Copy, CheckCircle } from 'lucide-react'
+import { Wallet, AlertCircle, RefreshCw, Droplets, Sparkles, Crown, TrendingUp, Clock, ExternalLink, Copy, CheckCircle, Maximize2, Minimize2 } from 'lucide-react'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
 import LoadingAnimation from '@/components/LoadingAnimation'
@@ -119,6 +119,8 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [selectedRug, setSelectedRug] = useState<RugData | null>(null)
   const [refreshing, setRefreshing] = useState(false)
+  const [fullScreenMode, setFullScreenMode] = useState(false)
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
 
   const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
 
@@ -369,12 +371,25 @@ export default function DashboardPage() {
     }
 
     fetchUserRugs()
-  }, [address, contractAddress])
+  }, [address, contractAddress, refreshTrigger])
 
   const handleRefresh = async () => {
+    if (refreshing || selectedRug) {
+      return
+    }
+
     setRefreshing(true)
-    await refetchBalance()
-    setTimeout(() => setRefreshing(false), 2000)
+    try {
+      await refetchBalance()
+      // Trigger a refresh of the rug collection
+      setRefreshTrigger(prev => prev + 1)
+      setTimeout(() => {
+        setRefreshing(false)
+      }, 2000)
+    } catch (error) {
+      console.error('Refresh failed:', error)
+      setRefreshing(false)
+    }
   }
 
   // Function to refresh a specific NFT in the collection
@@ -490,11 +505,9 @@ export default function DashboardPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col">
         <Navigation />
-        <main className="flex-grow">
-          <div className="container mx-auto px-4 py-20">
-            <div className="text-center">
-              <LoadingAnimation message="Loading your rugs..." />
-            </div>
+        <main className="flex-grow flex items-center justify-center">
+          <div className="text-center">
+            <LoadingAnimation message="Loading your rugs..." size="lg" />
           </div>
         </main>
         <Footer />
@@ -507,7 +520,7 @@ export default function DashboardPage() {
       <Navigation />
 
       <main className="flex-grow">
-        <div className="max-w-4xl mx-auto px-4 py-20">
+        <div className="max-w-4xl mx-auto px-4 py-20 pt-28">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -542,13 +555,14 @@ export default function DashboardPage() {
         </motion.div>
 
         {/* Refresh Button */}
-        <div className="flex justify-center mb-8">
+        <div className="flex justify-center mb-8 relative z-10">
           <button
             onClick={handleRefresh}
-            disabled={refreshing}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 disabled:opacity-50 text-blue-300 rounded-lg transition-colors duration-200"
+            disabled={refreshing || !!selectedRug}
+            className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 border-2 border-blue-400"
+            style={{ pointerEvents: (refreshing || !!selectedRug) ? 'none' : 'auto' }}
           >
-            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
             {refreshing ? 'Refreshing...' : 'Refresh Collection'}
           </button>
         </div>
@@ -726,30 +740,74 @@ export default function DashboardPage() {
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.9, opacity: 0 }}
-                className="bg-slate-800 rounded-lg max-w-4xl w-full max-h-[90vh]"
+                className={`bg-slate-800 rounded-lg w-full transition-all duration-300 ${
+                  fullScreenMode ? 'max-w-none h-screen max-h-screen' : 'max-w-4xl max-h-[90vh]'
+                }`}
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="p-6 max-h-[calc(90vh-3rem)] overflow-y-auto">
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-bold text-white">
-                      Rug #{selectedRug.tokenId}
-                    </h2>
-                    <button
-                      onClick={() => setSelectedRug(null)}
-                      className="text-white/60 hover:text-white"
-                    >
-                      ✕
-                    </button>
-                  </div>
+                <div className={`transition-all duration-300 ${
+                  fullScreenMode ? 'h-full overflow-hidden' : 'p-6 max-h-[calc(90vh-3rem)] overflow-y-auto'
+                }`}>
+                  {/* Header - Hidden in full screen mode */}
+                  {!fullScreenMode && (
+                    <div className="flex items-center justify-between mb-6">
+                      <h2 className="text-2xl font-bold text-white">
+                        Rug #{selectedRug.tokenId}
+                      </h2>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleRefreshNFT(selectedRug.tokenId)}
+                          disabled={refreshing}
+                          className="text-white/60 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed p-1"
+                          title="Refresh NFT data"
+                        >
+                          <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
+                        </button>
+                        <button
+                          onClick={() => setSelectedRug(null)}
+                          className="text-white/60 hover:text-white p-1"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="space-y-6">
                     {/* Large Rug Display - Top */}
-                    <div className="w-full">
+                    <div className="w-full relative">
+                      {/* Full Screen Toggle and Close Buttons */}
+                      <div className="absolute top-2 right-2 z-10 flex gap-2">
+                        <button
+                          onClick={() => setFullScreenMode(!fullScreenMode)}
+                          className="bg-black/50 hover:bg-black/70 text-white p-2 rounded-lg transition-colors duration-200"
+                          title={fullScreenMode ? "Exit full screen" : "View full screen"}
+                        >
+                          {fullScreenMode ? (
+                            <Minimize2 className="w-5 h-5" />
+                          ) : (
+                            <Maximize2 className="w-5 h-5" />
+                          )}
+                        </button>
+                        {fullScreenMode && (
+                          <button
+                            onClick={() => setSelectedRug(null)}
+                            className="bg-black/50 hover:bg-black/70 text-white p-2 rounded-lg transition-colors duration-200"
+                            title="Close modal"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+
                       <div
-                        className="w-full max-w-4xl mx-auto bg-black/30 rounded-lg overflow-hidden"
+                        className={`w-full mx-auto bg-black/30 rounded-lg overflow-hidden transition-all duration-300 ${
+                          fullScreenMode ? 'max-w-none h-screen max-h-screen' : 'max-w-4xl'
+                        }`}
                         style={{
-                          paddingBottom: '69.7%', // 920/1320 * 100% = 69.7% (maintains 1320:920 aspect ratio)
-                          position: 'relative'
+                          paddingBottom: fullScreenMode ? '0' : '69.7%', // 920/1320 * 100% = 69.7% (maintains 1320:920 aspect ratio)
+                          position: 'relative',
+                          height: fullScreenMode ? '100vh' : 'auto'
                         }}
                       >
                         <div className="absolute inset-0">
@@ -781,8 +839,10 @@ export default function DashboardPage() {
                       </div>
                     </div>
 
-                    {/* Quick Actions */}
-                    <div className="grid grid-cols-2 gap-3 max-w-md mx-auto">
+                    {/* Quick Actions - Hidden in full screen mode */}
+                    {!fullScreenMode && (
+                      <>
+                        <div className="grid grid-cols-2 gap-3 max-w-md mx-auto">
                       <button className="px-4 py-3 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded-lg transition-colors duration-200">
                         <ExternalLink className="w-4 h-4 inline mr-2" />
                         View on OpenSea
@@ -816,6 +876,28 @@ export default function DashboardPage() {
                         </div>
                       </div>
 
+                      {/* TokenURI Attributes Grid */}
+                      <div className="bg-slate-700/50 rounded-lg p-4">
+                        <h3 className="text-lg font-semibold text-white mb-4">TokenURI Attributes</h3>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                          {selectedRug.metadata?.attributes?.map((attr: any, index: number) => (
+                            <div key={index} className="bg-slate-600/30 rounded-lg p-3">
+                              <div className="text-xs text-white/60 mb-1">{attr.trait_type}</div>
+                              <div className="text-sm text-white">
+                                {typeof attr.value === 'boolean'
+                                  ? attr.value ? 'Yes' : 'No'
+                                  : attr.value?.toString() || 'N/A'
+                                }
+                              </div>
+                            </div>
+                          )) || (
+                            <div className="col-span-full text-center text-white/50 py-8">
+                              No attributes available
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
                       {/* Maintenance */}
                       <RugCleaning
                         tokenId={BigInt(selectedRug.tokenId)}
@@ -845,6 +927,8 @@ export default function DashboardPage() {
                         </button>
                       </div>
                     </div>
+                      </>
+                    )}
                   </div>
                 </div>
               </motion.div>

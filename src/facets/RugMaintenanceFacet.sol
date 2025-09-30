@@ -88,7 +88,6 @@ contract RugMaintenanceFacet {
 
         // Restore texture by reducing visible level by 1 (restorable wear)
         uint8 previousDirt = _getDirtLevel(tokenId);
-        uint8 previousTexture = currentTexture;
         aging.lastCleaned = block.timestamp;
 
         // Update dirt became heavy time after restoration
@@ -118,7 +117,8 @@ contract RugMaintenanceFacet {
             } else {
                 aging.textureProgressTimer = block.timestamp - (rs.textureLevel2Days * targetTextureLevel * agingMultiplier);
             }
-            // Partial restoration - don't reset lastTextureReset
+            // Sync lastTextureReset to ensure restoration timer takes effect
+            aging.lastTextureReset = aging.textureProgressTimer;
         }
         aging.restorationCount++;
         aging.maintenanceScore = (aging.cleaningCount * 2) + (aging.restorationCount * 5) + (aging.masterRestorationCount * 10) + (aging.launderingCount * 10);

@@ -19,22 +19,21 @@ const LoadingAnimation: React.FC<LoadingAnimationProps> = ({
   }
 
   const pixelSizes = {
-    sm: 32,
-    md: 48,
-    lg: 64
+    sm: 128,
+    md: 192,
+    lg: 256
   }
-
   return (
-    <div className={`flex flex-col items-center justify-center py-12 ${className}`}>
+    <div className={`flex flex-col items-center justify-center ${className}`}>
       <Image
-        src="/rug-loading-smol.webp"
+        src="/rug-loading-big.webp"
         alt="Loading animation"
         width={pixelSizes[size]}
         height={pixelSizes[size]}
         className={`${sizeClasses[size]} mb-4`}
         unoptimized // WebP animation needs unoptimized to preserve animation
       />
-      <span className="text-blue-600 font-medium">{message}</span>
+      <span className="text-white font-medium text-lg">{message}</span>
     </div>
   )
 }

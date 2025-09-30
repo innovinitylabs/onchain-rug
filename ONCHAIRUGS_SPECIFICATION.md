@@ -94,26 +94,106 @@ struct RugConfig {
 
 ---
 
-## ⏰ Aging & Maintenance System
+## ⏰ Aging & Maintenance System (Hybrid – Friendly Neglect)
 
 ### Dirt Accumulation (Resettable)
-```
 Time Uncleaned | Dirt Level | Visual Effect
 ---------------|------------|--------------
 0-3 days       | 0 (Clean) | No dirt
 3-7 days       | 1 (Light) | Subtle spots/stains
 7+ days        | 2 (Heavy) | Heavy soiling
-```
+
+- Cleaning resets dirt to 0.
+- Silver+ frames = Dirt Immunity (always 0).
 
 ### Texture Aging (Persistent)
-```
-Time Since Mint | Texture Level | Visual Effect
-----------------|----------------|--------------
-0-30 days       | 0 (Fresh)     | Crisp, new appearance
-30-90 days      | 1 (Worn)      | Light wear patterns
-90-180 days     | 2 (Aged)      | Moderate aging
-...            | ...           | Progressive wear
-Up to 10 levels| 10 (Ancient)  | Maximum aging
+
+#### A. Natural Aging (Slow, inevitable)
+- Time-based since mint or last master restoration.
+- Example progression:
+  - 0–30 days → Level 0
+  - 31–90 days → Level 1
+  - 91–180 days → Level 2
+  - … up to Level 10
+- Frame multipliers slow this:
+  - Gold: 25% slower
+  - Platinum: 50% slower
+  - Diamond: 75% slower
+
+#### B. Neglect Aging (Conditional, faster, friendly mode)
+- Trigger: Rug reaches Dirt = 2.
+- If left uncleaned:
+  - 48h grace period → no texture change.
+  - After that: +1 texture every 5 days until cleaned.
+- Cleaning resets dirt but does not reduce texture.
+
+### Maintenance Services
+- Clean() → Dirt = 0 (texture unchanged).
+- Restore() → Dirt = 0, Texture −1 (if >0).
+- MasterRestore() → Dirt = 0, Texture = 0.
+
+### Pseudocode
+
+variables:
+    dirtLevel (0,1,2)
+    textureLevel (0..10)
+    lastCleanedTime
+    lastNaturalCheckTime
+    lastNeglectCheckTime
+    frameType (None, Silver, Gold, Platinum, Diamond)
+
+function updateDirt():
+    if frameType >= Silver:
+        dirtLevel = 0
+        return
+    elapsed = now - lastCleanedTime
+    if elapsed >= 7 days:
+        dirtLevel = 2
+    else if elapsed >= 3 days:
+        dirtLevel = 1
+    else:
+        dirtLevel = 0
+
+function updateNaturalTexture():
+    elapsed = now - lastNaturalCheckTime
+    adjustedElapsed = applyFrameMultiplier(elapsed, frameType)
+    levelsGained = elapsedToNaturalTexture(adjustedElapsed)
+    textureLevel = min(textureLevel + levelsGained, 10)
+    lastNaturalCheckTime = now
+
+function updateNeglectTexture():
+    if dirtLevel == 2:
+        elapsed = now - lastNeglectCheckTime
+        if elapsed >= 48 hours:
+            textureLevel += 1
+            lastNeglectCheckTime = now
+        else if elapsed >= 5 days since lastNeglectCheckTime:
+            textureLevel += floor((elapsed - 48h)/5 days)
+            lastNeglectCheckTime = now
+    else:
+        lastNeglectCheckTime = now
+
+function clean():
+    dirtLevel = 0
+    lastCleanedTime = now
+
+function restore():
+    clean()
+    if textureLevel > 0:
+        textureLevel -= 1
+
+function masterRestore():
+    dirtLevel = 0
+    textureLevel = 0
+    lastCleanedTime = now
+    lastNaturalCheckTime = now
+    lastNeglectCheckTime = now
+
+function applyFrameMultiplier(elapsed, frameType):
+    if frameType == Gold: return elapsed * 0.75
+    if frameType == Platinum: return elapsed * 0.5
+    if frameType == Diamond: return elapsed * 0.25
+    return elapsed
 ```
 
 ### Maintenance Services

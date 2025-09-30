@@ -279,14 +279,14 @@ contract DeployShapeSepolia is Script {
             htmlGeneratorAddr
         );
 
-        // Configure aging thresholds (TEST VALUES - in minutes for easy testing)
+        // Configure aging thresholds (ULTRA FAST TEST VALUES - minutes for rapid testing)
         uint256[6] memory agingThresholds = [
-            uint256(3),   // dirtLevel1Days (3 minutes for testing - normally 3 days)
-            uint256(7),   // dirtLevel2Days (7 minutes for testing - normally 7 days)
-            uint256(30),  // textureLevel1Days (30 minutes for testing - normally 30 days)
-            uint256(90),  // textureLevel2Days (90 minutes for testing - normally 90 days)
-            uint256(2),   // freeCleanDays (2 minutes free after mint - normally 12 hours)
-            uint256(5)    // freeCleanWindow (5 minutes free after cleaning - normally 2 days)
+            uint256(1),    // dirtLevel1Days (1 minute for testing - normally 3 days)
+            uint256(2),    // dirtLevel2Days (2 minutes for testing - normally 7 days)
+            uint256(3),    // textureLevel1Days (3 minutes for testing - normally 30 days)
+            uint256(5),    // textureLevel2Days (5 minutes for testing - normally 90 days)
+            uint256(1),    // freeCleanDays (1 minute free after mint - normally 12 hours)
+            uint256(1)     // freeCleanWindow (1 minute free after cleaning - normally 2 days)
         ];
 
         RugAdminFacet(diamondAddr).updateAgingThresholds(agingThresholds);
@@ -310,7 +310,7 @@ contract DeployShapeSepolia is Script {
         console.log("   - Base price: 0.00003 ETH");
         console.log("   - Collection cap: 10,000");
         console.log("   - Wallet limit: 7");
-        console.log("   - Aging thresholds: 3m/7m dirt, 30m/90m texture (TEST VALUES)");
+        console.log("   - Aging thresholds: 1m/2m dirt, 3m/5m texture (ULTRA FAST TEST VALUES)");
         console.log("   - Hybrid aging system: Natural + Neglect");
         console.log("   - Frame multipliers: Gold 25%, Platinum 50%, Diamond 75% slower");
         console.log("   - Dirt immunity: Silver+ frames");

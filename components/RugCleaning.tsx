@@ -59,21 +59,32 @@ export function RugCleaning({ tokenId, mintTime, lastCleaned: propLastCleaned, o
     error: masterRestoreError
   } = useMasterRestoreRug()
 
-  // Monitor transaction completion and refetch data
+  // State to track refresh to prevent multiple calls
+  const [hasRefreshed, setHasRefreshed] = useState(false)
+
+  // Monitor transaction completion and refetch data (only once per transaction)
   useEffect(() => {
-    if (cleanSuccess || restoreSuccess || masterRestoreSuccess) {
+    if ((cleanSuccess || restoreSuccess || masterRestoreSuccess) && !hasRefreshed) {
       console.log('Transaction confirmed, refetching data...')
       refetch()
-      // Also refresh this specific NFT in the parent collection
+      // Also refresh this specific NFT in the parent collection (only once)
       if (onRefreshNFT) {
         onRefreshNFT(Number(tokenId))
       }
+      setHasRefreshed(true)
     }
     if (cleanError || restoreError || masterRestoreError) {
       console.error('Transaction error:', cleanError || restoreError || masterRestoreError)
       // Error is already displayed in the UI, no need for alert here
     }
-  }, [cleanSuccess, restoreSuccess, masterRestoreSuccess, cleanError, restoreError, masterRestoreError, refetch, onRefreshNFT, tokenId])
+  }, [cleanSuccess, restoreSuccess, masterRestoreSuccess, cleanError, restoreError, masterRestoreError, refetch, onRefreshNFT, tokenId, hasRefreshed])
+
+  // Reset refresh flag when starting a new transaction
+  useEffect(() => {
+    if (cleanPending || restorePending || masterRestorePending) {
+      setHasRefreshed(false)
+    }
+  }, [cleanPending, restorePending, masterRestorePending])
 
   const [gasEstimate, setGasEstimate] = useState<string>('')
   const [estimatingGas, setEstimatingGas] = useState(false)
@@ -478,28 +489,6 @@ export function RugCleaning({ tokenId, mintTime, lastCleaned: propLastCleaned, o
 
   return (
     <div className="space-y-4">
-      {/* Rug Status */}
-      <div className="bg-gray-900/50 border border-green-500/30 rounded p-3">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-green-300 text-sm font-mono">RUG STATUS</span>
-          {(cleanSuccess || restoreSuccess || masterRestoreSuccess) && (
-            <CheckCircle className="w-4 h-4 text-green-400" />
-          )}
-        </div>
-        
-        <div className="text-green-400 text-xs font-mono space-y-1">
-          <div>Token ID: {tokenId.toString()}</div>
-          <div>Dirt Level: {getDirtDescription()}</div>
-          <div>Texture: {getTextureDescription()}</div>
-          {actualLastCleaned && (
-            <div>Last Cleaned: {new Date(Number(actualLastCleaned) * 1000).toLocaleDateString()}</div>
-          )}
-          <div>Available Actions:</div>
-          <div>• Clean: {needsCleaning ? 'Yes' : 'No'}</div>
-          <div>• Restore Texture: {textureLevel > 0 ? 'Yes' : 'No'}</div>
-          <div>• Master Restore: {(dirtLevel > 0 || textureLevel > 0) ? 'Yes' : 'No'}</div>
-        </div>
-      </div>
 
       {/* Visual Status Indicators */}
       <div className="flex items-center gap-4">
@@ -523,55 +512,11 @@ export function RugCleaning({ tokenId, mintTime, lastCleaned: propLastCleaned, o
             'bg-indigo-500'
           }`} />
           <span className="text-green-400 text-xs font-mono">
-            Texture: {textureLevel}/2
+            Texture: {textureLevel}/10
           </span>
         </div>
       </div>
 
-      {/* Debug Info */}
-      <div className="bg-gray-900/50 border border-gray-600/30 rounded p-2 text-xs font-mono">
-        <div className="text-gray-300">🔍 Debug Info:</div>
-        <div className="text-cyan-400">Connected: {isConnected ? '✅' : '❌'}</div>
-        <div className="text-cyan-400">Chain ID: {chainId} (Expected: 11011/360)</div>
-        <div className="text-cyan-400">Address: {address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'None'}</div>
-        <div className="text-cyan-400">Token ID: {tokenId.toString()}</div>
-        {chainId !== 11011 && chainId !== 360 && (
-          <div className="text-yellow-400 mt-1">
-            ⚠️ Wrong network! Need Shape Sepolia (11011) or Shape Mainnet (360)
-            <button
-              onClick={() => switchChain({ chainId: 11011 })}
-              className="ml-2 px-2 py-1 bg-yellow-600 hover:bg-yellow-500 text-black text-xs rounded"
-            >
-              Switch to Shape Sepolia
-            </button>
-          </div>
-        )}
-        <div className="text-cyan-400 mt-1">
-          RainbowKit Status: Connected via {isConnected ? 'Wallet' : 'None'}
-        </div>
-        {isConnected && (
-          <button
-            onClick={async () => {
-              try {
-                console.log('Testing wallet connection with 0 ETH transaction...')
-                const result = await sendTransaction({
-                  to: address as `0x${string}`,
-                  value: BigInt(0),
-                  gas: BigInt(21000), // Standard ETH transfer gas
-                })
-                console.log('Test transaction result:', result)
-                alert('Test transaction sent! Check wallet for confirmation.')
-              } catch (e) {
-                console.error('Test transaction failed:', e)
-                alert('Test transaction failed: ' + (e as Error).message)
-              }
-            }}
-            className="mt-2 px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded"
-          >
-            Test Wallet (0 ETH)
-          </button>
-        )}
-      </div>
 
       {/* Error Display */}
       {(cleanError || restoreError || masterRestoreError) && (
