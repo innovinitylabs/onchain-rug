@@ -47,10 +47,9 @@ contract RugMaintenanceFacet {
             require(success, "Refund transfer failed");
         }
 
-        // Update aging data - reset dirt timer and texture progress timer
-        // This delays further texture wear but preserves existing max texture level
+        // Update aging data - reset dirt timer only
+        // Cleaning removes dirt but doesn't affect texture wear progression
         aging.lastCleaned = block.timestamp;
-        aging.textureProgressTimer = block.timestamp;
         aging.cleaningCount++;
         aging.maintenanceScore = (aging.cleaningCount * 2) + (aging.restorationCount * 5) + (aging.masterRestorationCount * 10) + (aging.launderingCount * 10);
 

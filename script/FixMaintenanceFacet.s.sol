@@ -10,6 +10,7 @@ import "../src/diamond/interfaces/IDiamondCut.sol";
  * - Fixes texture restoration to always reduce level by 1
  * - Implements restorable wear (can fully restore rugs)
  * - Uses lastTextureReset for accurate progression timing
+ * - Fixes cleaning to only reset dirt timer (not texture timer)
  */
 contract FixMaintenanceFacet is Script {
     function run() external {
