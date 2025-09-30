@@ -279,14 +279,14 @@ contract DeployShapeSepolia is Script {
             htmlGeneratorAddr
         );
 
-        // Configure aging thresholds (30 minutes free, 3 minutes level 1, 7 minutes level 2, etc.)
+        // Configure aging thresholds (per ONCHAIRUGS_SPECIFICATION.md)
         uint256[6] memory agingThresholds = [
-            uint256(1),  // dirtLevel1Days (3 minutes)
-            uint256(2),  // dirtLevel2Days (7 minutes)
-            uint256(3), // textureLevel1Days (30 minutes)
-            uint256(4), // textureLevel2Days (90 minutes)
-            uint256(30), // freeCleanDays (30 minutes free after mint)
-            uint256(11)  // freeCleanWindow (11 minutes free after cleaning)
+            uint256(4320),  // dirtLevel1Days (3 days = 4320 minutes)
+            uint256(10080), // dirtLevel2Days (7 days = 10080 minutes)
+            uint256(43200), // textureLevel1Days (30 days = 43200 minutes)
+            uint256(129600), // textureLevel2Days (90 days = 129600 minutes)
+            uint256(720),   // freeCleanDays (12 hours = 720 minutes free after mint)
+            uint256(2880)   // freeCleanWindow (2 days = 2880 minutes free after cleaning)
         ];
 
         RugAdminFacet(diamondAddr).updateAgingThresholds(agingThresholds);
@@ -310,6 +310,10 @@ contract DeployShapeSepolia is Script {
         console.log("   - Base price: 0.00003 ETH");
         console.log("   - Collection cap: 10,000");
         console.log("   - Wallet limit: 7");
+        console.log("   - Aging thresholds: 3d/7d dirt, 30d/90d texture");
+        console.log("   - Hybrid aging system: Natural + Neglect");
+        console.log("   - Frame multipliers: Gold 25%, Platinum 50%, Diamond 75% slower");
+        console.log("   - Dirt immunity: Silver+ frames");
         console.log("   - Scripty contracts configured");
     }
 
