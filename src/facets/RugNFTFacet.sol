@@ -97,6 +97,8 @@ contract RugNFTFacet is ERC721, ERC721URIStorage {
         rs.agingData[tokenId] = LibRugStorage.AgingData({
             lastCleaned: block.timestamp,
             lastTextureReset: block.timestamp, // DEPRECATED - kept for backward compatibility
+            lastNaturalCheckTime: block.timestamp, // Start natural aging timer at mint
+            dirtBecameHeavyTime: 0, // Not heavy initially
             lastSalePrice: 0,
             recentSalePrices: [uint256(0), 0, 0],
             dirtLevel: 0, // deprecated, will be calculated
