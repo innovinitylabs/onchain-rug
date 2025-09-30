@@ -6,7 +6,10 @@ import "../src/facets/RugMaintenanceFacet.sol";
 import "../src/diamond/interfaces/IDiamondCut.sol";
 
 /**
- * @dev Fixes RugMaintenanceFacet frame level access issue
+ * @dev Updates RugMaintenanceFacet with restorable wear system
+ * - Fixes texture restoration to always reduce level by 1
+ * - Implements restorable wear (can fully restore rugs)
+ * - Uses lastTextureReset for accurate progression timing
  */
 contract FixMaintenanceFacet is Script {
     function run() external {
@@ -29,13 +32,13 @@ contract FixMaintenanceFacet is Script {
         });
         IDiamondCut(diamondAddr).diamondCut(maintenanceCut, address(0), "");
 
-        console.log("RugMaintenanceFacet updated with fixed frame level access");
+        console.log("RugMaintenanceFacet updated with restorable wear system!");
 
         vm.stopBroadcast();
     }
 
     function _getRugMaintenanceFacetSelectors() internal pure returns (bytes4[] memory selectors) {
-        selectors = new bytes4[](7);
+        selectors = new bytes4[](10);
         selectors[0] = RugMaintenanceFacet.cleanRug.selector;
         selectors[1] = RugMaintenanceFacet.restoreRug.selector;
         selectors[2] = RugMaintenanceFacet.masterRestoreRug.selector;
@@ -43,5 +46,8 @@ contract FixMaintenanceFacet is Script {
         selectors[4] = RugMaintenanceFacet.getRestorationCost.selector;
         selectors[5] = RugMaintenanceFacet.getMasterRestorationCost.selector;
         selectors[6] = RugMaintenanceFacet.getMaintenanceOptions.selector;
+        selectors[7] = RugMaintenanceFacet.canCleanRug.selector;
+        selectors[8] = RugMaintenanceFacet.canRestoreRug.selector;
+        selectors[9] = RugMaintenanceFacet.needsMasterRestoration.selector;
     }
 }
