@@ -27,13 +27,26 @@ library LibRugStorage {
 
     struct AgingData {
         uint256 lastCleaned;            // Last cleaning timestamp
-        uint256 lastTextureReset;       // Last texture reset timestamp (mint time initially)
+        uint256 lastTextureReset;       // Last texture reset timestamp (mint time initially) - DEPRECATED
+        uint256 lastNaturalCheckTime;   // Last natural texture aging check timestamp
+        uint256 dirtBecameHeavyTime;    // Timestamp when dirt first reached level 2
         uint256 lastSalePrice;          // Highest sale price
         uint256[3] recentSalePrices;    // Last 3 sale prices
         uint8 dirtLevel;                // Current dirt (0-2) - deprecated, calculated
         uint8 textureLevel;             // Current texture aging (0-10) - deprecated, calculated
+        uint8 maxTextureLevel;          // MAX texture level ever reached (0-10, persistent)
+        uint256 textureProgressTimer;   // Timer for advancing texture level (replaces lastTextureReset)
         uint256 launderingCount;        // Number of times laundered
         uint256 lastLaundered;          // Last laundering timestamp
+        uint256 cleaningCount;          // Number of times cleaned
+        uint256 restorationCount;       // Number of times restored
+        uint256 masterRestorationCount; // Number of times master restored
+        uint256 maintenanceScore;       // Calculated maintenance quality score
+        string currentFrameLevel;       // Current frame level ("None", "Bronze", etc.)
+        uint256 frameAchievedTime;      // When current frame was first achieved
+        bool gracePeriodActive;         // Whether frame is in grace period
+        uint256 gracePeriodEnd;         // Grace period expiration timestamp
+        bool isMuseumPiece;             // Whether this is a permanent Diamond frame
     }
 
     struct RugConfig {
@@ -56,12 +69,12 @@ library LibRugStorage {
         uint256 linePrice4;            // Additional for line 4
         uint256 linePrice5;            // Additional for line 5
         // Aging configuration
-        uint256 dirtLevel1Days;        // Days for dirt level 1
-        uint256 dirtLevel2Days;        // Days for dirt level 2
-        uint256 textureLevel1Days;     // Days for texture level 1
-        uint256 textureLevel2Days;     // Days for texture level 2
-        uint256 freeCleanDays;         // Days after mint for free cleaning
-        uint256 freeCleanWindow;       // Days after cleaning for free cleaning
+        uint256 dirtLevel1Days;        // Minutes for dirt level 1
+        uint256 dirtLevel2Days;        // Minutes for dirt level 2
+        uint256 textureLevel1Days;     // Minutes for texture level 1
+        uint256 textureLevel2Days;     // Minutes for texture level 2
+        uint256 freeCleanDays;         // Minutes after mint for free cleaning
+        uint256 freeCleanWindow;       // Minutes after cleaning for free cleaning
         // Maintenance pricing
         uint256 cleaningCost;          // Regular cleaning cost
         uint256 restorationCost;       // Per level restoration cost
@@ -93,14 +106,37 @@ library LibRugStorage {
 
     function isTextAvailable(string[] memory textLines) internal view returns (bool) {
         RugConfig storage rs = rugStorage();
+
+        // Allow unlimited mints of empty text (no uniqueness restriction)
+        if (isEmptyText(textLines)) {
+            return true;
+        }
+
         bytes32 textHash = hashTextLines(textLines);
         return !rs.usedTextHashes[textHash];
     }
 
     function markTextAsUsed(string[] memory textLines) internal {
         RugConfig storage rs = rugStorage();
+
+        // Don't mark empty text as used (allow unlimited mints)
+        if (isEmptyText(textLines)) {
+            return;
+        }
+
         bytes32 textHash = hashTextLines(textLines);
         rs.usedTextHashes[textHash] = true;
+    }
+
+    function isEmptyText(string[] memory textLines) internal pure returns (bool) {
+        if (textLines.length == 0) return true;
+
+        for (uint256 i = 0; i < textLines.length; i++) {
+            if (bytes(textLines[i]).length > 0) {
+                return false;
+            }
+        }
+        return true;
     }
 
     // Utility functions for wallet limits

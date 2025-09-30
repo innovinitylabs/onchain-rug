@@ -6,6 +6,8 @@ export async function GET(request: NextRequest) {
   const endpoint = searchParams.get('endpoint')
   const contractAddress = searchParams.get('contractAddress')
   const tokenId = searchParams.get('tokenId')
+  const owner = searchParams.get('owner')
+  const index = searchParams.get('index')
 
   const alchemyApiKey = process.env.ALCHEMY_API_KEY
 
@@ -29,7 +31,7 @@ export async function GET(request: NextRequest) {
 
     switch (endpoint) {
       case 'getNFTsForCollection':
-        url = `https://shape-sepolia.g.alchemy.com/nft/v3/${alchemyApiKey}/getNFTsForCollection?contractAddress=${contractAddress}&withMetadata=false&limit=20`
+        url = `https://shape-sepolia.g.alchemy.com/nft/v3/${alchemyApiKey}/getNFTsForCollection?contractAddress=${contractAddress}&withMetadata=false&limit=100`
         break
 
       case 'getNFTMetadata':
@@ -39,7 +41,18 @@ export async function GET(request: NextRequest) {
             { status: 400 }
           )
         }
-        url = `https://shape-sepolia.g.alchemy.com/nft/v3/${alchemyApiKey}/getNFTMetadata?contractAddress=${contractAddress}&tokenId=${tokenId}`
+        url = `https://shape-sepolia.g.alchemy.com/nft/v3/${alchemyApiKey}/getNFTMetadata?contractAddress=${contractAddress}&tokenId=${tokenId}&refreshCache=false`
+        break
+
+      case 'getTokenIdByIndex':
+        if (!owner || index === null) {
+          return NextResponse.json(
+            { error: 'owner and index required for getTokenIdByIndex endpoint' },
+            { status: 400 }
+          )
+        }
+        // This would require a direct contract call, but for now we'll use Alchemy's owner NFTs
+        url = `https://shape-sepolia.g.alchemy.com/nft/v3/${alchemyApiKey}/getNFTsForOwner?owner=${owner}&contractAddresses[]=${contractAddress}&withMetadata=false`
         break
 
       default:

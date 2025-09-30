@@ -464,7 +464,7 @@ export default function Hero() {
                 filter: 'contrast(1.3) saturate(1.15)'
               }}
             >
-              Max supply: 1111 onchain rugs
+              Max supply: 10000 onchain rugs
             </span>
           </motion.p> */}
           

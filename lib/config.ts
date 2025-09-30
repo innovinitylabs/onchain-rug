@@ -15,20 +15,20 @@ export const config = {
   // 🔓 SAFE TO EXPOSE - Contract addresses (public blockchain data)
   contracts: {
     onchainRugs: process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT ||
-                process.env.ONCHAIN_RUGS_CONTRACT || '0x6D3ef465089f20e6933F9DAB8A35244D219F26B2',
+                process.env.ONCHAIN_RUGS_CONTRACT || '0xa7e2c645E9332900b09c627c88b15Cc0b0fAcDc0',
     scriptyStorage: process.env.NEXT_PUBLIC_SCRIPTY_STORAGE ||
-                   process.env.SCRIPTY_STORAGE || '0x6D3ef465089f20e6933F9DAB8A35244D219F26B2',
+                   process.env.SCRIPTY_STORAGE || '0xF7134668cea698fC713582B5B6bfe33Ab8227a5e',
     scriptyBuilder: process.env.NEXT_PUBLIC_SCRIPTY_BUILDER ||
-                   process.env.SCRIPTY_BUILDER || '0x6D3ef465089f20e6933F9DAB8A35244D219F26B2',
+                   process.env.SCRIPTY_BUILDER || '0x1F2b94753D5717400c6DA24D7c8058B4C20015F8',
     htmlGenerator: process.env.NEXT_PUBLIC_HTML_GENERATOR ||
-                  process.env.HTML_GENERATOR || '0x6D3ef465089f20e6933F9DAB8A35244D219F26B2',
+                  process.env.HTML_GENERATOR || '0x02998E64852C50F151d738ef486A599c796A3bc7',
   },
 
   // 🔓 SAFE TO EXPOSE - Legacy contract address references (public blockchain data)
   rugContractAddress: process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT ||
-                     process.env.ONCHAIN_RUGS_CONTRACT || '0x73db032918FAEb5c853045cF8e9F70362738a8ee',
+                     process.env.ONCHAIN_RUGS_CONTRACT || '0xa7e2c645E9332900b09c627c88b15Cc0b0fAcDc0',
   cleaningContractAddress: process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT ||
-                          process.env.ONCHAIN_RUGS_CONTRACT || '0x73db032918FAEb5c853045cF8e9F70362738a8ee',
+                          process.env.ONCHAIN_RUGS_CONTRACT || '0xa7e2c645E9332900b09c627c88b15Cc0b0fAcDc0',
   
   // Network configuration
   networks: {
@@ -49,7 +49,7 @@ export const config = {
   
   // Minting configuration
   minting: {
-    maxSupply: 1111,
+    maxSupply: 10000,
     basePrice: '100000000000', // 0.0000001 ETH in wei (base price for any mint)
     additionalLinePrices: {
       lines2to3: 0.0000001, // ETH (additional for lines 2-3)
@@ -70,24 +70,32 @@ export const config = {
     defaultWarpThickness: 8,
   },
   
-  // Aging system
+  // Aging system (now using minutes instead of days for faster testing)
   aging: {
     dirtAppearanceDays: 3,
     fullDirtDays: 7,
-    textureAppearanceDays: 30, // Updated: moderate texture at 30 days
-    fullTextureDays: 90, // Updated: full texture at 90 days
+    textureAppearanceDays: 30, // Updated: moderate texture at 30 minutes
+    fullTextureDays: 90, // Updated: full texture at 90 minutes
     freeCleaningDays: 30,
     dirtAccumulation: {
-      light: 3 * 24 * 60 * 60, // 3 days in seconds
-      heavy: 7 * 24 * 60 * 60, // 7 days in seconds
+      light: 3 * 60, // 3 minutes in seconds (changed from 3 days)
+      heavy: 7 * 60, // 7 minutes in seconds (changed from 7 days)
     },
     textureAging: {
-      moderate: 30 * 24 * 60 * 60, // 30 days in seconds (updated)
-      intense: 90 * 24 * 60 * 60, // 90 days in seconds (updated)
+      moderate: 30 * 60, // 30 minutes in seconds (changed from 30 days)
+      intense: 90 * 60, // 90 minutes in seconds (changed from 90 days)
     },
     cleaningCosts: {
       free: 0,
-      paid: 0.0009, // ETH (updated)
+      paid: '900000000000000', // 0.0009 ETH in wei
+    },
+    restorationCosts: {
+      free: 0,
+      paid: '2000000000000000', // 0.002 ETH in wei (texture restoration)
+    },
+    masterRestorationCosts: {
+      free: 0,
+      paid: '5000000000000000', // 0.005 ETH in wei (complete restoration)
     },
   },
   

@@ -50,6 +50,7 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
      * @param tokenId The token ID
      * @param dirtLevel Current dirt level (0-2)
      * @param textureLevel Current texture level (0-10)
+     * @param frameLevel Frame level string ("None", "Bronze", "Silver", "Gold", "Platinum", "Diamond")
      * @param scriptyBuilder Address of ScriptyBuilderV2
      * @param scriptyStorage Address of ScriptyStorage
      * @return html Generated HTML string
@@ -59,13 +60,14 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
         uint256 tokenId,
         uint8 dirtLevel,
         uint8 textureLevel,
+        string memory frameLevel,
         address scriptyBuilder,
         address scriptyStorage
     ) external view override returns (string memory html) {
         RugData memory rug = abi.decode(projectData, (RugData));
 
         // Create HTML request using existing method
-        HTMLRequest memory htmlRequest = createHTMLRequest(scriptyStorage, rug, dirtLevel, textureLevel, tokenId);
+        HTMLRequest memory htmlRequest = createHTMLRequest(scriptyStorage, rug, dirtLevel, textureLevel, frameLevel, tokenId);
 
         // Use Scripty to generate HTML (raw HTML, not URL-safe)
         bytes memory rawHTML = IScriptyBuilderV2(scriptyBuilder).getHTML(htmlRequest);
@@ -80,9 +82,10 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
      * @return libraries Array of required library names
      */
     function getRequiredLibraries() external pure override returns (string[] memory libraries) {
-        libraries = new string[](2);
+        libraries = new string[](3);
         libraries[0] = "rug-p5.js";
         libraries[1] = "rug-algo.js";
+        libraries[2] = "rug-frame.js";
     }
 
     /**
@@ -106,7 +109,7 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
      * @param rug Rug data
      * @return js JavaScript configuration string
      */
-    function generateRugConfig(RugData memory rug, uint8 dirtLevel, uint8 textureLevel) internal pure returns (string memory js) {
+    function generateRugConfig(RugData memory rug, uint8 dirtLevel, uint8 textureLevel, string memory frameLevel) internal pure returns (string memory js) {
         return string.concat(
             'let w=800,h=1200,f=30,wt=8,wp=',
             rug.warpThickness.toString(),
@@ -124,7 +127,9 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
             Strings.toString(textureLevel),
             ',dl=',
             Strings.toString(dirtLevel),
-            ';p=JSON.parse(p);sd=JSON.parse(sd);cm=JSON.parse(cm);'
+            ',fl="',
+            frameLevel,
+            '";p=JSON.parse(p);sd=JSON.parse(sd);cm=JSON.parse(cm);'
         );
     }
 
@@ -158,6 +163,7 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
         RugData memory rug,
         uint8 dirtLevel,
         uint8 textureLevel,
+        string memory frameLevel,
         uint256 tokenId
     ) internal view returns (HTMLRequest memory htmlRequest) {
         // Create head tags
@@ -177,8 +183,12 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
             tagContent: ""
         });
 
+        // Determine if we need frame script
+        bool hasFrame = keccak256(abi.encodePacked(frameLevel)) != keccak256(abi.encodePacked("None"));
+        uint256 bodyTagCount = hasFrame ? 5 : 4;
+
         // Create body tags
-        HTMLTag[] memory bodyTags = new HTMLTag[](4);
+        HTMLTag[] memory bodyTags = new HTMLTag[](bodyTagCount);
 
         // 1. p5.js library from ScriptyStorage (inline script)
         bodyTags[0] = HTMLTag({
@@ -210,7 +220,7 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
             tagType: HTMLTagType.script,
             tagOpen: "",
             tagClose: "",
-            tagContent: bytes(generateRugConfig(rug, dirtLevel, textureLevel))
+            tagContent: bytes(generateRugConfig(rug, dirtLevel, textureLevel, frameLevel))
         });
 
         // 4. Algorithm script from ScriptyStorage (inline script)
@@ -223,6 +233,19 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
             tagClose: "",
             tagContent: ""
         });
+
+        // 5. Conditional frame script (only for rugs that qualify)
+        if (hasFrame) {
+            bodyTags[4] = HTMLTag({
+                name: "rug-frame.js",
+                contractAddress: scriptyStorage,
+                contractData: abi.encode("rug-frame.js"),
+                tagType: HTMLTagType.script,
+                tagOpen: "",
+                tagClose: "",
+                tagContent: ""
+            });
+        }
 
         htmlRequest.headTags = headTags;
         htmlRequest.bodyTags = bodyTags;

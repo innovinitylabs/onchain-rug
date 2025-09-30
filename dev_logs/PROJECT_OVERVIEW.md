@@ -68,7 +68,7 @@ function withdraw() external onlyOwner
 - **Owner**: `0x7Bc9427C8730b87Ab3faD10DA63F0C4b9e9E0A5F`
 
 ### **Current Settings:**
-- **Max Supply**: 1,111 rugs
+- **Max Supply**: 10,000 rugs
 - **Base Price**: 0.0001 ETH
 - **Text Pricing**: 0.00111 ETH (lines 2-3), 0.00222 ETH (lines 4-5)
 - **Cleaning Cost**: 0.0009 ETH (after 30 days)

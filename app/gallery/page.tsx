@@ -3,11 +3,12 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useContractRead, useWatchContractEvent, useAccount, useChainId } from 'wagmi'
-import { ExternalLink, Filter, SortAsc, Grid, List, RefreshCw, ChevronDown, ChevronUp, Code } from 'lucide-react'
+import { ExternalLink, Filter, SortAsc, Grid, List, RefreshCw, ChevronDown, ChevronUp, Code, X, Maximize2, Minimize2 } from 'lucide-react'
 import { onchainRugsABI, contractAddresses } from '@/lib/web3'
 import { config } from '@/lib/config'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
+import LoadingAnimation from '@/components/LoadingAnimation'
 
 // Types for our NFT data
 interface RugTraits {
@@ -30,6 +31,7 @@ interface NFTData {
   traits: RugTraits
   owner: string
   metadata?: any
+  raw?: any // Raw Alchemy metadata including tokenURI attributes
   rarityScore?: number
   name?: string
   description?: string
@@ -37,7 +39,7 @@ interface NFTData {
   animation_url?: string
 }
 
-type SortOption = 'tokenId' | 'mintTime' | 'rarity' | 'complexity' | 'stripeCount' | 'characterCount'
+type SortOption = 'tokenId' | 'mintTime' | 'rarity' | 'complexity' | 'stripeCount' | 'characterCount' | 'textLines' | 'warpThickness' | 'dirtLevel' | 'textureLevel' | 'maintenanceScore'
 type SortDirection = 'asc' | 'desc'
 
 export default function GalleryPage() {
@@ -55,6 +57,8 @@ export default function GalleryPage() {
   const [refreshing, setRefreshing] = useState(false)
   const [initialLoad, setInitialLoad] = useState(true)
   const [showRawData, setShowRawData] = useState(false)
+  const [selectedNFT, setSelectedNFT] = useState<NFTData | null>(null)
+  const [isFullscreen, setIsFullscreen] = useState(false)
 
   const itemsPerPage = 24
   const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
@@ -299,6 +303,7 @@ export default function GalleryPage() {
               tokenId: Number(nft.tokenId),
               traits,
               owner: nft.owners ? nft.owners[0] : '', // Primary owner
+              raw: nft.raw, // Include raw Alchemy metadata for trait filtering
               rarityScore: calculateRarityScore(traits),
               // Use the metadata we already set up
               name: nft.name,
@@ -377,12 +382,31 @@ export default function GalleryPage() {
     return score
   }
 
-  // Dynamic trait filtering
+  // Dynamic trait filtering - show all traits from tokenURI attributes
   const availableTraits = useMemo(() => {
     const traits: Record<string, Set<any>> = {}
 
     nfts.forEach(nft => {
+      // Get attributes from Alchemy's raw metadata (tokenURI attributes)
+      const attributes = nft.raw?.metadata?.attributes || []
+
+      attributes.forEach((attr: any) => {
+        if (!attr || !attr.trait_type || attr.value === undefined || attr.value === null) return
+
+        const traitType = attr.trait_type
+        const value = attr.value
+
+        if (!traits[traitType]) traits[traitType] = new Set()
+        traits[traitType].add(value)
+      })
+
+      // Also include any rug traits that might not be in attributes but are useful for filtering
+      // (like seed, mintTime from rug data)
       Object.entries(nft.traits).forEach(([key, value]) => {
+        // Skip internal implementation traits, keep only meaningful ones
+        const excludedTraits = ['minifiedPalette', 'minifiedStripeData', 'filteredCharacterMap']
+        if (excludedTraits.includes(key)) return
+
         if (!traits[key]) traits[key] = new Set()
         if (value !== undefined && value !== null) {
           traits[key].add(value)
@@ -393,12 +417,30 @@ export default function GalleryPage() {
     return traits
   }, [nfts])
 
+  // Helper function to get trait value for filtering/sorting
+  const getTraitValue = (nft: NFTData, traitName: string): any => {
+    // First check if the trait exists in nft.traits (RugTraits interface)
+    if (nft.traits && traitName in nft.traits) {
+      return nft.traits[traitName as keyof RugTraits]
+    }
+
+    // If not in traits, check tokenURI attributes from raw metadata
+    if (nft.raw?.metadata?.attributes) {
+      const attribute = nft.raw.metadata.attributes.find((attr: any) => attr.trait_type === traitName)
+      return attribute ? attribute.value : undefined
+    }
+
+    return undefined
+  }
+
   // Filtered and sorted NFTs
   const filteredAndSortedNFTs = useMemo(() => {
-    let filtered = nfts.filter(nft => {
+    const filtered = nfts.filter(nft => {
       return Object.entries(selectedTraits).every(([trait, value]) => {
         if (value === null || value === undefined || value === '') return true
-        return nft.traits[trait as keyof RugTraits] === value
+
+        const traitValue = getTraitValue(nft, trait)
+        return traitValue != undefined && traitValue == value // Use loose equality for type conversion
       })
     })
 
@@ -412,28 +454,55 @@ export default function GalleryPage() {
           bValue = b.tokenId
           break
         case 'mintTime':
-          aValue = Number(a.traits.mintTime)
-          bValue = Number(b.traits.mintTime)
+          aValue = getTraitValue(a, 'Mint Time') || Number(a.traits.mintTime)
+          bValue = getTraitValue(b, 'Mint Time') || Number(b.traits.mintTime)
           break
         case 'rarity':
           aValue = a.rarityScore || 0
           bValue = b.rarityScore || 0
           break
         case 'complexity':
-          aValue = a.traits.complexity
-          bValue = b.traits.complexity
+          aValue = getTraitValue(a, 'Complexity') || a.traits.complexity
+          bValue = getTraitValue(b, 'Complexity') || b.traits.complexity
           break
         case 'stripeCount':
-          aValue = Number(a.traits.stripeCount)
-          bValue = Number(b.traits.stripeCount)
+          aValue = getTraitValue(a, 'Stripe Count') || Number(a.traits.stripeCount)
+          bValue = getTraitValue(b, 'Stripe Count') || Number(b.traits.stripeCount)
           break
         case 'characterCount':
-          aValue = Number(a.traits.characterCount)
-          bValue = Number(b.traits.characterCount)
+          aValue = getTraitValue(a, 'Character Count') || Number(a.traits.characterCount)
+          bValue = getTraitValue(b, 'Character Count') || Number(b.traits.characterCount)
+          break
+        case 'textLines':
+          aValue = getTraitValue(a, 'Text Lines')
+          bValue = getTraitValue(b, 'Text Lines')
+          break
+        case 'warpThickness':
+          aValue = getTraitValue(a, 'Warp Thickness') || a.traits.warpThickness
+          bValue = getTraitValue(b, 'Warp Thickness') || b.traits.warpThickness
+          break
+        case 'dirtLevel':
+          aValue = getTraitValue(a, 'Dirt Level')
+          bValue = getTraitValue(b, 'Dirt Level')
+          break
+        case 'textureLevel':
+          aValue = getTraitValue(a, 'Texture Level')
+          bValue = getTraitValue(b, 'Texture Level')
+          break
+        case 'maintenanceScore':
+          aValue = getTraitValue(a, 'Maintenance Score')
+          bValue = getTraitValue(b, 'Maintenance Score')
           break
         default:
-          return 0
+          // For other traits, try to get the value for sorting
+          aValue = getTraitValue(a, sortBy)
+          bValue = getTraitValue(b, sortBy)
+          break
       }
+
+      // Convert to numbers for numeric sorting if possible
+      if (typeof aValue === 'string' && !isNaN(Number(aValue))) aValue = Number(aValue)
+      if (typeof bValue === 'string' && !isNaN(Number(bValue))) bValue = Number(bValue)
 
       if (sortDirection === 'asc') {
         return aValue > bValue ? 1 : -1
@@ -480,39 +549,32 @@ export default function GalleryPage() {
     setTimeout(() => setRefreshing(false), 1000)
   }
 
-  // Loading component with rotating valipokkann.svg
+  // Loading component with rug-loading-smol.webp
   const LoadingSpinner = () => (
-    <div className="flex items-center justify-center py-12">
-      <motion.img
-        src="/valipokkann.svg"
-        alt="Loading"
-        className="w-8 h-8"
-        animate={{ rotate: 360 }}
-        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-      />
-      <span className="ml-3 text-blue-600">Loading NFTs...</span>
-    </div>
+    <LoadingAnimation message="Loading NFTs..." />
   )
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-indigo-50 flex flex-col">
       <Navigation />
-      {/* Header */}
-      <motion.div
+      <main className="flex-grow">
+        {/* Header */}
+        <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
         className="text-center mb-12 pt-24"
       >
         <h1 className="text-6xl md:text-7xl font-bold gradient-text mb-6">
-          🖼️ Gallery
+          Gallery
         </h1>
         <p className="text-xl text-blue-700 max-w-3xl mx-auto mb-8">
-          Explore our collection of 1,111 unique Onchain Rugs, algorithmically generated and stored entirely on-chain.
+          Explore our collection of 10K unique Onchain Rugs, algorithmically generated and stored entirely on-chain.
           {nfts.length > 0 ? ` Currently displaying ${nfts.length} loaded NFTs.` : ' Loading NFT data from the blockchain...'}
         </p>
 
-        {/* Contract Info */}
+        {/* TODO: remove when mainnet - Contract Info */}
+        {false && (
         <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-blue-200/50 max-w-4xl mx-auto mb-8">
           <div className="text-center mb-4">
             <h3 className="text-lg font-semibold text-blue-800 mb-2">Contract Information</h3>
@@ -563,11 +625,12 @@ export default function GalleryPage() {
             </AnimatePresence>
           </div>
         </div>
+        )}
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-2xl mx-auto">
           <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 border border-blue-200/50">
-            <div className="text-2xl font-bold text-blue-600">{totalSupply ? Number(totalSupply) : 1111}</div>
+            <div className="text-2xl font-bold text-blue-600">{totalSupply ? Number(totalSupply) : 10000}</div>
             <div className="text-sm text-blue-700">Total Supply</div>
           </div>
           <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 border border-indigo-200/50">
@@ -615,6 +678,11 @@ export default function GalleryPage() {
                     <option value="complexity">Complexity</option>
                     <option value="stripeCount">Stripes</option>
                     <option value="characterCount">Characters</option>
+                    <option value="textLines">Text Lines</option>
+                    <option value="warpThickness">Warp Thickness</option>
+                    <option value="dirtLevel">Dirt Level</option>
+                    <option value="textureLevel">Texture Level</option>
+                    <option value="maintenanceScore">Maintenance Score</option>
                   </select>
                   <button
                     onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}
@@ -674,7 +742,7 @@ export default function GalleryPage() {
               </div>
 
               <div className="space-y-4">
-                {Object.entries(availableTraits).slice(0, 12).map(([trait, values]) => (
+                {Object.entries(availableTraits).map(([trait, values]) => (
                   <div key={trait} className="space-y-2">
                     <label className="block text-sm font-medium text-blue-700 capitalize">
                       {trait.replace(/([A-Z])/g, ' $1').trim()}
@@ -688,7 +756,7 @@ export default function GalleryPage() {
                       className="w-full px-2 py-2 text-sm bg-white/80 border border-blue-200 rounded text-blue-700"
                     >
                       <option value="">All</option>
-                      {Array.from(values).slice(0, 10).map((value, idx) => (
+                      {Array.from(values).slice(0, 20).map((value, idx) => (
                         <option key={idx} value={String(value)}>
                           {String(value).length > 20 ? String(value).substring(0, 20) + '...' : String(value)}
                         </option>
@@ -788,29 +856,33 @@ export default function GalleryPage() {
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.9 }}
                     transition={{ duration: 0.3 }}
-                    className={`bg-white/60 backdrop-blur-sm rounded-2xl border border-blue-200/50 overflow-hidden hover:shadow-xl transition-all duration-300 ${
+                    className={`bg-white/60 backdrop-blur-sm rounded-2xl border border-blue-200/50 overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer ${
                       viewMode === 'list' ? 'flex' : ''
                     }`}
+                    onClick={() => setSelectedNFT(nft)}
                   >
                     {/* Artwork Iframe */}
                     <div className={`relative ${viewMode === 'grid' ? 'aspect-[4/3]' : 'w-64 flex-shrink-0'}`}>
                       {nft.animation_url ? (
-                        <div className={`w-full ${viewMode === 'list' ? 'h-48' : 'h-full'} overflow-hidden rounded-lg relative`}>
+                        <div className={`w-full ${viewMode === 'list' ? 'h-48' : 'h-full'} overflow-hidden rounded-lg relative bg-gradient-to-br from-blue-50 to-indigo-50`}>
                           {/* Responsive iframe container that matches canvas aspect ratio */}
                           <div
-                            className="w-full relative"
+                            className="w-full relative overflow-hidden rounded-lg"
                             style={{
-                              paddingBottom: viewMode === 'list' ? '69.7%' : '69.7%', // 920/1320 * 100% = 69.7% (maintains 1320:920 aspect ratio)
-                              overflow: 'hidden',
-                              maxHeight: viewMode === 'list' ? '192px' : 'none' // 48 * 4px (Tailwind h-48)
+                              paddingBottom: viewMode === 'list' ? '75%' : '75%', // More generous aspect ratio to prevent overflow
+                              maxHeight: viewMode === 'list' ? '192px' : 'none'
                             }}
                           >
                             <iframe
                               src={nft.animation_url}
-                              className="absolute inset-0 border-0 w-full h-full"
+                              className="absolute inset-0 border-0 w-full h-full rounded-lg"
                               style={{
                                 width: '100%',
-                                height: '100%'
+                                height: '100%',
+                                maxWidth: '100%',
+                                maxHeight: '100%',
+                                transform: 'scale(0.95)', // Slight scale down to prevent overflow
+                                transformOrigin: 'center center'
                               }}
                               title={`Onchain Rug #${nft.tokenId}`}
                               sandbox="allow-scripts"
@@ -939,6 +1011,179 @@ export default function GalleryPage() {
           </div>
         </div>
       </div>
+      </main>
+
+      {/* NFT Detail Modal */}
+      <AnimatePresence>
+        {selectedNFT && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className={`fixed z-50 flex items-center justify-center ${isFullscreen ? 'inset-0 bg-black' : 'inset-0 p-4 bg-black/80 backdrop-blur-sm'}`}
+            onClick={() => setSelectedNFT(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              transition={{ type: 'tween', duration: 0.3 }}
+              className={`w-full overflow-hidden ${isFullscreen ? 'max-w-full max-h-full' : 'max-w-6xl max-h-[90vh]'}`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className={`overflow-hidden shadow-2xl ${isFullscreen ? 'bg-black w-full h-full' : 'bg-white/95 backdrop-blur-xl rounded-2xl border border-blue-200/50'}`}>
+                {/* Modal Header - Hidden in fullscreen */}
+                {!isFullscreen && (
+                  <div className="flex items-center justify-between p-6 border-b border-blue-200/50">
+                    <div>
+                      <h2 className="text-2xl font-bold text-blue-800">
+                        {selectedNFT.name || `OnchainRug #${selectedNFT.tokenId}`}
+                      </h2>
+                      <p className="text-blue-600 mt-1">Token ID: {selectedNFT.tokenId}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setIsFullscreen(!isFullscreen)}
+                        className="p-2 rounded-lg hover:bg-blue-50 transition-colors"
+                        title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+                      >
+                        <Maximize2 className="w-5 h-5 text-blue-600" />
+                      </button>
+                      <button
+                        onClick={() => setSelectedNFT(null)}
+                        className="p-2 rounded-lg hover:bg-blue-50 transition-colors"
+                        title="Close"
+                      >
+                        <X className="w-5 h-5 text-blue-600" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Fullscreen Controls */}
+                {isFullscreen && (
+                  <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+                    <button
+                      onClick={() => setIsFullscreen(false)}
+                      className="p-2 rounded-lg bg-black/50 hover:bg-black/70 transition-colors"
+                      title="Exit Fullscreen"
+                    >
+                      <Minimize2 className="w-5 h-5 text-white" />
+                    </button>
+                    <button
+                      onClick={() => setSelectedNFT(null)}
+                      className="p-2 rounded-lg bg-black/50 hover:bg-black/70 transition-colors"
+                      title="Close"
+                    >
+                      <X className="w-5 h-5 text-white" />
+                    </button>
+                  </div>
+                )}
+
+                {/* Modal Content */}
+                <div className={`flex ${isFullscreen ? 'flex-col h-full' : 'flex-col lg:flex-row'}`}>
+                  {/* Large NFT Preview */}
+                  <div className={`flex-shrink-0 ${isFullscreen ? 'flex-1 p-4' : 'lg:w-1/2 p-6'}`}>
+                    <div className="relative bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl overflow-hidden">
+                      {selectedNFT.animation_url ? (
+                        <div
+                          className="w-full relative"
+                          style={{
+                            paddingBottom: '69.7%', // Maintains 1320:920 aspect ratio
+                          }}
+                        >
+                          <iframe
+                            src={selectedNFT.animation_url}
+                            className="absolute inset-0 border-0 w-full h-full rounded-xl"
+                            title={`Onchain Rug #${selectedNFT.tokenId} - Large Preview`}
+                            sandbox="allow-scripts"
+                          />
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center py-32">
+                          <div className="text-center">
+                            <div className="text-6xl mb-4">🎨</div>
+                            <div className="text-xl text-blue-600 font-medium">No artwork available</div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Traits Grid - Hidden in fullscreen */}
+                  {!isFullscreen && (
+                    <div className="flex-1 p-6 lg:w-1/2">
+                    <h3 className="text-xl font-bold text-blue-800 mb-4">NFT Traits</h3>
+
+                    {/* Description */}
+                    {selectedNFT.description && (
+                      <div className="mb-6">
+                        <h4 className="text-lg font-semibold text-blue-700 mb-2">Description</h4>
+                        <p className="text-blue-600">{selectedNFT.description}</p>
+                      </div>
+                    )}
+
+                    {/* Traits Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-96 overflow-y-auto">
+                      {/* Get all traits from both nft.traits and raw metadata */}
+                      {(() => {
+                        const allTraits = new Map<string, any>()
+
+                        // Add traits from nft.traits
+                        Object.entries(selectedNFT.traits).forEach(([key, value]) => {
+                          if (key !== 'minifiedPalette' && key !== 'minifiedStripeData' && key !== 'filteredCharacterMap') {
+                            allTraits.set(key, value)
+                          }
+                        })
+
+                        // Add traits from raw metadata attributes
+                        if (selectedNFT.raw?.metadata?.attributes) {
+                          selectedNFT.raw.metadata.attributes.forEach((attr: any) => {
+                            if (attr.trait_type && attr.value !== undefined) {
+                              allTraits.set(attr.trait_type, attr.value)
+                            }
+                          })
+                        }
+
+                        return Array.from(allTraits.entries()).map(([traitName, value]) => (
+                          <div key={traitName} className="bg-blue-50 rounded-lg p-3 border border-blue-200/50">
+                            <div className="text-xs text-blue-600 font-medium uppercase tracking-wide">
+                              {traitName.replace(/([A-Z])/g, ' $1').trim()}
+                            </div>
+                            <div className="text-blue-800 font-semibold mt-1">
+                              {String(value).length > 25 ? String(value).substring(0, 25) + '...' : String(value)}
+                            </div>
+                          </div>
+                        ))
+                      })()}
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-3 mt-6 pt-6 border-t border-blue-200/50">
+                      <a
+                        href={`https://sepolia.shapescan.xyz/token/${contractAddress}/instance/${selectedNFT.tokenId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium transition-colors"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                        View on Explorer
+                      </a>
+                      {userAddress && (
+                        <button className="px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors">
+                          Transfer NFT
+                        </button>
+                      )}
+                    </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Footer */}
       <Footer />

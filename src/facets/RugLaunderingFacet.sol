@@ -4,6 +4,7 @@ pragma solidity ^0.8.22;
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {LibRugStorage} from "../libraries/LibRugStorage.sol";
 import {LibDiamond} from "../diamond/libraries/LibDiamond.sol";
+import {RugNFTFacet} from "./RugNFTFacet.sol";
 
 /**
  * @title RugLaunderingFacet
@@ -95,7 +96,7 @@ contract RugLaunderingFacet {
      * @return lastSalePrice Most recent sale price
      * @return recentPrices Last 3 sale prices
      */
-    function getSaleHistory(uint256 tokenId) external view returns (uint256 lastSalePrice, uint256[3] memory recentPrices) {
+    function getLaunderingSaleHistory(uint256 tokenId) external view returns (uint256 lastSalePrice, uint256[3] memory recentPrices) {
         LibRugStorage.AgingData storage aging = LibRugStorage.rugStorage().agingData[tokenId];
         return (aging.lastSalePrice, aging.recentSalePrices);
     }
@@ -204,13 +205,19 @@ contract RugLaunderingFacet {
 
         // Reset all aging (laundering resets everything to level 0)
         aging.lastCleaned = block.timestamp;
-        aging.lastTextureReset = block.timestamp;
+        aging.lastTextureReset = block.timestamp; // DEPRECATED - kept for compatibility
+        aging.maxTextureLevel = 0; // Reset all texture wear to pristine
+        aging.textureProgressTimer = block.timestamp; // Reset progress timer
         aging.dirtLevel = 0; // deprecated
         aging.textureLevel = 0; // deprecated
 
         // Track laundering statistics
         aging.launderingCount++;
         aging.lastLaundered = block.timestamp;
+        aging.maintenanceScore = (aging.cleaningCount * 2) + (aging.restorationCount * 5) + (aging.masterRestorationCount * 10) + (aging.launderingCount * 10);
+
+        // Update frame level based on new score
+        RugNFTFacet(address(this)).updateFrameLevel(tokenId);
 
         (bool shouldTrigger, string memory reason) = _checkLaunderingConditions(tokenId, salePrice);
 

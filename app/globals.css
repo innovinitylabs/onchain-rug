@@ -23,9 +23,79 @@ h1, h2, h3, h4, h5, h6, p, span, div {
   animation-play-state: running !important;
 }
 
-/* Force opacity to be solid for text elements */
+/* Ensure text elements maintain their intended visibility */
 h1, h2, h3, h4, h5, h6, p, span {
   opacity: 1 !important;
+}
+
+/* Ensure text elements are not completely invisible due to blend modes or other effects */
+.liquid-glass__content [class*="text-white/"] {
+  mix-blend-mode: normal !important;
+}
+
+.liquid-glass__content * {
+  mix-blend-mode: normal !important;
+}
+
+/* Specific overrides for common transparent text classes - preserve intended opacity levels */
+/* Use higher specificity to override LiquidGlass text-white class */
+.liquid-glass__content .text-white\/70,
+.text-white\/70 {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.liquid-glass__content .text-white\/60,
+.text-white\/60 {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.liquid-glass__content .text-white\/50,
+.text-white\/50 {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.liquid-glass__content .text-white\/40,
+.text-white\/40 {
+  color: rgba(255, 255, 255, 0.4) !important;
+}
+
+.liquid-glass__content .text-white\/30,
+.text-white\/30 {
+  color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.liquid-glass__content .text-white\/20,
+.text-white\/20 {
+  color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.liquid-glass__content .text-white\/10,
+.text-white\/10 {
+  color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.text-slate-500\/70 {
+  color: rgba(100, 116, 139, 0.7) !important;
+}
+
+.text-slate-500\/60 {
+  color: rgba(100, 116, 139, 0.6) !important;
+}
+
+.text-slate-500\/50 {
+  color: rgba(100, 116, 139, 0.5) !important;
+}
+
+.text-gray-500\/70 {
+  color: rgba(107, 114, 128, 0.7) !important;
+}
+
+.text-gray-500\/60 {
+  color: rgba(107, 114, 128, 0.6) !important;
+}
+
+.text-gray-500\/50 {
+  color: rgba(107, 114, 128, 0.5) !important;
 }
 
 /* Override Framer Motion inline styles with maximum specificity */
@@ -36,10 +106,18 @@ div[data-projection-id] h4,
 div[data-projection-id] h5,
 div[data-projection-id] h6,
 div[data-projection-id] p,
-div[data-projection-id] span {
+div[data-projection-id] span,
+div[data-projection-id] div {
   opacity: 1 !important;
   animation: none !important;
   transition: none !important;
+}
+
+/* Override opacity in Framer Motion components specifically */
+div[data-projection-id] [class*="text-white/"],
+div[data-projection-id] [class*="text-gray/"],
+div[data-projection-id] [class*="text-slate/"] {
+  opacity: 1 !important;
 }
 
 /* Additional override for motion components */
@@ -50,10 +128,18 @@ div[data-projection-id] span {
 [class*="motion-"] h5,
 [class*="motion-"] h6,
 [class*="motion-"] p,
-[class*="motion-"] span {
+[class*="motion-"] span,
+[class*="motion-"] div {
   opacity: 1 !important;
   animation: none !important;
   transition: none !important;
+}
+
+/* Override opacity in motion components specifically */
+[class*="motion-"] [class*="text-white/"],
+[class*="motion-"] [class*="text-gray/"],
+[class*="motion-"] [class*="text-slate/"] {
+  opacity: 1 !important;
 }
 
 /* Only allow transitions on interactive elements */

@@ -28,27 +28,29 @@ export default function Home() {
   }, [])
 
   return (
-    <main className="bg-gradient-to-br from-sky-200 via-blue-300 to-indigo-400 min-h-screen">
+    <div className="bg-gradient-to-br from-sky-200 via-blue-300 to-indigo-400 min-h-screen flex flex-col">
       <Navigation />
-      <PerformanceMonitor />
-      <ScrollIndicator />
-      {/* Hero Section with 3D Flying Rugs - Performance Optimized */}
-      <section className="relative h-screen overflow-hidden" style={{ willChange: 'auto' }}>
-        {showAnimatedRugs && (
-          <Suspense fallback={<div className="h-screen bg-gradient-to-br from-sky-200 via-blue-300 to-indigo-400" />}>
-            <AnimatedRugs key={animationKey} />
-          </Suspense>
-        )}
-        <div style={{ willChange: 'auto' }}>
-          <Hero />
-        </div>
-      </section>
+      <main className="flex-grow">
+        <PerformanceMonitor />
+        <ScrollIndicator />
+        {/* Hero Section with 3D Flying Rugs - Performance Optimized */}
+        <section className="relative h-screen overflow-hidden" style={{ willChange: 'auto' }}>
+          {showAnimatedRugs && (
+            <Suspense fallback={<div className="h-screen bg-gradient-to-br from-sky-200 via-blue-300 to-indigo-400" />}>
+              <AnimatedRugs key={animationKey} />
+            </Suspense>
+          )}
+          <div style={{ willChange: 'auto' }}>
+            <Hero />
+          </div>
+        </section>
 
-      {/* Features Section */}
-      <Features />
+        {/* Features Section */}
+        <Features />
+      </main>
 
       {/* Footer */}
       <Footer />
-    </main>
+    </div>
   )
 }

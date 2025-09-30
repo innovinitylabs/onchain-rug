@@ -4,8 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { WagmiProvider } from 'wagmi'
 import { RainbowKitProvider, getDefaultConfig, Theme } from '@rainbow-me/rainbowkit'
 import { config as appConfig } from '@/lib/config'
-import { wagmiConfig, shapeSepolia, shapeMainnet } from '@/lib/web3'
-import { useMemo } from 'react'
+import { shapeSepolia, shapeMainnet } from '@/lib/web3'
 
 // Import RainbowKit styles
 import '@rainbow-me/rainbowkit/styles.css'
@@ -70,35 +69,25 @@ const glassTheme: Theme = {
   },
 }
 
+// Create stable RainbowKit config outside component to prevent re-initialization
+const projectId = appConfig.walletConnectProjectId || 'placeholder-project-id'
+
+if (!appConfig.walletConnectProjectId) {
+  console.warn('WalletConnect Project ID not found. Using placeholder. Set WALLET_CONNECT_PROJECT_ID environment variable.')
+}
+
+const rainbowKitConfig = getDefaultConfig({
+  appName: 'Onchain Rugs',
+  projectId: projectId,
+  chains: [shapeSepolia, shapeMainnet],
+  ssr: true,
+})
+
 export function Providers({ children }: { children: React.ReactNode }) {
-  // Create RainbowKit config inside the component to ensure env vars are available
-  const rainbowKitConfig = useMemo(() => {
-    const projectId = appConfig.walletConnectProjectId
-
-    // Ensure we have a valid projectId
-    if (!projectId || projectId === '') {
-      console.warn('WalletConnect Project ID not found. Please set WALLET_CONNECT_PROJECT_ID environment variable.')
-      // Use a fallback that won't break the app
-      return getDefaultConfig({
-        appName: 'Onchain Rugs',
-        projectId: 'placeholder-project-id', // This will be overridden when env var is set
-        chains: [shapeSepolia, shapeMainnet],
-        ssr: true,
-      })
-    }
-
-    return getDefaultConfig({
-      appName: 'Onchain Rugs',
-      projectId: projectId,
-      chains: [shapeSepolia, shapeMainnet],
-      ssr: true,
-    })
-  }, [])
-
   return (
-    <WagmiProvider config={wagmiConfig}>
+    <WagmiProvider config={rainbowKitConfig}>
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider theme={glassTheme} {...rainbowKitConfig}>
+        <RainbowKitProvider theme={glassTheme}>
           {children}
         </RainbowKitProvider>
       </QueryClientProvider>

@@ -60,8 +60,8 @@ export function useRugMinting() {
   const mintRug = async (seed?: number, textLines?: string[], svgArt?: string) => {
     if (!writeContract) return
 
-    // Generate deterministic seed if not provided
-    const finalSeed = seed || Math.floor(Math.random() * 10000)
+    // Generate deterministic seed if not provided (using large range to prevent repetition)
+    const finalSeed = seed || Math.floor(Math.random() * 1000000)
 
     // Calculate minting price based on text lines
     const mintingPrice = calculateMintingPrice(textLines || [])

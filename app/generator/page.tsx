@@ -2,13 +2,14 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Shuffle, Download, FileText, Plus, X } from 'lucide-react'
+import { Shuffle, Download, FileText, Plus, X, Copy } from 'lucide-react'
 import Navigation from '@/components/Navigation'
 import NFTExporter from '@/components/NFTExporter'
 import Web3Minting from '@/components/Web3Minting'
 import SimpleMinting from '@/components/SimpleMinting'
 import Footer from '@/components/Footer'
 import { initPRNG, getPRNG, createDerivedPRNG } from '@/lib/DeterministicPRNG'
+import { config } from '@/lib/config'
 
 export default function GeneratorPage() {
   const [isLoaded, setIsLoaded] = useState(false)
@@ -17,12 +18,25 @@ export default function GeneratorPage() {
   const [currentRowCount, setCurrentRowCount] = useState(1)
   const [palette, setPalette] = useState<any>(null)
   const [traits, setTraits] = useState<any>(null)
+  const [stripeData, setStripeData] = useState<any[]>([])
   const [showDirt, setShowDirt] = useState(false)
   const [dirtLevel, setDirtLevel] = useState(0) // 0 = clean, 1 = 50% dirty, 2 = full dirty
   const [showTexture, setShowTexture] = useState(false)
   const [textureLevel, setTextureLevel] = useState(0) // 0 = none, 1 = 7 days, 2 = 30 days
   const [warpThickness, setWarpThickness] = useState(2) // Default warp thickness
   const [complexity, setComplexity] = useState(2) // Default complexity
+
+  // Debounce timer for live updates
+  const liveUpdateTimerRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (liveUpdateTimerRef.current) {
+        clearTimeout(liveUpdateTimerRef.current)
+      }
+    }
+  }, [])
 
   // Copy to clipboard function
   const copyToClipboard = async (text: string, label: string) => {
@@ -266,19 +280,21 @@ export default function GeneratorPage() {
       '=': ["00000","00000","11111","00000","11111","00000","00000"],
       "'": ["00100","00100","00100","00000","00000","00000","00000"],
       '"': ["01010","01010","01010","00000","00000","00000","00000"],
-      '.': ["00000","00000","00000","00000","00000","00100","00100"]
+      '.': ["00000","00000","00000","00000","00000","00100","00100"],
+      '<': ["00010","00100","01000","10000","01000","00100","00010"],
+      '>': ["01000","00100","00010","00001","00010","00100","01000"]
     }
     
     // Global variables for NFTExporter
-    let selectedPalette = colorPalettes[0]
-    let stripeData: any[] = []
-    let textData: any[] = []
-    let doormatTextRows: string[] = []
-    let warpThickness = config.WARP_THICKNESS
+    const selectedPalette = colorPalettes[0]
+    const stripeData: any[] = []
+    const textData: any[] = []
+    const doormatTextRows: string[] = []
+    const warpThickness = config.WARP_THICKNESS
     
     // Text colors (chosen from palette) - MISSING FROM ORIGINAL
-    let lightTextColor: any = null
-    let darkTextColor: any = null
+    const lightTextColor: any = null
+    const darkTextColor: any = null
     
     // Expose minimal globals for NFTExporter
     if (typeof window !== 'undefined') {
@@ -316,7 +332,7 @@ export default function GeneratorPage() {
           // Original setup function from doormat.js
       p.setup = () => {
             // Create canvas with swapped dimensions for 90-degree rotation (original logic)
-            let canvas = p.createCanvas(doormatData.config.DOORMAT_HEIGHT + (doormatData.config.FRINGE_LENGTH * 4), 
+            const canvas = p.createCanvas(doormatData.config.DOORMAT_HEIGHT + (doormatData.config.FRINGE_LENGTH * 4), 
                                        doormatData.config.DOORMAT_WIDTH + (doormatData.config.FRINGE_LENGTH * 4))
             canvas.parent('canvas-container')
             // Let CSS handle positioning - don't set styles here
@@ -358,11 +374,12 @@ export default function GeneratorPage() {
             if (currentShowTexture && currentTextureLevel > 0) {
               drawTextureOverlayWithLevel(p, doormatData, currentTextureLevel)
             }
-            p.pop()
             
-            // Draw fringe with adjusted positioning
+            // Draw fringe and selvedge within the same translation as the rug (rotated coordinate system)
             drawFringeOriginal(p, doormatData, drawingPRNG)
             drawSelvedgeEdgesOriginal(p, doormatData, drawingPRNG)
+
+            p.pop()
             
             // Draw dirt overlay if enabled
             const currentShowDirt = (window as any).showDirt || false
@@ -412,9 +429,9 @@ export default function GeneratorPage() {
     // Limited to 1-4 to prevent text clipping with 5 lines
     const warpThicknessWeights = {
       1: 0.10,  // 10% - Very thin
-      2: 0.25,  // 25% - Thin
-      3: 0.35,  // 35% - Medium-thin (most common)
-      4: 0.30   // 30% - Medium
+      2: 0.25,  // 25% chance (rare)
+      3: 0.35,  // 35% chance (most common)
+      4: 0.30   // 30% chance
     }
     
     const warpThicknessRoll = prng.next()
@@ -437,6 +454,7 @@ export default function GeneratorPage() {
     
     // Generate stripes with seeded randomness
     doormatData.stripeData = generateStripes(doormatData, seed)
+    setStripeData(doormatData.stripeData) // Update React state
 
     // Calculate complexity based on stripe patterns
     const calculatedComplexity = calculateNumericComplexity(doormatData.stripeData)
@@ -566,11 +584,14 @@ export default function GeneratorPage() {
     console.log(`🎨 Selected palette index: ${tierPaletteIndex}/${tierPalettes.length - 1}`)
     
     // Original doormat.js stripe generation logic
-    let totalHeight = config.DOORMAT_HEIGHT
+    const totalHeight = config.DOORMAT_HEIGHT
     let currentY = 0
+
+    // Track previous stripe's weave type to prevent consecutive mixed stripes
+    let previousWeaveType = null
     
     // Decide stripe density pattern for this doormat
-    let densityType = stripePRNG.next()
+    const densityType = stripePRNG.next()
     let minHeight, maxHeight
     
     if (densityType < 0.2) {
@@ -592,7 +613,7 @@ export default function GeneratorPage() {
       let stripeHeight
       if (densityType >= 0.4) {
         // Mixed density: add more randomization within the range
-        let variationType = stripePRNG.next()
+        const variationType = stripePRNG.next()
         if (variationType < 0.3) {
           // 30% thin stripes within mixed
           stripeHeight = minHeight + (stripePRNG.next() * 20)
@@ -614,7 +635,7 @@ export default function GeneratorPage() {
       }
       
       // Select colors for this stripe
-      let primaryColor = palette.colors[Math.floor(stripePRNG.next() * palette.colors.length)]
+      const primaryColor = palette.colors[Math.floor(stripePRNG.next() * palette.colors.length)]
       
       // RARITY-BASED SECONDARY COLOR GENERATION
       // Make blended colors rarer based on overall rarity
@@ -636,12 +657,12 @@ export default function GeneratorPage() {
         console.log(`🎨 ${selectedRarity} Secondary Color Chance: ${(secondaryColorChance * 100).toFixed(1)}%`)
       }
       
-      let hasSecondaryColor = stripePRNG.next() < secondaryColorChance
-      let secondaryColor = hasSecondaryColor ? palette.colors[Math.floor(stripePRNG.next() * palette.colors.length)] : null
+      const hasSecondaryColor = stripePRNG.next() < secondaryColorChance
+      const secondaryColor = hasSecondaryColor ? palette.colors[Math.floor(stripePRNG.next() * palette.colors.length)] : null
       
       // RARITY-BASED WEAVE PATTERN SELECTION
       // Make complex patterns rarer based on overall rarity
-      let weaveRand = stripePRNG.next()
+      const weaveRand = stripePRNG.next()
       let weaveType
       
       // Adjust probabilities based on palette rarity
@@ -676,12 +697,15 @@ export default function GeneratorPage() {
         console.log(`  Solid: ${(solidChance * 100).toFixed(1)}%, Textured: ${(texturedChance * 100).toFixed(1)}%, Mixed: ${(mixedChance * 100).toFixed(1)}%`)
       }
       
+      // Prevent consecutive mixed stripes to avoid text obfuscation
       if (weaveRand < solidChance) {
-        weaveType = 'solid'
+        weaveType = 's'  // solid
       } else if (weaveRand < solidChance + texturedChance) {
-        weaveType = 'textured'
+        weaveType = 't'  // textured
       } else {
-        weaveType = 'mixed'
+        // Only use mixed if we actually have a secondary color AND previous stripe wasn't mixed
+        const wantsMixed = hasSecondaryColor && previousWeaveType !== 'm'
+        weaveType = wantsMixed ? 'm' : 's'  // mixed only if secondary color exists AND not consecutive, otherwise fallback to solid
       }
       
       // Create stripe object (original structure)
@@ -695,6 +719,7 @@ export default function GeneratorPage() {
       }
       
       stripes.push(stripe)
+      previousWeaveType = weaveType  // Track for preventing consecutive mixed stripes
       currentY += stripeHeight
     }
     
@@ -706,16 +731,19 @@ export default function GeneratorPage() {
     const config = doormatData.config
     const warpSpacing = doormatData.warpThickness + 1
     const weftSpacing = config.WEFT_THICKNESS + 1
-    
+
+    // Draw character outlines first (for mixed weaves)
+    drawCharacterOutlines(p, stripe, doormatData)
+
     // First, draw the warp threads (vertical) as the foundation
     for (let x = 0; x < config.DOORMAT_WIDTH; x += warpSpacing) {
       for (let y = stripe.y; y < stripe.y + stripe.height; y += weftSpacing) {
-        let warpColor = p.color(stripe.primaryColor)
+        const warpColor = p.color(stripe.primaryColor)
         
         // Check if this position should be modified for text
         let isTextPixel = false
         if (doormatData.textData && doormatData.textData.length > 0) {
-          for (let textPixel of doormatData.textData) {
+          for (const textPixel of doormatData.textData) {
             if (x >= textPixel.x && x < textPixel.x + textPixel.width &&
                 y >= textPixel.y && y < textPixel.y + textPixel.height) {
               isTextPixel = true
@@ -729,22 +757,54 @@ export default function GeneratorPage() {
         let g = p.green(warpColor) + drawingPRNG.range(-15, 15)
         let b = p.blue(warpColor) + drawingPRNG.range(-15, 15)
         
-        // Modify color for text pixels (vertical lines use weft thickness)
+        // Handle text pixels in warp threads
         if (isTextPixel) {
-          const bgBrightness = (r + g + b) / 3
-          let tc = bgBrightness < 128 ? doormatData.lightTextColor : doormatData.darkTextColor
-          r = p.red(tc); g = p.green(tc); b = p.blue(tc)
+          // Draw shadow for text
+          p.fill(0, 0, 0, 120)
+          p.noStroke()
+          const warpCurve = p.sin(y * 0.05) * 0.5
+          p.rect(x + warpCurve + 0.5, y + 0.5, doormatData.warpThickness, weftSpacing)
+
+          // Use intelligent text color selection for warp threads
+          if (stripe.weaveType === 'm' && stripe.secondaryColor) {
+            // For mixed weaves, choose text color that contrasts best with BOTH colors
+            const primaryBrightness = (p.red(p.color(stripe.primaryColor)) + p.green(p.color(stripe.primaryColor)) + p.blue(p.color(stripe.primaryColor))) / 3
+            const secondaryBrightness = (p.red(p.color(stripe.secondaryColor)) + p.green(p.color(stripe.secondaryColor)) + p.blue(p.color(stripe.secondaryColor))) / 3
+
+            // Test contrast with black vs white
+            const blackContrastPrimary = Math.abs(primaryBrightness - 0)
+            const blackContrastSecondary = Math.abs(secondaryBrightness - 0)
+            const whiteContrastPrimary = Math.abs(primaryBrightness - 255)
+            const whiteContrastSecondary = Math.abs(secondaryBrightness - 255)
+
+            // Use the color that gives better minimum contrast
+            const blackMinContrast = Math.min(blackContrastPrimary, blackContrastSecondary)
+            const whiteMinContrast = Math.min(whiteContrastPrimary, whiteContrastSecondary)
+
+            if (whiteMinContrast > blackMinContrast) {
+              r = 255; g = 255; b = 255 // White
+            } else {
+              r = 0; g = 0; b = 0 // Black
+            }
+          } else {
+            r = 0; g = 0; b = 0 // Black for warp threads
+          }
+        } else {
+          // Normal warp thread color
+          r = p.red(warpColor) + drawingPRNG.range(-15, 15)
+          g = p.green(warpColor) + drawingPRNG.range(-15, 15)
+          b = p.blue(warpColor) + drawingPRNG.range(-15, 15)
         }
-        
+
         r = p.constrain(r, 0, 255)
         g = p.constrain(g, 0, 255)
         b = p.constrain(b, 0, 255)
-        
+
         p.fill(r, g, b)
         p.noStroke()
-        
+
         // Draw warp thread with slight curve for natural look
-        let warpCurve = p.sin(y * 0.05) * 0.5
+        const warpCurve = p.sin(y * 0.05) * 0.5
         p.rect(x + warpCurve, y, doormatData.warpThickness, weftSpacing)
       }
     }
@@ -755,19 +815,19 @@ export default function GeneratorPage() {
         let weftColor = p.color(stripe.primaryColor)
         
         // Add variation based on weave type
-        if (stripe.weaveType === 'mixed' && stripe.secondaryColor) {
+        if (stripe.weaveType === 'm' && stripe.secondaryColor) {
           if (p.noise(x * 0.1, y * 0.1) > 0.5) {
             weftColor = p.color(stripe.secondaryColor)
           }
-        } else if (stripe.weaveType === 'textured') {
-          let noiseVal = p.noise(x * 0.05, y * 0.05)
+        } else if (stripe.weaveType === 't') {
+          const noiseVal = p.noise(x * 0.05, y * 0.05)
           weftColor = p.lerpColor(p.color(stripe.primaryColor), p.color(255), noiseVal * 0.15)
         }
         
         // Check if this position should be modified for text
         let isTextPixel = false
         if (doormatData.textData && doormatData.textData.length > 0) {
-          for (let textPixel of doormatData.textData) {
+          for (const textPixel of doormatData.textData) {
             if (x >= textPixel.x && x < textPixel.x + textPixel.width &&
                 y >= textPixel.y && y < textPixel.y + textPixel.height) {
               isTextPixel = true
@@ -780,23 +840,349 @@ export default function GeneratorPage() {
         let r = p.red(weftColor) + drawingPRNG.range(-20, 20)
         let g = p.green(weftColor) + drawingPRNG.range(-20, 20)
         let b = p.blue(weftColor) + drawingPRNG.range(-20, 20)
-        
-        // Modify color for text pixels (horizontal lines use warp thickness)
+
+        // Handle text pixels with special rendering
         if (isTextPixel) {
-          const bgBrightness = (r + g + b) / 3
-          let tc = bgBrightness < 128 ? doormatData.lightTextColor : doormatData.darkTextColor
-          r = p.red(tc); g = p.green(tc); b = p.blue(tc)
+          // Draw shadow for text (works on all backgrounds)
+          p.fill(0, 0, 0, 120) // Semi-transparent black shadow
+          p.noStroke()
+          const weftCurve = p.cos(x * 0.05) * 0.5
+          p.rect(x + 0.5, y + weftCurve + 0.5, warpSpacing, config.WEFT_THICKNESS)
+
+          // Use high contrast text color
+          if (stripe.weaveType === 'm' && stripe.secondaryColor) {
+            // For mixed weaves: analyse local background and choose a high-contrast colour
+            const sampleColors: any[] = []
+            const checkRadius = 2
+            const stripeWidth = doormatData.config?.DOORMAT_WIDTH || config.DOORMAT_WIDTH
+
+            // Always include the current weft colour
+            sampleColors.push(p.color(weftColor))
+
+            for (let dx = -checkRadius; dx <= checkRadius; dx++) {
+              for (let dy = -checkRadius; dy <= checkRadius; dy++) {
+                if (dx === 0 && dy === 0) continue
+
+                const checkX = x + dx
+                const checkY = y + dy
+
+                if (checkY < stripe.y || checkY >= stripe.y + stripe.height) continue
+                if (checkX < 0 || checkX >= stripeWidth) continue
+
+                let checkWeftColor = p.color(stripe.primaryColor)
+                const noiseVal = p.noise(checkX * 0.1, checkY * 0.1)
+                if (noiseVal > 0.5) {
+                  checkWeftColor = p.color(stripe.secondaryColor)
+                }
+                sampleColors.push(checkWeftColor)
+              }
+            }
+
+            if (sampleColors.length === 0) {
+              sampleColors.push(p.color(stripe.primaryColor))
+            }
+
+            const toKey = (colorObj: any) => {
+              return [Math.round(p.red(colorObj)), Math.round(p.green(colorObj)), Math.round(p.blue(colorObj))].join('-')
+            }
+
+            const toRelativeLuminance = (colorObj: any) => {
+              const convert = (value: number) => {
+                const channel = value / 255
+                return channel <= 0.03928 ? channel / 12.92 : Math.pow((channel + 0.055) / 1.055, 2.4)
+              }
+              const rLum = convert(p.red(colorObj))
+              const gLum = convert(p.green(colorObj))
+              const bLum = convert(p.blue(colorObj))
+              return 0.2126 * rLum + 0.7152 * gLum + 0.0722 * bLum
+            }
+
+            const contrastRatio = (a: any, b: any) => {
+              const lumA = toRelativeLuminance(a)
+              const lumB = toRelativeLuminance(b)
+              const lighter = Math.max(lumA, lumB)
+              const darker = Math.min(lumA, lumB)
+              return (lighter + 0.05) / (darker + 0.05)
+            }
+
+            // CIE Lab color space conversion for better perceptual color differences
+            const rgbToXyz = (r: number, g: number, b: number) => {
+              // Normalize RGB to 0-1
+              r = r / 255
+              g = g / 255
+              b = b / 255
+
+              // Linearize RGB
+              r = r > 0.04045 ? Math.pow((r + 0.055) / 1.055, 2.4) : r / 12.92
+              g = g > 0.04045 ? Math.pow((g + 0.055) / 1.055, 2.4) : g / 12.92
+              b = b > 0.04045 ? Math.pow((b + 0.055) / 1.055, 2.4) : b / 12.92
+
+              // Convert to XYZ
+              const x = r * 0.4124 + g * 0.3576 + b * 0.1805
+              const y = r * 0.2126 + g * 0.7152 + b * 0.0722
+              const z = r * 0.0193 + g * 0.1192 + b * 0.9505
+
+              return { x, y, z }
+            }
+
+            const xyzToLab = (x: number, y: number, z: number) => {
+              // Normalize by D65 white point
+              x = x / 0.95047
+              y = y / 1.00000
+              z = z / 1.08883
+
+              // Lab function
+              const f = (t: number) => t > Math.pow(6/29, 3) ? Math.pow(t, 1/3) : (1/3) * Math.pow(29/6, 2) * t + 4/29
+
+              const L = 116 * f(y) - 16
+              const a = 500 * (f(x) - f(y))
+              const b_lab = 200 * (f(y) - f(z))
+
+              return { L, a, b: b_lab }
+            }
+
+            const rgbToLab = (color: any) => {
+              const { x, y, z } = rgbToXyz(p.red(color), p.green(color), p.blue(color))
+              return xyzToLab(x, y, z)
+            }
+
+            // CIEDE2000 color difference formula
+            const deltaE2000 = (lab1: any, lab2: any) => {
+              const { L: L1, a: a1, b: b1 } = lab1
+              const { L: L2, a: a2, b: b2 } = lab2
+
+              const kL = 1, kC = 1, kH = 1
+
+              const deltaLPrime = L2 - L1
+              const LBar = (L1 + L2) / 2
+
+              const C1 = Math.sqrt(a1 * a1 + b1 * b1)
+              const C2 = Math.sqrt(a2 * a2 + b2 * b2)
+              const CBar = (C1 + C2) / 2
+
+              const aPrime1 = a1 * (1 + 0.5 * (Math.sqrt(Math.pow(CBar, 7) / (Math.pow(CBar, 7) + Math.pow(25, 7)))))
+              const aPrime2 = a2 * (1 + 0.5 * (Math.sqrt(Math.pow(CBar, 7) / (Math.pow(CBar, 7) + Math.pow(25, 7)))))
+
+              const CPrime1 = Math.sqrt(aPrime1 * aPrime1 + b1 * b1)
+              const CPrime2 = Math.sqrt(aPrime2 * aPrime2 + b2 * b2)
+              const CBarPrime = (CPrime1 + CPrime2) / 2
+
+              const deltaCPrime = CPrime2 - CPrime1
+
+              const hPrime1 = Math.atan2(b1, aPrime1) * 180 / Math.PI
+              const hPrime2 = Math.atan2(b2, aPrime2) * 180 / Math.PI
+              const deltahPrime = Math.abs(hPrime1 - hPrime2) <= 180 ? hPrime2 - hPrime1 : (hPrime2 - hPrime1 > 180 ? hPrime2 - hPrime1 - 360 : hPrime2 - hPrime1 + 360)
+              const deltaHPrime = 2 * Math.sqrt(CPrime1 * CPrime2) * Math.sin(deltahPrime * Math.PI / 360)
+
+              const HBarPrime = Math.abs(hPrime1 - hPrime2) <= 180 ? (hPrime1 + hPrime2) / 2 : (hPrime1 + hPrime2 >= 360 ? (hPrime1 + hPrime2) / 2 : (hPrime1 + hPrime2 + 360) / 2)
+
+              const T = 1 - 0.17 * Math.cos(HBarPrime * Math.PI / 180 - 30) + 0.24 * Math.cos(2 * HBarPrime * Math.PI / 180) + 0.32 * Math.cos(3 * HBarPrime * Math.PI / 180 + 6) - 0.20 * Math.cos(4 * HBarPrime * Math.PI / 180 - 63)
+
+              const SL = 1 + (0.015 * Math.pow(LBar - 50, 2)) / Math.sqrt(20 + Math.pow(LBar - 50, 2))
+              const SC = 1 + 0.045 * CBarPrime
+              const SH = 1 + 0.015 * CBarPrime * T
+
+              const RT = -Math.sin(2 * (HBarPrime * Math.PI / 180 - 55) * Math.PI / 180) * (2 * Math.sqrt(Math.pow(CBarPrime, 7) / (Math.pow(CBarPrime, 7) + Math.pow(25, 7))))
+
+              const kL_SL = kL * SL
+              const kC_SC = kC * SC
+              const kH_SH = kH * SH
+
+              const termL = deltaLPrime / kL_SL
+              const termC = deltaCPrime / kC_SC
+              const termH = deltaHPrime / kH_SH
+
+              return Math.sqrt(termL * termL + termC * termC + termH * termH + RT * termC * termH)
+            }
+
+            const perceptualColorDistance = (a: any, b: any) => {
+              const lab1 = rgbToLab(a)
+              const lab2 = rgbToLab(b)
+              return deltaE2000(lab1, lab2)
+            }
+
+            const primaryColor = p.color(stripe.primaryColor)
+            const secondaryColor = p.color(stripe.secondaryColor)
+
+            // Use perceptual distance threshold (delta E > 20 is considered different colors)
+            const distinctThreshold = 20
+            const isDistinct = (candidate: any) => {
+              return perceptualColorDistance(candidate, primaryColor) > distinctThreshold &&
+                     perceptualColorDistance(candidate, secondaryColor) > distinctThreshold
+            }
+
+            // BULLETPROOF SOLUTION: For mixed weaves, use palette colors NOT used in stripe
+            const candidateColors: any[] = []
+            const candidateKeys = new Set<string>()
+
+            // Simple function to add color to candidates
+            const addColor = (color: any) => {
+              const key = Math.round(p.red(color)) + '-' + Math.round(p.green(color)) + '-' + Math.round(p.blue(color))
+              if (!candidateKeys.has(key)) {
+                candidateKeys.add(key)
+                candidateColors.push(color)
+              }
+            }
+
+            // Get all palette colors as p5.Color objects
+            const allPaletteColors: any[] = []
+            if (doormatData.selectedPalette?.colors?.length) {
+              for (const paletteColor of doormatData.selectedPalette.colors) {
+                allPaletteColors.push(p.color(paletteColor))
+              }
+            }
+
+            // Create a simple set of used colors (primary + secondary)
+            const usedColors = new Set<string>()
+            const primaryKey = Math.round(p.red(primaryColor)) + '-' + Math.round(p.green(primaryColor)) + '-' + Math.round(p.blue(primaryColor))
+            const secondaryKey = Math.round(p.red(secondaryColor)) + '-' + Math.round(p.green(secondaryColor)) + '-' + Math.round(p.blue(secondaryColor))
+            usedColors.add(primaryKey)
+            usedColors.add(secondaryKey)
+
+            // Find unused palette colors
+            const unusedPaletteColors: any[] = []
+            for (const paletteColor of allPaletteColors) {
+              const colorKey = Math.round(p.red(paletteColor)) + '-' + Math.round(p.green(paletteColor)) + '-' + Math.round(p.blue(paletteColor))
+              if (!usedColors.has(colorKey)) {
+                unusedPaletteColors.push(paletteColor)
+              }
+            }
+
+            // Use unused colors with subtle adjustment for contrast
+            for (const unusedColor of unusedPaletteColors) {
+              // Use much more subtle darkening to preserve color identity
+              const lightness = (p.red(unusedColor) + p.green(unusedColor) + p.blue(unusedColor)) / (3 * 255)
+              const darkenAmount = lightness > 0.7 ? 0.15 : lightness > 0.4 ? 0.2 : 0.25 // Less darkening for lighter colors
+              const adjusted = p.lerpColor(unusedColor, p.color(0, 0, 0), darkenAmount)
+              addColor(adjusted)
+            }
+
+            // If no unused colors, use ALL palette colors with subtle adjustment as fallback
+            if (candidateColors.length === 0) {
+              for (const paletteColor of allPaletteColors) {
+                const lightness = (p.red(paletteColor) + p.green(paletteColor) + p.blue(paletteColor)) / (3 * 255)
+                const darkenAmount = lightness > 0.7 ? 0.15 : lightness > 0.4 ? 0.2 : 0.25
+                const adjusted = p.lerpColor(paletteColor, p.color(0, 0, 0), darkenAmount)
+                addColor(adjusted)
+              }
+            }
+
+            // Enhanced evaluation using multiple contrast metrics
+            const evaluateCandidates = (pool: any[]) => {
+              let bestCandidate = pool[0]
+              let bestScore = -1
+
+              for (const candidate of pool) {
+                // Calculate multiple contrast metrics
+                let minContrastRatio = Infinity
+                let avgColorDistance = 0
+                let minPerceptualDistance = Infinity
+
+                for (const sampleColor of sampleColors) {
+                  // WCAG contrast ratio (brightness-based)
+                  const ratio = contrastRatio(candidate, sampleColor)
+                  if (ratio < minContrastRatio) {
+                    minContrastRatio = ratio
+                  }
+
+                  // Perceptual color distance (CIEDE2000)
+                  const perceptualDist = perceptualColorDistance(candidate, sampleColor)
+                  if (perceptualDist < minPerceptualDistance) {
+                    minPerceptualDistance = perceptualDist
+                  }
+
+                  avgColorDistance += perceptualDist
+                }
+                avgColorDistance /= sampleColors.length
+
+                // Combined score: prioritize perceptual distance, then WCAG contrast
+                // Weight perceptual distance more heavily as it's more accurate
+                const perceptualWeight = 0.7
+                const contrastWeight = 0.3
+
+                // Normalize perceptual distance (higher is better for contrast)
+                const normalizedPerceptual = Math.min(minPerceptualDistance / 50, 1)
+                // Normalize contrast ratio (WCAG AA requires 4.5:1, AAA requires 7:1)
+                const normalizedContrast = Math.min(minContrastRatio / 7, 1)
+
+                const combinedScore = perceptualWeight * normalizedPerceptual + contrastWeight * normalizedContrast
+
+                if (combinedScore > bestScore) {
+                  bestScore = combinedScore
+                  bestCandidate = candidate
+                }
+              }
+              return { bestCandidate, bestScore }
+            }
+
+            // For mixed weaves, we already filtered to only palette colors above
+            // Just evaluate what we have
+            let { bestCandidate, bestScore } = evaluateCandidates(candidateColors)
+
+            // Enhanced fallback logic: If still no good contrast, use ALL palette colors with multiple variations
+            const desiredCombinedScore = 0.6 // Require at least 60% of maximum possible contrast
+            if (bestScore < desiredCombinedScore && allPaletteColors.length > 0) {
+              const allPaletteCandidates: any[] = []
+
+              // Try multiple variations of palette colors with subtle adjustments
+              for (const paletteColor of allPaletteColors) {
+                const lightness = (p.red(paletteColor) + p.green(paletteColor) + p.blue(paletteColor)) / (3 * 255)
+
+                // Darkened version (for light backgrounds) - much more subtle
+                const darkenAmount = lightness > 0.7 ? 0.15 : lightness > 0.4 ? 0.2 : 0.25
+                const darkenedColor = p.lerpColor(paletteColor, p.color(0, 0, 0), darkenAmount)
+                allPaletteCandidates.push(darkenedColor)
+
+                // Lightened version (for dark backgrounds) - subtle lightening
+                const lightenAmount = lightness < 0.3 ? 0.2 : lightness < 0.6 ? 0.15 : 0.1
+                const lightenedColor = p.lerpColor(paletteColor, p.color(255, 255, 255), lightenAmount)
+                allPaletteCandidates.push(lightenedColor)
+
+                // High contrast colors using simple HSV-based complementary approach
+                const r = p.red(paletteColor) / 255
+                const g = p.green(paletteColor) / 255
+                const b = p.blue(paletteColor) / 255
+
+                // Calculate brightness and create high contrast alternatives
+                const brightness = (r + g + b) / 3
+
+                // Create high contrast color by inverting brightness while keeping hue
+                const contrastR = brightness > 0.5 ? Math.max(0, r - 0.4) : Math.min(1, r + 0.4)
+                const contrastG = brightness > 0.5 ? Math.max(0, g - 0.4) : Math.min(1, g + 0.4)
+                const contrastB = brightness > 0.5 ? Math.max(0, b - 0.4) : Math.min(1, b + 0.4)
+
+                allPaletteCandidates.push(p.color(contrastR * 255, contrastG * 255, contrastB * 255))
+              }
+
+              ;({ bestCandidate } = evaluateCandidates(allPaletteCandidates))
+            }
+
+            // For mixed weaves: Use shadow effect (matching rug-algo.js)
+            r = p.red(bestCandidate)
+            g = p.green(bestCandidate)
+            b = p.blue(bestCandidate)
+          } else {
+            // For solid and textured weaves, use current logic
+            const bgBrightness = (p.red(weftColor) + p.green(weftColor) + p.blue(weftColor)) / 3
+            const tc = bgBrightness < 128 ? doormatData.lightTextColor : doormatData.darkTextColor
+            r = p.red(tc); g = p.green(tc); b = p.blue(tc)
+          }
+        } else {
+          // Normal thread color
+          r = p.red(weftColor) + drawingPRNG.range(-20, 20)
+          g = p.green(weftColor) + drawingPRNG.range(-20, 20)
+          b = p.blue(weftColor) + drawingPRNG.range(-20, 20)
         }
-        
+
         r = p.constrain(r, 0, 255)
         g = p.constrain(g, 0, 255)
         b = p.constrain(b, 0, 255)
-        
+
         p.fill(r, g, b)
         p.noStroke()
-        
+
         // Draw weft thread with slight curve
-        let weftCurve = p.cos(x * 0.05) * 0.5
+        const weftCurve = p.cos(x * 0.05) * 0.5
         p.rect(x, y + weftCurve, warpSpacing, config.WEFT_THICKNESS)
       }
     }
@@ -830,8 +1216,8 @@ export default function GeneratorPage() {
     // Create subtle hatching effect like in the diagram
     for (let x = 0; x < config.DOORMAT_WIDTH; x += 2) {
       for (let y = 0; y < config.DOORMAT_HEIGHT; y += 2) {
-        let noiseVal = p.noise(x * 0.02, y * 0.02)
-        let hatchingIntensity = p.map(noiseVal, 0, 1, 0, 50)
+        const noiseVal = p.noise(x * 0.02, y * 0.02)
+        const hatchingIntensity = p.map(noiseVal, 0, 1, 0, 50)
         
         p.fill(0, 0, 0, hatchingIntensity)
         p.noStroke()
@@ -842,7 +1228,7 @@ export default function GeneratorPage() {
     // Add subtle relief effect to show the bumpy, cloth-like surface
     for (let x = 0; x < config.DOORMAT_WIDTH; x += 6) {
       for (let y = 0; y < config.DOORMAT_HEIGHT; y += 6) {
-        let reliefNoise = p.noise(x * 0.03, y * 0.03)
+        const reliefNoise = p.noise(x * 0.03, y * 0.03)
         if (reliefNoise > 0.6) {
           p.fill(255, 255, 255, 25)
           p.noStroke()
@@ -858,34 +1244,40 @@ export default function GeneratorPage() {
     p.pop()
   }
 
-  // Enhanced texture overlay with time-based intensity levels
+  // Enhanced texture overlay with 10-level intensity progression
   const drawTextureOverlayWithLevel = (p: any, doormatData: any, textureLevel: number) => {
     const config = doormatData.config
-    
-    // Texture intensity based on level (1 = 7 days, 2 = 30 days)
-    const hatchingIntensity = textureLevel === 1 ? 30 : 80  // More intense after 30 days
-    const reliefIntensity = textureLevel === 1 ? 20 : 40    // More relief after 30 days
-    const reliefThreshold = textureLevel === 1 ? 0.6 : 0.5  // Lower threshold = more relief
-    
+
+    // Scale all effects based on 10-level system (0-10)
+    const intensityMultiplier = textureLevel / 10 // 0.0 to 1.0
+
+    // Progressive intensity scaling
+    const hatchingIntensity = p.map(intensityMultiplier, 0, 1, 0, 120)  // 0 to 120 opacity
+    const reliefIntensity = p.map(intensityMultiplier, 0, 1, 0, 60)     // 0 to 60 opacity
+    const reliefThreshold = p.map(intensityMultiplier, 0, 1, 0.8, 0.3)  // 0.8 to 0.3 (more relief as wear increases)
+    const wearLineDensity = p.map(intensityMultiplier, 0, 1, 0.9, 0.4)   // 0.9 to 0.4 (more wear lines)
+    const fringeWear = textureLevel >= 5 // Fringe wear starts at level 5
+    const cornerDamage = textureLevel >= 8 // Corner damage starts at level 8
+
     p.push()
     p.blendMode(p.MULTIPLY)
-    
-    // Create hatching effect with variable intensity
+
+    // Base hatching effect - scales with level
     for (let x = 0; x < config.DOORMAT_WIDTH; x += 2) {
       for (let y = 0; y < config.DOORMAT_HEIGHT; y += 2) {
-        let noiseVal = p.noise(x * 0.02, y * 0.02)
-        let intensity = p.map(noiseVal, 0, 1, 0, hatchingIntensity)
-        
+        const noiseVal = p.noise(x * 0.02, y * 0.02)
+        const intensity = p.map(noiseVal, 0, 1, 0, hatchingIntensity)
+
         p.fill(0, 0, 0, intensity)
         p.noStroke()
         p.rect(x, y, 2, 2)
       }
     }
-    
-    // Add relief effect with variable intensity
+
+    // Relief effect - more prominent with higher levels
     for (let x = 0; x < config.DOORMAT_WIDTH; x += 6) {
       for (let y = 0; y < config.DOORMAT_HEIGHT; y += 6) {
-        let reliefNoise = p.noise(x * 0.03, y * 0.03)
+        const reliefNoise = p.noise(x * 0.03, y * 0.03)
         if (reliefNoise > reliefThreshold) {
           p.fill(255, 255, 255, reliefIntensity)
           p.noStroke()
@@ -897,65 +1289,145 @@ export default function GeneratorPage() {
         }
       }
     }
-    
-    // Add additional wear patterns for 30-day level
-    if (textureLevel === 2) {
-      // Add more pronounced wear lines
-      for (let x = 0; x < config.DOORMAT_WIDTH; x += 8) {
-        for (let y = 0; y < config.DOORMAT_HEIGHT; y += 8) {
-          let wearNoise = p.noise(x * 0.01, y * 0.01)
-          if (wearNoise > 0.7) {
-            p.fill(0, 0, 0, 15)
+
+    // Progressive wear patterns based on level
+    if (textureLevel >= 1) {
+      // Level 1+: Basic wear lines
+      for (let x = 0; x < config.DOORMAT_WIDTH; x += 12) {
+        for (let y = 0; y < config.DOORMAT_HEIGHT; y += 12) {
+          const wearNoise = p.noise(x * 0.008, y * 0.008)
+          if (wearNoise > wearLineDensity) {
+            const lineOpacity = p.map(textureLevel, 1, 10, 8, 25)
+            p.fill(0, 0, 0, lineOpacity)
             p.noStroke()
-            p.rect(x, y, 8, 2) // Horizontal wear lines
+            p.rect(x, y, 12, 1) // Horizontal wear lines
           }
         }
       }
     }
-    
+
+    if (textureLevel >= 3) {
+      // Level 3+: Vertical wear patterns
+      for (let x = 0; x < config.DOORMAT_WIDTH; x += 15) {
+        for (let y = 0; y < config.DOORMAT_HEIGHT; y += 15) {
+          const verticalNoise = p.noise(x * 0.006, y * 0.006)
+          if (verticalNoise > wearLineDensity + 0.1) {
+            const lineOpacity = p.map(textureLevel, 3, 10, 6, 20)
+            p.fill(0, 0, 0, lineOpacity)
+            p.noStroke()
+            p.rect(x, y, 1, 15) // Vertical wear lines
+          }
+        }
+      }
+    }
+
+    if (textureLevel >= 5) {
+      // Level 5+: Fringe wear (edges of rug)
+      const fringeWidth = 20
+      for (let x = 0; x < config.DOORMAT_WIDTH; x += 4) {
+        // Top fringe
+        if (p.noise(x * 0.05) > 0.6) {
+          p.fill(0, 0, 0, p.map(textureLevel, 5, 10, 10, 35))
+          p.noStroke()
+          p.rect(x, 0, 4, p.random(2, 6))
+        }
+        // Bottom fringe
+        if (p.noise(x * 0.05, 100) > 0.6) {
+          p.fill(0, 0, 0, p.map(textureLevel, 5, 10, 10, 35))
+          p.noStroke()
+          p.rect(x, config.DOORMAT_HEIGHT - 8, 4, p.random(2, 6))
+        }
+      }
+    }
+
+    if (textureLevel >= 7) {
+      // Level 7+: Patchy wear areas
+      for (let x = 0; x < config.DOORMAT_WIDTH; x += 25) {
+        for (let y = 0; y < config.DOORMAT_HEIGHT; y += 25) {
+          const patchNoise = p.noise(x * 0.004, y * 0.004)
+          if (patchNoise > 0.75) {
+            const patchOpacity = p.map(textureLevel, 7, 10, 15, 40)
+            p.fill(0, 0, 0, patchOpacity)
+            p.noStroke()
+            p.rect(x, y, 25, 25)
+          }
+        }
+      }
+    }
+
+    if (textureLevel >= 9) {
+      // Level 9+: Heavy concentrated wear
+      for (let x = 0; x < config.DOORMAT_WIDTH; x += 30) {
+        for (let y = 0; y < config.DOORMAT_HEIGHT; y += 30) {
+          const heavyNoise = p.noise(x * 0.003, y * 0.003)
+          if (heavyNoise > 0.8) {
+            const heavyOpacity = p.map(textureLevel, 9, 10, 20, 50)
+            p.fill(0, 0, 0, heavyOpacity)
+            p.noStroke()
+            p.rect(x, y, 30, 30)
+          }
+        }
+      }
+    }
+
+    if (textureLevel === 10) {
+      // Level 10: Maximum degradation - add some highlight damage
+      for (let x = 0; x < config.DOORMAT_WIDTH; x += 20) {
+        for (let y = 0; y < config.DOORMAT_HEIGHT; y += 20) {
+          const damageNoise = p.noise(x * 0.02, y * 0.02)
+          if (damageNoise > 0.85) {
+            // Add some white highlights for extreme wear
+            p.fill(255, 255, 255, 30)
+            p.noStroke()
+            p.rect(x, y, 20, 20)
+          }
+        }
+      }
+    }
+
     p.pop()
   }
 
   // Original doormat.js drawFringe function
   const drawFringeOriginal = (p: any, doormatData: any, drawingPRNG: any) => {
     const config = doormatData.config
-    // Top fringe (warp ends)
-    drawFringeSectionOriginal(p, config.FRINGE_LENGTH * 2, config.FRINGE_LENGTH, config.DOORMAT_WIDTH, config.FRINGE_LENGTH, 'top', doormatData, drawingPRNG)
+    // Top fringe (warp ends) - relative to rug translation
+    drawFringeSectionOriginal(p, 0, -config.FRINGE_LENGTH, config.DOORMAT_WIDTH, config.FRINGE_LENGTH, 'top', doormatData, drawingPRNG)
     
-    // Bottom fringe (warp ends)
-    drawFringeSectionOriginal(p, config.FRINGE_LENGTH * 2, config.FRINGE_LENGTH * 2 + config.DOORMAT_HEIGHT, config.DOORMAT_WIDTH, config.FRINGE_LENGTH, 'bottom', doormatData, drawingPRNG)
+    // Bottom fringe (warp ends) - relative to rug translation, minimal gap to avoid overlay
+    drawFringeSectionOriginal(p, 0, config.DOORMAT_HEIGHT + 1, config.DOORMAT_WIDTH, config.FRINGE_LENGTH, 'bottom', doormatData, drawingPRNG)
   }
 
   // Original doormat.js drawFringeSection function
   const drawFringeSectionOriginal = (p: any, x: number, y: number, w: number, h: number, side: string, doormatData: any, drawingPRNG: any) => {
-    let fringeStrands = w / 12
-    let strandWidth = w / fringeStrands
+    const fringeStrands = w / 12
+    const strandWidth = w / fringeStrands
     
     for (let i = 0; i < fringeStrands; i++) {
-      let strandX = x + i * strandWidth
+      const strandX = x + i * strandWidth
       
-      let strandColor = drawingPRNG.randomChoice(doormatData.selectedPalette.colors)
+      const strandColor = drawingPRNG.randomChoice(doormatData.selectedPalette.colors)
       
       // Draw individual fringe strand with thin threads
       for (let j = 0; j < 12; j++) {
-        let threadX = strandX + drawingPRNG.range(-strandWidth/6, strandWidth/6)
-        let startY = side === 'top' ? y + h : y
-        let endY = side === 'top' ? y : y + h
+        const threadX = strandX + drawingPRNG.range(-strandWidth/6, strandWidth/6)
+        const startY = side === 'top' ? y + h : y
+        const endY = side === 'top' ? y : y + h
         
         // Add natural curl/wave to the fringe with more variation
-        let waveAmplitude = drawingPRNG.range(1, 4)
-        let waveFreq = drawingPRNG.range(0.2, 0.8)
+        const waveAmplitude = drawingPRNG.range(1, 4)
+        const waveFreq = drawingPRNG.range(0.2, 0.8)
         
         // Randomize the direction and intensity for each thread
-        let direction = drawingPRNG.randomChoice([-1, 1])
-        let curlIntensity = drawingPRNG.range(0.5, 2.0)
-        let threadLength = drawingPRNG.range(0.8, 1.2)
+        const direction = drawingPRNG.randomChoice([-1, 1])
+        const curlIntensity = drawingPRNG.range(0.5, 2.0)
+        const threadLength = drawingPRNG.range(0.8, 1.2)
         
         // Use darker version of strand color for fringe
-        let fringeColor = p.color(strandColor)
-        let r = p.red(fringeColor) * 0.7
-        let g = p.green(fringeColor) * 0.7
-        let b = p.blue(fringeColor) * 0.7
+        const fringeColor = p.color(strandColor)
+        const r = p.red(fringeColor) * 0.7
+        const g = p.green(fringeColor) * 0.7
+        const b = p.blue(fringeColor) * 0.7
         
         p.stroke(r, g, b)
         p.strokeWeight(drawingPRNG.range(0.5, 1.2))
@@ -963,7 +1435,7 @@ export default function GeneratorPage() {
         p.noFill()
         p.beginShape()
         for (let t = 0; t <= 1; t += 0.1) {
-          let yPos = p.lerp(startY, endY, t * threadLength)
+          const yPos = p.lerp(startY, endY, t * threadLength)
           let xOffset = p.sin(t * p.PI * waveFreq) * waveAmplitude * t * direction * curlIntensity
           // Add more randomness and natural variation
           xOffset += drawingPRNG.range(-1, 1)
@@ -981,7 +1453,7 @@ export default function GeneratorPage() {
   // Original doormat.js drawSelvedgeEdges function
   const drawSelvedgeEdgesOriginal = (p: any, doormatData: any, drawingPRNG: any) => {
     const config = doormatData.config
-    let weftSpacing = config.WEFT_THICKNESS + 1
+    const weftSpacing = config.WEFT_THICKNESS + 1
     let isFirstWeft = true
     
     // Left selvedge edge - flowing semicircular weft threads
@@ -997,26 +1469,26 @@ export default function GeneratorPage() {
         let selvedgeColor = p.color(stripe.primaryColor)
         
         // Check if there's a secondary color for blending
-        if (stripe.secondaryColor && stripe.weaveType === 'mixed') {
-          let secondaryColor = p.color(stripe.secondaryColor)
-          let blendFactor = p.noise(y * 0.1) * 0.5 + 0.5
+        if (stripe.secondaryColor && stripe.weaveType === 'm') {
+          const secondaryColor = p.color(stripe.secondaryColor)
+          const blendFactor = p.noise(y * 0.1) * 0.5 + 0.5
           selvedgeColor = p.lerpColor(selvedgeColor, secondaryColor, blendFactor)
         }
         
-        let r = p.red(selvedgeColor) * 0.8
-        let g = p.green(selvedgeColor) * 0.8
-        let b = p.blue(selvedgeColor) * 0.8
+        const r = p.red(selvedgeColor) * 0.8
+        const g = p.green(selvedgeColor) * 0.8
+        const b = p.blue(selvedgeColor) * 0.8
         
         p.fill(r, g, b)
         p.noStroke()
         
-        let radius = config.WEFT_THICKNESS * drawingPRNG.range(1.2, 1.8)
-        let centerX = config.FRINGE_LENGTH * 2 + drawingPRNG.range(-2, 2)
-        let centerY = config.FRINGE_LENGTH * 2 + y + config.WEFT_THICKNESS/2 + drawingPRNG.range(-1, 1)
+        const radius = config.WEFT_THICKNESS * drawingPRNG.range(1.2, 1.8)
+        const centerX = drawingPRNG.range(-2, 2)  // Relative to rug translation
+        const centerY = y + config.WEFT_THICKNESS/2 + drawingPRNG.range(-1, 1)  // Relative to rug translation
         
         // Vary the arc angles for more natural look
-        let startAngle = p.HALF_PI + drawingPRNG.range(-0.2, 0.2)
-        let endAngle = -p.HALF_PI + drawingPRNG.range(-0.2, 0.2)
+        const startAngle = p.HALF_PI + drawingPRNG.range(-0.2, 0.2)
+        const endAngle = -p.HALF_PI + drawingPRNG.range(-0.2, 0.2)
         
         // Draw textured semicircle with individual thread details
         drawTexturedSelvedgeArcOriginal(p, centerX, centerY, radius, startAngle, endAngle, r, g, b, 'left', drawingPRNG)
@@ -1037,26 +1509,26 @@ export default function GeneratorPage() {
         let selvedgeColor = p.color(stripe.primaryColor)
         
         // Check if there's a secondary color for blending
-        if (stripe.secondaryColor && stripe.weaveType === 'mixed') {
-          let secondaryColor = p.color(stripe.secondaryColor)
-          let blendFactor = p.noise(y * 0.1) * 0.5 + 0.5
+        if (stripe.secondaryColor && stripe.weaveType === 'm') {
+          const secondaryColor = p.color(stripe.secondaryColor)
+          const blendFactor = p.noise(y * 0.1) * 0.5 + 0.5
           selvedgeColor = p.lerpColor(selvedgeColor, secondaryColor, blendFactor)
         }
         
-        let r = p.red(selvedgeColor) * 0.8
-        let g = p.green(selvedgeColor) * 0.8
-        let b = p.blue(selvedgeColor) * 0.8
+        const r = p.red(selvedgeColor) * 0.8
+        const g = p.green(selvedgeColor) * 0.8
+        const b = p.blue(selvedgeColor) * 0.8
         
         p.fill(r, g, b)
         p.noStroke()
         
-        let radius = config.WEFT_THICKNESS * drawingPRNG.range(1.2, 1.8)
-        let centerX = config.FRINGE_LENGTH * 2 + config.DOORMAT_WIDTH + drawingPRNG.range(-2, 2)
-        let centerY = config.FRINGE_LENGTH * 2 + y + config.WEFT_THICKNESS/2 + drawingPRNG.range(-1, 1)
+        const radius = config.WEFT_THICKNESS * drawingPRNG.range(1.2, 1.8)
+        const centerX = config.DOORMAT_WIDTH + drawingPRNG.range(-2, 2)  // Relative to rug translation
+        const centerY = y + config.WEFT_THICKNESS/2 + drawingPRNG.range(-1, 1)  // Relative to rug translation
         
         // Vary the arc angles for more natural look
-        let startAngle = -p.HALF_PI + drawingPRNG.range(-0.2, 0.2)
-        let endAngle = p.HALF_PI + drawingPRNG.range(-0.2, 0.2)
+        const startAngle = -p.HALF_PI + drawingPRNG.range(-0.2, 0.2)
+        const endAngle = p.HALF_PI + drawingPRNG.range(-0.2, 0.2)
         
         // Draw textured semicircle with individual thread details
         drawTexturedSelvedgeArcOriginal(p, centerX, centerY, radius, startAngle, endAngle, r, g, b, 'right', drawingPRNG)
@@ -1067,12 +1539,12 @@ export default function GeneratorPage() {
   // Original doormat.js drawTexturedSelvedgeArc function
   const drawTexturedSelvedgeArcOriginal = (p: any, centerX: number, centerY: number, radius: number, startAngle: number, endAngle: number, r: number, g: number, b: number, side: string, drawingPRNG: any) => {
     // Draw a realistic textured selvedge arc with visible woven texture
-    let threadCount = p.max(6, p.floor(radius / 1.2))
-    let threadSpacing = radius / threadCount
+    const threadCount = p.max(6, p.floor(radius / 1.2))
+    const threadSpacing = radius / threadCount
     
     // Draw individual thread arcs to create visible woven texture
     for (let i = 0; i < threadCount; i++) {
-      let threadRadius = radius - (i * threadSpacing)
+      const threadRadius = radius - (i * threadSpacing)
       
       // Create distinct thread colors for visible texture
       let threadR, threadG, threadB
@@ -1097,37 +1569,37 @@ export default function GeneratorPage() {
       p.fill(threadR, threadG, threadB, 88)
       
       // Draw individual thread arc with slight position variation
-      let threadX = centerX + drawingPRNG.range(-1, 1)
-      let threadY = centerY + drawingPRNG.range(-1, 1)
-      let threadStartAngle = startAngle + drawingPRNG.range(-0.1, 0.1)
-      let threadEndAngle = endAngle + drawingPRNG.range(-0.1, 0.1)
+      const threadX = centerX + drawingPRNG.range(-1, 1)
+      const threadY = centerY + drawingPRNG.range(-1, 1)
+      const threadStartAngle = startAngle + drawingPRNG.range(-0.1, 0.1)
+      const threadEndAngle = endAngle + drawingPRNG.range(-0.1, 0.1)
       
       p.arc(threadX, threadY, threadRadius * 2, threadRadius * 2, threadStartAngle, threadEndAngle)
     }
     
     // Add a few more detailed texture layers
     for (let i = 0; i < 3; i++) {
-      let detailRadius = radius * (0.3 + i * 0.2)
-      let detailAlpha = 180 - (i * 40)
+      const detailRadius = radius * (0.3 + i * 0.2)
+      const detailAlpha = 180 - (i * 40)
       
       // Create contrast for visibility
-      let detailR = p.constrain(r + (i % 2 === 0 ? 15 : -15), 0, 255)
-      let detailG = p.constrain(g + (i % 2 === 0 ? 15 : -15), 0, 255)
-      let detailB = p.constrain(b + (i % 2 === 0 ? 15 : -15), 0, 255)
+      const detailR = p.constrain(r + (i % 2 === 0 ? 15 : -15), 0, 255)
+      const detailG = p.constrain(g + (i % 2 === 0 ? 15 : -15), 0, 255)
+      const detailB = p.constrain(b + (i % 2 === 0 ? 15 : -15), 0, 255)
       
       p.fill(detailR, detailG, detailB, detailAlpha * 0.7)
       
-      let detailX = centerX + drawingPRNG.range(-0.5, 0.5)
-      let detailY = centerY + drawingPRNG.range(-0.5, 0.5)
-      let detailStartAngle = startAngle + drawingPRNG.range(-0.05, 0.05)
-      let detailEndAngle = endAngle + drawingPRNG.range(-0.05, 0.05)
+      const detailX = centerX + drawingPRNG.range(-0.5, 0.5)
+      const detailY = centerY + drawingPRNG.range(-0.5, 0.5)
+      const detailStartAngle = startAngle + drawingPRNG.range(-0.05, 0.05)
+      const detailEndAngle = endAngle + drawingPRNG.range(-0.05, 0.05)
       
       p.arc(detailX, detailY, detailRadius * 2, detailRadius * 2, detailStartAngle, detailEndAngle)
     }
     
     // Add subtle shadow for depth
     p.fill(r * 0.6, g * 0.6, b * 0.6, 70)
-    let shadowOffset = side === 'left' ? 1 : -1
+    const shadowOffset = side === 'left' ? 1 : -1
     p.arc(centerX + shadowOffset, centerY + 1, radius * 2, radius * 2, startAngle, endAngle)
     
     // Add small transparent hole in the center
@@ -1136,10 +1608,10 @@ export default function GeneratorPage() {
     
     // Add visible texture details - small bumps and knots
     for (let i = 0; i < 8; i++) {
-      let detailAngle = drawingPRNG.range(startAngle, endAngle)
-      let detailRadius = radius * drawingPRNG.range(0.2, 0.7)
-      let detailX = centerX + p.cos(detailAngle) * detailRadius
-      let detailY = centerY + p.sin(detailAngle) * detailRadius
+      const detailAngle = drawingPRNG.range(startAngle, endAngle)
+      const detailRadius = radius * drawingPRNG.range(0.2, 0.7)
+      const detailX = centerX + p.cos(detailAngle) * detailRadius
+      const detailY = centerY + p.sin(detailAngle) * detailRadius
       
       // Alternate between light and dark for visible contrast
       if (i % 2 === 0) {
@@ -1228,6 +1700,58 @@ export default function GeneratorPage() {
 
   // MISSING TEXT FUNCTIONS FROM ORIGINAL DOORMAT.JS
 
+  // Draw character outlines for all text (new function)
+  const drawCharacterOutlines = (p: any, stripe: any, doormatData: any) => {
+
+    // Find all text pixels in this stripe
+    const textPixels: any[] = []
+
+    for (let y = stripe.y; y < stripe.y + stripe.height; y++) {
+      for (let x = 0; x < doormatData.width; x++) {
+        let isTextPixel = false
+        if (doormatData.textData && doormatData.textData.length > 0) {
+          for (const textPixel of doormatData.textData) {
+            if (x >= textPixel.x && x < textPixel.x + textPixel.width &&
+                y >= textPixel.y && y < textPixel.y + textPixel.height) {
+              isTextPixel = true
+              break
+            }
+          }
+        }
+        if (isTextPixel) {
+          textPixels.push({x, y})
+        }
+      }
+    }
+
+    if (textPixels.length === 0) return
+
+    // Find bounding box for all text pixels in this stripe
+    let minX = Math.min(...textPixels.map(p => p.x))
+    let maxX = Math.max(...textPixels.map(p => p.x))
+    let minY = Math.min(...textPixels.map(p => p.y))
+    let maxY = Math.max(...textPixels.map(p => p.y))
+
+    // Expand bounding box slightly
+    minX -= 2
+    maxX += 3
+    minY -= 2
+    maxY += 3
+
+    const width = maxX - minX
+    const height = maxY - minY
+
+    // Draw outline around all text (thick border)
+    p.fill(0, 0, 0, 180) // Dark outline
+    p.noStroke()
+    p.rect(minX, minY, width, height)
+
+    // Inner lighter border for depth
+    p.fill(255, 255, 255, 80)
+    p.noStroke()
+    p.rect(minX + 1, minY + 1, width - 2, height - 2)
+  }
+
   // Update text colors based on palette (original function)
   const updateTextColors = (p: any, doormatData: any) => {
     if (!doormatData.selectedPalette || !doormatData.selectedPalette.colors) return
@@ -1236,9 +1760,9 @@ export default function GeneratorPage() {
     let lightest = doormatData.selectedPalette.colors[0]
     let darkestVal = 999, lightestVal = -1
     
-    for (let hex of doormatData.selectedPalette.colors) {
-      let c = p.color(hex)
-      let bright = (p.red(c) + p.green(c) + p.blue(c)) / 3
+    for (const hex of doormatData.selectedPalette.colors) {
+      const c = p.color(hex)
+      const bright = (p.red(c) + p.green(c) + p.blue(c)) / 3
       if (bright < darkestVal) { darkestVal = bright; darkest = hex }
       if (bright > lightestVal) { lightestVal = bright; lightest = hex }
     }
@@ -1418,11 +1942,11 @@ export default function GeneratorPage() {
     let secondaryColorCount = 0
 
     // Count different pattern types and features
-    for (let stripe of stripeData) {
-      if (stripe.weaveType === 'mixed') {
+    for (const stripe of stripeData) {
+      if (stripe.weaveType === 'm') {
         mixedCount++
         complexityScore += 2 // Mixed weave adds significant complexity
-      } else if (stripe.weaveType === 'textured') {
+      } else if (stripe.weaveType === 't') {
         texturedCount++
         complexityScore += 1.5 // Textured adds medium complexity
       }
@@ -1459,11 +1983,11 @@ export default function GeneratorPage() {
     let secondaryColorCount = 0
     
     // Count different pattern types
-    for (let stripe of stripeData) {
-      if (stripe.weaveType === 'mixed') {
+    for (const stripe of stripeData) {
+      if (stripe.weaveType === 'm') {
         mixedCount++
         complexityScore += 2 // Mixed weave adds more complexity
-      } else if (stripe.weaveType === 'textured') {
+      } else if (stripe.weaveType === 't') {
         texturedCount++
         complexityScore += 1.5 // Textured adds medium complexity
       } else {
@@ -1603,7 +2127,7 @@ export default function GeneratorPage() {
   // Generate new doormat
   const generateNew = () => {
     // Generate a random seed like before
-    const seed = Math.floor(Math.random() * 10000)
+    const seed = Math.floor(Math.random() * 1000000)
     setCurrentSeed(seed)
     
     if (typeof window !== 'undefined' && (window as any).p5Instance) {
@@ -1691,26 +2215,38 @@ export default function GeneratorPage() {
   const removeTextRow = (index: number) => {
     if (index > 0 && currentRowCount > 1) {
       setCurrentRowCount(prev => prev - 1)
-      setTextInputs(prev => prev.filter((_, i) => i !== index))
+      const newInputs = textInputs.filter((_, i) => i !== index)
+      setTextInputs(newInputs)
+
+      // Update doormat with new text (removes texture from removed row)
+      setTimeout(() => {
+        addTextToDoormat(newInputs)
+      }, 50)
     }
   }
 
   // Update text input with automatic embedding
   const updateTextInput = (index: number, value: string) => {
     const newInputs = [...textInputs]
-    // Allow all characters from the characterMap: A-Z, 0-9, space, ?, _, !, @, #, $, &, %, +, -, (, ), [, ], *, =, ', ", .
-    const allowedChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ?_!@#$&%+-()[]*=\'"\\.'.split('')
+    // Allow all characters from the characterMap: A-Z, 0-9, space, ?, _, !, @, #, $, &, %, +, -, (, ), [, ], *, =, ', ", ., <, >
+    const allowedChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ?_!@#$&%+-()[]*=\'"\\.><'.split('')
     newInputs[index] = value.toUpperCase()
       .split('')
       .filter(char => allowedChars.includes(char))
       .join('')
       .slice(0, 11)
 
-    // Automatically embed text as user types (with small delay to avoid excessive updates)
     setTextInputs(newInputs)
-    setTimeout(() => {
+
+    // Debounced live update to prevent lag from rapid typing
+    if (liveUpdateTimerRef.current) {
+      clearTimeout(liveUpdateTimerRef.current)
+    }
+
+    liveUpdateTimerRef.current = setTimeout(() => {
       addTextToDoormat(newInputs)
-    }, 50)
+      liveUpdateTimerRef.current = null
+    }, 200) // Increased delay to reduce lag
   }
 
   // Add text to doormat
@@ -1876,9 +2412,10 @@ export default function GeneratorPage() {
   }, [isLoaded]) // Only run when isLoaded changes to true
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100 flex flex-col">
       <Navigation />
-      <div className="max-w-[1800px] mx-auto px-4 pt-24">
+      <main className="flex-grow">
+        <div className="max-w-[1800px] mx-auto px-4 pt-24">
       {/* Header */}
 
         {/* Old-School Terminal Layout - Art on Top, Terminal on Bottom */}
@@ -1975,7 +2512,7 @@ export default function GeneratorPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="w-full"
+            className="w-full pb-8"
           >
             <div className="relative mx-auto w-full max-w-6xl px-4 md:px-6 lg:px-8">
               <div className="bg-black text-green-400 font-mono border-t-2 border-green-500 py-3 md:py-4 px-4 md:px-6">
@@ -2033,13 +2570,13 @@ export default function GeneratorPage() {
               {/* Revamped Terminal Interface */}
               <div className="space-y-4">
                 {/* Seed Input Section - Hidden but can be restored */}
-                {/* 
+                {/*
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <h4 className="text-green-300 text-sm font-mono font-medium">SEED</h4>
                     <span className="text-green-500 text-xs font-mono">Deterministic generation</span>
                   </div>
-                  
+
                   <div className="flex gap-2">
                     <input
                       type="number"
@@ -2055,7 +2592,7 @@ export default function GeneratorPage() {
                       RANDOM
                     </button>
                   </div>
-                  
+
                   <div className="text-green-400 text-xs font-mono bg-gray-900/50 p-2 rounded border border-green-500/30">
                     Same seed = identical doormat. Try: 4241, 1234, 9999
                   </div>
@@ -2063,7 +2600,7 @@ export default function GeneratorPage() {
                 */}
 
                 {/* Primary Actions - Top Priority */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3">
                   <button
                     onClick={generateNew}
                     disabled={!isLoaded}
@@ -2072,176 +2609,205 @@ export default function GeneratorPage() {
                     <Shuffle className="w-4 h-4" />
                     GENERATE
                   </button>
-                  <button
-                    onClick={saveDoormat}
-                    disabled={!isLoaded}
-                    className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 text-white px-4 py-2.5 rounded font-mono transition-all duration-200 border border-blue-400 flex items-center justify-center gap-2 text-sm"
-                  >
-                    <Download className="w-4 h-4" />
-                    SAVE
-                  </button>
                 </div>
-                
-                {/* Text Input Section */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-green-300 text-sm font-mono font-medium">TEXT EMBEDDING</h4>
-                    <span className="text-green-500 text-xs font-mono">{currentRowCount}/5 rows</span>
-                  </div>
-                  
-                  <div className="text-green-400 text-xs font-mono bg-gray-900/50 p-2 rounded border border-green-500/30">
-                    Allowed: A-Z, 0-9, space, ? _ ! @ # $ & % + - ( ) [ ] * = &apos; &quot;
-                  </div>
 
-                  {/* Compact Text Inputs */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                  {textInputs.map((text, index) => (
-                      <div key={index} className="flex items-center gap-2">
-                        <span className="text-green-400 font-mono text-sm min-w-[20px]">{index + 1}.</span>
-                      <input
-                        type="text"
-                        value={text}
-                        onChange={(e) => updateTextInput(index, e.target.value)}
-                          placeholder={`Row ${index + 1}`}
-                        maxLength={11}
-                          className="flex-1 px-2 py-1.5 bg-gray-900 border border-green-500/50 text-green-400 rounded text-sm font-mono focus:ring-1 focus:ring-green-500 focus:border-transparent transition-all"
+                {/* Contract Address Display */}
+                <div className="space-y-2">
+                  <h4 className="text-green-300 text-sm font-mono font-medium">CONTRACT ADDRESS</h4>
+                  <div className="bg-gray-900/50 p-3 rounded">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="text-green-400 text-xs font-mono break-all flex-1">
+                        {config.rugContractAddress}
+                      </div>
+                      <Copy
+                        onClick={() => copyToClipboard(config.rugContractAddress, 'contract address')}
+                        className="text-green-500 hover:text-green-300 cursor-pointer transition-colors w-4 h-4"
                       />
-                      {index > 0 && (
+                    </div>
+                  </div>
+                </div>
+
+                {/* Two-Panel Layout: Text Embedding (Left) | Systems (Right) */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Left Panel - Text Embedding */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-green-300 text-sm font-mono font-medium">TEXT EMBEDDING</h4>
+                      <span className="text-green-500 text-xs font-mono">{currentRowCount}/5 rows</span>
+                    </div>
+
+                    <div className="text-green-400 text-xs font-mono bg-gray-900/50 p-2 rounded">
+                      Allowed: A-Z, 0-9, space, ? _ ! @ # $ & % + - ( ) [ ] * = &apos; &quot; . &lt; &gt;
+                    </div>
+
+                    {/* Compact Text Inputs */}
+                    <div className="space-y-2">
+                      {textInputs.map((text, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                          <span className="text-green-400 font-mono text-sm min-w-[20px]">{index + 1}.</span>
+                          <input
+                            type="text"
+                            value={text}
+                            onChange={(e) => updateTextInput(index, e.target.value)}
+                            placeholder={`Row ${index + 1}`}
+                            maxLength={11}
+                            className="flex-1 px-2 py-1.5 bg-gray-900 text-green-400 rounded text-sm font-mono focus:ring-1 focus:ring-green-500 transition-all"
+                          />
+                          {index > 0 && (
+                            <button
+                              onClick={() => removeTextRow(index)}
+                              className="bg-red-600/80 hover:bg-red-600 text-white p-1 rounded transition-colors"
+                              title="Remove row"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Text Control Actions */}
+                    <div className="flex flex-wrap gap-2">
+                      {currentRowCount < 5 && (
                         <button
-                          onClick={() => removeTextRow(index)}
-                            className="bg-red-600/80 hover:bg-red-600 text-white p-1 rounded transition-colors"
-                            title="Remove row"
+                          onClick={addTextRow}
+                          className="bg-green-600/80 hover:bg-green-600 text-black font-bold px-3 py-1.5 rounded font-mono transition-all duration-200 border border-green-400 flex items-center gap-1.5 text-xs"
                         >
-                            <X className="w-3 h-3" />
+                          <Plus className="w-3 h-3" />
+                          ADD ROW
                         </button>
                       )}
-                    </div>
-                  ))}
-                  </div>
-                  
-                  {/* Text Control Actions */}
-                  <div className="flex flex-wrap gap-2">
-                    {currentRowCount < 5 && (
                       <button
-                        onClick={addTextRow}
-                        className="bg-green-600/80 hover:bg-green-600 text-black font-bold px-3 py-1.5 rounded font-mono transition-all duration-200 border border-green-400 flex items-center gap-1.5 text-xs"
+                        onClick={clearText}
+                        className="bg-gray-600/80 hover:bg-gray-600 text-white px-3 py-1.5 rounded font-mono transition-all duration-200 border border-gray-400 text-xs"
                       >
-                        <Plus className="w-3 h-3" />
-                        ADD ROW
+                        CLEAR
                       </button>
-                    )}
-                    <button
-                      onClick={clearText}
-                      className="bg-gray-600/80 hover:bg-gray-600 text-white px-3 py-1.5 rounded font-mono transition-all duration-200 border border-gray-400 text-xs"
-                    >
-                      CLEAR
-                    </button>
-                  </div>
-                </div>
-
-                {/* Dirt System Controls */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-green-300 text-sm font-mono font-medium">DIRT SYSTEM</h4>
-                    <span className="text-green-500 text-xs font-mono">
-                      {showDirt ? `${dirtLevel === 1 ? '50%' : '100%'} dirty` : 'Clean'}
-                    </span>
-                  </div>
-                  
-                  <div className="text-green-400 text-xs font-mono bg-gray-900/50 p-2 rounded border border-green-500/30">
-                    Dynamic dirt accumulation: 50% after 3 days, 100% after 7 days. Clean with onchain transaction.
+                    </div>
                   </div>
 
-                  {/* Dirt Toggle */}
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => updateDirtState(!showDirt, dirtLevel)}
-                      className={`px-3 py-1.5 rounded font-mono text-xs transition-all duration-200 border ${
-                        showDirt 
-                          ? 'bg-orange-600/80 hover:bg-orange-600 text-white border-orange-400' 
-                          : 'bg-gray-600/80 hover:bg-gray-600 text-white border-gray-400'
-                      }`}
-                    >
-                      {showDirt ? 'HIDE DIRT' : 'SHOW DIRT'}
-                    </button>
-                    
-                    {showDirt && (
-                      <div className="flex gap-1">
+                  {/* Right Panel - Dirt & Texture Systems */}
+                  <div className="space-y-4">
+                    {/* Dirt System Controls */}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-green-300 text-sm font-mono font-medium">DIRT SYSTEM</h4>
+                        <span className="text-green-500 text-xs font-mono">
+                          {showDirt ? `${dirtLevel === 1 ? '50%' : '100%'} dirty` : 'Clean'}
+                        </span>
+                      </div>
+
+                      <div className="text-green-400 text-xs font-mono bg-gray-900/50 p-2 rounded">
+                        Dynamic dirt accumulation: 50% after 3 days, 100% after 7 days. Clean with onchain transaction.
+                      </div>
+
+                      {/* Dirt Toggle */}
+                      <div className="flex items-center gap-3">
                         <button
-                          onClick={() => updateDirtState(showDirt, 1)}
-                          className={`px-2 py-1 rounded font-mono text-xs transition-all duration-200 border ${
-                            dirtLevel === 1 
-                              ? 'bg-yellow-600 text-white border-yellow-400' 
-                              : 'bg-gray-700 text-gray-300 border-gray-500 hover:bg-gray-600'
+                          onClick={() => updateDirtState(!showDirt, dirtLevel)}
+                          className={`px-3 py-1.5 rounded font-mono text-xs transition-all duration-200 border ${
+                            showDirt
+                              ? 'bg-orange-600/80 hover:bg-orange-600 text-white border-orange-400'
+                              : 'bg-gray-600/80 hover:bg-gray-600 text-white border-gray-400'
                           }`}
                         >
-                          50%
+                          {showDirt ? 'HIDE DIRT' : 'SHOW DIRT'}
                         </button>
+
+                        {showDirt && (
+                          <div className="flex gap-1">
+                            <button
+                              onClick={() => updateDirtState(showDirt, 1)}
+                              className={`px-2 py-1 rounded font-mono text-xs transition-all duration-200 border ${
+                                dirtLevel === 1
+                                  ? 'bg-yellow-600 text-white border-yellow-400'
+                                  : 'bg-gray-700 text-gray-300 border-gray-500 hover:bg-gray-600'
+                              }`}
+                            >
+                              50%
+                            </button>
+                            <button
+                              onClick={() => updateDirtState(showDirt, 2)}
+                              className={`px-2 py-1 rounded font-mono text-xs transition-all duration-200 border ${
+                                dirtLevel === 2
+                                  ? 'bg-red-600 text-white border-red-400'
+                                  : 'bg-gray-700 text-gray-300 border-gray-500 hover:bg-gray-600'
+                              }`}
+                            >
+                              100%
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Texture System Controls */}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-green-300 text-sm font-mono font-medium">TEXTURE SYSTEM</h4>
+                        <span className="text-green-500 text-xs font-mono">
+                          {showTexture ? `Level ${textureLevel}/10 wear` : 'Smooth'}
+                        </span>
+                      </div>
+
+                      <div className="text-green-400 text-xs font-mono bg-gray-900/50 p-2 rounded">
+                        10-level texture progression: Level 1 (fresh wear) to Level 10 (maximum wear). Each level represents increasing fabric degradation.
+                      </div>
+
+                      {/* Texture Toggle */}
+                      <div className="flex items-center gap-3">
                         <button
-                          onClick={() => updateDirtState(showDirt, 2)}
-                          className={`px-2 py-1 rounded font-mono text-xs transition-all duration-200 border ${
-                            dirtLevel === 2 
-                              ? 'bg-red-600 text-white border-red-400' 
-                              : 'bg-gray-700 text-gray-300 border-gray-500 hover:bg-gray-600'
+                          onClick={() => updateTextureState(!showTexture, textureLevel)}
+                          className={`px-3 py-1.5 rounded font-mono text-xs transition-all duration-200 border ${
+                            showTexture
+                              ? 'bg-purple-600/80 hover:bg-purple-600 text-white border-purple-400'
+                              : 'bg-gray-600/80 hover:bg-gray-600 text-white border-gray-400'
                           }`}
                         >
-                          100%
+                          {showTexture ? 'HIDE TEXTURE' : 'SHOW TEXTURE'}
                         </button>
                       </div>
-                    )}
-                  </div>
-                </div>
 
-                {/* Texture System Controls */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-green-300 text-sm font-mono font-medium">TEXTURE SYSTEM</h4>
-                    <span className="text-green-500 text-xs font-mono">
-                      {showTexture ? `${textureLevel === 1 ? '7 days' : '30 days'} wear` : 'Smooth'}
-                    </span>
-                  </div>
-                  
-                  <div className="text-green-400 text-xs font-mono bg-gray-900/50 p-2 rounded border border-green-500/30">
-                    Time-based texture wear: appears after 7 days, intensifies after 30 days. Creates realistic fabric aging.
-                  </div>
+                      {showTexture && (
+                        <div className="space-y-3">
+                          {/* Texture Level Slider */}
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <label className="text-green-300 text-xs font-mono">Wear Level</label>
+                              <span className="text-green-500 text-xs font-mono">{textureLevel}/10</span>
+                            </div>
+                            <input
+                              type="range"
+                              min="0"
+                              max="10"
+                              value={textureLevel}
+                              onChange={(e) => updateTextureState(showTexture, parseInt(e.target.value))}
+                              className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-green"
+                            />
+                            <div className="flex justify-between text-xs text-gray-400 font-mono">
+                              <span>0 (Fresh)</span>
+                              <span>5 (Moderate)</span>
+                              <span>10 (Maximum)</span>
+                            </div>
+                          </div>
 
-                  {/* Texture Toggle */}
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => updateTextureState(!showTexture, textureLevel)}
-                      className={`px-3 py-1.5 rounded font-mono text-xs transition-all duration-200 border ${
-                        showTexture 
-                          ? 'bg-purple-600/80 hover:bg-purple-600 text-white border-purple-400' 
-                          : 'bg-gray-600/80 hover:bg-gray-600 text-white border-gray-400'
-                      }`}
-                    >
-                      {showTexture ? 'HIDE TEXTURE' : 'SHOW TEXTURE'}
-                    </button>
-                    
-                    {showTexture && (
-                      <div className="flex gap-1">
-                        <button
-                          onClick={() => updateTextureState(showTexture, 1)}
-                          className={`px-2 py-1 rounded font-mono text-xs transition-all duration-200 border ${
-                            textureLevel === 1 
-                              ? 'bg-blue-600 text-white border-blue-400' 
-                              : 'bg-gray-700 text-gray-300 border-gray-500 hover:bg-gray-600'
-                          }`}
-                        >
-                          7 DAYS
-                        </button>
-                        <button
-                          onClick={() => updateTextureState(showTexture, 2)}
-                          className={`px-2 py-1 rounded font-mono text-xs transition-all duration-200 border ${
-                            textureLevel === 2 
-                              ? 'bg-purple-600 text-white border-purple-400' 
-                              : 'bg-gray-700 text-gray-300 border-gray-500 hover:bg-gray-600'
-                          }`}
-                        >
-                          30 DAYS
-                        </button>
-                      </div>
-                    )}
+                          {/* Texture Level Descriptions */}
+                          <div className="text-xs text-green-400 font-mono bg-gray-900/30 p-2 rounded">
+                            {textureLevel === 0 && "✨ Fresh from the loom - pristine condition"}
+                            {textureLevel === 1 && "🧵 Subtle signs of use - barely noticeable wear"}
+                            {textureLevel === 2 && "📅 Light wear - 2 minutes of normal use"}
+                            {textureLevel === 3 && "🏠 Moderate wear - well-used but functional"}
+                            {textureLevel === 4 && "📆 Significant wear - shows character"}
+                            {textureLevel === 5 && "🪶 Heavy wear - vintage appearance"}
+                            {textureLevel === 6 && "🎭 Very worn - distinctive patina"}
+                            {textureLevel === 7 && "🏺 Antique look - rich texture"}
+                            {textureLevel === 8 && "🏛️ Museum quality - extreme character"}
+                            {textureLevel === 9 && "🎨 Masterpiece wear - legendary status"}
+                            {textureLevel === 10 && "💎 Ultimate wear - maximum degradation"}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -2342,11 +2908,15 @@ export default function GeneratorPage() {
 
                                 const used = new Set<string>();
                                 textInputs.forEach(row => {
-                                  for (let char of row.toUpperCase()) {
+                                  for (const char of row.toUpperCase()) {
                                     used.add(char);
                                   }
                                 });
+
+                                // Only include space if there are actually used characters
+                                if (used.size > 0) {
                                 used.add(' ');
+                                }
 
                                 const usedCharMap: any = {};
                                 used.forEach((char) => {
@@ -2369,11 +2939,15 @@ export default function GeneratorPage() {
 
                             const used = new Set<string>();
                             textInputs.forEach(row => {
-                              for (let char of row.toUpperCase()) {
+                              for (const char of row.toUpperCase()) {
                                 used.add(char);
                               }
                             });
+
+                            // Only include space if there are actually used characters
+                            if (used.size > 0) {
                             used.add(' ');
+                            }
 
                             const usedCharMap: any = {};
                             used.forEach((char) => {
@@ -2476,7 +3050,7 @@ export default function GeneratorPage() {
                     </div>
                   </div>
 
-                  {/* NFT Exporter Component */}
+                  {/* NFT Exporter Component - Hidden */}
                   {false && (
                   <NFTExporter
                     currentSeed={currentSeed}
@@ -2491,7 +3065,7 @@ export default function GeneratorPage() {
                   <Web3Minting
                     textRows={textInputs}
                     currentPalette={palette}
-                    currentStripeData={typeof window !== 'undefined' ? (window as any).stripeData || [] : []}
+                    currentStripeData={stripeData}
                     characterMap={typeof window !== 'undefined' ? (window as any).doormatData?.characterMap || {} : {}}
                     warpThickness={warpThickness}
                     seed={currentSeed}
@@ -2516,9 +3090,11 @@ export default function GeneratorPage() {
           <button id="toggleRowsBtn"></button>
         </div>
       </div>
+      </main>
 
       {/* Footer */}
       <Footer />
     </div>
   )
 }
+

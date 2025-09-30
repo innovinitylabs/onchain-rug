@@ -4,9 +4,7 @@ import { useEffect, useState } from 'react';
 
 // Available background images for desktop
 const desktopBackgrounds = [
-  '/backgrounds/anime-style-clouds.jpg',
-  '/backgrounds/anime-style-clouds-1.jpg',
-  '/backgrounds/anime-style-clouds-2.jpg'
+  '/backgrounds/anime-style-clouds-1.jpg'
 ];
 
 // Available background images for mobile (vertical)
@@ -43,6 +41,9 @@ function get42SecondBackgroundIndex(backgroundArray: string[]): number {
 export default function BackgroundRotator() {
   const [isMobile, setIsMobile] = useState(false);
   const [backgrounds, setBackgrounds] = useState(desktopBackgrounds);
+  const [currentBg, setCurrentBg] = useState(desktopBackgrounds[0]);
+  const [nextBg, setNextBg] = useState(desktopBackgrounds[0]);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   // Detect mobile device and set appropriate backgrounds
   useEffect(() => {
@@ -95,31 +96,79 @@ export default function BackgroundRotator() {
     }
   }, [backgrounds]);
 
-  // Generate time-based background immediately (42-second rotation)
-  const timeBasedIndex = get42SecondBackgroundIndex(backgrounds);
-  const selectedBg = backgrounds.length > 0 ? backgrounds[timeBasedIndex] : desktopBackgrounds[0];
+  // Update selected background when backgrounds change or periodically
+  useEffect(() => {
+    const updateBackground = () => {
+      const timeBasedIndex = get42SecondBackgroundIndex(backgrounds);
+      const newSelectedBg = backgrounds.length > 0 ? backgrounds[timeBasedIndex] : desktopBackgrounds[0];
+
+      if (newSelectedBg !== currentBg && !isTransitioning) {
+        setIsTransitioning(true);
+        setNextBg(newSelectedBg);
+
+        // Start transition after a brief delay to ensure nextBg is set
+        setTimeout(() => {
+          setCurrentBg(newSelectedBg);
+          setNextBg(newSelectedBg);
+
+          // Reset transition state after transition completes
+          setTimeout(() => {
+            setIsTransitioning(false);
+          }, 2000); // Match CSS transition duration
+        }, 100);
+      }
+    };
+
+    // Update immediately
+    updateBackground();
+
+    // Update every 42 seconds
+    const interval = setInterval(updateBackground, 42000);
+
+    return () => clearInterval(interval);
+  }, [backgrounds, currentBg, isTransitioning]);
 
   // Detailed logging for debugging time-based rotation
   const timestamp = new Date().toISOString();
   const currentWindow = Math.floor(Date.now() / (1000 * 42));
+  const timeBasedIndex = get42SecondBackgroundIndex(backgrounds);
   console.log(`🎨 Background Rotator [${timestamp}] - Window ${currentWindow}:`);
   console.log(`   Device: ${isMobile ? 'Mobile' : 'Desktop'}`);
-  console.log(`   Index: ${timeBasedIndex}, Background: ${selectedBg}`);
+  console.log(`   Index: ${timeBasedIndex}, Current: ${currentBg}, Next: ${nextBg}`);
+  console.log(`   Transitioning: ${isTransitioning}`);
   console.log(`   Changes every 42 seconds: [${backgrounds.join(', ')}]`);
 
   return (
-    <div
-      className="fixed inset-0 z-0"
-      style={{
-        backgroundImage: `url(${selectedBg})`,
-        backgroundSize: isMobile ? 'cover' : 'cover', // Keep cover for both but adjust other properties
-        backgroundPosition: isMobile ? 'center top' : 'center', // Mobile: center top to account for vertical images
-        backgroundRepeat: 'no-repeat',
-        backgroundAttachment: isMobile ? 'scroll' : 'fixed', // Mobile: use scroll instead of fixed for better performance
-        opacity: 0.8,
-        // Mobile-specific adjustments for vertical images
-        backgroundOrigin: isMobile ? 'padding-box' : 'border-box',
-      }}
-    />
+    <div className="fixed inset-0 z-0">
+      {/* Current background layer */}
+      <div
+        className={`absolute inset-0 transition-opacity duration-2000 ease-in-out ${
+          isTransitioning ? 'opacity-0' : 'opacity-80'
+        }`}
+        style={{
+          backgroundImage: `url(${currentBg})`,
+          backgroundSize: isMobile ? 'cover' : 'cover',
+          backgroundPosition: isMobile ? 'center top' : 'center',
+          backgroundRepeat: 'no-repeat',
+          backgroundAttachment: isMobile ? 'scroll' : 'fixed',
+          backgroundOrigin: isMobile ? 'padding-box' : 'border-box',
+        }}
+      />
+
+      {/* Next background layer */}
+      <div
+        className={`absolute inset-0 transition-opacity duration-2000 ease-in-out ${
+          isTransitioning ? 'opacity-80' : 'opacity-0'
+        }`}
+        style={{
+          backgroundImage: `url(${nextBg})`,
+          backgroundSize: isMobile ? 'cover' : 'cover',
+          backgroundPosition: isMobile ? 'center top' : 'center',
+          backgroundRepeat: 'no-repeat',
+          backgroundAttachment: isMobile ? 'scroll' : 'fixed',
+          backgroundOrigin: isMobile ? 'padding-box' : 'border-box',
+        }}
+      />
+    </div>
   );
 }
