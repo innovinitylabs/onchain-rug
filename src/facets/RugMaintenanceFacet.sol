@@ -84,7 +84,7 @@ contract RugMaintenanceFacet {
             require(success, "Refund transfer failed");
         }
 
-        // Restore texture by reducing current level (not max level)
+        // Restore texture by reducing visible level by 1 (restorable wear)
         uint8 previousDirt = _getDirtLevel(tokenId);
         uint8 previousTexture = currentTexture;
         aging.lastCleaned = block.timestamp;
@@ -92,20 +92,28 @@ contract RugMaintenanceFacet {
         // Calculate target texture level (current - 1, minimum 0)
         uint8 targetTextureLevel = currentTexture > 0 ? currentTexture - 1 : 0;
 
+        // Update maxTextureLevel to allow restoration (restorable wear)
+        // This allows rugs to be fully restored over time with multiple restorations
+        if (aging.maxTextureLevel > targetTextureLevel) {
+            aging.maxTextureLevel = targetTextureLevel;
+        }
+
         // Set texture progress timer to achieve target level
-        // This manipulates currentAdvancementLevel to be targetTextureLevel
         string memory frameLevel = aging.currentFrameLevel;
         uint256 agingMultiplier = _getTextureAgingMultiplier(frameLevel);
 
         if (targetTextureLevel == 0) {
             // Reset to fresh state
             aging.textureProgressTimer = block.timestamp;
-        } else if (targetTextureLevel == 1) {
-            // Set timer so timeSinceProgressStart = textureLevel1Days * 2
-            aging.textureProgressTimer = block.timestamp - (rs.textureLevel1Days * 2 * agingMultiplier);
+            aging.lastTextureReset = block.timestamp; // Track complete reset
         } else {
-            // For levels 2,4,6,8,10: set timer so timeSinceProgressStart = textureLevel2Days * targetLevel
-            aging.textureProgressTimer = block.timestamp - (rs.textureLevel2Days * targetTextureLevel * agingMultiplier);
+            // Set timer so currentAdvancementLevel becomes targetTextureLevel
+            if (targetTextureLevel == 1) {
+                aging.textureProgressTimer = block.timestamp - (rs.textureLevel1Days * 2 * agingMultiplier);
+            } else {
+                aging.textureProgressTimer = block.timestamp - (rs.textureLevel2Days * targetTextureLevel * agingMultiplier);
+            }
+            // Partial restoration - don't reset lastTextureReset
         }
         aging.restorationCount++;
         aging.maintenanceScore = (aging.cleaningCount * 2) + (aging.restorationCount * 5) + (aging.masterRestorationCount * 10) + (aging.launderingCount * 10);
@@ -293,21 +301,25 @@ contract RugMaintenanceFacet {
         string memory frameLevel = aging.currentFrameLevel;
         uint256 agingMultiplier = _getTextureAgingMultiplier(frameLevel);
 
-        // Calculate current advancement level based on progress timer
-        uint256 timeSinceProgressStart = (block.timestamp - aging.textureProgressTimer) / agingMultiplier;
+        // Use the most recent reset time (either lastTextureReset or textureProgressTimer)
+        uint256 effectiveStartTime = aging.lastTextureReset > aging.textureProgressTimer ?
+            aging.lastTextureReset : aging.textureProgressTimer;
+
+        // Calculate current advancement level based on effective start time
+        uint256 timeSinceStart = (block.timestamp - effectiveStartTime) / agingMultiplier;
         uint8 currentAdvancementLevel;
 
         // Texture progression over time (longer timeline than dirt)
-        if (timeSinceProgressStart >= rs.textureLevel2Days * 10) currentAdvancementLevel = 10;
-        else if (timeSinceProgressStart >= rs.textureLevel2Days * 8) currentAdvancementLevel = 8;
-        else if (timeSinceProgressStart >= rs.textureLevel2Days * 6) currentAdvancementLevel = 6;
-        else if (timeSinceProgressStart >= rs.textureLevel2Days * 4) currentAdvancementLevel = 4;
-        else if (timeSinceProgressStart >= rs.textureLevel2Days * 2) currentAdvancementLevel = 2;
-        else if (timeSinceProgressStart >= rs.textureLevel1Days * 2) currentAdvancementLevel = 1;
+        if (timeSinceStart >= rs.textureLevel2Days * 10) currentAdvancementLevel = 10;
+        else if (timeSinceStart >= rs.textureLevel2Days * 8) currentAdvancementLevel = 8;
+        else if (timeSinceStart >= rs.textureLevel2Days * 6) currentAdvancementLevel = 6;
+        else if (timeSinceStart >= rs.textureLevel2Days * 4) currentAdvancementLevel = 4;
+        else if (timeSinceStart >= rs.textureLevel2Days * 2) currentAdvancementLevel = 2;
+        else if (timeSinceStart >= rs.textureLevel1Days * 2) currentAdvancementLevel = 1;
         else currentAdvancementLevel = 0;
 
-        // Texture level = MAX(current advancement, max texture level ever reached)
-        // This ensures texture wear is persistent once achieved
+        // For restorable wear: texture level = MAX(current advancement, max texture level)
+        // But maxTextureLevel can be reduced by restorations, allowing full restoration over time
         return currentAdvancementLevel > aging.maxTextureLevel ? currentAdvancementLevel : aging.maxTextureLevel;
     }
 
