@@ -26,6 +26,18 @@ export default function GeneratorPage() {
   const [warpThickness, setWarpThickness] = useState(2) // Default warp thickness
   const [complexity, setComplexity] = useState(2) // Default complexity
 
+  // Debounce timer for live updates
+  const liveUpdateTimerRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (liveUpdateTimerRef.current) {
+        clearTimeout(liveUpdateTimerRef.current)
+      }
+    }
+  }, [])
+
   // Copy to clipboard function
   const copyToClipboard = async (text: string, label: string) => {
     try {
@@ -2203,7 +2215,13 @@ export default function GeneratorPage() {
   const removeTextRow = (index: number) => {
     if (index > 0 && currentRowCount > 1) {
       setCurrentRowCount(prev => prev - 1)
-      setTextInputs(prev => prev.filter((_, i) => i !== index))
+      const newInputs = textInputs.filter((_, i) => i !== index)
+      setTextInputs(newInputs)
+
+      // Update doormat with new text (removes texture from removed row)
+      setTimeout(() => {
+        addTextToDoormat(newInputs)
+      }, 50)
     }
   }
 
@@ -2218,11 +2236,17 @@ export default function GeneratorPage() {
       .join('')
       .slice(0, 11)
 
-    // Automatically embed text as user types (with small delay to avoid excessive updates)
     setTextInputs(newInputs)
-    setTimeout(() => {
+
+    // Debounced live update to prevent lag from rapid typing
+    if (liveUpdateTimerRef.current) {
+      clearTimeout(liveUpdateTimerRef.current)
+    }
+
+    liveUpdateTimerRef.current = setTimeout(() => {
       addTextToDoormat(newInputs)
-    }, 50)
+      liveUpdateTimerRef.current = null
+    }, 200) // Increased delay to reduce lag
   }
 
   // Add text to doormat
