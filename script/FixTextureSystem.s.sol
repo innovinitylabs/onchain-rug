@@ -146,7 +146,7 @@ contract FixTextureSystem is Script {
         selectors[1] = RugLaunderingFacet.triggerLaundering.selector;
         selectors[2] = RugLaunderingFacet.updateLaunderingThreshold.selector;
         selectors[3] = RugLaunderingFacet.wouldTriggerLaundering.selector;
-        selectors[4] = RugLaunderingFacet.getSaleHistory.selector;
+        selectors[4] = RugLaunderingFacet.getLaunderingSaleHistory.selector;
         selectors[5] = RugLaunderingFacet.getMaxRecentSalePrice.selector;
         selectors[6] = RugLaunderingFacet.getLaunderingConfig.selector;
         selectors[7] = RugLaunderingFacet.getLaunderingStats.selector;

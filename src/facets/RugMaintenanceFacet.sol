@@ -84,25 +84,36 @@ contract RugMaintenanceFacet {
             require(success, "Refund transfer failed");
         }
 
-        // Restore texture by reducing max level and resetting progress timer
+        // Restore texture by reducing current level (not max level)
         uint8 previousDirt = _getDirtLevel(tokenId);
         uint8 previousTexture = currentTexture;
         aging.lastCleaned = block.timestamp;
 
-        // Reduce max texture level by 1 (actual repair of existing wear)
-        if (aging.maxTextureLevel > 0) {
-            aging.maxTextureLevel -= 1;
-        }
+        // Calculate target texture level (current - 1, minimum 0)
+        uint8 targetTextureLevel = currentTexture > 0 ? currentTexture - 1 : 0;
 
-        // Reset texture progress timer to ensure immediate texture level reduction
-        aging.textureProgressTimer = block.timestamp;
+        // Set texture progress timer to achieve target level
+        // This manipulates currentAdvancementLevel to be targetTextureLevel
+        string memory frameLevel = aging.currentFrameLevel;
+        uint256 agingMultiplier = _getTextureAgingMultiplier(frameLevel);
+
+        if (targetTextureLevel == 0) {
+            // Reset to fresh state
+            aging.textureProgressTimer = block.timestamp;
+        } else if (targetTextureLevel == 1) {
+            // Set timer so timeSinceProgressStart = textureLevel1Days * 2
+            aging.textureProgressTimer = block.timestamp - (rs.textureLevel1Days * 2 * agingMultiplier);
+        } else {
+            // For levels 2,4,6,8,10: set timer so timeSinceProgressStart = textureLevel2Days * targetLevel
+            aging.textureProgressTimer = block.timestamp - (rs.textureLevel2Days * targetTextureLevel * agingMultiplier);
+        }
         aging.restorationCount++;
         aging.maintenanceScore = (aging.cleaningCount * 2) + (aging.restorationCount * 5) + (aging.masterRestorationCount * 10) + (aging.launderingCount * 10);
 
         // Frame level updates are handled by the NFT facet when tokenURI is requested
         // No cross-facet calls needed here
 
-        emit RugRestored(tokenId, msg.sender, previousDirt, previousTexture - 1, rs.restorationCost);
+        emit RugRestored(tokenId, msg.sender, previousDirt, targetTextureLevel, rs.restorationCost);
     }
 
     /**
