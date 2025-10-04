@@ -93,23 +93,27 @@ contract RugNFTFacet is ERC721, ERC721URIStorage {
             stripeCount: stripeCount
         });
 
-        // Initialize aging data
+        // Initialize aging data with new O(1) system
         rs.agingData[tokenId] = LibRugStorage.AgingData({
-            lastCleaned: block.timestamp,
-            lastTextureReset: block.timestamp, // DEPRECATED - kept for backward compatibility
-            lastNaturalCheckTime: block.timestamp, // Start natural aging timer at mint
-            dirtBecameHeavyTime: 0, // Not heavy initially
-            lastSalePrice: 0,
-            recentSalePrices: [uint256(0), 0, 0],
-            dirtLevel: 0, // deprecated, will be calculated
-            textureLevel: 0, // deprecated, will be calculated
-            maxTextureLevel: 0, // Fresh rug starts with no texture wear
+            // Core O(1) Aging System
+            lastTextureProgression: uint32(block.timestamp), // DEPRECATED - kept for backward compatibility
+            currentTextureLevel: 0, // DEPRECATED - kept for backward compatibility
+
+            // Dirt System
+            lastCleaned: block.timestamp, // Start clean at mint
             textureProgressTimer: block.timestamp, // Start progress timer at mint time
-            launderingCount: 0, // Never laundered initially
-            lastLaundered: 0, // Never laundered initially
+            maxTextureLevel: 0, // Fresh rug starts with no texture wear
+
+            // Maintenance Tracking
             cleaningCount: 0, // Never cleaned initially
             restorationCount: 0, // Never restored initially
             masterRestorationCount: 0, // Never master restored initially
+            launderingCount: 0, // Never laundered initially
+            lastLaundered: 0, // Never laundered initially
+
+            // Trading History
+            lastSalePrice: 0,
+            recentSalePrices: [uint256(0), 0, 0],
             maintenanceScore: 0, // Initial maintenance score
             currentFrameLevel: "None", // No frame initially
             frameAchievedTime: 0, // No frame achieved yet
@@ -439,26 +443,47 @@ contract RugNFTFacet is ERC721, ERC721URIStorage {
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
         LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
 
-        // Get frame level to determine texture aging speed
-        string memory frameLevel = _getFrameLevel(tokenId);
-        uint256 agingMultiplier = _getTextureAgingMultiplier(frameLevel);
+        // Start with permanent texture level
+        uint8 baseLevel = aging.currentTextureLevel;
 
-        // Calculate current advancement level based on progress timer
-        uint256 timeSinceProgressStart = (block.timestamp - aging.textureProgressTimer) / agingMultiplier;
-        uint8 currentAdvancementLevel;
+        // Calculate how much time has passed since last texture progression
+        uint256 timeSinceLastProgression = block.timestamp - aging.lastTextureProgression;
 
-        // Texture progression over time (longer timeline than dirt)
-        if (timeSinceProgressStart >= rs.textureLevel2Days * 10) currentAdvancementLevel = 10;
-        else if (timeSinceProgressStart >= rs.textureLevel2Days * 8) currentAdvancementLevel = 8;
-        else if (timeSinceProgressStart >= rs.textureLevel2Days * 6) currentAdvancementLevel = 6;
-        else if (timeSinceProgressStart >= rs.textureLevel2Days * 4) currentAdvancementLevel = 4;
-        else if (timeSinceProgressStart >= rs.textureLevel2Days * 2) currentAdvancementLevel = 2;
-        else if (timeSinceProgressStart >= rs.textureLevel1Days * 2) currentAdvancementLevel = 1;
-        else currentAdvancementLevel = 0;
+        // Get the duration for the current level (with frame multiplier)
+        uint256 levelDuration = _getLevelDuration(aging.currentTextureLevel, aging.currentFrameLevel);
 
-        // Texture level = MAX(current advancement, max texture level ever reached)
-        // This ensures texture wear is persistent once achieved
-        return currentAdvancementLevel > aging.maxTextureLevel ? currentAdvancementLevel : aging.maxTextureLevel;
+        // Calculate how many levels we should have progressed
+        uint256 levelsProgressed = timeSinceLastProgression / levelDuration;
+
+        // New level = min(10, baseLevel + levelsProgressed)
+        uint8 newLevel = baseLevel + uint8(levelsProgressed);
+        return newLevel > 10 ? 10 : newLevel;
+    }
+
+    function _getLevelDuration(uint8 currentLevel, string memory frameLevel) internal pure returns (uint256) {
+        // Base duration for each level progression (TEST VALUES - minutes)
+        uint256 baseDuration;
+        if (currentLevel == 0) baseDuration = 3 minutes;    // 0→1
+        else if (currentLevel == 1) baseDuration = 6 minutes;    // 1→2
+        else if (currentLevel == 2) baseDuration = 9 minutes;    // 2→3
+        else if (currentLevel == 3) baseDuration = 12 minutes;   // 3→4
+        else if (currentLevel == 4) baseDuration = 15 minutes;   // 4→5
+        else if (currentLevel == 5) baseDuration = 18 minutes;   // 5→6
+        else if (currentLevel == 6) baseDuration = 21 minutes;   // 6→7
+        else if (currentLevel == 7) baseDuration = 24 minutes;   // 7→8
+        else if (currentLevel == 8) baseDuration = 27 minutes;   // 8→9
+        else baseDuration = 30 minutes; // Level 9->10
+
+        // Apply frame multipliers (reduce duration = faster progression)
+        uint256 multiplier = _getFrameMultiplier(frameLevel);
+        return baseDuration * multiplier / 100;
+    }
+
+    function _getFrameMultiplier(string memory frameLevel) internal pure returns (uint256) {
+        if (keccak256(abi.encodePacked(frameLevel)) == keccak256(abi.encodePacked("Diamond"))) return 25; // 75% slower
+        if (keccak256(abi.encodePacked(frameLevel)) == keccak256(abi.encodePacked("Platinum"))) return 50; // 50% slower
+        if (keccak256(abi.encodePacked(frameLevel)) == keccak256(abi.encodePacked("Gold"))) return 75; // 25% slower
+        return 100; // Normal speed for Silver, Bronze, None
     }
 
     function _getTextureAgingMultiplier(string memory frameLevel) internal pure returns (uint256) {

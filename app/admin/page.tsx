@@ -24,7 +24,7 @@ export default function AdminPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <LoadingAnimation message="Loading..." />
+        <LoadingAnimation message="Loading..." size="lg" />
       </div>
     )
   }

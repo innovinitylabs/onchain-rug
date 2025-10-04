@@ -113,6 +113,22 @@ contract RugAdminFacet {
     }
 
     /**
+     * @notice Get current aging thresholds (in seconds)
+     * @return Array of 6 time periods: [dirt1, dirt2, texture1, texture2, freeCleanDays, freeCleanWindow]
+     */
+    function getAgingThresholds() external view returns (uint256[6] memory) {
+        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+        return [
+            rs.dirtLevel1Days,
+            rs.dirtLevel2Days,
+            rs.textureLevel1Days,
+            rs.textureLevel2Days,
+            rs.freeCleanDays,
+            rs.freeCleanWindow
+        ];
+    }
+
+    /**
      * @notice Update aging thresholds (owner only)
      * @param thresholds Array of 6 time periods in minutes: [dirt1, dirt2, texture1, texture2, freeCleanDays, freeCleanWindow]
      */
@@ -121,13 +137,12 @@ contract RugAdminFacet {
 
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
 
-        // Thresholds are passed as seconds (converted to minutes for testing)
-        rs.dirtLevel1Days = thresholds[0];
-        rs.dirtLevel2Days = thresholds[1];
-        rs.textureLevel1Days = thresholds[2];
-        rs.textureLevel2Days = thresholds[3];
-        rs.freeCleanDays = thresholds[4];
-        rs.freeCleanWindow = thresholds[5];
+        rs.dirtLevel1Days = thresholds[0] * 1 minutes;
+        rs.dirtLevel2Days = thresholds[1] * 1 minutes;
+        rs.textureLevel1Days = thresholds[2] * 1 minutes;
+        rs.textureLevel2Days = thresholds[3] * 1 minutes;
+        rs.freeCleanDays = thresholds[4] * 1 minutes;
+        rs.freeCleanWindow = thresholds[5] * 1 minutes;
 
         emit AgingThresholdsUpdated();
     }

@@ -3,56 +3,83 @@ pragma solidity ^0.8.22;
 
 import "forge-std/Script.sol";
 import "forge-std/console.sol";
-import "../src/diamond/interfaces/IDiamondCut.sol";
 import "../src/facets/RugAdminFacet.sol";
+import "../src/diamond/Diamond.sol";
+import "../src/diamond/interfaces/IDiamondCut.sol";
 
 /**
- * @title Update RugAdminFacet
- * @dev Adds exception list management functions to RugAdminFacet
+ * @title Update RugAdminFacet Script
+ * @dev Updates the RugAdminFacet with fixed aging thresholds
  */
 contract UpdateRugAdminFacet is Script {
-    address public constant DIAMOND_ADDR = 0x6F7D033F046eE9c41A73713Fe5620D8f64C3BbAd;
+    // Main diamond contract
+    address public diamondAddr = 0xbFcf06FA1fEBCc8e990a5E5e5681e96a7B422724;
+
+    // Diamond contracts
+    RugAdminFacet public rugAdminFacet;
+
+    function setUp() public {}
 
     function run() public {
-        uint256 deployerPrivateKey = vm.envUint("TESTNET_PRIVATE_KEY");
-        vm.startBroadcast(deployerPrivateKey);
+        vm.startBroadcast();
 
         console.log("=========================================");
-        console.log("Updating RugAdminFacet with Exception List Functions");
+        console.log("Updating RugAdminFacet with Fixed Aging Thresholds");
         console.log("=========================================");
 
-        // Get the current RugAdminFacet address
-        bytes4 facetAddressSelector = bytes4(keccak256("facetAddress(bytes4)"));
-        (bool success, bytes memory data) = DIAMOND_ADDR.call(abi.encodeWithSelector(facetAddressSelector, bytes4(0x4f7fbdde))); // updateWalletLimit selector
-        require(success, "Failed to get facet address");
+        // Deploy new RugAdminFacet
+        rugAdminFacet = new RugAdminFacet();
+        console.log("New RugAdminFacet deployed at:", address(rugAdminFacet));
 
-        address rugAdminFacetAddr = abi.decode(data, (address));
-        console.log("RugAdminFacet address:", rugAdminFacetAddr);
-
-        // Add exception list selectors to existing RugAdminFacet
-        IDiamondCut.FacetCut[] memory cut = new IDiamondCut.FacetCut[](1);
-        cut[0] = IDiamondCut.FacetCut({
-            facetAddress: rugAdminFacetAddr,
-            action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: _getExceptionSelectors()
+        // Replace the RugAdminFacet in the diamond
+        IDiamondCut.FacetCut[] memory adminCut = new IDiamondCut.FacetCut[](1);
+        adminCut[0] = IDiamondCut.FacetCut({
+            facetAddress: address(rugAdminFacet),
+            action: IDiamondCut.FacetCutAction.Replace,
+            functionSelectors: getRugAdminSelectors()
         });
 
-        IDiamondCut(DIAMOND_ADDR).diamondCut(cut, address(0), "");
-        console.log("Added exception list functions to RugAdminFacet");
+        IDiamondCut(diamondAddr).diamondCut(adminCut, address(0), "");
+        console.log("RugAdminFacet updated successfully");
+
+        // Set correct aging thresholds (in seconds, not multiplied by minutes)
+        uint256[6] memory agingThresholds = [
+            uint256(60),     // dirtLevel1Days: 1 minute (60 seconds)
+            uint256(120),    // dirtLevel2Days: 2 minutes (120 seconds)
+            uint256(360),    // textureLevel1Days: 6 minutes (360 seconds)
+            uint256(720),    // textureLevel2Days: 12 minutes (720 seconds)
+            uint256(60),     // freeCleanDays: 1 minute after mint
+            uint256(30)      // freeCleanWindow: 30 seconds after cleaning
+        ];
+
+        RugAdminFacet(diamondAddr).updateAgingThresholds(agingThresholds);
+        console.log("Aging thresholds updated to proper values");
 
         console.log("=========================================");
-        console.log("RugAdminFacet Updated Successfully!");
-        console.log("Now includes exception list management");
+        console.log("Update Complete!");
         console.log("=========================================");
 
         vm.stopBroadcast();
     }
 
-    function _getExceptionSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](3);
-        selectors[0] = RugAdminFacet.addToExceptionList.selector;
-        selectors[1] = RugAdminFacet.removeFromExceptionList.selector;
-        selectors[2] = RugAdminFacet.getExceptionList.selector;
+    function getRugAdminSelectors() internal pure returns (bytes4[] memory) {
+        bytes4[] memory selectors = new bytes4[](16);
+        selectors[0] = RugAdminFacet.updateMintPricing.selector;
+        selectors[1] = RugAdminFacet.updateCollectionCap.selector;
+        selectors[2] = RugAdminFacet.updateWalletLimit.selector;
+        selectors[3] = RugAdminFacet.updateAgingThresholds.selector;
+        selectors[4] = RugAdminFacet.getAgingThresholds.selector;
+        selectors[5] = RugAdminFacet.setLaunderingEnabled.selector;
+        selectors[6] = RugAdminFacet.setLaunchStatus.selector;
+        selectors[7] = RugAdminFacet.getMintPricing.selector;
+        selectors[8] = RugAdminFacet.getConfig.selector;
+        selectors[9] = RugAdminFacet.setScriptyContracts.selector;
+        selectors[10] = RugAdminFacet.addToExceptionList.selector;
+        selectors[11] = RugAdminFacet.removeFromExceptionList.selector;
+        selectors[12] = RugAdminFacet.getExceptionList.selector;
+        selectors[13] = RugAdminFacet.getServicePricing.selector;
+        selectors[14] = RugAdminFacet.updateServicePricing.selector;
+        selectors[15] = RugAdminFacet.isConfigured.selector;
         return selectors;
     }
 }
