@@ -374,7 +374,7 @@ export default function MarketPage() {
         <main className="flex-grow">
           <div className="container mx-auto px-4 py-20">
             <div className="text-center">
-              <LoadingAnimation message="Loading the rug market..." />
+              <LoadingAnimation message="Loading the rug market..." size="lg" />
             </div>
           </div>
         </main>

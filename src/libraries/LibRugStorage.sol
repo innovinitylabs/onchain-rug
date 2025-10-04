@@ -26,21 +26,27 @@ library LibRugStorage {
     }
 
     struct AgingData {
+        // Core O(1) Aging System
+        uint32 lastTextureProgression;  // Timestamp when current texture level started
+        uint8 currentTextureLevel;      // Current permanent texture level (0-10)
+
+        // Dirt System
         uint256 lastCleaned;            // Last cleaning timestamp
-        uint256 lastTextureReset;       // Last texture reset timestamp (mint time initially) - DEPRECATED
-        uint256 lastNaturalCheckTime;   // Last natural texture aging check timestamp
-        uint256 dirtBecameHeavyTime;    // Timestamp when dirt first reached level 2
-        uint256 lastSalePrice;          // Highest sale price
-        uint256[3] recentSalePrices;    // Last 3 sale prices
-        uint8 dirtLevel;                // Current dirt (0-2) - deprecated, calculated
-        uint8 textureLevel;             // Current texture aging (0-10) - deprecated, calculated
+        uint256 textureProgressTimer;   // Timer for advancing texture level (resets on cleaning)
         uint8 maxTextureLevel;          // MAX texture level ever reached (0-10, persistent)
-        uint256 textureProgressTimer;   // Timer for advancing texture level (replaces lastTextureReset)
-        uint256 launderingCount;        // Number of times laundered
-        uint256 lastLaundered;          // Last laundering timestamp
+
+        // Maintenance Tracking
         uint256 cleaningCount;          // Number of times cleaned
         uint256 restorationCount;       // Number of times restored
         uint256 masterRestorationCount; // Number of times master restored
+        uint256 launderingCount;        // Number of times laundered
+        uint256 lastLaundered;          // Last laundering timestamp
+
+        // Trading History
+        uint256 lastSalePrice;          // Highest sale price
+        uint256[3] recentSalePrices;    // Last 3 sale prices
+
+        // Frame System
         uint256 maintenanceScore;       // Calculated maintenance quality score
         string currentFrameLevel;       // Current frame level ("None", "Bronze", etc.)
         uint256 frameAchievedTime;      // When current frame was first achieved

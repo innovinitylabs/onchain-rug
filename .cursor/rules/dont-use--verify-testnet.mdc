@@ -1,0 +1,5 @@
+---
+Description: Dont use --verify in forge scripts for shape sepolia testnet. testnet doesnt have verify capablities. it only wastes time.
+alwaysApply: true
+
+---

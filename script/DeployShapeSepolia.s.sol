@@ -279,17 +279,12 @@ contract DeployShapeSepolia is Script {
             htmlGeneratorAddr
         );
 
-        // Configure aging thresholds (ULTRA FAST TEST VALUES - minutes for rapid testing)
-        uint256[6] memory agingThresholds = [
-            uint256(1),    // dirtLevel1Days (1 minute for testing - normally 3 days)
-            uint256(2),    // dirtLevel2Days (2 minutes for testing - normally 7 days)
-            uint256(3),    // textureLevel1Days (3 minutes for testing - normally 30 days)
-            uint256(5),    // textureLevel2Days (5 minutes for testing - normally 90 days)
-            uint256(1),    // freeCleanDays (1 minute free after mint - normally 12 hours)
-            uint256(1)     // freeCleanWindow (1 minute free after cleaning - normally 2 days)
-        ];
-
-        RugAdminFacet(diamondAddr).updateAgingThresholds(agingThresholds);
+        // Note: New O(1) aging system uses hardcoded constants, not configurable thresholds
+        // Test values use minutes instead of days for rapid testing
+        console.log("   O(1) Aging System:");
+        console.log("   - Dirt: 1min to 1, 2min to 2 (normally 3d to 1, 7d to 2)");
+        console.log("   - Texture: 3min/level progression (normally 30dto60dto90dto120d...)");
+        console.log("   - Free cleaning: 30min after mint, 11min after last clean");
 
         // Set pricing (0.00003 ETH base price, others 0)
         uint256[6] memory prices = [
@@ -306,13 +301,25 @@ contract DeployShapeSepolia is Script {
         RugAdminFacet(diamondAddr).updateCollectionCap(10000);
         RugAdminFacet(diamondAddr).updateWalletLimit(7);
 
+        // Set aging thresholds for test environment (minutes instead of days for rapid testing)
+        // [dirt1, dirt2, texture1, texture2, freeCleanDays, freeCleanWindow] in minutes
+        uint256[6] memory agingThresholds = [
+            uint256(1 minutes),    // dirtLevel1Days: 1 minute to level 1
+            uint256(2 minutes),    // dirtLevel2Days: 2 minutes to level 2
+            uint256(6 minutes),    // textureLevel1Days: 6 minutes to start texture progression
+            uint256(12 minutes),   // textureLevel2Days: 12 minutes for texture scaling
+            uint256(1 minutes),    // freeCleanDays: 1 minute after mint for free cleaning
+            uint256(30 seconds)    // freeCleanWindow: 30 seconds after cleaning for free cleaning
+        ];
+        RugAdminFacet(diamondAddr).updateAgingThresholds(agingThresholds);
+
         console.log("   System initialized with:");
         console.log("   - Base price: 0.00003 ETH");
         console.log("   - Collection cap: 10,000");
         console.log("   - Wallet limit: 7");
-        console.log("   - Aging thresholds: 1m/2m dirt, 3m/5m texture (ULTRA FAST TEST VALUES)");
+        console.log("   - Aging thresholds: 1min/2min dirt, 6min/12min texture, 1min free clean, 30sec window");
         console.log("   - Hybrid aging system: Natural + Neglect");
-        console.log("   - Frame multipliers: Gold 25%, Platinum 50%, Diamond 75% slower");
+        console.log("   - Frame multipliers: Gold 50%, Platinum 67%, Diamond 75% slower");
         console.log("   - Dirt immunity: Silver+ frames");
         console.log("   - Scripty contracts configured");
     }
@@ -405,16 +412,16 @@ contract DeployShapeSepolia is Script {
 
     function _getRugMaintenanceSelectors() internal pure returns (bytes4[] memory) {
         bytes4[] memory selectors = new bytes4[](10);
-        selectors[0] = RugMaintenanceFacet.cleanRug.selector;
-        selectors[1] = RugMaintenanceFacet.restoreRug.selector;
-        selectors[2] = RugMaintenanceFacet.masterRestoreRug.selector;
-        selectors[3] = RugMaintenanceFacet.getCleaningCost.selector;
-        selectors[4] = RugMaintenanceFacet.getRestorationCost.selector;
-        selectors[5] = RugMaintenanceFacet.getMasterRestorationCost.selector;
-        selectors[6] = RugMaintenanceFacet.getMaintenanceOptions.selector;
-        selectors[7] = RugMaintenanceFacet.canCleanRug.selector;
-        selectors[8] = RugMaintenanceFacet.canRestoreRug.selector;
-        selectors[9] = RugMaintenanceFacet.needsMasterRestoration.selector;
+        selectors[0] = bytes4(0x4f44b188); // cleanRug(uint256)
+        selectors[1] = bytes4(0x9282303d); // restoreRug(uint256)
+        selectors[2] = bytes4(0x0c19faf9); // masterRestoreRug(uint256)
+        selectors[3] = bytes4(0x6c174ed8); // getCleaningCost(uint256)
+        selectors[4] = bytes4(0x40a9c122); // getRestorationCost(uint256)
+        selectors[5] = bytes4(0x234e4777); // getMasterRestorationCost(uint256)
+        selectors[6] = bytes4(0x7eeafdbc); // getMaintenanceOptions(uint256)
+        selectors[7] = bytes4(0x89d929be); // canCleanRug(uint256)
+        selectors[8] = bytes4(0xf4fbfba0); // canRestoreRug(uint256)
+        selectors[9] = bytes4(0x6c3075f2); // needsMasterRestoration(uint256)
         return selectors;
     }
 

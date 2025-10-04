@@ -6,8 +6,8 @@ import LiquidGlass from '@/components/LiquidGlass'
 
 export default function Hero() {
   return (
-    <div className="relative z-10 h-screen flex items-center justify-center text-center px-6" style={{ willChange: 'transform' }}>
-      <div className="max-w-7xl mx-auto overflow-visible" style={{ willChange: 'transform, opacity' }}>
+    <div className="relative z-10 h-screen md:h-screen flex items-center md:justify-center justify-start pt-16 md:pt-0 text-center px-2" style={{ willChange: 'transform' }}>
+      <div className="max-w-6xl mx-auto overflow-visible" style={{ willChange: 'transform, opacity' }}>
         {/* Floating elements - Delayed for performance optimization */}
         <div className="absolute -top-10 -left-10 w-20 h-20 opacity-20" style={{ willChange: 'transform' }}>
           <motion.div
@@ -74,7 +74,7 @@ export default function Hero() {
                   flex: '1',
                   maxWidth: 'none',
                   height: 'auto',
-                  filter: 'drop-shadow(0 0 20px rgba(108, 190, 230, 0.6)) drop-shadow(0 0 40px rgba(255, 255, 255, 0.3))',
+                  filter: 'drop-shadow(0 0 25px rgba(108, 190, 230, 1)) drop-shadow(0 0 50px rgba(255, 255, 255, 0.5)) drop-shadow(0 0 80px rgba(108, 190, 230, 0.4))',
                   overflow: 'visible',
                   fontSize: 'clamp(12rem, 20vw, 32rem)'
                 }}
@@ -253,23 +253,29 @@ export default function Hero() {
           </motion.h1>
           
           <motion.div
-            className="mb-8"
+            className="mb-4 md:mb-8 w-full overflow-visible"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.8, type: "tween" }}
-            style={{ willChange: 'opacity' }}
+            style={{ 
+              willChange: 'opacity',
+              width: '100%',
+              overflow: 'visible'
+            }}
           >
             <svg
               width="100%"
               height="auto"
-              viewBox="0 0 1000 90"
+              viewBox="0 0 1600 350"
+              preserveAspectRatio="xMidYMid meet"
               style={{
                 display: 'block',
-                maxWidth: '100%',
+                width: '100%',
                 height: 'auto',
-                filter: 'drop-shadow(0 0 15px rgba(108, 190, 230, 0.5)) drop-shadow(0 0 30px rgba(255, 255, 255, 0.2))'
+                overflow: 'visible',
+                filter: 'drop-shadow(0 0 25px rgba(108, 190, 230, 1)) drop-shadow(0 0 50px rgba(255, 255, 255, 0.5)) drop-shadow(0 0 80px rgba(108, 190, 230, 0.4))'
               }}
-              aria-label="Generative Doormat Art on the Blockchain"
+              aria-label="Do Your Own Rugs. Don't Get Rugged. An On-Chain Art Project."
             >
               <defs>
                 {/* Liquid Glass Material - Multiple Layers for Depth */}
@@ -364,78 +370,82 @@ export default function Hero() {
               {/* Liquid Glass Shadow Layer */}
               <text
                 x="50%"
-                y="47"
+                y="150"
                 textAnchor="middle"
                 dominantBaseline="middle"
                 className="text-2xl md:text-3xl font-semibold"
                 style={{
                   fill: 'url(#liquid-glass-shadow)',
                   filter: 'url(#liquid-glass-depth)',
-                   fontSize: '48px',
+                   fontSize: 'clamp(4rem, 6vw, 7rem)',
                   fontWeight: '600',
                   fontFamily: 'system-ui, -apple-system, sans-serif',
-                  opacity: 0.6
+                  opacity: 0.4
                 }}
               >
-                Generative Doormat Art on the Blockchain
+                <tspan x="50%" dy="-0.3em">Do Your Own Rugs. Don't Get Rugged.</tspan>
+                <tspan x="50%" dy="1.2em">An On-Chain Art Project.</tspan>
               </text>
 
               {/* Liquid Glass Main Fill */}
               <text
                 x="50%"
-                y="45"
+                y="145"
                 textAnchor="middle"
                 dominantBaseline="middle"
                 className="text-2xl md:text-3xl font-semibold"
                 style={{
                   fill: 'url(#liquid-glass-fill)',
                   filter: 'url(#liquid-glass-depth)',
-                   fontSize: '48px',
+                   fontSize: 'clamp(4rem, 6vw, 7rem)',
                   fontWeight: '600',
                   fontFamily: 'system-ui, -apple-system, sans-serif',
                 }}
               >
-                Generative Doormat Art on the Blockchain
+                <tspan x="50%" dy="-0.3em">Do Your Own Rugs. Don't Get Rugged.</tspan>
+                <tspan x="50%" dy="1.2em">An On-Chain Art Project.</tspan>
               </text>
 
               {/* Liquid Glass Surface Highlight */}
               <text
                 x="50%"
-                y="43"
+                y="140"
                 textAnchor="middle"
                 dominantBaseline="middle"
                 className="text-2xl md:text-3xl font-semibold"
                 style={{
                   fill: 'url(#liquid-glass-highlight)',
                   filter: 'url(#liquid-glass-surface)',
-                   fontSize: '48px',
+                   fontSize: 'clamp(4rem, 6vw, 7rem)',
                   fontWeight: '600',
                   fontFamily: 'system-ui, -apple-system, sans-serif',
                   mixBlendMode: 'screen'
                 }}
               >
-                Generative Doormat Art on the Blockchain
+                <tspan x="50%" dy="-0.3em">Do Your Own Rugs. Don't Get Rugged.</tspan>
+                <tspan x="50%" dy="1.2em">An On-Chain Art Project.</tspan>
               </text>
 
               {/* Liquid Glass Rim Light */}
               <text
                 x="50%"
-                y="45"
+                y="145"
                 textAnchor="middle"
                 dominantBaseline="middle"
                 className="text-2xl md:text-3xl font-semibold"
-            style={{ 
+            style={{
                   fill: 'none',
                   stroke: 'rgba(255, 255, 255, 0.8)',
                   strokeWidth: '0.3',
                   filter: 'url(#liquid-glass-surface)',
-                   fontSize: '48px',
+                   fontSize: 'clamp(4rem, 6vw, 7rem)',
                   fontWeight: '600',
                   fontFamily: 'system-ui, -apple-system, sans-serif',
                   mixBlendMode: 'overlay'
             }}
           >
-            Generative Doormat Art on the Blockchain
+            <tspan x="50%" dy="-0.3em">Do Your Own Rugs. Don't Get Rugged.</tspan>
+            <tspan x="50%" dy="1.2em">An On-Chain Art Project.</tspan>
               </text>
             </svg>
           </motion.div>
@@ -468,8 +478,8 @@ export default function Hero() {
             </span>
           </motion.p> */}
           
-          <motion.div 
-            className="flex flex-col sm:flex-row gap-6 justify-center items-center"
+          <motion.div
+            className="flex flex-col sm:flex-row gap-4 md:gap-6 justify-center items-center"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.2, type: "tween" }}

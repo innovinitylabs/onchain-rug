@@ -551,7 +551,7 @@ export default function GalleryPage() {
 
   // Loading component with rug-loading-smol.webp
   const LoadingSpinner = () => (
-    <LoadingAnimation message="Loading NFTs..." />
+    <LoadingAnimation message="Loading NFTs..." size="lg" />
   )
 
   return (

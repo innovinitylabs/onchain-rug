@@ -136,24 +136,9 @@ contract RugAgingFacet {
      * @return secondsUntilTexture Time in seconds until texture level increases
      */
     function timeUntilNextTexture(uint256 tokenId) external view returns (uint256) {
-        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
-        LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
-
-        uint8 currentTexture = _getTextureLevel(tokenId);
-        uint256 timeSinceReset = block.timestamp - aging.lastTextureReset;
-
-        // Simple calculation - next level threshold
-        uint256 nextThreshold;
-        if (currentTexture == 0) nextThreshold = rs.textureLevel1Days;
-        else if (currentTexture == 1) nextThreshold = rs.textureLevel2Days;
-        else return 0; // Max texture reached
-
-        if (timeSinceReset < nextThreshold) {
-            return nextThreshold - timeSinceReset;
-        }
-
-        return 0;
+        return _timeUntilNextTexture(tokenId);
     }
+
 
     /**
      * @notice Get aging statistics for a rug
@@ -234,7 +219,7 @@ contract RugAgingFacet {
         LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
 
         // Check if rug has a frame (Silver+ frames get dirt immunity)
-        string memory frameLevel = RugNFTFacet(address(this)).getFrameLevel(tokenId);
+        string memory frameLevel = _getFrameLevel(tokenId);
         if (keccak256(abi.encodePacked(frameLevel)) != keccak256(abi.encodePacked("None")) &&
             keccak256(abi.encodePacked(frameLevel)) != keccak256(abi.encodePacked("Bronze"))) {
             return 0; // Framed rugs don't accumulate dirt
@@ -247,26 +232,35 @@ contract RugAgingFacet {
         return 0;
     }
 
+    function _getFrameLevel(uint256 tokenId) internal view returns (string memory) {
+        LibRugStorage.AgingData storage aging = LibRugStorage.rugStorage().agingData[tokenId];
+        return aging.currentFrameLevel;
+    }
+
     function _getTextureLevel(uint256 tokenId) internal view returns (uint8) {
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
         LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
 
         // Get frame level to determine texture aging speed
-        string memory frameLevel = RugNFTFacet(address(this)).getFrameLevel(tokenId);
+        string memory frameLevel = _getFrameLevel(tokenId);
         uint256 agingMultiplier = _getTextureAgingMultiplier(frameLevel);
 
-        // Texture level based on time since last texture reset (adjusted by frame benefits)
-        uint256 adjustedTimeSinceReset = (block.timestamp - aging.lastTextureReset) / agingMultiplier;
+        // Calculate current advancement level based on progress timer
+        uint256 timeSinceProgressStart = (block.timestamp - aging.textureProgressTimer) / agingMultiplier;
+        uint8 currentAdvancementLevel;
 
         // Texture progression over time (longer timeline than dirt)
-        if (adjustedTimeSinceReset >= rs.textureLevel2Days * 5) return 10;
-        if (adjustedTimeSinceReset >= rs.textureLevel2Days * 4) return 8;
-        if (adjustedTimeSinceReset >= rs.textureLevel2Days * 3) return 6;
-        if (adjustedTimeSinceReset >= rs.textureLevel2Days * 2) return 4;
-        if (adjustedTimeSinceReset >= rs.textureLevel2Days) return 2;
-        if (adjustedTimeSinceReset >= rs.textureLevel1Days) return 1;
+        if (timeSinceProgressStart >= rs.textureLevel2Days * 10) currentAdvancementLevel = 10;
+        else if (timeSinceProgressStart >= rs.textureLevel2Days * 8) currentAdvancementLevel = 8;
+        else if (timeSinceProgressStart >= rs.textureLevel2Days * 6) currentAdvancementLevel = 6;
+        else if (timeSinceProgressStart >= rs.textureLevel2Days * 4) currentAdvancementLevel = 4;
+        else if (timeSinceProgressStart >= rs.textureLevel2Days * 2) currentAdvancementLevel = 2;
+        else if (timeSinceProgressStart >= rs.textureLevel1Days * 2) currentAdvancementLevel = 1;
+        else currentAdvancementLevel = 0;
 
-        return 0; // Fresh texture
+        // Texture level = MAX(current advancement, max texture level ever reached)
+        // This ensures texture wear is persistent once achieved
+        return currentAdvancementLevel > aging.maxTextureLevel ? currentAdvancementLevel : aging.maxTextureLevel;
     }
 
     function _getTextureAgingMultiplier(string memory frameLevel) internal pure returns (uint256) {
@@ -298,16 +292,27 @@ contract RugAgingFacet {
         LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
 
         uint8 currentTexture = _getTextureLevel(tokenId);
-        uint256 timeSinceReset = block.timestamp - aging.lastTextureReset;
+        if (currentTexture >= 10) return 0; // Max texture reached
 
-        // Simple calculation - next level threshold
+        // Get frame level to determine texture aging speed
+        string memory frameLevel = _getFrameLevel(tokenId);
+        uint256 agingMultiplier = _getTextureAgingMultiplier(frameLevel);
+
+        // Calculate current advancement level based on progress timer
+        uint256 timeSinceProgressStart = (block.timestamp - aging.textureProgressTimer) / agingMultiplier;
+
+        // Find next texture level threshold
         uint256 nextThreshold;
-        if (currentTexture == 0) nextThreshold = rs.textureLevel1Days;
-        else if (currentTexture == 1) nextThreshold = rs.textureLevel2Days;
-        else return 0; // Max texture reached
+        if (currentTexture < 1) nextThreshold = rs.textureLevel1Days * 2;
+        else if (currentTexture < 2) nextThreshold = rs.textureLevel2Days * 2;
+        else if (currentTexture < 4) nextThreshold = rs.textureLevel2Days * 4;
+        else if (currentTexture < 6) nextThreshold = rs.textureLevel2Days * 6;
+        else if (currentTexture < 8) nextThreshold = rs.textureLevel2Days * 8;
+        else nextThreshold = rs.textureLevel2Days * 10; // Max level
 
-        if (timeSinceReset < nextThreshold) {
-            return nextThreshold - timeSinceReset;
+        // Time remaining until next level
+        if (timeSinceProgressStart < nextThreshold) {
+            return ((nextThreshold - timeSinceProgressStart) * agingMultiplier);
         }
 
         return 0;
