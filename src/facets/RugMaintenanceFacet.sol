@@ -7,19 +7,17 @@ import {RugNFTFacet} from "./RugNFTFacet.sol";
 
 /**
  * @title RugMaintenanceFacet
- * @notice Maintenance services facet for OnchainRugs cleaning and restoration
- * @dev Handles cleaning, restoration, and master restoration services
+ * @notice FRESH REDESIGN: Simplified maintenance services for OnchainRugs
+ * @dev Handles cleaning, restoration, and master restoration with dirt (3 levels) and aging (10 levels)
  */
 contract RugMaintenanceFacet {
-    // NOTE: All aging constants now come from LibRugStorage for consistency across facets
-
     // Events
     event RugCleaned(uint256 indexed tokenId, address indexed owner, uint256 cost, bool wasFree);
     event RugRestored(uint256 indexed tokenId, address indexed owner, uint8 previousLevel, uint8 newLevel, uint256 cost);
-    event RugMasterRestored(uint256 indexed tokenId, address indexed owner, uint8 previousDirt, uint8 previousTexture, uint256 cost);
+    event RugMasterRestored(uint256 indexed tokenId, address indexed owner, uint8 previousDirt, uint8 previousAging, uint256 cost);
 
     /**
-     * @notice Clean a rug (removes dirt, resets dirt timer)
+     * @notice Clean a rug (resets dirt to level 0, earns maintenance points)
      * @param tokenId Token ID to clean
      */
     function cleanRug(uint256 tokenId) external payable {
@@ -29,14 +27,13 @@ contract RugMaintenanceFacet {
         // Verify ownership
         require(IERC721(address(this)).ownerOf(tokenId) == msg.sender, "Not token owner");
 
-        // Check if cleaning is beneficial (for maintenance or dirt removal)
+        // Check if cleaning is beneficial (has dirt or free cleaning available)
         uint8 currentDirt = _getDirtLevel(tokenId);
-        uint8 currentTexture = _getTextureLevel(tokenId);
-        bool needsCleaning = currentDirt > 0 || currentTexture > 0 || _isCleaningFree(tokenId);
+        bool isFree = _isCleaningFree(tokenId);
+        bool needsCleaning = currentDirt > 0 || isFree;
         require(needsCleaning, "Rug doesn't need cleaning right now");
 
-        // Check if free cleaning is available
-        bool isFree = _isCleaningFree(tokenId);
+        // Calculate cost
         uint256 cost = isFree ? 0 : rs.cleaningCost;
 
         // Validate payment
@@ -48,25 +45,25 @@ contract RugMaintenanceFacet {
             require(success, "Refund transfer failed");
         }
 
-        // New O(1) cleaning logic:
-        // 1. Clean dirt (reset dirt timer)
-        // 2. Reset texture progression timer (maintains current texture level)
-        uint8 previousDirt = _getDirtLevel(tokenId);
-        uint8 previousTexture = _getTextureLevel(tokenId);
-
+        // Clean dirt (reset to level 0)
         aging.lastCleaned = block.timestamp;
-        aging.lastTextureProgression = uint32(block.timestamp); // Reset progression timer
-        aging.cleaningCount++;
-        aging.maintenanceScore = (aging.cleaningCount * 2) + (aging.restorationCount * 5) + (aging.masterRestorationCount * 10) + (aging.launderingCount * 10);
 
-        // Frame level updates are handled by the NFT facet when tokenURI is requested
-        // No cross-facet calls needed here
+        // Earn maintenance points
+        aging.cleaningCount++;
+
+        // Update frame level based on new score
+        uint256 newScore = LibRugStorage.calculateMaintenanceScore(aging);
+        uint8 newFrameLevel = LibRugStorage.getFrameLevelFromScore(newScore);
+        if (newFrameLevel != aging.frameLevel) {
+            aging.frameLevel = newFrameLevel;
+            aging.frameAchievedTime = block.timestamp;
+        }
 
         emit RugCleaned(tokenId, msg.sender, cost, isFree);
     }
 
     /**
-     * @notice Restore a rug (reduce texture level by 1, set dirt to 0)
+     * @notice Restore a rug (reduce aging level by 1, clean dirt)
      * @param tokenId Token ID to restore
      */
     function restoreRug(uint256 tokenId) external payable {
@@ -76,9 +73,9 @@ contract RugMaintenanceFacet {
         // Verify ownership
         require(IERC721(address(this)).ownerOf(tokenId) == msg.sender, "Not token owner");
 
-        // Check if texture restoration is available
-        uint8 currentTexture = _getTextureLevel(tokenId);
-        require(currentTexture > 0, "Rug has no texture aging to restore");
+        // Check if restoration is available (aging level > 0)
+        uint8 currentAging = _getAgingLevel(tokenId);
+        require(currentAging > 0, "Rug has no aging to restore");
 
         // Validate payment
         require(msg.value >= rs.restorationCost, "Insufficient payment");
@@ -89,32 +86,33 @@ contract RugMaintenanceFacet {
             require(success, "Refund transfer failed");
         }
 
-        // New O(1) restoration logic:
-        // Permanently reduce texture level by 1
+        // Record previous state
         uint8 previousDirt = _getDirtLevel(tokenId);
-        uint8 previousTexture = currentTexture;
+        uint8 previousAging = currentAging;
 
-        // Clean dirt
+        // Clean dirt and reduce aging level by 1
         aging.lastCleaned = block.timestamp;
-
-        // Permanently reduce max texture level by 1
-        if (aging.maxTextureLevel > 0) {
-            aging.maxTextureLevel -= 1;
+        if (aging.agingLevel > 0) {
+            aging.agingLevel -= 1;
+            aging.agingStartTime = block.timestamp; // Reset timer for new level
         }
 
-        // Reset texture progression timer for new level
-        aging.textureProgressTimer = block.timestamp;
+        // Earn maintenance points
         aging.restorationCount++;
-        aging.maintenanceScore = (aging.cleaningCount * 2) + (aging.restorationCount * 5) + (aging.masterRestorationCount * 10) + (aging.launderingCount * 10);
 
-        // Frame level updates are handled by the NFT facet when tokenURI is requested
-        // No cross-facet calls needed here
+        // Update frame level based on new score
+        uint256 newScore = LibRugStorage.calculateMaintenanceScore(aging);
+        uint8 newFrameLevel = LibRugStorage.getFrameLevelFromScore(newScore);
+        if (newFrameLevel != aging.frameLevel) {
+            aging.frameLevel = newFrameLevel;
+            aging.frameAchievedTime = block.timestamp;
+        }
 
-        emit RugRestored(tokenId, msg.sender, previousDirt, aging.currentTextureLevel, rs.restorationCost);
+        emit RugRestored(tokenId, msg.sender, previousAging, aging.agingLevel, rs.restorationCost);
     }
 
     /**
-     * @notice Master restore a rug (reset all aging to level 0)
+     * @notice Master restore a rug (reset dirt and aging to level 0)
      * @param tokenId Token ID to master restore
      */
     function masterRestoreRug(uint256 tokenId) external payable {
@@ -126,8 +124,8 @@ contract RugMaintenanceFacet {
 
         // Check if any aging exists
         uint8 currentDirt = _getDirtLevel(tokenId);
-        uint8 currentTexture = _getTextureLevel(tokenId);
-        require(currentDirt > 0 || currentTexture > 0, "Rug is already pristine");
+        uint8 currentAging = _getAgingLevel(tokenId);
+        require(currentDirt > 0 || currentAging > 0, "Rug is already pristine");
 
         // Validate payment
         require(msg.value >= rs.masterRestorationCost, "Insufficient payment");
@@ -138,20 +136,27 @@ contract RugMaintenanceFacet {
             require(success, "Refund transfer failed");
         }
 
-        // New O(1) master restoration: complete reset to level 0
+        // Record previous state
         uint8 previousDirt = currentDirt;
-        uint8 previousTexture = currentTexture;
+        uint8 previousAging = currentAging;
 
+        // Complete reset: dirt to 0, aging to 0
         aging.lastCleaned = block.timestamp;
-        aging.maxTextureLevel = 0; // Reset all texture wear to pristine
-        aging.textureProgressTimer = block.timestamp; // Reset progress timer
+        aging.agingLevel = 0;
+        aging.agingStartTime = block.timestamp;
+
+        // Earn maintenance points
         aging.masterRestorationCount++;
-        aging.maintenanceScore = (aging.cleaningCount * 2) + (aging.restorationCount * 5) + (aging.masterRestorationCount * 10) + (aging.launderingCount * 10);
 
-        // Frame level updates are handled by the NFT facet when tokenURI is requested
-        // No cross-facet calls needed here
+        // Update frame level based on new score
+        uint256 newScore = LibRugStorage.calculateMaintenanceScore(aging);
+        uint8 newFrameLevel = LibRugStorage.getFrameLevelFromScore(newScore);
+        if (newFrameLevel != aging.frameLevel) {
+            aging.frameLevel = newFrameLevel;
+            aging.frameAchievedTime = block.timestamp;
+        }
 
-        emit RugMasterRestored(tokenId, msg.sender, currentDirt, currentTexture, rs.masterRestorationCost);
+        emit RugMasterRestored(tokenId, msg.sender, previousDirt, previousAging, rs.masterRestorationCost);
     }
 
     /**
@@ -162,14 +167,13 @@ contract RugMaintenanceFacet {
     function getCleaningCost(uint256 tokenId) external view returns (uint256) {
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
 
-        // Verify token exists and ownership
+        // Verify token exists
         require(IERC721(address(this)).ownerOf(tokenId) != address(0), "Token does not exist");
 
         // Return 0 if cleaning is not beneficial
         uint8 dirtLevel = _getDirtLevel(tokenId);
-        uint8 textureLevel = _getTextureLevel(tokenId);
         bool isFreeCleaning = _isCleaningFree(tokenId);
-        bool needsCleaning = dirtLevel > 0 || textureLevel > 0 || isFreeCleaning;
+        bool needsCleaning = dirtLevel > 0 || isFreeCleaning;
 
         if (!needsCleaning) return 0;
 
@@ -179,55 +183,54 @@ contract RugMaintenanceFacet {
     /**
      * @notice Get cost for restoring a specific rug
      * @param tokenId Token ID to check
-     * @return cost Cost in wei
+     * @return cost Cost in wei (0 if no aging to restore)
      */
     function getRestorationCost(uint256 tokenId) external view returns (uint256) {
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
 
-        // Verify token exists and ownership
+        // Verify token exists
         require(IERC721(address(this)).ownerOf(tokenId) != address(0), "Token does not exist");
 
-        uint8 currentDirt = _getDirtLevel(tokenId);
-        return currentDirt > 0 ? rs.restorationCost : 0;
+        uint8 currentAging = _getAgingLevel(tokenId);
+        return currentAging > 0 ? rs.restorationCost : 0;
     }
 
     /**
      * @notice Get cost for master restoration of a specific rug
      * @param tokenId Token ID to check
-     * @return cost Cost in wei
+     * @return cost Cost in wei (0 if already pristine)
      */
     function getMasterRestorationCost(uint256 tokenId) external view returns (uint256) {
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
 
-        // Verify token exists and ownership
+        // Verify token exists
         require(IERC721(address(this)).ownerOf(tokenId) != address(0), "Token does not exist");
 
         uint8 currentDirt = _getDirtLevel(tokenId);
-        uint8 currentTexture = _getTextureLevel(tokenId);
-        return (currentDirt > 0 || currentTexture > 0) ? rs.masterRestorationCost : 0;
+        uint8 currentAging = _getAgingLevel(tokenId);
+        return (currentDirt > 0 || currentAging > 0) ? rs.masterRestorationCost : 0;
     }
 
     /**
-     * @notice Check if a rug can be cleaned (has dirt, texture aging, or free cleaning available)
+     * @notice Check if a rug can be cleaned (has dirt or free cleaning available)
      * @param tokenId Token ID to check
      * @return canClean True if cleaning is beneficial
      */
     function canCleanRug(uint256 tokenId) external view returns (bool) {
         require(IERC721(address(this)).ownerOf(tokenId) != address(0), "Token does not exist");
         uint8 dirtLevel = _getDirtLevel(tokenId);
-        uint8 textureLevel = _getTextureLevel(tokenId);
         bool isFreeCleaning = _isCleaningFree(tokenId);
-        return dirtLevel > 0 || textureLevel > 0 || isFreeCleaning;
+        return dirtLevel > 0 || isFreeCleaning;
     }
 
     /**
-     * @notice Check if a rug can be restored (has texture wear that can be reduced)
+     * @notice Check if a rug can be restored (has aging that can be reduced)
      * @param tokenId Token ID to check
      * @return canRestore True if restoration is available
      */
     function canRestoreRug(uint256 tokenId) external view returns (bool) {
         require(IERC721(address(this)).ownerOf(tokenId) != address(0), "Token does not exist");
-        return _getTextureLevel(tokenId) > 0;
+        return _getAgingLevel(tokenId) > 0;
     }
 
     /**
@@ -238,8 +241,8 @@ contract RugMaintenanceFacet {
     function needsMasterRestoration(uint256 tokenId) external view returns (bool) {
         require(IERC721(address(this)).ownerOf(tokenId) != address(0), "Token does not exist");
         uint8 dirt = _getDirtLevel(tokenId);
-        uint8 texture = _getTextureLevel(tokenId);
-        return dirt > 0 || texture > 0;
+        uint8 aging = _getAgingLevel(tokenId);
+        return dirt > 0 || aging > 0;
     }
 
     /**
@@ -263,7 +266,7 @@ contract RugMaintenanceFacet {
         require(IERC721(address(this)).ownerOf(tokenId) != address(0), "Token does not exist");
 
         canClean = _getDirtLevel(tokenId) > 0;
-        canRestore = _getTextureLevel(tokenId) > 0; // Restoration reduces texture level
+        canRestore = _getAgingLevel(tokenId) > 0; // Restoration reduces aging level
         needsMaster = canClean || canRestore;
 
         cleaningCost = canClean ? (_isCleaningFree(tokenId) ? 0 : LibRugStorage.rugStorage().cleaningCost) : 0;
@@ -271,76 +274,39 @@ contract RugMaintenanceFacet {
         masterCost = needsMaster ? LibRugStorage.rugStorage().masterRestorationCost : 0;
     }
 
-    // Internal helper functions (duplicate logic from RugAgingFacet for efficiency)
+    // Internal helper functions
 
     function _getDirtLevel(uint256 tokenId) internal view returns (uint8) {
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
         LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
 
-        // Silver+ frames have dirt immunity (always clean)
-        if (_hasDirtImmunity(tokenId)) {
-            return 0;
+        // Check frame immunity first
+        if (LibRugStorage.hasDirtImmunity(aging.frameLevel)) {
+            return 0; // Silver+ frames never accumulate dirt
         }
 
+        // Calculate dirt level based on time since cleaning
         uint256 timeSinceCleaned = block.timestamp - aging.lastCleaned;
 
-        if (timeSinceCleaned >= rs.dirtLevel2Days) return 2;
-        if (timeSinceCleaned >= rs.dirtLevel1Days) return 1;
+        if (timeSinceCleaned >= rs.dirtLevel2Days * 1 days) return 2;
+        if (timeSinceCleaned >= rs.dirtLevel1Days * 1 days) return 1;
         return 0;
     }
 
-
-    function _hasDirtImmunity(uint256 tokenId) internal view returns (bool) {
-        LibRugStorage.AgingData storage aging = LibRugStorage.rugStorage().agingData[tokenId];
-
-        // Silver and higher frames have dirt immunity
-        string memory frameLevel = aging.currentFrameLevel;
-        return (
-            keccak256(abi.encodePacked(frameLevel)) == keccak256(abi.encodePacked("Silver")) ||
-            keccak256(abi.encodePacked(frameLevel)) == keccak256(abi.encodePacked("Gold")) ||
-            keccak256(abi.encodePacked(frameLevel)) == keccak256(abi.encodePacked("Platinum")) ||
-            keccak256(abi.encodePacked(frameLevel)) == keccak256(abi.encodePacked("Diamond"))
-        );
-    }
-
-    function _getTextureLevel(uint256 tokenId) internal view returns (uint8) {
+    function _getAgingLevel(uint256 tokenId) internal view returns (uint8) {
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
         LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
 
-        // Get frame level to determine texture aging speed
-        string memory frameLevel = _getFrameLevel(tokenId);
-        uint256 agingMultiplier = _getTextureAgingMultiplier(frameLevel);
+        uint256 timeSinceLevelStart = block.timestamp - aging.agingStartTime;
+        uint256 advanceInterval = rs.agingAdvanceDays * 1 days;
 
-        // Calculate current advancement level based on progress timer
-        uint256 timeSinceProgressStart = (block.timestamp - aging.textureProgressTimer) / agingMultiplier;
-        uint8 currentAdvancementLevel;
+        // Calculate how many levels we should have advanced
+        uint8 levelsAdvanced = uint8(timeSinceLevelStart / advanceInterval);
 
-        // Texture progression over time (longer timeline than dirt)
-        if (timeSinceProgressStart >= rs.textureLevel2Days * 10) currentAdvancementLevel = 10;
-        else if (timeSinceProgressStart >= rs.textureLevel2Days * 8) currentAdvancementLevel = 8;
-        else if (timeSinceProgressStart >= rs.textureLevel2Days * 6) currentAdvancementLevel = 6;
-        else if (timeSinceProgressStart >= rs.textureLevel2Days * 4) currentAdvancementLevel = 4;
-        else if (timeSinceProgressStart >= rs.textureLevel2Days * 2) currentAdvancementLevel = 2;
-        else if (timeSinceProgressStart >= rs.textureLevel1Days * 2) currentAdvancementLevel = 1;
-        else currentAdvancementLevel = 0;
-
-        // Texture level = MAX(current advancement, max texture level ever reached)
-        // This ensures texture wear is persistent once achieved
-        return currentAdvancementLevel > aging.maxTextureLevel ? currentAdvancementLevel : aging.maxTextureLevel;
+        // Cap at max level 10
+        uint8 calculatedLevel = aging.agingLevel + levelsAdvanced;
+        return calculatedLevel > 10 ? 10 : calculatedLevel;
     }
-
-    function _getFrameLevel(uint256 tokenId) internal view returns (string memory) {
-        LibRugStorage.AgingData storage aging = LibRugStorage.rugStorage().agingData[tokenId];
-        return aging.currentFrameLevel;
-    }
-
-    function _getTextureAgingMultiplier(string memory frameLevel) internal pure returns (uint256) {
-        if (keccak256(abi.encodePacked(frameLevel)) == keccak256(abi.encodePacked("Diamond"))) return 4; // 75% slower
-        if (keccak256(abi.encodePacked(frameLevel)) == keccak256(abi.encodePacked("Platinum"))) return 3; // 67% slower (2/3 speed)
-        if (keccak256(abi.encodePacked(frameLevel)) == keccak256(abi.encodePacked("Gold"))) return 2; // 50% slower
-        return 1; // Normal speed for Silver, Bronze, None
-    }
-
 
     function _isCleaningFree(uint256 tokenId) internal view returns (bool) {
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
@@ -349,11 +315,11 @@ contract RugMaintenanceFacet {
 
         // Free if within initial grace period from mint
         uint256 timeSinceMint = block.timestamp - rug.mintTime;
-        if (timeSinceMint <= rs.freeCleanDays) return true;
+        if (timeSinceMint <= rs.freeCleanDays * 1 days) return true;
 
         // Free if recently cleaned (within free window)
         uint256 timeSinceLastClean = block.timestamp - aging.lastCleaned;
-        if (timeSinceLastClean <= rs.freeCleanWindow) return true;
+        if (timeSinceLastClean <= rs.freeCleanWindow * 1 days) return true;
 
         return false;
     }

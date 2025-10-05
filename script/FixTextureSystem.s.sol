@@ -5,6 +5,7 @@ import "forge-std/Script.sol";
 import "forge-std/console.sol";
 import "../src/diamond/interfaces/IDiamondCut.sol";
 import "../src/facets/RugNFTFacet.sol";
+import "../src/facets/RugAgingFacet.sol";
 import "../src/facets/RugMaintenanceFacet.sol";
 import "../src/facets/RugLaunderingFacet.sol";
 
@@ -122,8 +123,8 @@ contract FixTextureSystem is Script {
         selectors[21] = RugNFTFacet.maxSupply.selector;           // d5abeb01
         selectors[22] = RugNFTFacet.walletMints.selector;         // f0293fd3
         selectors[23] = RugNFTFacet.isWalletException.selector;   // 2d2bf633
-        selectors[24] = RugNFTFacet.getFrameLevel.selector;       // ceffb063
-        selectors[25] = RugNFTFacet.updateFrameLevel.selector;    // 650def5b
+        selectors[24] = RugAgingFacet.getFrameLevel.selector;     // ceffb063
+        // selectors[25] = RugNFTFacet.updateFrameLevel.selector;    // 650def5b - REMOVED: frames update automatically
 
         return selectors;
     }

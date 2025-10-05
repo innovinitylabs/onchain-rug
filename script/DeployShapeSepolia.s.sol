@@ -302,14 +302,13 @@ contract DeployShapeSepolia is Script {
         RugAdminFacet(diamondAddr).updateWalletLimit(7);
 
         // Set aging thresholds for test environment (minutes instead of days for rapid testing)
-        // [dirt1, dirt2, texture1, texture2, freeCleanDays, freeCleanWindow] in minutes
-        uint256[6] memory agingThresholds = [
-            uint256(1 minutes),    // dirtLevel1Days: 1 minute to level 1
-            uint256(2 minutes),    // dirtLevel2Days: 2 minutes to level 2
-            uint256(6 minutes),    // textureLevel1Days: 6 minutes to start texture progression
-            uint256(12 minutes),   // textureLevel2Days: 12 minutes for texture scaling
-            uint256(1 minutes),    // freeCleanDays: 1 minute after mint for free cleaning
-            uint256(30 seconds)    // freeCleanWindow: 30 seconds after cleaning for free cleaning
+        // [dirtLevel1, dirtLevel2, agingAdvance, freeCleanDays, freeCleanWindow] in days
+        uint256[5] memory agingThresholds = [
+            uint256(1),    // dirtLevel1Days: 1 day to level 1
+            uint256(3),    // dirtLevel2Days: 3 days to level 2
+            uint256(7),    // agingAdvanceDays: 7 days between aging level advances
+            uint256(14),   // freeCleanDays: 14 days after mint for free cleaning
+            uint256(5)     // freeCleanWindow: 5 days after cleaning for free cleaning
         ];
         RugAdminFacet(diamondAddr).updateAgingThresholds(agingThresholds);
 
@@ -364,11 +363,11 @@ contract DeployShapeSepolia is Script {
         selectors[20] = RugNFTFacet.maxSupply.selector;           // d5abeb01
         selectors[21] = RugNFTFacet.walletMints.selector;         // f0293fd3
         selectors[22] = RugNFTFacet.isWalletException.selector;   // 2d2bf633
-        selectors[23] = RugNFTFacet.getFrameLevel.selector;       // ceffb063
-        selectors[24] = RugNFTFacet.updateFrameLevel.selector;    // 650def5b
-        selectors[25] = RugNFTFacet.getFrameStatus.selector;      // b3e50020
-        selectors[26] = RugNFTFacet.getMaintenanceHistory.selector; // 65b79c85
-        selectors[27] = RugNFTFacet.getSaleHistory.selector;      // e05d541d
+        selectors[23] = RugAgingFacet.getFrameLevel.selector;     // ceffb063
+        // selectors[24] = RugNFTFacet.updateFrameLevel.selector;    // 650def5b - REMOVED: frames update automatically
+        selectors[24] = RugNFTFacet.getFrameStatus.selector;      // b3e50020
+        selectors[25] = RugNFTFacet.getMaintenanceHistory.selector; // 65b79c85
+        selectors[26] = RugNFTFacet.getSaleHistory.selector;      // e05d541d
 
         return selectors;
     }
@@ -397,16 +396,16 @@ contract DeployShapeSepolia is Script {
     function _getRugAgingSelectors() internal pure returns (bytes4[] memory) {
         bytes4[] memory selectors = new bytes4[](11);
         selectors[0] = RugAgingFacet.getDirtLevel.selector;
-        selectors[1] = RugAgingFacet.getTextureLevel.selector;
+        selectors[1] = RugAgingFacet.getAgingLevel.selector;  // Changed from getTextureLevel
         selectors[2] = RugAgingFacet.getAgingState.selector;
-        selectors[3] = RugAgingFacet.canClean.selector;
-        selectors[4] = RugAgingFacet.canRestore.selector;
+        selectors[3] = RugAgingFacet.hasDirt.selector;        // Changed from canClean
+        selectors[4] = RugAgingFacet.getAgingLevel.selector;  // Changed from canRestore (simplified)
         selectors[5] = RugAgingFacet.isCleaningFree.selector;
         selectors[6] = RugAgingFacet.timeUntilNextDirt.selector;
-        selectors[7] = RugAgingFacet.timeUntilNextTexture.selector;
-        selectors[8] = RugAgingFacet.getAgingStats.selector;
-        selectors[9] = RugAgingFacet.getProgressionInfo.selector;
-        selectors[10] = RugAgingFacet.isWellMaintained.selector;
+        selectors[7] = RugAgingFacet.timeUntilNextAging.selector; // Changed from timeUntilNextTexture
+        selectors[8] = RugAgingFacet.getAgingState.selector;  // Changed from getAgingStats (simplified)
+        selectors[9] = RugAgingFacet.getAgingState.selector;  // Changed from getProgressionInfo (simplified)
+        selectors[10] = RugAgingFacet.getMaintenanceScore.selector; // Changed from isWellMaintained (simplified)
         return selectors;
     }
 

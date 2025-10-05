@@ -6,12 +6,14 @@ import {RugNFTFacet} from "./RugNFTFacet.sol";
 
 /**
  * @title RugAgingFacet
- * @notice Aging mechanics facet for OnchainRugs dirt and texture calculations
- * @dev Handles time-based aging progression and state calculations
+ * @notice FRESH REDESIGN: Simplified aging mechanics for OnchainRugs
+ * @dev Handles dirt (3 levels), aging (11 levels: 0-10), and frames (5 levels)
  */
 contract RugAgingFacet {
+    // ===== DIRT SYSTEM (3 LEVELS: 0=Clean, 1=Dirty, 2=Very Dirty) =====
+
     /**
-     * @notice Calculate current dirt level for a rug
+     * @notice Get current dirt level for a rug
      * @param tokenId Token ID to check
      * @return dirtLevel Current dirt level (0-2)
      */
@@ -19,91 +21,131 @@ contract RugAgingFacet {
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
         LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
 
+        // Check frame immunity first
+        if (LibRugStorage.hasDirtImmunity(aging.frameLevel)) {
+            return 0; // Silver+ frames never accumulate dirt
+        }
+
+        // Calculate dirt level based on time since cleaning
         uint256 timeSinceCleaned = block.timestamp - aging.lastCleaned;
 
-        if (timeSinceCleaned >= rs.dirtLevel2Days) return 2;
-        if (timeSinceCleaned >= rs.dirtLevel1Days) return 1;
+        if (timeSinceCleaned >= rs.dirtLevel2Days * 1 days) return 2;
+        if (timeSinceCleaned >= rs.dirtLevel1Days * 1 days) return 1;
         return 0;
     }
 
     /**
-     * @notice Get texture level for a rug (based on aging time)
+     * @notice Check if a rug shows any dirt
      * @param tokenId Token ID to check
-     * @return textureLevel Texture level based on time since last cleaning (0-10)
+     * @return hasDirt True if rug shows dirt overlay (level 1+)
      */
-    function getTextureLevel(uint256 tokenId) external view returns (uint8) {
-        return _getTextureLevel(tokenId);
+    function hasDirt(uint256 tokenId) external view returns (bool) {
+        return this.getDirtLevel(tokenId) > 0;
     }
+
+    // ===== AGING SYSTEM (11 LEVELS: 0-10) =====
+
+    /**
+     * @notice Get current aging level for a rug
+     * @param tokenId Token ID to check
+     * @return agingLevel Current aging level (0-10)
+     */
+    function getAgingLevel(uint256 tokenId) external view returns (uint8) {
+        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+        LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
+
+        uint256 timeSinceLevelStart = block.timestamp - aging.agingStartTime;
+        uint256 advanceInterval = rs.agingAdvanceDays * 1 days;
+
+        // Calculate how many levels we should have advanced
+        uint8 levelsAdvanced = uint8(timeSinceLevelStart / advanceInterval);
+
+        // Cap at max level 10
+        uint8 calculatedLevel = aging.agingLevel + levelsAdvanced;
+        return calculatedLevel > 10 ? 10 : calculatedLevel;
+    }
+
+    // ===== FRAME SYSTEM (5 LEVELS: 0-4) =====
+
+    /**
+     * @notice Get current frame level for a rug
+     * @param tokenId Token ID to check
+     * @return frameLevel Current frame level (0-4)
+     */
+    function getFrameLevel(uint256 tokenId) external view returns (uint8) {
+        LibRugStorage.AgingData storage aging = LibRugStorage.rugStorage().agingData[tokenId];
+        return aging.frameLevel;
+    }
+
+    /**
+     * @notice Get frame name for a rug
+     * @param tokenId Token ID to check
+     * @return frameName String name of current frame
+     */
+    function getFrameName(uint256 tokenId) external view returns (string memory) {
+        uint8 frameLevel = this.getFrameLevel(tokenId);
+        return LibRugStorage.getFrameName(frameLevel);
+    }
+
+    /**
+     * @notice Get maintenance score for a rug
+     * @param tokenId Token ID to check
+     * @return score Total maintenance score
+     */
+    function getMaintenanceScore(uint256 tokenId) external view returns (uint256) {
+        LibRugStorage.AgingData storage aging = LibRugStorage.rugStorage().agingData[tokenId];
+        return LibRugStorage.calculateMaintenanceScore(aging);
+    }
+
+    // ===== COMPREHENSIVE STATE QUERIES =====
 
     /**
      * @notice Get complete aging state for a rug
      * @param tokenId Token ID to check
-     * @return dirtLevel Current dirt level based on aging (0-2)
-     * @return textureLevel Current texture level based on aging (0-10)
-     * @return showDirt Whether dirt should be displayed
-     * @return showTexture Whether texture should be displayed
-     * @return timeSinceCleaned Seconds since last cleaning
-     * @return timeSinceMint Seconds since minting
+     * @return dirtLevel Current dirt level (0-2)
+     * @return agingLevel Current aging level (0-9)
+     * @return frameLevel Current frame level (0-4)
+     * @return maintenanceScore Total maintenance score
+     * @return lastCleaned Timestamp of last cleaning
+     * @return agingStartTime When current aging level started
      */
     function getAgingState(uint256 tokenId) external view returns (
         uint8 dirtLevel,
-        uint8 textureLevel,
-        bool showDirt,
-        bool showTexture,
-        uint256 timeSinceCleaned,
-        uint256 timeSinceMint
+        uint8 agingLevel,
+        uint8 frameLevel,
+        uint256 maintenanceScore,
+        uint256 lastCleaned,
+        uint256 agingStartTime
     ) {
-        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
-        LibRugStorage.RugData storage rug = rs.rugs[tokenId];
-        LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
+        LibRugStorage.AgingData storage aging = LibRugStorage.rugStorage().agingData[tokenId];
 
-        timeSinceCleaned = block.timestamp - aging.lastCleaned;
-        timeSinceMint = block.timestamp - rug.mintTime;
-
-        dirtLevel = _getDirtLevel(tokenId);
-        textureLevel = _getTextureLevel(tokenId);
-
-        showDirt = dirtLevel > 0;
-        showTexture = textureLevel > 0;
+        dirtLevel = this.getDirtLevel(tokenId);
+        agingLevel = this.getAgingLevel(tokenId);
+        frameLevel = aging.frameLevel;
+        maintenanceScore = LibRugStorage.calculateMaintenanceScore(aging);
+        lastCleaned = aging.lastCleaned;
+        agingStartTime = aging.agingStartTime;
     }
 
-    /**
-     * @notice Check if rug can be cleaned (has dirt or needs maintenance)
-     * @param tokenId Token ID to check
-     * @return canClean True if cleaning is needed or beneficial
-     */
-    function canClean(uint256 tokenId) external view returns (bool) {
-        uint8 dirtLevel = _getDirtLevel(tokenId);
-        return dirtLevel > 0;
-    }
+    // ===== UTILITY FUNCTIONS =====
 
     /**
-     * @notice Check if rug can be restored (has texture aging)
+     * @notice Check if cleaning is free for a rug
      * @param tokenId Token ID to check
-     * @return canRestore True if texture restoration is available
-     */
-    function canRestore(uint256 tokenId) external view returns (bool) {
-        uint8 textureLevel = _getTextureLevel(tokenId);
-        return textureLevel > 0;
-    }
-
-    /**
-     * @notice Check if rug qualifies for free cleaning
-     * @param tokenId Token ID to check
-     * @return isFree True if cleaning is free
+     * @return isFree True if cleaning costs nothing
      */
     function isCleaningFree(uint256 tokenId) external view returns (bool) {
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
         LibRugStorage.RugData storage rug = rs.rugs[tokenId];
         LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
 
-        // Free if within initial period from mint
+        // Free if within initial grace period from mint
         uint256 timeSinceMint = block.timestamp - rug.mintTime;
-        if (timeSinceMint <= rs.freeCleanDays) return true;
+        if (timeSinceMint <= rs.freeCleanDays * 1 days) return true;
 
-        // Free if recently cleaned
+        // Free if recently cleaned (within free window)
         uint256 timeSinceLastClean = block.timestamp - aging.lastCleaned;
-        if (timeSinceLastClean <= rs.freeCleanWindow) return true;
+        if (timeSinceLastClean <= rs.freeCleanWindow * 1 days) return true;
 
         return false;
     }
@@ -111,105 +153,51 @@ contract RugAgingFacet {
     /**
      * @notice Get time until next dirt level increase
      * @param tokenId Token ID to check
-     * @return secondsUntilDirt Time in seconds until dirt level increases
+     * @return secondsUntilNextDirt Time in seconds until dirt level increases (0 if maxed or immune)
      */
     function timeUntilNextDirt(uint256 tokenId) external view returns (uint256) {
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
         LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
 
-        uint8 currentDirt = _getDirtLevel(tokenId);
+        // Check immunity
+        if (LibRugStorage.hasDirtImmunity(aging.frameLevel)) {
+            return 0; // Never becomes dirty
+        }
+
+        uint8 currentDirt = this.getDirtLevel(tokenId);
         uint256 timeSinceCleaned = block.timestamp - aging.lastCleaned;
 
-        if (currentDirt == 0 && timeSinceCleaned < rs.dirtLevel1Days) {
-            return rs.dirtLevel1Days - timeSinceCleaned;
+        // Find time to next level
+        if (currentDirt == 0 && timeSinceCleaned < rs.dirtLevel1Days * 1 days) {
+            return (rs.dirtLevel1Days * 1 days) - timeSinceCleaned;
         }
-        if (currentDirt == 1 && timeSinceCleaned < rs.dirtLevel2Days) {
-            return rs.dirtLevel2Days - timeSinceCleaned;
+        if (currentDirt == 1 && timeSinceCleaned < rs.dirtLevel2Days * 1 days) {
+            return (rs.dirtLevel2Days * 1 days) - timeSinceCleaned;
         }
 
-        return 0; // Already at max dirt
+        return 0; // Already at max dirt level
     }
 
     /**
-     * @notice Get time until next texture level increase
+     * @notice Get time until next aging level increase
      * @param tokenId Token ID to check
-     * @return secondsUntilTexture Time in seconds until texture level increases
+     * @return secondsUntilAging Time in seconds until aging level increases (0 if maxed)
      */
-    function timeUntilNextTexture(uint256 tokenId) external view returns (uint256) {
-        return _timeUntilNextTexture(tokenId);
-    }
-
-
-    /**
-     * @notice Get aging statistics for a rug
-     * @param tokenId Token ID to check
-     * @return mintTime When the rug was minted
-     * @return lastCleaned When the rug was last cleaned
-     * @return daysOld How many days since minting
-     * @return daysSinceCleaned How many days since last cleaning
-     */
-    function getAgingStats(uint256 tokenId) external view returns (
-        uint256 mintTime,
-        uint256 lastCleaned,
-        uint256 daysOld,
-        uint256 daysSinceCleaned
-    ) {
-        LibRugStorage.RugData storage rug = LibRugStorage.rugStorage().rugs[tokenId];
-        LibRugStorage.AgingData storage aging = LibRugStorage.rugStorage().agingData[tokenId];
-
-        mintTime = rug.mintTime;
-        lastCleaned = aging.lastCleaned;
-
-        daysOld = (block.timestamp - mintTime) / 1 days;
-        daysSinceCleaned = (block.timestamp - lastCleaned) / 1 days;
-    }
-
-    /**
-     * @notice Check if rug is considered "well-maintained"
-     * @param tokenId Token ID to check
-     * @return isWellMaintained True if recently cleaned and not aged
-     */
-    function isWellMaintained(uint256 tokenId) external view returns (bool) {
+    function timeUntilNextAging(uint256 tokenId) external view returns (uint256) {
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
         LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
 
-        uint256 timeSinceCleaned = block.timestamp - aging.lastCleaned;
+        uint8 currentLevel = this.getAgingLevel(tokenId);
+        if (currentLevel >= 10) return 0; // Max level reached
 
-        // Well-maintained if cleaned within free window and no aging
-        return timeSinceCleaned <= rs.freeCleanWindow &&
-               _getDirtLevel(tokenId) == 0 &&
-               _getTextureLevel(tokenId) <= 1;
-    }
+        uint256 timeSinceLevelStart = block.timestamp - aging.agingStartTime;
+        uint256 advanceInterval = rs.agingAdvanceDays * 1 days;
 
-    /**
-     * @notice Get aging progression info for UI display
-     * @param tokenId Token ID to check
-     * @return currentDirt Current dirt level
-     * @return maxDirt Maximum possible dirt level
-     * @return currentTexture Current texture level
-     * @return maxTexture Maximum possible texture level
-     * @return secondsToNextAging Seconds until next aging event
-     */
-    function getProgressionInfo(uint256 tokenId) external view returns (
-        uint8 currentDirt,
-        uint8 maxDirt,
-        uint8 currentTexture,
-        uint8 maxTexture,
-        uint256 secondsToNextAging
-    ) {
-        currentDirt = _getDirtLevel(tokenId);
-        maxDirt = 2; // Max dirt level
+        // Time until next level
+        uint256 timeForNextLevel = (currentLevel - aging.agingLevel + 1) * advanceInterval;
+        uint256 timeRemaining = timeForNextLevel - timeSinceLevelStart;
 
-        currentTexture = _getTextureLevel(tokenId);
-        maxTexture = 10; // Max texture level
-
-        // Find time to next aging event
-        uint256 toDirt = _timeUntilNextDirt(tokenId);
-        uint256 toTexture = _timeUntilNextTexture(tokenId);
-
-        secondsToNextAging = (toDirt > 0 && toTexture > 0) ?
-            (toDirt < toTexture ? toDirt : toTexture) :
-            (toDirt > 0 ? toDirt : toTexture);
+        return timeRemaining;
     }
 
     // Internal helper functions
@@ -234,41 +222,24 @@ contract RugAgingFacet {
 
     function _getFrameLevel(uint256 tokenId) internal view returns (string memory) {
         LibRugStorage.AgingData storage aging = LibRugStorage.rugStorage().agingData[tokenId];
-        return aging.currentFrameLevel;
+        return LibRugStorage.getFrameName(aging.frameLevel);
     }
 
-    function _getTextureLevel(uint256 tokenId) internal view returns (uint8) {
+    function _getAgingLevel(uint256 tokenId) internal view returns (uint8) {
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
         LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
 
-        // Get frame level to determine texture aging speed
-        string memory frameLevel = _getFrameLevel(tokenId);
-        uint256 agingMultiplier = _getTextureAgingMultiplier(frameLevel);
+        uint256 timeSinceLevelStart = block.timestamp - aging.agingStartTime;
+        uint256 advanceInterval = rs.agingAdvanceDays * 1 days;
 
-        // Calculate current advancement level based on progress timer
-        uint256 timeSinceProgressStart = (block.timestamp - aging.textureProgressTimer) / agingMultiplier;
-        uint8 currentAdvancementLevel;
+        // Calculate how many levels we should have advanced
+        uint8 levelsAdvanced = uint8(timeSinceLevelStart / advanceInterval);
 
-        // Texture progression over time (longer timeline than dirt)
-        if (timeSinceProgressStart >= rs.textureLevel2Days * 10) currentAdvancementLevel = 10;
-        else if (timeSinceProgressStart >= rs.textureLevel2Days * 8) currentAdvancementLevel = 8;
-        else if (timeSinceProgressStart >= rs.textureLevel2Days * 6) currentAdvancementLevel = 6;
-        else if (timeSinceProgressStart >= rs.textureLevel2Days * 4) currentAdvancementLevel = 4;
-        else if (timeSinceProgressStart >= rs.textureLevel2Days * 2) currentAdvancementLevel = 2;
-        else if (timeSinceProgressStart >= rs.textureLevel1Days * 2) currentAdvancementLevel = 1;
-        else currentAdvancementLevel = 0;
-
-        // Texture level = MAX(current advancement, max texture level ever reached)
-        // This ensures texture wear is persistent once achieved
-        return currentAdvancementLevel > aging.maxTextureLevel ? currentAdvancementLevel : aging.maxTextureLevel;
+        // Cap at max level 10
+        uint8 calculatedLevel = aging.agingLevel + levelsAdvanced;
+        return calculatedLevel > 10 ? 10 : calculatedLevel;
     }
 
-    function _getTextureAgingMultiplier(string memory frameLevel) internal pure returns (uint256) {
-        if (keccak256(abi.encodePacked(frameLevel)) == keccak256(abi.encodePacked("Diamond"))) return 4; // 75% slower
-        if (keccak256(abi.encodePacked(frameLevel)) == keccak256(abi.encodePacked("Platinum"))) return 3; // 67% slower (2/3 speed)
-        if (keccak256(abi.encodePacked(frameLevel)) == keccak256(abi.encodePacked("Gold"))) return 2; // 50% slower
-        return 1; // Normal speed for Silver, Bronze, None
-    }
 
     function _timeUntilNextDirt(uint256 tokenId) internal view returns (uint256) {
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
@@ -287,35 +258,21 @@ contract RugAgingFacet {
         return 0; // Already at max dirt
     }
 
-    function _timeUntilNextTexture(uint256 tokenId) internal view returns (uint256) {
+    function _timeUntilNextAging(uint256 tokenId) internal view returns (uint256) {
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
         LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
 
-        uint8 currentTexture = _getTextureLevel(tokenId);
-        if (currentTexture >= 10) return 0; // Max texture reached
+        uint8 currentLevel = _getAgingLevel(tokenId);
+        if (currentLevel >= 10) return 0; // Max level reached
 
-        // Get frame level to determine texture aging speed
-        string memory frameLevel = _getFrameLevel(tokenId);
-        uint256 agingMultiplier = _getTextureAgingMultiplier(frameLevel);
+        uint256 timeSinceLevelStart = block.timestamp - aging.agingStartTime;
+        uint256 advanceInterval = rs.agingAdvanceDays * 1 days;
 
-        // Calculate current advancement level based on progress timer
-        uint256 timeSinceProgressStart = (block.timestamp - aging.textureProgressTimer) / agingMultiplier;
+        // Time until next level
+        uint256 timeForNextLevel = (currentLevel - aging.agingLevel + 1) * advanceInterval;
+        uint256 timeRemaining = timeForNextLevel - timeSinceLevelStart;
 
-        // Find next texture level threshold
-        uint256 nextThreshold;
-        if (currentTexture < 1) nextThreshold = rs.textureLevel1Days * 2;
-        else if (currentTexture < 2) nextThreshold = rs.textureLevel2Days * 2;
-        else if (currentTexture < 4) nextThreshold = rs.textureLevel2Days * 4;
-        else if (currentTexture < 6) nextThreshold = rs.textureLevel2Days * 6;
-        else if (currentTexture < 8) nextThreshold = rs.textureLevel2Days * 8;
-        else nextThreshold = rs.textureLevel2Days * 10; // Max level
-
-        // Time remaining until next level
-        if (timeSinceProgressStart < nextThreshold) {
-            return ((nextThreshold - timeSinceProgressStart) * agingMultiplier);
-        }
-
-        return 0;
+        return timeRemaining;
     }
 
     function _exists(uint256 tokenId) internal view returns (bool) {

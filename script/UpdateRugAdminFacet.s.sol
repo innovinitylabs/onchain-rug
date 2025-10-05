@@ -42,14 +42,13 @@ contract UpdateRugAdminFacet is Script {
         IDiamondCut(diamondAddr).diamondCut(adminCut, address(0), "");
         console.log("RugAdminFacet updated successfully");
 
-        // Set correct aging thresholds (in seconds, not multiplied by minutes)
-        uint256[6] memory agingThresholds = [
-            uint256(60),     // dirtLevel1Days: 1 minute (60 seconds)
-            uint256(120),    // dirtLevel2Days: 2 minutes (120 seconds)
-            uint256(360),    // textureLevel1Days: 6 minutes (360 seconds)
-            uint256(720),    // textureLevel2Days: 12 minutes (720 seconds)
-            uint256(60),     // freeCleanDays: 1 minute after mint
-            uint256(30)      // freeCleanWindow: 30 seconds after cleaning
+        // Set correct aging thresholds (in days)
+        uint256[5] memory agingThresholds = [
+            uint256(1),      // dirtLevel1Days: 1 day
+            uint256(3),      // dirtLevel2Days: 3 days
+            uint256(7),      // agingAdvanceDays: 7 days between levels
+            uint256(14),     // freeCleanDays: 14 days after mint
+            uint256(5)       // freeCleanWindow: 5 days after cleaning
         ];
 
         RugAdminFacet(diamondAddr).updateAgingThresholds(agingThresholds);
