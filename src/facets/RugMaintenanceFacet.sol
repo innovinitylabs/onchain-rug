@@ -89,8 +89,9 @@ contract RugMaintenanceFacet {
         // Record previous state
         uint8 previousAging = currentAging;
 
-        // Clean dirt and reduce aging level to current calculated - 1
+        // Clean dirt and reduce aging level by 1 from current calculated level
         aging.lastCleaned = block.timestamp;
+        // Reduce visible aging by 1 level (can't go below 0)
         aging.agingLevel = currentAging > 0 ? currentAging - 1 : 0;
 
         // Earn maintenance points
@@ -283,22 +284,26 @@ contract RugMaintenanceFacet {
         // Calculate dirt level based on time since cleaning with frame speed adjustments
         uint256 timeSinceCleaned = block.timestamp - aging.lastCleaned;
 
-        // Apply frame-based speed multipliers (higher frames = slower dirt accumulation)
-        uint256 speedMultiplier;
+        // Pre-calculate adjusted thresholds to reduce computation
+        uint256 level1Threshold;
+        uint256 level2Threshold;
+
         if (aging.frameLevel == 2) {
-            speedMultiplier = 200; // Silver: 2x slower
+            // Silver: 2x slower
+            level1Threshold = rs.dirtLevel1Days * 2;
+            level2Threshold = rs.dirtLevel2Days * 2;
         } else if (aging.frameLevel == 1) {
-            speedMultiplier = 150; // Bronze: 1.5x slower
+            // Bronze: 1.5x slower (multiply by 3/2)
+            level1Threshold = (rs.dirtLevel1Days * 3) / 2;
+            level2Threshold = (rs.dirtLevel2Days * 3) / 2;
         } else {
-            speedMultiplier = 100; // None: normal speed
+            // None: normal speed
+            level1Threshold = rs.dirtLevel1Days;
+            level2Threshold = rs.dirtLevel2Days;
         }
 
-        // Adjust thresholds based on frame level
-        uint256 adjustedLevel1Days = (rs.dirtLevel1Days * speedMultiplier) / 100;
-        uint256 adjustedLevel2Days = (rs.dirtLevel2Days * speedMultiplier) / 100;
-
-        if (timeSinceCleaned >= adjustedLevel2Days) return 2;
-        if (timeSinceCleaned >= adjustedLevel1Days) return 1;
+        if (timeSinceCleaned >= level2Threshold) return 2;
+        if (timeSinceCleaned >= level1Threshold) return 1;
         return 0;
     }
 
