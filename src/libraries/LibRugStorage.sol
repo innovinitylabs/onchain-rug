@@ -209,10 +209,10 @@ library LibRugStorage {
      * @return score Total maintenance score
      */
     function calculateMaintenanceScore(AgingData storage aging) internal view returns (uint256) {
-        return (aging.cleaningCount * 2) +
-               (aging.restorationCount * 5) +
-               (aging.masterRestorationCount * 10) +
-               (aging.launderingCount * 10);
+        return (aging.cleaningCount * 1) +        // 1 point per clean
+               (aging.restorationCount * 3) +      // 3 points per restore
+               (aging.masterRestorationCount * 8) + // 8 points per master restore
+               (aging.launderingCount * 15);       // 15 points per laundering
     }
 
     /**

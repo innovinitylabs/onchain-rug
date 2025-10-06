@@ -322,6 +322,15 @@ contract DeployShapeSepolia is Script {
         ];
         RugAdminFacet(diamondAddr).updateServicePricing(servicePrices);
 
+        // Set frame progression thresholds (higher = harder to achieve)
+        uint256[4] memory frameThresholds = [
+            uint256(50),   // bronzeThreshold: 50 points
+            uint256(150),  // silverThreshold: 150 points
+            uint256(300),  // goldThreshold: 300 points
+            uint256(600)   // diamondThreshold: 600 points
+        ];
+        RugAdminFacet(diamondAddr).updateFrameThresholds(frameThresholds);
+
         console.log("   System initialized with:");
         console.log("   - Base price: 0.00003 ETH");
         console.log("   - Collection cap: 10,000");
@@ -329,6 +338,7 @@ contract DeployShapeSepolia is Script {
         console.log("   - Aging thresholds (TEST VALUES): 1min/2min dirt, 3min aging progression");
         console.log("   - Free cleaning: 5min after mint, 2min after cleaning");
         console.log("   - Service costs: 0.00001 ETH each");
+        console.log("   - Frame thresholds: Bronze(50), Silver(150), Gold(300), Diamond(600)");
         console.log("   - Frame immunity: Bronze+ slower aging, Silver+ dirt immunity");
         console.log("   - Fresh mechanics: 3 dirt levels, 11 aging levels, 5 frames");
         console.log("   - Scripty contracts configured");
@@ -382,7 +392,7 @@ contract DeployShapeSepolia is Script {
     }
 
     function _getRugAdminSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](16);
+        bytes4[] memory selectors = new bytes4[](17);
         selectors[0] = RugAdminFacet.updateMintPricing.selector;
         selectors[1] = RugAdminFacet.updateCollectionCap.selector;
         selectors[2] = RugAdminFacet.updateWalletLimit.selector;
@@ -398,7 +408,8 @@ contract DeployShapeSepolia is Script {
         selectors[12] = RugAdminFacet.getExceptionList.selector;
         selectors[13] = RugAdminFacet.getServicePricing.selector;
         selectors[14] = RugAdminFacet.updateServicePricing.selector;
-        selectors[15] = RugAdminFacet.isConfigured.selector;
+        selectors[15] = RugAdminFacet.updateFrameThresholds.selector;
+        selectors[16] = RugAdminFacet.isConfigured.selector;
         return selectors;
     }
 

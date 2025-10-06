@@ -19,6 +19,7 @@ contract RugAdminFacet {
     event ExceptionRemoved(address indexed account);
     event LaunderingToggled(bool enabled);
     event LaunchStatusChanged(bool launched);
+    event FrameThresholdsUpdated();
 
     /**
      * @notice Update collection cap (owner only)
@@ -129,6 +130,23 @@ contract RugAdminFacet {
         rs.freeCleanWindow = thresholds[4];     // Days after cleaning for free cleaning
 
         emit AgingThresholdsUpdated();
+    }
+
+    /**
+     * @notice Update frame progression thresholds (owner only)
+     * @param thresholds Array of 4 thresholds: [bronze, silver, gold, diamond]
+     */
+    function updateFrameThresholds(uint256[4] calldata thresholds) external {
+        LibDiamond.enforceIsContractOwner();
+
+        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+
+        rs.bronzeThreshold = thresholds[0];
+        rs.silverThreshold = thresholds[1];
+        rs.goldThreshold = thresholds[2];
+        rs.diamondThreshold = thresholds[3];
+
+        emit FrameThresholdsUpdated();
     }
 
     /**
