@@ -39,9 +39,9 @@ contract RugMaintenanceFacet {
         // Validate payment
         require(msg.value >= cost, "Insufficient payment");
 
-        // Refund excess payment
+        // Refund excess payment with sufficient gas
         if (msg.value > cost) {
-            (bool success,) = payable(msg.sender).call{value: msg.value - cost}("");
+            (bool success,) = payable(msg.sender).call{value: msg.value - cost, gas: 5000}("");
             require(success, "Refund transfer failed");
         }
 
