@@ -152,6 +152,82 @@ export const onchainRugsABI = [
     stateMutability: 'payable',
     type: 'function',
   },
+  // Aging and maintenance view functions
+  {
+    inputs: [{ name: 'tokenId', type: 'uint256' }],
+    name: 'getDirtLevel',
+    outputs: [{ name: '', type: 'uint8' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [{ name: 'tokenId', type: 'uint256' }],
+    name: 'getAgingLevel',
+    outputs: [{ name: '', type: 'uint8' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [{ name: 'tokenId', type: 'uint256' }],
+    name: 'getFrameLevel',
+    outputs: [{ name: '', type: 'uint8' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [{ name: 'tokenId', type: 'uint256' }],
+    name: 'getFrameName',
+    outputs: [{ name: '', type: 'string' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [{ name: 'tokenId', type: 'uint256' }],
+    name: 'getMaintenanceScore',
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [{ name: 'tokenId', type: 'uint256' }],
+    name: 'getAgingState',
+    outputs: [
+      { name: 'lastCleaned', type: 'uint256' },
+      { name: 'dirtLevel', type: 'uint8' },
+      { name: 'agingLevel', type: 'uint8' },
+      { name: 'frameLevel', type: 'uint8' },
+      { name: 'frameName', type: 'string' },
+      { name: 'maintenanceScore', type: 'uint256' },
+      { name: 'hasDirt', type: 'bool' }
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'getServicePricing',
+    outputs: [
+      { name: 'cleaningCost', type: 'uint256' },
+      { name: 'restorationCost', type: 'uint256' },
+      { name: 'masterRestorationCost', type: 'uint256' },
+      { name: 'launderingThreshold', type: 'uint256' }
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'getAgingThresholds',
+    outputs: [
+      { name: 'dirtLevel1Days', type: 'uint256' },
+      { name: 'dirtLevel2Days', type: 'uint256' },
+      { name: 'agingAdvanceDays', type: 'uint256' },
+      { name: 'freeCleanDays', type: 'uint256' },
+      { name: 'freeCleanWindow', type: 'uint256' }
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
   // Events for listening to new mints
   {
     anonymous: false,

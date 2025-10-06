@@ -6,7 +6,7 @@
 import React, { useState, useCallback, useMemo } from 'react'
 import { useContractInteraction } from './use-contract-interaction'
 import { useTokenURI, TokenURIData } from './use-token-uri'
-import { getDirtDescription, getTextureDescription } from '@/utils/parsing-utils'
+import { getDirtDescription, getAgingDescription } from '@/utils/parsing-utils'
 import { handleContractError, logContractError } from '@/utils/error-utils'
 
 export interface RugData extends TokenURIData {
@@ -62,14 +62,14 @@ export function useRugData(tokenId: number | null): UseRugDataResult {
       return null
     }
 
-    const { dirtLevel, textureLevel } = tokenURI.data.aging
+    const { dirtLevel, agingLevel } = tokenURI.data.aging
 
     return {
       ...tokenURI.data,
       tokenId: tokenId || 0,
       owner,
       dirtDescription: getDirtDescription(dirtLevel),
-      textureDescription: getTextureDescription(textureLevel),
+      textureDescription: getAgingDescription(agingLevel),
       isClean: dirtLevel === 0,
       needsCleaning: dirtLevel > 0,
       cleaningCost: dirtLevel > 0 ? 0.01 : 0, // This would come from config

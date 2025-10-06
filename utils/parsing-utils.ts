@@ -21,21 +21,21 @@ export function parseBase64Json(tokenURI: string): any {
 // Extract aging data from tokenURI attributes
 export function parseAgingDataFromAttributes(attributes: any[]): {
   dirtLevel: number
-  textureLevel: number
+  agingLevel: number
   lastCleaned: bigint | null
   mintTime: number
 } {
   if (!attributes || !Array.isArray(attributes)) {
     return {
       dirtLevel: 0,
-      textureLevel: 0,
+      agingLevel: 0,
       lastCleaned: null,
       mintTime: 0,
     }
   }
 
   let dirtLevel = 0
-  let textureLevel = 0
+  let agingLevel = 0
   let lastCleaned: bigint | null = null
   let mintTime = 0
 
@@ -46,8 +46,8 @@ export function parseAgingDataFromAttributes(attributes: any[]): {
       case 'Dirt Level':
         dirtLevel = parseInt(attr.value) || 0
         break
-      case 'Texture Level':
-        textureLevel = parseInt(attr.value) || 0
+      case 'Aging Level':
+        agingLevel = parseInt(attr.value) || 0
         break
       case 'Last Cleaned':
         lastCleaned = attr.value ? BigInt(attr.value) : null
@@ -60,7 +60,7 @@ export function parseAgingDataFromAttributes(attributes: any[]): {
 
   return {
     dirtLevel,
-    textureLevel,
+    agingLevel,
     lastCleaned,
     mintTime,
   }
@@ -148,15 +148,31 @@ export function getDirtDescription(dirtLevel: number): string {
   }
 }
 
-// Get texture description based on level
-export function getTextureDescription(textureLevel: number): string {
-  switch (textureLevel) {
+// Get aging description based on level
+export function getAgingDescription(agingLevel: number): string {
+  switch (agingLevel) {
     case 0:
-      return 'Smooth'
+      return 'Brand New'
     case 1:
-      return 'Moderate Wear'
+      return 'Slightly Aged'
     case 2:
-      return 'Heavy Wear'
+      return 'Moderately Aged'
+    case 3:
+      return 'Well Aged'
+    case 4:
+      return 'Significantly Aged'
+    case 5:
+      return 'Very Aged'
+    case 6:
+      return 'Extremely Aged'
+    case 7:
+      return 'Heavily Aged'
+    case 8:
+      return 'Severely Aged'
+    case 9:
+      return 'Critically Aged'
+    case 10:
+      return 'Maximum Age'
     default:
       return 'Unknown'
   }

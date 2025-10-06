@@ -205,18 +205,21 @@ contract RugLaunderingFacet {
 
         // Reset all aging (laundering resets everything to level 0)
         aging.lastCleaned = block.timestamp;
-        aging.lastTextureProgression = uint32(block.timestamp);
-        aging.currentTextureLevel = 0; // Reset to pristine
+        aging.agingLevel = 0;
 
         // Track laundering statistics
         aging.launderingCount++;
         aging.lastLaundered = block.timestamp;
-        aging.maintenanceScore = (aging.cleaningCount * 2) + (aging.restorationCount * 5) + (aging.masterRestorationCount * 10) + (aging.launderingCount * 10);
 
         // Update frame level based on new score
-        RugNFTFacet(address(this)).updateFrameLevel(tokenId);
+        uint256 newScore = LibRugStorage.calculateMaintenanceScore(aging);
+        uint8 newFrameLevel = LibRugStorage.getFrameLevelFromScore(newScore);
+        if (newFrameLevel != aging.frameLevel) {
+            aging.frameLevel = newFrameLevel;
+            aging.frameAchievedTime = block.timestamp;
+        }
 
-        (bool shouldTrigger, string memory reason) = _checkLaunderingConditions(tokenId, salePrice);
+        (, string memory reason) = _checkLaunderingConditions(tokenId, salePrice);
 
         emit RugLaundered(tokenId, buyer, salePrice, reason);
     }

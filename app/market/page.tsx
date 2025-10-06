@@ -51,7 +51,7 @@ interface AgingData {
   lastSalePrice: bigint
   recentSalePrices: readonly [bigint, bigint, bigint]
   dirtLevel: number
-  textureLevel: number
+  agingLevel: number
   launderingCount: bigint
   lastLaundered: bigint
   cleaningCount: bigint
@@ -78,7 +78,7 @@ function parseAgingDataFromAttributes(attributes: any[]): AgingData {
     lastSalePrice: BigInt(getAttributeValue('Last Sale Price') || 0),
     recentSalePrices: [BigInt(0), BigInt(0), BigInt(0)], // Not in tokenURI
     dirtLevel: parseInt(getAttributeValue('Dirt Level') || '0'),
-    textureLevel: parseInt(getAttributeValue('Texture Level') || '0'),
+    agingLevel: parseInt(getAttributeValue('Aging Level') || '0'),
     launderingCount: BigInt(getAttributeValue('Laundering Count') || '0'),
     lastLaundered: BigInt(0), // Not in tokenURI
     cleaningCount: BigInt(getAttributeValue('Cleaning Count') || '0'),
@@ -254,15 +254,6 @@ export default function MarketPage() {
     return 0
   }
 
-  // Get texture level
-  const getTextureLevel = (lastTextureReset: bigint) => {
-    const now = Math.floor(Date.now() / 1000)
-    const timeSinceReset = now - Number(lastTextureReset)
-
-    if (timeSinceReset >= config.aging.textureAging.intense) return 2
-    if (timeSinceReset >= config.aging.textureAging.moderate) return 1
-    return 0
-  }
 
   // Filter and sort NFTs
   const filteredAndSortedNFTs = useMemo(() => {
@@ -569,8 +560,8 @@ export default function MarketPage() {
               : 'grid-cols-1'
           }`}>
             {paginatedNFTs.map((nft) => {
-              const dirtLevel = getDirtLevel(nft.aging.lastCleaned)
-              const textureLevel = getTextureLevel(nft.aging.lastTextureReset)
+              const dirtLevel = nft.aging.dirtLevel
+              const agingLevel = nft.aging.agingLevel
               const isOwner = address?.toLowerCase() === nft.owner?.toLowerCase()
               const isFavorited = favorites.has(nft.tokenId)
 
@@ -686,11 +677,14 @@ export default function MarketPage() {
                         <div className="flex items-center gap-2 mb-3">
                           <div className="flex items-center gap-1">
                             <div className={`w-3 h-3 rounded-full ${
-                              textureLevel === 0 ? 'bg-emerald-400' :
-                              textureLevel === 1 ? 'bg-amber-400' : 'bg-red-400'
+                              agingLevel === 0 ? 'bg-emerald-400' :
+                              agingLevel <= 3 ? 'bg-amber-400' :
+                              agingLevel <= 7 ? 'bg-orange-400' : 'bg-red-400'
                             }`} />
                             <span className="text-xs text-white/70 font-medium">
-                              {textureLevel === 0 ? 'Brand New' : textureLevel === 1 ? 'Well Used' : 'Vintage'}
+                              {agingLevel === 0 ? 'Brand New' :
+                               agingLevel <= 3 ? 'Slightly Aged' :
+                               agingLevel <= 7 ? 'Moderately Aged' : 'Heavily Aged'}
                             </span>
                           </div>
                           <div className="flex items-center gap-1">

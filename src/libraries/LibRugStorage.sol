@@ -3,8 +3,8 @@ pragma solidity ^0.8.22;
 
 /**
  * @title LibRugStorage
- * @notice Shared storage library for all Rug facets
- * @dev Contains all storage structures and utilities used across Rug facets
+ * @notice Shared storage library for all Rug facets - FRESH REDESIGN
+ * @dev Contains simplified storage structures for 2-level dirt, 10-level aging, 5-frame system
  */
 
 library LibRugStorage {
@@ -26,33 +26,29 @@ library LibRugStorage {
     }
 
     struct AgingData {
-        // Core O(1) Aging System
-        uint32 lastTextureProgression;  // Timestamp when current texture level started
-        uint8 currentTextureLevel;      // Current permanent texture level (0-10)
+        // ===== FRESH SIMPLIFIED SYSTEM =====
 
-        // Dirt System
+        // Dirt System (3 levels: 0=Clean, 1=Dirty, 2=Very Dirty)
         uint256 lastCleaned;            // Last cleaning timestamp
-        uint256 textureProgressTimer;   // Timer for advancing texture level (resets on cleaning)
-        uint8 maxTextureLevel;          // MAX texture level ever reached (0-10, persistent)
+        uint8 dirtLevel;                // Current dirt level (0-2)
+
+        // Aging System (11 levels: 0=Clean, 1-10=Aged)
+        uint8 agingLevel;               // Current aging level (0-10)
+
+        // Frame System (5 levels: 0=None, 1=Bronze, 2=Silver, 3=Gold, 4=Diamond)
+        uint8 frameLevel;               // Current frame level (0-4)
+        uint256 frameAchievedTime;      // When current frame was achieved
 
         // Maintenance Tracking
         uint256 cleaningCount;          // Number of times cleaned
-        uint256 restorationCount;       // Number of times restored
-        uint256 masterRestorationCount; // Number of times master restored
+        uint256 restorationCount;       // Number of times aging level reduced
+        uint256 masterRestorationCount; // Number of times fully reset
         uint256 launderingCount;        // Number of times laundered
         uint256 lastLaundered;          // Last laundering timestamp
 
         // Trading History
         uint256 lastSalePrice;          // Highest sale price
         uint256[3] recentSalePrices;    // Last 3 sale prices
-
-        // Frame System
-        uint256 maintenanceScore;       // Calculated maintenance quality score
-        string currentFrameLevel;       // Current frame level ("None", "Bronze", etc.)
-        uint256 frameAchievedTime;      // When current frame was first achieved
-        bool gracePeriodActive;         // Whether frame is in grace period
-        uint256 gracePeriodEnd;         // Grace period expiration timestamp
-        bool isMuseumPiece;             // Whether this is a permanent Diamond frame
     }
 
     struct RugConfig {
@@ -67,6 +63,7 @@ library LibRugStorage {
         address rugScriptyBuilder;      // ScriptyBuilderV2 contract
         address rugEthFSStorage;        // EthFS storage contract
         address onchainRugsHTMLGenerator; // HTML generator contract
+
         // Pricing configuration
         uint256 basePrice;             // Base mint cost
         uint256 linePrice1;            // Additional for line 1
@@ -74,26 +71,37 @@ library LibRugStorage {
         uint256 linePrice3;            // Additional for line 3
         uint256 linePrice4;            // Additional for line 4
         uint256 linePrice5;            // Additional for line 5
-        // Aging configuration
-        uint256 dirtLevel1Days;        // Minutes for dirt level 1
-        uint256 dirtLevel2Days;        // Minutes for dirt level 2
-        uint256 textureLevel1Days;     // Minutes for texture level 1
-        uint256 textureLevel2Days;     // Minutes for texture level 2
-        uint256 freeCleanDays;         // Minutes after mint for free cleaning
-        uint256 freeCleanWindow;       // Minutes after cleaning for free cleaning
-        // Maintenance pricing
-        uint256 cleaningCost;          // Regular cleaning cost
-        uint256 restorationCost;       // Per level restoration cost
-        uint256 masterRestorationCost; // Full reset cost
+
+        // ===== FRESH SIMPLIFIED AGING CONFIG =====
+        uint256 dirtLevel1Days;        // Days until rug becomes dirty level 1 (default: 3)
+        uint256 dirtLevel2Days;        // Days until rug becomes dirty level 2 (default: 7)
+        uint256 agingAdvanceDays;      // Days between aging level increases (default: 14)
+        uint256 freeCleanDays;         // Days after mint for free cleaning (default: 30)
+        uint256 freeCleanWindow;       // Days after cleaning for free cleaning (default: 11)
+
+        // Maintenance pricing (simplified)
+        uint256 cleaningCost;          // Cost to clean dirt
+        uint256 restorationCost;       // Cost to reduce aging by 1 level
+        uint256 masterRestorationCost; // Cost for full reset
         uint256 launderingThreshold;   // Minimum price for laundering
+
+        // Frame thresholds (maintenance points needed)
+        uint256 bronzeThreshold;       // Points needed for Bronze frame (default: 25)
+        uint256 silverThreshold;       // Points needed for Silver frame (default: 50)
+        uint256 goldThreshold;         // Points needed for Gold frame (default: 100)
+        uint256 diamondThreshold;      // Points needed for Diamond frame (default: 200)
+
         // Token supply tracking
         uint256 totalSupply;           // Current total supply
         uint256 tokenCounter;          // Next token ID to mint
+
         // Text uniqueness
         mapping(bytes32 => bool) usedTextHashes; // Track used text combinations
+
         // Token data
         mapping(uint256 => RugData) rugs;          // Token ID => rug data
         mapping(uint256 => AgingData) agingData;   // Token ID => aging data
+
         // Wallet tracking
         mapping(address => uint256) walletMints;   // Address => mint count
     }
@@ -191,5 +199,79 @@ library LibRugStorage {
     function nextTokenId() internal view returns (uint256) {
         RugConfig storage rs = rugStorage();
         return rs.tokenCounter + 1;
+    }
+
+    // ===== FRESH SYSTEM UTILITY FUNCTIONS =====
+
+    /**
+     * @notice Calculate maintenance score for frame progression
+     * @param aging Aging data for the rug
+     * @return score Total maintenance score
+     */
+    function calculateMaintenanceScore(AgingData storage aging) internal view returns (uint256) {
+        return (aging.cleaningCount * 1) +        // 1 point per clean
+               (aging.restorationCount * 3) +      // 3 points per restore
+               (aging.masterRestorationCount * 8) + // 8 points per master restore
+               (aging.launderingCount * 15);       // 15 points per laundering
+    }
+
+    /**
+     * @notice Get frame level based on maintenance score
+     * @param score Maintenance score
+     * @return frameLevel Frame level (0-4)
+     */
+    function getFrameLevelFromScore(uint256 score) internal view returns (uint8) {
+        RugConfig storage rs = rugStorage();
+
+        if (score >= rs.diamondThreshold) return 4; // Diamond
+        if (score >= rs.goldThreshold) return 3;    // Gold
+        if (score >= rs.silverThreshold) return 2;  // Silver
+        if (score >= rs.bronzeThreshold) return 1;  // Bronze
+        return 0; // None
+    }
+
+    /**
+     * @notice Get frame name from frame level
+     * @param frameLevel Frame level (0-4)
+     * @return frameName String name of the frame
+     */
+    function getFrameName(uint8 frameLevel) internal pure returns (string memory) {
+        if (frameLevel == 4) return "Diamond";
+        if (frameLevel == 3) return "Gold";
+        if (frameLevel == 2) return "Silver";
+        if (frameLevel == 1) return "Bronze";
+        return "None";
+    }
+
+    /**
+     * @notice Check if rug has dirt immunity (Silver+ frames)
+     * @param frameLevel Current frame level
+     * @return hasImmunity True if frame provides dirt immunity
+     */
+    function hasDirtImmunity(uint8 frameLevel) internal pure returns (bool) {
+        return frameLevel >= 2; // Silver and above
+    }
+
+    /**
+     * @notice Get frame-based aging multiplier (higher frames age slower)
+     * @param frameLevel Current frame level
+     * @return multiplier Aging speed multiplier (100 = normal, 60 = 40% slower, etc.)
+     */
+    function getAgingMultiplier(uint8 frameLevel) internal pure returns (uint256) {
+        if (frameLevel >= 4) return 40; // Diamond: 60% slower (2.5x longer per level)
+        if (frameLevel >= 3) return 60; // Gold: 40% slower (1.7x longer per level)
+        if (frameLevel >= 2) return 80; // Silver: 20% slower (1.25x longer per level)
+        if (frameLevel >= 1) return 90; // Bronze: 10% slower (1.1x longer per level)
+        return 100; // None: normal speed
+    }
+
+    /**
+     * @notice Calculate aging progression time
+     * @param agingLevel Current aging level
+     * @return daysRequired Days needed to reach this level
+     */
+    function getAgingProgressionDays(uint8 agingLevel) internal view returns (uint256) {
+        RugConfig storage rs = rugStorage();
+        return agingLevel * rs.agingAdvanceDays;
     }
 }

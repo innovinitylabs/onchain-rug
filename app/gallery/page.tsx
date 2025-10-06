@@ -39,7 +39,7 @@ interface NFTData {
   animation_url?: string
 }
 
-type SortOption = 'tokenId' | 'mintTime' | 'rarity' | 'complexity' | 'stripeCount' | 'characterCount' | 'textLines' | 'warpThickness' | 'dirtLevel' | 'textureLevel' | 'maintenanceScore'
+type SortOption = 'tokenId' | 'mintTime' | 'rarity' | 'complexity' | 'stripeCount' | 'characterCount' | 'textLines' | 'warpThickness' | 'dirtLevel' | 'agingLevel' | 'maintenanceScore'
 type SortDirection = 'asc' | 'desc'
 
 export default function GalleryPage() {
@@ -485,9 +485,9 @@ export default function GalleryPage() {
           aValue = getTraitValue(a, 'Dirt Level')
           bValue = getTraitValue(b, 'Dirt Level')
           break
-        case 'textureLevel':
-          aValue = getTraitValue(a, 'Texture Level')
-          bValue = getTraitValue(b, 'Texture Level')
+        case 'agingLevel':
+          aValue = getTraitValue(a, 'Aging Level')
+          bValue = getTraitValue(b, 'Aging Level')
           break
         case 'maintenanceScore':
           aValue = getTraitValue(a, 'Maintenance Score')
@@ -681,7 +681,7 @@ export default function GalleryPage() {
                     <option value="textLines">Text Lines</option>
                     <option value="warpThickness">Warp Thickness</option>
                     <option value="dirtLevel">Dirt Level</option>
-                    <option value="textureLevel">Texture Level</option>
+                    <option value="agingLevel">Aging Level</option>
                     <option value="maintenanceScore">Maintenance Score</option>
                   </select>
                   <button

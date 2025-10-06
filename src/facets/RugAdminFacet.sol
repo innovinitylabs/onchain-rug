@@ -19,6 +19,7 @@ contract RugAdminFacet {
     event ExceptionRemoved(address indexed account);
     event LaunderingToggled(bool enabled);
     event LaunchStatusChanged(bool launched);
+    event FrameThresholdsUpdated();
 
     /**
      * @notice Update collection cap (owner only)
@@ -113,23 +114,39 @@ contract RugAdminFacet {
     }
 
     /**
-     * @notice Update aging thresholds (owner only)
-     * @param thresholds Array of 6 time periods in minutes: [dirt1, dirt2, texture1, texture2, freeCleanDays, freeCleanWindow]
+     * @notice Update aging thresholds for simplified system (owner only)
+     * @param thresholds Array of 5 time periods in days: [dirtLevel1, dirtLevel2, agingAdvance, freeCleanDays, freeCleanWindow]
      */
-    function updateAgingThresholds(uint256[6] calldata thresholds) external {
+    function updateAgingThresholds(uint256[5] calldata thresholds) external {
         LibDiamond.enforceIsContractOwner();
 
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
 
-        // Thresholds are passed as seconds (converted to minutes for testing)
-        rs.dirtLevel1Days = thresholds[0];
-        rs.dirtLevel2Days = thresholds[1];
-        rs.textureLevel1Days = thresholds[2];
-        rs.textureLevel2Days = thresholds[3];
-        rs.freeCleanDays = thresholds[4];
-        rs.freeCleanWindow = thresholds[5];
+        // Update simplified aging parameters
+        rs.dirtLevel1Days = thresholds[0];      // Days until dirt level 1
+        rs.dirtLevel2Days = thresholds[1];      // Days until dirt level 2
+        rs.agingAdvanceDays = thresholds[2];    // Days between aging level advances
+        rs.freeCleanDays = thresholds[3];       // Days after mint for free cleaning
+        rs.freeCleanWindow = thresholds[4];     // Days after cleaning for free cleaning
 
         emit AgingThresholdsUpdated();
+    }
+
+    /**
+     * @notice Update frame progression thresholds (owner only)
+     * @param thresholds Array of 4 thresholds: [bronze, silver, gold, diamond]
+     */
+    function updateFrameThresholds(uint256[4] calldata thresholds) external {
+        LibDiamond.enforceIsContractOwner();
+
+        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+
+        rs.bronzeThreshold = thresholds[0];
+        rs.silverThreshold = thresholds[1];
+        rs.goldThreshold = thresholds[2];
+        rs.diamondThreshold = thresholds[3];
+
+        emit FrameThresholdsUpdated();
     }
 
     /**
@@ -232,18 +249,17 @@ contract RugAdminFacet {
     }
 
     /**
-     * @notice Get aging thresholds in minutes
-     * @return dirt1, dirt2, texture1, texture2, freeCleanDays, freeCleanWindow
+     * @notice Get aging thresholds for simplified system
+     * @return dirtLevel1, dirtLevel2, agingAdvance, freeCleanDays, freeCleanWindow
      */
-    function getAgingThresholds() external view returns (uint256, uint256, uint256, uint256, uint256, uint256) {
+    function getAgingThresholds() external view returns (uint256, uint256, uint256, uint256, uint256) {
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
         return (
-            rs.dirtLevel1Days / 1 minutes,
-            rs.dirtLevel2Days / 1 minutes,
-            rs.textureLevel1Days / 1 minutes,
-            rs.textureLevel2Days / 1 minutes,
-            rs.freeCleanDays / 1 minutes,
-            rs.freeCleanWindow / 1 minutes
+            rs.dirtLevel1Days,
+            rs.dirtLevel2Days,
+            rs.agingAdvanceDays,
+            rs.freeCleanDays,
+            rs.freeCleanWindow
         );
     }
 

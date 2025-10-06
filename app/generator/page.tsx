@@ -2741,17 +2741,17 @@ export default function GeneratorPage() {
                       </div>
                     </div>
 
-                    {/* Texture System Controls */}
+                    {/* Aging System Controls */}
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <h4 className="text-green-300 text-sm font-mono font-medium">TEXTURE SYSTEM</h4>
+                        <h4 className="text-green-300 text-sm font-mono font-medium">AGING SYSTEM</h4>
                         <span className="text-green-500 text-xs font-mono">
-                          {showTexture ? `Level ${textureLevel}/10 wear` : 'Smooth'}
+                          {showTexture ? `Level ${textureLevel}/10 aging` : 'Brand New'}
                         </span>
                       </div>
 
                       <div className="text-green-400 text-xs font-mono bg-gray-900/50 p-2 rounded">
-                        10-level texture progression: Level 1 (fresh wear) to Level 10 (maximum wear). Each level represents increasing fabric degradation.
+                        11-level aging progression: Level 0 (brand new) to Level 10 (maximum age). Each level represents increasing fabric aging and character.
                       </div>
 
                       {/* Texture Toggle */}
@@ -2770,10 +2770,10 @@ export default function GeneratorPage() {
 
                       {showTexture && (
                         <div className="space-y-3">
-                          {/* Texture Level Slider */}
+                          {/* Aging Level Slider */}
                           <div className="space-y-2">
                             <div className="flex items-center justify-between">
-                              <label className="text-green-300 text-xs font-mono">Wear Level</label>
+                              <label className="text-green-300 text-xs font-mono">Aging Level</label>
                               <span className="text-green-500 text-xs font-mono">{textureLevel}/10</span>
                             </div>
                             <input
@@ -2791,19 +2791,19 @@ export default function GeneratorPage() {
                             </div>
                           </div>
 
-                          {/* Texture Level Descriptions */}
+                          {/* Aging Level Descriptions */}
                           <div className="text-xs text-green-400 font-mono bg-gray-900/30 p-2 rounded">
-                            {textureLevel === 0 && "✨ Fresh from the loom - pristine condition"}
-                            {textureLevel === 1 && "🧵 Subtle signs of use - barely noticeable wear"}
-                            {textureLevel === 2 && "📅 Light wear - 2 minutes of normal use"}
-                            {textureLevel === 3 && "🏠 Moderate wear - well-used but functional"}
-                            {textureLevel === 4 && "📆 Significant wear - shows character"}
-                            {textureLevel === 5 && "🪶 Heavy wear - vintage appearance"}
-                            {textureLevel === 6 && "🎭 Very worn - distinctive patina"}
-                            {textureLevel === 7 && "🏺 Antique look - rich texture"}
-                            {textureLevel === 8 && "🏛️ Museum quality - extreme character"}
-                            {textureLevel === 9 && "🎨 Masterpiece wear - legendary status"}
-                            {textureLevel === 10 && "💎 Ultimate wear - maximum degradation"}
+                            {textureLevel === 0 && "✨ Brand New - pristine condition"}
+                            {textureLevel === 1 && "🧵 Slightly Aged - subtle signs of use"}
+                            {textureLevel === 2 && "📅 Moderately Aged - light aging"}
+                            {textureLevel === 3 && "🏠 Well Aged - well-used but functional"}
+                            {textureLevel === 4 && "📆 Significantly Aged - shows character"}
+                            {textureLevel === 5 && "🪶 Very Aged - vintage appearance"}
+                            {textureLevel === 6 && "🎭 Extremely Aged - distinctive patina"}
+                            {textureLevel === 7 && "🏺 Heavily Aged - rich texture"}
+                            {textureLevel === 8 && "🏛️ Severely Aged - extreme character"}
+                            {textureLevel === 9 && "🎨 Critically Aged - legendary status"}
+                            {textureLevel === 10 && "💎 Maximum Age - ultimate degradation"}
                           </div>
                         </div>
                       )}
