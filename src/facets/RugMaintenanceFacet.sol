@@ -36,14 +36,8 @@ contract RugMaintenanceFacet {
         // Calculate cost
         uint256 cost = isFree ? 0 : rs.cleaningCost;
 
-        // Validate payment
-        require(msg.value >= cost, "Insufficient payment");
-
-        // Refund excess payment with sufficient gas
-        if (msg.value > cost) {
-            (bool success,) = payable(msg.sender).call{value: msg.value - cost, gas: 5000}("");
-            require(success, "Refund transfer failed");
-        }
+        // Require exact payment (no refunds to avoid complexity)
+        require(msg.value == cost, "Must send exact payment amount");
 
         // Clean dirt (reset to level 0) and delay aging progression
         aging.lastCleaned = block.timestamp;
@@ -77,14 +71,8 @@ contract RugMaintenanceFacet {
         uint8 currentAging = _getAgingLevel(tokenId);
         require(currentAging > 0, "Rug has no aging to restore");
 
-        // Validate payment
-        require(msg.value >= rs.restorationCost, "Insufficient payment");
-
-        // Refund excess payment
-        if (msg.value > rs.restorationCost) {
-            (bool success,) = payable(msg.sender).call{value: msg.value - rs.restorationCost}("");
-            require(success, "Refund transfer failed");
-        }
+        // Require exact payment (no refunds to avoid complexity)
+        require(msg.value == rs.restorationCost, "Must send exact payment amount");
 
         // Record previous state
         uint8 previousAging = currentAging;
@@ -124,14 +112,8 @@ contract RugMaintenanceFacet {
         uint8 currentAging = _getAgingLevel(tokenId);
         require(currentDirt > 0 || currentAging > 0, "Rug is already pristine");
 
-        // Validate payment
-        require(msg.value >= rs.masterRestorationCost, "Insufficient payment");
-
-        // Refund excess payment
-        if (msg.value > rs.masterRestorationCost) {
-            (bool success,) = payable(msg.sender).call{value: msg.value - rs.masterRestorationCost}("");
-            require(success, "Refund transfer failed");
-        }
+        // Require exact payment (no refunds to avoid complexity)
+        require(msg.value == rs.masterRestorationCost, "Must send exact payment amount");
 
         // Record previous state
         uint8 previousDirt = currentDirt;
