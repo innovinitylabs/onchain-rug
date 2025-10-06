@@ -700,8 +700,8 @@ export default function DashboardPage() {
                               <div className="text-xs text-white/60">Dirt Level</div>
                             </div>
                             <div className="text-center">
-                              <div className="text-lg font-bold text-purple-400">{rug.aging.textureLevel}</div>
-                              <div className="text-xs text-white/60">Wear Level</div>
+                              <div className="text-lg font-bold text-purple-400">{rug.aging.agingLevel}</div>
+                              <div className="text-xs text-white/60">Aging Level</div>
                             </div>
                           </div>
                         </div>

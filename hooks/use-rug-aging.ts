@@ -4,7 +4,7 @@ import { ethers } from 'ethers'
 import { config, agingConfig } from '@/lib/config'
 import { shapeSepolia, shapeMainnet, contractAddresses, onchainRugsABI } from '@/lib/web3'
 import { useTokenURI } from './use-token-uri'
-import { getDirtDescription, getTextureDescription } from '@/utils/parsing-utils'
+import { getDirtDescription, getAgingDescription } from '@/utils/parsing-utils'
 import { estimateContractGasWithRetry, getRecommendedGasOptions, formatGasEstimate } from '@/utils/gas-estimation'
 
 // Rug aging hook for managing dirt and texture states
@@ -13,7 +13,7 @@ export function useRugAging(tokenId?: bigint) {
   const chainId = useChainId()
   const publicClient = usePublicClient()
   const [dirtLevel, setDirtLevel] = useState(0)
-  const [textureLevel, setTextureLevel] = useState(0)
+  const [agingLevel, setAgingLevel] = useState(0)
   const [lastCleaned, setLastCleaned] = useState<Date | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
@@ -36,9 +36,9 @@ export function useRugAging(tokenId?: bigint) {
 
       return {
         dirtLevel: aging.dirtLevel,
-        textureLevel: aging.textureLevel,
+        agingLevel: aging.agingLevel, // Updated: contract now uses agingLevel instead of textureLevel
         showDirt: aging.dirtLevel > 0,
-        showTexture: aging.textureLevel > 0,
+        showAging: aging.agingLevel > 0, // Updated: show aging instead of texture
         timeSinceCleaned: BigInt(0), // Not directly available in tokenURI
         timeSinceMint: BigInt(0), // Not directly available in tokenURI
       }
@@ -51,9 +51,9 @@ export function useRugAging(tokenId?: bigint) {
   // Calculate aging based on tokenURI data
   useEffect(() => {
     if (agingData && tokenId) {
-      // Use the dirt and texture levels from tokenURI attributes
+      // Use the dirt and aging levels from tokenURI attributes
       setDirtLevel(agingData.dirtLevel)
-      setTextureLevel(agingData.textureLevel)
+      setAgingLevel(agingData.agingLevel)
 
       // For last cleaned time, we don't have this in tokenURI attributes
       // Could be added to tokenURI generation if needed
@@ -68,7 +68,7 @@ export function useRugAging(tokenId?: bigint) {
 
   return {
     dirtLevel,
-    textureLevel,
+    agingLevel,
     lastCleaned,
     isLoading,
     refetch,

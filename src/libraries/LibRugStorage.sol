@@ -254,6 +254,19 @@ library LibRugStorage {
     }
 
     /**
+     * @notice Get frame-based aging multiplier (higher frames age slower)
+     * @param frameLevel Current frame level
+     * @return multiplier Aging speed multiplier (100 = normal, 60 = 40% slower, etc.)
+     */
+    function getAgingMultiplier(uint8 frameLevel) internal pure returns (uint256) {
+        if (frameLevel >= 4) return 40; // Diamond: 60% slower (2.5x longer per level)
+        if (frameLevel >= 3) return 60; // Gold: 40% slower (1.7x longer per level)
+        if (frameLevel >= 2) return 80; // Silver: 20% slower (1.25x longer per level)
+        if (frameLevel >= 1) return 90; // Bronze: 10% slower (1.1x longer per level)
+        return 100; // None: normal speed
+    }
+
+    /**
      * @notice Calculate aging progression time
      * @param agingLevel Current aging level
      * @return daysRequired Days needed to reach this level

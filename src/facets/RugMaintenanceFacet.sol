@@ -45,8 +45,15 @@ contract RugMaintenanceFacet {
             require(success, "Refund transfer failed");
         }
 
-        // Clean dirt (reset to level 0)
+        // Clean dirt (reset to level 0) and delay aging
         aging.lastCleaned = block.timestamp;
+
+        // Update aging level to current calculated level before resetting timer
+        uint8 currentLevel = _getAgingLevel(tokenId);
+        if (currentLevel > aging.agingLevel) {
+            aging.agingLevel = currentLevel; // "Freeze" current level
+        }
+        aging.agingStartTime = block.timestamp; // Reset aging timer to delay further aging
 
         // Earn maintenance points
         aging.cleaningCount++;
@@ -288,8 +295,8 @@ contract RugMaintenanceFacet {
         // Calculate dirt level based on time since cleaning
         uint256 timeSinceCleaned = block.timestamp - aging.lastCleaned;
 
-        if (timeSinceCleaned >= rs.dirtLevel2Days * 1 days) return 2;
-        if (timeSinceCleaned >= rs.dirtLevel1Days * 1 days) return 1;
+        if (timeSinceCleaned >= rs.dirtLevel2Days) return 2;
+        if (timeSinceCleaned >= rs.dirtLevel1Days) return 1;
         return 0;
     }
 
@@ -298,10 +305,14 @@ contract RugMaintenanceFacet {
         LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
 
         uint256 timeSinceLevelStart = block.timestamp - aging.agingStartTime;
-        uint256 advanceInterval = rs.agingAdvanceDays * 1 days;
+        uint256 baseInterval = rs.agingAdvanceDays;
+
+        // Apply frame-based aging immunity (higher frames age slower)
+        uint256 agingMultiplier = LibRugStorage.getAgingMultiplier(aging.frameLevel);
+        uint256 adjustedInterval = (baseInterval * 100) / agingMultiplier;
 
         // Calculate how many levels we should have advanced
-        uint8 levelsAdvanced = uint8(timeSinceLevelStart / advanceInterval);
+        uint8 levelsAdvanced = uint8(timeSinceLevelStart / adjustedInterval);
 
         // Cap at max level 10
         uint8 calculatedLevel = aging.agingLevel + levelsAdvanced;
@@ -315,11 +326,11 @@ contract RugMaintenanceFacet {
 
         // Free if within initial grace period from mint
         uint256 timeSinceMint = block.timestamp - rug.mintTime;
-        if (timeSinceMint <= rs.freeCleanDays * 1 days) return true;
+        if (timeSinceMint <= rs.freeCleanDays) return true;
 
         // Free if recently cleaned (within free window)
         uint256 timeSinceLastClean = block.timestamp - aging.lastCleaned;
-        if (timeSinceLastClean <= rs.freeCleanWindow * 1 days) return true;
+        if (timeSinceLastClean <= rs.freeCleanWindow) return true;
 
         return false;
     }

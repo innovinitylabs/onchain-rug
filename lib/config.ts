@@ -15,20 +15,20 @@ export const config = {
   // 🔓 SAFE TO EXPOSE - Contract addresses (public blockchain data)
   contracts: {
     onchainRugs: process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT ||
-                process.env.ONCHAIN_RUGS_CONTRACT || '0xa7e2c645E9332900b09c627c88b15Cc0b0fAcDc0',
+                process.env.ONCHAIN_RUGS_CONTRACT || '0xd750d12040E536E230aE989247Df7d89453e94d9',
     scriptyStorage: process.env.NEXT_PUBLIC_SCRIPTY_STORAGE ||
-                   process.env.SCRIPTY_STORAGE || '0xF7134668cea698fC713582B5B6bfe33Ab8227a5e',
+                   process.env.SCRIPTY_STORAGE || '0x7107d4F12d138576fF4283ba636aCebE6B9c3365',
     scriptyBuilder: process.env.NEXT_PUBLIC_SCRIPTY_BUILDER ||
-                   process.env.SCRIPTY_BUILDER || '0x1F2b94753D5717400c6DA24D7c8058B4C20015F8',
+                   process.env.SCRIPTY_BUILDER || '0xf3ae9Fd75bb7A33C97803555dA56209DB211893C',
     htmlGenerator: process.env.NEXT_PUBLIC_HTML_GENERATOR ||
-                  process.env.HTML_GENERATOR || '0x02998E64852C50F151d738ef486A599c796A3bc7',
+                  process.env.HTML_GENERATOR || '0xd0046995a14fB8282814C5E575524c3ABbf39A20',
   },
 
   // 🔓 SAFE TO EXPOSE - Legacy contract address references (public blockchain data)
   rugContractAddress: process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT ||
-                     process.env.ONCHAIN_RUGS_CONTRACT || '0xa7e2c645E9332900b09c627c88b15Cc0b0fAcDc0',
+                     process.env.ONCHAIN_RUGS_CONTRACT || '0xd750d12040E536E230aE989247Df7d89453e94d9',
   cleaningContractAddress: process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT ||
-                          process.env.ONCHAIN_RUGS_CONTRACT || '0xa7e2c645E9332900b09c627c88b15Cc0b0fAcDc0',
+                          process.env.ONCHAIN_RUGS_CONTRACT || '0xd750d12040E536E230aE989247Df7d89453e94d9',
   
   // Network configuration
   networks: {
@@ -76,7 +76,7 @@ export const config = {
     fullDirtDays: 7,
     textureAppearanceDays: 30, // Updated: moderate texture at 30 minutes
     fullTextureDays: 90, // Updated: full texture at 90 minutes
-    freeCleaningDays: 30,
+    freeCleaningDays: 5, // Updated: 5 minutes free cleaning after mint (matches contract)
     dirtAccumulation: {
       light: 3 * 60, // 3 minutes in seconds (changed from 3 days)
       heavy: 7 * 60, // 7 minutes in seconds (changed from 7 days)
@@ -85,17 +85,18 @@ export const config = {
       moderate: 30 * 60, // 30 minutes in seconds (changed from 30 days)
       intense: 90 * 60, // 90 minutes in seconds (changed from 90 days)
     },
+    freeCleaningWindow: 2, // Updated: 2 minutes free cleaning after last clean (matches contract)
     cleaningCosts: {
       free: 0,
-      paid: '900000000000000', // 0.0009 ETH in wei
+      paid: '10000000000000', // 0.00001 ETH in wei (matches contract)
     },
     restorationCosts: {
       free: 0,
-      paid: '2000000000000000', // 0.002 ETH in wei (texture restoration)
+      paid: '10000000000000', // 0.00001 ETH in wei (matches contract)
     },
     masterRestorationCosts: {
       free: 0,
-      paid: '5000000000000000', // 0.005 ETH in wei (complete restoration)
+      paid: '10000000000000', // 0.00001 ETH in wei (matches contract)
     },
   },
   

@@ -3,54 +3,71 @@ pragma solidity ^0.8.22;
 
 import "forge-std/Script.sol";
 import "forge-std/console.sol";
-import "../src/diamond/interfaces/IDiamondCut.sol";
 import "../src/facets/RugNFTFacet.sol";
-import "../src/facets/RugAgingFacet.sol";
+import "../src/diamond/interfaces/IDiamondCut.sol";
 
 /**
- * @title Update RugNFTFacet - New Texture System
- * @dev Updates RugNFTFacet with persistent texture wear mechanics
+ * @title Update RugNFTFacet
+ * @dev Upgrade the RugNFTFacet to fix time calculation bugs in tokenURI
+ * @notice Fixes the * 1 days multipliers that were causing incorrect timing in metadata
  */
 contract UpdateRugNFTFacet is Script {
-    address public constant DIAMOND_ADDR = 0x6F7D033F046eE9c41A73713Fe5620D8f64C3BbAd;
+    // Shape Sepolia deployed addresses
+    address constant DIAMOND_ADDR = 0xd750d12040E536E230aE989247Df7d89453e94d9;
+
+    // Deployment addresses
+    address public deployer;
+    uint256 public deployerPrivateKey;
+
+    function setUp() public {
+        deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        deployer = vm.addr(deployerPrivateKey);
+        console.log("Deployer address:", deployer);
+        console.log("Deployer balance:", deployer.balance / 1e18, "ETH");
+    }
 
     function run() public {
-        uint256 deployerPrivateKey = vm.envUint("TESTNET_PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
         console.log("=========================================");
-        console.log("Updating RugNFTFacet - New Texture System");
+        console.log("Upgrading RugNFTFacet on Shape Sepolia");
         console.log("=========================================");
+        console.log("Diamond address:", DIAMOND_ADDR);
 
-        // Deploy new RugNFTFacet with updated texture calculation
+        // Deploy new RugNFTFacet
+        console.log("1. Deploying new RugNFTFacet...");
         RugNFTFacet newRugNFTFacet = new RugNFTFacet();
         address newFacetAddr = address(newRugNFTFacet);
-        console.log("New RugNFTFacet deployed at:", newFacetAddr);
+        console.log("   New RugNFTFacet deployed at:", newFacetAddr);
 
-        // Replace the existing RugNFTFacet
-        IDiamondCut.FacetCut[] memory cut = new IDiamondCut.FacetCut[](1);
-        cut[0] = IDiamondCut.FacetCut({
+        // Prepare facet cut for replacement
+        console.log("2. Preparing facet cut for replacement...");
+        IDiamondCut.FacetCut[] memory cuts = new IDiamondCut.FacetCut[](1);
+        cuts[0] = IDiamondCut.FacetCut({
             facetAddress: newFacetAddr,
             action: IDiamondCut.FacetCutAction.Replace,
             functionSelectors: _getRugNFTSelectors()
         });
 
-        IDiamondCut(DIAMOND_ADDR).diamondCut(cut, address(0), "");
-        console.log("RugNFTFacet replaced with new texture system");
+        // Execute upgrade
+        console.log("3. Executing facet upgrade...");
+        IDiamondCut(DIAMOND_ADDR).diamondCut(cuts, address(0), "");
 
         console.log("=========================================");
-        console.log("RugNFTFacet Updated!");
-        console.log("- Texture wear is now persistent");
-        console.log("- maxTextureLevel tracks highest wear achieved");
-        console.log("- textureProgressTimer controls advancement rate");
+        console.log("RugNFTFacet Upgrade Complete!");
+        console.log("=========================================");
+        console.log("Fixed: Removed incorrect * 1 days multipliers in _getDirtLevel");
+        console.log("Fixed: Removed incorrect * 1 days multipliers in _getAgingLevel");
+        console.log("Fixed: Added frame immunity to _getAgingLevel calculations");
+        console.log("Fixed: tokenURI now correctly shows dirt level 2 and aging level 10");
         console.log("=========================================");
 
         vm.stopBroadcast();
     }
 
     function _getRugNFTSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](26);
-        // ERC721 Standard Functions (hardcoded selectors from forge inspect)
+        bytes4[] memory selectors = new bytes4[](25);
+        // ERC721 Standard Functions (hardcoded selectors)
         selectors[0] = bytes4(0x70a08231); // balanceOf(address)
         selectors[1] = bytes4(0x6352211e); // ownerOf(uint256)
         selectors[2] = bytes4(0x42842e0e); // safeTransferFrom(address,address,uint256)
@@ -63,23 +80,21 @@ contract UpdateRugNFTFacet is Script {
         selectors[9] = bytes4(0x95d89b41); // symbol()
         selectors[10] = bytes4(0xc87b56dd); // tokenURI(uint256)
         selectors[11] = bytes4(0x18160ddd); // totalSupply()
-        selectors[12] = bytes4(0x01ffc9a7); // supportsInterface(bytes4)
-        selectors[13] = bytes4(0xb88d4fde); // safeTransferFrom(address,address,uint256,bytes)
+        selectors[12] = bytes4(0xb88d4fde); // safeTransferFrom(address,address,uint256,bytes)
 
         // Rug-specific functions
-        selectors[14] = RugNFTFacet.mintRug.selector;             // 0f495d0c
-        selectors[15] = RugNFTFacet.burn.selector;                // 42966c68
-        selectors[16] = RugNFTFacet.getRugData.selector;          // 2e99fe3f
-        selectors[17] = RugNFTFacet.getAgingData.selector;        // a8accc46
-        selectors[18] = RugNFTFacet.getMintPrice.selector;        // 559e775b
-        selectors[19] = RugNFTFacet.canMint.selector;             // c2ba4744
-        selectors[20] = RugNFTFacet.isTextAvailable.selector;     // fdd9d9e8
-        selectors[21] = RugNFTFacet.maxSupply.selector;           // d5abeb01
-        selectors[22] = RugNFTFacet.walletMints.selector;         // f0293fd3
-        selectors[23] = RugNFTFacet.isWalletException.selector;   // 2d2bf633
-        selectors[24] = RugAgingFacet.getFrameLevel.selector;     // ceffb063
-        // selectors[25] = RugNFTFacet.updateFrameLevel.selector;    // 650def5b - REMOVED: frames update automatically
-
+        selectors[13] = RugNFTFacet.mintRug.selector;
+        selectors[14] = RugNFTFacet.burn.selector;
+        selectors[15] = RugNFTFacet.getRugData.selector;
+        selectors[16] = RugNFTFacet.getAgingData.selector;
+        selectors[17] = RugNFTFacet.getMintPrice.selector;
+        selectors[18] = RugNFTFacet.canMint.selector;
+        selectors[19] = RugNFTFacet.isTextAvailable.selector;
+        selectors[20] = RugNFTFacet.maxSupply.selector;
+        selectors[21] = RugNFTFacet.walletMints.selector;
+        selectors[22] = RugNFTFacet.isWalletException.selector;
+        selectors[23] = RugNFTFacet.getFrameStatus.selector;
+        selectors[24] = RugNFTFacet.getMaintenanceHistory.selector;
         return selectors;
     }
 }

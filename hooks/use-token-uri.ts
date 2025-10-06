@@ -12,7 +12,7 @@ export interface TokenURIData {
   metadata: any
   aging: {
     dirtLevel: number
-    textureLevel: number
+    agingLevel: number
     lastCleaned: bigint | null
     mintTime: number
   }

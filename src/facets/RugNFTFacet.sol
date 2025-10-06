@@ -421,8 +421,8 @@ contract RugNFTFacet is ERC721, ERC721URIStorage {
         // Calculate dirt level based on time since cleaning
         uint256 timeSinceCleaned = block.timestamp - aging.lastCleaned;
 
-        if (timeSinceCleaned >= rs.dirtLevel2Days * 1 days) return 2;
-        if (timeSinceCleaned >= rs.dirtLevel1Days * 1 days) return 1;
+        if (timeSinceCleaned >= rs.dirtLevel2Days) return 2;
+        if (timeSinceCleaned >= rs.dirtLevel1Days) return 1;
         return 0;
     }
 
@@ -431,10 +431,14 @@ contract RugNFTFacet is ERC721, ERC721URIStorage {
         LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
 
         uint256 timeSinceLevelStart = block.timestamp - aging.agingStartTime;
-        uint256 advanceInterval = rs.agingAdvanceDays * 1 days;
+        uint256 baseInterval = rs.agingAdvanceDays;
+
+        // Apply frame-based aging immunity (higher frames age slower)
+        uint256 agingMultiplier = LibRugStorage.getAgingMultiplier(aging.frameLevel);
+        uint256 adjustedInterval = (baseInterval * 100) / agingMultiplier;
 
         // Calculate how many levels we should have advanced
-        uint8 levelsAdvanced = uint8(timeSinceLevelStart / advanceInterval);
+        uint8 levelsAdvanced = uint8(timeSinceLevelStart / adjustedInterval);
 
         // Cap at max level 10
         uint8 calculatedLevel = aging.agingLevel + levelsAdvanced;
