@@ -98,7 +98,29 @@ export function RugCleaning({ tokenId, mintTime, lastCleaned: propLastCleaned, o
   const [estimatingMasterRestoreGas, setEstimatingMasterRestoreGas] = useState(false)
 
   const isCorrectChain = chainId === config.chainId
-  const needsCleaning = dirtLevel > 0
+
+  // Match contract logic: needs cleaning if has dirt OR cleaning is free
+  const getNeedsCleaning = () => {
+    // Has dirt
+    if (dirtLevel > 0) return true
+
+    // Check if cleaning would be free (within free periods)
+    const now = Math.floor(Date.now() / 1000)
+
+    // Free if within initial period from mint
+    const timeSinceMint = actualMintTime ? now - actualMintTime : 0
+    const freeCleanDays = contractConfig?.freeCleanDays || agingConfig.freeCleaningDays
+    if (timeSinceMint <= freeCleanDays) return true
+
+    // Free if recently cleaned (within free window of last clean)
+    const timeSinceLastClean = actualLastCleaned ? now - Number(actualLastCleaned) : 0
+    const freeCleanWindow = contractConfig?.freeCleanWindow || agingConfig.freeCleaningWindow
+    if (timeSinceLastClean <= freeCleanWindow) return true
+
+    return false
+  }
+
+  const needsCleaning = getNeedsCleaning()
 
   const getCleaningCost = () => {
     // Use contract config if available, otherwise fall back to static config
@@ -455,7 +477,16 @@ export function RugCleaning({ tokenId, mintTime, lastCleaned: propLastCleaned, o
     if (cleanPending) return 'Cleaning...'
     if (cleanConfirming) return 'Confirming...'
     const cost = getCleaningCost()
-    return `Clean Rug (${cost === 0 ? 'Free' : formatEther(BigInt(cost)) + ' ETH'})`
+    const hasDirt = dirtLevel > 0
+    const isFree = cost === 0
+
+    if (isFree && !hasDirt) {
+      return 'Clean Rug (Free - Maintenance)'
+    } else if (isFree && hasDirt) {
+      return 'Clean Rug (Free)'
+    } else {
+      return `Clean Rug (${formatEther(BigInt(cost))} ETH)`
+    }
   }
 
   const getCleanButtonClass = () => {
@@ -656,7 +687,7 @@ export function RugCleaning({ tokenId, mintTime, lastCleaned: propLastCleaned, o
           Maintenance Info
         </div>
         <div className="text-blue-300 text-xs font-mono space-y-1">
-          <div>• <strong>Clean:</strong> Removes dirt and delays aging progression</div>
+          <div>• <strong>Clean:</strong> Removes dirt and delays aging progression (free maintenance periods available)</div>
           <div>• <strong>Restore Aging:</strong> Repairs aging (reduces aging level by 1)</div>
           <div>• <strong>Master Restore:</strong> Complete aging restoration (resets aging to pristine)</div>
           <div>• Cleaning: Free for first {contractConfig ? Math.floor(contractConfig.freeCleanDays / 60) : agingConfig.freeCleaningDays} minutes, then {contractConfig ? formatEther(BigInt(contractConfig.cleaningCost)) : formatEther(BigInt(agingConfig.cleaningCosts.paid))} ETH</div>
