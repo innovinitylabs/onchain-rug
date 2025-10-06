@@ -181,7 +181,7 @@ export function useRestoreRug() {
         functionName: 'restoreRug',
         args: [tokenId],
         value: BigInt(restorationCost),
-        gas: Number(txParams.gasLimit),
+        gas: txParams.gasLimit,
         chain,
         account: address as `0x${string}`,
       }
@@ -327,7 +327,7 @@ export function useMasterRestoreRug() {
         functionName: 'masterRestoreRug',
         args: [tokenId],
         value: BigInt(masterRestorationCost),
-        gas: Number(txParams.gasLimit),
+        gas: txParams.gasLimit,
         chain,
         account: address as `0x${string}`,
       }
@@ -530,7 +530,7 @@ export function useCleanRug() {
         functionName: 'cleanRug',
         args: [tokenId],
         value: BigInt(cleaningCost),
-        gas: Number(finalGasLimit), // Use calculated gas limit that meets intrinsic gas requirements
+        gas: finalGasLimit, // Pass as bigint directly to wagmi
         chain,
         account: address as `0x${string}`,
       }
