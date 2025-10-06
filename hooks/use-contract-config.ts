@@ -15,7 +15,7 @@ export function useContractConfig(chainId?: number) {
     error: agingError,
     refetch: refetchAging
   } = useReadContract({
-    address: contractAddress,
+    address: contractAddress as `0x${string}`,
     abi: onchainRugsABI,
     functionName: 'getAgingThresholds',
     query: {
@@ -30,7 +30,7 @@ export function useContractConfig(chainId?: number) {
     error: pricingError,
     refetch: refetchPricing
   } = useReadContract({
-    address: contractAddress,
+    address: contractAddress as `0x${string}`,
     abi: onchainRugsABI,
     functionName: 'getServicePricing',
     query: {

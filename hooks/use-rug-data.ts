@@ -62,14 +62,14 @@ export function useRugData(tokenId: number | null): UseRugDataResult {
       return null
     }
 
-    const { dirtLevel, textureLevel } = tokenURI.data.aging
+    const { dirtLevel, agingLevel } = tokenURI.data.aging
 
     return {
       ...tokenURI.data,
       tokenId: tokenId || 0,
       owner,
       dirtDescription: getDirtDescription(dirtLevel),
-      textureDescription: getAgingDescription(textureLevel),
+      textureDescription: getAgingDescription(agingLevel),
       isClean: dirtLevel === 0,
       needsCleaning: dirtLevel > 0,
       cleaningCost: dirtLevel > 0 ? 0.01 : 0, // This would come from config

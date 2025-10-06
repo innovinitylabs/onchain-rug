@@ -275,7 +275,7 @@ export default function Hero() {
                 overflow: 'visible',
                 filter: 'drop-shadow(0 0 25px rgba(108, 190, 230, 1)) drop-shadow(0 0 50px rgba(255, 255, 255, 0.5)) drop-shadow(0 0 80px rgba(108, 190, 230, 0.4))'
               }}
-              aria-label="Do Your Own Rugs. Don't Get Rugged. An On-Chain Art Project."
+              aria-label="Do Your Own Rugs. Don&apos;t Get Rugged. An OnChain Art Project."
             >
               <defs>
                 {/* Liquid Glass Material - Multiple Layers for Depth */}
@@ -383,7 +383,7 @@ export default function Hero() {
                   opacity: 0.4
                 }}
               >
-                <tspan x="50%" dy="-0.3em">Do Your Own Rugs. Don't Get Rugged.</tspan>
+                <tspan x="50%" dy="-0.3em">Do Your Own Rugs. Don&apos;t Get Rugged.</tspan>
                 <tspan x="50%" dy="1.2em">An On-Chain Art Project.</tspan>
               </text>
 
@@ -402,7 +402,7 @@ export default function Hero() {
                   fontFamily: 'system-ui, -apple-system, sans-serif',
                 }}
               >
-                <tspan x="50%" dy="-0.3em">Do Your Own Rugs. Don't Get Rugged.</tspan>
+                <tspan x="50%" dy="-0.3em">Do Your Own Rugs. Don&apos;t Get Rugged.</tspan>
                 <tspan x="50%" dy="1.2em">An On-Chain Art Project.</tspan>
               </text>
 
@@ -422,7 +422,7 @@ export default function Hero() {
                   mixBlendMode: 'screen'
                 }}
               >
-                <tspan x="50%" dy="-0.3em">Do Your Own Rugs. Don't Get Rugged.</tspan>
+                <tspan x="50%" dy="-0.3em">Do Your Own Rugs. Don&apos;t Get Rugged.</tspan>
                 <tspan x="50%" dy="1.2em">An On-Chain Art Project.</tspan>
               </text>
 
@@ -444,7 +444,7 @@ export default function Hero() {
                   mixBlendMode: 'overlay'
             }}
           >
-            <tspan x="50%" dy="-0.3em">Do Your Own Rugs. Don't Get Rugged.</tspan>
+            <tspan x="50%" dy="-0.3em">Do Your Own Rugs. Don&apos;t Get Rugged.</tspan>
             <tspan x="50%" dy="1.2em">An On-Chain Art Project.</tspan>
               </text>
             </svg>
