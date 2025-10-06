@@ -24,7 +24,7 @@ contract RugMaintenanceFacet {
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
         LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
 
-        // Verify ownership
+        // Verify ownership FIRST (before complex calculations for gas estimation)
         require(IERC721(address(this)).ownerOf(tokenId) == msg.sender, "Not token owner");
 
         // Check if cleaning is beneficial (has dirt or free cleaning available)
