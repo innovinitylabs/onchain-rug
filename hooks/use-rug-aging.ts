@@ -117,10 +117,24 @@ export function useRestoreRug() {
 
     console.log('restoreRug called with:', { tokenId: tokenId.toString(), textureLevel, providedGasEstimate })
 
-    // Get restoration cost from contract
-    const restorationCost = agingConfig.restorationCosts.paid
+    // Get maintenance options from contract (source of truth)
+    const maintenanceOptions = await publicClient.readContract({
+      address: contractAddress as `0x${string}`,
+      abi: onchainRugsABI,
+      functionName: 'getMaintenanceOptions',
+      args: [tokenId],
+    }) as [boolean, boolean, boolean, bigint, bigint, bigint]
 
-    console.log('Restoration cost calculation:', { restorationCost })
+    const [, , , , restorationCost] = maintenanceOptions
+
+    console.log('Contract maintenance options:', {
+      canClean: maintenanceOptions[0],
+      canRestore: maintenanceOptions[1],
+      needsMaster: maintenanceOptions[2],
+      cleaningCost: maintenanceOptions[3].toString(),
+      restorationCost: restorationCost.toString(),
+      masterCost: maintenanceOptions[5].toString()
+    })
 
     try {
       const chain = chainId === 360 ? shapeMainnet : shapeSepolia
@@ -263,10 +277,24 @@ export function useMasterRestoreRug() {
 
     console.log('masterRestoreRug called with:', { tokenId: tokenId.toString(), dirtLevel, textureLevel, providedGasEstimate })
 
-    // Get master restoration cost from contract
-    const masterRestorationCost = agingConfig.masterRestorationCosts.paid
+    // Get maintenance options from contract (source of truth)
+    const maintenanceOptions = await publicClient.readContract({
+      address: contractAddress as `0x${string}`,
+      abi: onchainRugsABI,
+      functionName: 'getMaintenanceOptions',
+      args: [tokenId],
+    }) as [boolean, boolean, boolean, bigint, bigint, bigint]
 
-    console.log('Master restoration cost calculation:', { masterRestorationCost })
+    const [, , , , , masterRestorationCost] = maintenanceOptions
+
+    console.log('Contract maintenance options:', {
+      canClean: maintenanceOptions[0],
+      canRestore: maintenanceOptions[1],
+      needsMaster: maintenanceOptions[2],
+      cleaningCost: maintenanceOptions[3].toString(),
+      restorationCost: maintenanceOptions[4].toString(),
+      masterCost: masterRestorationCost.toString()
+    })
 
     try {
       const chain = chainId === 360 ? shapeMainnet : shapeSepolia
@@ -409,14 +437,24 @@ export function useCleanRug() {
 
     console.log('cleanRug called with:', { tokenId: tokenId.toString(), dirtLevel, mintTime, providedGasEstimate })
 
-    // Calculate cleaning cost based on age (free for first 30 minutes)
-    const now = Math.floor(Date.now() / 1000)
-    const timeSinceMint = mintTime ? now - Number(mintTime) : 0
-    const cleaningCost = timeSinceMint < agingConfig.textureAging.intense
-      ? agingConfig.cleaningCosts.free
-      : agingConfig.cleaningCosts.paid
+    // Get maintenance options from contract (source of truth)
+    const maintenanceOptions = await publicClient.readContract({
+      address: contractAddress as `0x${string}`,
+      abi: onchainRugsABI,
+      functionName: 'getMaintenanceOptions',
+      args: [tokenId],
+    }) as [boolean, boolean, boolean, bigint, bigint, bigint]
 
-    console.log('Cleaning cost calculation:', { now, timeSinceMint, cleaningCost })
+    const [, , , cleaningCost] = maintenanceOptions
+
+    console.log('Contract maintenance options:', {
+      canClean: maintenanceOptions[0],
+      canRestore: maintenanceOptions[1],
+      needsMaster: maintenanceOptions[2],
+      cleaningCost: cleaningCost.toString(),
+      restorationCost: maintenanceOptions[4].toString(),
+      masterCost: maintenanceOptions[5].toString()
+    })
 
     try {
       const chain = chainId === 360 ? shapeMainnet : shapeSepolia
