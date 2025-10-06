@@ -100,6 +100,11 @@ export function RugCleaning({ tokenId, mintTime, lastCleaned: propLastCleaned, o
 
   const isCorrectChain = chainId === config.chainId
 
+  const getCleaningCost = () => {
+    // Use contract-provided cost if available, otherwise fallback
+    return Number(cleaningCost || BigInt(0))
+  }
+
   // Use contract data: needs cleaning if canClean (has dirt) OR cost is 0 (free)
   const getNeedsCleaning = () => {
     // Has dirt or cleaning is free (cost = 0)
@@ -107,11 +112,6 @@ export function RugCleaning({ tokenId, mintTime, lastCleaned: propLastCleaned, o
   }
 
   const needsCleaning = getNeedsCleaning()
-
-  const getCleaningCost = () => {
-    // Use contract-provided cost if available, otherwise fallback
-    return Number(cleaningCost || BigInt(0))
-  }
 
   const getDirtDescription = () => {
     if (dirtLevel === 0) return 'Clean'
