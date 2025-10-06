@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useAccount, useChainId, useSwitchChain, useSendTransaction } from 'wagmi'
 import { estimateContractGasWithRetry, getRecommendedGasOptions, formatGasEstimate } from '@/utils/gas-estimation'
-import { useRugAging, useCleanRug, useRestoreRug, useMasterRestoreRug } from '@/hooks/use-rug-aging'
+import { useRugAging, useCleanRug, useRestoreRug, useMasterRestoreRug, useMaintenanceOptions } from '@/hooks/use-rug-aging'
 import { useContractConfig } from '@/hooks/use-contract-config'
 import { motion } from 'framer-motion'
 import { Droplets, AlertCircle, CheckCircle, Clock, Sparkles, Crown } from 'lucide-react'
@@ -24,6 +24,7 @@ export function RugCleaning({ tokenId, mintTime, lastCleaned: propLastCleaned, o
   const { sendTransaction } = useSendTransaction()
   const { dirtLevel, agingLevel, lastCleaned: hookLastCleaned, refetch } = useRugAging(tokenId)
   const { config: contractConfig, isLoading: configLoading } = useContractConfig(chainId)
+  const { cleaningCost, restorationCost, masterCost, canClean, canRestore, needsMaster, isLoading: maintenanceLoading } = useMaintenanceOptions(tokenId)
 
   // Use prop data if available, otherwise fall back to hook data
   const actualMintTime = mintTime
@@ -99,53 +100,17 @@ export function RugCleaning({ tokenId, mintTime, lastCleaned: propLastCleaned, o
 
   const isCorrectChain = chainId === config.chainId
 
-  // Match contract logic: needs cleaning if has dirt OR cleaning is free
+  // Use contract data: needs cleaning if canClean (has dirt) OR cost is 0 (free)
   const getNeedsCleaning = () => {
-    // Has dirt
-    if (dirtLevel > 0) return true
-
-    // Check if cleaning would be free (within free periods)
-    const now = Math.floor(Date.now() / 1000)
-
-    // Free if within initial period from mint
-    const timeSinceMint = actualMintTime ? now - actualMintTime : 0
-    const freeCleanDays = contractConfig?.freeCleanDays || agingConfig.freeCleaningDays
-    if (timeSinceMint <= freeCleanDays) return true
-
-    // Free if recently cleaned (within free window of last clean)
-    const timeSinceLastClean = actualLastCleaned ? now - Number(actualLastCleaned) : 0
-    const freeCleanWindow = contractConfig?.freeCleanWindow || agingConfig.freeCleaningWindow
-    if (timeSinceLastClean <= freeCleanWindow) return true
-
-    return false
+    // Has dirt or cleaning is free (cost = 0)
+    return canClean || getCleaningCost() === 0
   }
 
   const needsCleaning = getNeedsCleaning()
 
   const getCleaningCost = () => {
-    // Use contract config if available, otherwise fall back to static config
-    const currentConfig = contractConfig || {
-      freeCleanDays: agingConfig.freeCleaningDays,
-      freeCleanWindow: agingConfig.freeCleaningWindow,
-      cleaningCost: agingConfig.cleaningCosts.paid
-    }
-
-    // Check if rug is within free cleaning periods (matching contract logic)
-    const now = Math.floor(Date.now() / 1000)
-
-    // Free if within initial period from mint
-    const timeSinceMint = actualMintTime ? now - actualMintTime : 0
-    if (timeSinceMint <= currentConfig.freeCleanDays) { // Already in seconds
-      return 0 // Free
-    }
-
-    // Free if recently cleaned (within free window of last clean)
-    const timeSinceLastClean = actualLastCleaned ? now - Number(actualLastCleaned) : 0
-    if (timeSinceLastClean <= currentConfig.freeCleanWindow) { // Already in seconds
-      return 0 // Free
-    }
-
-    return currentConfig.cleaningCost // Paid otherwise
+    // Use contract-provided cost if available, otherwise fallback
+    return Number(cleaningCost || BigInt(0))
   }
 
   const getDirtDescription = () => {

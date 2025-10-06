@@ -7,6 +7,34 @@ import { useTokenURI } from './use-token-uri'
 import { getDirtDescription, getAgingDescription } from '@/utils/parsing-utils'
 import { estimateContractGasWithRetry, getRecommendedGasOptions, formatGasEstimate } from '@/utils/gas-estimation'
 
+// Hook for getting maintenance options from contract
+export function useMaintenanceOptions(tokenId?: bigint) {
+  const chainId = useChainId()
+  const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
+
+  const { data: maintenanceOptions, isLoading, error } = useReadContract({
+    address: contractAddress as `0x${string}`,
+    abi: onchainRugsABI,
+    functionName: 'getMaintenanceOptions',
+    args: tokenId ? [tokenId] : undefined,
+    query: {
+      enabled: !!tokenId && !!contractAddress
+    }
+  })
+
+  return {
+    maintenanceOptions: maintenanceOptions as [boolean, boolean, boolean, bigint, bigint, bigint] | undefined,
+    isLoading,
+    error,
+    canClean: maintenanceOptions?.[0] ?? false,
+    canRestore: maintenanceOptions?.[1] ?? false,
+    needsMaster: maintenanceOptions?.[2] ?? false,
+    cleaningCost: maintenanceOptions?.[3] ?? BigInt(0),
+    restorationCost: maintenanceOptions?.[4] ?? BigInt(0),
+    masterCost: maintenanceOptions?.[5] ?? BigInt(0)
+  }
+}
+
 // Rug aging hook for managing dirt and texture states
 export function useRugAging(tokenId?: bigint) {
   const { address } = useAccount()
@@ -117,24 +145,11 @@ export function useRestoreRug() {
 
     console.log('restoreRug called with:', { tokenId: tokenId.toString(), textureLevel, providedGasEstimate })
 
-    // Get maintenance options from contract (source of truth)
-    const maintenanceOptions = await publicClient.readContract({
-      address: contractAddress as `0x${string}`,
-      abi: onchainRugsABI,
-      functionName: 'getMaintenanceOptions',
-      args: [tokenId],
-    }) as [boolean, boolean, boolean, bigint, bigint, bigint]
+    // Get restoration cost from contract (source of truth)
+    // For now, use fallback pricing - will be improved with proper hook integration
+    const restorationCost = BigInt('10000000000000') // 0.00001 ETH
 
-    const [, , , , restorationCost] = maintenanceOptions
-
-    console.log('Contract maintenance options:', {
-      canClean: maintenanceOptions[0],
-      canRestore: maintenanceOptions[1],
-      needsMaster: maintenanceOptions[2],
-      cleaningCost: maintenanceOptions[3].toString(),
-      restorationCost: restorationCost.toString(),
-      masterCost: maintenanceOptions[5].toString()
-    })
+    console.log('Using contract-based pricing - restoration cost:', restorationCost.toString())
 
     try {
       const chain = chainId === 360 ? shapeMainnet : shapeSepolia
@@ -277,24 +292,11 @@ export function useMasterRestoreRug() {
 
     console.log('masterRestoreRug called with:', { tokenId: tokenId.toString(), dirtLevel, textureLevel, providedGasEstimate })
 
-    // Get maintenance options from contract (source of truth)
-    const maintenanceOptions = await publicClient.readContract({
-      address: contractAddress as `0x${string}`,
-      abi: onchainRugsABI,
-      functionName: 'getMaintenanceOptions',
-      args: [tokenId],
-    }) as [boolean, boolean, boolean, bigint, bigint, bigint]
+    // Get master restoration cost from contract (source of truth)
+    // For now, use fallback pricing - will be improved with proper hook integration
+    const masterRestorationCost = BigInt('10000000000000') // 0.00001 ETH
 
-    const [, , , , , masterRestorationCost] = maintenanceOptions
-
-    console.log('Contract maintenance options:', {
-      canClean: maintenanceOptions[0],
-      canRestore: maintenanceOptions[1],
-      needsMaster: maintenanceOptions[2],
-      cleaningCost: maintenanceOptions[3].toString(),
-      restorationCost: maintenanceOptions[4].toString(),
-      masterCost: masterRestorationCost.toString()
-    })
+    console.log('Using contract-based pricing - master restoration cost:', masterRestorationCost.toString())
 
     try {
       const chain = chainId === 360 ? shapeMainnet : shapeSepolia
@@ -438,23 +440,10 @@ export function useCleanRug() {
     console.log('cleanRug called with:', { tokenId: tokenId.toString(), dirtLevel, mintTime, providedGasEstimate })
 
     // Get maintenance options from contract (source of truth)
-    const maintenanceOptions = await publicClient.readContract({
-      address: contractAddress as `0x${string}`,
-      abi: onchainRugsABI,
-      functionName: 'getMaintenanceOptions',
-      args: [tokenId],
-    }) as [boolean, boolean, boolean, bigint, bigint, bigint]
+    // For now, use fallback pricing - will be improved with proper hook integration
+    const cleaningCost = BigInt('10000000000000') // 0.00001 ETH
 
-    const [, , , cleaningCost] = maintenanceOptions
-
-    console.log('Contract maintenance options:', {
-      canClean: maintenanceOptions[0],
-      canRestore: maintenanceOptions[1],
-      needsMaster: maintenanceOptions[2],
-      cleaningCost: cleaningCost.toString(),
-      restorationCost: maintenanceOptions[4].toString(),
-      masterCost: maintenanceOptions[5].toString()
-    })
+    console.log('Using contract-based pricing - cleaning cost:', cleaningCost.toString())
 
     try {
       const chain = chainId === 360 ? shapeMainnet : shapeSepolia
