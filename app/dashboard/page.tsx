@@ -43,7 +43,7 @@ function parseAgingDataFromAttributes(attributes: any[]): AgingData {
     lastSalePrice: BigInt(getAttributeValue('Last Sale Price') || 0),
     recentSalePrices: [BigInt(0), BigInt(0), BigInt(0)], // Not stored in attributes
     dirtLevel: parseInt(getAttributeValue('Dirt Level')) || 0,
-    textureLevel: parseInt(getAttributeValue('Texture Level')) || 0,
+    agingLevel: parseInt(getAttributeValue('Aging Level')) || 0,
     launderingCount: BigInt(getAttributeValue('Laundering Count') || 0),
     lastLaundered: BigInt(0), // Not stored in attributes
     cleaningCount: BigInt(getAttributeValue('Cleaning Count') || 0),
@@ -64,7 +64,7 @@ interface AgingData {
   lastSalePrice: bigint
   recentSalePrices: readonly [bigint, bigint, bigint]
   dirtLevel: number
-  textureLevel: number
+  agingLevel: number
   launderingCount: bigint
   lastLaundered: bigint
   cleaningCount: bigint
@@ -94,7 +94,7 @@ interface RugData {
   }
   aging: {
     dirtLevel: number
-    textureLevel: number
+    agingLevel: number
     lastCleaned: bigint | null
     mintTime: number
   }
@@ -105,7 +105,7 @@ interface RugData {
   tokenURI?: string
   metadata?: any
   dirtDescription?: string
-  textureDescription?: string
+  agingDescription?: string
   isClean?: boolean
   needsCleaning?: boolean
   cleaningCost?: number
@@ -165,7 +165,7 @@ export default function DashboardPage() {
           console.log(`Parsed data for rug #${tokenId}:`, {
             name: parsedData.name,
             dirtLevel: parsedData.aging.dirtLevel,
-            textureLevel: parsedData.aging.textureLevel,
+            agingLevel: parsedData.aging.agingLevel,
           })
 
           // Get owner with Alchemy fallback
@@ -189,7 +189,7 @@ export default function DashboardPage() {
             name: parsedData.name,
             owner: ownerOf,
             dirtDescription: parsedData.aging.dirtLevel === 0 ? 'Clean' : 'Dirty',
-            textureDescription: parsedData.aging.textureLevel === 0 ? 'Smooth' : 'Worn',
+            agingDescription: parsedData.aging.agingLevel === 0 ? 'Brand New' : 'Aged',
             isClean: parsedData.aging.dirtLevel === 0,
             needsCleaning: parsedData.aging.dirtLevel > 0,
             cleaningCost: parsedData.aging.dirtLevel > 0 ? 0.01 : 0,
@@ -235,7 +235,7 @@ export default function DashboardPage() {
 
         const aging = {
           dirtLevel: parseInt(getAttributeValue('Dirt Level')) || 0,
-          textureLevel: parseInt(getAttributeValue('Texture Level')) || 0,
+          agingLevel: parseInt(getAttributeValue('Aging Level')) || 0,
           lastCleaned: BigInt(0), // Not available in attributes
           mintTime: parseInt(getAttributeValue('Mint Time')) || 0,
         }
@@ -259,7 +259,7 @@ export default function DashboardPage() {
           name: metadata.name,
           owner: ownerOf,
           dirtDescription: aging.dirtLevel === 0 ? 'Clean' : 'Dirty',
-          textureDescription: aging.textureLevel === 0 ? 'Smooth' : 'Worn',
+          agingDescription: aging.agingLevel === 0 ? 'Brand New' : 'Aged',
           isClean: aging.dirtLevel === 0,
           needsCleaning: aging.dirtLevel > 0,
           cleaningCost: aging.dirtLevel > 0 ? 0.01 : 0,
@@ -588,7 +588,7 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 gap-6">
             {userRugs.map((rug) => {
               const dirtLevel = rug.aging.dirtLevel || 0
-              const textureLevel = rug.aging.textureLevel || 0
+              const agingLevel = rug.aging.agingLevel || 0
 
               return (
                 <motion.div
@@ -661,18 +661,21 @@ export default function DashboardPage() {
                         {/* Status and Stats */}
                         <div className="space-y-4">
                           {/* Status Indicators */}
-                          {/* Aging Level (Texture-based) */}
+                          {/* Aging Level */}
                           <div className="space-y-2">
                             <div className="flex items-center justify-between">
                               <span className="text-xs text-white/60">Aging Level</span>
-                              <div className={`w-3 h-3 rounded-full ${
-                                textureLevel === 0 ? 'bg-emerald-400' :
-                                textureLevel === 1 ? 'bg-amber-400' : 'bg-red-400'
-                              }`} />
-                            </div>
-                            <div className="text-xs text-white/70 text-center font-medium">
-                              {textureLevel === 0 ? 'Brand New' : textureLevel === 1 ? 'Well Used' : 'Vintage'}
-                            </div>
+                            <div className={`w-3 h-3 rounded-full ${
+                              agingLevel === 0 ? 'bg-emerald-400' :
+                              agingLevel <= 3 ? 'bg-amber-400' :
+                              agingLevel <= 7 ? 'bg-orange-400' : 'bg-red-400'
+                            }`} />
+                          </div>
+                          <div className="text-xs text-white/70 text-center font-medium">
+                            {agingLevel === 0 ? 'Brand New' :
+                             agingLevel <= 3 ? 'Slightly Aged' :
+                             agingLevel <= 7 ? 'Moderately Aged' : 'Heavily Aged'}
+                          </div>
                           </div>
 
                           {/* Dirt Condition */}
