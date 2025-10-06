@@ -233,7 +233,7 @@ contract EdgeCaseTests is Test {
         // Set aging level to 5, then immediately check calculations
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
         rs.agingData[testTokenId].agingLevel = 5;
-        rs.agingData[testTokenId].agingStartTime = block.timestamp;
+        rs.agingData[testTokenId].lastCleaned = block.timestamp;
 
         // Small time advance - should not cause issues
         vm.warp(block.timestamp + 1);

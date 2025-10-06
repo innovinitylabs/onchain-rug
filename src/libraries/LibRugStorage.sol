@@ -34,7 +34,6 @@ library LibRugStorage {
 
         // Aging System (11 levels: 0=Clean, 1-10=Aged)
         uint8 agingLevel;               // Current aging level (0-10)
-        uint256 agingStartTime;         // When current aging level started
 
         // Frame System (5 levels: 0=None, 1=Bronze, 2=Silver, 3=Gold, 4=Diamond)
         uint8 frameLevel;               // Current frame level (0-4)

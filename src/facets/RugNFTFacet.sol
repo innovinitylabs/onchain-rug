@@ -101,7 +101,6 @@ contract RugNFTFacet is ERC721, ERC721URIStorage {
 
             // Aging System (11 levels: 0=Clean, 1-10=Aged)
             agingLevel: 0, // Start at pristine level
-            agingStartTime: block.timestamp, // Start aging timer
 
             // Frame System (5 levels: 0=None, 1=Bronze, 2=Silver, 3=Gold, 4=Diamond)
             frameLevel: 0, // No frame initially
@@ -430,7 +429,7 @@ contract RugNFTFacet is ERC721, ERC721URIStorage {
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
         LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
 
-        uint256 timeSinceLevelStart = block.timestamp - aging.agingStartTime;
+        uint256 timeSinceLevelStart = block.timestamp - aging.lastCleaned;
         uint256 baseInterval = rs.agingAdvanceDays;
 
         // Apply frame-based aging immunity (higher frames age slower)

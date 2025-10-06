@@ -206,7 +206,6 @@ contract RugLaunderingFacet {
         // Reset all aging (laundering resets everything to level 0)
         aging.lastCleaned = block.timestamp;
         aging.agingLevel = 0;
-        aging.agingStartTime = block.timestamp;
 
         // Track laundering statistics
         aging.launderingCount++;
@@ -220,7 +219,7 @@ contract RugLaunderingFacet {
             aging.frameAchievedTime = block.timestamp;
         }
 
-        (bool shouldTrigger, string memory reason) = _checkLaunderingConditions(tokenId, salePrice);
+        (, string memory reason) = _checkLaunderingConditions(tokenId, salePrice);
 
         emit RugLaundered(tokenId, buyer, salePrice, reason);
     }

@@ -13,8 +13,7 @@ contract SimpleFreshRugMechanicsTest is Test {
     // Test data structure matching our fresh design
     struct TestRugData {
         uint256 lastCleaned;
-        uint8 agingLevel;        // Stored aging level (updated on cleaning)
-        uint256 agingStartTime;  // When aging started (moves forward with restorations)
+        uint8 agingLevel;        // Stored aging level
         uint8 frameLevel;
         uint256 frameAchievedTime;
         uint256 cleaningCount;
@@ -39,7 +38,6 @@ contract SimpleFreshRugMechanicsTest is Test {
         testRug = TestRugData({
             lastCleaned: block.timestamp,
             agingLevel: 0,
-            agingStartTime: block.timestamp,
             frameLevel: 0,
             frameAchievedTime: 0,
             cleaningCount: 0,
@@ -138,7 +136,7 @@ contract SimpleFreshRugMechanicsTest is Test {
 
         // Should reset everything
         assertEq(_calculateAgingLevel(testRug), 0);
-        assertEq(testRug.agingStartTime, block.timestamp);
+        assertEq(testRug.lastCleaned, block.timestamp);
         assertEq(_calculateDirtLevel(testRug), 0);
         assertEq(testRug.lastCleaned, block.timestamp);
         assertEq(testRug.masterRestorationCount, 1);
@@ -235,7 +233,7 @@ contract SimpleFreshRugMechanicsTest is Test {
         assertEq(_calculateDirtLevel(testRug), 0); // Dirt cleaned
         uint8 levelAfterClean = _calculateAgingLevel(testRug);
         assert(levelAfterClean <= levelBeforeClean + 1); // Should not increase significantly
-        assertEq(testRug.agingStartTime, block.timestamp); // Timer reset
+        assertEq(testRug.lastCleaned, block.timestamp); // Timer reset
         assertEq(testRug.cleaningCount, 1);
         assertEq(testRug.lastCleaned, block.timestamp);
     }
@@ -254,7 +252,7 @@ contract SimpleFreshRugMechanicsTest is Test {
         // Verify: dirt resets and aging timer reset (though level 0 unchanged)
         assertEq(_calculateDirtLevel(testRug), 0);
         assertEq(_calculateAgingLevel(testRug), 0);
-        assertEq(testRug.agingStartTime, block.timestamp); // Timer reset
+        assertEq(testRug.lastCleaned, block.timestamp); // Timer reset
         assertEq(testRug.cleaningCount, 1);
     }
 
@@ -274,7 +272,7 @@ contract SimpleFreshRugMechanicsTest is Test {
         assertEq(_calculateDirtLevel(testRug), 0);
         uint8 levelAfterClean = _calculateAgingLevel(testRug);
         assert(levelAfterClean <= levelBeforeClean + 1); // Should not increase significantly
-        assertEq(testRug.agingStartTime, block.timestamp); // Timer reset
+        assertEq(testRug.lastCleaned, block.timestamp); // Timer reset
         assertEq(testRug.cleaningCount, 1);
     }
 
@@ -294,7 +292,7 @@ contract SimpleFreshRugMechanicsTest is Test {
         assertEq(_calculateDirtLevel(testRug), 0);
         uint8 levelAfterClean = _calculateAgingLevel(testRug);
         assert(levelAfterClean <= levelBeforeClean + 1); // Should not increase significantly
-        assertEq(testRug.agingStartTime, block.timestamp); // Timer reset
+        assertEq(testRug.lastCleaned, block.timestamp); // Timer reset
         assertEq(testRug.cleaningCount, 1);
     }
 
@@ -331,7 +329,7 @@ contract SimpleFreshRugMechanicsTest is Test {
         // Should reset everything to 0
         assertEq(_calculateAgingLevel(testRug), 0);
         assertEq(_calculateDirtLevel(testRug), 0);
-        assertEq(testRug.agingStartTime, block.timestamp);
+        assertEq(testRug.lastCleaned, block.timestamp);
         assertEq(testRug.lastCleaned, block.timestamp);
         assertEq(testRug.masterRestorationCount, 1);
         assertEq(_calculateMaintenanceScore(testRug), 10);
@@ -503,7 +501,7 @@ contract SimpleFreshRugMechanicsTest is Test {
 
         // Reset and test with Diamond frame
         testRug.agingLevel = 0;
-        testRug.agingStartTime = block.timestamp;
+        testRug.lastCleaned = block.timestamp;
         testRug.frameLevel = 4; // Diamond
 
         vm.warp(block.timestamp + 10 * AGING_ADVANCE_DAYS); // Another 140 days
@@ -603,7 +601,7 @@ contract SimpleFreshRugMechanicsTest is Test {
     }
 
     function _calculateAgingLevel(TestRugData memory rug) internal view returns (uint8) {
-        uint256 timeSinceLevelStart = block.timestamp - rug.agingStartTime;
+        uint256 timeSinceLevelStart = block.timestamp - rug.lastCleaned;
         uint256 baseInterval = AGING_ADVANCE_DAYS;
 
         // Apply frame-based aging immunity
@@ -647,32 +645,23 @@ contract SimpleFreshRugMechanicsTest is Test {
     }
 
     function _cleanRug(TestRugData storage rug) internal {
-        // Update aging level to current calculated level before resetting timer
-        uint8 currentLevel = _calculateAgingLevel(rug);
-        if (currentLevel > rug.agingLevel) {
-            rug.agingLevel = currentLevel; // "Freeze" current level
-        }
-
+        // Clean only resets dirt and delays aging progression
         rug.lastCleaned = block.timestamp;
-        rug.agingStartTime = block.timestamp; // Reset aging timer to delay further aging
         rug.cleaningCount++;
         _updateFrame(rug);
     }
 
     function _restoreRug(TestRugData storage rug) internal {
         uint8 currentLevel = _calculateAgingLevel(rug);
-        if (currentLevel > 0) {
-            // Set aging start time to achieve currentLevel - 1
-            uint256 targetStartTime = block.timestamp - (uint256(currentLevel - 1) * AGING_ADVANCE_DAYS);
-            rug.agingStartTime = targetStartTime;
-        }
+        // Set stored level to current calculated - 1
+        rug.agingLevel = currentLevel > 0 ? currentLevel - 1 : 0;
         rug.lastCleaned = block.timestamp;
         rug.restorationCount++;
         _updateFrame(rug);
     }
 
     function _masterRestoreRug(TestRugData storage rug) internal {
-        rug.agingStartTime = block.timestamp;
+        rug.agingLevel = 0;
         rug.lastCleaned = block.timestamp;
         rug.masterRestorationCount++;
         _updateFrame(rug);
@@ -716,7 +705,7 @@ contract SimpleFreshRugMechanicsTest is Test {
         if (targetLevel <= currentLevel) return 0;
 
         uint256 levelsNeeded = targetLevel - currentLevel;
-        uint256 timeSinceLevelStart = block.timestamp - rug.agingStartTime;
+        uint256 timeSinceLevelStart = block.timestamp - rug.lastCleaned;
         uint256 advanceInterval = AGING_ADVANCE_DAYS;
 
         uint256 targetTime = levelsNeeded * advanceInterval;

@@ -54,7 +54,7 @@ contract RugAgingFacet {
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
         LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
 
-        uint256 timeSinceLevelStart = block.timestamp - aging.agingStartTime;
+        uint256 timeSinceLevelStart = block.timestamp - aging.lastCleaned;
         uint256 baseInterval = rs.agingAdvanceDays;
 
         // Apply frame-based aging immunity (higher frames age slower)
@@ -107,19 +107,17 @@ contract RugAgingFacet {
      * @notice Get complete aging state for a rug
      * @param tokenId Token ID to check
      * @return dirtLevel Current dirt level (0-2)
-     * @return agingLevel Current aging level (0-9)
+     * @return agingLevel Current aging level (0-10)
      * @return frameLevel Current frame level (0-4)
      * @return maintenanceScore Total maintenance score
-     * @return lastCleaned Timestamp of last cleaning
-     * @return agingStartTime When current aging level started
+     * @return lastCleaned Timestamp of last maintenance action
      */
     function getAgingState(uint256 tokenId) external view returns (
         uint8 dirtLevel,
         uint8 agingLevel,
         uint8 frameLevel,
         uint256 maintenanceScore,
-        uint256 lastCleaned,
-        uint256 agingStartTime
+        uint256 lastCleaned
     ) {
         LibRugStorage.AgingData storage aging = LibRugStorage.rugStorage().agingData[tokenId];
 
@@ -128,7 +126,6 @@ contract RugAgingFacet {
         frameLevel = aging.frameLevel;
         maintenanceScore = LibRugStorage.calculateMaintenanceScore(aging);
         lastCleaned = aging.lastCleaned;
-        agingStartTime = aging.agingStartTime;
     }
 
     // ===== UTILITY FUNCTIONS =====
@@ -194,7 +191,7 @@ contract RugAgingFacet {
         uint8 currentLevel = this.getAgingLevel(tokenId);
         if (currentLevel >= 10) return 0; // Max level reached
 
-        uint256 timeSinceLevelStart = block.timestamp - aging.agingStartTime;
+        uint256 timeSinceLevelStart = block.timestamp - aging.lastCleaned;
         uint256 baseInterval = rs.agingAdvanceDays;
 
         // Apply frame-based aging immunity
@@ -237,7 +234,7 @@ contract RugAgingFacet {
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
         LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
 
-        uint256 timeSinceLevelStart = block.timestamp - aging.agingStartTime;
+        uint256 timeSinceLevelStart = block.timestamp - aging.lastCleaned;
         uint256 advanceInterval = rs.agingAdvanceDays;
 
         // Calculate how many levels we should have advanced
@@ -273,7 +270,7 @@ contract RugAgingFacet {
         uint8 currentLevel = _getAgingLevel(tokenId);
         if (currentLevel >= 10) return 0; // Max level reached
 
-        uint256 timeSinceLevelStart = block.timestamp - aging.agingStartTime;
+        uint256 timeSinceLevelStart = block.timestamp - aging.lastCleaned;
         uint256 advanceInterval = rs.agingAdvanceDays;
 
         // Time until next level

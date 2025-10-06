@@ -86,6 +86,7 @@ contract DeploymentCriticalTests is Test {
         rs.diamondThreshold = 200;
 
         rs.collectionCap = 1000; // Set collection cap for testing
+        rs.totalSupply = 0; // Reset total supply for testing
 
         vm.stopPrank();
     }

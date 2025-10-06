@@ -45,15 +45,8 @@ contract RugMaintenanceFacet {
             require(success, "Refund transfer failed");
         }
 
-        // Clean dirt (reset to level 0) and delay aging
+        // Clean dirt (reset to level 0) and delay aging progression
         aging.lastCleaned = block.timestamp;
-
-        // Update aging level to current calculated level before resetting timer
-        uint8 currentLevel = _getAgingLevel(tokenId);
-        if (currentLevel > aging.agingLevel) {
-            aging.agingLevel = currentLevel; // "Freeze" current level
-        }
-        aging.agingStartTime = block.timestamp; // Reset aging timer to delay further aging
 
         // Earn maintenance points
         aging.cleaningCount++;
@@ -94,15 +87,11 @@ contract RugMaintenanceFacet {
         }
 
         // Record previous state
-        uint8 previousDirt = _getDirtLevel(tokenId);
         uint8 previousAging = currentAging;
 
-        // Clean dirt and reduce aging level by 1
+        // Clean dirt and reduce aging level to current calculated - 1
         aging.lastCleaned = block.timestamp;
-        if (aging.agingLevel > 0) {
-            aging.agingLevel -= 1;
-            aging.agingStartTime = block.timestamp; // Reset timer for new level
-        }
+        aging.agingLevel = currentAging > 0 ? currentAging - 1 : 0;
 
         // Earn maintenance points
         aging.restorationCount++;
@@ -150,7 +139,6 @@ contract RugMaintenanceFacet {
         // Complete reset: dirt to 0, aging to 0
         aging.lastCleaned = block.timestamp;
         aging.agingLevel = 0;
-        aging.agingStartTime = block.timestamp;
 
         // Earn maintenance points
         aging.masterRestorationCount++;
@@ -287,16 +275,30 @@ contract RugMaintenanceFacet {
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
         LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
 
-        // Check frame immunity first
-        if (LibRugStorage.hasDirtImmunity(aging.frameLevel)) {
-            return 0; // Silver+ frames never accumulate dirt
+        // Gold+ frames never get dirty
+        if (aging.frameLevel >= 3) {
+            return 0;
         }
 
-        // Calculate dirt level based on time since cleaning
+        // Calculate dirt level based on time since cleaning with frame speed adjustments
         uint256 timeSinceCleaned = block.timestamp - aging.lastCleaned;
 
-        if (timeSinceCleaned >= rs.dirtLevel2Days) return 2;
-        if (timeSinceCleaned >= rs.dirtLevel1Days) return 1;
+        // Apply frame-based speed multipliers (higher frames = slower dirt accumulation)
+        uint256 speedMultiplier;
+        if (aging.frameLevel == 2) {
+            speedMultiplier = 200; // Silver: 2x slower
+        } else if (aging.frameLevel == 1) {
+            speedMultiplier = 150; // Bronze: 1.5x slower
+        } else {
+            speedMultiplier = 100; // None: normal speed
+        }
+
+        // Adjust thresholds based on frame level
+        uint256 adjustedLevel1Days = (rs.dirtLevel1Days * speedMultiplier) / 100;
+        uint256 adjustedLevel2Days = (rs.dirtLevel2Days * speedMultiplier) / 100;
+
+        if (timeSinceCleaned >= adjustedLevel2Days) return 2;
+        if (timeSinceCleaned >= adjustedLevel1Days) return 1;
         return 0;
     }
 
@@ -304,7 +306,7 @@ contract RugMaintenanceFacet {
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
         LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
 
-        uint256 timeSinceLevelStart = block.timestamp - aging.agingStartTime;
+        uint256 timeSinceLevelStart = block.timestamp - aging.lastCleaned;
         uint256 baseInterval = rs.agingAdvanceDays;
 
         // Apply frame-based aging immunity (higher frames age slower)
