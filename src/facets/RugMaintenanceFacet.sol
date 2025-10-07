@@ -40,6 +40,9 @@ contract RugMaintenanceFacet {
         require(msg.value == cost, "Must send exact payment amount");
 
         // Clean dirt (reset to level 0) and delay aging progression
+        // Preserve current aging level by committing it to storage
+        uint8 currentAging = _getAgingLevel(tokenId);
+        aging.agingLevel = currentAging;
         aging.lastCleaned = block.timestamp;
 
         // Earn maintenance points
