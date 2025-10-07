@@ -228,6 +228,20 @@ export const onchainRugsABI = [
     stateMutability: 'view',
     type: 'function',
   },
+  {
+    inputs: [{ name: 'tokenId', type: 'uint256' }],
+    name: 'getMaintenanceOptions',
+    outputs: [
+      { name: 'canClean', type: 'bool' },
+      { name: 'canRestore', type: 'bool' },
+      { name: 'needsMaster', type: 'bool' },
+      { name: 'cleaningCost', type: 'uint256' },
+      { name: 'restorationCost', type: 'uint256' },
+      { name: 'masterCost', type: 'uint256' }
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
   // Events for listening to new mints
   {
     anonymous: false,

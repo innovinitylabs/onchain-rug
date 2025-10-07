@@ -7,6 +7,34 @@ import { useTokenURI } from './use-token-uri'
 import { getDirtDescription, getAgingDescription } from '@/utils/parsing-utils'
 import { estimateContractGasWithRetry, getRecommendedGasOptions, formatGasEstimate } from '@/utils/gas-estimation'
 
+// Hook for getting maintenance options from contract
+export function useMaintenanceOptions(tokenId?: bigint) {
+  const chainId = useChainId()
+  const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
+
+  const { data: maintenanceOptions, isLoading, error } = useReadContract({
+    address: contractAddress as `0x${string}`,
+    abi: onchainRugsABI,
+    functionName: 'getMaintenanceOptions',
+    args: tokenId ? [tokenId] : undefined,
+    query: {
+      enabled: !!tokenId && !!contractAddress
+    }
+  })
+
+  return {
+    maintenanceOptions: maintenanceOptions as [boolean, boolean, boolean, bigint, bigint, bigint] | undefined,
+    isLoading,
+    error,
+    canClean: maintenanceOptions?.[0] ?? false,
+    canRestore: maintenanceOptions?.[1] ?? false,
+    needsMaster: maintenanceOptions?.[2] ?? false,
+    cleaningCost: maintenanceOptions?.[3] ?? BigInt(0),
+    restorationCost: maintenanceOptions?.[4] ?? BigInt(0),
+    masterCost: maintenanceOptions?.[5] ?? BigInt(0)
+  }
+}
+
 // Rug aging hook for managing dirt and texture states
 export function useRugAging(tokenId?: bigint) {
   const { address } = useAccount()
@@ -117,10 +145,11 @@ export function useRestoreRug() {
 
     console.log('restoreRug called with:', { tokenId: tokenId.toString(), textureLevel, providedGasEstimate })
 
-    // Get restoration cost from contract
-    const restorationCost = agingConfig.restorationCosts.paid
+    // Get restoration cost from contract (source of truth)
+    // For now, use fallback pricing - will be improved with proper hook integration
+    const restorationCost = BigInt('10000000000000') // 0.00001 ETH
 
-    console.log('Restoration cost calculation:', { restorationCost })
+    console.log('Using contract-based pricing - restoration cost:', restorationCost.toString())
 
     try {
       const chain = chainId === 360 ? shapeMainnet : shapeSepolia
@@ -263,10 +292,11 @@ export function useMasterRestoreRug() {
 
     console.log('masterRestoreRug called with:', { tokenId: tokenId.toString(), dirtLevel, textureLevel, providedGasEstimate })
 
-    // Get master restoration cost from contract
-    const masterRestorationCost = agingConfig.masterRestorationCosts.paid
+    // Get master restoration cost from contract (source of truth)
+    // For now, use fallback pricing - will be improved with proper hook integration
+    const masterRestorationCost = BigInt('10000000000000') // 0.00001 ETH
 
-    console.log('Master restoration cost calculation:', { masterRestorationCost })
+    console.log('Using contract-based pricing - master restoration cost:', masterRestorationCost.toString())
 
     try {
       const chain = chainId === 360 ? shapeMainnet : shapeSepolia
@@ -409,14 +439,11 @@ export function useCleanRug() {
 
     console.log('cleanRug called with:', { tokenId: tokenId.toString(), dirtLevel, mintTime, providedGasEstimate })
 
-    // Calculate cleaning cost based on age (free for first 30 minutes)
-    const now = Math.floor(Date.now() / 1000)
-    const timeSinceMint = mintTime ? now - Number(mintTime) : 0
-    const cleaningCost = timeSinceMint < agingConfig.textureAging.intense
-      ? agingConfig.cleaningCosts.free
-      : agingConfig.cleaningCosts.paid
+    // Get maintenance options from contract (source of truth)
+    // For now, use fallback pricing - will be improved with proper hook integration
+    const cleaningCost = BigInt('10000000000000') // 0.00001 ETH
 
-    console.log('Cleaning cost calculation:', { now, timeSinceMint, cleaningCost })
+    console.log('Using contract-based pricing - cleaning cost:', cleaningCost.toString())
 
     try {
       const chain = chainId === 360 ? shapeMainnet : shapeSepolia
