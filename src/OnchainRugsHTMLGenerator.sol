@@ -110,6 +110,7 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
      * @return js JavaScript configuration string
      */
     function generateRugConfig(RugData memory rug, uint8 dirtLevel, uint8 textureLevel, string memory frameLevel) internal pure returns (string memory js) {
+        string memory frameCode = mapFrameLevelToCode(frameLevel);
         return string.concat(
             'let w=800,h=1200,f=30,wt=8,wp=',
             rug.warpThickness.toString(),
@@ -128,9 +129,22 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
             ',dl=',
             Strings.toString(dirtLevel),
             ',fl="',
-            frameLevel,
+            frameCode,
             '";p=JSON.parse(p);sd=JSON.parse(sd);cm=JSON.parse(cm);'
         );
+    }
+
+    /**
+     * @notice Map frame level string to single-letter code for JavaScript
+     * @param frameLevel Full frame level name
+     * @return code Single-letter code (G, B, S, D)
+     */
+    function mapFrameLevelToCode(string memory frameLevel) internal pure returns (string memory code) {
+        if (keccak256(abi.encodePacked(frameLevel)) == keccak256(abi.encodePacked("Gold"))) return "G";
+        if (keccak256(abi.encodePacked(frameLevel)) == keccak256(abi.encodePacked("Bronze"))) return "B";
+        if (keccak256(abi.encodePacked(frameLevel)) == keccak256(abi.encodePacked("Silver"))) return "S";
+        if (keccak256(abi.encodePacked(frameLevel)) == keccak256(abi.encodePacked("Diamond"))) return "D";
+        return "G"; // Default fallback to Gold
     }
 
     /**
@@ -165,7 +179,10 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
         uint8 textureLevel,
         string memory frameLevel,
         uint256 tokenId
-    ) internal view returns (HTMLRequest memory htmlRequest) {
+    ) internal pure returns (HTMLRequest memory htmlRequest) {
+        // Check if we need frame script - ensure Bronze frames get frame algorithm
+        bool hasFrame = keccak256(abi.encodePacked(frameLevel)) != keccak256(abi.encodePacked("None"));
+
         // Create head tags
         HTMLTag[] memory headTags = new HTMLTag[](1);
         headTags[0] = HTMLTag({
@@ -182,9 +199,6 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
             tagClose: "",
             tagContent: ""
         });
-
-        // Determine if we need frame script
-        bool hasFrame = keccak256(abi.encodePacked(frameLevel)) != keccak256(abi.encodePacked("None"));
         uint256 bodyTagCount = hasFrame ? 5 : 4;
 
         // Create body tags
