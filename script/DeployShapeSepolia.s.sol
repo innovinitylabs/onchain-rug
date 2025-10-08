@@ -339,7 +339,9 @@ contract DeployShapeSepolia is Script {
         console.log("   - Free cleaning: 5min after mint, 2min after cleaning");
         console.log("   - Service costs: 0.00001 ETH each");
         console.log("   - Frame thresholds: Bronze(50), Silver(150), Gold(300), Diamond(600)");
-        console.log("   - Frame immunity: Bronze+ slower aging, Silver+ dirt immunity");
+        console.log("   - Aging protection: Bronze(25% slower), Silver(50%), Gold(80%), Diamond(90%)");
+        console.log("   - Dirt immunity: Silver+ frames never accumulate dirt");
+        console.log("   - Maintenance points: Clean(2), Restore(8), Master(12), Launder(20)");
         console.log("   - Fresh mechanics: 3 dirt levels, 11 aging levels, 5 frames");
         console.log("   - Scripty contracts configured");
     }

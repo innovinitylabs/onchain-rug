@@ -32,11 +32,53 @@ contract EdgeCaseTests is Test {
     // Malicious contract for reentrancy testing
     ReentrancyAttacker public attackerContract;
 
+    function _resetStorageState() internal {
+        // Complete storage reset before any contract interactions
+        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+
+        // Reset RugConfig struct fields
+        rs.collectionCap = 0;
+        rs.walletLimit = 0;
+        rs.reserveAmount = 0;
+        rs.isLaunched = false;
+        rs.launderingEnabled = false;
+        delete rs.exceptionList;
+        rs.rugScriptyBuilder = address(0);
+        rs.rugEthFSStorage = address(0);
+        rs.onchainRugsHTMLGenerator = address(0);
+        rs.basePrice = 0;
+        rs.linePrice1 = 0;
+        rs.linePrice2 = 0;
+        rs.linePrice3 = 0;
+        rs.linePrice4 = 0;
+        rs.linePrice5 = 0;
+        rs.dirtLevel1Days = 0;
+        rs.dirtLevel2Days = 0;
+        rs.agingAdvanceDays = 0;
+        rs.freeCleanDays = 0;
+        rs.freeCleanWindow = 0;
+        rs.cleaningCost = 0;
+        rs.restorationCost = 0;
+        rs.masterRestorationCost = 0;
+        rs.launderingThreshold = 0;
+        rs.bronzeThreshold = 0;
+        rs.silverThreshold = 0;
+        rs.goldThreshold = 0;
+        rs.diamondThreshold = 0;
+
+        // Reset supply tracking
+        rs.totalSupply = 0;
+        rs.tokenCounter = 0;
+    }
+
     function setUp() public {
         vm.deal(owner, 100 ether);
         vm.deal(user1, 100 ether);
         vm.deal(user2, 100 ether);
         vm.deal(attacker, 10 ether);
+
+        // FULLY RESET storage BEFORE deploying any facets
+        _resetStorageState();
 
         // Deploy facets
         vm.startPrank(owner);
@@ -45,21 +87,53 @@ contract EdgeCaseTests is Test {
         maintenanceFacet = new RugMaintenanceFacet();
         adminFacet = new RugAdminFacet();
 
-        // Setup configuration
+        // FULLY RESET all storage state for test isolation
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+
+        // Reset aging configuration
         rs.dirtLevel1Days = 1 * DAY;
         rs.dirtLevel2Days = 3 * DAY;
         rs.agingAdvanceDays = 7 * DAY;
         rs.freeCleanDays = 14 * DAY;
         rs.freeCleanWindow = 5 * DAY;
+
+        // Reset pricing
         rs.cleaningCost = CLEANING_COST;
         rs.restorationCost = CLEANING_COST;
         rs.masterRestorationCost = CLEANING_COST;
+
+        // Reset frame thresholds
         rs.bronzeThreshold = 25;
         rs.silverThreshold = 50;
         rs.goldThreshold = 100;
         rs.diamondThreshold = 200;
+
+        // Reset supply tracking
         rs.collectionCap = 1000;
+        rs.totalSupply = 0;
+        rs.tokenCounter = 0;
+
+        // Reset wallet limits
+        rs.walletLimit = 7;
+
+        // Reset launch state
+        rs.isLaunched = true;
+
+        // Reset exception list
+        delete rs.exceptionList;
+
+        // Reset Scripty contracts (set dummy addresses for testing)
+        rs.rugScriptyBuilder = address(0x123);
+        rs.rugEthFSStorage = address(0x456);
+        rs.onchainRugsHTMLGenerator = address(0x789);
+
+        // Reset pricing configuration
+        rs.basePrice = 0.000005 ether;
+        rs.linePrice1 = 0.000001 ether;
+        rs.linePrice2 = 0.000001 ether;
+        rs.linePrice3 = 0.000001 ether;
+        rs.linePrice4 = 0.000001 ether;
+        rs.linePrice5 = 0.000001 ether;
 
         vm.stopPrank();
 
