@@ -179,11 +179,11 @@ contract SimpleFreshRugMechanicsTest is Test {
         _cleanRug(testRug); // +2 points
         assertEq(_calculateMaintenanceScore(testRug), 2);
 
-        _restoreRug(testRug); // +5 points
-        assertEq(_calculateMaintenanceScore(testRug), 7);
+        _restoreRug(testRug); // +8 points
+        assertEq(_calculateMaintenanceScore(testRug), 10);
 
-        _masterRestoreRug(testRug); // +10 points
-        assertEq(_calculateMaintenanceScore(testRug), 17);
+        _masterRestoreRug(testRug); // +12 points
+        assertEq(_calculateMaintenanceScore(testRug), 22);
     }
 
     // ===== INTEGRATION TESTS =====
@@ -311,7 +311,7 @@ contract SimpleFreshRugMechanicsTest is Test {
         assertEq(_calculateAgingLevel(testRug), 0);
         assertEq(_calculateDirtLevel(testRug), 0);
         assertEq(testRug.masterRestorationCount, 1);
-        assertEq(_calculateMaintenanceScore(testRug), 10);
+        assertEq(_calculateMaintenanceScore(testRug), 12);
     }
 
     function testMasterRestorationAtTextureLevel5() public {
@@ -332,7 +332,7 @@ contract SimpleFreshRugMechanicsTest is Test {
         assertEq(testRug.lastCleaned, block.timestamp);
         assertEq(testRug.lastCleaned, block.timestamp);
         assertEq(testRug.masterRestorationCount, 1);
-        assertEq(_calculateMaintenanceScore(testRug), 10);
+        assertEq(_calculateMaintenanceScore(testRug), 12);
     }
 
     function testMasterRestorationAtTextureLevel10() public {
@@ -348,7 +348,7 @@ contract SimpleFreshRugMechanicsTest is Test {
         assertEq(_calculateAgingLevel(testRug), 0);
         assertEq(_calculateDirtLevel(testRug), 0);
         assertEq(testRug.masterRestorationCount, 1);
-        assertEq(_calculateMaintenanceScore(testRug), 10);
+        assertEq(_calculateMaintenanceScore(testRug), 12);
     }
 
     function testMasterRestorationAtTextureLevel2() public {
@@ -367,7 +367,7 @@ contract SimpleFreshRugMechanicsTest is Test {
         assertEq(_calculateAgingLevel(testRug), 0);
         assertEq(_calculateDirtLevel(testRug), 0);
         assertEq(testRug.masterRestorationCount, 1);
-        assertEq(_calculateMaintenanceScore(testRug), 10);
+        assertEq(_calculateMaintenanceScore(testRug), 12);
     }
 
     function testMasterRestorationAtTextureLevel7() public {
@@ -386,7 +386,7 @@ contract SimpleFreshRugMechanicsTest is Test {
         assertEq(_calculateAgingLevel(testRug), 0);
         assertEq(_calculateDirtLevel(testRug), 0);
         assertEq(testRug.masterRestorationCount, 1);
-        assertEq(_calculateMaintenanceScore(testRug), 10);
+        assertEq(_calculateMaintenanceScore(testRug), 12);
     }
 
     // ===== FRAME LEVEL EFFECTS =====
@@ -615,17 +615,17 @@ contract SimpleFreshRugMechanicsTest is Test {
     }
 
     function _getAgingMultiplier(uint8 frameLevel) internal pure returns (uint256) {
-        if (frameLevel >= 4) return 40; // Diamond: 60% slower
-        if (frameLevel >= 3) return 60; // Gold: 40% slower
-        if (frameLevel >= 2) return 80; // Silver: 20% slower
-        if (frameLevel >= 1) return 90; // Bronze: 10% slower
+        if (frameLevel >= 4) return 10; // Diamond: 90% slower (10x longer)
+        if (frameLevel >= 3) return 20; // Gold: 80% slower (5x longer)
+        if (frameLevel >= 2) return 50; // Silver: 50% slower (2x longer)
+        if (frameLevel >= 1) return 75; // Bronze: 25% slower (1.3x longer)
         return 100; // None: normal speed
     }
 
     function _calculateMaintenanceScore(TestRugData memory rug) internal pure returns (uint256) {
         return (rug.cleaningCount * 2) +
-               (rug.restorationCount * 5) +
-               (rug.masterRestorationCount * 10);
+               (rug.restorationCount * 8) +
+               (rug.masterRestorationCount * 12);
     }
 
     function _getFrameLevelFromScore(uint256 score) internal pure returns (uint8) {
