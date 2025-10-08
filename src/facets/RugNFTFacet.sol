@@ -9,12 +9,16 @@ import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {Base64} from "@openzeppelin/contracts/utils/Base64.sol";
 import {LibRugStorage} from "../libraries/LibRugStorage.sol";
 import {LibDiamond} from "../diamond/libraries/LibDiamond.sol";
+import {LibTransferSecurity} from "../libraries/LibTransferSecurity.sol";
 import {OnchainRugsHTMLGenerator} from "../OnchainRugsHTMLGenerator.sol";
+import {ICreatorToken} from "@limitbreak/creator-token-contracts/interfaces/ICreatorToken.sol";
+import {ICreatorTokenTransferValidator} from "@limitbreak/creator-token-contracts/interfaces/ICreatorTokenTransferValidator.sol";
+import {CollectionSecurityPolicy} from "@limitbreak/creator-token-contracts/utils/TransferPolicy.sol";
 
 /**
  * @title RugNFTFacet
- * @notice ERC721 facet for OnchainRugs NFT functionality
- * @dev Handles minting, token management, and ERC721 compliance
+ * @notice ERC721-C compatible facet for OnchainRugs NFT functionality
+ * @dev Handles minting, token management, ERC721-C compliance with transfer validation
  */
 contract RugNFTFacet is ERC721, ERC721URIStorage {
     using Strings for uint256;
@@ -399,7 +403,115 @@ contract RugNFTFacet is ERC721, ERC721URIStorage {
     }
 
     function supportsInterface(bytes4 interfaceId) public view override(ERC721, ERC721URIStorage) returns (bool) {
-        return super.supportsInterface(interfaceId);
+        return interfaceId == type(ICreatorToken).interfaceId || super.supportsInterface(interfaceId);
+    }
+
+    /// @dev ERC721-C transfer validation - called during token transfer
+    function _update(
+        address to,
+        uint256 tokenId,
+        address auth
+    ) internal virtual override returns (address) {
+        address from = _ownerOf(tokenId);
+        
+        // Validate transfer using ERC721-C validator if configured
+        // Skip validation for mints (from == address(0)) and burns (to == address(0))
+        if (LibTransferSecurity.areTransfersEnforced() && from != address(0) && to != address(0)) {
+            address validator = LibTransferSecurity.getTransferValidator();
+            if (validator != address(0)) {
+                _validateBeforeTransfer(from, to, tokenId, validator);
+            }
+        }
+        
+        // Perform the transfer
+        address previousOwner = super._update(to, tokenId, auth);
+        
+        // After transfer validation (optional)
+        if (LibTransferSecurity.areTransfersEnforced() && from != address(0) && to != address(0)) {
+            address validator = LibTransferSecurity.getTransferValidator();
+            if (validator != address(0)) {
+                _validateAfterTransfer(from, to, tokenId, validator);
+            }
+        }
+        
+        return previousOwner;
+    }
+
+    /// @dev Internal transfer validation before transfer
+    function _validateBeforeTransfer(address from, address to, uint256 /*tokenId*/, address validator) private view {
+        try ICreatorTokenTransferValidator(validator).applyCollectionTransferPolicy(
+            msg.sender,
+            from,
+            to
+        ) {} catch {
+            revert("Transfer validation failed");
+        }
+    }
+
+    /// @dev Internal transfer validation after transfer (currently not used as interface doesn't define it)
+    function _validateAfterTransfer(address /*from*/, address /*to*/, uint256 /*tokenId*/, address /*validator*/) private pure {
+        // After transfer validation is not part of the current interface
+        // This is kept for future compatibility
+    }
+
+    /// @dev Get the transfer validator (ICreatorToken interface)
+    function getTransferValidator() external view returns (address) {
+        return LibTransferSecurity.getTransferValidator();
+    }
+
+    /// @dev Get the security policy (ICreatorToken interface)
+    function getSecurityPolicy() external view returns (string memory) {
+        uint256 policyId = LibTransferSecurity.getSecurityPolicyId();
+        if (policyId == 0) {
+            return "default";
+        }
+        return string(abi.encodePacked("policy-", Strings.toString(policyId)));
+    }
+
+    /// @dev Get whitelisted operators (ICreatorToken interface)
+    function getWhitelistedOperators() external view returns (address[] memory) {
+        // Return empty array - whitelisting managed by validator
+        return new address[](0);
+    }
+
+    /// @dev Get permitted contract receivers (ICreatorToken interface)  
+    function getPermittedContractReceivers() external view returns (address[] memory) {
+        // Return empty array - permissions managed by validator
+        return new address[](0);
+    }
+
+    /// @dev Check if operator is whitelisted (ICreatorToken interface)
+    function isOperatorWhitelisted(address operator) external view returns (bool) {
+        address validator = LibTransferSecurity.getTransferValidator();
+        if (validator == address(0)) return false;
+        
+        // Get the collection security policy to find the whitelist ID
+        try ICreatorTokenTransferValidator(validator).getCollectionSecurityPolicy(address(this)) returns (
+            CollectionSecurityPolicy memory policy
+        ) {
+            // Check if operator is in the whitelist using the ID
+            try ICreatorTokenTransferValidator(validator).isOperatorWhitelisted(
+                policy.operatorWhitelistId,
+                operator
+            ) returns (bool whitelisted) {
+                return whitelisted;
+            } catch {
+                return false;
+            }
+        } catch {
+            return false;
+        }
+    }
+
+    /// @dev Check if receiver is whitelisted (ICreatorToken interface)
+    function isTransferAllowed(address from, address to) external view returns (bool) {
+        if (!LibTransferSecurity.areTransfersEnforced()) return true;
+        
+        address validator = LibTransferSecurity.getTransferValidator();
+        if (validator == address(0)) return true;
+        
+        // Basic check - actual validation happens in transfer hooks
+        return true;
     }
 
     function _exists(uint256 tokenId) internal view returns (bool) {

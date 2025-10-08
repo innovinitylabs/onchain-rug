@@ -3,11 +3,13 @@ pragma solidity ^0.8.22;
 
 import {LibRugStorage} from "../libraries/LibRugStorage.sol";
 import {LibDiamond} from "../diamond/libraries/LibDiamond.sol";
+import {LibTransferSecurity} from "../libraries/LibTransferSecurity.sol";
+import {IERC2981} from "@openzeppelin/contracts/interfaces/IERC2981.sol";
 
 /**
  * @title RugCommerceFacet
- * @notice Commerce facet for OnchainRugs withdrawals and royalties
- * @dev Handles ETH withdrawals and EIP-2981 royalty system
+ * @notice Commerce facet for OnchainRugs withdrawals, royalties, and Payment Processor integration
+ * @dev Handles ETH withdrawals, EIP-2981 royalty system, and Payment Processor security policies
  */
 contract RugCommerceFacet {
 
@@ -15,6 +17,7 @@ contract RugCommerceFacet {
     event Withdrawn(address indexed to, uint256 amount);
     event RoyaltiesConfigured(uint256 royaltyPercentage, address[] recipients, uint256[] splits);
     event RevenueReceived(uint256 amount, string source);
+    event PricingBoundsSet(address indexed tokenAddress, uint256 floorPrice, uint256 ceilingPrice);
 
     // Royalty storage (separate from main storage for EIP-2981 compliance)
     struct RoyaltyConfig {
@@ -223,6 +226,153 @@ contract RugCommerceFacet {
     function areRoyaltiesConfigured() external view returns (bool) {
         RoyaltyConfig storage rs = royaltyStorage();
         return rs.recipients.length > 0 && rs.royaltyPercentage > 0;
+    }
+
+    // Payment Processor Integration Functions
+
+    struct PricingBounds {
+        bool isEnabled;
+        bool isImmutable;
+        uint256 floorPrice;
+        uint256 ceilingPrice;
+    }
+
+    bytes32 constant PRICING_BOUNDS_POSITION = keccak256("rug.pricing.bounds.storage");
+
+    struct PricingBoundsStorage {
+        mapping(address => mapping(uint256 => PricingBounds)) tokenBounds;  // token => tokenId => bounds
+        mapping(address => PricingBounds) collectionBounds;                  // token => bounds
+        address approvedPaymentCoin;                                         // Approved ERC20 for price constraints
+    }
+
+    function pricingBoundsStorage() internal pure returns (PricingBoundsStorage storage pbs) {
+        bytes32 position = PRICING_BOUNDS_POSITION;
+        assembly {
+            pbs.slot := position
+        }
+    }
+
+    /**
+     * @notice Set collection-level pricing bounds for Payment Processor
+     * @param floorPrice Minimum price in wei
+     * @param ceilingPrice Maximum price in wei
+     * @param immutable_ Whether bounds are immutable
+     */
+    function setCollectionPricingBounds(
+        uint256 floorPrice,
+        uint256 ceilingPrice,
+        bool immutable_
+    ) external {
+        LibDiamond.enforceIsContractOwner();
+        require(ceilingPrice >= floorPrice, "Ceiling must be >= floor");
+        
+        PricingBoundsStorage storage pbs = pricingBoundsStorage();
+        PricingBounds storage bounds = pbs.collectionBounds[address(this)];
+        
+        require(!bounds.isImmutable, "Bounds are immutable");
+        
+        bounds.isEnabled = true;
+        bounds.isImmutable = immutable_;
+        bounds.floorPrice = floorPrice;
+        bounds.ceilingPrice = ceilingPrice;
+
+        emit PricingBoundsSet(address(this), floorPrice, ceilingPrice);
+    }
+
+    /**
+     * @notice Set token-level pricing bounds for Payment Processor
+     * @param tokenId Token ID to set bounds for
+     * @param floorPrice Minimum price in wei
+     * @param ceilingPrice Maximum price in wei
+     * @param immutable_ Whether bounds are immutable
+     */
+    function setTokenPricingBounds(
+        uint256 tokenId,
+        uint256 floorPrice,
+        uint256 ceilingPrice,
+        bool immutable_
+    ) external {
+        LibDiamond.enforceIsContractOwner();
+        require(ceilingPrice >= floorPrice, "Ceiling must be >= floor");
+        
+        PricingBoundsStorage storage pbs = pricingBoundsStorage();
+        PricingBounds storage bounds = pbs.tokenBounds[address(this)][tokenId];
+        
+        require(!bounds.isImmutable, "Bounds are immutable");
+        
+        bounds.isEnabled = true;
+        bounds.isImmutable = immutable_;
+        bounds.floorPrice = floorPrice;
+        bounds.ceilingPrice = ceilingPrice;
+
+        emit PricingBoundsSet(address(this), floorPrice, ceilingPrice);
+    }
+
+    /**
+     * @notice Set approved payment coin for price-constrained sales
+     * @param coin ERC20 token address (address(0) for ETH)
+     */
+    function setApprovedPaymentCoin(address coin) external {
+        LibDiamond.enforceIsContractOwner();
+        PricingBoundsStorage storage pbs = pricingBoundsStorage();
+        pbs.approvedPaymentCoin = coin;
+    }
+
+    /**
+     * @notice Get collection pricing bounds
+     * @return floorPrice Minimum price
+     * @return ceilingPrice Maximum price
+     */
+    function getCollectionPricingBounds() external view returns (uint256 floorPrice, uint256 ceilingPrice) {
+        PricingBoundsStorage storage pbs = pricingBoundsStorage();
+        PricingBounds storage bounds = pbs.collectionBounds[address(this)];
+        return (bounds.floorPrice, bounds.ceilingPrice);
+    }
+
+    /**
+     * @notice Get token pricing bounds
+     * @param tokenId Token ID
+     * @return floorPrice Minimum price
+     * @return ceilingPrice Maximum price
+     */
+    function getTokenPricingBounds(uint256 tokenId) external view returns (uint256 floorPrice, uint256 ceilingPrice) {
+        PricingBoundsStorage storage pbs = pricingBoundsStorage();
+        PricingBounds storage bounds = pbs.tokenBounds[address(this)][tokenId];
+        
+        // If token-level bounds not set, fall back to collection bounds
+        if (!bounds.isEnabled) {
+            PricingBounds storage collectionBounds = pbs.collectionBounds[address(this)];
+            return (collectionBounds.floorPrice, collectionBounds.ceilingPrice);
+        }
+        
+        return (bounds.floorPrice, bounds.ceilingPrice);
+    }
+
+    /**
+     * @notice Check if collection pricing is immutable
+     * @return immutable_ True if immutable
+     */
+    function isCollectionPricingImmutable() external view returns (bool) {
+        PricingBoundsStorage storage pbs = pricingBoundsStorage();
+        return pbs.collectionBounds[address(this)].isImmutable;
+    }
+
+    /**
+     * @notice Check if token pricing is immutable
+     * @param tokenId Token ID
+     * @return immutable_ True if immutable
+     */
+    function isTokenPricingImmutable(uint256 tokenId) external view returns (bool) {
+        PricingBoundsStorage storage pbs = pricingBoundsStorage();
+        return pbs.tokenBounds[address(this)][tokenId].isImmutable;
+    }
+
+    /**
+     * @notice Get approved payment coin
+     * @return coin Approved payment coin address
+     */
+    function getApprovedPaymentCoin() external view returns (address) {
+        return pricingBoundsStorage().approvedPaymentCoin;
     }
 
     // Note: supportsInterface removed to avoid conflict with ERC721's supportsInterface
