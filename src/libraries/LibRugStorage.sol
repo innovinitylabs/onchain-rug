@@ -209,10 +209,10 @@ library LibRugStorage {
      * @return score Total maintenance score
      */
     function calculateMaintenanceScore(AgingData storage aging) internal view returns (uint256) {
-        return (aging.cleaningCount * 1) +        // 1 point per clean
-               (aging.restorationCount * 3) +      // 3 points per restore
-               (aging.masterRestorationCount * 8) + // 8 points per master restore
-               (aging.launderingCount * 15);       // 15 points per laundering
+        return (aging.cleaningCount * 2) +        // 2 points per clean
+               (aging.restorationCount * 8) +      // 8 points per restore
+               (aging.masterRestorationCount * 12) + // 12 points per master restore
+               (aging.launderingCount * 20);       // 20 points per laundering
     }
 
     /**
@@ -258,11 +258,11 @@ library LibRugStorage {
      * @return multiplier Aging speed multiplier (100 = normal, 60 = 40% slower, etc.)
      */
     function getAgingMultiplier(uint8 frameLevel) internal pure returns (uint256) {
-        if (frameLevel >= 4) return 40; // Diamond: 60% slower (2.5x longer per level)
-        if (frameLevel >= 3) return 60; // Gold: 40% slower (1.7x longer per level)
-        if (frameLevel >= 2) return 80; // Silver: 20% slower (1.25x longer per level)
-        if (frameLevel >= 1) return 90; // Bronze: 10% slower (1.1x longer per level)
-        return 100; // None: normal speed
+        if (frameLevel >= 4) return 10; // Diamond: 90% slower (10x longer, ~1.9 years total)
+        if (frameLevel >= 3) return 20; // Gold: 80% slower (5x longer, ~11.7 months total)
+        if (frameLevel >= 2) return 50; // Silver: 50% slower (2x longer, ~4.7 months total)
+        if (frameLevel >= 1) return 75; // Bronze: 25% slower (1.3x longer, ~3 months total)
+        return 100; // None: normal speed (~2.3 months total)
     }
 
     /**

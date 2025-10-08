@@ -22,8 +22,8 @@ contract UpdateHTMLGeneratorFacet is Script {
 
         // Update the HTML generator address using the admin facet
         // Current addresses from deployment
-        address currentBuilder = 0xeb7ef4a24a6972ddb3cafba3e0e899935ee3ccf6;
-        address currentStorage = 0xb40f968c837c3097ba498b0da70ec1a509a441be;
+        address currentBuilder = 0xeB7Ef4a24a6972dDb3CaFBA3e0E899935eE3ccF6;
+        address currentStorage = 0xB40F968c837C3097ba498B0dA70ec1A509a441Be;
 
         // Update with the new HTML generator
         RugAdminFacet(diamondAddr).setScriptyContracts(currentBuilder, currentStorage, htmlGeneratorAddr);
