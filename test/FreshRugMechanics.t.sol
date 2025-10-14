@@ -75,17 +75,25 @@ contract FreshRugMechanicsTest is Test {
         textRows[1] = "WORLD";
         textRows[2] = "TEST";
 
+        RugNFTFacet.VisualConfig memory visual = RugNFTFacet.VisualConfig({
+            warpThickness: 3,
+            stripeCount: 5
+        });
+
+        RugNFTFacet.ArtData memory art = RugNFTFacet.ArtData({
+            paletteName: "TestPalette",
+            minifiedPalette: "minifiedPaletteData",
+            minifiedStripeData: "minifiedStripeData",
+            filteredCharacterMap: "characterMap"
+        });
+
         RugNFTFacet(DIAMOND_ADDR).mintRug{value: 0.00001 ether}(
             textRows,
             12345,
-            "TestPalette",
-            "minifiedPaletteData",
-            "minifiedStripeData",
-            "characterMap",
-            3,
-            4,
-            10,
-            5
+            visual,
+            art,
+            4, // complexity
+            10 // characterCount
         );
 
         // For testing, assume token ID 1 (first mint)

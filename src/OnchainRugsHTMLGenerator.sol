@@ -144,7 +144,7 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
         if (keccak256(abi.encodePacked(frameLevel)) == keccak256(abi.encodePacked("Bronze"))) return "B";
         if (keccak256(abi.encodePacked(frameLevel)) == keccak256(abi.encodePacked("Silver"))) return "S";
         if (keccak256(abi.encodePacked(frameLevel)) == keccak256(abi.encodePacked("Diamond"))) return "D";
-        return "G"; // Default fallback to Gold
+        return ""; // No frame for "None" or unknown
     }
 
     /**

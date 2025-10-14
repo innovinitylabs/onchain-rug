@@ -172,17 +172,26 @@ contract DeploymentCriticalTests is Test {
         textRows[1] = "WORLD";
         textRows[2] = "TEST";
 
+        // Create structs for new mintRug signature
+        RugNFTFacet.VisualConfig memory visual = RugNFTFacet.VisualConfig({
+            warpThickness: 3,
+            stripeCount: 5
+        });
+
+        RugNFTFacet.ArtData memory art = RugNFTFacet.ArtData({
+            paletteName: "TestPalette",
+            minifiedPalette: "minifiedPaletteData",
+            minifiedStripeData: "minifiedStripeData",
+            filteredCharacterMap: "characterMap"
+        });
+
         nftFacet.mintRug{value: 0.00001 ether}(
             textRows,
             12345,
-            "TestPalette",
-            "minifiedPaletteData",
-            "minifiedStripeData",
-            "characterMap",
-            3,
-            4,
-            10,
-            5
+            visual,
+            art,
+            4, // complexity
+            10 // characterCount
         );
 
         testTokenId = nftFacet.totalSupply();
@@ -284,17 +293,26 @@ contract DeploymentCriticalTests is Test {
 
         // Measure gas for minting
         uint256 gasStart = gasleft();
+
+        RugNFTFacet.VisualConfig memory visual2 = RugNFTFacet.VisualConfig({
+            warpThickness: 2,
+            stripeCount: 4
+        });
+
+        RugNFTFacet.ArtData memory art2 = RugNFTFacet.ArtData({
+            paletteName: "GasPalette",
+            minifiedPalette: "minifiedPaletteData",
+            minifiedStripeData: "minifiedStripeData",
+            filteredCharacterMap: "characterMap"
+        });
+
         nftFacet.mintRug{value: 0.00001 ether}(
             textRows,
             54321,
-            "GasPalette",
-            "minifiedPaletteData",
-            "minifiedStripeData",
-            "characterMap",
-            2,
-            3,
-            8,
-            4
+            visual2,
+            art2,
+            3, // complexity
+            8  // characterCount
         );
         uint256 gasUsed = gasStart - gasleft();
 
@@ -458,18 +476,26 @@ contract DeploymentCriticalTests is Test {
         string[] memory textRows = new string[](1);
         textRows[0] = "MULTI";
 
+        RugNFTFacet.VisualConfig memory visual3 = RugNFTFacet.VisualConfig({
+            warpThickness: 2,
+            stripeCount: 4
+        });
+
+        RugNFTFacet.ArtData memory art3 = RugNFTFacet.ArtData({
+            paletteName: "MultiPalette",
+            minifiedPalette: "minifiedPaletteData",
+            minifiedStripeData: "minifiedStripeData",
+            filteredCharacterMap: "characterMap"
+        });
+
         for (uint256 i = 0; i < 3; i++) {
             nftFacet.mintRug{value: 0.00001 ether}(
                 textRows,
                 uint256(keccak256(abi.encode(i))),
-                "MultiPalette",
-                "minifiedPaletteData",
-                "minifiedStripeData",
-                "characterMap",
-                2,
-                3,
-                8,
-                4
+                visual3,
+                art3,
+                3, // complexity
+                8  // characterCount
             );
         }
 

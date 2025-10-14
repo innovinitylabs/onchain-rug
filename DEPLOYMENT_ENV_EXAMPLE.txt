@@ -1,0 +1,41 @@
+# Shape L2 Deployment Environment Variables
+# Copy this to your .env file and fill in the values
+
+# Private Key for deployment (without 0x prefix)
+PRIVATE_KEY=your_private_key_here
+
+# Shape L2 RPC
+SHAPE_RPC=https://sepolia.shape.network
+
+# =============================================
+# AFTER USING LIMITBREAK INFRASTRUCTURE TOOLS:
+# =============================================
+
+# Payment Processor address (deploy via https://developers.apptokens.com/infrastructure)
+PAYMENT_PROCESSOR_SHAPE=0x0000000000000000000000000000000000000000
+
+# CreatorTokenTransferValidator (usually the default address, or your deployed one)
+CREATOR_TOKEN_VALIDATOR_SHAPE=0x0000721C310194CcfC01E523fc93C9cCcFa2A0Ac
+
+# =============================================
+# AFTER YOUR CONTRACT DEPLOYMENT:
+# =============================================
+
+# Your deployed OnchainRugs diamond contract
+ONCHAIN_RUGS_DIAMOND=0x0000000000000000000000000000000000000000
+
+# Security policy ID created in Payment Processor configuration
+SECURITY_POLICY_ID=0
+
+# =============================================
+# USAGE:
+# =============================================
+
+# 1. Deploy Payment Processor on Shape via LimitBreak tools
+# 2. Update PAYMENT_PROCESSOR_SHAPE with deployed address
+# 3. Run verification: forge script script/VerifyShapeDeployment.s.sol --rpc-url $SHAPE_RPC
+# 4. Configure security policies: forge script script/DeployPaymentProcessor.s.sol --sig "configureForShape(address)" $PAYMENT_PROCESSOR_SHAPE --rpc-url $SHAPE_RPC --broadcast
+# 5. Update SECURITY_POLICY_ID with returned value
+# 6. Deploy your NFT contract: forge script script/DeployShapeSepolia.s.sol --rpc-url $SHAPE_RPC --broadcast --verify
+# 7. Update ONCHAIN_RUGS_DIAMOND with deployed address
+# 8. Link everything together using the facet functions

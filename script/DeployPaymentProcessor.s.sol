@@ -28,30 +28,50 @@ interface IPaymentProcessor {
 /**
  * @title DeployPaymentProcessor
  * @notice Configuration script for Payment Processor security policies
- * @dev Uses already-deployed Payment Processor on Shape Sepolia
+ * @dev Uses Payment Processor deployed via LimitBreak infrastructure tools
  */
 contract DeployPaymentProcessor is Script {
     
-    // Payment Processor addresses (already deployed by LimitBreak)
+    // Payment Processor addresses (deterministic deployment)
     address constant PAYMENT_PROCESSOR_SEPOLIA = 0x009a1D8DE8D80Fcd9C6aaAFE97A237dC663f2978;
     address constant PAYMENT_PROCESSOR_MAINNET = 0x009a1dC629242961C9E4f089b437aFD394474cc0;
+    address constant PAYMENT_PROCESSOR_SHAPE_L2 = 0x9a1D00000000fC540e2000560054812452eB5366; // Already deployed!
     
     // Default addresses for Shape Sepolia
     address constant WETH_SHAPE_SEPOLIA = address(0); // TODO: Add actual WETH address when available
     address constant USDC_SHAPE_SEPOLIA = address(0); // TODO: Add actual USDC address when available
 
     function run() external {
+        // Use Sepolia for testing, but you can call configureForShape() for Shape L2
+        configureForNetwork(PAYMENT_PROCESSOR_SEPOLIA, "Sepolia");
+    }
+
+    /**
+     * @notice Configure Payment Processor for Shape L2
+     * @param shapePaymentProcessorAddress The Payment Processor address on Shape L2
+     */
+    function configureForShape(address shapePaymentProcessorAddress) external {
+        configureForNetwork(shapePaymentProcessorAddress, "Shape L2");
+    }
+
+    /**
+     * @notice Internal function to configure any network
+     * @param paymentProcessorAddress The Payment Processor contract address
+     * @param networkName Name of the network for logging
+     */
+    function configureForNetwork(address paymentProcessorAddress, string memory networkName) internal {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address deployer = vm.addr(deployerPrivateKey);
 
         console.log("Configuring Payment Processor security policy...");
+        console.log("Network:", networkName);
         console.log("Deployer:", deployer);
-        console.log("Using Payment Processor at:", PAYMENT_PROCESSOR_SEPOLIA);
+        console.log("Using Payment Processor at:", paymentProcessorAddress);
 
         vm.startBroadcast(deployerPrivateKey);
 
         // Get Payment Processor instance
-        IPaymentProcessor paymentProcessor = IPaymentProcessor(PAYMENT_PROCESSOR_SEPOLIA);
+        IPaymentProcessor paymentProcessor = IPaymentProcessor(paymentProcessorAddress);
 
         // Create default security policy for OnchainRugs collection
         // enforceExchangeWhitelist: false (allow any marketplace initially)

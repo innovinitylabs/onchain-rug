@@ -141,8 +141,26 @@ contract EdgeCaseTests is Test {
         vm.startPrank(user1);
         string[] memory textRows = new string[](1);
         textRows[0] = "EDGE";
+
+        RugNFTFacet.VisualConfig memory visual = RugNFTFacet.VisualConfig({
+            warpThickness: 2,
+            stripeCount: 4
+        });
+
+        RugNFTFacet.ArtData memory art = RugNFTFacet.ArtData({
+            paletteName: "EdgePalette",
+            minifiedPalette: "data",
+            minifiedStripeData: "data",
+            filteredCharacterMap: "map"
+        });
+
         nftFacet.mintRug{value: 0.00001 ether}(
-            textRows, 12345, "EdgePalette", "data", "data", "map", 2, 3, 8, 4
+            textRows,
+            12345,
+            visual,
+            art,
+            3, // complexity
+            8  // characterCount
         );
         testTokenId = nftFacet.totalSupply();
         vm.stopPrank();

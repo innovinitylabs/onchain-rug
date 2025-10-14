@@ -152,17 +152,31 @@ export default function Web3Minting({
               "inputs": [
                 {"internalType": "string[]", "name": "textRows", "type": "string[]"},
                 {"internalType": "uint256", "name": "seed", "type": "uint256"},
-                {"internalType": "string", "name": "paletteName", "type": "string"},
-                {"internalType": "string", "name": "minifiedStripeData", "type": "string"},
-                {"internalType": "string", "name": "minifiedPalette", "type": "string"},
-                {"internalType": "string", "name": "filteredCharacterMap", "type": "string"},
-                {"internalType": "uint8", "name": "warpThickness", "type": "uint8"},
+                {
+                  "components": [
+                    {"internalType": "uint8", "name": "warpThickness", "type": "uint8"},
+                    {"internalType": "uint256", "name": "stripeCount", "type": "uint256"}
+                  ],
+                  "internalType": "struct RugNFTFacet.VisualConfig",
+                  "name": "visual",
+                  "type": "tuple"
+                },
+                {
+                  "components": [
+                    {"internalType": "string", "name": "paletteName", "type": "string"},
+                    {"internalType": "string", "name": "minifiedPalette", "type": "string"},
+                    {"internalType": "string", "name": "minifiedStripeData", "type": "string"},
+                    {"internalType": "string", "name": "filteredCharacterMap", "type": "string"}
+                  ],
+                  "internalType": "struct RugNFTFacet.ArtData",
+                  "name": "art",
+                  "type": "tuple"
+                },
                 {"internalType": "uint8", "name": "complexity", "type": "uint8"},
-                {"internalType": "uint256", "name": "characterCount", "type": "uint256"},
-                {"internalType": "uint256", "name": "stripeCount", "type": "uint256"}
+                {"internalType": "uint256", "name": "characterCount", "type": "uint256"}
               ],
               "name": "mintRug",
-              "outputs": [],
+              "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
               "stateMutability": "payable",
               "type": "function"
             }
@@ -171,14 +185,18 @@ export default function Web3Minting({
           args: [
             optimized.textRows,
             BigInt(seed),
-            optimized.palette.name,
-            JSON.stringify(optimized.stripeData),
-            JSON.stringify(optimized.palette),
-            JSON.stringify(optimized.characterMap),
-            warpThickness,
+            {
+              warpThickness: warpThickness,
+              stripeCount: BigInt(optimized.stripeData.length)
+            },
+            {
+              paletteName: optimized.palette.name,
+              minifiedPalette: JSON.stringify(optimized.palette),
+              minifiedStripeData: JSON.stringify(optimized.stripeData),
+              filteredCharacterMap: JSON.stringify(optimized.characterMap)
+            },
             complexity,
-            BigInt(optimized.textRows.join('').length),
-            BigInt(optimized.stripeData.length)
+            BigInt(optimized.textRows.join('').length)
           ],
           value: parseEther(mintCost.toString()),
           account: address
@@ -239,17 +257,31 @@ export default function Web3Minting({
             "inputs": [
               {"internalType": "string[]", "name": "textRows", "type": "string[]"},
               {"internalType": "uint256", "name": "seed", "type": "uint256"},
-              {"internalType": "string", "name": "paletteName", "type": "string"},
-              {"internalType": "string", "name": "minifiedPalette", "type": "string"},
-              {"internalType": "string", "name": "minifiedStripeData", "type": "string"},
-              {"internalType": "string", "name": "filteredCharacterMap", "type": "string"},
-              {"internalType": "uint8", "name": "warpThickness", "type": "uint8"},
+              {
+                "components": [
+                  {"internalType": "uint8", "name": "warpThickness", "type": "uint8"},
+                  {"internalType": "uint256", "name": "stripeCount", "type": "uint256"}
+                ],
+                "internalType": "struct RugNFTFacet.VisualConfig",
+                "name": "visual",
+                "type": "tuple"
+              },
+              {
+                "components": [
+                  {"internalType": "string", "name": "paletteName", "type": "string"},
+                  {"internalType": "string", "name": "minifiedPalette", "type": "string"},
+                  {"internalType": "string", "name": "minifiedStripeData", "type": "string"},
+                  {"internalType": "string", "name": "filteredCharacterMap", "type": "string"}
+                ],
+                "internalType": "struct RugNFTFacet.ArtData",
+                "name": "art",
+                "type": "tuple"
+              },
               {"internalType": "uint8", "name": "complexity", "type": "uint8"},
-              {"internalType": "uint256", "name": "characterCount", "type": "uint256"},
-              {"internalType": "uint256", "name": "stripeCount", "type": "uint256"}
+              {"internalType": "uint256", "name": "characterCount", "type": "uint256"}
             ],
             "name": "mintRug",
-            "outputs": [],
+            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
             "stateMutability": "payable",
             "type": "function"
           }
@@ -258,14 +290,18 @@ export default function Web3Minting({
         args: [
           optimized.textRows,
           BigInt(seed), // Using the seed from the generator
-          optimized.palette.name,
-          JSON.stringify(optimized.palette),
-          JSON.stringify(optimized.stripeData),
-          JSON.stringify(optimized.characterMap),
-          warpThickness, // Using the actual warp thickness from generator
+          {
+            warpThickness: warpThickness, // Using the actual warp thickness from generator
+            stripeCount: BigInt(optimized.stripeData.length)
+          },
+          {
+            paletteName: optimized.palette.name,
+            minifiedPalette: JSON.stringify(optimized.palette),
+            minifiedStripeData: JSON.stringify(optimized.stripeData),
+            filteredCharacterMap: JSON.stringify(optimized.characterMap)
+          },
           complexity, // Using the calculated complexity from generator
-          BigInt(optimized.textRows.join('').length), // characterCount
-          BigInt(optimized.stripeData.length) // stripeCount
+          BigInt(optimized.textRows.join('').length) // characterCount
         ],
         value: parseEther(mintCost.toString()),
         gas: gasLimit,

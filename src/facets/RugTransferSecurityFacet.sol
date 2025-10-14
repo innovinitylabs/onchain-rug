@@ -23,8 +23,8 @@ contract RugTransferSecurityFacet {
         uint120 permittedContractReceiversId
     );
 
-    // Constants - LimitBreak default validator
-    address public constant DEFAULT_TRANSFER_VALIDATOR = 0x0000721C310194CcfC01E523fc93C9cCcFa2A0Ac;
+    // Constants - LimitBreak CreatorTokenTransferValidator v5.0.0 (deterministic address)
+    address public constant DEFAULT_TRANSFER_VALIDATOR = 0x721C008fdff27BF06E7E123956E2Fe03B63342e3;
     TransferSecurityLevels public constant DEFAULT_TRANSFER_SECURITY_LEVEL = TransferSecurityLevels.One;
     uint120 public constant DEFAULT_OPERATOR_WHITELIST_ID = uint120(1);
 

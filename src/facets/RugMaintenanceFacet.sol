@@ -3,7 +3,7 @@ pragma solidity ^0.8.22;
 
 import {LibRugStorage} from "../libraries/LibRugStorage.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import {RugNFTFacet} from "./RugNFTFacet.sol";
+// import {RugNFTFacet} from "./RugNFTFacet.sol";
 
 /**
  * @title RugMaintenanceFacet

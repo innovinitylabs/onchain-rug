@@ -124,8 +124,8 @@ contract ERC721CIntegrationTest is Test {
     }
 
     function test_GetTransferValidator() public {
-        address validator = RugNFTFacet(address(diamond)).getTransferValidator();
-        assertEq(validator, DEFAULT_VALIDATOR);
+        ICreatorTokenTransferValidator validator = RugNFTFacet(address(diamond)).getTransferValidator();
+        assertEq(address(validator), DEFAULT_VALIDATOR);
     }
 
     function test_CanDisableTransferEnforcement() public {
