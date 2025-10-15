@@ -6,15 +6,15 @@ import "forge-std/console.sol";
 import "../src/diamond/Diamond.sol";
 import "../src/diamond/facets/DiamondCutFacet.sol";
 import "../src/diamond/facets/DiamondLoupeFacet.sol";
-import "../src/facets/SimpleNFTFacet.sol";
+import "../src/facets/RugNFTFacet.sol";
 import "../src/facets/ERC721CFacet.sol";
 import "../src/facets/RugTransferSecurityFacet.sol";
 import "../src/diamond/interfaces/IDiamondCut.sol";
 
 /**
  * @title DeployMinimalERC721C
- * @notice Minimal deployment script to test ERC721-C functionality
- * @dev Deploys only the essential contracts for ERC721-C testing
+ * @notice Minimal deployment script to test ERC721-C functionality with RugNFTFacet
+ * @dev Deploys essential contracts for ERC721-C testing with full RugNFTFacet
  */
 contract DeployMinimalERC721C is Script {
 
@@ -25,7 +25,7 @@ contract DeployMinimalERC721C is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         console.log("=========================================");
-        console.log("Deploying Minimal ERC721-C Test");
+        console.log("Deploying RugNFT ERC721-C Test");
         console.log("=========================================");
 
         // Deploy diamond infrastructure
@@ -37,8 +37,8 @@ contract DeployMinimalERC721C is Script {
         console.log("   Diamond deployed at:", diamondAddr);
 
         // Deploy facets
-        console.log("2. Deploying ERC721-C facets...");
-        SimpleNFTFacet simpleNFTFacet = new SimpleNFTFacet();
+        console.log("2. Deploying RugNFT and ERC721-C facets...");
+        RugNFTFacet rugNFTFacet = new RugNFTFacet();
         ERC721CFacet erc721CFacet = new ERC721CFacet();
         RugTransferSecurityFacet transferSecurityFacet = new RugTransferSecurityFacet();
         console.log("   Facets deployed");
@@ -56,15 +56,15 @@ contract DeployMinimalERC721C is Script {
         IDiamondCut(diamondAddr).diamondCut(loupeCut, address(0), "");
         console.log("   Added DiamondLoupeFacet");
 
-        // Add SimpleNFTFacet
+        // Add RugNFTFacet
         IDiamondCut.FacetCut[] memory nftCut = new IDiamondCut.FacetCut[](1);
         nftCut[0] = IDiamondCut.FacetCut({
-            facetAddress: address(simpleNFTFacet),
+            facetAddress: address(rugNFTFacet),
             action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: _getSimpleNFTSelectors()
+            functionSelectors: _getRugNFTSelectors()
         });
         IDiamondCut(diamondAddr).diamondCut(nftCut, address(0), "");
-        console.log("   Added SimpleNFTFacet");
+        console.log("   Added RugNFTFacet");
 
         // Add ERC721CFacet
         IDiamondCut.FacetCut[] memory erc721cCut = new IDiamondCut.FacetCut[](1);
@@ -94,13 +94,13 @@ contract DeployMinimalERC721C is Script {
         vm.stopBroadcast();
 
         console.log("=========================================");
-        console.log("ERC721-C Test Deployment Complete!");
+        console.log("RugNFT ERC721-C Test Deployment Complete!");
         console.log("=========================================");
         console.log("Diamond Contract:", diamondAddr);
         console.log("CreatorTokenTransferValidator: 0x721C008fdff27BF06E7E123956E2Fe03B63342e3");
         console.log("=========================================");
         console.log("Test Commands:");
-        console.log("- Mint: SimpleNFTFacet(diamond).mint()");
+        console.log("- Mint: RugNFTFacet(diamond).mintRug()");
         console.log("- Transfer: Test ERC721-C validation");
         console.log("- Check security: ERC721CFacet(diamond).getSecurityPolicy()");
         console.log("=========================================");
@@ -116,19 +116,22 @@ contract DeployMinimalERC721C is Script {
         return selectors;
     }
 
-    function _getSimpleNFTSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](11);
-        selectors[0] = SimpleNFTFacet.mint.selector;
-        selectors[1] = SimpleNFTFacet.mintRug.selector;
-        selectors[2] = SimpleNFTFacet.burn.selector;
-        selectors[3] = 0x70a08231; // balanceOf(address)
-        selectors[4] = 0x6352211e; // ownerOf(uint256)
-        selectors[5] = 0x42842e0e; // safeTransferFrom(address,address,uint256)
-        selectors[6] = 0x23b872dd; // transferFrom(address,address,uint256)
-        selectors[7] = 0x095ea7b3; // approve(address,uint256)
-        selectors[8] = 0x06fdde03; // name()
-        selectors[9] = 0x95d89b41; // symbol()
-        selectors[10] = 0xc87b56dd; // tokenURI(uint256)
+    function _getRugNFTSelectors() internal pure returns (bytes4[] memory) {
+        bytes4[] memory selectors = new bytes4[](14);
+        selectors[0] = RugNFTFacet.mintRug.selector;
+        selectors[1] = RugNFTFacet.burn.selector;
+        selectors[2] = 0x70a08231; // balanceOf(address)
+        selectors[3] = 0x6352211e; // ownerOf(uint256)
+        selectors[4] = 0x42842e0e; // safeTransferFrom(address,address,uint256)
+        selectors[5] = 0x23b872dd; // transferFrom(address,address,uint256)
+        selectors[6] = 0x095ea7b3; // approve(address,uint256)
+        selectors[7] = 0x17307eab; // setApprovalForAll(address,bool)
+        selectors[8] = 0x081812fc; // getApproved(uint256)
+        selectors[9] = 0xe985e9c5; // isApprovedForAll(address,address)
+        selectors[10] = RugNFTFacet.name.selector;
+        selectors[11] = RugNFTFacet.symbol.selector;
+        selectors[12] = RugNFTFacet.tokenURI.selector;
+        selectors[13] = RugNFTFacet.totalSupply.selector;
         return selectors;
     }
 

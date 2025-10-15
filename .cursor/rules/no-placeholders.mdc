@@ -1,5 +1,5 @@
 ---
-description: Dont use Placholders, we are still in development and so we always do full implementations, no half measures
+description: Dont use Placholders, we are still in development and so we always do full implementations, no half measures. No minimal test deployment, no commenting functionality to test others, always work with full code base like its production. we are still in development so we have time. Dont temporarily remove anything. if its ultimately necessary dont do it without my explicit permission.
 globs:
 alwaysApply: true
 ---
