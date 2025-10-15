@@ -26,7 +26,7 @@ contract UpdateRugNFTFacetCompleteTraits is Script {
 
         // Replace RugNFTFacet with updated version (Replace action)
         IDiamondCut.FacetCut[] memory cut = new IDiamondCut.FacetCut[](1);
-        bytes4[] memory selectors = new bytes4[](24);
+        bytes4[] memory selectors = new bytes4[](29);
 
         // ERC721 functions
         selectors[0] = 0x70a08231; // balanceOf
@@ -54,7 +54,14 @@ contract UpdateRugNFTFacetCompleteTraits is Script {
         selectors[20] = RugNFTFacet.maxSupply.selector;
         selectors[21] = RugNFTFacet.walletMints.selector;
         selectors[22] = RugNFTFacet.isWalletException.selector;
-        selectors[23] = 0x01ffc9a7; // supportsInterface
+
+        // ERC721-C functions (validation disabled for mints)
+        selectors[23] = RugNFTFacet.getTransferValidator.selector;
+        selectors[24] = RugNFTFacet.getSecurityPolicy.selector;
+        selectors[25] = RugNFTFacet.getWhitelistedOperators.selector;
+        selectors[26] = RugNFTFacet.getPermittedContractReceivers.selector;
+        selectors[27] = RugNFTFacet.isTransferAllowed.selector;
+        selectors[28] = 0x01ffc9a7; // supportsInterface
 
         cut[0] = IDiamondCut.FacetCut({
             facetAddress: newFacetAddress,

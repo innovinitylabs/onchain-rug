@@ -22,8 +22,8 @@ interface IProjectHTMLGenerator {
      * @param projectData Encoded project-specific data (e.g., RugData for OnchainRugs)
      * @param tokenId The token ID
      * @param dirtLevel Current dirt level (0-2)
-     * @param agingLevel Current aging level (0-10) - used for visual effects
-     * @param frameLevel Frame level string ("None", "Bronze", "Silver", "Gold", "Platinum", "Diamond")
+     * @param textureLevel Current texture level (0-10)
+     * @param frameLevel Frame level string ("None", "Bronze", "Silver", "Gold", "Diamond")
      * @param scriptyBuilder Address of ScriptyBuilderV2
      * @param ethfsStorage Address of EthFS storage contract
      * @return html Generated HTML string
@@ -32,7 +32,7 @@ interface IProjectHTMLGenerator {
         bytes memory projectData,
         uint256 tokenId,
         uint8 dirtLevel,
-        uint8 agingLevel,
+        uint8 textureLevel,
         string memory frameLevel,
         address scriptyBuilder,
         address ethfsStorage

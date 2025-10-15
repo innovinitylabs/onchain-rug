@@ -5,7 +5,6 @@ import "forge-std/Test.sol";
 import "../src/diamond/Diamond.sol";
 import "../src/diamond/facets/DiamondCutFacet.sol";
 import "../src/facets/RugNFTFacet.sol";
-import "../src/facets/ERC721CFacet.sol";
 import "../src/facets/RugAdminFacet.sol";
 import "../src/facets/RugTransferSecurityFacet.sol";
 import "../src/facets/RugCommerceFacet.sol";
@@ -22,7 +21,6 @@ contract ERC721CIntegrationTest is Test {
     Diamond public diamond;
     DiamondCutFacet public diamondCutFacet;
     RugNFTFacet public rugNFTFacet;
-    ERC721CFacet public erc721cFacet;
     RugAdminFacet public rugAdminFacet;
     RugTransferSecurityFacet public rugTransferSecurityFacet;
     RugCommerceFacet public rugCommerceFacet;
@@ -50,20 +48,20 @@ contract ERC721CIntegrationTest is Test {
 
         // Deploy facets
         rugNFTFacet = new RugNFTFacet();
-        erc721cFacet = new ERC721CFacet();
         rugAdminFacet = new RugAdminFacet();
         rugTransferSecurityFacet = new RugTransferSecurityFacet();
         rugCommerceFacet = new RugCommerceFacet();
 
         // Configure diamond with facets
-        IDiamondCut.FacetCut[] memory cuts = new IDiamondCut.FacetCut[](5);
+        IDiamondCut.FacetCut[] memory cuts = new IDiamondCut.FacetCut[](4);
         
         // NFT Facet
-        bytes4[] memory nftSelectors = new bytes4[](4);
+        bytes4[] memory nftSelectors = new bytes4[](5);
         nftSelectors[0] = RugNFTFacet.mintRug.selector;
         nftSelectors[1] = bytes4(keccak256("ownerOf(uint256)"));
         nftSelectors[2] = bytes4(keccak256("transferFrom(address,address,uint256)"));
-        nftSelectors[3] = RugNFTFacet.supportsInterface.selector;
+        nftSelectors[3] = RugNFTFacet.getTransferValidator.selector;
+        nftSelectors[4] = RugNFTFacet.supportsInterface.selector;
         
         cuts[0] = IDiamondCut.FacetCut({
             facetAddress: address(rugNFTFacet),
@@ -71,28 +69,11 @@ contract ERC721CIntegrationTest is Test {
             functionSelectors: nftSelectors
         });
 
-        // ERC721C Facet
-        bytes4[] memory erc721cSelectors = new bytes4[](8);
-        erc721cSelectors[0] = ERC721CFacet.getTransferValidator.selector;
-        erc721cSelectors[1] = ERC721CFacet.getSecurityPolicy.selector;
-        erc721cSelectors[2] = ERC721CFacet.getWhitelistedOperators.selector;
-        erc721cSelectors[3] = ERC721CFacet.getPermittedContractReceivers.selector;
-        erc721cSelectors[4] = ERC721CFacet.isOperatorWhitelisted.selector;
-        erc721cSelectors[5] = ERC721CFacet.isContractReceiverPermitted.selector;
-        erc721cSelectors[6] = ERC721CFacet.isTransferAllowed.selector;
-        erc721cSelectors[7] = ERC721CFacet.validateTransfer.selector;
-
-        cuts[1] = IDiamondCut.FacetCut({
-            facetAddress: address(erc721cFacet),
-            action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: erc721cSelectors
-        });
-
         // Admin Facet
         bytes4[] memory adminSelectors = new bytes4[](1);
         adminSelectors[0] = RugAdminFacet.updateCollectionCap.selector;
-
-        cuts[2] = IDiamondCut.FacetCut({
+        
+        cuts[1] = IDiamondCut.FacetCut({
             facetAddress: address(rugAdminFacet),
             action: IDiamondCut.FacetCutAction.Add,
             functionSelectors: adminSelectors
@@ -107,7 +88,7 @@ contract ERC721CIntegrationTest is Test {
         securitySelectors[4] = RugTransferSecurityFacet.setTransferEnforcement.selector;
         securitySelectors[5] = RugTransferSecurityFacet.isSecurityInitialized.selector;
         
-        cuts[3] = IDiamondCut.FacetCut({
+        cuts[2] = IDiamondCut.FacetCut({
             facetAddress: address(rugTransferSecurityFacet),
             action: IDiamondCut.FacetCutAction.Add,
             functionSelectors: securitySelectors
@@ -117,8 +98,8 @@ contract ERC721CIntegrationTest is Test {
         bytes4[] memory commerceSelectors = new bytes4[](2);
         commerceSelectors[0] = RugCommerceFacet.royaltyInfo.selector;
         commerceSelectors[1] = RugCommerceFacet.configureRoyalties.selector;
-
-        cuts[4] = IDiamondCut.FacetCut({
+        
+        cuts[3] = IDiamondCut.FacetCut({
             facetAddress: address(rugCommerceFacet),
             action: IDiamondCut.FacetCutAction.Add,
             functionSelectors: commerceSelectors
@@ -143,7 +124,7 @@ contract ERC721CIntegrationTest is Test {
     }
 
     function test_GetTransferValidator() public {
-        ICreatorTokenTransferValidator validator = ERC721CFacet(address(diamond)).getTransferValidator();
+        ICreatorTokenTransferValidator validator = RugNFTFacet(address(diamond)).getTransferValidator();
         assertEq(address(validator), DEFAULT_VALIDATOR);
     }
 
@@ -210,65 +191,63 @@ contract ERC721CIntegrationTest is Test {
         RugTransferSecurityFacet(address(diamond)).setTransferEnforcement(false);
     }
 
-    // Payment Processor functionality removed for this implementation
-    // function test_PaymentProcessorPricingBounds() public {
-    //     // Set collection pricing bounds
-    //     RugCommerceFacet(address(diamond)).setCollectionPricingBounds(
-    //         0.01 ether,  // floor
-    //         1 ether,     // ceiling
-    //         false        // not immutable
-    //     );
+    function test_PaymentProcessorPricingBounds() public {
+        // Set collection pricing bounds
+        RugCommerceFacet(address(diamond)).setCollectionPricingBounds(
+            0.01 ether,  // floor
+            1 ether,     // ceiling
+            false        // not immutable
+        );
 
-    //     (uint256 floor, uint256 ceiling) = RugCommerceFacet(address(diamond)).getCollectionPricingBounds();
-    //     assertEq(floor, 0.01 ether);
-    //     assertEq(ceiling, 1 ether);
-    //     assertFalse(RugCommerceFacet(address(diamond)).isCollectionPricingImmutable());
-    // }
+        (uint256 floor, uint256 ceiling) = RugCommerceFacet(address(diamond)).getCollectionPricingBounds();
+        assertEq(floor, 0.01 ether);
+        assertEq(ceiling, 1 ether);
+        assertFalse(RugCommerceFacet(address(diamond)).isCollectionPricingImmutable());
+    }
 
-    // Payment Processor functionality removed for this implementation
-    // function test_PaymentProcessorTokenPricingBounds() public {
-    //     uint256 tokenId = 1;
-    //
-    //     // Set token pricing bounds
-    //     RugCommerceFacet(address(diamond)).setTokenPricingBounds(
-    //         tokenId,
-    //         0.05 ether,  // floor
-    //         0.5 ether,   // ceiling
-    //         true         // immutable
-    //     );
-    //
-    //     (uint256 floor, uint256 ceiling) = RugCommerceFacet(address(diamond)).getTokenPricingBounds(tokenId);
-    //     assertEq(floor, 0.05 ether);
-    //     assertEq(ceiling, 0.5 ether);
-    //     assertTrue(RugCommerceFacet(address(diamond)).isTokenPricingImmutable(tokenId));
-    // }
+    function test_PaymentProcessorTokenPricingBounds() public {
+        uint256 tokenId = 1;
+        
+        // Set token pricing bounds
+        RugCommerceFacet(address(diamond)).setTokenPricingBounds(
+            tokenId,
+            0.05 ether,  // floor
+            0.5 ether,   // ceiling
+            true         // immutable
+        );
 
-    // function test_CannotChangeImmutablePricing() public {
-    //     uint256 tokenId = 1;
-    //
-    //     // Set immutable bounds
-    //     RugCommerceFacet(address(diamond)).setTokenPricingBounds(
-    //         tokenId,
-    //         0.05 ether,
-    //         0.5 ether,
-    //         true
-    //     );
+        (uint256 floor, uint256 ceiling) = RugCommerceFacet(address(diamond)).getTokenPricingBounds(tokenId);
+        assertEq(floor, 0.05 ether);
+        assertEq(ceiling, 0.5 ether);
+        assertTrue(RugCommerceFacet(address(diamond)).isTokenPricingImmutable(tokenId));
+    }
 
-    //     // Try to change - should revert
-    //     vm.expectRevert("Bounds are immutable");
-    //     RugCommerceFacet(address(diamond)).setTokenPricingBounds(
-    //         tokenId,
-    //         0.1 ether,
-    //         1 ether,
-    //         false
-    //     );
-    // }
+    function test_CannotChangeImmutablePricing() public {
+        uint256 tokenId = 1;
+        
+        // Set immutable bounds
+        RugCommerceFacet(address(diamond)).setTokenPricingBounds(
+            tokenId,
+            0.05 ether,
+            0.5 ether,
+            true
+        );
 
-    // function test_ApprovedPaymentCoin() public {
-    //     address usdc = address(0x123);
-    //
-    //     RugCommerceFacet(address(diamond)).setApprovedPaymentCoin(usdc);
-    //     assertEq(RugCommerceFacet(address(diamond)).getApprovedPaymentCoin(), usdc);
-    // }
+        // Try to change - should revert
+        vm.expectRevert("Bounds are immutable");
+        RugCommerceFacet(address(diamond)).setTokenPricingBounds(
+            tokenId,
+            0.1 ether,
+            1 ether,
+            false
+        );
+    }
+
+    function test_ApprovedPaymentCoin() public {
+        address usdc = address(0x123);
+        
+        RugCommerceFacet(address(diamond)).setApprovedPaymentCoin(usdc);
+        assertEq(RugCommerceFacet(address(diamond)).getApprovedPaymentCoin(), usdc);
+    }
 }
 

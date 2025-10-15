@@ -4,7 +4,7 @@ pragma solidity ^0.8.22;
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {LibRugStorage} from "../libraries/LibRugStorage.sol";
 import {LibDiamond} from "../diamond/libraries/LibDiamond.sol";
-import {RugNFTFacet} from "./RugNFTFacet.sol";
+// import {RugNFTFacet} from "./RugNFTFacet.sol";
 
 /**
  * @title RugLaunderingFacet

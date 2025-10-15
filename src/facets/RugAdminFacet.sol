@@ -115,19 +115,19 @@ contract RugAdminFacet {
 
     /**
      * @notice Update aging thresholds for simplified system (owner only)
-     * @param thresholds Array of 5 time periods in days: [dirtLevel1, dirtLevel2, agingAdvance, freeCleanDays, freeCleanWindow]
+     * @param thresholds Array of 5 time periods in seconds: [dirtLevel1, dirtLevel2, agingAdvance, freeCleanDays, freeCleanWindow]
      */
     function updateAgingThresholds(uint256[5] calldata thresholds) external {
         LibDiamond.enforceIsContractOwner();
 
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
 
-        // Update simplified aging parameters
-        rs.dirtLevel1Days = thresholds[0];      // Days until dirt level 1
-        rs.dirtLevel2Days = thresholds[1];      // Days until dirt level 2
-        rs.agingAdvanceDays = thresholds[2];    // Days between aging level advances
-        rs.freeCleanDays = thresholds[3];       // Days after mint for free cleaning
-        rs.freeCleanWindow = thresholds[4];     // Days after cleaning for free cleaning
+        // Update simplified aging parameters (values in seconds)
+        rs.dirtLevel1Days = thresholds[0];      // Seconds until dirt level 1
+        rs.dirtLevel2Days = thresholds[1];      // Seconds until dirt level 2
+        rs.agingAdvanceDays = thresholds[2];    // Seconds between aging level advances
+        rs.freeCleanDays = thresholds[3];       // Seconds after mint for free cleaning
+        rs.freeCleanWindow = thresholds[4];     // Seconds after cleaning for free cleaning
 
         emit AgingThresholdsUpdated();
     }

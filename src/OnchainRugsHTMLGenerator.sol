@@ -49,7 +49,7 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
      * @param projectData Encoded RugData
      * @param tokenId The token ID
      * @param dirtLevel Current dirt level (0-2)
-     * @param agingLevel Current texture level (0-10)
+     * @param textureLevel Current texture level (0-10)
      * @param frameLevel Frame level string ("None", "Bronze", "Silver", "Gold", "Platinum", "Diamond")
      * @param scriptyBuilder Address of ScriptyBuilderV2
      * @param scriptyStorage Address of ScriptyStorage
@@ -59,7 +59,7 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
         bytes memory projectData,
         uint256 tokenId,
         uint8 dirtLevel,
-        uint8 agingLevel,
+        uint8 textureLevel,
         string memory frameLevel,
         address scriptyBuilder,
         address scriptyStorage
@@ -67,7 +67,7 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
         RugData memory rug = abi.decode(projectData, (RugData));
 
         // Create HTML request using existing method
-        HTMLRequest memory htmlRequest = createHTMLRequest(scriptyStorage, rug, dirtLevel, agingLevel, frameLevel, tokenId);
+        HTMLRequest memory htmlRequest = createHTMLRequest(scriptyStorage, rug, dirtLevel, textureLevel, frameLevel, tokenId);
 
         // Use Scripty to generate HTML (raw HTML, not URL-safe)
         bytes memory rawHTML = IScriptyBuilderV2(scriptyBuilder).getHTML(htmlRequest);
@@ -109,7 +109,7 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
      * @param rug Rug data
      * @return js JavaScript configuration string
      */
-    function generateRugConfig(RugData memory rug, uint8 dirtLevel, uint8 agingLevel, string memory frameLevel) internal pure returns (string memory js) {
+    function generateRugConfig(RugData memory rug, uint8 dirtLevel, uint8 textureLevel, string memory frameLevel) internal pure returns (string memory js) {
         string memory frameCode = mapFrameLevelToCode(frameLevel);
         return string.concat(
             'let w=800,h=1200,f=30,wt=8,wp=',
@@ -125,7 +125,7 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
             ',cm=\'',
             rug.filteredCharacterMap,
             '\',tl=',
-            Strings.toString(agingLevel),
+            Strings.toString(textureLevel),
             ',dl=',
             Strings.toString(dirtLevel),
             ',fl="',
@@ -168,7 +168,7 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
      * @param scriptyStorage Address of ScriptyStorage
      * @param rug Rug data
      * @param dirtLevel Current dirt level (0-2)
-     * @param agingLevel Current texture level (0-10)
+     * @param textureLevel Current texture level (0-10)
      * @param tokenId The token ID
      * @return htmlRequest Properly structured HTML request for scripty
      */
@@ -176,7 +176,7 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
         address scriptyStorage,
         RugData memory rug,
         uint8 dirtLevel,
-        uint8 agingLevel,
+        uint8 textureLevel,
         string memory frameLevel,
         uint256 tokenId
     ) internal pure returns (HTMLRequest memory htmlRequest) {
@@ -234,7 +234,7 @@ contract OnchainRugsHTMLGenerator is IProjectHTMLGenerator {
             tagType: HTMLTagType.script,
             tagOpen: "",
             tagClose: "",
-            tagContent: bytes(generateRugConfig(rug, dirtLevel, agingLevel, frameLevel))
+            tagContent: bytes(generateRugConfig(rug, dirtLevel, textureLevel, frameLevel))
         });
 
         // 4. Algorithm script from ScriptyStorage (inline script)

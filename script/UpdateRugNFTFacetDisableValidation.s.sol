@@ -7,27 +7,29 @@ import "../src/diamond/interfaces/IDiamondCut.sol";
 import "../src/facets/RugNFTFacet.sol";
 
 /**
- * @title FixHTMLAging
- * @notice Fix HTML generation to pass aging level for visual effects
+ * @title UpdateRugNFTFacetDisableValidation
+ * @notice Disable all ERC721-C validation to isolate minting issue
+ * @dev Completely disables _beforeTokenTransfer validation
  */
-contract FixHTMLAging is Script {
+contract UpdateRugNFTFacetDisableValidation is Script {
     address constant DIAMOND = 0x2aB6ad4761307CFaF229c75F6B4A909B73175146;
+    address constant OLD_RUG_NFT_FACET = address(0); // We'll get this from the diamond
 
     function run() public {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
-        console.log("=== FIXING HTML AGING VISUALS ===");
-        console.log("Diamond:", DIAMOND);
-
-        // Deploy updated RugNFTFacet
+        // Deploy new RugNFTFacet with validation completely disabled
         RugNFTFacet newRugNFTFacet = new RugNFTFacet();
-        address facetAddress = address(newRugNFTFacet);
+        address newFacetAddress = address(newRugNFTFacet);
 
-        console.log("Deployed updated RugNFTFacet at:", facetAddress);
+        console.log("Deployed new RugNFTFacet at:", newFacetAddress);
 
-        // Replace RugNFTFacet
+        // Replace RugNFTFacet with updated version (Replace action)
+        IDiamondCut.FacetCut[] memory cut = new IDiamondCut.FacetCut[](1);
         bytes4[] memory selectors = new bytes4[](29);
+
+        // ERC721 functions
         selectors[0] = 0x70a08231; // balanceOf
         selectors[1] = 0x6352211e; // ownerOf
         selectors[2] = 0x42842e0e; // safeTransferFrom(address,address,uint256)
@@ -41,6 +43,8 @@ contract FixHTMLAging is Script {
         selectors[10] = 0xc87b56dd; // tokenURI
         selectors[11] = 0x18160ddd; // totalSupply
         selectors[12] = 0xb88d4fde; // safeTransferFrom(address,address,uint256,bytes)
+
+        // Rug-specific functions
         selectors[13] = RugNFTFacet.mintRug.selector;
         selectors[14] = RugNFTFacet.burn.selector;
         selectors[15] = RugNFTFacet.getRugData.selector;
@@ -51,6 +55,8 @@ contract FixHTMLAging is Script {
         selectors[20] = RugNFTFacet.maxSupply.selector;
         selectors[21] = RugNFTFacet.walletMints.selector;
         selectors[22] = RugNFTFacet.isWalletException.selector;
+
+        // ERC721-C functions (still exposed but validation disabled)
         selectors[23] = RugNFTFacet.getTransferValidator.selector;
         selectors[24] = RugNFTFacet.getSecurityPolicy.selector;
         selectors[25] = RugNFTFacet.getWhitelistedOperators.selector;
@@ -58,9 +64,8 @@ contract FixHTMLAging is Script {
         selectors[27] = RugNFTFacet.isTransferAllowed.selector;
         selectors[28] = 0x01ffc9a7; // supportsInterface
 
-        IDiamondCut.FacetCut[] memory cut = new IDiamondCut.FacetCut[](1);
         cut[0] = IDiamondCut.FacetCut({
-            facetAddress: facetAddress,
+            facetAddress: newFacetAddress,
             action: IDiamondCut.FacetCutAction.Replace,
             functionSelectors: selectors
         });
@@ -68,7 +73,8 @@ contract FixHTMLAging is Script {
         IDiamondCut(DIAMOND).diamondCut(cut, address(0), "");
 
         console.log("RugNFTFacet replaced successfully!");
-        console.log("HTML generation now uses aging level for visual effects");
+        console.log("New facet:", newFacetAddress);
+        console.log("ALL validation temporarily disabled to test minting");
 
         vm.stopBroadcast();
     }

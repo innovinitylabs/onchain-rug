@@ -281,6 +281,40 @@ contract RugAgingFacet {
     }
 
     function _exists(uint256 tokenId) internal view returns (bool) {
-        return RugNFTFacet(address(this)).ownerOf(tokenId) != address(0);
+        // Call ownerOf on the diamond contract (this facet's context)
+        (bool success, bytes memory data) = address(this).staticcall(
+            abi.encodeWithSignature("ownerOf(uint256)", tokenId)
+        );
+        if (success) {
+            address owner = abi.decode(data, (address));
+            return owner != address(0);
+        }
+        return false;
+    }
+
+    /**
+     * @notice Get frame status for a rug (moved from RugNFTFacet)
+     * @param tokenId Token ID
+     * @return frameName Current frame name
+     * @return frameAchievedTime Timestamp when frame was achieved
+     */
+    function getFrameStatus(uint256 tokenId) external view returns (
+        string memory frameName,
+        uint256 frameAchievedTime
+    ) {
+        // Check token exists using direct call to ownerOf
+        (bool success, bytes memory data) = address(this).staticcall(
+            abi.encodeWithSignature("ownerOf(uint256)", tokenId)
+        );
+        require(success && data.length == 32, "Token does not exist");
+        address owner = abi.decode(data, (address));
+        require(owner != address(0), "Token does not exist");
+
+        LibRugStorage.AgingData storage aging = LibRugStorage.rugStorage().agingData[tokenId];
+
+        return (
+            LibRugStorage.getFrameName(aging.frameLevel),
+            aging.frameAchievedTime
+        );
     }
 }

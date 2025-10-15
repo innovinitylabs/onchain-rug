@@ -117,7 +117,7 @@ contract DeployFullRug is Script {
     }
 
     function _getRugNFTSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](20);
+        bytes4[] memory selectors = new bytes4[](27);
         selectors[0] = RugNFTFacet.mintRug.selector;
         selectors[1] = RugNFTFacet.burn.selector;
         selectors[2] = RugNFTFacet.getRugData.selector;
@@ -130,15 +130,23 @@ contract DeployFullRug is Script {
         selectors[9] = RugNFTFacet.walletMints.selector;
         selectors[10] = RugNFTFacet.isWalletException.selector;
         selectors[11] = RugNFTFacet.tokenURI.selector;
+        // ERC721-C functions
+        selectors[12] = RugNFTFacet.getTransferValidator.selector;
+        selectors[13] = RugNFTFacet.getSecurityPolicy.selector;
+        selectors[14] = RugNFTFacet.getWhitelistedOperators.selector;
+        selectors[15] = RugNFTFacet.getPermittedContractReceivers.selector;
+        selectors[16] = RugNFTFacet.isOperatorWhitelisted.selector;
+        selectors[17] = RugNFTFacet.isContractReceiverPermitted.selector;
+        selectors[18] = RugNFTFacet.isTransferAllowed.selector;
         // ERC721 standard functions
-        selectors[12] = 0x70a08231; // balanceOf(address)
-        selectors[13] = 0x6352211e; // ownerOf(uint256)
-        selectors[14] = 0x42842e0e; // safeTransferFrom(address,address,uint256)
-        selectors[15] = 0x23b872dd; // transferFrom(address,address,uint256)
-        selectors[16] = 0x095ea7b3; // approve(address,uint256)
-        selectors[17] = 0x06fdde03; // name()
-        selectors[18] = 0x95d89b41; // symbol()
-        selectors[19] = 0x01ffc9a7; // supportsInterface(bytes4)
+        selectors[19] = 0x70a08231; // balanceOf(address)
+        selectors[20] = 0x6352211e; // ownerOf(uint256)
+        selectors[21] = 0x42842e0e; // safeTransferFrom(address,address,uint256)
+        selectors[22] = 0x23b872dd; // transferFrom(address,address,uint256)
+        selectors[23] = 0x095ea7b3; // approve(address,uint256)
+        selectors[24] = 0x06fdde03; // name()
+        selectors[25] = 0x95d89b41; // symbol()
+        selectors[26] = 0x01ffc9a7; // supportsInterface(bytes4)
         return selectors;
     }
 

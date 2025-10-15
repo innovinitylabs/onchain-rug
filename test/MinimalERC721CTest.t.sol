@@ -20,17 +20,22 @@ contract MinimalERC721CTest is Test {
         vm.deal(user2, 1 ether);
     }
 
-    function testRugNFTBasic() public {
-        console.log("Testing RugNFT Basic Functionality");
-
-        // Check basic ERC721 functionality
-        string memory name = nft.name();
-        string memory symbol = nft.symbol();
-        console.log("Name:", name);
-        console.log("Symbol:", symbol);
-
-        assertEq(name, "OnchainRugs");
-        assertEq(symbol, "RUGS");
+    function testERC721CBasic() public {
+        console.log("Testing ERC721-C Basic Functionality");
+        
+        // Check that ERC721-C validator is set
+        address validator = nft.getTransferValidator();
+        console.log("Transfer Validator:", validator);
+        assertEq(validator, 0x721C008fdff27BF06E7E123956E2Fe03B63342e3);
+        
+        // Check security policy
+        CollectionSecurityPolicy memory policy = nft.getSecurityPolicy();
+        console.log("Security Level:", uint256(policy.transferSecurityLevel));
+        
+        // Check interface support
+        bool supportsERC721C = nft.supportsInterface(0x6bb7a0a0); // ICreatorToken interface ID
+        console.log("Supports ICreatorToken:", supportsERC721C);
+        assertTrue(supportsERC721C);
     }
 
     function testMintRugWithStructs() public {
@@ -41,21 +46,20 @@ contract MinimalERC721CTest is Test {
         textRows[0] = "HELLO";
         textRows[1] = "WORLD";
         
-        // Create mint parameters using structs
         RugNFTFacet.VisualConfig memory visual = RugNFTFacet.VisualConfig({
             warpThickness: 3,
             stripeCount: 5
         });
-
+        
         RugNFTFacet.ArtData memory art = RugNFTFacet.ArtData({
             paletteName: "TestPalette",
             minifiedPalette: "palette_data",
             minifiedStripeData: "stripe_data",
             filteredCharacterMap: "char_map"
         });
-
+        
         // Mint rug
-        nft.mintRug{value: 0.00001 ether}(
+        uint256 tokenId = nft.mintRug{value: 0.00001 ether}(
             textRows,
             12345,
             visual,
@@ -63,7 +67,6 @@ contract MinimalERC721CTest is Test {
             4, // complexity
             10 // characterCount
         );
-        uint256 tokenId = 1; // First token is always ID 1
         
         console.log("Minted token ID:", tokenId);
         assertEq(tokenId, 1);
