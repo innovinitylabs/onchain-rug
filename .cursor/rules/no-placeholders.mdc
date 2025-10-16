@@ -1,5 +1,5 @@
 ---
-description: Dont use Placholders, we are still in development and so we always do full implementations, no half measures
+description: Dont use Placholders, we are still in development and so we always do full implementations. no simplified functions or modules, no minified functions or modules, no commenting out some part of code to test other, we always test full project.
 globs:
 alwaysApply: true
 ---

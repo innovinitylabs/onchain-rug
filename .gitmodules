@@ -10,3 +10,9 @@
 [submodule "lib/sstore2"]
 	path = lib/sstore2
 	url = https://github.com/0xsequence/sstore2
+[submodule "lib/creator-token-contracts"]
+	path = lib/creator-token-contracts
+	url = https://github.com/limitbreakinc/creator-token-contracts
+[submodule "lib/payment-processor"]
+	path = lib/payment-processor
+	url = https://github.com/limitbreakinc/payment-processor

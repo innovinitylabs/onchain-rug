@@ -280,7 +280,4 @@ contract RugAgingFacet {
         return timeRemaining;
     }
 
-    function _exists(uint256 tokenId) internal view returns (bool) {
-        return RugNFTFacet(address(this)).ownerOf(tokenId) != address(0);
-    }
 }

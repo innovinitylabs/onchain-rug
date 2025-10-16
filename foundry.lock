@@ -1,4 +1,10 @@
 {
+  "lib/creator-token-contracts": {
+    "tag": {
+      "name": "1.1.2",
+      "rev": "17fb926b9b4aa40c4037d64494b14f1dc20da68a"
+    }
+  },
   "lib/forge-std": {
     "tag": {
       "name": "v1.10.0",
@@ -11,10 +17,16 @@
       "rev": "c64a1edb67b6e3f4a15cca8909c9482ad33a02b0"
     }
   },
+  "lib/payment-processor": {
+    "rev": "12d55457785ecf6fcb8df2483bf3dbbd326a34a1"
+  },
   "lib/solady": {
     "tag": {
       "name": "v0.1.26",
       "rev": "acd959aa4bd04720d640bf4e6a5c71037510cc4b"
     }
+  },
+  "lib/sstore2": {
+    "rev": "0a28fe61b6e81de9a05b462a24b9f4ba8c70d5b7"
   }
 }

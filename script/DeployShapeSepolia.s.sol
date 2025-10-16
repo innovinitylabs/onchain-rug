@@ -16,6 +16,7 @@ import "../src/facets/RugAgingFacet.sol";
 import "../src/facets/RugMaintenanceFacet.sol";
 import "../src/facets/RugCommerceFacet.sol";
 import "../src/facets/RugLaunderingFacet.sol";
+import "../src/facets/RugTransferSecurityFacet.sol";
 import "../src/libraries/LibRugStorage.sol";
 import "../src/diamond/interfaces/IDiamondCut.sol";
 
@@ -43,6 +44,7 @@ contract DeployShapeSepolia is Script {
     RugMaintenanceFacet public rugMaintenanceFacet;
     RugCommerceFacet public rugCommerceFacet;
     RugLaunderingFacet public rugLaunderingFacet;
+    RugTransferSecurityFacet public rugTransferSecurityFacet;
 
     // Deployment addresses
     address public fileStoreAddr;
@@ -136,7 +138,8 @@ contract DeployShapeSepolia is Script {
         rugMaintenanceFacet = new RugMaintenanceFacet();
         rugCommerceFacet = new RugCommerceFacet();
         rugLaunderingFacet = new RugLaunderingFacet();
-        console.log("   All Rug facets deployed");
+        rugTransferSecurityFacet = new RugTransferSecurityFacet();
+        console.log("   All Rug facets deployed (including Transfer Security)");
     }
 
     function configureDiamond() internal {
@@ -160,7 +163,7 @@ contract DeployShapeSepolia is Script {
             functionSelectors: _getRugNFTSelectors()
         });
         IDiamondCut(diamondAddr).diamondCut(nftCut, address(0), "");
-        console.log("   Added RugNFTFacet with all ERC721 functions");
+        console.log("   Added RugNFTFacet with all ERC721 functions (includes ERC721-C validation)");
 
         // Add RugAdminFacet
         IDiamondCut.FacetCut[] memory adminCut = new IDiamondCut.FacetCut[](1);
@@ -211,6 +214,16 @@ contract DeployShapeSepolia is Script {
         });
         IDiamondCut(diamondAddr).diamondCut(launderingCut, address(0), "");
         console.log("   Added RugLaunderingFacet");
+
+        // Add RugTransferSecurityFacet
+        IDiamondCut.FacetCut[] memory transferSecurityCut = new IDiamondCut.FacetCut[](1);
+        transferSecurityCut[0] = IDiamondCut.FacetCut({
+            facetAddress: address(rugTransferSecurityFacet),
+            action: IDiamondCut.FacetCutAction.Add,
+            functionSelectors: _getRugTransferSecuritySelectors()
+        });
+        IDiamondCut(diamondAddr).diamondCut(transferSecurityCut, address(0), "");
+        console.log("   Added RugTransferSecurityFacet");
     }
 
     function uploadLibraries() internal {
@@ -279,6 +292,9 @@ contract DeployShapeSepolia is Script {
             scriptyStorageAddr,
             htmlGeneratorAddr
         );
+
+        // ERC721-C transfer security already initialized in RugNFTFacet constructor
+        console.log("   ERC721-C transfer validator initialized in RugNFTFacet");
 
         // Note: New O(1) aging system uses hardcoded constants, not configurable thresholds
         // Test values use minutes instead of days for rapid testing
@@ -358,9 +374,8 @@ contract DeployShapeSepolia is Script {
     }
 
     function _getRugNFTSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](26);
+        bytes4[] memory selectors = new bytes4[](28);
         // ERC721 Standard Functions (hardcoded selectors from forge inspect)
-        // Note: supportsInterface(bytes4) is already registered by DiamondLoupeFacet, so we skip it
         selectors[0] = bytes4(0x70a08231); // balanceOf(address)
         selectors[1] = bytes4(0x6352211e); // ownerOf(uint256)
         selectors[2] = bytes4(0x42842e0e); // safeTransferFrom(address,address,uint256)
@@ -386,12 +401,17 @@ contract DeployShapeSepolia is Script {
         selectors[20] = RugNFTFacet.maxSupply.selector;
         selectors[21] = RugNFTFacet.walletMints.selector;
         selectors[22] = RugNFTFacet.isWalletException.selector;
-        selectors[23] = RugNFTFacet.getFrameStatus.selector;
-        selectors[24] = RugNFTFacet.getMaintenanceHistory.selector;
-        selectors[25] = RugNFTFacet.getSaleHistory.selector;
+
+        // ERC721-C functions
+        selectors[23] = RugNFTFacet.getTransferValidator.selector;
+        selectors[24] = RugNFTFacet.getSecurityPolicy.selector;
+        selectors[25] = RugNFTFacet.getWhitelistedOperators.selector;
+        selectors[26] = RugNFTFacet.getPermittedContractReceivers.selector;
+        selectors[27] = RugNFTFacet.isTransferAllowed.selector;
 
         return selectors;
     }
+
 
     function _getRugAdminSelectors() internal pure returns (bytes4[] memory) {
         bytes4[] memory selectors = new bytes4[](17);
@@ -416,7 +436,7 @@ contract DeployShapeSepolia is Script {
     }
 
     function _getRugAgingSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](8);
+        bytes4[] memory selectors = new bytes4[](11);
         selectors[0] = RugAgingFacet.getDirtLevel.selector;
         selectors[1] = RugAgingFacet.getAgingLevel.selector;
         selectors[2] = RugAgingFacet.getFrameLevel.selector;
@@ -425,11 +445,14 @@ contract DeployShapeSepolia is Script {
         selectors[5] = RugAgingFacet.hasDirt.selector;
         selectors[6] = RugAgingFacet.isCleaningFree.selector;
         selectors[7] = RugAgingFacet.timeUntilNextAging.selector;
+        selectors[8] = RugAgingFacet.timeUntilNextDirt.selector;
+        selectors[9] = RugAgingFacet.getAgingState.selector;
+        selectors[10] = RugAgingFacet.getFrameStatus.selector; // Added
         return selectors;
     }
 
     function _getRugMaintenanceSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](10);
+        bytes4[] memory selectors = new bytes4[](11);
         selectors[0] = RugMaintenanceFacet.cleanRug.selector;
         selectors[1] = RugMaintenanceFacet.restoreRug.selector;
         selectors[2] = RugMaintenanceFacet.masterRestoreRug.selector;
@@ -440,11 +463,13 @@ contract DeployShapeSepolia is Script {
         selectors[7] = RugMaintenanceFacet.canRestoreRug.selector;
         selectors[8] = RugMaintenanceFacet.needsMasterRestoration.selector;
         selectors[9] = RugMaintenanceFacet.getMaintenanceOptions.selector;
+        selectors[10] = RugMaintenanceFacet.getMaintenanceHistory.selector; // Added
         return selectors;
     }
 
     function _getRugCommerceSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](10);
+        bytes4[] memory selectors = new bytes4[](19);
+        // Original selectors
         selectors[0] = RugCommerceFacet.withdraw.selector;
         selectors[1] = RugCommerceFacet.withdrawTo.selector;
         selectors[2] = RugCommerceFacet.configureRoyalties.selector;
@@ -455,6 +480,17 @@ contract DeployShapeSepolia is Script {
         selectors[7] = RugCommerceFacet.calculateRoyalty.selector;
         selectors[8] = RugCommerceFacet.getRoyaltyRecipients.selector;
         selectors[9] = RugCommerceFacet.areRoyaltiesConfigured.selector;
+        // Payment Processor integration selectors
+        selectors[10] = RugCommerceFacet.setCollectionPricingBounds.selector;
+        selectors[11] = RugCommerceFacet.setTokenPricingBounds.selector;
+        selectors[12] = RugCommerceFacet.setApprovedPaymentCoin.selector;
+        selectors[13] = RugCommerceFacet.getCollectionPricingBounds.selector;
+        selectors[14] = RugCommerceFacet.getTokenPricingBounds.selector;
+        selectors[15] = RugCommerceFacet.isCollectionPricingImmutable.selector;
+        selectors[16] = RugCommerceFacet.isTokenPricingImmutable.selector;
+        selectors[17] = RugCommerceFacet.getApprovedPaymentCoin.selector;
+        selectors[18] = RugCommerceFacet.getSaleHistory.selector; // Added
+        // Note: supportsInterface(bytes4) is already registered by DiamondLoupeFacet
         return selectors;
     }
 
@@ -468,6 +504,21 @@ contract DeployShapeSepolia is Script {
         selectors[5] = RugLaunderingFacet.getMaxRecentSalePrice.selector;
         selectors[6] = RugLaunderingFacet.getLaunderingConfig.selector;
         selectors[7] = RugLaunderingFacet.getLaunderingStats.selector;
+        return selectors;
+    }
+
+    function _getRugTransferSecuritySelectors() internal pure returns (bytes4[] memory) {
+        bytes4[] memory selectors = new bytes4[](9);
+        selectors[0] = RugTransferSecurityFacet.initializeTransferSecurity.selector;
+        selectors[1] = RugTransferSecurityFacet.setTransferValidator.selector;
+        selectors[2] = RugTransferSecurityFacet.setToDefaultSecurityPolicy.selector;
+        selectors[3] = RugTransferSecurityFacet.setToCustomSecurityPolicy.selector;
+        selectors[4] = RugTransferSecurityFacet.setPaymentProcessorSecurityPolicy.selector;
+        selectors[5] = RugTransferSecurityFacet.setTransferEnforcement.selector;
+        // selectors[6] = RugTransferSecurityFacet.getTransferValidator.selector; // Now in RugNFTFacet
+        selectors[6] = RugTransferSecurityFacet.getSecurityPolicyId.selector;
+        selectors[7] = RugTransferSecurityFacet.areTransfersEnforced.selector;
+        selectors[8] = RugTransferSecurityFacet.isSecurityInitialized.selector;
         return selectors;
     }
 }

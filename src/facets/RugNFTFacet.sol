@@ -9,52 +9,67 @@ import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {Base64} from "@openzeppelin/contracts/utils/Base64.sol";
 import {LibRugStorage} from "../libraries/LibRugStorage.sol";
 import {LibDiamond} from "../diamond/libraries/LibDiamond.sol";
+import {LibTransferSecurity} from "../libraries/LibTransferSecurity.sol";
 import {OnchainRugsHTMLGenerator} from "../OnchainRugsHTMLGenerator.sol";
+import {ICreatorToken} from "@limitbreak/creator-token-contracts/interfaces/ICreatorToken.sol";
+import {ICreatorTokenTransferValidator} from "@limitbreak/creator-token-contracts/interfaces/ICreatorTokenTransferValidator.sol";
+import {TransferSecurityLevels, CollectionSecurityPolicy} from "@limitbreak/creator-token-contracts/utils/TransferPolicy.sol";
 
 /**
  * @title RugNFTFacet
- * @notice ERC721 facet for OnchainRugs NFT functionality
- * @dev Handles minting, token management, and ERC721 compliance
+ * @notice ERC721-C compatible facet for OnchainRugs NFT functionality
+ * @dev Handles minting, token management, ERC721 compliance, and ERC721-C transfer validation
  */
-contract RugNFTFacet is ERC721, ERC721URIStorage {
+contract RugNFTFacet is ERC721, ERC721URIStorage, ICreatorToken {
     using Strings for uint256;
+
+    // ERC721-C Constants - LimitBreak CreatorTokenTransferValidator v5.0.0 (deterministic address)
+    address public constant DEFAULT_TRANSFER_VALIDATOR = 0x721C008fdff27BF06E7E123956E2Fe03B63342e3;
+
+    // Structs to reduce stack depth in mintRug
+    struct VisualConfig {
+        uint8 warpThickness;    // Design parameter (required for HTML generation)
+        uint256 stripeCount;    // Number of stripes
+    }
+
+    struct ArtData {
+        string paletteName;           // Color palette identifier
+        string minifiedPalette;       // Compressed palette data
+        string minifiedStripeData;    // Compressed stripe data
+        string filteredCharacterMap;  // Character usage map (required for HTML generation)
+    }
 
     // Events
     event RugMinted(uint256 indexed tokenId, address indexed owner, string[] textRows, uint256 seed);
     event RugBurned(uint256 indexed tokenId, address indexed owner);
 
-    constructor() ERC721("OnchainRugs", "RUGS") {}
+    constructor() ERC721("OnchainRugs", "RUGS") {
+        // Initialize ERC721-C transfer security with deterministic validator
+        LibTransferSecurity.initializeTransferSecurity(DEFAULT_TRANSFER_VALIDATOR);
+    }
 
     /**
-     * @notice Mint a new rug NFT
+     * @notice Mint a new rug NFT (ERC721-C compatible)
      * @param textRows Array of text lines (1-5)
-     * @param seed Random seed for generation
-     * @param paletteName Color palette identifier
-     * @param minifiedPalette Compressed palette data
-     * @param minifiedStripeData Compressed stripe data
-     * @param filteredCharacterMap Character usage map
-     * @param warpThickness Design parameter
-     * @param complexity Pattern complexity
-     * @param characterCount Total characters
-     * @param stripeCount Number of stripes
+     * @param seed Random seed for generation (0 = auto-generate)
+     * @param visual Visual configuration parameters
+     * @param art Art generation data
+     * @param complexity Pattern complexity (deprecated, kept for compatibility)
+     * @param characterCount Total characters (can be derived from filteredCharacterMap)
      */
     function mintRug(
         string[] calldata textRows,
         uint256 seed,
-        string calldata paletteName,
-        string calldata minifiedPalette,
-        string calldata minifiedStripeData,
-        string calldata filteredCharacterMap,
-        uint8 warpThickness,
+        VisualConfig calldata visual,
+        ArtData calldata art,
         uint8 complexity,
-        uint256 characterCount,
-        uint256 stripeCount
+        uint256 characterCount
     ) external payable {
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
 
         // Basic validation
         require(textRows.length > 0 && textRows.length <= 5, "Invalid text length");
-        require(warpThickness >= 1 && warpThickness <= 5, "Invalid warp thickness");
+        require(visual.warpThickness >= 1 && visual.warpThickness <= 5, "Invalid warp thickness");
         require(LibRugStorage.canMintSupply(), "Max supply reached");
         require(LibRugStorage.canMint(msg.sender), "Wallet limit exceeded");
 
@@ -82,38 +97,29 @@ contract RugNFTFacet is ERC721, ERC721URIStorage {
         rs.rugs[tokenId] = LibRugStorage.RugData({
             seed: seed,
             textRows: textRows,
-            paletteName: paletteName,
-            minifiedPalette: minifiedPalette,
-            minifiedStripeData: minifiedStripeData,
-            warpThickness: warpThickness,
+            paletteName: art.paletteName,
+            minifiedPalette: art.minifiedPalette,
+            minifiedStripeData: art.minifiedStripeData,
+            warpThickness: visual.warpThickness,
             mintTime: block.timestamp,
-            filteredCharacterMap: filteredCharacterMap,
+            filteredCharacterMap: art.filteredCharacterMap,
             complexity: complexity,
             characterCount: characterCount,
-            stripeCount: stripeCount
+            stripeCount: visual.stripeCount
         });
 
-        // Initialize aging data with fresh simplified system
+        // Initialize aging data
         rs.agingData[tokenId] = LibRugStorage.AgingData({
-            // Dirt System (3 levels: 0=Clean, 1=Dirty, 2=Very Dirty)
-            lastCleaned: block.timestamp, // Start clean at mint
-            dirtLevel: 0, // Always 0, calculated dynamically
-
-            // Aging System (11 levels: 0=Clean, 1-10=Aged)
-            agingLevel: 0, // Start at pristine level
-
-            // Frame System (5 levels: 0=None, 1=Bronze, 2=Silver, 3=Gold, 4=Diamond)
-            frameLevel: 0, // No frame initially
-            frameAchievedTime: 0, // No frame achieved yet
-
-            // Maintenance Tracking
-            cleaningCount: 0, // Never cleaned initially
-            restorationCount: 0, // Never restored initially
-            masterRestorationCount: 0, // Never master restored initially
-            launderingCount: 0, // Never laundered initially
-            lastLaundered: 0, // Never laundered initially
-
-            // Trading History
+            lastCleaned: block.timestamp,
+            dirtLevel: 0,
+            agingLevel: 0,
+            frameLevel: 0,
+            frameAchievedTime: 0,
+            cleaningCount: 0,
+            restorationCount: 0,
+            masterRestorationCount: 0,
+            launderingCount: 0,
+            lastLaundered: 0,
             lastSalePrice: 0,
             recentSalePrices: [uint256(0), 0, 0]
         });
@@ -122,8 +128,8 @@ contract RugNFTFacet is ERC721, ERC721URIStorage {
         LibRugStorage.markTextAsUsed(textRows);
         LibRugStorage.recordMint(msg.sender);
 
-        // Mint NFT
-        _safeMint(msg.sender, tokenId);
+        // Mint NFT -  use _mint instead of _safeMint to avoid ERC721c receiver checks. since this is open to all mint, owner checks aren't necessary.
+        _mint(msg.sender, tokenId);
 
         emit RugMinted(tokenId, msg.sender, textRows, seed);
     }
@@ -228,85 +234,6 @@ contract RugNFTFacet is ERC721, ERC721URIStorage {
         return LibRugStorage.isException(account);
     }
 
-    /**
-     * @notice Get frame status for a rug
-     * @param tokenId Token ID to check
-     * @return frameName Current frame name
-     * @return frameAchievedTime When frame was achieved
-     */
-    function getFrameStatus(uint256 tokenId) external view returns (
-        string memory frameName,
-        uint256 frameAchievedTime
-    ) {
-        require(_exists(tokenId), "Token does not exist");
-        LibRugStorage.AgingData storage aging = LibRugStorage.rugStorage().agingData[tokenId];
-
-        return (
-            LibRugStorage.getFrameName(aging.frameLevel),
-            aging.frameAchievedTime
-        );
-    }
-
-    /**
-     * @notice Get complete maintenance history for a rug
-     * @param tokenId Token ID to check
-     * @return cleaningCount Number of cleanings
-     * @return restorationCount Number of restorations
-     * @return masterRestorationCount Number of master restorations
-     * @return launderingCount Number of launderings
-     * @return maintenanceScore Calculated maintenance score
-     * @return lastLaundered Last laundering timestamp
-     */
-    function getMaintenanceHistory(uint256 tokenId) external view returns (
-        uint256 cleaningCount,
-        uint256 restorationCount,
-        uint256 masterRestorationCount,
-        uint256 launderingCount,
-        uint256 maintenanceScore,
-        uint256 lastLaundered
-    ) {
-        require(_exists(tokenId), "Token does not exist");
-        LibRugStorage.AgingData storage aging = LibRugStorage.rugStorage().agingData[tokenId];
-
-        return (
-            aging.cleaningCount,
-            aging.restorationCount,
-            aging.masterRestorationCount,
-            aging.launderingCount,
-            LibRugStorage.calculateMaintenanceScore(aging),
-            aging.lastLaundered
-        );
-    }
-
-    /**
-     * @notice Get complete sale history for a rug
-     * @param tokenId Token ID to check
-     * @return lastSalePrice Most recent sale price
-     * @return recentSalePrices Last 3 sale prices
-     * @return maxRecentSalePrice Highest of last 3 sales
-     */
-    function getSaleHistory(uint256 tokenId) external view returns (
-        uint256 lastSalePrice,
-        uint256[3] memory recentSalePrices,
-        uint256 maxRecentSalePrice
-    ) {
-        require(_exists(tokenId), "Token does not exist");
-        LibRugStorage.AgingData storage aging = LibRugStorage.rugStorage().agingData[tokenId];
-
-        uint256 maxPrice = 0;
-        for (uint256 i = 0; i < 3; i++) {
-            if (aging.recentSalePrices[i] > maxPrice) {
-                maxPrice = aging.recentSalePrices[i];
-            }
-        }
-
-        return (
-            aging.lastSalePrice,
-            aging.recentSalePrices,
-            maxPrice
-        );
-    }
-
     // ERC721 overrides
     function tokenURI(uint256 tokenId)
         public
@@ -320,7 +247,7 @@ contract RugNFTFacet is ERC721, ERC721URIStorage {
         LibRugStorage.RugData memory rug = rs.rugs[tokenId];
         LibRugStorage.AgingData memory aging = rs.agingData[tokenId];
 
-        // Get current dirt and aging levels using new system
+        // Get current dirt and aging levels
         uint8 dirtLevel = _getDirtLevel(tokenId);
         uint8 agingLevel = _getAgingLevel(tokenId);
 
@@ -330,7 +257,6 @@ contract RugNFTFacet is ERC721, ERC721URIStorage {
         require(rs.onchainRugsHTMLGenerator != address(0), "HTML generator not configured");
 
         // Encode rug data for the HTML generator
-        // Use abi.encode to match the RugData struct in OnchainRugsHTMLGenerator
         bytes memory encodedRugData = abi.encode(rug);
 
         string memory frameLevel = LibRugStorage.getFrameName(aging.frameLevel);
@@ -339,17 +265,17 @@ contract RugNFTFacet is ERC721, ERC721URIStorage {
             encodedRugData,
             tokenId,
             dirtLevel,
-            agingLevel, // Changed from textureLevel to agingLevel
+            agingLevel,
             frameLevel,
             rs.rugScriptyBuilder,
             rs.rugEthFSStorage
         );
 
-        // Create JSON metadata (build in chunks to avoid stack depth issues)
+        // Create JSON metadata (split into parts to avoid stack too deep)
         string memory startJson = string(abi.encodePacked(
             '{"name":"OnchainRug #', tokenId.toString(),
             '","description":"OnchainRugs by valipokkann","image":"https://onchainrugs.xyz/logo.png","animation_url":"',
-            html,  // HTML generator now returns complete data URI
+            html,
             '","attributes":['
         ));
 
@@ -373,7 +299,7 @@ contract RugNFTFacet is ERC721, ERC721URIStorage {
             '"},{"trait_type":"Master Restoration Count","value":"', aging.masterRestorationCount.toString(),
             '"},{"trait_type":"Laundering Count","value":"', aging.launderingCount.toString(),
             '"},{"trait_type":"Maintenance Score","value":"', LibRugStorage.calculateMaintenanceScore(LibRugStorage.rugStorage().agingData[tokenId]).toString(),
-            '"},{"trait_type":"Frame Level","value":"', LibRugStorage.getFrameName(aging.frameLevel)
+            '"},{"trait_type":"Frame","value":"', LibRugStorage.getFrameName(aging.frameLevel)
         ));
 
         string memory attrs4 = string(abi.encodePacked(
@@ -389,39 +315,31 @@ contract RugNFTFacet is ERC721, ERC721URIStorage {
         return string.concat("data:application/json;base64,", json);
     }
 
-    // ERC721 Metadata overrides
-    function name() public pure override(ERC721) returns (string memory) {
+
+
+    // ERC721 Metadata
+    function name() public view override(ERC721) returns (string memory) {
         return "OnchainRugs";
     }
 
-    function symbol() public pure override(ERC721) returns (string memory) {
+    function symbol() public view override(ERC721) returns (string memory) {
         return "RUGS";
     }
 
-    function supportsInterface(bytes4 interfaceId) public view override(ERC721, ERC721URIStorage) returns (bool) {
-        return super.supportsInterface(interfaceId);
-    }
-
-    function _exists(uint256 tokenId) internal view returns (bool) {
-        return ownerOf(tokenId) != address(0);
-    }
-
-    // Internal helper functions for new simplified system
-
+    // Internal helper functions
     function _getDirtLevel(uint256 tokenId) internal view returns (uint8) {
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
         LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
 
-        // Check frame immunity first
-        if (LibRugStorage.hasDirtImmunity(aging.frameLevel)) {
-            return 0; // Silver+ frames never accumulate dirt
-        }
-
-        // Calculate dirt level based on time since cleaning
         uint256 timeSinceCleaned = block.timestamp - aging.lastCleaned;
 
         if (timeSinceCleaned >= rs.dirtLevel2Days) return 2;
         if (timeSinceCleaned >= rs.dirtLevel1Days) return 1;
+        return 0;
+    }
+
+    function _getTextureLevel(uint256 tokenId) internal view returns (uint8) {
+        // Texture system removed - return default level
         return 0;
     }
 
@@ -442,5 +360,130 @@ contract RugNFTFacet is ERC721, ERC721URIStorage {
         // Cap at max level 10
         uint8 calculatedLevel = aging.agingLevel + levelsAdvanced;
         return calculatedLevel > 10 ? 10 : calculatedLevel;
+    }
+
+    // =======================================================================
+    // ERC721-C Interface Implementation
+    // =======================================================================
+
+    /// @notice Get the transfer validator contract address
+    function getTransferValidator() external view override returns (ICreatorTokenTransferValidator) {
+        return ICreatorTokenTransferValidator(LibTransferSecurity.getTransferValidator());
+    }
+
+    /// @notice Get the security policy for this collection
+    function getSecurityPolicy() external view override returns (CollectionSecurityPolicy memory) {
+        address validator = LibTransferSecurity.getTransferValidator();
+        if (validator == address(0)) {
+            return CollectionSecurityPolicy({
+                transferSecurityLevel: TransferSecurityLevels.Zero,
+                operatorWhitelistId: 0,
+                permittedContractReceiversId: 0
+            });
+        }
+
+        try ICreatorTokenTransferValidator(validator).getCollectionSecurityPolicy(address(this)) returns (CollectionSecurityPolicy memory policy) {
+            return policy;
+        } catch {
+            return CollectionSecurityPolicy({
+                transferSecurityLevel: TransferSecurityLevels.Zero,
+                operatorWhitelistId: 0,
+                permittedContractReceiversId: 0
+            });
+        }
+    }
+
+    /// @notice Get whitelisted operators for this collection
+    function getWhitelistedOperators() external view override returns (address[] memory) {
+        address validator = LibTransferSecurity.getTransferValidator();
+        if (validator == address(0)) return new address[](0);
+
+        CollectionSecurityPolicy memory policy = this.getSecurityPolicy();
+        try ICreatorTokenTransferValidator(validator).getWhitelistedOperators(policy.operatorWhitelistId) returns (address[] memory operators) {
+            return operators;
+        } catch {
+            return new address[](0);
+        }
+    }
+
+    /// @notice Get permitted contract receivers for this collection
+    function getPermittedContractReceivers() external view override returns (address[] memory) {
+        address validator = LibTransferSecurity.getTransferValidator();
+        if (validator == address(0)) return new address[](0);
+
+        CollectionSecurityPolicy memory policy = this.getSecurityPolicy();
+        try ICreatorTokenTransferValidator(validator).getPermittedContractReceivers(policy.permittedContractReceiversId) returns (address[] memory receivers) {
+            return receivers;
+        } catch {
+            return new address[](0);
+        }
+    }
+
+    /// @notice Check if an operator is whitelisted
+    function isOperatorWhitelisted(address operator) external view override returns (bool) {
+        address validator = LibTransferSecurity.getTransferValidator();
+        if (validator == address(0)) return false;
+
+        CollectionSecurityPolicy memory policy = this.getSecurityPolicy();
+        try ICreatorTokenTransferValidator(validator).isOperatorWhitelisted(policy.operatorWhitelistId, operator) returns (bool whitelisted) {
+            return whitelisted;
+        } catch {
+            return false;
+        }
+    }
+
+    /// @notice Check if a contract receiver is permitted
+    function isContractReceiverPermitted(address receiver) external view override returns (bool) {
+        address validator = LibTransferSecurity.getTransferValidator();
+        if (validator == address(0)) return false;
+
+        CollectionSecurityPolicy memory policy = this.getSecurityPolicy();
+        try ICreatorTokenTransferValidator(validator).isContractReceiverPermitted(policy.permittedContractReceiversId, receiver) returns (bool permitted) {
+            return permitted;
+        } catch {
+            return false;
+        }
+    }
+
+    /// @notice Check if a transfer is allowed
+    function isTransferAllowed(address caller, address from, address to) external view override returns (bool) {
+        address validator = LibTransferSecurity.getTransferValidator();
+        if (validator == address(0)) return true; // No validator = allow all transfers
+
+        try ICreatorTokenTransferValidator(validator).applyCollectionTransferPolicy(caller, from, to) {
+            return true; // No revert = transfer allowed
+        } catch {
+            return false; // Revert = transfer not allowed
+        }
+    }
+
+    /// @dev Override OpenZeppelin ERC721 _beforeTokenTransfer for ERC721-C validation
+    function _beforeTokenTransfer(address from, address to, uint256 tokenId) internal virtual override {
+        super._beforeTokenTransfer(from, to, tokenId);
+
+        // Validate transfer using ERC721-C validator for transfers only (not mints)
+        // For open mints, we don't need validation during minting (from == address(0))
+        if (LibTransferSecurity.areTransfersEnforced() && from != address(0) && to != address(0)) {
+            address validator = LibTransferSecurity.getTransferValidator();
+            if (validator != address(0)) {
+                try ICreatorTokenTransferValidator(validator).applyCollectionTransferPolicy(
+                    msg.sender,
+                    from,
+                    to
+                ) {} catch {
+                    revert("Transfer validation failed");
+                }
+            }
+        }
+    }
+
+    /// @dev Override _burn to handle ERC721URIStorage
+    function _burn(uint256 tokenId) internal override(ERC721, ERC721URIStorage) {
+        super._burn(tokenId);
+    }
+
+    /// @dev Override supportsInterface to include ICreatorToken
+    function supportsInterface(bytes4 interfaceId) public view override(ERC721) returns (bool) {
+        return interfaceId == type(ICreatorToken).interfaceId || super.supportsInterface(interfaceId);
     }
 }
