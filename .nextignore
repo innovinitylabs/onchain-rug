@@ -1,0 +1,18 @@
+# Exclude smart contract libraries from Next.js build
+lib/
+lib/creator-token-contracts/
+lib/creator-token-contracts/**/*
+lib/openzeppelin-contracts/
+lib/solady/
+
+# Exclude script files
+script/
+script/**/*.sol
+
+# Exclude test files
+test/
+test/**/*.sol
+
+# Exclude smart contract source
+src/
+src/**/*.sol
