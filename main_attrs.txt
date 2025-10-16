@@ -1,0 +1,31 @@
+        string memory attrs1 = string(abi.encodePacked(
+            '{"trait_type":"Text Lines","value":"', rug.textRows.length.toString(),
+            '"},{"trait_type":"Character Count","value":"', rug.characterCount.toString(),
+            '"},{"trait_type":"Palette Name","value":"', rug.paletteName,
+            '"},{"trait_type":"Stripe Count","value":"', rug.stripeCount.toString(),
+            '"},{"trait_type":"Complexity","value":"', uint256(rug.complexity).toString(),
+            '"},{"trait_type":"Warp Thickness","value":"', uint256(rug.warpThickness).toString()
+        ));
+
+        string memory attrs2 = string(abi.encodePacked(
+            '"},{"trait_type":"Dirt Level","value":"', uint256(dirtLevel).toString(),
+            '"},{"trait_type":"Aging Level","value":"', uint256(agingLevel).toString(),
+            '"},{"trait_type":"Cleaning Count","value":"', aging.cleaningCount.toString(),
+            '"},{"trait_type":"Restoration Count","value":"', aging.restorationCount.toString()
+        ));
+
+        string memory attrs3 = string(abi.encodePacked(
+            '"},{"trait_type":"Master Restoration Count","value":"', aging.masterRestorationCount.toString(),
+            '"},{"trait_type":"Laundering Count","value":"', aging.launderingCount.toString(),
+            '"},{"trait_type":"Maintenance Score","value":"', LibRugStorage.calculateMaintenanceScore(LibRugStorage.rugStorage().agingData[tokenId]).toString(),
+            '"},{"trait_type":"Frame Level","value":"', LibRugStorage.getFrameName(aging.frameLevel)
+        ));
+
+        string memory attrs4 = string(abi.encodePacked(
+            '"},{"trait_type":"Last Sale Price","value":"', aging.lastSalePrice.toString(),
+            '"},{"trait_type":"Mint Time","value":"', rug.mintTime.toString(),
+            '"},{"trait_type":"Last Cleaned","value":"', aging.lastCleaned.toString(),
+            '"}]}'
+        ));
+
+        string memory fullJson = string(abi.encodePacked(startJson, attrs1, attrs2, attrs3, attrs4));

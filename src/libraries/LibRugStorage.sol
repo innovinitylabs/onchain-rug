@@ -73,9 +73,9 @@ library LibRugStorage {
         uint256 linePrice5;            // Additional for line 5
 
         // ===== FRESH SIMPLIFIED AGING CONFIG =====
-        uint256 dirtLevel1Days;        // Days until rug becomes dirty level 1 (default: 3)
-        uint256 dirtLevel2Days;        // Days until rug becomes dirty level 2 (default: 7)
-        uint256 agingAdvanceDays;      // Days between aging level increases (default: 14)
+        uint256 dirtLevel1Days;        // Seconds until rug becomes dirty level 1 (default: 3 days worth)
+        uint256 dirtLevel2Days;        // Seconds until rug becomes dirty level 2 (default: 7 days worth)
+        uint256 agingAdvanceDays;      // Seconds between aging level increases (default: 14 days worth)
         uint256 freeCleanDays;         // Days after mint for free cleaning (default: 30)
         uint256 freeCleanWindow;       // Days after cleaning for free cleaning (default: 11)
 

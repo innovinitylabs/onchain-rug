@@ -1,0 +1,80 @@
+    function tokenURI(uint256 tokenId)
+        public
+        view
+        override(ERC721, ERC721URIStorage)
+        returns (string memory)
+    {
+        require(_exists(tokenId), "Token does not exist");
+
+        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+        LibRugStorage.RugData memory rug = rs.rugs[tokenId];
+        LibRugStorage.AgingData memory aging = rs.agingData[tokenId];
+
+        // Get current dirt and aging levels using new system
+        uint8 dirtLevel = _getDirtLevel(tokenId);
+        uint8 agingLevel = _getAgingLevel(tokenId);
+
+        // Use Scripty system - now mandatory
+        require(rs.rugScriptyBuilder != address(0), "ScriptyBuilder not configured");
+        require(rs.rugEthFSStorage != address(0), "EthFS storage not configured");
+        require(rs.onchainRugsHTMLGenerator != address(0), "HTML generator not configured");
+
+        // Encode rug data for the HTML generator
+        // Use abi.encode to match the RugData struct in OnchainRugsHTMLGenerator
+        bytes memory encodedRugData = abi.encode(rug);
+
+        string memory frameLevel = LibRugStorage.getFrameName(aging.frameLevel);
+
+        string memory html = OnchainRugsHTMLGenerator(rs.onchainRugsHTMLGenerator).generateProjectHTML(
+            encodedRugData,
+            tokenId,
+            dirtLevel,
+            agingLevel, // Changed from textureLevel to agingLevel
+            frameLevel,
+            rs.rugScriptyBuilder,
+            rs.rugEthFSStorage
+        );
+
+        // Create JSON metadata (build in chunks to avoid stack depth issues)
+        string memory startJson = string(abi.encodePacked(
+            '{"name":"OnchainRug #', tokenId.toString(),
+            '","description":"OnchainRugs by valipokkann","image":"https://onchainrugs.xyz/logo.png","animation_url":"',
+            html,  // HTML generator now returns complete data URI
+            '","attributes":['
+        ));
+
+        string memory attrs1 = string(abi.encodePacked(
+            '{"trait_type":"Text Lines","value":"', rug.textRows.length.toString(),
+            '"},{"trait_type":"Character Count","value":"', rug.characterCount.toString(),
+            '"},{"trait_type":"Palette Name","value":"', rug.paletteName,
+            '"},{"trait_type":"Stripe Count","value":"', rug.stripeCount.toString(),
+            '"},{"trait_type":"Complexity","value":"', uint256(rug.complexity).toString(),
+            '"},{"trait_type":"Warp Thickness","value":"', uint256(rug.warpThickness).toString()
+        ));
+
+        string memory attrs2 = string(abi.encodePacked(
+            '"},{"trait_type":"Dirt Level","value":"', uint256(dirtLevel).toString(),
+            '"},{"trait_type":"Aging Level","value":"', uint256(agingLevel).toString(),
+            '"},{"trait_type":"Cleaning Count","value":"', aging.cleaningCount.toString(),
+            '"},{"trait_type":"Restoration Count","value":"', aging.restorationCount.toString()
+        ));
+
+        string memory attrs3 = string(abi.encodePacked(
+            '"},{"trait_type":"Master Restoration Count","value":"', aging.masterRestorationCount.toString(),
+            '"},{"trait_type":"Laundering Count","value":"', aging.launderingCount.toString(),
+            '"},{"trait_type":"Maintenance Score","value":"', LibRugStorage.calculateMaintenanceScore(LibRugStorage.rugStorage().agingData[tokenId]).toString(),
+            '"},{"trait_type":"Frame Level","value":"', LibRugStorage.getFrameName(aging.frameLevel)
+        ));
+
+        string memory attrs4 = string(abi.encodePacked(
+            '"},{"trait_type":"Last Sale Price","value":"', aging.lastSalePrice.toString(),
+            '"},{"trait_type":"Mint Time","value":"', rug.mintTime.toString(),
+            '"},{"trait_type":"Last Cleaned","value":"', aging.lastCleaned.toString(),
+            '"}]}'
+        ));
+
+        string memory fullJson = string(abi.encodePacked(startJson, attrs1, attrs2, attrs3, attrs4));
+        string memory json = Base64.encode(bytes(fullJson));
+
+        return string.concat("data:application/json;base64,", json);
+    }

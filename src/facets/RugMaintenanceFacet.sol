@@ -3,7 +3,7 @@ pragma solidity ^0.8.22;
 
 import {LibRugStorage} from "../libraries/LibRugStorage.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-// import {RugNFTFacet} from "./RugNFTFacet.sol";
+import {RugNFTFacet} from "./RugNFTFacet.sol";
 
 /**
  * @title RugMaintenanceFacet
@@ -325,5 +325,42 @@ contract RugMaintenanceFacet {
         if (timeSinceLastClean <= rs.freeCleanWindow) return true;
 
         return false;
+    }
+
+    /**
+     * @notice Get maintenance history for a rug (moved from RugNFTFacet)
+     * @param tokenId Token ID
+     * @return cleaningCount Number of times cleaned
+     * @return restorationCount Number of times restored
+     * @return masterRestorationCount Number of master restorations
+     * @return launderingCount Number of times laundered
+     * @return maintenanceScore Calculated maintenance score
+     * @return lastLaundered Timestamp of last laundering
+     */
+    function getMaintenanceHistory(uint256 tokenId) external view returns (
+        uint256 cleaningCount,
+        uint256 restorationCount,
+        uint256 masterRestorationCount,
+        uint256 launderingCount,
+        uint256 maintenanceScore,
+        uint256 lastLaundered
+    ) {
+        // Check token exists using diamond call
+        (bool success, bytes memory data) = address(this).staticcall(
+            abi.encodeWithSignature("ownerOf(uint256)", tokenId)
+        );
+        require(success && data.length == 32, "Token does not exist");
+        address owner = abi.decode(data, (address));
+        require(owner != address(0), "Token does not exist");
+        LibRugStorage.AgingData storage aging = LibRugStorage.rugStorage().agingData[tokenId];
+
+        return (
+            aging.cleaningCount,
+            aging.restorationCount,
+            aging.masterRestorationCount,
+            aging.launderingCount,
+            LibRugStorage.calculateMaintenanceScore(aging),
+            aging.lastLaundered
+        );
     }
 }

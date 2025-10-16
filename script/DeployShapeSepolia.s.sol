@@ -436,7 +436,7 @@ contract DeployShapeSepolia is Script {
     }
 
     function _getRugAgingSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](8);
+        bytes4[] memory selectors = new bytes4[](11);
         selectors[0] = RugAgingFacet.getDirtLevel.selector;
         selectors[1] = RugAgingFacet.getAgingLevel.selector;
         selectors[2] = RugAgingFacet.getFrameLevel.selector;
@@ -445,11 +445,14 @@ contract DeployShapeSepolia is Script {
         selectors[5] = RugAgingFacet.hasDirt.selector;
         selectors[6] = RugAgingFacet.isCleaningFree.selector;
         selectors[7] = RugAgingFacet.timeUntilNextAging.selector;
+        selectors[8] = RugAgingFacet.timeUntilNextDirt.selector;
+        selectors[9] = RugAgingFacet.getAgingState.selector;
+        selectors[10] = RugAgingFacet.getFrameStatus.selector; // Added
         return selectors;
     }
 
     function _getRugMaintenanceSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](10);
+        bytes4[] memory selectors = new bytes4[](11);
         selectors[0] = RugMaintenanceFacet.cleanRug.selector;
         selectors[1] = RugMaintenanceFacet.restoreRug.selector;
         selectors[2] = RugMaintenanceFacet.masterRestoreRug.selector;
@@ -460,11 +463,12 @@ contract DeployShapeSepolia is Script {
         selectors[7] = RugMaintenanceFacet.canRestoreRug.selector;
         selectors[8] = RugMaintenanceFacet.needsMasterRestoration.selector;
         selectors[9] = RugMaintenanceFacet.getMaintenanceOptions.selector;
+        selectors[10] = RugMaintenanceFacet.getMaintenanceHistory.selector; // Added
         return selectors;
     }
 
     function _getRugCommerceSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](18);
+        bytes4[] memory selectors = new bytes4[](19);
         // Original selectors
         selectors[0] = RugCommerceFacet.withdraw.selector;
         selectors[1] = RugCommerceFacet.withdrawTo.selector;
@@ -485,6 +489,7 @@ contract DeployShapeSepolia is Script {
         selectors[15] = RugCommerceFacet.isCollectionPricingImmutable.selector;
         selectors[16] = RugCommerceFacet.isTokenPricingImmutable.selector;
         selectors[17] = RugCommerceFacet.getApprovedPaymentCoin.selector;
+        selectors[18] = RugCommerceFacet.getSaleHistory.selector; // Added
         // Note: supportsInterface(bytes4) is already registered by DiamondLoupeFacet
         return selectors;
     }

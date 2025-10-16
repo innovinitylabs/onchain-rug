@@ -377,5 +377,40 @@ contract RugCommerceFacet {
 
     // Note: supportsInterface removed to avoid conflict with ERC721's supportsInterface
 
+    /**
+     * @notice Get complete sale history for a rug (moved from RugNFTFacet)
+     * @param tokenId Token ID to check
+     * @return lastSalePrice Most recent sale price
+     * @return recentSalePrices Last 3 sale prices
+     * @return maxRecentSalePrice Highest of last 3 sales
+     */
+    function getSaleHistory(uint256 tokenId) external view returns (
+        uint256 lastSalePrice,
+        uint256[3] memory recentSalePrices,
+        uint256 maxRecentSalePrice
+    ) {
+        // Check token exists using diamond call
+        (bool success, bytes memory data) = address(this).staticcall(
+            abi.encodeWithSignature("ownerOf(uint256)", tokenId)
+        );
+        require(success && data.length == 32, "Token does not exist");
+        address owner = abi.decode(data, (address));
+        require(owner != address(0), "Token does not exist");
+        LibRugStorage.AgingData storage aging = LibRugStorage.rugStorage().agingData[tokenId];
+
+        uint256 maxPrice = 0;
+        for (uint256 i = 0; i < 3; i++) {
+            if (aging.recentSalePrices[i] > maxPrice) {
+                maxPrice = aging.recentSalePrices[i];
+            }
+        }
+
+        return (
+            aging.lastSalePrice,
+            aging.recentSalePrices,
+            maxPrice
+        );
+    }
+
     // Note: receive() and fallback() functions removed as Diamond handles ETH reception
 }
