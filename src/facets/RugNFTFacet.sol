@@ -2,6 +2,7 @@
 pragma solidity ^0.8.22;
 
 import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import {ERC721URIStorage} from "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {IERC721Metadata} from "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
@@ -19,7 +20,7 @@ import {TransferSecurityLevels, CollectionSecurityPolicy} from "@limitbreak/crea
  * @notice ERC721-C compatible facet for OnchainRugs NFT functionality
  * @dev Handles minting, token management, ERC721 compliance, and ERC721-C transfer validation
  */
-contract RugNFTFacet is ERC721, ICreatorToken {
+contract RugNFTFacet is ERC721, ERC721URIStorage, ICreatorToken {
     using Strings for uint256;
 
     // ERC721-C Constants - LimitBreak CreatorTokenTransferValidator v5.0.0 (deterministic address)
@@ -127,7 +128,7 @@ contract RugNFTFacet is ERC721, ICreatorToken {
         LibRugStorage.markTextAsUsed(textRows);
         LibRugStorage.recordMint(msg.sender);
 
-        // Mint NFT - temporarily use _mint instead of _safeMint to avoid ERC721 receiver checks
+        // Mint NFT -  use _mint instead of _safeMint to avoid ERC721c receiver checks. since this is open to all mint, owner checks aren't necessary.
         _mint(msg.sender, tokenId);
 
         emit RugMinted(tokenId, msg.sender, textRows, seed);
@@ -237,7 +238,7 @@ contract RugNFTFacet is ERC721, ICreatorToken {
     function tokenURI(uint256 tokenId)
         public
         view
-        override(ERC721)
+        override(ERC721, ERC721URIStorage)
         returns (string memory)
     {
         require(_exists(tokenId), "Token does not exist");
@@ -246,9 +247,9 @@ contract RugNFTFacet is ERC721, ICreatorToken {
         LibRugStorage.RugData memory rug = rs.rugs[tokenId];
         LibRugStorage.AgingData memory aging = rs.agingData[tokenId];
 
-        // Get current dirt and texture levels
+        // Get current dirt and aging levels
         uint8 dirtLevel = _getDirtLevel(tokenId);
-        uint8 textureLevel = _getTextureLevel(tokenId);
+        uint8 agingLevel = _getAgingLevel(tokenId);
 
         // Use Scripty system - now mandatory
         require(rs.rugScriptyBuilder != address(0), "ScriptyBuilder not configured");
@@ -256,39 +257,60 @@ contract RugNFTFacet is ERC721, ICreatorToken {
         require(rs.onchainRugsHTMLGenerator != address(0), "HTML generator not configured");
 
         // Encode rug data for the HTML generator
-        // Use abi.encode to match the RugData struct in OnchainRugsHTMLGenerator
         bytes memory encodedRugData = abi.encode(rug);
+
+        string memory frameLevel = LibRugStorage.getFrameName(aging.frameLevel);
 
         string memory html = OnchainRugsHTMLGenerator(rs.onchainRugsHTMLGenerator).generateProjectHTML(
             encodedRugData,
             tokenId,
             dirtLevel,
-            textureLevel,
-            Strings.toString(aging.frameLevel),
+            agingLevel,
+            frameLevel,
             rs.rugScriptyBuilder,
             rs.rugEthFSStorage
         );
 
-        // Create JSON metadata
-        string memory json = Base64.encode(
-            bytes(
-                string(
-                    abi.encodePacked(
-                        '{"name":"OnchainRug #', tokenId.toString(),
-                        '","description":"OnchainRugs by valipokkann","image":"https://onchainrugs.xyz/logo.png","animation_url":"',
-                        html,  // HTML generator now returns complete data URI
-                        '","attributes":[{"trait_type":"Text Lines","value":"', rug.textRows.length.toString(),
-                        '"},{"trait_type":"Character Count","value":"', rug.characterCount.toString(),
-                        '"},{"trait_type":"Palette Name","value":"', rug.paletteName,
-                        '"},{"trait_type":"Stripe Count","value":"', rug.stripeCount.toString(),
-                        '"},{"trait_type":"Complexity","value":"', uint256(rug.complexity).toString(),
-                        '"},{"trait_type":"Warp Thickness","value":"', uint256(rug.warpThickness).toString(),
-                        '"},{"trait_type":"Dirt Level","value":"', uint256(dirtLevel).toString(),
-                        '"}]}'
-                    )
-                )
-            )
-        );
+        // Create JSON metadata (split into parts to avoid stack too deep)
+        string memory startJson = string(abi.encodePacked(
+            '{"name":"OnchainRug #', tokenId.toString(),
+            '","description":"OnchainRugs by valipokkann","image":"https://onchainrugs.xyz/logo.png","animation_url":"',
+            html,
+            '","attributes":['
+        ));
+
+        string memory attrs1 = string(abi.encodePacked(
+            '{"trait_type":"Text Lines","value":"', rug.textRows.length.toString(),
+            '"},{"trait_type":"Character Count","value":"', rug.characterCount.toString(),
+            '"},{"trait_type":"Palette Name","value":"', rug.paletteName,
+            '"},{"trait_type":"Stripe Count","value":"', rug.stripeCount.toString(),
+            '"},{"trait_type":"Complexity","value":"', uint256(rug.complexity).toString(),
+            '"},{"trait_type":"Warp Thickness","value":"', uint256(rug.warpThickness).toString()
+        ));
+
+        string memory attrs2 = string(abi.encodePacked(
+            '"},{"trait_type":"Dirt Level","value":"', uint256(dirtLevel).toString(),
+            '"},{"trait_type":"Aging Level","value":"', uint256(agingLevel).toString(),
+            '"},{"trait_type":"Cleaning Count","value":"', aging.cleaningCount.toString(),
+            '"},{"trait_type":"Restoration Count","value":"', aging.restorationCount.toString()
+        ));
+
+        string memory attrs3 = string(abi.encodePacked(
+            '"},{"trait_type":"Master Restoration Count","value":"', aging.masterRestorationCount.toString(),
+            '"},{"trait_type":"Laundering Count","value":"', aging.launderingCount.toString(),
+            '"},{"trait_type":"Maintenance Score","value":"', LibRugStorage.calculateMaintenanceScore(LibRugStorage.rugStorage().agingData[tokenId]).toString(),
+            '"},{"trait_type":"Frame","value":"', LibRugStorage.getFrameName(aging.frameLevel)
+        ));
+
+        string memory attrs4 = string(abi.encodePacked(
+            '"},{"trait_type":"Last Sale Price","value":"', aging.lastSalePrice.toString(),
+            '"},{"trait_type":"Mint Time","value":"', rug.mintTime.toString(),
+            '"},{"trait_type":"Last Cleaned","value":"', aging.lastCleaned.toString(),
+            '"}]}'
+        ));
+
+        string memory fullJson = string(abi.encodePacked(startJson, attrs1, attrs2, attrs3, attrs4));
+        string memory json = Base64.encode(bytes(fullJson));
 
         return string.concat("data:application/json;base64,", json);
     }
@@ -319,6 +341,25 @@ contract RugNFTFacet is ERC721, ICreatorToken {
     function _getTextureLevel(uint256 tokenId) internal view returns (uint8) {
         // Texture system removed - return default level
         return 0;
+    }
+
+    function _getAgingLevel(uint256 tokenId) internal view returns (uint8) {
+        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+        LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
+
+        uint256 timeSinceLevelStart = block.timestamp - aging.lastCleaned;
+        uint256 baseInterval = rs.agingAdvanceDays;
+
+        // Apply frame-based aging immunity (higher frames age slower)
+        uint256 agingMultiplier = LibRugStorage.getAgingMultiplier(aging.frameLevel);
+        uint256 adjustedInterval = (baseInterval * 100) / agingMultiplier;
+
+        // Calculate how many levels we should have advanced
+        uint8 levelsAdvanced = uint8(timeSinceLevelStart / adjustedInterval);
+
+        // Cap at max level 10
+        uint8 calculatedLevel = aging.agingLevel + levelsAdvanced;
+        return calculatedLevel > 10 ? 10 : calculatedLevel;
     }
 
     // =======================================================================
@@ -420,9 +461,6 @@ contract RugNFTFacet is ERC721, ICreatorToken {
     function _beforeTokenTransfer(address from, address to, uint256 tokenId) internal virtual override {
         super._beforeTokenTransfer(from, to, tokenId);
 
-        // TEMPORARILY DISABLED: All validation to isolate the minting issue
-        // TODO: Re-enable ERC721-C validation for transfers after fixing minting
-        /*
         // Validate transfer using ERC721-C validator for transfers only (not mints)
         // For open mints, we don't need validation during minting (from == address(0))
         if (LibTransferSecurity.areTransfersEnforced() && from != address(0) && to != address(0)) {
@@ -437,7 +475,11 @@ contract RugNFTFacet is ERC721, ICreatorToken {
                 }
             }
         }
-        */
+    }
+
+    /// @dev Override _burn to handle ERC721URIStorage
+    function _burn(uint256 tokenId) internal override(ERC721, ERC721URIStorage) {
+        super._burn(tokenId);
     }
 
     /// @dev Override supportsInterface to include ICreatorToken

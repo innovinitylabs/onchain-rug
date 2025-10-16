@@ -2,8 +2,7 @@
 pragma solidity ^0.8.22;
 
 import {LibRugStorage} from "../libraries/LibRugStorage.sol";
-import {SimpleNFTFacet} from "./SimpleNFTFacet.sol";
-// import {RugNFTFacet} from "./RugNFTFacet.sol";
+import {RugNFTFacet} from "./RugNFTFacet.sol";
 
 /**
  * @title RugAgingFacet
@@ -281,7 +280,4 @@ contract RugAgingFacet {
         return timeRemaining;
     }
 
-    function _exists(uint256 tokenId) internal view returns (bool) {
-        return SimpleNFTFacet(address(this)).ownerOf(tokenId) != address(0);
-    }
 }
