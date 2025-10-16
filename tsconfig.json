@@ -28,5 +28,16 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "Doormat_original"]
+  "exclude": [
+    "node_modules",
+    "Doormat_original",
+    "lib",
+    "lib/**/*",
+    "src",
+    "src/**/*",
+    "script",
+    "script/**/*",
+    "test",
+    "test/**/*"
+  ]
 }
