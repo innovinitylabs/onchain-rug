@@ -56,6 +56,9 @@ contract RugNFTFacet is ERC721, ERC721URIStorage, ICreatorToken {
      * @param art Art generation data
      * @param complexity Pattern complexity (deprecated, kept for compatibility)
      * @param characterCount Total characters (can be derived from filteredCharacterMap)
+     *
+     * @dev TEST DATA REFERENCE: See TEST_MINT_REFERENCE.md and test_mint_data.json
+     *      Always use the official test data, never random/placeholder values!
      */
     function mintRug(
         string[] calldata textRows,
