@@ -79,11 +79,23 @@ export default function PortfolioPage() {
               const metadata = await metadataResponse.json()
               const attributes = metadata.raw?.metadata?.attributes || metadata.attributes || []
               
+              // Verify ownership with contract call
+              let verifiedOwner = address;
+              try {
+                const response = await fetch(`/api/contract?method=ownerOf&tokenId=${tokenId}&contractAddress=${contractAddress}`);
+                if (response.ok) {
+                  const ownerData = await response.json();
+                  verifiedOwner = ownerData.owner;
+                }
+              } catch (error) {
+                console.warn(`Failed to verify owner for token ${tokenId}:`, error);
+              }
+
               processedNfts.push({
                 tokenId: parseInt(tokenId),
                 traits: metadata.rugData || {},
                 aging: parseAgingData(attributes),
-                owner: address, // We know they own it since this is getNFTsForOwner
+                owner: verifiedOwner,
                 name: metadata.name,
                 description: metadata.description,
                 animation_url: metadata.animation_url || metadata.raw?.metadata?.animation_url,

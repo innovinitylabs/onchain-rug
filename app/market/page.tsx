@@ -113,10 +113,20 @@ export default function MarketPage() {
                                  metadata.raw?.metadata?.animation_url ||
                                  metadata.metadata?.animation_url
 
-              // Get owner - Alchemy getNFTMetadata includes ownership info
-              const owner = metadata.owners?.[0] || 
-                           metadata.contract?.deployer || 
-                           '0x0000000000000000000000000000000000000000'
+              // Get owner from contract call
+              let owner: string;
+              try {
+                const response = await fetch(`/api/contract?method=ownerOf&tokenId=${nft.tokenId}&contractAddress=${contractAddress}`);
+                if (response.ok) {
+                  const ownerData = await response.json();
+                  owner = ownerData.owner;
+                } else {
+                  owner = '0x0000000000000000000000000000000000000000';
+                }
+              } catch (error) {
+                console.warn(`Failed to get owner for token ${nft.tokenId}:`, error);
+                owner = '0x0000000000000000000000000000000000000000';
+              }
 
               processedNfts.push({
                 tokenId: nft.tokenId,
