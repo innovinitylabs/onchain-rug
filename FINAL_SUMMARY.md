@@ -219,7 +219,9 @@ The marketplace we built focuses on **art**, not trading:
 **Documentation:** ✅ Complete  
 **Testing Scripts:** ✅ Ready to run  
 
-**What's needed:** Just run `./test-marketplace.sh`
+**What's needed:** 
+1. Ensure your `.env` has `TESTNET_PRIVATE_KEY` and `TESTNET_PRIVATE_KEY_2`
+2. Run `./test-marketplace.sh`
 
 ---
 

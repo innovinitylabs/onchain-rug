@@ -17,25 +17,34 @@ contract TestMarketplace is Script {
     // Contract addresses (set after deployment)
     address public diamondAddress;
     
-    // Test wallets
-    address public wallet1 = 0x7Bc9427C8730b87Ab3faD10DA63F0C4b9e9E0A5F; // Original testnet wallet
-    address public wallet2 = 0x8B46f9A4a29967644C3B6A628C058541492acD57; // New testing wallet
+    // Test wallets (derived from private keys)
+    address public wallet1;
+    address public wallet2;
     
-    uint256 public pk1 = 0xc944f06adcf72ce9afee9131a960a33cb35de65a63d5603814d119685446c207;
-    uint256 public pk2 = 0xfb5d3d24805c4cf92b50e0dde0984652a122456d6531bf7c27bfbbccde711e72;
+    // Private keys (read from .env)
+    uint256 public pk1;
+    uint256 public pk2;
     
     uint256 public tokenId1;
     uint256 public tokenId2;
     uint256 public tokenId3;
     
     function setUp() public {
-        // Get diamond address from environment or use default
-        diamondAddress = vm.envOr("DIAMOND_ADDRESS", address(0));
-        require(diamondAddress != address(0), "DIAMOND_ADDRESS not set");
+        // Read private keys from environment
+        pk1 = vm.envUint("TESTNET_PRIVATE_KEY");
+        pk2 = vm.envUint("TESTNET_PRIVATE_KEY_2");
+        
+        // Derive wallet addresses
+        wallet1 = vm.addr(pk1);
+        wallet2 = vm.addr(pk2);
+        
+        // Get diamond address from environment
+        diamondAddress = vm.envOr("DIAMOND_ADDRESS", vm.envOr("NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT", address(0)));
+        require(diamondAddress != address(0), "DIAMOND_ADDRESS or NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT not set");
         
         console.log("Testing marketplace at:", diamondAddress);
-        console.log("Wallet 1:", wallet1);
-        console.log("Wallet 2:", wallet2);
+        console.log("Wallet 1 (Seller):", wallet1);
+        console.log("Wallet 2 (Buyer):", wallet2);
     }
     
     function run() public {

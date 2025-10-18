@@ -11,13 +11,24 @@
 
 ```env
 # Primary deployment wallet (has testnet ETH)
+# Wallet: 0x7Bc9427C8730b87Ab3faD10DA63F0C4b9e9E0A5F
 PRIVATE_KEY=0xc944f06adcf72ce9afee9131a960a33cb35de65a63d5603814d119685446c207
+TESTNET_PRIVATE_KEY=0xc944f06adcf72ce9afee9131a960a33cb35de65a63d5603814d119685446c207
 
 # Testing wallet 2 (for buy/bid operations)
-PRIVATE_KEY_2=0xfb5d3d24805c4cf92b50e0dde0984652a122456d6531bf7c27bfbbccde711e72
+# Wallet: 0x8B46f9A4a29967644C3B6A628C058541492acD57
+TESTNET_PRIVATE_KEY_2=0xfb5d3d24805c4cf92b50e0dde0984652a122456d6531bf7c27bfbbccde711e72
 
 # Shape Sepolia RPC
 SHAPE_SEPOLIA_RPC=https://sepolia.shape.network
+
+# Will be set after deployment
+NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT=
+```
+
+**Or copy from template:**
+```bash
+cp env.marketplace-testing.example .env
 ```
 
 ---

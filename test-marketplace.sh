@@ -19,10 +19,23 @@ NC='\033[0m' # No Color
 
 # Check environment
 echo "Checking environment..."
-if [ -z "$PRIVATE_KEY" ]; then
-    echo "${RED}ERROR: PRIVATE_KEY not set in environment${NC}"
-    echo "Please set PRIVATE_KEY in your .env file or export it"
+
+# Load .env file if it exists
+if [ -f .env ]; then
+    export $(cat .env | grep -v '^#' | xargs)
+fi
+
+if [ -z "$TESTNET_PRIVATE_KEY" ] && [ -z "$PRIVATE_KEY" ]; then
+    echo "${RED}ERROR: TESTNET_PRIVATE_KEY or PRIVATE_KEY not set${NC}"
+    echo "Please add to your .env file:"
+    echo "  TESTNET_PRIVATE_KEY=0x..."
+    echo "  TESTNET_PRIVATE_KEY_2=0x..."
     exit 1
+fi
+
+# Use TESTNET_PRIVATE_KEY if available, otherwise fall back to PRIVATE_KEY
+if [ -z "$TESTNET_PRIVATE_KEY" ]; then
+    export TESTNET_PRIVATE_KEY=$PRIVATE_KEY
 fi
 
 echo "${GREEN}✅ Environment configured${NC}"
@@ -50,6 +63,9 @@ echo "${BLUE}[STEP 2] Deploying contracts to Shape Sepolia...${NC}"
 echo "This will take 5-10 minutes..."
 echo ""
 
+# Set PRIVATE_KEY for deployment (use TESTNET_PRIVATE_KEY)
+export PRIVATE_KEY=${TESTNET_PRIVATE_KEY}
+
 DEPLOY_OUTPUT=$(forge script script/DeployShapeSepolia.s.sol \
     --rpc-url $RPC_URL \
     --broadcast \
@@ -73,10 +89,15 @@ if [ $? -eq 0 ]; then
     
     echo "${GREEN}Diamond Address: $DIAMOND_ADDRESS${NC}"
     export DIAMOND_ADDRESS
+    export NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT=$DIAMOND_ADDRESS
     
     # Save to file for frontend
     echo "$DIAMOND_ADDRESS" > .diamond-address
     echo "${GREEN}Saved diamond address to .diamond-address${NC}"
+    echo ""
+    echo "${YELLOW}Add this to your .env file:${NC}"
+    echo "DIAMOND_ADDRESS=$DIAMOND_ADDRESS"
+    echo "NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT=$DIAMOND_ADDRESS"
 else
     echo "${RED}❌ Deployment failed${NC}"
     echo "$DEPLOY_OUTPUT"
