@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createPublicClient, http } from 'viem'
-import { shape } from 'viem/chains'
-import { config } from '@/lib/config'
+import { shapeSepolia } from '@/lib/web3'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -18,8 +17,8 @@ export async function GET(request: NextRequest) {
 
   try {
     const client = createPublicClient({
-      chain: shape,
-      transport: http()
+      chain: shapeSepolia,
+      transport: http(shapeSepolia.rpcUrls.default.http[0])
     })
 
     let result: any
