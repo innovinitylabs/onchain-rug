@@ -4,7 +4,7 @@ pragma solidity ^0.8.22;
 import "forge-std/Script.sol";
 import "forge-std/console.sol";
 import {DeployShapeSepolia} from "./DeployShapeSepolia.s.sol";
-import {DeployPaymentProcessor} from "./DeployPaymentProcessor.s.sol";
+// import {DeployPaymentProcessor} from "./DeployPaymentProcessor.s.sol"; // TODO: Create this file if needed
 
 /**
  * @title DeployOnchainRugsToShape

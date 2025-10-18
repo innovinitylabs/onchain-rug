@@ -17,6 +17,7 @@ import "../src/facets/RugMaintenanceFacet.sol";
 import "../src/facets/RugCommerceFacet.sol";
 import "../src/facets/RugLaunderingFacet.sol";
 import "../src/facets/RugTransferSecurityFacet.sol";
+import "../src/facets/RugMarketplaceFacet.sol";
 import "../src/libraries/LibRugStorage.sol";
 import "../src/diamond/interfaces/IDiamondCut.sol";
 
@@ -45,6 +46,7 @@ contract DeployShapeSepolia is Script {
     RugCommerceFacet public rugCommerceFacet;
     RugLaunderingFacet public rugLaunderingFacet;
     RugTransferSecurityFacet public rugTransferSecurityFacet;
+    RugMarketplaceFacet public rugMarketplaceFacet;
 
     // Deployment addresses
     address public fileStoreAddr;
@@ -139,7 +141,8 @@ contract DeployShapeSepolia is Script {
         rugCommerceFacet = new RugCommerceFacet();
         rugLaunderingFacet = new RugLaunderingFacet();
         rugTransferSecurityFacet = new RugTransferSecurityFacet();
-        console.log("   All Rug facets deployed (including Transfer Security)");
+        rugMarketplaceFacet = new RugMarketplaceFacet();
+        console.log("   All Rug facets deployed (including Transfer Security and Marketplace)");
     }
 
     function configureDiamond() internal {
@@ -224,6 +227,16 @@ contract DeployShapeSepolia is Script {
         });
         IDiamondCut(diamondAddr).diamondCut(transferSecurityCut, address(0), "");
         console.log("   Added RugTransferSecurityFacet");
+
+        // Add RugMarketplaceFacet
+        IDiamondCut.FacetCut[] memory marketplaceCut = new IDiamondCut.FacetCut[](1);
+        marketplaceCut[0] = IDiamondCut.FacetCut({
+            facetAddress: address(rugMarketplaceFacet),
+            action: IDiamondCut.FacetCutAction.Add,
+            functionSelectors: _getRugMarketplaceSelectors()
+        });
+        IDiamondCut(diamondAddr).diamondCut(marketplaceCut, address(0), "");
+        console.log("   Added RugMarketplaceFacet");
     }
 
     function uploadLibraries() internal {
@@ -295,6 +308,10 @@ contract DeployShapeSepolia is Script {
 
         // ERC721-C transfer security already initialized in RugNFTFacet constructor
         console.log("   ERC721-C transfer validator initialized in RugNFTFacet");
+
+        // Initialize marketplace with default configuration
+        RugMarketplaceFacet(diamondAddr).initializeMarketplace();
+        console.log("   Marketplace initialized (2.5% fee, 7 day max auctions, 5% min bid)");
 
         // Note: New O(1) aging system uses hardcoded constants, not configurable thresholds
         // Test values use minutes instead of days for rapid testing
@@ -436,7 +453,7 @@ contract DeployShapeSepolia is Script {
     }
 
     function _getRugAgingSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](11);
+        bytes4[] memory selectors = new bytes4[](10);
         selectors[0] = RugAgingFacet.getDirtLevel.selector;
         selectors[1] = RugAgingFacet.getAgingLevel.selector;
         selectors[2] = RugAgingFacet.getFrameLevel.selector;
@@ -447,7 +464,6 @@ contract DeployShapeSepolia is Script {
         selectors[7] = RugAgingFacet.timeUntilNextAging.selector;
         selectors[8] = RugAgingFacet.timeUntilNextDirt.selector;
         selectors[9] = RugAgingFacet.getAgingState.selector;
-        selectors[10] = RugAgingFacet.getFrameStatus.selector; // Added
         return selectors;
     }
 
@@ -519,6 +535,46 @@ contract DeployShapeSepolia is Script {
         selectors[6] = RugTransferSecurityFacet.getSecurityPolicyId.selector;
         selectors[7] = RugTransferSecurityFacet.areTransfersEnforced.selector;
         selectors[8] = RugTransferSecurityFacet.isSecurityInitialized.selector;
+        return selectors;
+    }
+
+    function _getRugMarketplaceSelectors() internal pure returns (bytes4[] memory) {
+        bytes4[] memory selectors = new bytes4[](29);
+        // Direct listing functions
+        selectors[0] = RugMarketplaceFacet.createListing.selector;
+        selectors[1] = RugMarketplaceFacet.cancelListing.selector;
+        selectors[2] = RugMarketplaceFacet.updateListingPrice.selector;
+        selectors[3] = RugMarketplaceFacet.buyListing.selector;
+        selectors[4] = RugMarketplaceFacet.bulkCreateListings.selector;
+        // Auction functions
+        selectors[5] = RugMarketplaceFacet.createAuction.selector;
+        selectors[6] = RugMarketplaceFacet.placeBid.selector;
+        selectors[7] = RugMarketplaceFacet.finalizeAuction.selector;
+        selectors[8] = RugMarketplaceFacet.cancelAuction.selector;
+        // Offer functions
+        selectors[9] = RugMarketplaceFacet.makeOffer.selector;
+        selectors[10] = RugMarketplaceFacet.makeCollectionOffer.selector;
+        selectors[11] = RugMarketplaceFacet.acceptOffer.selector;
+        selectors[12] = RugMarketplaceFacet.cancelOffer.selector;
+        // Bundle functions
+        selectors[13] = RugMarketplaceFacet.createBundle.selector;
+        selectors[14] = RugMarketplaceFacet.buyBundle.selector;
+        selectors[15] = RugMarketplaceFacet.cancelBundle.selector;
+        // Admin functions
+        selectors[16] = RugMarketplaceFacet.setMarketplaceFee.selector;
+        selectors[17] = RugMarketplaceFacet.setMaxAuctionDuration.selector;
+        selectors[18] = RugMarketplaceFacet.setMinBidIncrement.selector;
+        selectors[19] = RugMarketplaceFacet.withdrawMarketplaceFees.selector;
+        selectors[20] = RugMarketplaceFacet.initializeMarketplace.selector;
+        // View functions
+        selectors[21] = RugMarketplaceFacet.getListing.selector;
+        selectors[22] = RugMarketplaceFacet.getAuction.selector;
+        selectors[23] = RugMarketplaceFacet.getOffer.selector;
+        selectors[24] = RugMarketplaceFacet.getTokenOffers.selector;
+        selectors[25] = RugMarketplaceFacet.getCollectionOffers.selector;
+        selectors[26] = RugMarketplaceFacet.getBundle.selector;
+        selectors[27] = RugMarketplaceFacet.getMarketplaceStats.selector;
+        selectors[28] = RugMarketplaceFacet.getMarketplaceConfig.selector;
         return selectors;
     }
 }
