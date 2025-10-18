@@ -38,9 +38,9 @@ contract TestMarketplace is Script {
         wallet1 = vm.addr(pk1);
         wallet2 = vm.addr(pk2);
         
-        // Get diamond address from environment
-        diamondAddress = vm.envOr("DIAMOND_ADDRESS", vm.envOr("NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT", address(0)));
-        require(diamondAddress != address(0), "DIAMOND_ADDRESS or NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT not set");
+        // Get diamond address from environment (same as NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT)
+        diamondAddress = vm.envAddress("NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT");
+        require(diamondAddress != address(0), "NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT not set in .env");
         
         console.log("Testing marketplace at:", diamondAddress);
         console.log("Wallet 1 (Seller):", wallet1);

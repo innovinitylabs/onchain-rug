@@ -95,8 +95,7 @@ if [ $? -eq 0 ]; then
     echo "$DIAMOND_ADDRESS" > .diamond-address
     echo "${GREEN}Saved diamond address to .diamond-address${NC}"
     echo ""
-    echo "${YELLOW}Add this to your .env file:${NC}"
-    echo "DIAMOND_ADDRESS=$DIAMOND_ADDRESS"
+    echo "${YELLOW}Add this to your .env file (they're the same address):${NC}"
     echo "NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT=$DIAMOND_ADDRESS"
 else
     echo "${RED}❌ Deployment failed${NC}"
@@ -117,7 +116,6 @@ echo "${BLUE}[STEP 4] Running automated marketplace tests...${NC}"
 # Ensure all required env vars are exported for the test script
 export TESTNET_PRIVATE_KEY
 export TESTNET_PRIVATE_KEY_2
-export DIAMOND_ADDRESS
 export NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT
 
 forge script script/TestMarketplace.s.sol \
