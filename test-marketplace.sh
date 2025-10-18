@@ -113,6 +113,13 @@ echo ""
 
 # Step 4: Run automated marketplace tests
 echo "${BLUE}[STEP 4] Running automated marketplace tests...${NC}"
+
+# Ensure all required env vars are exported for the test script
+export TESTNET_PRIVATE_KEY
+export TESTNET_PRIVATE_KEY_2
+export DIAMOND_ADDRESS
+export NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT
+
 forge script script/TestMarketplace.s.sol \
     --rpc-url $RPC_URL \
     --broadcast \

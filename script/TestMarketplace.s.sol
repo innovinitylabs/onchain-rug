@@ -140,7 +140,7 @@ contract TestMarketplace is Script {
         
         vm.stopBroadcast();
         
-        console.log("  ✅ Minting complete");
+        console.log("  [SUCCESS] Minting complete");
     }
     
     function step2_TestDirectListing() internal {
@@ -159,7 +159,7 @@ contract TestMarketplace is Script {
         require(isActive, "Listing not active");
         require(seller == wallet1, "Incorrect seller");
         require(price == 0.01 ether, "Incorrect price");
-        console.log("  ✅ Listing verified");
+        console.log("  [SUCCESS] Listing verified");
         
         vm.stopBroadcast();
         
@@ -172,7 +172,7 @@ contract TestMarketplace is Script {
         // Verify ownership transferred
         address newOwner = RugNFTFacet(diamondAddress).ownerOf(tokenId1);
         require(newOwner == wallet2, "Ownership not transferred");
-        console.log("  ✅ Purchase successful - NFT #", tokenId1, "now owned by wallet2");
+        console.log("  [SUCCESS] Purchase successful - NFT #", tokenId1, "now owned by wallet2");
         
         vm.stopBroadcast();
     }
@@ -213,7 +213,7 @@ contract TestMarketplace is Script {
         require(isActive, "Auction not active");
         require(highestBidder == wallet2, "Incorrect bidder");
         require(currentBid == 0.025 ether, "Incorrect bid amount");
-        console.log("  ✅ Bid placed successfully");
+        console.log("  [SUCCESS] Bid placed successfully");
         
         vm.stopBroadcast();
         
@@ -226,7 +226,7 @@ contract TestMarketplace is Script {
         // Verify transfer
         address auctionWinner = RugNFTFacet(diamondAddress).ownerOf(tokenId2);
         require(auctionWinner == wallet2, "Auction winner incorrect");
-        console.log("  ✅ Auction finalized - NFT #", tokenId2, "transferred to wallet2");
+        console.log("  [SUCCESS] Auction finalized - NFT #", tokenId2, "transferred to wallet2");
     }
     
     function step4_TestOffers() internal {
@@ -243,7 +243,7 @@ contract TestMarketplace is Script {
         
         uint256[] memory offers = RugMarketplaceFacet(diamondAddress).getTokenOffers(tokenId3);
         require(offers.length == 1, "Offer not created");
-        console.log("  ✅ Offer created (ID:", offers[0], ")");
+        console.log("  [SUCCESS] Offer created (ID:", offers[0], ")");
         
         vm.stopBroadcast();
         
@@ -256,7 +256,7 @@ contract TestMarketplace is Script {
         // Verify transfer
         address offerBuyer = RugNFTFacet(diamondAddress).ownerOf(tokenId3);
         require(offerBuyer == wallet2, "Offer acceptance failed");
-        console.log("  ✅ Offer accepted - NFT #", tokenId3, "transferred to wallet2");
+        console.log("  [SUCCESS] Offer accepted - NFT #", tokenId3, "transferred to wallet2");
         
         vm.stopBroadcast();
     }
@@ -324,7 +324,7 @@ contract TestMarketplace is Script {
         // Verify both NFTs transferred
         require(RugNFTFacet(diamondAddress).ownerOf(bundleToken1) == wallet2, "Bundle token 1 not transferred");
         require(RugNFTFacet(diamondAddress).ownerOf(bundleToken2) == wallet2, "Bundle token 2 not transferred");
-        console.log("  ✅ Bundle purchased - both NFTs transferred to wallet2");
+        console.log("  [SUCCESS] Bundle purchased - both NFTs transferred to wallet2");
         
         vm.stopBroadcast();
     }
@@ -343,7 +343,7 @@ contract TestMarketplace is Script {
             RugLaunderingFacet(diamondAddress).getLaunderingStats(tokenId1);
         
         console.log("  NFT #", tokenId1, "laundering count:", launderingCount);
-        console.log("  ✅ Laundering integration verified");
+        console.log("  [SUCCESS] Laundering integration verified");
     }
     
     function step7_CheckStats() internal {
@@ -360,10 +360,10 @@ contract TestMarketplace is Script {
         console.log("  Total Volume:", totalVolume / 1e18, "ETH");
         console.log("  Fees Collected:", totalFeesCollected / 1e18, "ETH");
         console.log("  Marketplace Fee:", marketplaceFeePercent / 100, "%");
-        console.log("  ✅ Stats verified");
+        console.log("  [SUCCESS] Stats verified");
         
         require(totalSales >= 3, "Sales count incorrect");
-        console.log("  ✅ All stats look correct!");
+        console.log("  [SUCCESS] All stats look correct!");
     }
 }
 
