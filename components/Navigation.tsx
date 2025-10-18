@@ -3,12 +3,15 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-import { Home, Palette, Image, Sparkles, Menu, X, ImageIcon, User, ShoppingCart, Briefcase, BarChart3 } from 'lucide-react'
+import { Home, Palette, Image, Sparkles, Menu, X, ImageIcon, User, ShoppingCart, Briefcase, ChevronDown, Settings } from 'lucide-react'
+import { useAccount } from 'wagmi'
 import { WalletConnect } from './wallet-connect'
 import LiquidGlass from './LiquidGlass'
 
 export default function Navigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isManageDropdownOpen, setIsManageDropdownOpen] = useState(false)
+  const { isConnected } = useAccount()
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen)
@@ -16,6 +19,10 @@ export default function Navigation() {
 
   const closeMobileMenu = () => {
     setIsMobileMenuOpen(false)
+  }
+
+  const toggleManageDropdown = () => {
+    setIsManageDropdownOpen(!isManageDropdownOpen)
   }
 
   return (
@@ -409,20 +416,58 @@ export default function Navigation() {
               <ShoppingCart className="w-5 h-5" />
               <span className="text-white/90 text-sm font-semibold">Market</span>
             </Link>
-            <Link
-              href="/portfolio"
-              className="flex items-center gap-2 hover:opacity-90 transition-all duration-300"
-            >
-              <Briefcase className="w-5 h-5" />
-              <span className="text-white/90 text-sm font-semibold">Portfolio</span>
-            </Link>
-            <Link
-              href="/analytics"
-              className="flex items-center gap-2 hover:opacity-90 transition-all duration-300"
-            >
-              <BarChart3 className="w-5 h-5" />
-              <span className="text-white/90 text-sm font-semibold">Analytics</span>
-            </Link>
+            
+            {/* Manage Dropdown - Only visible when wallet connected */}
+            {isConnected && (
+              <div className="relative">
+                <button
+                  onClick={toggleManageDropdown}
+                  className="flex items-center gap-2 hover:opacity-90 transition-all duration-300"
+                >
+                  <Settings className="w-5 h-5" />
+                  <span className="text-white/90 text-sm font-semibold">Manage</span>
+                  <ChevronDown className={`w-4 h-4 transition-transform ${isManageDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+                
+                <AnimatePresence>
+                  {isManageDropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="absolute top-full mt-2 right-0 min-w-[200px]"
+                      onMouseLeave={() => setIsManageDropdownOpen(false)}
+                    >
+                      <LiquidGlass
+                        blurAmount={0.15}
+                        aberrationIntensity={2}
+                        elasticity={0.08}
+                        cornerRadius={12}
+                      >
+                        <div className="py-2 bg-slate-900/95">
+                          <Link
+                            href="/portfolio"
+                            onClick={() => setIsManageDropdownOpen(false)}
+                            className="flex items-center gap-3 px-4 py-3 text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+                          >
+                            <Briefcase className="w-4 h-4" />
+                            <span>Portfolio</span>
+                          </Link>
+                          <Link
+                            href="/dashboard"
+                            onClick={() => setIsManageDropdownOpen(false)}
+                            className="flex items-center gap-3 px-4 py-3 text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+                          >
+                            <User className="w-4 h-4" />
+                            <span>Dashboard</span>
+                          </Link>
+                        </div>
+                      </LiquidGlass>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
           </div>
 
           {/* Mobile Hamburger Menu Button */}
@@ -529,23 +574,35 @@ export default function Navigation() {
                 <span className="text-lg font-medium">Market</span>
               </Link>
 
-              <Link
-                href="/portfolio"
-                onClick={closeMobileMenu}
-                className="flex items-center gap-4 px-6 py-4 text-white hover:bg-white/10 transition-colors duration-200"
-              >
-                <Briefcase className="w-6 h-6" />
-                <span className="text-lg font-medium">Portfolio</span>
-              </Link>
+              {/* Manage section - Only visible when connected */}
+              {isConnected && (
+                <>
+                  <div className="px-6 py-2">
+                    <div className="flex items-center gap-2 text-white/50 text-sm font-semibold">
+                      <Settings className="w-4 h-4" />
+                      <span>MANAGE</span>
+                    </div>
+                  </div>
+                  
+                  <Link
+                    href="/portfolio"
+                    onClick={closeMobileMenu}
+                    className="flex items-center gap-4 px-6 py-3 pl-12 text-white/80 hover:text-white hover:bg-white/10 transition-colors duration-200"
+                  >
+                    <Briefcase className="w-5 h-5" />
+                    <span className="text-base font-medium">Portfolio</span>
+                  </Link>
 
-              <Link
-                href="/analytics"
-                onClick={closeMobileMenu}
-                className="flex items-center gap-4 px-6 py-4 text-white hover:bg-white/10 transition-colors duration-200"
-              >
-                <BarChart3 className="w-6 h-6" />
-                <span className="text-lg font-medium">Analytics</span>
-              </Link>
+                  <Link
+                    href="/dashboard"
+                    onClick={closeMobileMenu}
+                    className="flex items-center gap-4 px-6 py-3 pl-12 text-white/80 hover:text-white hover:bg-white/10 transition-colors duration-200"
+                  >
+                    <User className="w-5 h-5" />
+                    <span className="text-base font-medium">Dashboard</span>
+                  </Link>
+                </>
+              )}
 
             </div>
 
