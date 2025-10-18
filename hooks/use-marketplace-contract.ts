@@ -1,7 +1,7 @@
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useChainId } from 'wagmi'
 import { parseEther } from 'viem'
 import { config } from '@/lib/config'
-import { contractAddresses } from '@/lib/web3'
+import { contractAddresses, shapeSepolia, shapeMainnet } from '@/lib/web3'
 
 // Marketplace ABI - only the functions we need
 const marketplaceABI = [
@@ -165,12 +165,15 @@ export function useCreateListing() {
     const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
     const price = parseEther(priceInEth)
     const duration = durationInDays * 24 * 60 * 60 // Convert days to seconds
+    const chain = chainId === 360 ? shapeMainnet : shapeSepolia
 
     await writeContract({
       address: contractAddress as `0x${string}`,
       abi: marketplaceABI,
       functionName: 'createListing',
-      args: [BigInt(tokenId), price, BigInt(duration)]
+      args: [BigInt(tokenId), price, BigInt(duration)],
+      chain,
+      account: address
     })
   }
 
@@ -191,13 +194,16 @@ export function useBuyListing() {
     
     const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
     const price = parseEther(priceInEth)
+    const chain = chainId === 360 ? shapeMainnet : shapeSepolia
 
     await writeContract({
       address: contractAddress as `0x${string}`,
       abi: marketplaceABI,
       functionName: 'buyListing',
       args: [BigInt(tokenId)],
-      value: price
+      value: price,
+      chain,
+      account: address
     })
   }
 
@@ -217,12 +223,15 @@ export function useCancelListing() {
     if (!address) throw new Error('Wallet not connected')
     
     const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
+    const chain = chainId === 360 ? shapeMainnet : shapeSepolia
 
     await writeContract({
       address: contractAddress as `0x${string}`,
       abi: marketplaceABI,
       functionName: 'cancelListing',
-      args: [BigInt(tokenId)]
+      args: [BigInt(tokenId)],
+      chain,
+      account: address
     })
   }
 
@@ -243,12 +252,15 @@ export function useUpdateListingPrice() {
     
     const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
     const newPrice = parseEther(newPriceInEth)
+    const chain = chainId === 360 ? shapeMainnet : shapeSepolia
 
     await writeContract({
       address: contractAddress as `0x${string}`,
       abi: marketplaceABI,
       functionName: 'updateListingPrice',
-      args: [BigInt(tokenId), newPrice]
+      args: [BigInt(tokenId), newPrice],
+      chain,
+      account: address
     })
   }
 
@@ -277,12 +289,15 @@ export function useCreateAuction() {
     const startPrice = parseEther(startPriceInEth)
     const reservePrice = reservePriceInEth ? parseEther(reservePriceInEth) : BigInt(0)
     const duration = durationInDays * 24 * 60 * 60
+    const chain = chainId === 360 ? shapeMainnet : shapeSepolia
 
     await writeContract({
       address: contractAddress as `0x${string}`,
       abi: marketplaceABI,
       functionName: 'createAuction',
-      args: [BigInt(tokenId), startPrice, reservePrice, BigInt(duration), autoExtend]
+      args: [BigInt(tokenId), startPrice, reservePrice, BigInt(duration), autoExtend],
+      chain,
+      account: address
     })
   }
 
@@ -303,13 +318,16 @@ export function usePlaceBid() {
     
     const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
     const bidAmount = parseEther(bidAmountInEth)
+    const chain = chainId === 360 ? shapeMainnet : shapeSepolia
 
     await writeContract({
       address: contractAddress as `0x${string}`,
       abi: marketplaceABI,
       functionName: 'placeBid',
       args: [BigInt(tokenId)],
-      value: bidAmount
+      value: bidAmount,
+      chain,
+      account: address
     })
   }
 
@@ -333,13 +351,16 @@ export function useMakeOffer() {
     const expiresAt = expiresInDays > 0 
       ? Math.floor(Date.now() / 1000) + (expiresInDays * 24 * 60 * 60)
       : 0
+    const chain = chainId === 360 ? shapeMainnet : shapeSepolia
 
     await writeContract({
       address: contractAddress as `0x${string}`,
       abi: marketplaceABI,
       functionName: 'makeOffer',
       args: [BigInt(tokenId), BigInt(expiresAt)],
-      value: offerAmount
+      value: offerAmount,
+      chain,
+      account: address
     })
   }
 
@@ -359,12 +380,15 @@ export function useAcceptOffer() {
     if (!address) throw new Error('Wallet not connected')
     
     const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
+    const chain = chainId === 360 ? shapeMainnet : shapeSepolia
 
     await writeContract({
       address: contractAddress as `0x${string}`,
       abi: marketplaceABI,
       functionName: 'acceptOffer',
-      args: [BigInt(tokenId), BigInt(offerId)]
+      args: [BigInt(tokenId), BigInt(offerId)],
+      chain,
+      account: address
     })
   }
 
@@ -393,12 +417,15 @@ export function useBulkCreateListings() {
     const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
     const prices = pricesInEth.map(p => parseEther(p))
     const durations = durationsInDays.map(d => BigInt(d * 24 * 60 * 60))
+    const chain = chainId === 360 ? shapeMainnet : shapeSepolia
 
     await writeContract({
       address: contractAddress as `0x${string}`,
       abi: marketplaceABI,
       functionName: 'bulkCreateListings',
-      args: [tokenIds.map(BigInt), prices, durations]
+      args: [tokenIds.map(BigInt), prices, durations],
+      chain,
+      account: address
     })
   }
 

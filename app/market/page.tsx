@@ -25,11 +25,7 @@ import ActivityFeed from '@/components/marketplace/ActivityFeed'
 import MarketplaceStats from '@/components/marketplace/MarketplaceStats'
 import { useMarketplaceStats } from '@/hooks/use-marketplace-data'
 import { 
-  sortByPrice, 
   sortByRarity, 
-  filterByTraits, 
-  filterByCondition, 
-  filterByPriceRange,
   debounce
 } from '@/utils/marketplace-utils'
 
@@ -207,10 +203,10 @@ export default function MarketPage() {
       )
     }
 
-    // Price range filter
-    if (priceRange.min || priceRange.max) {
-      filtered = filterByPriceRange(filtered, priceRange.min, priceRange.max)
-    }
+    // Price range filter (requires listing data - will be implemented with backend indexing)
+    // if (priceRange.min || priceRange.max) {
+    //   filtered = filterByPriceRange(filtered, priceRange.min, priceRange.max)
+    // }
 
     // Trait filters
     if (traitFilters.complexity) {
@@ -237,10 +233,9 @@ export default function MarketPage() {
         filtered.sort((a, b) => a.tokenId - b.tokenId)
         break
       case 'price-asc':
-        filtered = sortByPrice(filtered, 'asc')
-        break
       case 'price-desc':
-        filtered = sortByPrice(filtered, 'desc')
+        // Price sorting requires listing data - will be implemented with indexing
+        filtered.sort((a, b) => a.tokenId - b.tokenId)
         break
       case 'rarity':
         filtered = sortByRarity(filtered, 'desc')
