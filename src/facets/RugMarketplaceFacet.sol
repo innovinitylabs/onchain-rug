@@ -188,14 +188,27 @@ contract RugMarketplaceFacet is ReentrancyGuard {
     ) external {
         require(tokenIds.length == prices.length && tokenIds.length == durations.length, "Array length mismatch");
         
+        LibRugStorage.MarketplaceConfig storage ms = LibRugStorage.marketplaceStorage();
+        
         for (uint256 i = 0; i < tokenIds.length; i++) {
-            if (IERC721(address(this)).ownerOf(tokenIds[i]) == msg.sender) {
-                try this.createListing(tokenIds[i], prices[i], durations[i]) {
-                    // Success
-                } catch {
-                    // Skip failed listings
-                }
-            }
+            // Skip if not owner or invalid price
+            if (IERC721(address(this)).ownerOf(tokenIds[i]) != msg.sender) continue;
+            if (prices[i] == 0) continue;
+            
+            LibRugStorage.Listing storage listing = ms.listings[tokenIds[i]];
+            
+            // Skip if already listed or in auction
+            if (listing.isActive) continue;
+            if (ms.auctions[tokenIds[i]].isActive) continue;
+            
+            uint256 expiresAt = durations[i] == 0 ? 0 : block.timestamp + durations[i];
+            
+            listing.seller = msg.sender;
+            listing.price = prices[i];
+            listing.expiresAt = expiresAt;
+            listing.isActive = true;
+            
+            emit ListingCreated(tokenIds[i], msg.sender, prices[i], expiresAt);
         }
     }
     
