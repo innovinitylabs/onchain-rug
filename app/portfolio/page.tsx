@@ -54,11 +54,23 @@ export default function PortfolioPage() {
         if (!response.ok) throw new Error('Failed to fetch NFTs')
 
         const data = await response.json()
+        console.log('Portfolio API response:', data)
+        
         const processedNfts: any[] = []
+        const ownedNfts = data.ownedNfts || []
+        
+        console.log('Found', ownedNfts.length, 'NFTs for address:', address)
 
-        for (const nft of data.ownedNfts || []) {
+        for (const nft of ownedNfts) {
           try {
-            const tokenId = nft.tokenId || nft.id?.tokenId
+            // Handle different response formats
+            const tokenId = nft.tokenId || nft.id?.tokenId || nft.token?.tokenId
+            
+            if (!tokenId) {
+              console.warn('No tokenId found in NFT:', nft)
+              continue
+            }
+            
             const metadataResponse = await fetch(
               `/api/alchemy?endpoint=getNFTMetadata&contractAddress=${contractAddress}&tokenId=${tokenId}`
             )
@@ -71,7 +83,7 @@ export default function PortfolioPage() {
                 tokenId: parseInt(tokenId),
                 traits: metadata.rugData || {},
                 aging: parseAgingData(attributes),
-                owner: address,
+                owner: address, // We know they own it since this is getNFTsForOwner
                 name: metadata.name,
                 description: metadata.description,
                 animation_url: metadata.animation_url || metadata.raw?.metadata?.animation_url,
@@ -83,7 +95,7 @@ export default function PortfolioPage() {
           }
         }
 
-        console.log('Portfolio: Loaded', processedNfts.length, 'NFTs')
+        console.log('Portfolio: Successfully loaded', processedNfts.length, 'NFTs')
         setNfts(processedNfts)
       } catch (error) {
         console.error('Failed to fetch user NFTs:', error)

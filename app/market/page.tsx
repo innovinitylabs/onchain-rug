@@ -113,17 +113,28 @@ export default function MarketPage() {
                                  metadata.raw?.metadata?.animation_url ||
                                  metadata.metadata?.animation_url
 
+              // Get owner - Alchemy getNFTMetadata includes ownership info
+              const owner = metadata.owners?.[0] || 
+                           metadata.contract?.deployer || 
+                           '0x0000000000000000000000000000000000000000'
+
               processedNfts.push({
                 tokenId: nft.tokenId,
                 traits: metadata.rugData || {},
                 aging: agingData,
-                owner: nft.owner,
+                owner: owner,
                 name: metadata.name,
                 description: metadata.description,
                 image: metadata.image,
                 animation_url: animationUrl,
                 rarityScore
               })
+              
+              // Debug logging
+              if (processedNfts.length === 1) {
+                console.log('Market page - First NFT owner:', owner)
+                console.log('Your address:', address?.toLowerCase())
+              }
             }
           } catch (error) {
             console.warn(`Failed to fetch metadata for NFT ${nft.tokenId}:`, error)

@@ -55,6 +55,18 @@ export async function GET(request: NextRequest) {
         url = `https://shape-sepolia.g.alchemy.com/nft/v3/${alchemyApiKey}/getNFTsForOwner?owner=${owner}&contractAddresses[]=${contractAddress}&withMetadata=false`
         break
 
+      case 'getNFTsForOwner':
+        if (!owner) {
+          return NextResponse.json(
+            { error: 'owner required for getNFTsForOwner endpoint' },
+            { status: 400 }
+          )
+        }
+        // Support both contractAddress and contractAddresses[] parameters
+        const contractsList = searchParams.get('contractAddresses[]') || contractAddress
+        url = `https://shape-sepolia.g.alchemy.com/nft/v3/${alchemyApiKey}/getNFTsForOwner?owner=${owner}&contractAddresses[]=${contractsList}&withMetadata=true`
+        break
+
       default:
         return NextResponse.json(
           { error: 'Invalid endpoint' },
