@@ -29,7 +29,15 @@ export default function NFTDetailModal({ tokenId, isOpen, onClose, nftData }: NF
   const { offerIds } = useTokenOffers(tokenId)
   
   // Check if user is the owner
-  const isOwner = address?.toLowerCase() === nftData?.owner?.toLowerCase()
+  const isOwner = isConnected && address?.toLowerCase() === nftData?.owner?.toLowerCase()
+  
+  console.log('NFT Modal Debug:', {
+    tokenId,
+    userAddress: address?.toLowerCase(),
+    nftOwner: nftData?.owner?.toLowerCase(),
+    isOwner,
+    isConnected
+  })
   
   // Determine current status
   const hasActiveListing = listing?.isActive && !isListingExpired(listing)
@@ -320,8 +328,8 @@ function DetailsView({ tokenId, nftData, isOwner, listing, auction, hasOffers, o
         </div>
       )}
 
-      {/* Non-Owner Actions */}
-      {!isOwner && !hasActiveListing && !hasActiveAuction && (
+      {/* Non-Owner Actions - Only show if NOT owner */}
+      {!isOwner && (
         <button
           onClick={onMakeOffer}
           className="w-full py-3 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded-lg transition-colors flex items-center justify-center gap-2"

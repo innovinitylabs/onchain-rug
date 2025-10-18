@@ -48,7 +48,7 @@ export default function PortfolioPage() {
         setLoading(true)
         
         const response = await fetch(
-          `/api/alchemy?endpoint=getNFTsForOwner&owner=${address}&contractAddress=${contractAddress}`
+          `/api/alchemy?endpoint=getNFTsForOwner&owner=${address}&contractAddresses[]=${contractAddress}`
         )
 
         if (!response.ok) throw new Error('Failed to fetch NFTs')
@@ -58,8 +58,9 @@ export default function PortfolioPage() {
 
         for (const nft of data.ownedNfts || []) {
           try {
+            const tokenId = nft.tokenId || nft.id?.tokenId
             const metadataResponse = await fetch(
-              `/api/alchemy?endpoint=getNFTMetadata&contractAddress=${contractAddress}&tokenId=${nft.id.tokenId}`
+              `/api/alchemy?endpoint=getNFTMetadata&contractAddress=${contractAddress}&tokenId=${tokenId}`
             )
 
             if (metadataResponse.ok) {
@@ -67,7 +68,7 @@ export default function PortfolioPage() {
               const attributes = metadata.raw?.metadata?.attributes || metadata.attributes || []
               
               processedNfts.push({
-                tokenId: parseInt(nft.id.tokenId),
+                tokenId: parseInt(tokenId),
                 traits: metadata.rugData || {},
                 aging: parseAgingData(attributes),
                 owner: address,
@@ -78,10 +79,11 @@ export default function PortfolioPage() {
               })
             }
           } catch (error) {
-            console.warn(`Failed to fetch metadata for token ${nft.id.tokenId}`)
+            console.warn(`Failed to fetch metadata for token ${tokenId}`, error)
           }
         }
 
+        console.log('Portfolio: Loaded', processedNfts.length, 'NFTs')
         setNfts(processedNfts)
       } catch (error) {
         console.error('Failed to fetch user NFTs:', error)
