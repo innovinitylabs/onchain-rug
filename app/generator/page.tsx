@@ -455,6 +455,7 @@ export default function GeneratorPage() {
     // Generate stripes with seeded randomness
     doormatData.stripeData = generateStripes(doormatData, seed)
     setStripeData(doormatData.stripeData) // Update React state
+    setPalette(doormatData.selectedPalette) // Update palette React state
 
     // Calculate complexity based on stripe patterns
     const calculatedComplexity = calculateNumericComplexity(doormatData.stripeData)
