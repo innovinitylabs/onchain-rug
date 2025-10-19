@@ -15,7 +15,7 @@ export const config = {
   // 🔓 SAFE TO EXPOSE - Contract addresses (public blockchain data)
   contracts: {
     onchainRugs: process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT ||
-                process.env.ONCHAIN_RUGS_CONTRACT || '0x8e580FC0ff258D5C720AD6f2BB3315f6E29cCB76',
+                process.env.ONCHAIN_RUGS_CONTRACT || '0xfFa1E7F07490eF27B3F4b5C81cC3E635c86921d7',
     scriptyStorage: process.env.NEXT_PUBLIC_SCRIPTY_STORAGE ||
                    process.env.SCRIPTY_STORAGE || '0x7107d4F12d138576fF4283ba636aCebE6B9c3365',
     scriptyBuilder: process.env.NEXT_PUBLIC_SCRIPTY_BUILDER ||
@@ -26,9 +26,9 @@ export const config = {
 
   // 🔓 SAFE TO EXPOSE - Legacy contract address references (public blockchain data)
   rugContractAddress: process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT ||
-                     process.env.ONCHAIN_RUGS_CONTRACT || '0x8e580FC0ff258D5C720AD6f2BB3315f6E29cCB76',
+                     process.env.ONCHAIN_RUGS_CONTRACT || '0xfFa1E7F07490eF27B3F4b5C81cC3E635c86921d7',
   cleaningContractAddress: process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT ||
-                          process.env.ONCHAIN_RUGS_CONTRACT || '0x8e580FC0ff258D5C720AD6f2BB3315f6E29cCB76',
+                          process.env.ONCHAIN_RUGS_CONTRACT || '0xfFa1E7F07490eF27B3F4b5C81cC3E635c86921d7',
   
   // Network configuration
   networks: {
