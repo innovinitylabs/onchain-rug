@@ -14,7 +14,7 @@ export function useRugMinting() {
 
   // Get current mint price
   const { data: mintPrice } = useReadContract({
-    address: config.rugContractAddress as `0x${string}`,
+    address: config.contracts.onchainRugs as `0x${string}`,
     abi: [
       {
         inputs: [],
@@ -29,7 +29,7 @@ export function useRugMinting() {
 
   // Get current supply
   const { data: currentSupply } = useReadContract({
-    address: config.rugContractAddress as `0x${string}`,
+    address: config.contracts.onchainRugs as `0x${string}`,
     abi: [
       {
         inputs: [],
@@ -44,7 +44,7 @@ export function useRugMinting() {
 
   // Get max supply
   const { data: maxSupply } = useReadContract({
-    address: config.rugContractAddress as `0x${string}`,
+    address: config.contracts.onchainRugs as `0x${string}`,
     abi: [
       {
         inputs: [],
@@ -72,7 +72,7 @@ export function useRugMinting() {
     try {
       const chain = chainId === 360 ? shapeMainnet : shapeSepolia
       await writeContract({
-        address: config.rugContractAddress as `0x${string}`,
+        address: config.contracts.onchainRugs as `0x${string}`,
         abi: [
           {
             inputs: [
@@ -145,7 +145,7 @@ export function useUserRugs() {
 
   // Get user's rug count
   const { data: balance } = useReadContract({
-    address: config.rugContractAddress as `0x${string}`,
+    address: config.contracts.onchainRugs as `0x${string}`,
     abi: [
       {
         inputs: [{ name: 'owner', type: 'address' }],
@@ -164,7 +164,7 @@ export function useUserRugs() {
 
   // Get user's rug token IDs
   const { data: tokenIds } = useReadContract({
-    address: config.rugContractAddress as `0x${string}`,
+    address: config.contracts.onchainRugs as `0x${string}`,
     abi: [
       {
         inputs: [

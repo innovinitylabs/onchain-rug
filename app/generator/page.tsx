@@ -2617,10 +2617,10 @@ export default function GeneratorPage() {
                   <div className="bg-gray-900/50 p-3 rounded">
                     <div className="flex items-center gap-2 mb-2">
                       <div className="text-green-400 text-xs font-mono break-all flex-1">
-                        {config.rugContractAddress}
+                        {config.contracts.onchainRugs}
                       </div>
                       <Copy
-                        onClick={() => copyToClipboard(config.rugContractAddress, 'contract address')}
+                        onClick={() => copyToClipboard(config.contracts.onchainRugs, 'contract address')}
                         className="text-green-500 hover:text-green-300 cursor-pointer transition-colors w-4 h-4"
                       />
                     </div>
