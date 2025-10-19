@@ -92,7 +92,11 @@ contract RugMarketplaceFacet is ReentrancyGuard {
         if (ms.auctions[tokenId].isActive) revert AuctionActive();
 
         // Approve marketplace to transfer this NFT (required for buyListing to work)
-        IERC721(address(this)).approve(address(this), tokenId);
+        // Check current approval first to avoid unnecessary calls
+        address currentApproved = IERC721(address(this)).getApproved(tokenId);
+        if (currentApproved != address(this)) {
+            IERC721(address(this)).approve(address(this), tokenId);
+        }
 
         uint256 expiresAt = duration == 0 ? 0 : block.timestamp + duration;
 

@@ -168,17 +168,36 @@ export function useCreateListing() {
     const chain = chainId === 360 ? shapeMainnet : shapeSepolia
 
     console.log('Creating listing with approval...')
-
-    // Create listing (the smart contract should handle approval internally)
-    // Note: In a production system, approval would be handled separately
-    await writeContract({
-      address: contractAddress as `0x${string}`,
-      abi: marketplaceABI,
-      functionName: 'createListing',
-      args: [BigInt(tokenId), price, BigInt(duration)],
-      chain,
-      account: address
+    console.log('Parameters:', {
+      tokenId,
+      price: price.toString(),
+      duration,
+      contractAddress,
+      chainId: chain.id,
+      userAddress: address
     })
+
+    try {
+      // Create listing (the smart contract should handle approval internally)
+      // Note: In a production system, approval would be handled separately
+      const result = await writeContract({
+        address: contractAddress as `0x${string}`,
+        abi: marketplaceABI,
+        functionName: 'createListing',
+        args: [BigInt(tokenId), price, BigInt(duration)],
+        chain,
+        account: address
+      })
+      console.log('Listing created successfully:', result)
+    } catch (error) {
+      console.error('Listing creation failed:', error)
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        data: error.data
+      })
+      throw error
+    }
   }
 
   return { createListing, isPending, isConfirming, isSuccess, error, hash }
