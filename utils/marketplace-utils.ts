@@ -222,11 +222,28 @@ export function calculateMinimumBid(
 }
 
 /**
- * Format ETH amount
+ * Format ETH amount with intelligent decimal display
  */
-export function formatEth(wei: bigint, decimals: number = 4): string {
+export function formatEth(wei: bigint): string {
   const eth = Number(wei) / 1e18
-  return eth.toFixed(decimals)
+
+  // For very small amounts (< 0.001 ETH), show up to 6 decimals
+  if (eth < 0.001) {
+    return eth.toFixed(6).replace(/\.?0+$/, '') // Remove trailing zeros
+  }
+
+  // For small amounts (< 0.01 ETH), show up to 5 decimals
+  if (eth < 0.01) {
+    return eth.toFixed(5).replace(/\.?0+$/, '') // Remove trailing zeros
+  }
+
+  // For amounts < 1 ETH, show 4 decimals
+  if (eth < 1) {
+    return eth.toFixed(4).replace(/\.?0+$/, '') // Remove trailing zeros
+  }
+
+  // For amounts >= 1 ETH, show 2 decimals
+  return eth.toFixed(2)
 }
 
 /**
