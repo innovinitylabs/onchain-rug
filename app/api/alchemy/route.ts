@@ -8,6 +8,9 @@ export async function GET(request: NextRequest) {
   const tokenId = searchParams.get('tokenId')
   const owner = searchParams.get('owner')
   const index = searchParams.get('index')
+  const contractAddresses = searchParams.getAll('contractAddresses[]')
+
+  console.log('Alchemy API params:', { endpoint, contractAddress, tokenId, owner, index, contractAddresses })
 
   const alchemyApiKey = process.env.ALCHEMY_API_KEY
 
@@ -19,7 +22,7 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  if (!endpoint || !contractAddress) {
+  if (!endpoint || (!contractAddress && contractAddresses.length === 0)) {
     return NextResponse.json(
       { error: 'Missing required parameters: endpoint and contractAddress' },
       { status: 400 }
@@ -51,8 +54,17 @@ export async function GET(request: NextRequest) {
             { status: 400 }
           )
         }
-        // This would require a direct contract call, but for now we'll use Alchemy's owner NFTs
-        url = `https://shape-sepolia.g.alchemy.com/nft/v3/${alchemyApiKey}/getNFTsForOwner?owner=${owner}&contractAddresses[]=${contractAddress}&withMetadata=false`
+        // Use contractAddresses array or fallback to contractAddress
+        const indexContracts = contractAddresses.length > 0 ? contractAddresses : (contractAddress ? [contractAddress] : [])
+        if (indexContracts.length === 0) {
+          return NextResponse.json(
+            { error: 'contract address required for getTokenIdByIndex endpoint' },
+            { status: 400 }
+          )
+        }
+        // Build the contract addresses parameter
+        const indexContractParams = indexContracts.map(addr => `contractAddresses[]=${addr}`).join('&')
+        url = `https://shape-sepolia.g.alchemy.com/nft/v3/${alchemyApiKey}/getNFTsForOwner?owner=${owner}&${indexContractParams}&withMetadata=false`
         break
 
       case 'getNFTsForOwner':
@@ -62,9 +74,17 @@ export async function GET(request: NextRequest) {
             { status: 400 }
           )
         }
-        // Support both contractAddress and contractAddresses[] parameters
-        const contractsList = searchParams.get('contractAddresses[]') || contractAddress
-        url = `https://shape-sepolia.g.alchemy.com/nft/v3/${alchemyApiKey}/getNFTsForOwner?owner=${owner}&contractAddresses[]=${contractsList}&withMetadata=true`
+        // Use contractAddresses array or fallback to contractAddress
+        const ownerContracts = contractAddresses.length > 0 ? contractAddresses : (contractAddress ? [contractAddress] : [])
+        if (ownerContracts.length === 0) {
+          return NextResponse.json(
+            { error: 'contract address required for getNFTsForOwner endpoint' },
+            { status: 400 }
+          )
+        }
+        // Build the contract addresses parameter
+        const ownerContractParams = ownerContracts.map(addr => `contractAddresses[]=${addr}`).join('&')
+        url = `https://shape-sepolia.g.alchemy.com/nft/v3/${alchemyApiKey}/getNFTsForOwner?owner=${owner}&${ownerContractParams}&withMetadata=true`
         break
 
       default:
