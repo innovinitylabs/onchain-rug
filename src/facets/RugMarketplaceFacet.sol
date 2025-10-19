@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.22;
 
+// Updated approval logic - simplified for reliability
+
 import {LibRugStorage} from "../libraries/LibRugStorage.sol";
 import {LibDiamond} from "../diamond/libraries/LibDiamond.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
@@ -89,11 +91,8 @@ contract RugMarketplaceFacet is ReentrancyGuard {
         if (listing.isActive) revert ListingAlreadyExists();
         if (ms.auctions[tokenId].isActive) revert AuctionActive();
 
-        // Approve marketplace to transfer NFTs (required for marketplace to work)
-        // Only approve if not already approved to avoid unnecessary gas costs
-        if (IERC721(address(this)).getApproved(tokenId) != address(this)) {
-            IERC721(address(this)).approve(address(this), tokenId);
-        }
+        // Approve marketplace to transfer this NFT (required for buyListing to work)
+        IERC721(address(this)).approve(address(this), tokenId);
 
         uint256 expiresAt = duration == 0 ? 0 : block.timestamp + duration;
 
@@ -208,9 +207,7 @@ contract RugMarketplaceFacet is ReentrancyGuard {
             if (ms.auctions[tokenIds[i]].isActive) continue;
 
             // Approve marketplace to transfer this NFT
-            if (IERC721(address(this)).getApproved(tokenIds[i]) != address(this)) {
-                IERC721(address(this)).approve(address(this), tokenIds[i]);
-            }
+            IERC721(address(this)).approve(address(this), tokenIds[i]);
 
             uint256 expiresAt = durations[i] == 0 ? 0 : block.timestamp + durations[i];
             
@@ -249,10 +246,8 @@ contract RugMarketplaceFacet is ReentrancyGuard {
         if (ms.listings[tokenId].isActive) revert ListingAlreadyExists();
         if (ms.auctions[tokenId].isActive) revert AuctionActive();
 
-        // Approve marketplace to transfer NFTs (required for marketplace to work)
-        if (IERC721(address(this)).getApproved(tokenId) != address(this)) {
-            IERC721(address(this)).approve(address(this), tokenId);
-        }
+        // Approve marketplace to transfer this NFT (required for buyListing to work)
+        IERC721(address(this)).approve(address(this), tokenId);
 
         uint256 endTime = block.timestamp + duration;
         
