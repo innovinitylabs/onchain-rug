@@ -161,12 +161,16 @@ export function useCreateListing() {
 
   const createListing = async (tokenId: number, priceInEth: string, durationInDays: number) => {
     if (!address) throw new Error('Wallet not connected')
-    
+
     const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
     const price = parseEther(priceInEth)
     const duration = durationInDays * 24 * 60 * 60 // Convert days to seconds
     const chain = chainId === 360 ? shapeMainnet : shapeSepolia
 
+    console.log('Creating listing with approval...')
+
+    // Create listing (the smart contract should handle approval internally)
+    // Note: In a production system, approval would be handled separately
     await writeContract({
       address: contractAddress as `0x${string}`,
       abi: marketplaceABI,
@@ -191,20 +195,34 @@ export function useBuyListing() {
 
   const buyListing = async (tokenId: number, priceInEth: string) => {
     if (!address) throw new Error('Wallet not connected')
-    
+
     const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
     const price = parseEther(priceInEth)
     const chain = chainId === 360 ? shapeMainnet : shapeSepolia
 
-    await writeContract({
-      address: contractAddress as `0x${string}`,
-      abi: marketplaceABI,
-      functionName: 'buyListing',
-      args: [BigInt(tokenId)],
-      value: price,
-      chain,
-      account: address
+    console.log('BuyListing Debug:', {
+      tokenId,
+      priceInEth,
+      price: price.toString(),
+      contractAddress,
+      chainId,
+      userAddress: address
     })
+
+    try {
+      await writeContract({
+        address: contractAddress as `0x${string}`,
+        abi: marketplaceABI,
+        functionName: 'buyListing',
+        args: [BigInt(tokenId)],
+        value: price,
+        chain,
+        account: address
+      })
+    } catch (error) {
+      console.error('BuyListing Transaction Error:', error)
+      throw error
+    }
   }
 
   return { buyListing, isPending, isConfirming, isSuccess, error, hash }

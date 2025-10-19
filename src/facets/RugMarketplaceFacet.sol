@@ -76,26 +76,32 @@ contract RugMarketplaceFacet is ReentrancyGuard {
      * @param price Listing price in wei
      * @param duration Listing duration in seconds (0 = no expiration)
      */
-    function createListing(uint256 tokenId, uint256 price, uint256 duration) 
-        external 
-        onlyTokenOwner(tokenId) 
+    function createListing(uint256 tokenId, uint256 price, uint256 duration)
+        external
+        onlyTokenOwner(tokenId)
     {
         if (price == 0) revert InvalidPrice();
-        
+
         LibRugStorage.MarketplaceConfig storage ms = LibRugStorage.marketplaceStorage();
         LibRugStorage.Listing storage listing = ms.listings[tokenId];
-        
+
         // Check no active listing or auction
         if (listing.isActive) revert ListingAlreadyExists();
         if (ms.auctions[tokenId].isActive) revert AuctionActive();
-        
+
+        // Approve marketplace to transfer NFTs (required for marketplace to work)
+        // Only approve if not already approved to avoid unnecessary gas costs
+        if (IERC721(address(this)).getApproved(tokenId) != address(this)) {
+            IERC721(address(this)).approve(address(this), tokenId);
+        }
+
         uint256 expiresAt = duration == 0 ? 0 : block.timestamp + duration;
-        
+
         listing.seller = msg.sender;
         listing.price = price;
         listing.expiresAt = expiresAt;
         listing.isActive = true;
-        
+
         emit ListingCreated(tokenId, msg.sender, price, expiresAt);
     }
     
@@ -200,7 +206,12 @@ contract RugMarketplaceFacet is ReentrancyGuard {
             // Skip if already listed or in auction
             if (listing.isActive) continue;
             if (ms.auctions[tokenIds[i]].isActive) continue;
-            
+
+            // Approve marketplace to transfer this NFT
+            if (IERC721(address(this)).getApproved(tokenIds[i]) != address(this)) {
+                IERC721(address(this)).approve(address(this), tokenIds[i]);
+            }
+
             uint256 expiresAt = durations[i] == 0 ? 0 : block.timestamp + durations[i];
             
             listing.seller = msg.sender;
@@ -237,7 +248,12 @@ contract RugMarketplaceFacet is ReentrancyGuard {
         if (duration == 0 || duration > ms.maxAuctionDuration) revert InvalidDuration();
         if (ms.listings[tokenId].isActive) revert ListingAlreadyExists();
         if (ms.auctions[tokenId].isActive) revert AuctionActive();
-        
+
+        // Approve marketplace to transfer NFTs (required for marketplace to work)
+        if (IERC721(address(this)).getApproved(tokenId) != address(this)) {
+            IERC721(address(this)).approve(address(this), tokenId);
+        }
+
         uint256 endTime = block.timestamp + duration;
         
         LibRugStorage.Auction storage auction = ms.auctions[tokenId];

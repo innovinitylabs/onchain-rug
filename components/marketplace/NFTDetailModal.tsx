@@ -268,7 +268,15 @@ function DetailsView({ tokenId, nftData, isOwner, listing, auction, hasOffers, o
             </button>
           ) : (
             <button
-              onClick={() => buyListing(tokenId, formatEther(listing.price))}
+              onClick={() => {
+                console.log('Buy Now clicked:', {
+                  tokenId,
+                  listing,
+                  price: formatEther(listing.price),
+                  isOwner
+                })
+                buyListing(tokenId, formatEther(listing.price))
+              }}
               disabled={isBuying}
               className="w-full mt-4 py-2 bg-green-500/20 hover:bg-green-500/30 text-green-300 rounded-lg transition-colors disabled:opacity-50"
             >
