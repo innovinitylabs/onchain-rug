@@ -15,12 +15,6 @@ export const config = {
   // 🔓 SAFE TO EXPOSE - Contract addresses (public blockchain data)
   contracts: {
     onchainRugs: process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT || '',
-    scriptyStorage: process.env.NEXT_PUBLIC_SCRIPTY_STORAGE ||
-                   process.env.SCRIPTY_STORAGE || '0x7107d4F12d138576fF4283ba636aCebE6B9c3365',
-    scriptyBuilder: process.env.NEXT_PUBLIC_SCRIPTY_BUILDER ||
-                   process.env.SCRIPTY_BUILDER || '0xf3ae9Fd75bb7A33C97803555dA56209DB211893C',
-    htmlGenerator: process.env.NEXT_PUBLIC_HTML_GENERATOR ||
-                  process.env.HTML_GENERATOR || '0xd0046995a14fB8282814C5E575524c3ABbf39A20',
   },
   
   // Network configuration
