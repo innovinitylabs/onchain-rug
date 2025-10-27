@@ -41,7 +41,8 @@ export async function GET(request: NextRequest) {
             type: "function"
           }],
           functionName: 'ownerOf',
-          args: [BigInt(tokenId)]
+          args: [BigInt(tokenId)],
+          authorizationList: []
         })
         return NextResponse.json({ owner: result })
 

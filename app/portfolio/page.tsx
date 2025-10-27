@@ -22,7 +22,7 @@ import LoadingAnimation from '@/components/LoadingAnimation'
 import LiquidGlass from '@/components/LiquidGlass'
 import ListingCard from '@/components/marketplace/ListingCard'
 import NFTDetailModal from '@/components/marketplace/NFTDetailModal'
-import { useUserListings, useUserOffers, useOffersReceived } from '@/hooks/use-marketplace-data'
+// Marketplace hooks removed - simplified marketplace
 import { useCancelListing } from '@/hooks/use-marketplace-contract'
 import { formatEth } from '@/utils/marketplace-utils'
 
@@ -62,14 +62,15 @@ export default function PortfolioPage() {
         console.log('Found', ownedNfts.length, 'NFTs for address:', address)
 
         for (const nft of ownedNfts) {
+          // Handle different response formats
+          const tokenId = nft.tokenId || nft.id?.tokenId || nft.token?.tokenId
+          
+          if (!tokenId) {
+            console.warn('No tokenId found in NFT:', nft)
+            continue
+          }
+          
           try {
-            // Handle different response formats
-            const tokenId = nft.tokenId || nft.id?.tokenId || nft.token?.tokenId
-            
-            if (!tokenId) {
-              console.warn('No tokenId found in NFT:', nft)
-              continue
-            }
             
             const metadataResponse = await fetch(
               `/api/alchemy?endpoint=getNFTMetadata&contractAddress=${contractAddress}&tokenId=${tokenId}`
@@ -488,10 +489,11 @@ function EmptyState({ icon, title, description }: any) {
 
 // Showcased Tab (pieces for sale)
 function ShowcasedTab({ nfts, onSelectNFT }: any) {
-  const { listings } = useUserListings()
+  // Simplified - no active listings in simplified marketplace
+  const listings = []
   const { cancelListing, isPending } = useCancelListing()
 
-  const listedNFTs = nfts.filter((nft: any) => 
+  const listedNFTs = nfts.filter((nft: any) =>
     listings.some((l: any) => l.tokenId === nft.tokenId && l.isActive)
   )
 
@@ -550,7 +552,9 @@ function ShowcasedTab({ nfts, onSelectNFT }: any) {
 
 // Offers Received Tab
 function OffersReceivedTab({ address, onSelectNFT }: any) {
-  const { offers, isLoading } = useOffersReceived(address)
+  // Simplified marketplace - no offers functionality
+  const offers = []
+  const isLoading = false
 
   if (isLoading) {
     return <LoadingAnimation message="Loading interest received..." />
@@ -602,7 +606,9 @@ function OffersReceivedTab({ address, onSelectNFT }: any) {
 
 // Offers Made Tab
 function OffersMadeTab({ address }: any) {
-  const { offers, isLoading } = useUserOffers(address)
+  // Simplified marketplace - no offers functionality
+  const offers = []
+  const isLoading = false
 
   if (isLoading) {
     return <LoadingAnimation message="Loading your expressed interest..." />

@@ -6,6 +6,9 @@ import { RainbowKitProvider, getDefaultConfig, Theme } from '@rainbow-me/rainbow
 import { config as appConfig } from '@/lib/config'
 import { shapeSepolia, shapeMainnet } from '@/lib/web3'
 
+// Simple wagmi config for basic functionality
+import { createConfig, http } from 'wagmi'
+
 // Import RainbowKit styles
 import '@rainbow-me/rainbowkit/styles.css'
 
@@ -70,26 +73,51 @@ const glassTheme: Theme = {
 }
 
 // Create stable RainbowKit config outside component to prevent re-initialization
-const projectId = appConfig.walletConnectProjectId || 'placeholder-project-id'
+const projectId = appConfig.walletConnectProjectId || '3430b69b272c72262b35b3c106ff9d81'
 
 if (!appConfig.walletConnectProjectId) {
-  console.warn('WalletConnect Project ID not found. Using placeholder. Set WALLET_CONNECT_PROJECT_ID environment variable.')
+  console.warn('WalletConnect Project ID not found in config. Using fallback. Set NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID environment variable.')
 }
 
-const rainbowKitConfig = getDefaultConfig({
-  appName: 'Onchain Rugs',
-  projectId: projectId,
+console.log('WalletConnect Project ID:', projectId)
+
+// Create a simple wagmi config as fallback
+const simpleWagmiConfig = createConfig({
   chains: [shapeSepolia, shapeMainnet],
-  ssr: true,
+  transports: {
+    [shapeSepolia.id]: http(),
+    [shapeMainnet.id]: http(),
+  },
 })
+
+// Try to create RainbowKit config safely
+let rainbowKitConfig;
+export let useRainbowKit = true;
+
+try {
+  rainbowKitConfig = getDefaultConfig({
+    appName: 'Onchain Rugs',
+    projectId: projectId,
+    chains: [shapeSepolia, shapeMainnet],
+    ssr: true,
+  })
+} catch (error) {
+  console.error('Failed to initialize RainbowKit config, falling back to simple wagmi:', error)
+  rainbowKitConfig = simpleWagmiConfig
+  useRainbowKit = false
+}
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <WagmiProvider config={rainbowKitConfig}>
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider theme={glassTheme}>
-          {children}
-        </RainbowKitProvider>
+        {useRainbowKit ? (
+          <RainbowKitProvider theme={glassTheme} modalSize="compact">
+            {children}
+          </RainbowKitProvider>
+        ) : (
+          <>{children}</>
+        )}
       </QueryClientProvider>
     </WagmiProvider>
   )

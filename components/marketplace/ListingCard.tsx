@@ -2,10 +2,10 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Heart, Tag, Gavel, Clock, TrendingUp, Eye } from 'lucide-react'
+import { Heart, Tag, TrendingUp, Eye } from 'lucide-react'
 import LiquidGlass from '../LiquidGlass'
-import { formatEth, formatTimeRemaining, getConditionColor, isAuctionActive, isListingExpired } from '@/utils/marketplace-utils'
-import { useListingData, useAuctionData } from '@/hooks/use-marketplace-data'
+import { formatEth, formatTimeRemaining, getConditionColor, isListingExpired } from '@/utils/marketplace-utils'
+import { useListingData } from '@/hooks/use-marketplace-data'
 
 interface ListingCardProps {
   tokenId: number
@@ -28,11 +28,12 @@ export default function ListingCard({
   
   // Fetch marketplace data
   const { listing } = useListingData(tokenId)
-  const { auction } = useAuctionData(tokenId)
 
   // Determine status
-  const hasActiveListing = listing?.isActive && !isListingExpired(listing)
-  const hasActiveAuction = auction?.isActive && isAuctionActive(auction)
+  const hasActiveListing = listing?.isActive && !isListingExpired({
+    ...listing,
+    expiresAt: Number(listing.expiresAt)
+  })
 
   // Get status info
   let statusBadge = null
@@ -49,23 +50,6 @@ export default function ListingCard({
       <div>
         <div className="text-xs text-white/60">Price</div>
         <div className="text-lg font-bold text-white">{formatEth(listing.price)} ETH</div>
-      </div>
-    )
-  } else if (hasActiveAuction) {
-    statusBadge = (
-      <div className="px-2 py-1 bg-purple-500/20 text-purple-300 text-xs rounded border border-purple-500/30 flex items-center gap-1">
-        <Gavel className="w-3 h-3" />
-        AUCTION
-      </div>
-    )
-    priceDisplay = (
-      <div>
-        <div className="text-xs text-white/60">
-          {auction.currentBid > BigInt(0) ? 'Current Bid' : 'Starting Price'}
-        </div>
-        <div className="text-lg font-bold text-white">
-          {formatEth(auction.currentBid > BigInt(0) ? auction.currentBid : auction.startPrice)} ETH
-        </div>
       </div>
     )
   }
@@ -131,12 +115,6 @@ export default function ListingCard({
             {priceDisplay && (
               <div className="text-right">
                 {priceDisplay}
-                {hasActiveAuction && (
-                  <div className="flex items-center gap-1 text-xs text-white/60 mt-1">
-                    <Clock className="w-3 h-3" />
-                    {formatTimeRemaining(auction.endTime)}
-                  </div>
-                )}
               </div>
             )}
 
@@ -257,13 +235,6 @@ export default function ListingCard({
             {/* Price/Auction Info */}
             {priceDisplay}
             
-            {/* Auction Timer */}
-            {hasActiveAuction && (
-              <div className="flex items-center gap-1 text-xs text-white/60">
-                <Clock className="w-3 h-3" />
-                Ends in {formatTimeRemaining(auction.endTime)}
-              </div>
-            )}
 
             {/* Quick Stats */}
             <div className="grid grid-cols-2 gap-2 text-xs text-white/60 pt-2 border-t border-white/10">

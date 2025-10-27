@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { address: string } }
+  { params }: { params: Promise<{ address: string }> }
 ) {
   try {
-    const userAddress = params.address.toLowerCase()
+    const resolvedParams = await params
+    const userAddress = resolvedParams.address.toLowerCase()
 
     // For now, return empty array as we don't have efficient user offer lookup
     // In a production system, you'd need an indexer or off-chain database

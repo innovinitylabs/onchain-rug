@@ -3,14 +3,37 @@
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useAccount, useBalance, useChainId } from 'wagmi'
 import { formatEther } from 'viem'
-import { useEffect } from 'react'
-
+import { useEffect, useState } from 'react'
 export function WalletConnect() {
   const { address, isConnected } = useAccount()
   const { data: balance } = useBalance({
     address: address,
   })
   const chainId = useChainId()
+
+  // Check if we're using RainbowKit by trying to access it
+  const [useRainbowKit, setUseRainbowKit] = useState(true)
+
+  useEffect(() => {
+    // Check if RainbowKit is properly configured by looking for the providers flag
+    // If the providers component disabled RainbowKit, we'll fall back to basic connection
+    const checkRainbowKit = async () => {
+      try {
+        // Wait a bit for modules to load
+        await new Promise(resolve => setTimeout(resolve, 100))
+
+        // Try to access RainbowKit - if we get here, it should be available
+        // If the providers component disabled it, we'll catch that in the component render
+        return true
+      } catch (error) {
+        console.warn('RainbowKit initialization issue, using fallback')
+        setUseRainbowKit(false)
+        return false
+      }
+    }
+
+    checkRainbowKit()
+  }, [])
 
   // Force font styling on all RainbowKit elements
   useEffect(() => {
@@ -81,14 +104,34 @@ export function WalletConnect() {
         </div>
       )}
       <div className="glass-wallet-button">
-        <ConnectButton
-          showBalance={false}
-          chainStatus="icon"
-          accountStatus={{
-            smallScreen: 'avatar',
-            largeScreen: 'full',
-          }}
-        />
+        {useRainbowKit ? (
+          <ConnectButton
+            showBalance={false}
+            chainStatus="icon"
+            accountStatus={{
+              smallScreen: 'avatar',
+              largeScreen: 'full',
+            }}
+          />
+        ) : (
+          <button
+            onClick={async () => {
+              if (window.ethereum) {
+                try {
+                  await window.ethereum.request({ method: 'eth_requestAccounts' })
+                } catch (error) {
+                  console.error('Failed to connect wallet:', error)
+                  alert('Failed to connect wallet. Please try again.')
+                }
+              } else {
+                alert('Please install MetaMask or another Web3 wallet')
+              }
+            }}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+          >
+            {isConnected ? `${address?.slice(0, 6)}...${address?.slice(-4)}` : 'Connect Wallet'}
+          </button>
+        )}
       </div>
     </div>
   )

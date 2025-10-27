@@ -8,8 +8,9 @@ pragma solidity ^0.8.22;
  */
 
 library LibRugStorage {
-    // Storage slot for Rug data (using keccak256 to avoid conflicts)
+    // Storage slots (using keccak256 to avoid conflicts)
     bytes32 constant RUG_STORAGE_POSITION = keccak256("rug.storage.position");
+    bytes32 constant ERC721_STORAGE_POSITION = keccak256("erc721.storage.position");
     bytes32 constant MARKETPLACE_STORAGE_POSITION = keccak256("rug.marketplace.storage.position");
 
     struct RugData {
@@ -120,6 +121,17 @@ library LibRugStorage {
         uint256 nextOfferId;                        // Counter for offer IDs
     }
 
+    // ERC721 Storage for diamond pattern
+    struct ERC721Storage {
+        string name;
+        string symbol;
+        mapping(uint256 => address) _owners;
+        mapping(address => uint256) _balances;
+        mapping(uint256 => address) _tokenApprovals;
+        mapping(address => mapping(address => bool)) _operatorApprovals;
+        uint256 _currentTokenId;
+    }
+
     struct RugConfig {
         uint256 collectionCap;          // Current max supply (editable 0-10000)
         uint256 walletLimit;            // NFTs per wallet (default: 7)
@@ -186,6 +198,13 @@ library LibRugStorage {
         bytes32 position = MARKETPLACE_STORAGE_POSITION;
         assembly {
             ms.slot := position
+        }
+    }
+
+    function erc721Storage() internal pure returns (ERC721Storage storage es) {
+        bytes32 position = ERC721_STORAGE_POSITION;
+        assembly {
+            es.slot := position
         }
     }
 

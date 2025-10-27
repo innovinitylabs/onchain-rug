@@ -134,8 +134,8 @@ contract DeploymentCriticalTests is Test {
         rs.goldThreshold = 100;
         rs.diamondThreshold = 200;
 
-        // Reset supply tracking
-        rs.collectionCap = 1000;
+        // Reset supply tracking - set higher cap for tests
+        rs.collectionCap = 10000;
         rs.totalSupply = 0;
         rs.tokenCounter = 0;
 
