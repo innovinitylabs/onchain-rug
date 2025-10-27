@@ -26,11 +26,11 @@ export async function GET(request: NextRequest) {
     switch (method) {
       case 'ownerOf':
         if (!tokenId) {
-          return NextResponse.json(
+        return NextResponse.json(
             { error: 'tokenId required for ownerOf method' },
-            { status: 400 }
-          )
-        }
+          { status: 400 }
+        )
+      }
         result = await client.readContract({
           address: contractAddress as `0x${string}`,
           abi: [{
@@ -47,10 +47,10 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ owner: result })
 
       default:
-        return NextResponse.json(
-          { error: 'Unsupported method' },
-          { status: 400 }
-        )
+      return NextResponse.json(
+        { error: 'Unsupported method' },
+        { status: 400 }
+      )
     }
   } catch (error) {
     console.error('Contract call error:', error)

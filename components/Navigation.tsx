@@ -460,7 +460,7 @@ export default function Navigation() {
                           >
                             <User className="w-4 h-4" />
                             <span>Dashboard</span>
-                          </Link>
+            </Link>
                         </div>
                       </LiquidGlass>
                     </motion.div>

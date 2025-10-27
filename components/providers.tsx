@@ -96,11 +96,11 @@ export let useRainbowKit = true;
 
 try {
   rainbowKitConfig = getDefaultConfig({
-    appName: 'Onchain Rugs',
-    projectId: projectId,
-    chains: [shapeSepolia, shapeMainnet],
-    ssr: true,
-  })
+  appName: 'Onchain Rugs',
+  projectId: projectId,
+  chains: [shapeSepolia, shapeMainnet],
+  ssr: true,
+})
 } catch (error) {
   console.error('Failed to initialize RainbowKit config, falling back to simple wagmi:', error)
   rainbowKitConfig = simpleWagmiConfig
@@ -113,8 +113,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <QueryClientProvider client={queryClient}>
         {useRainbowKit ? (
           <RainbowKitProvider theme={glassTheme} modalSize="compact">
-            {children}
-          </RainbowKitProvider>
+          {children}
+        </RainbowKitProvider>
         ) : (
           <>{children}</>
         )}

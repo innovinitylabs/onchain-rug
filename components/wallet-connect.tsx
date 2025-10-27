@@ -105,14 +105,14 @@ export function WalletConnect() {
       )}
       <div className="glass-wallet-button">
         {useRainbowKit ? (
-          <ConnectButton
-            showBalance={false}
-            chainStatus="icon"
-            accountStatus={{
-              smallScreen: 'avatar',
-              largeScreen: 'full',
-            }}
-          />
+        <ConnectButton
+          showBalance={false}
+          chainStatus="icon"
+          accountStatus={{
+            smallScreen: 'avatar',
+            largeScreen: 'full',
+          }}
+        />
         ) : (
           <button
             onClick={async () => {
