@@ -56,7 +56,7 @@ export default function ActivityFeed({ limit = 20, autoRefresh = true, className
   const getActivityDescription = (activity: Activity) => {
     switch (activity.type) {
       case 'sale':
-        return `Sold Rug #${activity.tokenId} for ${formatEth(activity.price || BigInt(0))} ETH`
+        return `Rug #${activity.tokenId} sold for ${formatEth(activity.price || BigInt(0))} ETH`
       case 'listing':
         return `Listed Rug #${activity.tokenId} for ${formatEth(activity.price || BigInt(0))} ETH`
       case 'cancelled':
@@ -122,11 +122,15 @@ export default function ActivityFeed({ limit = 20, autoRefresh = true, className
                             <span className="text-xs text-white/60">
                               {formatTimeAgo(activity.timestamp)}
                             </span>
-                            {activity.from && (
+                            {activity.type === 'sale' && activity.to ? (
+                              <span className="text-xs text-white/40">
+                                to {activity.to.slice(0, 6)}...{activity.to.slice(-4)}
+                              </span>
+                            ) : activity.from ? (
                               <span className="text-xs text-white/40">
                                 by {activity.from.slice(0, 6)}...{activity.from.slice(-4)}
                               </span>
-                            )}
+                            ) : null}
                           </div>
                         </div>
                       </div>
