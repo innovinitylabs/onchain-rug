@@ -249,9 +249,8 @@ contract RugNFTFacet is ICreatorToken {
         LibRugStorage.RugData memory rug = rs.rugs[tokenId];
         LibRugStorage.AgingData memory aging = rs.agingData[tokenId];
 
-        // Get current dirt and aging levels
+        // Get current dirt level
         uint8 dirtLevel = _getDirtLevel(tokenId);
-        uint8 agingLevel = _getAgingLevel(tokenId);
 
         // Use Scripty system - now mandatory
         require(rs.rugScriptyBuilder != address(0), "ScriptyBuilder not configured");
@@ -267,7 +266,7 @@ contract RugNFTFacet is ICreatorToken {
             encodedRugData,
             tokenId,
             dirtLevel,
-            _getTextureLevel(tokenId),
+            _getAgingLevel(tokenId), // Use aging level as texture level
             frameLevel,
             rs.rugScriptyBuilder,
             rs.rugEthFSStorage
@@ -292,7 +291,7 @@ contract RugNFTFacet is ICreatorToken {
 
         string memory attrs2 = string(abi.encodePacked(
             '"},{"trait_type":"Dirt Level","value":"', uint256(dirtLevel).toString(),
-            '"},{"trait_type":"Aging Level","value":"', uint256(agingLevel).toString(),
+            '"},{"trait_type":"Aging Level","value":"', uint256(_getAgingLevel(tokenId)).toString(),
             '"},{"trait_type":"Cleaning Count","value":"', aging.cleaningCount.toString(),
             '"},{"trait_type":"Restoration Count","value":"', aging.restorationCount.toString()
         ));
