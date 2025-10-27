@@ -1,11 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Tag, ShoppingCart, X, TrendingUp, Clock } from 'lucide-react'
 import LiquidGlass from '../LiquidGlass'
 import { formatEth, formatTimeAgo } from '@/utils/marketplace-utils'
-import { useMarketplaceStats } from '@/hooks/use-marketplace-data'
+import { useMarketplaceActivity } from '@/hooks/use-marketplace-data'
 
 interface ActivityFeedProps {
   limit?: number
@@ -26,49 +25,7 @@ interface Activity {
 }
 
 export default function ActivityFeed({ limit = 20, autoRefresh = true, className = '' }: ActivityFeedProps) {
-  const { stats } = useMarketplaceStats()
-  const [activities, setActivities] = useState<Activity[]>([])
-
-  // Generate mock activities based on marketplace stats
-  useEffect(() => {
-    if (!stats) return
-
-    const mockActivities: Activity[] = []
-
-    // Add some mock activities based on real stats
-    if (stats.totalSales > 0) {
-      for (let i = 0; i < Math.min(Number(stats.totalSales), 5); i++) {
-        mockActivities.push({
-          id: `sale-${i}`,
-          type: 'sale',
-          tokenId: Math.floor(Math.random() * 1000) + 1,
-          price: stats.totalVolume / BigInt(Number(stats.totalSales)),
-          from: '0x1234...5678',
-          to: '0xabcd...efgh',
-          timestamp: Date.now() - (i * 3600000) // 1 hour ago, 2 hours ago, etc.
-        })
-      }
-    }
-
-    // Add some mock listings based on sales (assuming some listings exist if there are sales)
-    if (stats.totalSales > 0) {
-      for (let i = 0; i < Math.min(2, Number(stats.totalSales)); i++) {
-        mockActivities.push({
-          id: `listing-${i}`,
-          type: 'listing',
-          tokenId: Math.floor(Math.random() * 1000) + 1,
-          price: BigInt(Math.floor(Math.random() * 1000000000000000000)), // Random price
-          from: '0x9876...1234',
-          timestamp: Date.now() - (i * 7200000) // 2 hours ago, 4 hours ago, etc.
-        })
-      }
-    }
-
-    // Sort by timestamp (newest first)
-    mockActivities.sort((a, b) => b.timestamp - a.timestamp)
-
-    setActivities(mockActivities.slice(0, limit))
-  }, [stats, limit])
+  const { activities, isLoading } = useMarketplaceActivity(limit)
 
   const getActivityIcon = (type: ActivityType) => {
     switch (type) {
@@ -133,13 +90,18 @@ export default function ActivityFeed({ limit = 20, autoRefresh = true, className
 
           <div className="space-y-2 max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
             <AnimatePresence mode="popLayout">
-              {activities.length === 0 ? (
+              {isLoading ? (
+                <div className="text-center text-white/50 py-8">
+                  <Clock className="w-8 h-8 mx-auto mb-2 opacity-50 animate-pulse" />
+                  <p>Loading activity...</p>
+                </div>
+              ) : activities.length === 0 ? (
                 <div className="text-center text-white/50 py-8">
                   <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
                   <p>No recent activity</p>
                 </div>
               ) : (
-                activities.map((activity) => (
+                activities.map((activity: Activity) => (
                   <motion.div
                     key={activity.id}
                     initial={{ opacity: 0, x: -20 }}
