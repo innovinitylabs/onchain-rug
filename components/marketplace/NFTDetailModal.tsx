@@ -1,14 +1,16 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Tag, Gavel, DollarSign, Clock, User, TrendingUp, Sparkles, AlertCircle } from 'lucide-react'
+import { X, Sparkles, Tag, ShoppingCart, Edit3, AlertCircle, CheckCircle, Loader2 } from 'lucide-react'
 import { useAccount } from 'wagmi'
-import { formatEther } from 'viem'
 import LiquidGlass from '../LiquidGlass'
-import { useListingData, useAuctionData, useTokenOffers } from '@/hooks/use-marketplace-data'
-import { useCreateListing, useBuyListing, useCancelListing, useCreateAuction, usePlaceBid, useMakeOffer, useAcceptOffer } from '@/hooks/use-marketplace-contract'
-import { formatTimeRemaining, formatEth, isAuctionActive, isListingExpired, getConditionColor } from '@/utils/marketplace-utils'
+import { useListingData } from '@/hooks/use-marketplace-data'
+import { useApprovalStatus, useApproveMarketplace, useCreateListing, useBuyListing, useCancelListing, useUpdateListingPrice } from '@/hooks/use-marketplace-contract'
+import { formatEth } from '@/utils/marketplace-utils'
+import { useReadContract, useChainId } from 'wagmi'
+import { contractAddresses, onchainRugsABI } from '@/lib/web3'
+import { config } from '@/lib/config'
 
 interface NFTDetailModalProps {
   tokenId: number
@@ -17,52 +19,140 @@ interface NFTDetailModalProps {
   nftData: any // Full NFT data including traits, aging, etc.
 }
 
-type ModalView = 'details' | 'create-listing' | 'create-auction' | 'place-bid' | 'make-offer'
+type ModalView = 'details' | 'create-listing' | 'update-listing'
 
 export default function NFTDetailModal({ tokenId, isOpen, onClose, nftData }: NFTDetailModalProps) {
   const { address, isConnected } = useAccount()
+  const chainId = useChainId()
   const [currentView, setCurrentView] = useState<ModalView>('details')
-  
-  // Fetch marketplace data
-  const { listing, refetch: refetchListing } = useListingData(tokenId)
-  const { auction, refetch: refetchAuction } = useAuctionData(tokenId)
-  const { offerIds } = useTokenOffers(tokenId)
-  
-  // Check if user is the owner
-  const isOwner = isConnected && address?.toLowerCase() === nftData?.owner?.toLowerCase()
-  
-  console.log('NFT Modal Debug:', {
-    tokenId,
-    userAddress: address?.toLowerCase(),
-    nftOwner: nftData?.owner?.toLowerCase(),
-    isOwner,
-    isConnected
-  })
-  
-  // Determine current status
-  const hasActiveListing = listing?.isActive && !isListingExpired(listing)
-  const hasActiveAuction = auction?.isActive && isAuctionActive(auction)
-  const hasOffers = offerIds.length > 0
+  const [listingPrice, setListingPrice] = useState('')
 
-  useEffect(() => {
-    if (isOpen) {
+  // Get contract address
+  const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
+
+  // Fetch owner from contract (more reliable than Alchemy data)
+  const { data: ownerAddress, isLoading: ownerLoading } = useReadContract({
+    address: contractAddress as `0x${string}`,
+    abi: onchainRugsABI,
+    functionName: 'ownerOf',
+    args: [BigInt(tokenId)]
+  })
+
+  // Marketplace hooks
+  const { listing, isLoading: listingLoading } = useListingData(tokenId)
+  const { approved, isLoading: approvalLoading } = useApprovalStatus(tokenId)
+  const approveMarketplace = useApproveMarketplace(tokenId)
+  const createListing = useCreateListing()
+  const buyListing = useBuyListing()
+  const cancelListing = useCancelListing()
+  const updateListingPrice = useUpdateListingPrice()
+
+  // Check if user is the owner using contract data
+  const isOwner = isConnected && address?.toLowerCase() === ownerAddress?.toLowerCase()
+  const isListingActive = listing?.isActive
+  const canList = isOwner && !isListingActive && approved
+  const canBuy = isConnected && !isOwner && isListingActive
+
+  if (!isOpen) return null
+
+  const handleCreateListing = async () => {
+    if (!listingPrice || parseFloat(listingPrice) <= 0) return
+
+    try {
+      await createListing.createListing(tokenId, listingPrice)
       setCurrentView('details')
-      refetchListing()
-      refetchAuction()
+      setListingPrice('')
+    } catch (error) {
+      console.error('Failed to create listing:', error)
     }
-  }, [isOpen, refetchListing, refetchAuction])
+  }
+
+  const handleBuyListing = async () => {
+    if (!listing?.price) return
+
+    try {
+      await buyListing.buyListing(tokenId, formatEth(listing.price))
+    } catch (error) {
+      console.error('Failed to buy listing:', error)
+    }
+  }
+
+  const handleCancelListing = async () => {
+    try {
+      await cancelListing.cancelListing(tokenId)
+    } catch (error) {
+      console.error('Failed to cancel listing:', error)
+    }
+  }
+
+  const handleUpdatePrice = async () => {
+    if (!listingPrice || parseFloat(listingPrice) <= 0) return
+
+    try {
+      await updateListingPrice.updateListingPrice(tokenId, listingPrice)
+      setCurrentView('details')
+      setListingPrice('')
+    } catch (error) {
+      console.error('Failed to update listing price:', error)
+    }
+  }
+
+  const renderModalContent = () => {
+    switch (currentView) {
+      case 'create-listing':
+        return <CreateListingView
+          price={listingPrice}
+          setPrice={setListingPrice}
+          onSubmit={handleCreateListing}
+          onCancel={() => setCurrentView('details')}
+          isLoading={createListing.isPending}
+        />
+
+      case 'update-listing':
+        return <UpdateListingView
+          currentPrice={listing?.price}
+          price={listingPrice}
+          setPrice={setListingPrice}
+          onSubmit={handleUpdatePrice}
+          onCancel={() => setCurrentView('details')}
+          isLoading={updateListingPrice.isPending}
+        />
+
+      default:
+        return <DetailsView
+          tokenId={tokenId}
+          nftData={nftData}
+          listing={listing}
+          ownerAddress={ownerAddress}
+          ownerLoading={ownerLoading}
+          isConnected={isConnected}
+          isOwner={isOwner}
+          canList={canList}
+          canBuy={canBuy}
+          approved={approved}
+          approvalLoading={approvalLoading}
+          onApprove={() => approveMarketplace.approve()}
+          onCreateListing={() => setCurrentView('create-listing')}
+          onUpdateListing={() => setCurrentView('update-listing')}
+          onBuy={handleBuyListing}
+          onCancel={handleCancelListing}
+          approveLoading={approveMarketplace.isPending}
+          buyLoading={buyListing.isPending}
+          cancelLoading={cancelListing.isPending}
+        />
+    }
+  }
 
   if (!isOpen) return null
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          className="w-full max-w-6xl max-h-[90vh] overflow-hidden"
-        >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+      >
           <LiquidGlass
             blurAmount={0.15}
             aberrationIntensity={2}
@@ -84,582 +174,288 @@ export default function NFTDetailModal({ tokenId, isOpen, onClose, nftData }: NF
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Left Column - NFT Display */}
-                <div>
-                  {/* NFT Preview */}
-                  <div 
-                    className="bg-black/30 rounded-lg overflow-hidden mb-4 relative"
-                    style={{
-                      paddingBottom: '69.7%', // 1320:920 aspect ratio
-                      position: 'relative'
-                    }}
-                  >
-                    <div className="absolute inset-0">
-                      {nftData?.animation_url ? (
-                        <iframe
-                          src={nftData.animation_url}
-                          className="w-full h-full"
-                          title={`Rug #${tokenId}`}
-                          style={{
-                            border: 'none',
-                            background: 'transparent'
-                          }}
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-white/50">
-                          <div className="text-center">
-                            <div className="text-4xl mb-2">🧵</div>
-                            <div>#{tokenId}</div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Traits */}
-                  <div className="bg-white/5 rounded-lg p-4">
-                    <h3 className="text-white font-semibold mb-3">Traits</h3>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div>
-                        <span className="text-white/60">Palette:</span>
-                        <span className="text-white ml-2">{nftData?.traits?.paletteName || 'Unknown'}</span>
-                      </div>
-                      <div>
-                        <span className="text-white/60">Complexity:</span>
-                        <span className="text-white ml-2">{nftData?.traits?.complexity || 0}/5</span>
-                      </div>
-                      <div>
-                        <span className="text-white/60">Character Count:</span>
-                        <span className="text-white ml-2">{Number(nftData?.traits?.characterCount || 0)}</span>
-                      </div>
-                      <div>
-                        <span className="text-white/60">Stripe Count:</span>
-                        <span className="text-white ml-2">{Number(nftData?.traits?.stripeCount || 0)}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Condition */}
-                  <div className="bg-white/5 rounded-lg p-4 mt-4">
-                    <h3 className="text-white font-semibold mb-3">Condition</h3>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-white/60">Dirt Level:</span>
-                        <span className={`px-2 py-1 rounded text-xs ${getConditionColor(nftData?.aging?.dirtLevel || 0, 0)}`}>
-                          Level {nftData?.aging?.dirtLevel || 0}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-white/60">Aging Level:</span>
-                        <span className={`px-2 py-1 rounded text-xs ${getConditionColor(0, nftData?.aging?.agingLevel || 0)}`}>
-                          Level {nftData?.aging?.agingLevel || 0}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-white/60">Frame:</span>
-                        <span className="text-white">{nftData?.aging?.currentFrameLevel || 'None'}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Right Column - Marketplace Actions */}
-                <div>
-                  {currentView === 'details' && (
-                    <DetailsView
-                      tokenId={tokenId}
-                      nftData={nftData}
-                      isOwner={isOwner}
-                      listing={listing}
-                      auction={auction}
-                      hasOffers={hasOffers}
-                      onCreateListing={() => setCurrentView('create-listing')}
-                      onCreateAuction={() => setCurrentView('create-auction')}
-                      onPlaceBid={() => setCurrentView('place-bid')}
-                      onMakeOffer={() => setCurrentView('make-offer')}
-                    />
-                  )}
-
-                  {currentView === 'create-listing' && (
-                    <CreateListingView
-                      tokenId={tokenId}
-                      onBack={() => setCurrentView('details')}
-                      onSuccess={() => {
-                        refetchListing()
-                        setCurrentView('details')
-                      }}
-                    />
-                  )}
-
-                  {currentView === 'create-auction' && (
-                    <CreateAuctionView
-                      tokenId={tokenId}
-                      onBack={() => setCurrentView('details')}
-                      onSuccess={() => {
-                        refetchAuction()
-                        setCurrentView('details')
-                      }}
-                    />
-                  )}
-
-                  {currentView === 'place-bid' && auction && (
-                    <PlaceBidView
-                      tokenId={tokenId}
-                      auction={auction}
-                      onBack={() => setCurrentView('details')}
-                      onSuccess={() => {
-                        refetchAuction()
-                        setCurrentView('details')
-                      }}
-                    />
-                  )}
-
-                  {currentView === 'make-offer' && (
-                    <MakeOfferView
-                      tokenId={tokenId}
-                      onBack={() => setCurrentView('details')}
-                      onSuccess={() => setCurrentView('details')}
-                    />
-                  )}
-                </div>
-              </div>
+              {/* Content */}
+              {renderModalContent()}
             </div>
-          </LiquidGlass>
-        </motion.div>
-      </div>
+        </LiquidGlass>
+      </motion.div>
     </AnimatePresence>
   )
 }
 
+
 // Details View Component
-function DetailsView({ tokenId, nftData, isOwner, listing, auction, hasOffers, onCreateListing, onCreateAuction, onPlaceBid, onMakeOffer }: any) {
-  const { cancelListing, isPending: isCancelling } = useCancelListing()
-  const { buyListing, isPending: isBuying } = useBuyListing()
-
-  const hasActiveListing = listing?.isActive && !isListingExpired(listing)
-  const hasActiveAuction = auction?.isActive && isAuctionActive(auction)
-
+function DetailsView({
+  tokenId,
+  nftData,
+  listing,
+  ownerAddress,
+  ownerLoading,
+  isConnected,
+  isOwner,
+  canList,
+  canBuy,
+  approved,
+  approvalLoading,
+  onApprove,
+  onCreateListing,
+  onUpdateListing,
+  onBuy,
+  onCancel,
+  approveLoading,
+  buyLoading,
+  cancelLoading
+}: any) {
   return (
-    <div className="space-y-4">
-      {/* Current Status */}
-      {hasActiveListing && (
-        <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Tag className="w-5 h-5 text-green-400" />
-            <span className="text-green-400 font-semibold">Listed for Sale</span>
-          </div>
-          <div className="text-2xl font-bold text-white mb-2">
-            {formatEth(listing.price)} ETH
-          </div>
-          {listing.expiresAt > 0 && (
-            <div className="text-sm text-white/60">
-              Expires: {formatTimeRemaining(listing.expiresAt)}
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Left Column - NFT Preview */}
+      <div>
+        <div className="aspect-square rounded-lg overflow-hidden bg-black/30 mb-4">
+          {nftData?.animation_url ? (
+            <iframe
+              src={nftData.animation_url}
+              className="w-full h-full"
+              title={`Rug #${tokenId}`}
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-white/50">
+              Loading...
             </div>
           )}
-          
-          {isOwner ? (
-            <button
-              onClick={() => cancelListing(tokenId)}
-              disabled={isCancelling}
-              className="w-full mt-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-lg transition-colors disabled:opacity-50"
-            >
-              {isCancelling ? 'Cancelling...' : 'Cancel Listing'}
-            </button>
-          ) : (
-            <button
-              onClick={() => {
-                console.log('Buy Now clicked:', {
-                  tokenId,
-                  listing,
-                  price: formatEther(listing.price),
-                  isOwner
-                })
-                buyListing(tokenId, formatEther(listing.price))
-              }}
-              disabled={isBuying}
-              className="w-full mt-4 py-2 bg-green-500/20 hover:bg-green-500/30 text-green-300 rounded-lg transition-colors disabled:opacity-50"
-            >
-              {isBuying ? 'Buying...' : 'Buy Now'}
-            </button>
-          )}
         </div>
-      )}
 
-      {hasActiveAuction && (
-        <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Gavel className="w-5 h-5 text-purple-400" />
-            <span className="text-purple-400 font-semibold">Active Auction</span>
-          </div>
-          <div className="text-2xl font-bold text-white mb-2">
-            {auction.currentBid > BigInt(0) ? formatEth(auction.currentBid) : formatEth(auction.startPrice)} ETH
-          </div>
-          <div className="text-sm text-white/60 mb-2">
-            {auction.highestBidder !== '0x0000000000000000000000000000000000000000' 
-              ? `Current bid by ${auction.highestBidder.slice(0, 6)}...${auction.highestBidder.slice(-4)}`
-              : 'No bids yet'}
-          </div>
-          <div className="flex items-center gap-2 text-sm text-white/60">
-            <Clock className="w-4 h-4" />
-            {formatTimeRemaining(auction.endTime)} remaining
-          </div>
-          
-          {!isOwner && (
-            <button
-              onClick={onPlaceBid}
-              className="w-full mt-4 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 rounded-lg transition-colors"
-            >
-              Place Bid
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* Owner Actions */}
-      {isOwner && !hasActiveListing && !hasActiveAuction && (
+        {/* NFT Traits */}
         <div className="space-y-3">
-          <button
-            onClick={onCreateListing}
-            className="w-full py-3 bg-green-500/20 hover:bg-green-500/30 text-green-300 rounded-lg transition-colors flex items-center justify-center gap-2"
-          >
-            <Tag className="w-5 h-5" />
-            Create Listing
-          </button>
-          <button
-            onClick={onCreateAuction}
-            className="w-full py-3 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 rounded-lg transition-colors flex items-center justify-center gap-2"
-          >
-            <Gavel className="w-5 h-5" />
-            Create Auction
-          </button>
-        </div>
-      )}
-
-      {/* Non-Owner Actions - Only show if NOT owner */}
-      {!isOwner && (
-        <button
-          onClick={onMakeOffer}
-          className="w-full py-3 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded-lg transition-colors flex items-center justify-center gap-2"
-        >
-          <DollarSign className="w-5 h-5" />
-          Make Offer
-        </button>
-      )}
-
-      {/* Sales History */}
-      {nftData?.aging?.recentSalePrices && (
-        <div className="bg-white/5 rounded-lg p-4">
-          <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5" />
-            Sales History
-          </h3>
-          <div className="space-y-2 text-sm">
-            {nftData.aging.recentSalePrices.map((price: bigint, index: number) => (
-              price > BigInt(0) && (
-                <div key={index} className="flex justify-between text-white/70">
-                  <span>Sale {index + 1}:</span>
-                  <span className="text-white">{formatEth(price)} ETH</span>
-                </div>
-              )
+          <h3 className="text-lg font-semibold text-white">Traits</h3>
+          <div className="grid grid-cols-2 gap-3">
+            {nftData?.traits && Object.entries(nftData.traits).map(([key, value]: [string, any]) => (
+              <div key={key} className="bg-white/5 rounded-lg p-3">
+                <div className="text-xs text-white/60 uppercase tracking-wide">{key}</div>
+                <div className="text-sm font-medium text-white">{value}</div>
+              </div>
             ))}
           </div>
         </div>
-      )}
+      </div>
 
-      {/* Offers Count */}
-      {hasOffers && (
-        <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 text-center">
-          <span className="text-blue-300">This rug has active offers</span>
+      {/* Right Column - Details & Actions */}
+      <div className="space-y-6">
+        {/* Listing Status */}
+        {listing?.isActive && (
+          <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Tag className="w-4 h-4 text-green-400" />
+              <span className="text-green-400 font-medium">Listed for Sale</span>
+            </div>
+            <div className="text-2xl font-bold text-white mb-1">
+              {formatEth(listing.price)} ETH
+            </div>
+            <div className="text-sm text-white/60">
+              Listed by: {listing.seller?.slice(0, 6)}...{listing.seller?.slice(-4)}
+            </div>
+          </div>
+        )}
+
+        {/* Action Buttons */}
+        <div className="space-y-3">
+          {/* Loading state */}
+          {ownerLoading && (
+            <div className="text-center text-white/60 py-4">
+              <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
+              Loading ownership data...
+            </div>
+          )}
+
+          {/* Not connected */}
+          {!isConnected && !ownerLoading && (
+            <div className="text-center text-white/60 py-4">
+              Connect your wallet to interact with this NFT
+            </div>
+          )}
+
+          {/* Connected but ownership not determined yet */}
+          {isConnected && ownerLoading && (
+            <div className="text-center text-white/60 py-4">
+              <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
+              Checking ownership...
+            </div>
+          )}
+
+          {/* Owner actions */}
+          {isOwner && !ownerLoading && (
+            <>
+              {!approved && (
+                <button
+                  onClick={onApprove}
+                  disabled={approveLoading || approvalLoading}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded-lg transition-colors"
+                >
+                  {approveLoading || approvalLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <CheckCircle className="w-4 h-4" />
+                  )}
+                  {approveLoading ? 'Approving...' : 'Approve Marketplace'}
+                </button>
+              )}
+
+              {approved && !listing?.isActive && (
+                <button
+                  onClick={onCreateListing}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                >
+                  <Tag className="w-4 h-4" />
+                  Create Listing
+                </button>
+              )}
+
+              {listing?.isActive && (
+                <div className="space-y-2">
+                  <button
+                    onClick={onUpdateListing}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                    Update Price
+                  </button>
+                  <button
+                    onClick={onCancel}
+                    disabled={cancelLoading}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 text-white rounded-lg transition-colors"
+                  >
+                    {cancelLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <X className="w-4 h-4" />
+                    )}
+                    {cancelLoading ? 'Cancelling...' : 'Cancel Listing'}
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Buy actions for non-owners */}
+          {canBuy && (
+            <button
+              onClick={onBuy}
+              disabled={buyLoading}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 text-white rounded-lg transition-colors"
+            >
+              {buyLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <ShoppingCart className="w-4 h-4" />
+              )}
+              {buyLoading ? 'Buying...' : `Buy for ${formatEth(listing.price)} ETH`}
+            </button>
+          )}
+
+          {/* Cannot interact messages */}
+          {!isOwner && !canBuy && !ownerLoading && isConnected && (
+            <div className="text-center text-white/60 py-4">
+              {listing?.isActive ? 'You cannot buy your own listing' : 'This NFT is not for sale'}
+            </div>
+          )}
+
+          {/* Not the owner and connected */}
+          {!isOwner && !ownerLoading && isConnected && !listing?.isActive && (
+            <div className="text-center text-white/60 py-4">
+              You do not own this NFT
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   )
 }
 
 // Create Listing View Component
-function CreateListingView({ tokenId, onBack, onSuccess }: any) {
-  const [price, setPrice] = useState('')
-  const [duration, setDuration] = useState('7')
-  const { createListing, isPending, isSuccess } = useCreateListing()
-
-  useEffect(() => {
-    if (isSuccess) {
-      onSuccess()
-    }
-  }, [isSuccess, onSuccess])
-
-  const handleCreate = async () => {
-    if (!price || parseFloat(price) <= 0) {
-      alert('Please enter a valid price')
-      return
-    }
-    await createListing(tokenId, price, parseInt(duration))
-  }
-
+function CreateListingView({ price, setPrice, onSubmit, onCancel, isLoading }: any) {
   return (
-    <div className="space-y-4">
-      <button onClick={onBack} className="text-white/60 hover:text-white">
-        ← Back
-      </button>
-      
-      <h3 className="text-xl font-bold text-white">Create Fixed-Price Listing</h3>
-      
+    <div className="space-y-6">
       <div>
-        <label className="block text-white/70 mb-2">Price (ETH)</label>
+        <h3 className="text-xl font-semibold text-white mb-2">Create Listing</h3>
+        <p className="text-white/60">Set a price for your NFT</p>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-white mb-2">Price (ETH)</label>
         <input
           type="number"
           step="0.001"
           value={price}
           onChange={(e) => setPrice(e.target.value)}
-          className="w-full px-4 py-2 bg-black/30 border border-white/20 rounded-lg text-white"
-          placeholder="0.01"
+          placeholder="0.1"
+          className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
 
-      <div>
-        <label className="block text-white/70 mb-2">Duration (days)</label>
-        <select
-          value={duration}
-          onChange={(e) => setDuration(e.target.value)}
-          className="w-full px-4 py-2 bg-black/30 border border-white/20 rounded-lg text-white"
+      <div className="flex gap-3">
+        <button
+          onClick={onCancel}
+          className="flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
         >
-          <option value="1">1 day</option>
-          <option value="3">3 days</option>
-          <option value="7">7 days</option>
-          <option value="14">14 days</option>
-          <option value="30">30 days</option>
-        </select>
-      </div>
-
-      <button
-        onClick={handleCreate}
-        disabled={isPending || !price}
-        className="w-full py-3 bg-green-500/20 hover:bg-green-500/30 text-green-300 rounded-lg transition-colors disabled:opacity-50"
-      >
-        {isPending ? 'Creating...' : 'Create Listing'}
-      </button>
-    </div>
-  )
-}
-
-// Create Auction View Component
-function CreateAuctionView({ tokenId, onBack, onSuccess }: any) {
-  const [startPrice, setStartPrice] = useState('')
-  const [reservePrice, setReservePrice] = useState('')
-  const [duration, setDuration] = useState('3')
-  const [autoExtend, setAutoExtend] = useState(true)
-  const { createAuction, isPending, isSuccess } = useCreateAuction()
-
-  useEffect(() => {
-    if (isSuccess) {
-      onSuccess()
-    }
-  }, [isSuccess, onSuccess])
-
-  const handleCreate = async () => {
-    if (!startPrice || parseFloat(startPrice) <= 0) {
-      alert('Please enter a valid starting price')
-      return
-    }
-    await createAuction(tokenId, startPrice, reservePrice || '0', parseInt(duration), autoExtend)
-  }
-
-  return (
-    <div className="space-y-4">
-      <button onClick={onBack} className="text-white/60 hover:text-white">
-        ← Back
-      </button>
-      
-      <h3 className="text-xl font-bold text-white">Create Auction</h3>
-      
-      <div>
-        <label className="block text-white/70 mb-2">Starting Price (ETH)</label>
-        <input
-          type="number"
-          step="0.001"
-          value={startPrice}
-          onChange={(e) => setStartPrice(e.target.value)}
-          className="w-full px-4 py-2 bg-black/30 border border-white/20 rounded-lg text-white"
-          placeholder="0.01"
-        />
-      </div>
-
-      <div>
-        <label className="block text-white/70 mb-2">Reserve Price (ETH) - Optional</label>
-        <input
-          type="number"
-          step="0.001"
-          value={reservePrice}
-          onChange={(e) => setReservePrice(e.target.value)}
-          className="w-full px-4 py-2 bg-black/30 border border-white/20 rounded-lg text-white"
-          placeholder="0"
-        />
-      </div>
-
-      <div>
-        <label className="block text-white/70 mb-2">Duration (days)</label>
-        <select
-          value={duration}
-          onChange={(e) => setDuration(e.target.value)}
-          className="w-full px-4 py-2 bg-black/30 border border-white/20 rounded-lg text-white"
+          Cancel
+        </button>
+        <button
+          onClick={onSubmit}
+          disabled={isLoading || !price || parseFloat(price) <= 0}
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white rounded-lg transition-colors"
         >
-          <option value="1">1 day</option>
-          <option value="3">3 days</option>
-          <option value="7">7 days</option>
-        </select>
+          {isLoading ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Tag className="w-4 h-4" />
+          )}
+          {isLoading ? 'Creating...' : 'Create Listing'}
+        </button>
       </div>
-
-      <div className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          checked={autoExtend}
-          onChange={(e) => setAutoExtend(e.target.checked)}
-          className="w-4 h-4"
-        />
-        <label className="text-white/70">Auto-extend if bid near end</label>
-      </div>
-
-      <button
-        onClick={handleCreate}
-        disabled={isPending || !startPrice}
-        className="w-full py-3 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 rounded-lg transition-colors disabled:opacity-50"
-      >
-        {isPending ? 'Creating...' : 'Create Auction'}
-      </button>
     </div>
   )
 }
 
-// Place Bid View Component
-function PlaceBidView({ tokenId, auction, onBack, onSuccess }: any) {
-  const [bidAmount, setBidAmount] = useState('')
-  const { placeBid, isPending, isSuccess } = usePlaceBid()
-
-  const minBid = auction.currentBid > BigInt(0) 
-    ? formatEth(auction.currentBid * BigInt(105) / BigInt(100)) // 5% increment
-    : formatEth(auction.startPrice)
-
-  useEffect(() => {
-    if (isSuccess) {
-      onSuccess()
-    }
-  }, [isSuccess, onSuccess])
-
-  const handleBid = async () => {
-    if (!bidAmount || parseFloat(bidAmount) < parseFloat(minBid)) {
-      alert(`Bid must be at least ${minBid} ETH`)
-      return
-    }
-    await placeBid(tokenId, bidAmount)
-  }
-
+// Update Listing View Component
+function UpdateListingView({ currentPrice, price, setPrice, onSubmit, onCancel, isLoading }: any) {
   return (
-    <div className="space-y-4">
-      <button onClick={onBack} className="text-white/60 hover:text-white">
-        ← Back
-      </button>
-      
-      <h3 className="text-xl font-bold text-white">Place Bid</h3>
-      
-      <div className="bg-white/5 rounded-lg p-4">
-        <div className="text-sm text-white/60 mb-1">Minimum Bid</div>
-        <div className="text-xl font-bold text-white">{minBid} ETH</div>
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-xl font-semibold text-white mb-2">Update Listing Price</h3>
+        <p className="text-white/60">Current price: {formatEth(currentPrice)} ETH</p>
       </div>
 
       <div>
-        <label className="block text-white/70 mb-2">Your Bid (ETH)</label>
+        <label className="block text-sm font-medium text-white mb-2">New Price (ETH)</label>
         <input
           type="number"
           step="0.001"
-          value={bidAmount}
-          onChange={(e) => setBidAmount(e.target.value)}
-          className="w-full px-4 py-2 bg-black/30 border border-white/20 rounded-lg text-white"
-          placeholder={minBid}
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
+          placeholder={formatEth(currentPrice)}
+          className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
 
-      <button
-        onClick={handleBid}
-        disabled={isPending || !bidAmount}
-        className="w-full py-3 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 rounded-lg transition-colors disabled:opacity-50"
-      >
-        {isPending ? 'Placing Bid...' : 'Place Bid'}
-      </button>
-    </div>
-  )
-}
-
-// Make Offer View Component
-function MakeOfferView({ tokenId, onBack, onSuccess }: any) {
-  const [offerAmount, setOfferAmount] = useState('')
-  const [duration, setDuration] = useState('7')
-  const { makeOffer, isPending, isSuccess } = useMakeOffer()
-
-  useEffect(() => {
-    if (isSuccess) {
-      onSuccess()
-    }
-  }, [isSuccess, onSuccess])
-
-  const handleOffer = async () => {
-    if (!offerAmount || parseFloat(offerAmount) <= 0) {
-      alert('Please enter a valid offer amount')
-      return
-    }
-    await makeOffer(tokenId, offerAmount, parseInt(duration))
-  }
-
-  return (
-    <div className="space-y-4">
-      <button onClick={onBack} className="text-white/60 hover:text-white">
-        ← Back
-      </button>
-      
-      <h3 className="text-xl font-bold text-white">Make Offer</h3>
-      
-      <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 flex items-start gap-2">
-        <AlertCircle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
-        <div className="text-sm text-yellow-300">
-          Your ETH will be escrowed until the offer is accepted or cancelled
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-white/70 mb-2">Offer Amount (ETH)</label>
-        <input
-          type="number"
-          step="0.001"
-          value={offerAmount}
-          onChange={(e) => setOfferAmount(e.target.value)}
-          className="w-full px-4 py-2 bg-black/30 border border-white/20 rounded-lg text-white"
-          placeholder="0.01"
-        />
-      </div>
-
-      <div>
-        <label className="block text-white/70 mb-2">Offer Duration (days)</label>
-        <select
-          value={duration}
-          onChange={(e) => setDuration(e.target.value)}
-          className="w-full px-4 py-2 bg-black/30 border border-white/20 rounded-lg text-white"
+      <div className="flex gap-3">
+        <button
+          onClick={onCancel}
+          className="flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
         >
-          <option value="1">1 day</option>
-          <option value="3">3 days</option>
-          <option value="7">7 days</option>
-          <option value="14">14 days</option>
-          <option value="30">30 days</option>
-        </select>
+          Cancel
+        </button>
+        <button
+          onClick={onSubmit}
+          disabled={isLoading || !price || parseFloat(price) <= 0}
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded-lg transition-colors"
+        >
+          {isLoading ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Edit3 className="w-4 h-4" />
+          )}
+          {isLoading ? 'Updating...' : 'Update Price'}
+        </button>
       </div>
-
-      <button
-        onClick={handleOffer}
-        disabled={isPending || !offerAmount}
-        className="w-full py-3 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded-lg transition-colors disabled:opacity-50"
-      >
-        {isPending ? 'Making Offer...' : 'Make Offer'}
-      </button>
     </div>
   )
 }
-

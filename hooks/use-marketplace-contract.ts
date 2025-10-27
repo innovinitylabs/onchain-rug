@@ -1,9 +1,9 @@
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useChainId } from 'wagmi'
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useChainId, useReadContract, useConfig } from 'wagmi'
 import { parseEther } from 'viem'
 import { config } from '@/lib/config'
-import { contractAddresses, shapeSepolia, shapeMainnet } from '@/lib/web3'
+import { contractAddresses, shapeSepolia, shapeMainnet, onchainRugsABI } from '@/lib/web3'
 
-// Marketplace ABI - only the functions we need
+// Marketplace ABI - only the functions we need (simplified)
 const marketplaceABI = [
   // Direct Listings
   {
@@ -41,238 +41,217 @@ const marketplaceABI = [
     inputs: [{ name: 'tokenId', type: 'uint256' }],
     outputs: []
   },
+  // Admin functions
   {
-    name: 'bulkCreateListings',
+    name: 'setMarketplaceFee',
     type: 'function',
     stateMutability: 'nonpayable',
-    inputs: [
-      { name: 'tokenIds', type: 'uint256[]' },
-      { name: 'prices', type: 'uint256[]' },
-      { name: 'durations', type: 'uint256[]' }
-    ],
-    outputs: []
-  },
-  // Auctions
-  {
-    name: 'createAuction',
-    type: 'function',
-    stateMutability: 'nonpayable',
-    inputs: [
-      { name: 'tokenId', type: 'uint256' },
-      { name: 'startPrice', type: 'uint256' },
-      { name: 'reservePrice', type: 'uint256' },
-      { name: 'duration', type: 'uint256' },
-      { name: 'autoExtend', type: 'bool' }
-    ],
+    inputs: [{ name: 'newFeeBPS', type: 'uint256' }],
     outputs: []
   },
   {
-    name: 'placeBid',
+    name: 'withdrawFees',
     type: 'function',
-    stateMutability: 'payable',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: 'to', type: 'address' }],
+    outputs: []
+  },
+  // View functions
+  {
+    name: 'getListing',
+    type: 'function',
+    stateMutability: 'view',
     inputs: [{ name: 'tokenId', type: 'uint256' }],
-    outputs: []
-  },
-  {
-    name: 'finalizeAuction',
-    type: 'function',
-    stateMutability: 'nonpayable',
-    inputs: [{ name: 'tokenId', type: 'uint256' }],
-    outputs: []
-  },
-  {
-    name: 'cancelAuction',
-    type: 'function',
-    stateMutability: 'nonpayable',
-    inputs: [{ name: 'tokenId', type: 'uint256' }],
-    outputs: []
-  },
-  // Offers
-  {
-    name: 'makeOffer',
-    type: 'function',
-    stateMutability: 'payable',
-    inputs: [
-      { name: 'tokenId', type: 'uint256' },
-      { name: 'expiresAt', type: 'uint256' }
-    ],
-    outputs: []
-  },
-  {
-    name: 'makeCollectionOffer',
-    type: 'function',
-    stateMutability: 'payable',
-    inputs: [{ name: 'expiresAt', type: 'uint256' }],
-    outputs: []
-  },
-  {
-    name: 'acceptOffer',
-    type: 'function',
-    stateMutability: 'nonpayable',
-    inputs: [
-      { name: 'tokenId', type: 'uint256' },
-      { name: 'offerId', type: 'uint256' }
-    ],
-    outputs: []
-  },
-  {
-    name: 'cancelOffer',
-    type: 'function',
-    stateMutability: 'nonpayable',
-    inputs: [{ name: 'offerId', type: 'uint256' }],
-    outputs: []
-  },
-  // Bundles
-  {
-    name: 'createBundle',
-    type: 'function',
-    stateMutability: 'nonpayable',
-    inputs: [
-      { name: 'tokenIds', type: 'uint256[]' },
+    outputs: [
+      { name: 'seller', type: 'address' },
       { name: 'price', type: 'uint256' },
-      { name: 'duration', type: 'uint256' }
-    ],
-    outputs: []
+      { name: 'expiresAt', type: 'uint256' },
+      { name: 'isActive', type: 'bool' }
+    ]
   },
   {
-    name: 'buyBundle',
+    name: 'getMarketplaceStats',
     type: 'function',
-    stateMutability: 'payable',
-    inputs: [{ name: 'bundleId', type: 'uint256' }],
-    outputs: []
-  },
-  {
-    name: 'cancelBundle',
-    type: 'function',
-    stateMutability: 'nonpayable',
-    inputs: [{ name: 'bundleId', type: 'uint256' }],
-    outputs: []
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [
+      { name: 'totalFeesCollected', type: 'uint256' },
+      { name: 'totalVolume', type: 'uint256' },
+      { name: 'totalSales', type: 'uint256' },
+      { name: 'marketplaceFeeBPS', type: 'uint256' }
+    ]
   }
 ] as const
 
 /**
- * Hook for creating a fixed-price listing
+ * Hook for checking if marketplace is approved for a token
+ */
+export function useApprovalStatus(tokenId: number) {
+  const { address } = useAccount()
+  const chainId = useChainId()
+  const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
+  // In diamond pattern, marketplace is part of the main contract
+  const marketplaceAddress = contractAddress
+
+  const { data: approvedAddress, isLoading: approvedLoading } = useReadContract({
+    address: contractAddress as `0x${string}`,
+    abi: onchainRugsABI,
+    functionName: 'getApproved',
+    args: [BigInt(tokenId)]
+  })
+
+  const { data: isApprovedForAll, isLoading: approvedForAllLoading } = useReadContract({
+    address: contractAddress as `0x${string}`,
+    abi: onchainRugsABI,
+    functionName: 'isApprovedForAll',
+    args: [address ? (address as `0x${string}`) : '0x0000000000000000000000000000000000000000', marketplaceAddress as `0x${string}`]
+  })
+
+  const approved = approvedAddress === marketplaceAddress || isApprovedForAll
+  const isLoading = approvedLoading || approvedForAllLoading
+
+  return { approved, isLoading, approvedAddress, isApprovedForAll }
+}
+
+/**
+ * Hook for approving marketplace to transfer tokens
+ */
+export function useApproveMarketplace(tokenId: number) {
+  const { address } = useAccount()
+  const chainId = useChainId()
+  const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
+  const wagmiConfig = useConfig()
+
+  const { writeContract, data: hash, isPending, error } = useWriteContract()
+
+  const approve = () => {
+    // @ts-ignore - wagmi v2 type checking issue
+    writeContract({
+      address: contractAddress as `0x${string}`,
+      abi: onchainRugsABI,
+      functionName: 'approve',
+      args: [contractAddress as `0x${string}`, BigInt(tokenId)]
+    }, wagmiConfig)
+  }
+
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+    hash
+  })
+
+  return {
+    approve,
+    hash,
+    isPending,
+    isConfirming,
+    isConfirmed,
+    error
+  }
+}
+
+/**
+ * Hook for creating a listing
  */
 export function useCreateListing() {
   const { address } = useAccount()
   const chainId = useChainId()
+  const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
+  const wagmiConfig = useConfig()
+
   const { writeContract, data: hash, isPending, error } = useWriteContract()
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash })
 
-  const createListing = async (tokenId: number, priceInEth: string, durationInDays: number) => {
-    if (!address) throw new Error('Wallet not connected')
-
-    const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
-    const price = parseEther(priceInEth)
-    const duration = durationInDays * 24 * 60 * 60 // Convert days to seconds
-    const chain = chainId === 360 ? shapeMainnet : shapeSepolia
-
-    console.log('Creating listing with approval...')
-    console.log('Parameters:', {
-      tokenId,
-      price: price.toString(),
-      duration,
-      contractAddress,
-      chainId: chain.id,
-      userAddress: address
-    })
-
-    try {
-      // Create listing (the smart contract should handle approval internally)
-      // Note: In a production system, approval would be handled separately
-      const result = await writeContract({
-        address: contractAddress as `0x${string}`,
-        abi: marketplaceABI,
-        functionName: 'createListing',
-        args: [BigInt(tokenId), price, BigInt(duration)],
-        chain,
-        account: address
-      })
-      console.log('Listing created successfully:', result)
-    } catch (error) {
-      console.error('Listing creation failed:', error)
-      console.error('Error details:', {
-        message: error.message,
-        code: error.code,
-        data: error.data
-      })
-      throw error
-    }
+  const createListing = (tokenId: number, price: string, duration: number = 0) => {
+    // @ts-ignore - wagmi v2 type checking issue
+    writeContract({
+      address: contractAddress as `0x${string}`,
+      abi: marketplaceABI,
+      functionName: 'createListing',
+      args: [BigInt(tokenId), parseEther(price), BigInt(duration)]
+    }, wagmiConfig)
   }
 
-  return { createListing, isPending, isConfirming, isSuccess, error, hash }
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+    hash
+  })
+
+  return {
+    createListing,
+    hash,
+    isPending,
+    isConfirming,
+    isConfirmed,
+    error
+  }
 }
 
 /**
- * Hook for buying a listed NFT
+ * Hook for buying a listing
  */
 export function useBuyListing() {
   const { address } = useAccount()
   const chainId = useChainId()
+  const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
+  const wagmiConfig = useConfig()
+
   const { writeContract, data: hash, isPending, error } = useWriteContract()
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash })
 
-  const buyListing = async (tokenId: number, priceInEth: string) => {
-    if (!address) throw new Error('Wallet not connected')
-
-    const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
-    const price = parseEther(priceInEth)
-    const chain = chainId === 360 ? shapeMainnet : shapeSepolia
-
-    console.log('BuyListing Debug:', {
-      tokenId,
-      priceInEth,
-      price: price.toString(),
-      contractAddress,
-      chainId,
-      userAddress: address
-    })
-
-    try {
-      await writeContract({
-        address: contractAddress as `0x${string}`,
-        abi: marketplaceABI,
-        functionName: 'buyListing',
-        args: [BigInt(tokenId)],
-        value: price,
-        chain,
-        account: address
-      })
-    } catch (error) {
-      console.error('BuyListing Transaction Error:', error)
-      throw error
-    }
+  const buyListing = (tokenId: number, price: string) => {
+    // @ts-ignore - wagmi v2 type checking issue
+    writeContract({
+      address: contractAddress as `0x${string}`,
+      abi: marketplaceABI,
+      functionName: 'buyListing',
+      args: [BigInt(tokenId)],
+      value: parseEther(price)
+    }, wagmiConfig)
   }
 
-  return { buyListing, isPending, isConfirming, isSuccess, error, hash }
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+    hash
+  })
+
+  return {
+    buyListing,
+    hash,
+    isPending,
+    isConfirming,
+    isConfirmed,
+    error
+  }
 }
 
 /**
- * Hook for canceling a listing
+ * Hook for cancelling a listing
  */
 export function useCancelListing() {
   const { address } = useAccount()
   const chainId = useChainId()
+  const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
+  const wagmiConfig = useConfig()
+
   const { writeContract, data: hash, isPending, error } = useWriteContract()
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash })
 
-  const cancelListing = async (tokenId: number) => {
-    if (!address) throw new Error('Wallet not connected')
-    
-    const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
-    const chain = chainId === 360 ? shapeMainnet : shapeSepolia
-
-    await writeContract({
+  const cancelListing = (tokenId: number) => {
+    // @ts-ignore - wagmi v2 type checking issue
+    writeContract({
       address: contractAddress as `0x${string}`,
       abi: marketplaceABI,
       functionName: 'cancelListing',
-      args: [BigInt(tokenId)],
-      chain,
-      account: address
-    })
+      args: [BigInt(tokenId)]
+    }, wagmiConfig)
   }
 
-  return { cancelListing, isPending, isConfirming, isSuccess, error, hash }
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+    hash
+  })
+
+  return {
+    cancelListing,
+    hash,
+    isPending,
+    isConfirming,
+    isConfirmed,
+    error
+  }
 }
 
 /**
@@ -281,191 +260,31 @@ export function useCancelListing() {
 export function useUpdateListingPrice() {
   const { address } = useAccount()
   const chainId = useChainId()
+  const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
+  const wagmiConfig = useConfig()
+
   const { writeContract, data: hash, isPending, error } = useWriteContract()
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash })
 
-  const updatePrice = async (tokenId: number, newPriceInEth: string) => {
-    if (!address) throw new Error('Wallet not connected')
-    
-    const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
-    const newPrice = parseEther(newPriceInEth)
-    const chain = chainId === 360 ? shapeMainnet : shapeSepolia
-
-    await writeContract({
+  const updateListingPrice = (tokenId: number, newPrice: string) => {
+    // @ts-ignore - wagmi v2 type checking issue
+    writeContract({
       address: contractAddress as `0x${string}`,
       abi: marketplaceABI,
       functionName: 'updateListingPrice',
-      args: [BigInt(tokenId), newPrice],
-      chain,
-      account: address
-    })
+      args: [BigInt(tokenId), parseEther(newPrice)]
+    }, wagmiConfig)
   }
 
-  return { updatePrice, isPending, isConfirming, isSuccess, error, hash }
-}
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+    hash
+  })
 
-/**
- * Hook for creating an auction
- */
-export function useCreateAuction() {
-  const { address } = useAccount()
-  const chainId = useChainId()
-  const { writeContract, data: hash, isPending, error } = useWriteContract()
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash })
-
-  const createAuction = async (
-    tokenId: number,
-    startPriceInEth: string,
-    reservePriceInEth: string,
-    durationInDays: number,
-    autoExtend: boolean
-  ) => {
-    if (!address) throw new Error('Wallet not connected')
-    
-    const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
-    const startPrice = parseEther(startPriceInEth)
-    const reservePrice = reservePriceInEth ? parseEther(reservePriceInEth) : BigInt(0)
-    const duration = durationInDays * 24 * 60 * 60
-    const chain = chainId === 360 ? shapeMainnet : shapeSepolia
-
-    await writeContract({
-      address: contractAddress as `0x${string}`,
-      abi: marketplaceABI,
-      functionName: 'createAuction',
-      args: [BigInt(tokenId), startPrice, reservePrice, BigInt(duration), autoExtend],
-      chain,
-      account: address
-    })
+  return {
+    updateListingPrice,
+    hash,
+    isPending,
+    isConfirming,
+    isConfirmed,
+    error
   }
-
-  return { createAuction, isPending, isConfirming, isSuccess, error, hash }
 }
-
-/**
- * Hook for placing a bid
- */
-export function usePlaceBid() {
-  const { address } = useAccount()
-  const chainId = useChainId()
-  const { writeContract, data: hash, isPending, error } = useWriteContract()
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash })
-
-  const placeBid = async (tokenId: number, bidAmountInEth: string) => {
-    if (!address) throw new Error('Wallet not connected')
-    
-    const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
-    const bidAmount = parseEther(bidAmountInEth)
-    const chain = chainId === 360 ? shapeMainnet : shapeSepolia
-
-    await writeContract({
-      address: contractAddress as `0x${string}`,
-      abi: marketplaceABI,
-      functionName: 'placeBid',
-      args: [BigInt(tokenId)],
-      value: bidAmount,
-      chain,
-      account: address
-    })
-  }
-
-  return { placeBid, isPending, isConfirming, isSuccess, error, hash }
-}
-
-/**
- * Hook for making an offer
- */
-export function useMakeOffer() {
-  const { address } = useAccount()
-  const chainId = useChainId()
-  const { writeContract, data: hash, isPending, error } = useWriteContract()
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash })
-
-  const makeOffer = async (tokenId: number, offerAmountInEth: string, expiresInDays: number) => {
-    if (!address) throw new Error('Wallet not connected')
-    
-    const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
-    const offerAmount = parseEther(offerAmountInEth)
-    const expiresAt = expiresInDays > 0 
-      ? Math.floor(Date.now() / 1000) + (expiresInDays * 24 * 60 * 60)
-      : 0
-    const chain = chainId === 360 ? shapeMainnet : shapeSepolia
-
-    await writeContract({
-      address: contractAddress as `0x${string}`,
-      abi: marketplaceABI,
-      functionName: 'makeOffer',
-      args: [BigInt(tokenId), BigInt(expiresAt)],
-      value: offerAmount,
-      chain,
-      account: address
-    })
-  }
-
-  return { makeOffer, isPending, isConfirming, isSuccess, error, hash }
-}
-
-/**
- * Hook for accepting an offer
- */
-export function useAcceptOffer() {
-  const { address } = useAccount()
-  const chainId = useChainId()
-  const { writeContract, data: hash, isPending, error } = useWriteContract()
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash })
-
-  const acceptOffer = async (tokenId: number, offerId: number) => {
-    if (!address) throw new Error('Wallet not connected')
-    
-    const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
-    const chain = chainId === 360 ? shapeMainnet : shapeSepolia
-
-    await writeContract({
-      address: contractAddress as `0x${string}`,
-      abi: marketplaceABI,
-      functionName: 'acceptOffer',
-      args: [BigInt(tokenId), BigInt(offerId)],
-      chain,
-      account: address
-    })
-  }
-
-  return { acceptOffer, isPending, isConfirming, isSuccess, error, hash }
-}
-
-/**
- * Hook for bulk listing multiple NFTs
- */
-export function useBulkCreateListings() {
-  const { address } = useAccount()
-  const chainId = useChainId()
-  const { writeContract, data: hash, isPending, error } = useWriteContract()
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash })
-
-  const bulkList = async (
-    tokenIds: number[],
-    pricesInEth: string[],
-    durationsInDays: number[]
-  ) => {
-    if (!address) throw new Error('Wallet not connected')
-    if (tokenIds.length !== pricesInEth.length || tokenIds.length !== durationsInDays.length) {
-      throw new Error('Array lengths must match')
-    }
-    
-    const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
-    const prices = pricesInEth.map(p => parseEther(p))
-    const durations = durationsInDays.map(d => BigInt(d * 24 * 60 * 60))
-    const chain = chainId === 360 ? shapeMainnet : shapeSepolia
-
-    await writeContract({
-      address: contractAddress as `0x${string}`,
-      abi: marketplaceABI,
-      functionName: 'bulkCreateListings',
-      args: [tokenIds.map(BigInt), prices, durations],
-      chain,
-      account: address
-    })
-  }
-
-  return { bulkList, isPending, isConfirming, isSuccess, error, hash }
-}
-

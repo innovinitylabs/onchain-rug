@@ -1,8 +1,8 @@
 'use client'
 
-import { TrendingUp, DollarSign, ShoppingBag, Users, Activity } from 'lucide-react'
+import { TrendingUp, DollarSign, ShoppingBag, Activity } from 'lucide-react'
 import LiquidGlass from '../LiquidGlass'
-import { useMarketplaceStats, useFloorPrice } from '@/hooks/use-marketplace-data'
+import { useMarketplaceStats } from '@/hooks/use-marketplace-data'
 import { formatEth, formatNumber } from '@/utils/marketplace-utils'
 
 interface MarketplaceStatsProps {
@@ -11,33 +11,32 @@ interface MarketplaceStatsProps {
 }
 
 export default function MarketplaceStats({ className = '', variant = 'full' }: MarketplaceStatsProps) {
-  const { stats, isLoading: statsLoading } = useMarketplaceStats()
-  const { floorPrice, isLoading: floorLoading } = useFloorPrice()
+  const { stats, isLoading } = useMarketplaceStats()
 
   if (variant === 'compact') {
     return (
       <div className={`grid grid-cols-2 md:grid-cols-4 gap-3 ${className}`}>
         <StatCard
-          label="Floor Price"
-          value={floorLoading ? '...' : floorPrice ? `${formatEth(floorPrice)} ETH` : 'N/A'}
-          icon={<DollarSign className="w-4 h-4" />}
-          color="emerald"
-        />
-        <StatCard
           label="Total Volume"
-          value={statsLoading ? '...' : stats ? `${formatEth(stats.totalVolume)} ETH` : '0'}
+          value={isLoading ? '...' : stats ? `${formatEth(stats.totalVolume)} ETH` : '0'}
           icon={<TrendingUp className="w-4 h-4" />}
           color="blue"
         />
         <StatCard
           label="Total Sales"
-          value={statsLoading ? '...' : stats ? formatNumber(stats.totalSales) : '0'}
+          value={isLoading ? '...' : stats ? formatNumber(Number(stats.totalSales)) : '0'}
           icon={<ShoppingBag className="w-4 h-4" />}
           color="purple"
         />
         <StatCard
+          label="Fees Collected"
+          value={isLoading ? '...' : stats ? `${formatEth(stats.totalFeesCollected)} ETH` : '0'}
+          icon={<DollarSign className="w-4 h-4" />}
+          color="emerald"
+        />
+        <StatCard
           label="Market Fee"
-          value={statsLoading ? '...' : stats ? `${(stats.marketplaceFeePercent / 100).toFixed(1)}%` : '2.5%'}
+          value={isLoading ? '...' : stats ? `${(Number(stats.marketplaceFeeBPS) / 100).toFixed(1)}%` : '2.5%'}
           icon={<Activity className="w-4 h-4" />}
           color="yellow"
         />
@@ -60,29 +59,13 @@ export default function MarketplaceStats({ className = '', variant = 'full' }: M
           </h3>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {/* Floor Price */}
-            <div className="space-y-1">
-              <div className="flex items-center gap-2 text-emerald-400">
-                <DollarSign className="w-4 h-4" />
-                <span className="text-xs font-medium uppercase tracking-wide">Floor Price</span>
-              </div>
-              {floorLoading ? (
-                <div className="h-8 w-24 bg-white/10 rounded animate-pulse"></div>
-              ) : (
-                <div className="text-2xl font-bold text-white">
-                  {floorPrice ? `${formatEth(floorPrice)}` : 'N/A'}
-                </div>
-              )}
-              <div className="text-xs text-white/50">ETH</div>
-            </div>
-
             {/* Total Volume */}
             <div className="space-y-1">
               <div className="flex items-center gap-2 text-blue-400">
                 <TrendingUp className="w-4 h-4" />
                 <span className="text-xs font-medium uppercase tracking-wide">Total Volume</span>
               </div>
-              {statsLoading ? (
+              {isLoading ? (
                 <div className="h-8 w-24 bg-white/10 rounded animate-pulse"></div>
               ) : (
                 <div className="text-2xl font-bold text-white">
@@ -98,14 +81,30 @@ export default function MarketplaceStats({ className = '', variant = 'full' }: M
                 <ShoppingBag className="w-4 h-4" />
                 <span className="text-xs font-medium uppercase tracking-wide">Total Sales</span>
               </div>
-              {statsLoading ? (
+              {isLoading ? (
                 <div className="h-8 w-24 bg-white/10 rounded animate-pulse"></div>
               ) : (
                 <div className="text-2xl font-bold text-white">
-                  {stats ? formatNumber(stats.totalSales) : '0'}
+                  {stats ? formatNumber(Number(stats.totalSales)) : '0'}
                 </div>
               )}
               <div className="text-xs text-white/50">Transactions</div>
+            </div>
+
+            {/* Fees Collected */}
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-emerald-400">
+                <DollarSign className="w-4 h-4" />
+                <span className="text-xs font-medium uppercase tracking-wide">Fees Collected</span>
+              </div>
+              {isLoading ? (
+                <div className="h-8 w-24 bg-white/10 rounded animate-pulse"></div>
+              ) : (
+                <div className="text-2xl font-bold text-white">
+                  {stats ? formatEth(stats.totalFeesCollected) : '0'}
+                </div>
+              )}
+              <div className="text-xs text-white/50">ETH</div>
             </div>
 
             {/* Marketplace Fee */}
@@ -114,11 +113,11 @@ export default function MarketplaceStats({ className = '', variant = 'full' }: M
                 <Activity className="w-4 h-4" />
                 <span className="text-xs font-medium uppercase tracking-wide">Market Fee</span>
               </div>
-              {statsLoading ? (
+              {isLoading ? (
                 <div className="h-8 w-24 bg-white/10 rounded animate-pulse"></div>
               ) : (
                 <div className="text-2xl font-bold text-white">
-                  {stats ? (stats.marketplaceFeePercent / 100).toFixed(1) : '2.5'}%
+                  {stats ? (Number(stats.marketplaceFeeBPS) / 100).toFixed(1) : '2.5'}%
                 </div>
               )}
               <div className="text-xs text-white/50">Per Sale</div>
@@ -126,20 +125,20 @@ export default function MarketplaceStats({ className = '', variant = 'full' }: M
           </div>
 
           {/* Additional Stats Row */}
-          {!statsLoading && stats && (
+          {!isLoading && stats && (
             <div className="mt-4 pt-4 border-t border-white/10 grid grid-cols-2 gap-4">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-white/60">Fees Collected:</span>
-                <span className="text-white font-mono">{formatEth(stats.totalFeesCollected)} ETH</span>
-              </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-white/60">Avg Sale Price:</span>
                 <span className="text-white font-mono">
-                  {stats.totalSales > 0 
-                    ? formatEth(stats.totalVolume / BigInt(stats.totalSales))
+                  {stats.totalSales > 0
+                    ? formatEth(stats.totalVolume / BigInt(Number(stats.totalSales)))
                     : '0'
                   } ETH
                 </span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-white/60">Fee Rate:</span>
+                <span className="text-white font-mono">{stats ? (Number(stats.marketplaceFeeBPS) / 100).toFixed(1) : '2.5'}%</span>
               </div>
             </div>
           )}
@@ -150,16 +149,16 @@ export default function MarketplaceStats({ className = '', variant = 'full' }: M
 }
 
 // Compact stat card component
-function StatCard({ 
-  label, 
-  value, 
-  icon, 
-  color 
-}: { 
+function StatCard({
+  label,
+  value,
+  icon,
+  color
+}: {
   label: string
   value: string
   icon: React.ReactNode
-  color: 'emerald' | 'blue' | 'purple' | 'yellow' 
+  color: 'emerald' | 'blue' | 'purple' | 'yellow'
 }) {
   const colorClasses = {
     emerald: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400',
@@ -185,35 +184,3 @@ function StatCard({
     </LiquidGlass>
   )
 }
-
-/**
- * Simple inline stats for use in headers/banners
- */
-export function InlineMarketplaceStats() {
-  const { stats } = useMarketplaceStats()
-  const { floorPrice } = useFloorPrice()
-
-  return (
-    <div className="flex items-center gap-6 text-sm">
-      {floorPrice && (
-        <div className="flex items-center gap-2">
-          <span className="text-white/50">Floor:</span>
-          <span className="text-emerald-400 font-mono">{formatEth(floorPrice)} ETH</span>
-        </div>
-      )}
-      {stats && (
-        <>
-          <div className="flex items-center gap-2">
-            <span className="text-white/50">Volume:</span>
-            <span className="text-blue-400 font-mono">{formatEth(stats.totalVolume)} ETH</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-white/50">Sales:</span>
-            <span className="text-purple-400 font-mono">{formatNumber(stats.totalSales)}</span>
-          </div>
-        </>
-      )}
-    </div>
-  )
-}
-

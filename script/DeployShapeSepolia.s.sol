@@ -240,24 +240,21 @@ contract DeployShapeSepolia is Script {
     }
 
     function uploadLibraries() internal {
-        console.log("7. Uploading JavaScript libraries...");
+        console.log("7. Uploading JavaScript libraries to ScriptyStorage...");
 
-        // Upload p5.js library
-        console.log("   Uploading p5.js library...");
+        // Upload rug-p5.js
         string memory p5Content = vm.readFile("data/rug-p5.js");
         uploadFile("rug-p5.js", p5Content);
 
-        // Upload algorithm library
-        console.log("   Uploading algorithm library...");
+        // Upload rug-algo.js
         string memory algoContent = vm.readFile("data/rug-algo.js");
         uploadFile("rug-algo.js", algoContent);
 
-        // Upload frame library
-        console.log("   Uploading frame library...");
+        // Upload rug-frame.js
         string memory frameContent = vm.readFile("data/rug-frame.js");
         uploadFile("rug-frame.js", frameContent);
 
-        console.log("   Libraries uploaded successfully");
+        console.log("   All libraries uploaded successfully");
     }
 
     function uploadFile(string memory fileName, string memory content) internal {
@@ -309,9 +306,7 @@ contract DeployShapeSepolia is Script {
         // ERC721-C transfer security already initialized in RugNFTFacet constructor
         console.log("   ERC721-C transfer validator initialized in RugNFTFacet");
 
-        // Initialize marketplace with default configuration
-        RugMarketplaceFacet(diamondAddr).initializeMarketplace();
-        console.log("   Marketplace initialized (2.5% fee, 7 day max auctions, 5% min bid)");
+        // Marketplace uses default configuration (no initialization needed)
 
         // Note: New O(1) aging system uses hardcoded constants, not configurable thresholds
         // Test values use minutes instead of days for rapid testing
@@ -539,42 +534,18 @@ contract DeployShapeSepolia is Script {
     }
 
     function _getRugMarketplaceSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](29);
-        // Direct listing functions
+        bytes4[] memory selectors = new bytes4[](8);
+        // Listing functions
         selectors[0] = RugMarketplaceFacet.createListing.selector;
         selectors[1] = RugMarketplaceFacet.cancelListing.selector;
         selectors[2] = RugMarketplaceFacet.updateListingPrice.selector;
         selectors[3] = RugMarketplaceFacet.buyListing.selector;
-        selectors[4] = RugMarketplaceFacet.bulkCreateListings.selector;
-        // Auction functions
-        selectors[5] = RugMarketplaceFacet.createAuction.selector;
-        selectors[6] = RugMarketplaceFacet.placeBid.selector;
-        selectors[7] = RugMarketplaceFacet.finalizeAuction.selector;
-        selectors[8] = RugMarketplaceFacet.cancelAuction.selector;
-        // Offer functions
-        selectors[9] = RugMarketplaceFacet.makeOffer.selector;
-        selectors[10] = RugMarketplaceFacet.makeCollectionOffer.selector;
-        selectors[11] = RugMarketplaceFacet.acceptOffer.selector;
-        selectors[12] = RugMarketplaceFacet.cancelOffer.selector;
-        // Bundle functions
-        selectors[13] = RugMarketplaceFacet.createBundle.selector;
-        selectors[14] = RugMarketplaceFacet.buyBundle.selector;
-        selectors[15] = RugMarketplaceFacet.cancelBundle.selector;
         // Admin functions
-        selectors[16] = RugMarketplaceFacet.setMarketplaceFee.selector;
-        selectors[17] = RugMarketplaceFacet.setMaxAuctionDuration.selector;
-        selectors[18] = RugMarketplaceFacet.setMinBidIncrement.selector;
-        selectors[19] = RugMarketplaceFacet.withdrawMarketplaceFees.selector;
-        selectors[20] = RugMarketplaceFacet.initializeMarketplace.selector;
+        selectors[4] = RugMarketplaceFacet.setMarketplaceFee.selector;
+        selectors[5] = RugMarketplaceFacet.withdrawFees.selector;
         // View functions
-        selectors[21] = RugMarketplaceFacet.getListing.selector;
-        selectors[22] = RugMarketplaceFacet.getAuction.selector;
-        selectors[23] = RugMarketplaceFacet.getOffer.selector;
-        selectors[24] = RugMarketplaceFacet.getTokenOffers.selector;
-        selectors[25] = RugMarketplaceFacet.getCollectionOffers.selector;
-        selectors[26] = RugMarketplaceFacet.getBundle.selector;
-        selectors[27] = RugMarketplaceFacet.getMarketplaceStats.selector;
-        selectors[28] = RugMarketplaceFacet.getMarketplaceConfig.selector;
+        selectors[6] = RugMarketplaceFacet.getListing.selector;
+        selectors[7] = RugMarketplaceFacet.getMarketplaceStats.selector;
         return selectors;
     }
 }

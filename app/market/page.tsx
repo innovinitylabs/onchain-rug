@@ -23,7 +23,6 @@ import ListingCard, { ListingCardSkeleton } from '@/components/marketplace/Listi
 import NFTDetailModal from '@/components/marketplace/NFTDetailModal'
 import ActivityFeed from '@/components/marketplace/ActivityFeed'
 import MarketplaceStats from '@/components/marketplace/MarketplaceStats'
-import { useMarketplaceStats } from '@/hooks/use-marketplace-data'
 import { 
   sortByRarity, 
   debounce

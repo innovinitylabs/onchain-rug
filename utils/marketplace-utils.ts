@@ -64,18 +64,6 @@ export function formatDate(timestamp: number): string {
 }
 
 /**
- * Check if auction is active
- */
-export function isAuctionActive(auction: {
-  isActive: boolean
-  endTime: number
-}): boolean {
-  if (!auction.isActive) return false
-  const now = Math.floor(Date.now() / 1000)
-  return auction.endTime > now
-}
-
-/**
  * Check if listing is expired
  */
 export function isListingExpired(listing: {
@@ -129,19 +117,6 @@ export function sortByRarity<T extends { rarityScore?: number }>(
   })
 }
 
-/**
- * Sort auctions by end time
- */
-export function sortByEndTime<T extends { endTime?: number }>(
-  items: T[],
-  direction: 'asc' | 'desc' = 'asc'
-): T[] {
-  return [...items].sort((a, b) => {
-    const timeA = a.endTime || 0
-    const timeB = b.endTime || 0
-    return direction === 'asc' ? timeA - timeB : timeB - timeA
-  })
-}
 
 /**
  * Filter by traits
@@ -206,20 +181,6 @@ export function filterByPriceRange<T extends { price?: string | bigint }>(
   })
 }
 
-/**
- * Calculate minimum bid for auction
- */
-export function calculateMinimumBid(
-  currentBid: bigint,
-  startPrice: bigint,
-  minBidIncrementPercent: number
-): bigint {
-  if (currentBid === BigInt(0)) {
-    return startPrice
-  }
-  const increment = (currentBid * BigInt(minBidIncrementPercent)) / BigInt(10000)
-  return currentBid + increment
-}
 
 /**
  * Format ETH amount with intelligent decimal display
@@ -261,10 +222,6 @@ export function getListingStatusColor(status: string): string {
     case 'active':
     case 'for sale':
       return 'bg-green-500/20 text-green-300 border-green-500/30'
-    case 'auction':
-      return 'bg-purple-500/20 text-purple-300 border-purple-500/30'
-    case 'offers':
-      return 'bg-blue-500/20 text-blue-300 border-blue-500/30'
     case 'expired':
       return 'bg-gray-500/20 text-gray-300 border-gray-500/30'
     case 'sold':
@@ -336,3 +293,22 @@ export function debounce<T extends (...args: any[]) => any>(
   }
 }
 
+
+/**
+ * Format timestamp to human readable time ago
+ */
+export function formatTimeAgo(timestamp: number): string {
+  const now = Date.now()
+  const diff = now - timestamp
+
+  const minutes = Math.floor(diff / 60000)
+  const hours = Math.floor(diff / 3600000)
+  const days = Math.floor(diff / 86400000)
+
+  if (minutes < 1) return 'Just now'
+  if (minutes < 60) return `${minutes}m ago`
+  if (hours < 24) return `${hours}h ago`
+  if (days < 7) return `${days}d ago`
+
+  return new Date(timestamp).toLocaleDateString()
+}
