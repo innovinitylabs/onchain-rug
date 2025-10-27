@@ -5,6 +5,7 @@ import {LibRugStorage} from "../libraries/LibRugStorage.sol";
 import {LibDiamond} from "../diamond/libraries/LibDiamond.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {ReentrancyGuard} from "solady/utils/ReentrancyGuard.sol";
+import {RugLaunderingFacet} from "./RugLaunderingFacet.sol";
 
 /**
  * @title RugMarketplaceFacet
@@ -140,6 +141,10 @@ contract RugMarketplaceFacet is ReentrancyGuard {
         // Transfer NFT from seller to buyer using transferFrom
         // Since marketplace is approved (was approved during listing), this should work
         IERC721(address(this)).transferFrom(seller, msg.sender, tokenId);
+        
+        // Record sale for laundering tracking (tracks last 3 sale prices)
+        RugLaunderingFacet launderingFacet = RugLaunderingFacet(address(this));
+        launderingFacet.recordSale(tokenId, seller, msg.sender, price);
         
         // Update marketplace stats
         ms.totalSales++;
