@@ -1,7 +1,7 @@
 import { useReadContract, useChainId, useAccount } from 'wagmi'
 import { config } from '@/lib/config'
 import { contractAddresses } from '@/lib/web3'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 
 // View functions ABI
 const marketplaceViewABI = [
@@ -45,13 +45,16 @@ export function useListingData(tokenId: number) {
     args: [BigInt(tokenId)]
   })
 
-  // Transform the data to match expected format
-  const listing = listingData ? {
-    seller: listingData[0],
-    price: listingData[1],
-    expiresAt: listingData[2],
-    isActive: listingData[3]
-  } : null
+  // Transform the data to match expected format - memoize to prevent infinite loops
+  const listing = useMemo(() => {
+    if (!listingData) return null
+    return {
+      seller: listingData[0],
+      price: listingData[1],
+      expiresAt: listingData[2],
+      isActive: listingData[3]
+    }
+  }, [listingData])
 
   return { listing, isLoading, refetch }
 }
@@ -70,13 +73,16 @@ export function useMarketplaceStats() {
     args: []
   })
 
-  // Transform the data to match expected format
-  const stats = statsData ? {
-    totalFeesCollected: statsData[0],
-    totalVolume: statsData[1],
-    totalSales: statsData[2],
-    marketplaceFeeBPS: statsData[3]
-  } : null
+  // Transform the data to match expected format - memoize to prevent infinite loops
+  const stats = useMemo(() => {
+    if (!statsData) return null
+    return {
+      totalFeesCollected: statsData[0],
+      totalVolume: statsData[1],
+      totalSales: statsData[2],
+      marketplaceFeeBPS: statsData[3]
+    }
+  }, [statsData])
 
   return { stats, isLoading, refetch }
 }
