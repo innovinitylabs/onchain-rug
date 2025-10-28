@@ -10,8 +10,13 @@ import SimpleMinting from '@/components/SimpleMinting'
 import Footer from '@/components/Footer'
 import { initPRNG, getPRNG, createDerivedPRNG } from '@/lib/DeterministicPRNG'
 import { config } from '@/lib/config'
+import { useChainId } from 'wagmi'
+import { contractAddresses } from '@/lib/web3'
 
 export default function GeneratorPage() {
+  const chainId = useChainId()
+  const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
+  
   const [isLoaded, setIsLoaded] = useState(false)
   const [currentSeed, setCurrentSeed] = useState(42)
   const [textInputs, setTextInputs] = useState([''])
@@ -2618,12 +2623,17 @@ export default function GeneratorPage() {
                   <div className="bg-gray-900/50 p-3 rounded">
                     <div className="flex items-center gap-2 mb-2">
                       <div className="text-green-400 text-xs font-mono break-all flex-1">
-                        {config.contracts.onchainRugs}
+                        {contractAddress || 'Not deployed on this network'}
                       </div>
-                      <Copy
-                        onClick={() => copyToClipboard(config.contracts.onchainRugs, 'contract address')}
-                        className="text-green-500 hover:text-green-300 cursor-pointer transition-colors w-4 h-4"
-                      />
+                      {contractAddress && (
+                        <Copy
+                          onClick={() => copyToClipboard(contractAddress, 'contract address')}
+                          className="text-green-500 hover:text-green-300 cursor-pointer transition-colors w-4 h-4"
+                        />
+                      )}
+                    </div>
+                    <div className="text-green-500 text-xs font-mono mt-1">
+                      Network: {chainId === 84532 ? 'Base Sepolia' : chainId === 11011 ? 'Shape Sepolia' : chainId === 8453 ? 'Base Mainnet' : chainId === 360 ? 'Shape Mainnet' : `Chain ${chainId}`}
                     </div>
                   </div>
                 </div>
