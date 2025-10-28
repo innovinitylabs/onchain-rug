@@ -382,6 +382,21 @@ contract DeployBaseSepolia is Script {
         console.log("   - Maintenance points: Clean(2), Restore(8), Master(12), Launder(20)");
         console.log("   - Fresh mechanics: 3 dirt levels, 11 aging levels, 5 frames");
         console.log("   - Scripty contracts configured");
+
+        // Configure royalties (10% to deployer)
+        console.log("   Configuring royalties...");
+        address[] memory recipients = new address[](1);
+        recipients[0] = deployer; // Deployer's address
+
+        uint256[] memory recipientSplits = new uint256[](1);
+        recipientSplits[0] = 1000; // 10% = 1000 basis points
+
+        RugCommerceFacet(diamondAddr).configureRoyalties(
+            1000, // 10% royalty (1000 basis points)
+            recipients,
+            recipientSplits
+        );
+        console.log("   - Royalties: 10% to deployer address");
     }
 
     // Selector generation functions
@@ -396,7 +411,7 @@ contract DeployBaseSepolia is Script {
     }
 
     function _getRugNFTSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](29);
+        bytes4[] memory selectors = new bytes4[](32);
         // ERC721 Standard Functions (hardcoded selectors from forge inspect)
         selectors[0] = bytes4(0x70a08231); // balanceOf(address)
         selectors[1] = bytes4(0x6352211e); // ownerOf(uint256)
@@ -429,10 +444,15 @@ contract DeployBaseSepolia is Script {
         selectors[24] = RugNFTFacet.getSecurityPolicy.selector;
         selectors[25] = RugNFTFacet.getWhitelistedOperators.selector;
         selectors[26] = RugNFTFacet.getPermittedContractReceivers.selector;
-        selectors[27] = RugNFTFacet.isTransferAllowed.selector;
+        selectors[27] = RugNFTFacet.isOperatorWhitelisted.selector;
+        selectors[28] = RugNFTFacet.isContractReceiverPermitted.selector;
+        selectors[29] = RugNFTFacet.isTransferAllowed.selector;
+
+        // Marketplace function
+        selectors[30] = RugNFTFacet.marketplaceTransfer.selector;
 
         // Initialization function
-        selectors[28] = RugNFTFacet.initializeERC721Metadata.selector;
+        selectors[31] = RugNFTFacet.initializeERC721Metadata.selector;
 
         return selectors;
     }

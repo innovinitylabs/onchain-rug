@@ -6,6 +6,7 @@ import { Heart, Tag, TrendingUp, Eye } from 'lucide-react'
 import LiquidGlass from '../LiquidGlass'
 import { formatEth, formatTimeRemaining, getConditionColor, isListingExpired } from '@/utils/marketplace-utils'
 import { useListingData } from '@/hooks/use-marketplace-data'
+import { useRoyaltyInfo } from '@/hooks/use-royalty-info'
 
 interface ListingCardProps {
   tokenId: number
@@ -28,6 +29,7 @@ export default function ListingCard({
   
   // Fetch marketplace data
   const { listing } = useListingData(tokenId)
+  const { royaltyPercentage, isLoading: royaltyLoading } = useRoyaltyInfo(tokenId)
 
   // Determine status
   const hasActiveListing = listing?.isActive && !isListingExpired({
@@ -35,15 +37,26 @@ export default function ListingCard({
     expiresAt: Number(listing.expiresAt)
   })
 
+  // Royalty badge
+  const royaltyBadge = hasActiveListing && !royaltyLoading && royaltyPercentage > 0 && (
+    <div className="px-2 py-1 bg-orange-500/20 text-orange-300 text-xs rounded border border-orange-500/30 flex items-center gap-1">
+      <span className="text-xs">💰</span>
+      {royaltyPercentage}% Royalty
+    </div>
+  )
+
   // Get status info
   let statusBadge = null
   let priceDisplay = null
 
   if (hasActiveListing) {
     statusBadge = (
-      <div className="px-2 py-1 bg-green-500/20 text-green-300 text-xs rounded border border-green-500/30 flex items-center gap-1">
-        <Tag className="w-3 h-3" />
-        FOR SALE
+      <div className="flex items-center gap-2">
+        <div className="px-2 py-1 bg-green-500/20 text-green-300 text-xs rounded border border-green-500/30 flex items-center gap-1">
+          <Tag className="w-3 h-3" />
+          FOR SALE
+        </div>
+        {royaltyBadge}
       </div>
     )
     priceDisplay = (

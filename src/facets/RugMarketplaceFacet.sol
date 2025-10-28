@@ -6,6 +6,7 @@ import {LibDiamond} from "../diamond/libraries/LibDiamond.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {ReentrancyGuard} from "solady/utils/ReentrancyGuard.sol";
 import {RugLaunderingFacet} from "./RugLaunderingFacet.sol";
+import {RugCommerceFacet} from "./RugCommerceFacet.sol";
 
 /**
  * @title RugMarketplaceFacet
@@ -13,6 +14,8 @@ import {RugLaunderingFacet} from "./RugLaunderingFacet.sol";
  * @dev Integrates with laundering system to track sales and trigger automatic cleaning
  */
 contract RugMarketplaceFacet is ReentrancyGuard {
+
+    // ===== STATE =====
 
     // ===== EVENTS =====
 
@@ -142,10 +145,11 @@ contract RugMarketplaceFacet is ReentrancyGuard {
         // Since marketplace is approved (was approved during listing), this should work
         IERC721(address(this)).transferFrom(seller, msg.sender, tokenId);
         
+
         // Record sale for laundering tracking (tracks last 3 sale prices)
         RugLaunderingFacet launderingFacet = RugLaunderingFacet(address(this));
         launderingFacet.recordSale(tokenId, seller, msg.sender, price);
-        
+
         // Update marketplace stats
         ms.totalSales++;
         ms.totalVolume += price;
@@ -229,6 +233,7 @@ contract RugMarketplaceFacet is ReentrancyGuard {
         emit FeesWithdrawn(to, amount);
     }
 
+
     // ===== INTERNAL FUNCTIONS =====
 
     /**
@@ -239,9 +244,22 @@ contract RugMarketplaceFacet is ReentrancyGuard {
 
         // Calculate marketplace fee
         uint256 marketplaceFee = (price * ms.marketplaceFeePercent) / 10000;
-        uint256 sellerProceeds = price - marketplaceFee;
 
-        // Record fees
+        // Calculate and distribute royalties immediately
+        RugCommerceFacet commerceFacet = RugCommerceFacet(address(this));
+        (address royaltyRecipient, uint256 royaltyAmount) = commerceFacet.royaltyInfo(tokenId, price);
+
+        // Distribute royalties to recipient if configured
+        if (royaltyAmount > 0 && royaltyRecipient != address(0)) {
+            (bool royaltySuccess, ) = royaltyRecipient.call{value: royaltyAmount}("");
+            if (!royaltySuccess) revert TransferFailed();
+        }
+
+        // Calculate seller proceeds after fees and royalties
+        uint256 totalDeductions = marketplaceFee + royaltyAmount;
+        uint256 sellerProceeds = price - totalDeductions;
+
+        // Record marketplace fees
         ms.totalFeesCollected += marketplaceFee;
 
         // Send proceeds to seller
