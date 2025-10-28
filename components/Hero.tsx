@@ -1,52 +1,13 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { ChevronDown, Sparkles, Star } from 'lucide-react'
+import { ChevronDown } from 'lucide-react'
 import LiquidGlass from '@/components/LiquidGlass'
 
 export default function Hero() {
   return (
     <div className="relative z-10 h-screen md:h-screen flex items-center md:justify-center justify-start pt-16 md:pt-0 text-center px-2" style={{ willChange: 'transform' }}>
       <div className="max-w-6xl mx-auto overflow-visible" style={{ willChange: 'transform, opacity' }}>
-        {/* Floating elements - Delayed for performance optimization */}
-        <div className="absolute -top-10 -left-10 w-20 h-20 opacity-20" style={{ willChange: 'transform' }}>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ 
-              opacity: 1,
-              y: [0, -20, 0],
-              rotate: [0, 360]
-            }}
-            transition={{ 
-              opacity: { duration: 0.5, delay: 2.5 },
-              y: { duration: 6, repeat: Infinity, ease: "easeInOut", type: "tween", delay: 2.5 },
-              rotate: { duration: 6, repeat: Infinity, ease: "easeInOut", type: "tween", delay: 2.5 }
-            }}
-            style={{ willChange: 'transform' }}
-          >
-            <Sparkles className="w-full h-full text-blue-400" />
-          </motion.div>
-        </div>
-        
-        <div className="absolute -top-5 -right-5 w-16 h-16 opacity-30" style={{ willChange: 'transform' }}>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ 
-              opacity: 1,
-              y: [0, 15, 0],
-              rotate: [0, -360]
-            }}
-            transition={{ 
-              opacity: { duration: 0.5, delay: 2.8 },
-              y: { duration: 8, repeat: Infinity, ease: "easeInOut", type: "tween", delay: 2.8 },
-              rotate: { duration: 8, repeat: Infinity, ease: "easeInOut", type: "tween", delay: 2.8 }
-            }}
-            style={{ willChange: 'transform' }}
-          >
-            <Star className="w-full h-full text-sky-400" />
-          </motion.div>
-        </div>
-
         {/* Main content - Optimized for performance */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
