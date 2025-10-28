@@ -5,6 +5,17 @@ import { contractAddresses, shapeSepolia, shapeMainnet, onchainRugsABI } from '@
 
 // Marketplace ABI - only the functions we need (simplified)
 const marketplaceABI = [
+  // ERC721 Approvals
+  {
+    name: 'setApprovalForAll',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'operator', type: 'address' },
+      { name: 'approved', type: 'bool' }
+    ],
+    outputs: []
+  },
   // Direct Listings
   {
     name: 'createListing',
@@ -80,6 +91,31 @@ const marketplaceABI = [
       { name: 'totalSales', type: 'uint256' },
       { name: 'marketplaceFeeBPS', type: 'uint256' }
     ]
+  },
+  // Royalty functions (from RugCommerceFacet)
+  {
+    name: 'royaltyInfo',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [
+      { name: 'tokenId', type: 'uint256' },
+      { name: 'salePrice', type: 'uint256' }
+    ],
+    outputs: [
+      { name: 'receiver', type: 'address' },
+      { name: 'royaltyAmount', type: 'uint256' }
+    ]
+  },
+  {
+    name: 'getRoyaltyConfig',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [
+      { name: 'royaltyPercentage', type: 'uint256' },
+      { name: 'recipients', type: 'address[]' },
+      { name: 'splits', type: 'uint256[]' }
+    ]
   }
 ] as const
 
@@ -93,24 +129,23 @@ export function useApprovalStatus(tokenId: number) {
   // In diamond pattern, marketplace is part of the main contract
   const marketplaceAddress = contractAddress
 
-  const { data: approvedAddress, isLoading: approvedLoading } = useReadContract({
-    address: contractAddress as `0x${string}`,
-    abi: onchainRugsABI,
-    functionName: 'getApproved',
-    args: [BigInt(tokenId)]
-  })
-
-  const { data: isApprovedForAll, isLoading: approvedForAllLoading } = useReadContract({
+  // Only check isApprovedForAll since we use setApprovalForAll for blanket approval
+  const { data: isApprovedForAll, isLoading: approvedForAllLoading, refetch: refetchApprovedForAll } = useReadContract({
     address: contractAddress as `0x${string}`,
     abi: onchainRugsABI,
     functionName: 'isApprovedForAll',
     args: [address ? (address as `0x${string}`) : '0x0000000000000000000000000000000000000000', marketplaceAddress as `0x${string}`]
   })
 
-  const approved = approvedAddress === marketplaceAddress || isApprovedForAll
-  const isLoading = approvedLoading || approvedForAllLoading
+  const approved = Boolean(isApprovedForAll)
+  const isLoading = approvedForAllLoading
 
-  return { approved, isLoading, approvedAddress, isApprovedForAll }
+  // Function to manually refresh approval status
+  const refetch = () => {
+    refetchApprovedForAll()
+  }
+
+  return { approved, isLoading, isApprovedForAll, refetch }
 }
 
 /**
@@ -125,12 +160,13 @@ export function useApproveMarketplace(tokenId: number) {
   const { writeContract, data: hash, isPending, error } = useWriteContract()
 
   const approve = () => {
+    // Use setApprovalForAll for blanket approval of all NFTs
     // @ts-ignore - wagmi v2 type checking issue
     writeContract({
       address: contractAddress as `0x${string}`,
-      abi: onchainRugsABI,
-      functionName: 'approve',
-      args: [contractAddress as `0x${string}`, BigInt(tokenId)]
+      abi: marketplaceABI,
+      functionName: 'setApprovalForAll',
+      args: [contractAddress as `0x${string}`, true]
     }, wagmiConfig)
   }
 

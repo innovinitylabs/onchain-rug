@@ -1,15 +1,26 @@
-# Shape Sepolia Deployment - October 28, 2025
+# Shape Sepolia Deployment - October 29, 2025
 
-## ✅ Deployment Successful
+## ✅ Fresh Deployment Successful with Royalty Integration
 
-**Network**: Shape Sepolia (Chain ID: 11011)  
-**Deployer**: `0x7Bc9427C8730b87Ab3faD10DA63F0C4b9e9E0A5F`  
-**Gas Used**: 36,331,941  
-**Cost**: ~0.000036 ETH
+**Network**: Shape Sepolia (Chain ID: 11011)
+**Deployer**: `0x7Bc9427C8730b87Ab3faD10DA63F0C4b9e9E0A5F`
+**Gas Used**: 36,700,800
+**Cost**: ~0.000018 ETH
+
+### 🎯 Key Features
+- **ERC721-C Compatible**: Full creator token standard implementation
+- **Automatic Royalties**: 10% royalty enforced on all marketplace sales
+- **Diamond Architecture**: Modular, upgradable smart contract system
+- **Complete Selectors**: All facet functions properly registered
 
 ---
 
 ## 📝 Deployed Contract Addresses
+
+### 🎯 Main Contract
+| Contract | Address | Link |
+|----------|---------|------|
+| **Diamond (Main)** | `0x5419436b1e97063b636c70ba2e829ed26336aa0d` | [View on ShapeScan](https://sepolia.shapescan.xyz/address/0x5419436b1e97063b636c70ba2e829ed26336aa0d) |
 
 ### Infrastructure Contracts
 | Contract | Address |
@@ -69,6 +80,13 @@
 - **Service Costs**: 0.00001 ETH each
 - **Aging System**: O(1) with test values (minutes instead of days)
 - **Frame System**: Bronze/Silver/Gold/Diamond tiers
+
+### 🎨 Royalty System
+- **✅ Royalty Percentage**: 10% (1000 basis points)
+- **✅ Royalty Recipient**: Deployer address (`0x7Bc9427C8730b87Ab3faD10DA63F0C4b9e9E0A5F`)
+- **✅ Royalty Distribution**: Automatic on marketplace sales
+- **✅ Royalty Calculation**: 1 ETH sale = 0.1 ETH royalty ✅
+- **✅ ERC721-C Compliance**: Creator token standard fully implemented
 
 ---
 

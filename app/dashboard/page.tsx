@@ -289,8 +289,18 @@ export default function DashboardPage() {
         console.log('Using contract address:', contractAddress)
         console.log('Current chain ID:', chainId)
 
+        // First, check if user has any balance to avoid unnecessary API calls
+        if (!balance || balance === BigInt(0)) {
+          console.log('User has no NFTs (balance is 0), skipping NFT loading')
+          setUserRugs([])
+          setLoading(false)
+          return
+        }
+
+        console.log(`User has ${balance} NFTs, proceeding with loading...`)
+
         // Get NFTs owned by user from Alchemy
-        const ownerResponse = await fetch(`${window.location.origin}/api/alchemy?endpoint=getTokenIdByIndex&contractAddress=${contractAddress}&owner=${address}&index=0&chainId=${chainId}`)
+        const ownerResponse = await fetch(`${window.location.origin}/api/alchemy?endpoint=getNFTsForOwner&contractAddresses=${contractAddress}&owner=${address}&chainId=${chainId}`)
         const ownerData = await ownerResponse.json()
 
         console.log('Owner data response:', ownerData)
@@ -319,45 +329,8 @@ export default function DashboardPage() {
             }
           }
         } else {
-          console.log('No owned NFTs found from Alchemy')
-
-          // Fallback: Try to check a few common token IDs for testing
-          console.log('Trying fallback token ID check...')
-          const testTokenIds = [1, 2, 3, 4, 5] // Common test token IDs
-
-          for (const testTokenId of testTokenIds) {
-            try {
-              console.log(`Testing token ID ${testTokenId}...`)
-
-              // Check if this token exists and is owned by the user with Alchemy fallback
-              const ownerOf = await callContractMultiFallback(
-                contractAddress,
-                onchainRugsABI,
-                'ownerOf',
-                [BigInt(testTokenId)],
-                { chainId }
-              ) as unknown as string
-
-              if (ownerOf && ownerOf.toLowerCase() === address?.toLowerCase()) {
-                console.log(`Found owned token #${testTokenId}, fetching metadata...`)
-
-                // Use the new consolidated rug data fetching
-                const rugData = await fetchRugData(testTokenId)
-                if (rugData) {
-                  rugs.push(rugData)
-                  console.log(`Successfully added test rug #${testTokenId}`)
-                }
-              }
-
-              // Add delay between requests to avoid rate limiting
-              if (testTokenIds.indexOf(testTokenId) < testTokenIds.length - 1) {
-                await new Promise(resolve => setTimeout(resolve, 500)) // 500ms delay
-              }
-            } catch (error) {
-              // Token doesn't exist or not owned by user, skip
-              console.log(`Token ${testTokenId} not found or not owned`)
-            }
-          }
+          console.log('No owned NFTs found from Alchemy - this should not happen if balance > 0')
+          console.log('Balance check may be inaccurate or Alchemy API may be down')
         }
 
         console.log(`Final rug count: ${rugs.length}`)
@@ -371,7 +344,7 @@ export default function DashboardPage() {
     }
 
     fetchUserRugs()
-  }, [address, contractAddress, refreshTrigger])
+  }, [address, contractAddress, balance, refreshTrigger])
 
   const handleRefresh = async () => {
     if (refreshing || selectedRug) {
