@@ -98,7 +98,9 @@ export function RugCleaning({ tokenId, mintTime, lastCleaned: propLastCleaned, o
   const [masterRestoreGasEstimate, setMasterRestoreGasEstimate] = useState<string>('')
   const [estimatingMasterRestoreGas, setEstimatingMasterRestoreGas] = useState(false)
 
-  const isCorrectChain = chainId === config.chainId
+  // Check if on any supported network (not just the default config chain)
+  const supportedChainIds = [11011, 360, 84532, 8453] // Shape Sepolia, Shape Mainnet, Base Sepolia, Base Mainnet
+  const isCorrectChain = supportedChainIds.includes(chainId)
 
   const getCleaningCost = () => {
     // Use contract-provided cost if available, otherwise fallback
@@ -435,7 +437,7 @@ export function RugCleaning({ tokenId, mintTime, lastCleaned: propLastCleaned, o
 
   const getCleanButtonText = () => {
     if (!isConnected) return 'Connect Wallet to Clean'
-    if (!isCorrectChain) return `Switch to ${config.chainId === 360 ? 'Shape Mainnet' : 'Shape Sepolia'}`
+    if (!isCorrectChain) return 'Switch to Supported Network'
     if (!needsCleaning) return 'Rug is Already Clean'
     if (configLoading) return 'Loading Config...'
     if (estimatingGas) return 'Estimating Gas...'
@@ -466,7 +468,7 @@ export function RugCleaning({ tokenId, mintTime, lastCleaned: propLastCleaned, o
 
   const getRestoreButtonText = () => {
     if (!isConnected) return 'Connect Wallet to Restore'
-    if (!isCorrectChain) return `Switch to ${config.chainId === 360 ? 'Shape Mainnet' : 'Shape Sepolia'}`
+    if (!isCorrectChain) return 'Switch to Supported Network'
     if (agingLevel === 0) return 'No Aging to Restore'
     if (configLoading) return 'Loading Config...'
     if (estimatingRestoreGas) return 'Estimating Gas...'
@@ -488,7 +490,7 @@ export function RugCleaning({ tokenId, mintTime, lastCleaned: propLastCleaned, o
 
   const getMasterRestoreButtonText = () => {
     if (!isConnected) return 'Connect Wallet to Restore'
-    if (!isCorrectChain) return `Switch to ${config.chainId === 360 ? 'Shape Mainnet' : 'Shape Sepolia'}`
+    if (!isCorrectChain) return 'Switch to Supported Network'
     if (agingLevel === 0) return 'No Aging to Restore'
     if (configLoading) return 'Loading Config...'
     if (estimatingMasterRestoreGas) return 'Estimating Gas...'
@@ -640,7 +642,7 @@ export function RugCleaning({ tokenId, mintTime, lastCleaned: propLastCleaned, o
         <div className="bg-yellow-900/50 border border-yellow-500/30 rounded p-3">
           <div className="flex items-center gap-2 text-yellow-400 text-sm font-mono">
             <AlertCircle className="w-4 h-4" />
-            Please switch to {config.chainId === 360 ? 'Shape Mainnet' : 'Shape Sepolia'} to clean
+            Please switch to a supported network: Shape Sepolia (11011), Shape Mainnet (360), Base Sepolia (84532), or Base Mainnet (8453)
           </div>
         </div>
       )}

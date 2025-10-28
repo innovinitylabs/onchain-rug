@@ -2626,10 +2626,10 @@ export default function GeneratorPage() {
                         {contractAddress || 'Not deployed on this network'}
                       </div>
                       {contractAddress && (
-                        <Copy
+                      <Copy
                           onClick={() => copyToClipboard(contractAddress, 'contract address')}
-                          className="text-green-500 hover:text-green-300 cursor-pointer transition-colors w-4 h-4"
-                        />
+                        className="text-green-500 hover:text-green-300 cursor-pointer transition-colors w-4 h-4"
+                      />
                       )}
                     </div>
                     <div className="text-green-500 text-xs font-mono mt-1">

@@ -65,7 +65,7 @@ contract DeployShapeSepolia is Script {
         try vm.envUint("TESTNET_PRIVATE_KEY") returns (uint256 key) {
             deployerPrivateKey = key;
         } catch {
-            deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         }
         deployer = vm.addr(deployerPrivateKey);
         console.log("Deployer address:", deployer);

@@ -2,7 +2,7 @@ import { useAccount, useReadContract, useWriteContract, useWaitForTransactionRec
 import { useState, useEffect, useMemo } from 'react'
 import { ethers } from 'ethers'
 import { config, agingConfig } from '@/lib/config'
-import { shapeSepolia, shapeMainnet, contractAddresses, onchainRugsABI } from '@/lib/web3'
+import { shapeSepolia, shapeMainnet, baseSepolia, baseMainnet, contractAddresses, onchainRugsABI } from '@/lib/web3'
 import { useTokenURI } from './use-token-uri'
 import { getDirtDescription, getAgingDescription } from '@/utils/parsing-utils'
 import { estimateContractGasWithRetry, getRecommendedGasOptions, formatGasEstimate } from '@/utils/gas-estimation'
@@ -125,11 +125,11 @@ export function useRestoreRug() {
       throw new Error('Please connect your wallet first')
     }
 
-    // Check if on correct network
-    const expectedChainIds = [11011, 360] // Shape Sepolia and Shape Mainnet
-    if (!expectedChainIds.includes(chainId)) {
-      console.error('❌ Wrong network:', chainId, 'Expected:', expectedChainIds)
-      throw new Error(`Please switch to Shape Sepolia (${11011}) or Shape Mainnet (${360}) network`)
+    // Check if on supported network
+    const supportedChainIds = [11011, 360, 84532, 8453] // Shape Sepolia, Shape Mainnet, Base Sepolia, Base Mainnet
+    if (!supportedChainIds.includes(chainId)) {
+      console.error('❌ Unsupported network:', chainId, 'Supported:', supportedChainIds)
+      throw new Error(`Please switch to a supported network: Shape Sepolia (${11011}), Shape Mainnet (${360}), Base Sepolia (${84532}), or Base Mainnet (${8453})`)
     }
 
     if (!writeContract) {
@@ -152,7 +152,19 @@ export function useRestoreRug() {
     console.log('Using contract-based pricing - restoration cost:', restorationCost.toString())
 
     try {
-      const chain = chainId === 360 ? shapeMainnet : shapeSepolia
+      // Select appropriate chain based on chainId
+      let chain
+      if (chainId === 360) {
+        chain = shapeMainnet
+      } else if (chainId === 11011) {
+        chain = shapeSepolia
+      } else if (chainId === 8453) {
+        chain = baseMainnet
+      } else if (chainId === 84532) {
+        chain = baseSepolia
+      } else {
+        chain = shapeSepolia // Default fallback
+      }
 
       // Prepare transaction parameters
       const txParams: any = {
@@ -272,11 +284,11 @@ export function useMasterRestoreRug() {
       throw new Error('Please connect your wallet first')
     }
 
-    // Check if on correct network
-    const expectedChainIds = [11011, 360] // Shape Sepolia and Shape Mainnet
-    if (!expectedChainIds.includes(chainId)) {
-      console.error('❌ Wrong network:', chainId, 'Expected:', expectedChainIds)
-      throw new Error(`Please switch to Shape Sepolia (${11011}) or Shape Mainnet (${360}) network`)
+    // Check if on supported network
+    const supportedChainIds = [11011, 360, 84532, 8453] // Shape Sepolia, Shape Mainnet, Base Sepolia, Base Mainnet
+    if (!supportedChainIds.includes(chainId)) {
+      console.error('❌ Unsupported network:', chainId, 'Supported:', supportedChainIds)
+      throw new Error(`Please switch to a supported network: Shape Sepolia (${11011}), Shape Mainnet (${360}), Base Sepolia (${84532}), or Base Mainnet (${8453})`)
     }
 
     if (!writeContract) {
@@ -299,7 +311,19 @@ export function useMasterRestoreRug() {
     console.log('Using contract-based pricing - master restoration cost:', masterRestorationCost.toString())
 
     try {
-      const chain = chainId === 360 ? shapeMainnet : shapeSepolia
+      // Select appropriate chain based on chainId
+      let chain
+      if (chainId === 360) {
+        chain = shapeMainnet
+      } else if (chainId === 11011) {
+        chain = shapeSepolia
+      } else if (chainId === 8453) {
+        chain = baseMainnet
+      } else if (chainId === 84532) {
+        chain = baseSepolia
+      } else {
+        chain = shapeSepolia // Default fallback
+      }
 
       // Prepare transaction parameters
       const txParams: any = {
@@ -419,11 +443,11 @@ export function useCleanRug() {
       throw new Error('Please connect your wallet first')
     }
 
-    // Check if on correct network
-    const expectedChainIds = [11011, 360] // Shape Sepolia and Shape Mainnet
-    if (!expectedChainIds.includes(chainId)) {
-      console.error('❌ Wrong network:', chainId, 'Expected:', expectedChainIds)
-      throw new Error(`Please switch to Shape Sepolia (${11011}) or Shape Mainnet (${360}) network`)
+    // Check if on supported network
+    const supportedChainIds = [11011, 360, 84532, 8453] // Shape Sepolia, Shape Mainnet, Base Sepolia, Base Mainnet
+    if (!supportedChainIds.includes(chainId)) {
+      console.error('❌ Unsupported network:', chainId, 'Supported:', supportedChainIds)
+      throw new Error(`Please switch to a supported network: Shape Sepolia (${11011}), Shape Mainnet (${360}), Base Sepolia (${84532}), or Base Mainnet (${8453})`)
     }
 
     if (!writeContract) {
@@ -446,7 +470,19 @@ export function useCleanRug() {
     console.log('Using contract-based pricing - cleaning cost:', cleaningCost.toString())
 
     try {
-      const chain = chainId === 360 ? shapeMainnet : shapeSepolia
+      // Select appropriate chain based on chainId
+      let chain
+      if (chainId === 360) {
+        chain = shapeMainnet
+      } else if (chainId === 11011) {
+        chain = shapeSepolia
+      } else if (chainId === 8453) {
+        chain = baseMainnet
+      } else if (chainId === 84532) {
+        chain = baseSepolia
+      } else {
+        chain = shapeSepolia // Default fallback
+      }
 
       // Prepare transaction parameters
       const txParams: any = {
