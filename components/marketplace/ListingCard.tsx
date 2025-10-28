@@ -71,7 +71,7 @@ export default function ListingCard({
         >
           <div className="p-4 flex gap-4 items-center">
             {/* NFT Preview - Small */}
-            <div className="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 bg-black/30">
+            <div className="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 bg-gradient-to-br from-blue-100/20 to-indigo-100/20">
               {nftData?.animation_url ? (
                 <iframe
                   src={nftData.animation_url}
@@ -202,7 +202,7 @@ export default function ListingCard({
                   onLoad={() => setImageLoaded(true)}
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-white/50 bg-black/30 rounded-lg">
+                <div className="w-full h-full flex items-center justify-center text-blue-400 bg-gradient-to-br from-blue-100/20 to-indigo-100/20 rounded-lg">
                   <div className="text-center">
                     <div className="text-3xl mb-1">🧵</div>
                     <div className="text-xs">#{tokenId}</div>
@@ -211,8 +211,8 @@ export default function ListingCard({
               )}
               
               {!imageLoaded && nftData?.animation_url && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                <div className="absolute inset-0 flex items-center justify-center bg-blue-100/30 backdrop-blur-sm">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
                 </div>
               )}
             </div>
