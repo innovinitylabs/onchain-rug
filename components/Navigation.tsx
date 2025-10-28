@@ -522,22 +522,22 @@ export default function Navigation() {
                         elasticity={0.08}
                         cornerRadius={12}
                       >
-                        <div className="py-2 bg-slate-900/95">
+                        <div className="py-2 backdrop-blur-md bg-white/10 border border-white/20 rounded-xl shadow-lg">
                           <Link
                             href="/portfolio"
                             onClick={() => setIsManageDropdownOpen(false)}
-                            className="flex items-center gap-3 px-4 py-3 text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+                            className="flex items-center gap-3 px-4 py-3 text-white hover:bg-white/20 transition-colors rounded-lg mx-2"
                           >
-                            <Briefcase className="w-4 h-4" />
-                            <span>Portfolio</span>
+                            <Briefcase className="w-5 h-5" />
+                            <span className="font-semibold text-sm">Portfolio</span>
                           </Link>
                           <Link
                             href="/dashboard"
                             onClick={() => setIsManageDropdownOpen(false)}
-                            className="flex items-center gap-3 px-4 py-3 text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+                            className="flex items-center gap-3 px-4 py-3 text-white hover:bg-white/20 transition-colors rounded-lg mx-2"
                           >
-                            <User className="w-4 h-4" />
-                            <span>Dashboard</span>
+                            <User className="w-5 h-5" />
+                            <span className="font-semibold text-sm">Dashboard</span>
             </Link>
                         </div>
                       </LiquidGlass>
