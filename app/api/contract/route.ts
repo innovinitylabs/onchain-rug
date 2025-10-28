@@ -1,21 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createPublicClient, http } from 'viem'
+import { shapeSepolia } from '@/lib/web3'
 
-// Direct contract call API to avoid Alchemy caching
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const method = searchParams.get('method')
+  const tokenId = searchParams.get('tokenId')
   const contractAddress = searchParams.get('contractAddress')
-  const args = searchParams.get('args')
-
-  const alchemyApiKey = process.env.ALCHEMY_API_KEY
-
-  if (!alchemyApiKey) {
-    console.error('❌ ALCHEMY_API_KEY not configured in environment variables')
-    return NextResponse.json(
-      { error: 'Alchemy API key not configured' },
-      { status: 500 }
-    )
-  }
 
   if (!method || !contractAddress) {
     return NextResponse.json(
@@ -25,83 +16,46 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    console.log(`🔄 Making direct contract call: ${method} on ${contractAddress}`)
+    const client = createPublicClient({
+      chain: shapeSepolia,
+      transport: http(shapeSepolia.rpcUrls.default.http[0])
+    })
 
-    let callData: any
+    let result: any
 
-    // Handle different contract methods
-    if (method === 'tokenURI') {
-      if (!args) {
+    switch (method) {
+      case 'ownerOf':
+        if (!tokenId) {
         return NextResponse.json(
-          { error: 'args required for tokenURI (tokenId)' },
+            { error: 'tokenId required for ownerOf method' },
           { status: 400 }
         )
       }
+        result = await client.readContract({
+          address: contractAddress as `0x${string}`,
+          abi: [{
+            inputs: [{ internalType: "uint256", name: "tokenId", type: "uint256" }],
+            name: "ownerOf",
+            outputs: [{ internalType: "address", name: "", type: "address" }],
+            stateMutability: "view",
+            type: "function"
+          }],
+          functionName: 'ownerOf',
+          args: [BigInt(tokenId)],
+          authorizationList: []
+        })
+        return NextResponse.json({ owner: result })
 
-      // Encode tokenURI(uint256) call
-      const functionSignature = '0xc87b56dd' // tokenURI(uint256)
-      const encodedTokenId = BigInt(args).toString(16).padStart(64, '0')
-      const data = functionSignature + encodedTokenId
-
-      callData = {
-        jsonrpc: '2.0',
-        id: 1,
-        method: 'eth_call',
-        params: [{
-          to: contractAddress,
-          data: data
-        }, 'latest']
-      }
-    } else {
+      default:
       return NextResponse.json(
         { error: 'Unsupported method' },
         { status: 400 }
       )
     }
-
-    const url = `https://shape-sepolia.g.alchemy.com/v2/${alchemyApiKey}`
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: JSON.stringify(callData),
-    })
-
-    if (!response.ok) {
-      console.error(`❌ Contract call error: ${response.status} ${response.statusText}`)
-      return NextResponse.json(
-        { error: `Contract call error: ${response.status}` },
-        { status: response.status }
-      )
-    }
-
-    const data = await response.json()
-
-    if (method === 'tokenURI') {
-      if (data.result) {
-        console.log(`✅ tokenURI call success`)
-        return NextResponse.json({
-          result: data.result,
-          success: true
-        })
-      } else {
-        return NextResponse.json({
-          error: 'No result from tokenURI call',
-          success: false
-        })
-      }
-    }
-
-    console.log(`✅ Contract call success: ${method}`)
-    return NextResponse.json(data)
-
   } catch (error) {
-    console.error('❌ Contract call error:', error)
+    console.error('Contract call error:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Contract call failed' },
       { status: 500 }
     )
   }

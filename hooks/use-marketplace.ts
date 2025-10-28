@@ -20,7 +20,7 @@ export function useMarketplace() {
     hash,
   })
 
-  const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
+  const contractAddress = contractAddresses[chainId]
 
   // Record a sale (for laundering purposes)
   const recordSale = async (tokenId: number, from: string, to: string, salePrice: string) => {
@@ -101,7 +101,8 @@ export function useMarketplace() {
 
 // Hook for external marketplace integration
 export function useExternalMarketplaces(tokenId: number) {
-  const contractAddress = config.contracts.onchainRugs
+  const chainId = useChainId()
+  const contractAddress = contractAddresses[chainId]
 
   // Generate marketplace URLs
   const getMarketplaceUrls = () => {

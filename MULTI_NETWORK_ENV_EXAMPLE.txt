@@ -1,0 +1,118 @@
+# Multi-Network Configuration for OnchainRugs
+# Supports both Shape and Base networks automatically
+
+# ============================================
+# DEPLOYMENT KEYS (Backend)
+# ============================================
+
+# Private key for deployments (without 0x prefix)
+TESTNET_PRIVATE_KEY=your_testnet_private_key_here
+PRIVATE_KEY=your_mainnet_private_key_here
+
+# ============================================
+# SHAPE NETWORK CONTRACTS
+# ============================================
+
+# Shape Sepolia Testnet (Chain ID: 11011)
+NEXT_PUBLIC_SHAPE_SEPOLIA_CONTRACT=0x0000000000000000000000000000000000000000
+
+# Shape Mainnet (Chain ID: 360)
+NEXT_PUBLIC_SHAPE_MAINNET_CONTRACT=0x0000000000000000000000000000000000000000
+
+# ============================================
+# BASE NETWORK CONTRACTS
+# ============================================
+
+# Base Sepolia Testnet (Chain ID: 84532)
+NEXT_PUBLIC_BASE_SEPOLIA_CONTRACT=0xa43532205Fc90b286Da98389a9883347Cc4064a8
+
+# Base Mainnet (Chain ID: 8453)
+NEXT_PUBLIC_BASE_MAINNET_CONTRACT=0x0000000000000000000000000000000000000000
+
+# ============================================
+# FALLBACK CONTRACT (Optional)
+# ============================================
+
+# Used if network-specific contract not found
+NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT=0xa43532205Fc90b286Da98389a9883347Cc4064a8
+
+# ============================================
+# RPC ENDPOINTS
+# ============================================
+
+# Primary RPC (for default network)
+NEXT_PUBLIC_RPC_URL=https://sepolia.base.org
+
+# Network-specific RPCs (optional - overrides defaults)
+NEXT_PUBLIC_SHAPE_SEPOLIA_RPC=https://sepolia.shape.network
+NEXT_PUBLIC_SHAPE_MAINNET_RPC=https://mainnet.shape.network
+NEXT_PUBLIC_BASE_SEPOLIA_RPC=https://sepolia.base.org
+NEXT_PUBLIC_BASE_MAINNET_RPC=https://mainnet.base.org
+
+# Alternative RPC providers (if needed)
+# NEXT_PUBLIC_SHAPE_SEPOLIA_RPC=https://shape-sepolia.g.alchemy.com/v2/YOUR_KEY
+# NEXT_PUBLIC_BASE_SEPOLIA_RPC=https://base-sepolia.g.alchemy.com/v2/YOUR_KEY
+
+# ============================================
+# API KEYS
+# ============================================
+
+# Alchemy API Key (supports all networks)
+NEXT_PUBLIC_ALCHEMY_API_KEY=your_alchemy_api_key_here
+ALCHEMY_API_KEY=your_alchemy_api_key_here
+
+# WalletConnect Project ID
+NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=your_walletconnect_project_id
+
+# ============================================
+# OPTIONAL
+# ============================================
+
+# Royalty recipient
+NEXT_PUBLIC_ROYALTY_RECIPIENT=your_wallet_address
+
+# ============================================
+# HOW IT WORKS
+# ============================================
+
+# The app automatically detects which network the user is connected to:
+# 
+# 1. User connects wallet to Shape Sepolia (11011)
+#    → Uses NEXT_PUBLIC_SHAPE_SEPOLIA_CONTRACT
+#    → Routes Alchemy API to Shape Sepolia
+# 
+# 2. User connects wallet to Base Sepolia (84532)
+#    → Uses NEXT_PUBLIC_BASE_SEPOLIA_CONTRACT
+#    → Routes Alchemy API to Base Sepolia
+# 
+# 3. User switches network in wallet
+#    → App automatically updates contract address
+#    → No page reload needed
+# 
+# 4. If network-specific contract not set
+#    → Falls back to NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT
+
+# ============================================
+# DEPLOYMENT WORKFLOW
+# ============================================
+
+# Deploy to Shape Sepolia:
+# forge script script/DeployShapeSepolia.s.sol --rpc-url shape-sepolia --broadcast
+# 
+# Deploy to Base Sepolia:
+# forge script script/DeployBaseSepolia.s.sol --rpc-url base-sepolia --broadcast
+# 
+# Update respective NEXT_PUBLIC_*_CONTRACT variables above
+
+# ============================================
+# CURRENT DEPLOYMENTS
+# ============================================
+
+# Base Sepolia (Active):
+# Contract: 0xa43532205Fc90b286Da98389a9883347Cc4064a8
+# Explorer: https://sepolia-explorer.base.org/address/0xa43532205Fc90b286Da98389a9883347Cc4064a8
+# Rarible: https://testnet.rarible.com/collection/base-sepolia/0xa43532205Fc90b286Da98389a9883347Cc4064a8
+
+# Shape Sepolia:
+# Deploy using: forge script script/DeployShapeSepolia.s.sol --rpc-url shape-sepolia --broadcast
+

@@ -25,12 +25,22 @@ fs_permissions = [
 shape-sepolia = "https://sepolia.shape.network"
 shape-mainnet = "https://mainnet.shape.network"
 shape = "https://sepolia.shape.network"  # Alias for Shape Sepolia
+base-sepolia = "https://sepolia.base.org"
+base-mainnet = "https://mainnet.base.org"
+base = "https://sepolia.base.org"  # Alias for Base Sepolia
 
 [etherscan]
 shape-sepolia = { key = "your-api-key", url = "https://explorer-sepolia.shape.network/api" }
 shape-mainnet = { key = "your-api-key", url = "https://shapescan.xyz/api" }
+base-sepolia = { key = "your-api-key", url = "https://api-sepolia.basescan.org/api" }
+base-mainnet = { key = "your-api-key", url = "https://api.basescan.org/api" }
 
 # Gas settings for Shape L2
 [profile.default.gas]
 gas_price = 1000000000  # 1 gwei
 gas_limit = 30000000    # 30M gas limit
+
+# Gas settings for Base L2 (use with --profile base)
+[profile.base.gas]
+gas_price = 500000000  # 0.5 gwei (Base is cheaper)
+gas_limit = 20000000   # 20M gas limit

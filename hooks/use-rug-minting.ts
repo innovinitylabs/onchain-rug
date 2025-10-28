@@ -1,12 +1,13 @@
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, useChainId } from 'wagmi'
 import { useState } from 'react'
 import { config, mintingConfig } from '@/lib/config'
-import { shapeSepolia, shapeMainnet } from '@/lib/web3'
+import { shapeSepolia, shapeMainnet, contractAddresses } from '@/lib/web3'
 
 // Hook for minting rugs with deterministic seed generation
 export function useRugMinting() {
   const { address } = useAccount()
   const chainId = useChainId()
+  const contractAddress = contractAddresses[chainId]
   const { writeContract, data: hash, isPending, error } = useWriteContract()
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
@@ -14,7 +15,7 @@ export function useRugMinting() {
 
   // Get current mint price
   const { data: mintPrice } = useReadContract({
-    address: config.rugContractAddress as `0x${string}`,
+    address: contractAddress as `0x${string}`,
     abi: [
       {
         inputs: [],
@@ -29,7 +30,7 @@ export function useRugMinting() {
 
   // Get current supply
   const { data: currentSupply } = useReadContract({
-    address: config.rugContractAddress as `0x${string}`,
+    address: contractAddress as `0x${string}`,
     abi: [
       {
         inputs: [],
@@ -44,7 +45,7 @@ export function useRugMinting() {
 
   // Get max supply
   const { data: maxSupply } = useReadContract({
-    address: config.rugContractAddress as `0x${string}`,
+    address: contractAddress as `0x${string}`,
     abi: [
       {
         inputs: [],
@@ -72,7 +73,7 @@ export function useRugMinting() {
     try {
       const chain = chainId === 360 ? shapeMainnet : shapeSepolia
       await writeContract({
-        address: config.rugContractAddress as `0x${string}`,
+        address: contractAddress as `0x${string}`,
         abi: [
           {
             inputs: [
@@ -142,10 +143,12 @@ export function useRugMinting() {
 // Hook for getting user's rugs
 export function useUserRugs() {
   const { address } = useAccount()
+  const chainId = useChainId()
+  const contractAddress = contractAddresses[chainId]
 
   // Get user's rug count
   const { data: balance } = useReadContract({
-    address: config.rugContractAddress as `0x${string}`,
+    address: contractAddress as `0x${string}`,
     abi: [
       {
         inputs: [{ name: 'owner', type: 'address' }],
@@ -164,7 +167,7 @@ export function useUserRugs() {
 
   // Get user's rug token IDs
   const { data: tokenIds } = useReadContract({
-    address: config.rugContractAddress as `0x${string}`,
+    address: contractAddress as `0x${string}`,
     abi: [
       {
         inputs: [

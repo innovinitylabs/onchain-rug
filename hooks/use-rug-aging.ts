@@ -10,7 +10,7 @@ import { estimateContractGasWithRetry, getRecommendedGasOptions, formatGasEstima
 // Hook for getting maintenance options from contract
 export function useMaintenanceOptions(tokenId?: bigint) {
   const chainId = useChainId()
-  const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
+  const contractAddress = contractAddresses[chainId]
 
   const { data: maintenanceOptions, isLoading, error } = useReadContract({
     address: contractAddress as `0x${string}`,
@@ -45,7 +45,7 @@ export function useRugAging(tokenId?: bigint) {
   const [lastCleaned, setLastCleaned] = useState<Date | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
-  const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
+  const contractAddress = contractAddresses[chainId]
 
   // Use the new consolidated tokenURI hook
   const tokenURI = useTokenURI(tokenId ? Number(tokenId) : null)
@@ -112,7 +112,7 @@ export function useRestoreRug() {
     hash,
   })
 
-  const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
+  const contractAddress = contractAddresses[chainId]
 
   const restoreRug = async (tokenId: bigint, textureLevel: number, providedGasEstimate?: { gasLimit: bigint }) => {
     console.log('🔍 DEBUG: Wallet connection check for restore')
@@ -259,7 +259,7 @@ export function useMasterRestoreRug() {
     hash,
   })
 
-  const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
+  const contractAddress = contractAddresses[chainId]
 
   const masterRestoreRug = async (tokenId: bigint, dirtLevel: number, textureLevel: number, providedGasEstimate?: { gasLimit: bigint }) => {
     console.log('🔍 DEBUG: Wallet connection check for master restore')
@@ -406,7 +406,7 @@ export function useCleanRug() {
     hash,
   })
 
-  const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
+  const contractAddress = contractAddresses[chainId]
 
   const cleanRug = async (tokenId: bigint, dirtLevel: number, mintTime?: bigint, providedGasEstimate?: { gasLimit: bigint }) => {
     console.log('🔍 DEBUG: Wallet connection check')

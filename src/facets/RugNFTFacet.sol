@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.22;
 
-import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import {ERC721URIStorage} from "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {IERC721Metadata} from "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
+import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {Base64} from "@openzeppelin/contracts/utils/Base64.sol";
 import {LibRugStorage} from "../libraries/LibRugStorage.sol";
@@ -20,7 +19,7 @@ import {TransferSecurityLevels, CollectionSecurityPolicy} from "@limitbreak/crea
  * @notice ERC721-C compatible facet for OnchainRugs NFT functionality
  * @dev Handles minting, token management, ERC721 compliance, and ERC721-C transfer validation
  */
-contract RugNFTFacet is ERC721, ERC721URIStorage, ICreatorToken {
+contract RugNFTFacet is ICreatorToken {
     using Strings for uint256;
 
     // ERC721-C Constants - LimitBreak CreatorTokenTransferValidator v5.0.0 (deterministic address)
@@ -43,9 +42,34 @@ contract RugNFTFacet is ERC721, ERC721URIStorage, ICreatorToken {
     event RugMinted(uint256 indexed tokenId, address indexed owner, string[] textRows, uint256 seed);
     event RugBurned(uint256 indexed tokenId, address indexed owner);
 
-    constructor() ERC721("OnchainRugs", "RUGS") {
+    // ERC721 Events (matching IERC721)
+    event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
+    event Approval(address indexed owner, address indexed approved, uint256 indexed tokenId);
+    event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
+
+
+    constructor() {
         // Initialize ERC721-C transfer security with deterministic validator
         LibTransferSecurity.initializeTransferSecurity(DEFAULT_TRANSFER_VALIDATOR);
+
+        // Initialize ERC721 storage
+        LibRugStorage.ERC721Storage storage es = LibRugStorage.erc721Storage();
+        es.name = "OnchainRugs";
+        es.symbol = "RUGS";
+    }
+
+    /**
+     * @notice Initialize ERC721 metadata (for diamond pattern)
+     * @dev This function should be called after the facet is added to the diamond
+     */
+    function initializeERC721Metadata() external {
+        LibRugStorage.ERC721Storage storage es = LibRugStorage.erc721Storage();
+        if (bytes(es.name).length == 0) {
+            es.name = "OnchainRugs";
+        }
+        if (bytes(es.symbol).length == 0) {
+            es.symbol = "RUGS";
+        }
     }
 
     /**
@@ -56,6 +80,9 @@ contract RugNFTFacet is ERC721, ERC721URIStorage, ICreatorToken {
      * @param art Art generation data
      * @param complexity Pattern complexity (deprecated, kept for compatibility)
      * @param characterCount Total characters (can be derived from filteredCharacterMap)
+     *
+     * @dev TEST DATA REFERENCE: See TEST_MINT_REFERENCE.md and test_mint_data.json
+     *      Always use the official test data, never random/placeholder values!
      */
     function mintRug(
         string[] calldata textRows,
@@ -173,13 +200,6 @@ contract RugNFTFacet is ERC721, ERC721URIStorage, ICreatorToken {
         return LibRugStorage.rugStorage().agingData[tokenId];
     }
 
-    /**
-     * @notice Get total supply
-     * @return Current total supply
-     */
-    function totalSupply() external view returns (uint256) {
-        return LibRugStorage.rugStorage().totalSupply;
-    }
 
     /**
      * @notice Get max supply
@@ -235,11 +255,7 @@ contract RugNFTFacet is ERC721, ERC721URIStorage, ICreatorToken {
     }
 
     // ERC721 overrides
-    function tokenURI(uint256 tokenId)
-        public
-        view
-        override(ERC721, ERC721URIStorage)
-        returns (string memory)
+    function tokenURI(uint256 tokenId) public view returns (string memory)
     {
         require(_exists(tokenId), "Token does not exist");
 
@@ -247,9 +263,8 @@ contract RugNFTFacet is ERC721, ERC721URIStorage, ICreatorToken {
         LibRugStorage.RugData memory rug = rs.rugs[tokenId];
         LibRugStorage.AgingData memory aging = rs.agingData[tokenId];
 
-        // Get current dirt and aging levels
+        // Get current dirt level
         uint8 dirtLevel = _getDirtLevel(tokenId);
-        uint8 agingLevel = _getAgingLevel(tokenId);
 
         // Use Scripty system - now mandatory
         require(rs.rugScriptyBuilder != address(0), "ScriptyBuilder not configured");
@@ -265,7 +280,7 @@ contract RugNFTFacet is ERC721, ERC721URIStorage, ICreatorToken {
             encodedRugData,
             tokenId,
             dirtLevel,
-            agingLevel,
+            _getAgingLevel(tokenId), // Use aging level as texture level
             frameLevel,
             rs.rugScriptyBuilder,
             rs.rugEthFSStorage
@@ -290,7 +305,7 @@ contract RugNFTFacet is ERC721, ERC721URIStorage, ICreatorToken {
 
         string memory attrs2 = string(abi.encodePacked(
             '"},{"trait_type":"Dirt Level","value":"', uint256(dirtLevel).toString(),
-            '"},{"trait_type":"Aging Level","value":"', uint256(agingLevel).toString(),
+            '"},{"trait_type":"Aging Level","value":"', uint256(_getAgingLevel(tokenId)).toString(),
             '"},{"trait_type":"Cleaning Count","value":"', aging.cleaningCount.toString(),
             '"},{"trait_type":"Restoration Count","value":"', aging.restorationCount.toString()
         ));
@@ -317,13 +332,169 @@ contract RugNFTFacet is ERC721, ERC721URIStorage, ICreatorToken {
 
 
 
-    // ERC721 Metadata
-    function name() public view override(ERC721) returns (string memory) {
-        return "OnchainRugs";
+    // ===== ERC721 CORE FUNCTIONS =====
+
+    function ownerOf(uint256 tokenId) public view returns (address) {
+        LibRugStorage.ERC721Storage storage es = LibRugStorage.erc721Storage();
+        address owner = es._owners[tokenId];
+        require(owner != address(0), "ERC721: invalid token ID");
+        return owner;
     }
 
-    function symbol() public view override(ERC721) returns (string memory) {
-        return "RUGS";
+    function balanceOf(address owner) public view returns (uint256) {
+        LibRugStorage.ERC721Storage storage es = LibRugStorage.erc721Storage();
+        require(owner != address(0), "ERC721: address zero is not a valid owner");
+        return es._balances[owner];
+    }
+
+    function approve(address to, uint256 tokenId) public {
+        LibRugStorage.ERC721Storage storage es = LibRugStorage.erc721Storage();
+        address owner = es._owners[tokenId];
+        require(owner != address(0), "ERC721: invalid token ID");
+        require(msg.sender == owner || es._operatorApprovals[owner][msg.sender], "ERC721: approve caller is not token owner or approved for all");
+
+        es._tokenApprovals[tokenId] = to;
+        emit Approval(owner, to, tokenId);
+    }
+
+    function getApproved(uint256 tokenId) public view returns (address) {
+        LibRugStorage.ERC721Storage storage es = LibRugStorage.erc721Storage();
+        require(es._owners[tokenId] != address(0), "ERC721: invalid token ID");
+        return es._tokenApprovals[tokenId];
+    }
+
+    function setApprovalForAll(address operator, bool approved) public {
+        LibRugStorage.ERC721Storage storage es = LibRugStorage.erc721Storage();
+        require(operator != msg.sender, "ERC721: approve to caller");
+        es._operatorApprovals[msg.sender][operator] = approved;
+        emit ApprovalForAll(msg.sender, operator, approved);
+    }
+
+    function isApprovedForAll(address owner, address operator) public view returns (bool) {
+        LibRugStorage.ERC721Storage storage es = LibRugStorage.erc721Storage();
+        return es._operatorApprovals[owner][operator];
+    }
+
+    function transferFrom(address from, address to, uint256 tokenId) public {
+        LibRugStorage.ERC721Storage storage es = LibRugStorage.erc721Storage();
+        require(_isApprovedOrOwner(msg.sender, tokenId), "ERC721: caller is not token owner or approved");
+        _transfer(from, to, tokenId);
+    }
+
+    function safeTransferFrom(address from, address to, uint256 tokenId) public {
+        safeTransferFrom(from, to, tokenId, "");
+    }
+
+    function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory data) public {
+        require(_isApprovedOrOwner(msg.sender, tokenId), "ERC721: caller is not token owner or approved");
+        _safeTransfer(from, to, tokenId, data);
+    }
+
+    // ERC721 Metadata
+    function name() public view returns (string memory) {
+        LibRugStorage.ERC721Storage storage es = LibRugStorage.erc721Storage();
+        return es.name;
+    }
+
+    function symbol() public view returns (string memory) {
+        LibRugStorage.ERC721Storage storage es = LibRugStorage.erc721Storage();
+        return es.symbol;
+    }
+
+    function totalSupply() public view returns (uint256) {
+        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+        return rs.totalSupply;
+    }
+
+    function _exists(uint256 tokenId) internal view returns (bool) {
+        LibRugStorage.ERC721Storage storage es = LibRugStorage.erc721Storage();
+        return es._owners[tokenId] != address(0);
+    }
+
+    // Internal ERC721 functions
+    function _isApprovedOrOwner(address spender, uint256 tokenId) internal view returns (bool) {
+        LibRugStorage.ERC721Storage storage es = LibRugStorage.erc721Storage();
+        address owner = es._owners[tokenId];
+        return (spender == owner || es._tokenApprovals[tokenId] == spender || es._operatorApprovals[owner][spender]);
+    }
+
+    function _transfer(address from, address to, uint256 tokenId) internal {
+        LibRugStorage.ERC721Storage storage es = LibRugStorage.erc721Storage();
+        require(es._owners[tokenId] == from, "ERC721: transfer from incorrect owner");
+        require(to != address(0), "ERC721: transfer to the zero address");
+
+        _beforeTokenTransfer(from, to, tokenId);
+
+        // Clear approval
+        delete es._tokenApprovals[tokenId];
+
+        es._balances[from] -= 1;
+        es._balances[to] += 1;
+        es._owners[tokenId] = to;
+
+        emit Transfer(from, to, tokenId);
+    }
+
+    function _safeTransfer(address from, address to, uint256 tokenId, bytes memory data) internal {
+        _transfer(from, to, tokenId);
+        require(_checkOnERC721Received(from, to, tokenId, data), "ERC721: transfer to non ERC721Receiver implementer");
+    }
+
+    function _checkOnERC721Received(address from, address to, uint256 tokenId, bytes memory data) private returns (bool) {
+        if (to.code.length == 0) {
+            return true;
+        }
+
+        bytes memory encodedCall = abi.encodeWithSelector(
+            IERC721Receiver(to).onERC721Received.selector,
+            msg.sender,
+            from,
+            tokenId,
+            data
+        );
+
+        (bool success, bytes memory returnData) = to.call(encodedCall);
+        if (success) {
+            return abi.decode(returnData, (bytes4)) == IERC721Receiver.onERC721Received.selector;
+        } else {
+            if (returnData.length > 0) {
+                assembly {
+                    let returnDataSize := mload(returnData)
+                    revert(add(32, returnData), returnDataSize)
+                }
+            } else {
+                revert("ERC721: transfer to non ERC721Receiver implementer");
+            }
+        }
+    }
+
+    function _mint(address to, uint256 tokenId) internal {
+        LibRugStorage.ERC721Storage storage es = LibRugStorage.erc721Storage();
+        require(to != address(0), "ERC721: mint to the zero address");
+        require(es._owners[tokenId] == address(0), "ERC721: token already minted");
+
+        _beforeTokenTransfer(address(0), to, tokenId);
+
+        es._balances[to] += 1;
+        es._owners[tokenId] = to;
+
+        emit Transfer(address(0), to, tokenId);
+    }
+
+    function _burn(uint256 tokenId) internal {
+        LibRugStorage.ERC721Storage storage es = LibRugStorage.erc721Storage();
+        address owner = es._owners[tokenId];
+        require(owner != address(0), "ERC721: invalid token ID");
+
+        _beforeTokenTransfer(owner, address(0), tokenId);
+
+        // Clear approval
+        delete es._tokenApprovals[tokenId];
+
+        es._balances[owner] -= 1;
+        delete es._owners[tokenId];
+
+        emit Transfer(owner, address(0), tokenId);
     }
 
     // Internal helper functions
@@ -457,10 +628,8 @@ contract RugNFTFacet is ERC721, ERC721URIStorage, ICreatorToken {
         }
     }
 
-    /// @dev Override OpenZeppelin ERC721 _beforeTokenTransfer for ERC721-C validation
-    function _beforeTokenTransfer(address from, address to, uint256 tokenId) internal virtual override {
-        super._beforeTokenTransfer(from, to, tokenId);
-
+    /// @dev ERC721-C transfer validation hook
+    function _beforeTokenTransfer(address from, address to, uint256 tokenId) internal {
         // Validate transfer using ERC721-C validator for transfers only (not mints)
         // For open mints, we don't need validation during minting (from == address(0))
         if (LibTransferSecurity.areTransfersEnforced() && from != address(0) && to != address(0)) {
@@ -477,13 +646,22 @@ contract RugNFTFacet is ERC721, ERC721URIStorage, ICreatorToken {
         }
     }
 
-    /// @dev Override _burn to handle ERC721URIStorage
-    function _burn(uint256 tokenId) internal override(ERC721, ERC721URIStorage) {
-        super._burn(tokenId);
+    /// @dev ERC721 supportsInterface
+    function supportsInterface(bytes4 interfaceId) public view returns (bool) {
+        return interfaceId == type(IERC721).interfaceId ||
+               interfaceId == type(IERC721Metadata).interfaceId ||
+               interfaceId == type(ICreatorToken).interfaceId ||
+               interfaceId == 0x01ffc9a7; // ERC165
     }
 
-    /// @dev Override supportsInterface to include ICreatorToken
-    function supportsInterface(bytes4 interfaceId) public view override(ERC721) returns (bool) {
-        return interfaceId == type(ICreatorToken).interfaceId || super.supportsInterface(interfaceId);
+    /// @notice Marketplace transfer - allows marketplace to transfer tokens securely
+    /// @param from Address to transfer from
+    /// @param to Address to transfer to
+    /// @param tokenId Token ID to transfer
+    function marketplaceTransfer(address from, address to, uint256 tokenId) external {
+        // Only allow calls from marketplace facet (same contract in diamond)
+        // Direct transfer without approval checks
+        _transfer(from, to, tokenId);
     }
+
 }

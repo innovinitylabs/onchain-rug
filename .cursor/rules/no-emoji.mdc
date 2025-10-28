@@ -1,4 +1,4 @@
 ---
-description: dont use emoji in (console.log of) solidity scripts
+description: dont use emoji in (console.log of) solidity scripts. No Unicode characters from the Solidity & Solidity test script
 alwaysApply: true
 ---

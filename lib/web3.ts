@@ -17,10 +17,10 @@ export const shapeSepolia = {
   },
   rpcUrls: {
     default: {
-      http: ['https://sepolia.shape.network'],
+      http: [process.env.NEXT_PUBLIC_SHAPE_SEPOLIA_RPC || 'https://sepolia.shape.network'],
     },
     public: {
-      http: ['https://sepolia.shape.network'],
+      http: [process.env.NEXT_PUBLIC_SHAPE_SEPOLIA_RPC || 'https://sepolia.shape.network'],
     },
   },
   blockExplorers: {
@@ -42,10 +42,10 @@ export const shapeMainnet = {
   },
   rpcUrls: {
     default: {
-      http: ['https://mainnet.shape.network'],
+      http: [process.env.NEXT_PUBLIC_SHAPE_MAINNET_RPC || 'https://mainnet.shape.network'],
     },
     public: {
-      http: ['https://mainnet.shape.network'],
+      http: [process.env.NEXT_PUBLIC_SHAPE_MAINNET_RPC || 'https://mainnet.shape.network'],
     },
   },
   blockExplorers: {
@@ -57,12 +57,64 @@ export const shapeMainnet = {
   testnet: false,
 }
 
+export const baseSepolia = {
+  id: 84532, // Base Sepolia testnet chain ID
+  name: 'Base Sepolia',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'Ethereum',
+    symbol: 'ETH',
+  },
+  rpcUrls: {
+    default: {
+      http: [process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC || 'https://sepolia.base.org'],
+    },
+    public: {
+      http: [process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC || 'https://sepolia.base.org'],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'Base Sepolia Explorer',
+      url: 'https://sepolia-explorer.base.org',
+    },
+  },
+  testnet: true,
+}
+
+export const baseMainnet = {
+  id: 8453, // Base mainnet chain ID
+  name: 'Base Mainnet',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'Ethereum',
+    symbol: 'ETH',
+  },
+  rpcUrls: {
+    default: {
+      http: [process.env.NEXT_PUBLIC_BASE_MAINNET_RPC || 'https://mainnet.base.org'],
+    },
+    public: {
+      http: [process.env.NEXT_PUBLIC_BASE_MAINNET_RPC || 'https://mainnet.base.org'],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'Base Explorer',
+      url: 'https://basescan.org',
+    },
+  },
+  testnet: false,
+}
+
 // Wagmi configuration
 export const wagmiConfig = createConfig({
-  chains: [shapeSepolia, shapeMainnet],
+  chains: [shapeSepolia, shapeMainnet, baseSepolia, baseMainnet],
   transports: {
     [shapeSepolia.id]: http(),
     [shapeMainnet.id]: http(),
+    [baseSepolia.id]: http(),
+    [baseMainnet.id]: http(),
   },
 })
 
@@ -73,6 +125,33 @@ export const onchainRugsABI = [
     inputs: [{ name: 'tokenId', type: 'uint256' }],
     name: 'ownerOf',
     outputs: [{ name: '', type: 'address' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { name: 'to', type: 'address' },
+      { name: 'tokenId', type: 'uint256' }
+    ],
+    name: 'approve',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [{ name: 'tokenId', type: 'uint256' }],
+    name: 'getApproved',
+    outputs: [{ name: '', type: 'address' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { name: 'owner', type: 'address' },
+      { name: 'operator', type: 'address' }
+    ],
+    name: 'isApprovedForAll',
+    outputs: [{ name: '', type: 'bool' }],
     stateMutability: 'view',
     type: 'function',
   },
@@ -254,17 +333,39 @@ export const onchainRugsABI = [
   },
 ] as const
 
-// Contract addresses
-export const contractAddresses = {
-  [shapeSepolia.id]: appConfig.contracts.onchainRugs,
-  [shapeMainnet.id]: appConfig.contracts.onchainRugs,
+// Contract addresses per network
+// No fallback - safer to fail than use wrong contract on wrong network
+export const contractAddresses: Record<number, string | undefined> = {
+  [shapeSepolia.id]: process.env.NEXT_PUBLIC_SHAPE_SEPOLIA_CONTRACT,
+  [shapeMainnet.id]: process.env.NEXT_PUBLIC_SHAPE_MAINNET_CONTRACT,
+  [baseSepolia.id]: process.env.NEXT_PUBLIC_BASE_SEPOLIA_CONTRACT,
+  [baseMainnet.id]: process.env.NEXT_PUBLIC_BASE_MAINNET_CONTRACT,
 }
 
 // Alchemy NFT API Configuration
 export const alchemyConfig = {
   apiKey: appConfig.alchemyApiKey,
-  network: 'shape-sepolia', // Shape Sepolia testnet
-  baseUrl: 'https://shape-sepolia.g.alchemy.com/nft/v3'
+  network: 'base-sepolia', // Base Sepolia testnet (default - changed from shape-sepolia)
+  baseUrl: 'https://base-sepolia.g.alchemy.com/nft/v3'
+}
+
+// Helper function to get Alchemy NFT API URL based on chain ID
+export function getAlchemyNftApiUrl(chainId: number): string {
+  const apiKey = appConfig.alchemyApiKey
+  
+  switch (chainId) {
+    case shapeSepolia.id: // 11011
+      return `https://shape-sepolia.g.alchemy.com/nft/v3/${apiKey}`
+    case shapeMainnet.id: // 360
+      return `https://shape-mainnet.g.alchemy.com/nft/v3/${apiKey}`
+    case baseSepolia.id: // 84532
+      return `https://base-sepolia.g.alchemy.com/nft/v3/${apiKey}`
+    case baseMainnet.id: // 8453
+      return `https://base-mainnet.g.alchemy.com/nft/v3/${apiKey}`
+    default:
+      // Default to Base Sepolia
+      return `https://base-sepolia.g.alchemy.com/nft/v3/${apiKey}`
+  }
 }
 
 // Utility functions
@@ -273,7 +374,8 @@ export function getContractAddress(chainId: number): string {
 }
 
 export function isSupportedChain(chainId: number): boolean {
-  return chainId === shapeSepolia.id || chainId === shapeMainnet.id
+  return chainId === shapeSepolia.id || chainId === shapeMainnet.id || 
+         chainId === baseSepolia.id || chainId === baseMainnet.id
 }
 
 export function getChainName(chainId: number): string {
@@ -282,6 +384,10 @@ export function getChainName(chainId: number): string {
       return 'Shape Sepolia'
     case shapeMainnet.id:
       return 'Shape Mainnet'
+    case baseSepolia.id:
+      return 'Base Sepolia'
+    case baseMainnet.id:
+      return 'Base Mainnet'
     default:
       return 'Unknown'
   }
@@ -297,10 +403,19 @@ export async function callContractWithAlchemyFallback(
 ) {
   // First try Alchemy RPC (primary)
   try {
-    // Use public Alchemy RPC endpoint for Shape Sepolia (no API key needed)
-    const alchemyRpcUrl = chainId === shapeSepolia.id
-      ? 'https://shape-sepolia.g.alchemy.com/public'
-      : `https://shape-mainnet.g.alchemy.com/v2/${appConfig.alchemyApiKey}`
+    // Determine Alchemy RPC URL based on chain
+    let alchemyRpcUrl: string
+    if (chainId === shapeSepolia.id) {
+      alchemyRpcUrl = 'https://shape-sepolia.g.alchemy.com/public'
+    } else if (chainId === shapeMainnet.id) {
+      alchemyRpcUrl = `https://shape-mainnet.g.alchemy.com/v2/${appConfig.alchemyApiKey}`
+    } else if (chainId === baseSepolia.id) {
+      alchemyRpcUrl = `https://base-sepolia.g.alchemy.com/v2/${appConfig.alchemyApiKey}`
+    } else if (chainId === baseMainnet.id) {
+      alchemyRpcUrl = `https://base-mainnet.g.alchemy.com/v2/${appConfig.alchemyApiKey}`
+    } else {
+      throw new Error(`Unsupported chain ID: ${chainId}`)
+    }
 
     const response = await fetch(alchemyRpcUrl, {
       method: 'POST',
@@ -346,10 +461,23 @@ export async function callContractWithAlchemyFallback(
   } catch (alchemyError) {
     console.warn(`Alchemy RPC failed for ${functionName}, trying Shape fallback:`, alchemyError)
 
-    // Fallback to Shape RPC
+    // Fallback to native RPC (Shape or Base)
     try {
+      let chain
+      if (chainId === shapeSepolia.id) {
+        chain = shapeSepolia
+      } else if (chainId === shapeMainnet.id) {
+        chain = shapeMainnet
+      } else if (chainId === baseSepolia.id) {
+        chain = baseSepolia
+      } else if (chainId === baseMainnet.id) {
+        chain = baseMainnet
+      } else {
+        throw new Error(`Unsupported chain ID: ${chainId}`)
+      }
+
       const publicClient = createPublicClient({
-        chain: chainId === shapeSepolia.id ? shapeSepolia : shapeMainnet,
+        chain,
         transport: http()
       })
 
@@ -414,8 +542,9 @@ export async function getNftsForCollection(contractAddress: string, options?: {
   pageKey?: string
   limit?: number
   withMetadata?: boolean
+  chainId?: number
 }) {
-  const { pageKey, limit = 100, withMetadata = true } = options || {}
+  const { pageKey, limit = 100, withMetadata = true, chainId = baseSepolia.id } = options || {}
 
   const params = new URLSearchParams({
     withMetadata: withMetadata.toString(),
@@ -423,7 +552,8 @@ export async function getNftsForCollection(contractAddress: string, options?: {
     ...(pageKey && { pageKey })
   })
 
-  const url = `${alchemyConfig.baseUrl}/${alchemyConfig.apiKey}/getNFTsForCollection?contractAddress=${contractAddress}&${params}`
+  const baseUrl = getAlchemyNftApiUrl(chainId)
+  const url = `${baseUrl}/getNFTsForCollection?contractAddress=${contractAddress}&${params}`
 
   const response = await fetch(url)
   if (!response.ok) {
@@ -433,12 +563,18 @@ export async function getNftsForCollection(contractAddress: string, options?: {
   return response.json()
 }
 
-export async function getNftMetadata(contractAddress: string, tokenId: string, refreshCache = false) {
+export async function getNftMetadata(contractAddress: string, tokenId: string, options?: {
+  refreshCache?: boolean
+  chainId?: number
+}) {
+  const { refreshCache = false, chainId = baseSepolia.id } = options || {}
+  
   const params = new URLSearchParams({
     ...(refreshCache && { refreshCache: 'true' })
   })
 
-  const url = `${alchemyConfig.baseUrl}/${alchemyConfig.apiKey}/getNFTMetadata?contractAddress=${contractAddress}&tokenId=${tokenId}&${params}`
+  const baseUrl = getAlchemyNftApiUrl(chainId)
+  const url = `${baseUrl}/getNFTMetadata?contractAddress=${contractAddress}&tokenId=${tokenId}&${params}`
 
   const response = await fetch(url)
   if (!response.ok) {
@@ -448,8 +584,9 @@ export async function getNftMetadata(contractAddress: string, tokenId: string, r
   return response.json()
 }
 
-export async function getContractMetadata(contractAddress: string) {
-  const url = `${alchemyConfig.baseUrl}/${alchemyConfig.apiKey}/getContractMetadata?contractAddress=${contractAddress}`
+export async function getContractMetadata(contractAddress: string, chainId: number = baseSepolia.id) {
+  const baseUrl = getAlchemyNftApiUrl(chainId)
+  const url = `${baseUrl}/getContractMetadata?contractAddress=${contractAddress}`
 
   const response = await fetch(url)
   if (!response.ok) {

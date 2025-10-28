@@ -1,21 +1,40 @@
-# Shape L2 Deployment Environment Variables
+# Multi-Network Deployment Environment Variables
 # Copy this to your .env file and fill in the values
 
 # Private Key for deployment (without 0x prefix)
 PRIVATE_KEY=your_private_key_here
 
+# =============================================
+# SHAPE L2 NETWORK
+# =============================================
+
 # Shape L2 RPC
 SHAPE_RPC=https://sepolia.shape.network
+
+# =============================================
+# BASE L2 NETWORK
+# =============================================
+
+# Base Sepolia RPC
+BASE_RPC=https://sepolia.base.org
 
 # =============================================
 # AFTER USING LIMITBREAK INFRASTRUCTURE TOOLS:
 # =============================================
 
+# Shape Network
 # Payment Processor address (deploy via https://developers.apptokens.com/infrastructure)
 PAYMENT_PROCESSOR_SHAPE=0x0000000000000000000000000000000000000000
 
 # CreatorTokenTransferValidator (usually the default address, or your deployed one)
 CREATOR_TOKEN_VALIDATOR_SHAPE=0x0000721C310194CcfC01E523fc93C9cCcFa2A0Ac
+
+# Base Network
+# Payment Processor address for Base (check LimitBreak docs for availability)
+PAYMENT_PROCESSOR_BASE=0x0000000000000000000000000000000000000000
+
+# CreatorTokenTransferValidator for Base
+CREATOR_TOKEN_VALIDATOR_BASE=0x0000000000000000000000000000000000000000
 
 # =============================================
 # AFTER YOUR CONTRACT DEPLOYMENT:
@@ -28,7 +47,7 @@ ONCHAIN_RUGS_DIAMOND=0x0000000000000000000000000000000000000000
 SECURITY_POLICY_ID=0
 
 # =============================================
-# USAGE:
+# USAGE - SHAPE SEPOLIA:
 # =============================================
 
 # 1. Deploy Payment Processor on Shape via LimitBreak tools
@@ -39,3 +58,18 @@ SECURITY_POLICY_ID=0
 # 6. Deploy your NFT contract: forge script script/DeployShapeSepolia.s.sol --rpc-url $SHAPE_RPC --broadcast --verify
 # 7. Update ONCHAIN_RUGS_DIAMOND with deployed address
 # 8. Link everything together using the facet functions
+
+# =============================================
+# USAGE - BASE SEPOLIA:
+# =============================================
+
+# 1. Check LimitBreak infrastructure availability on Base
+#    Visit https://developers.apptokens.com/infrastructure
+# 2. If available, update PAYMENT_PROCESSOR_BASE and CREATOR_TOKEN_VALIDATOR_BASE
+# 3. Deploy your NFT contract:
+#    forge script script/DeployBaseSepolia.s.sol --rpc-url $BASE_RPC --broadcast --verify --profile base
+# 4. Update ONCHAIN_RUGS_DIAMOND with deployed address
+# 5. Test on Base Sepolia explorer: https://sepolia-explorer.base.org
+# 6. Configure ERC-721-C features if infrastructure is available
+
+# For detailed Base deployment instructions, see BASE_SEPOLIA_DEPLOYMENT_GUIDE.md

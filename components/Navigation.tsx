@@ -3,12 +3,15 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-import { Home, Palette, Image, Sparkles, Menu, X, ImageIcon, User } from 'lucide-react'
+import { Home, Palette, Image, Sparkles, Menu, X, ImageIcon, User, ShoppingCart, Briefcase, ChevronDown, Settings } from 'lucide-react'
+import { useAccount } from 'wagmi'
 import { WalletConnect } from './wallet-connect'
 import LiquidGlass from './LiquidGlass'
 
 export default function Navigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isManageDropdownOpen, setIsManageDropdownOpen] = useState(false)
+  const { isConnected } = useAccount()
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen)
@@ -16,6 +19,10 @@ export default function Navigation() {
 
   const closeMobileMenu = () => {
     setIsMobileMenuOpen(false)
+  }
+
+  const toggleManageDropdown = () => {
+    setIsManageDropdownOpen(!isManageDropdownOpen)
   }
 
   return (
@@ -271,7 +278,7 @@ export default function Navigation() {
           </Link>
 
           {/* Navigation Links - Desktop */}
-          <div className="hidden md:flex items-center gap-8">
+          <div className="hidden md:flex items-center gap-6">
             <Link
               href="/"
               className="flex items-center gap-2 hover:opacity-90 transition-all duration-300"
@@ -403,13 +410,13 @@ export default function Navigation() {
               </svg>
             </Link>
             <Link
-              href="/dashboard"
+              href="/market"
               className="flex items-center gap-2 hover:opacity-90 transition-all duration-300"
             >
-              <User className="w-5 h-5" />
+              <ShoppingCart className="w-5 h-5" />
               <svg
                 height="28px"
-                viewBox="0 0 90 20"
+                viewBox="0 0 70 20"
                 style={{
                   display: 'block',
                   height: '28px',
@@ -417,12 +424,12 @@ export default function Navigation() {
                 }}
               >
                 <defs>
-                  <filter id="nav-link-depth-dashboard" x="-100%" y="-100%" width="300%" height="300%">
-                    <feTurbulence baseFrequency="0.02" numOctaves="2" seed="46" type="fractalNoise" result="LINK_BASE_DASHBOARD" />
-                    <feDisplacementMap in="SourceGraphic" in2="LINK_BASE_DASHBOARD" scale="3" xChannelSelector="R" yChannelSelector="G" result="LINK_DISPLACED_DASHBOARD" />
-                    <feGaussianBlur in="LINK_DISPLACED_DASHBOARD" stdDeviation="0.5" result="LINK_BLUR_DASHBOARD" />
+                  <filter id="nav-link-depth-market" x="-100%" y="-100%" width="300%" height="300%">
+                    <feTurbulence baseFrequency="0.02" numOctaves="2" seed="45" type="fractalNoise" result="LINK_BASE_MARKET" />
+                    <feDisplacementMap in="SourceGraphic" in2="LINK_BASE_MARKET" scale="3" xChannelSelector="R" yChannelSelector="G" result="LINK_DISPLACED_MARKET" />
+                    <feGaussianBlur in="LINK_DISPLACED_MARKET" stdDeviation="0.5" result="LINK_BLUR_MARKET" />
                   </filter>
-                  <linearGradient id="nav-link-gradient-dashboard" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <linearGradient id="nav-link-gradient-market" x1="0%" y1="0%" x2="100%" y2="100%">
                     <stop offset="0%" style={{ stopColor: 'rgba(255, 255, 255, 0.9)', stopOpacity: 1 }} />
                     <stop offset="100%" style={{ stopColor: 'rgba(255, 255, 255, 0.9)', stopOpacity: 1 }} />
                   </linearGradient>
@@ -433,17 +440,112 @@ export default function Navigation() {
                   textAnchor="middle"
                   dominantBaseline="middle"
                   style={{
-                    fill: 'url(#nav-link-gradient-dashboard)',
-                    filter: 'url(#nav-link-depth-dashboard)',
+                    fill: 'url(#nav-link-gradient-market)',
+                    filter: 'url(#nav-link-depth-market)',
                     fontSize: '14px',
                     fontWeight: '600',
                     fontFamily: 'system-ui, -apple-system, sans-serif',
+                    WebkitFontSmoothing: 'antialiased',
+                    MozOsxFontSmoothing: 'grayscale',
+                    textRendering: 'optimizeLegibility',
+                    fontFeatureSettings: '"kern" 1',
                   }}
                 >
-              Dashboard
+                  Market
                 </text>
               </svg>
             </Link>
+            
+            {/* Manage Dropdown - Only visible when wallet connected */}
+            {isConnected && (
+              <div className="relative">
+                <button
+                  onClick={toggleManageDropdown}
+                  className="flex items-center gap-2 hover:opacity-90 transition-all duration-300"
+                >
+                  <Settings className="w-5 h-5" />
+                  <svg
+                    height="28px"
+                    viewBox="0 0 85 20"
+                    style={{
+                      display: 'block',
+                      height: '28px',
+                      filter: 'drop-shadow(0 0 6px rgba(108, 190, 230, 0.3))',
+                    }}
+                  >
+                    <defs>
+                      <filter id="nav-link-depth-manage" x="-100%" y="-100%" width="300%" height="300%">
+                        <feTurbulence baseFrequency="0.02" numOctaves="2" seed="46" type="fractalNoise" result="LINK_BASE_MANAGE" />
+                        <feDisplacementMap in="SourceGraphic" in2="LINK_BASE_MANAGE" scale="3" xChannelSelector="R" yChannelSelector="G" result="LINK_DISPLACED_MANAGE" />
+                        <feGaussianBlur in="LINK_DISPLACED_MANAGE" stdDeviation="0.5" result="LINK_BLUR_MANAGE" />
+                      </filter>
+                      <linearGradient id="nav-link-gradient-manage" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style={{ stopColor: 'rgba(255, 255, 255, 0.9)', stopOpacity: 1 }} />
+                        <stop offset="100%" style={{ stopColor: 'rgba(255, 255, 255, 0.9)', stopOpacity: 1 }} />
+                      </linearGradient>
+                    </defs>
+                    <text
+                      x="50%"
+                      y="12"
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      style={{
+                        fill: 'url(#nav-link-gradient-manage)',
+                        filter: 'url(#nav-link-depth-manage)',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        fontFamily: 'system-ui, -apple-system, sans-serif',
+                        WebkitFontSmoothing: 'antialiased',
+                        MozOsxFontSmoothing: 'grayscale',
+                        textRendering: 'optimizeLegibility',
+                        fontFeatureSettings: '"kern" 1',
+                      }}
+                    >
+                      Manage
+                    </text>
+                  </svg>
+                  <ChevronDown className={`w-4 h-4 -ml-2 transition-transform ${isManageDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+                
+                <AnimatePresence>
+                  {isManageDropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="absolute top-full mt-2 right-0 min-w-[200px]"
+                      onMouseLeave={() => setIsManageDropdownOpen(false)}
+                    >
+                      <LiquidGlass
+                        blurAmount={0.15}
+                        aberrationIntensity={2}
+                        elasticity={0.08}
+                        cornerRadius={12}
+                      >
+                        <div className="py-2 backdrop-blur-md bg-white/10 border border-white/20 rounded-xl shadow-lg">
+                          <Link
+                            href="/portfolio"
+                            onClick={() => setIsManageDropdownOpen(false)}
+                            className="flex items-center gap-3 px-4 py-3 text-white hover:bg-white/20 transition-colors rounded-lg mx-2"
+                          >
+                            <Briefcase className="w-5 h-5" />
+                            <span className="font-semibold text-sm">Portfolio</span>
+                          </Link>
+                          <Link
+                            href="/dashboard"
+                            onClick={() => setIsManageDropdownOpen(false)}
+                            className="flex items-center gap-3 px-4 py-3 text-white hover:bg-white/20 transition-colors rounded-lg mx-2"
+                          >
+                            <User className="w-5 h-5" />
+                            <span className="font-semibold text-sm">Dashboard</span>
+            </Link>
+                        </div>
+                      </LiquidGlass>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
           </div>
 
           {/* Mobile Hamburger Menu Button */}
@@ -541,15 +643,44 @@ export default function Navigation() {
                 <span className="text-lg font-medium">Gallery</span>
               </Link>
 
-
               <Link
-                href="/dashboard"
+                href="/market"
                 onClick={closeMobileMenu}
                 className="flex items-center gap-4 px-6 py-4 text-white hover:bg-white/10 transition-colors duration-200"
               >
-                <User className="w-6 h-6" />
-                <span className="text-lg font-medium">Dashboard</span>
+                <ShoppingCart className="w-6 h-6" />
+                <span className="text-lg font-medium">Market</span>
               </Link>
+
+              {/* Manage section - Only visible when connected */}
+              {isConnected && (
+                <>
+                  <div className="px-6 py-2">
+                    <div className="flex items-center gap-2 text-white/50 text-sm font-semibold">
+                      <Settings className="w-4 h-4" />
+                      <span>MANAGE</span>
+                    </div>
+                  </div>
+                  
+                  <Link
+                    href="/portfolio"
+                    onClick={closeMobileMenu}
+                    className="flex items-center gap-4 px-6 py-3 pl-12 text-white/80 hover:text-white hover:bg-white/10 transition-colors duration-200"
+                  >
+                    <Briefcase className="w-5 h-5" />
+                    <span className="text-base font-medium">Portfolio</span>
+                  </Link>
+
+                  <Link
+                    href="/dashboard"
+                    onClick={closeMobileMenu}
+                    className="flex items-center gap-4 px-6 py-3 pl-12 text-white/80 hover:text-white hover:bg-white/10 transition-colors duration-200"
+                  >
+                    <User className="w-5 h-5" />
+                    <span className="text-base font-medium">Dashboard</span>
+                  </Link>
+                </>
+              )}
 
             </div>
 

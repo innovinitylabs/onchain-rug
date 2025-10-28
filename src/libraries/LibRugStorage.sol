@@ -8,8 +8,10 @@ pragma solidity ^0.8.22;
  */
 
 library LibRugStorage {
-    // Storage slot for Rug data (using keccak256 to avoid conflicts)
+    // Storage slots (using keccak256 to avoid conflicts)
     bytes32 constant RUG_STORAGE_POSITION = keccak256("rug.storage.position");
+    bytes32 constant ERC721_STORAGE_POSITION = keccak256("erc721.storage.position");
+    bytes32 constant MARKETPLACE_STORAGE_POSITION = keccak256("rug.marketplace.storage.position");
 
     struct RugData {
         uint256 seed;                    // Generation seed
@@ -49,6 +51,85 @@ library LibRugStorage {
         // Trading History
         uint256 lastSalePrice;          // Highest sale price
         uint256[3] recentSalePrices;    // Last 3 sale prices
+    }
+
+    // ===== MARKETPLACE STRUCTS =====
+
+    struct Listing {
+        address seller;
+        uint256 price;
+        uint256 expiresAt;
+        bool isActive;
+    }
+
+    struct Auction {
+        address seller;
+        uint256 startPrice;
+        uint256 reservePrice;
+        uint256 currentBid;
+        address highestBidder;
+        uint256 startTime;
+        uint256 endTime;
+        bool isActive;
+        bool autoExtend;
+        uint256 minBidIncrement; // Minimum bid increase (basis points)
+    }
+
+    struct Offer {
+        uint256 offerId;
+        address offerer;
+        uint256 tokenId;    // 0 for collection-wide offers
+        uint256 price;
+        uint256 expiresAt;
+        bool isActive;
+    }
+
+    struct Bundle {
+        uint256 bundleId;
+        address seller;
+        uint256[] tokenIds;
+        uint256 price;
+        uint256 expiresAt;
+        bool isActive;
+    }
+
+    struct MarketplaceConfig {
+        // Token-specific listings and auctions
+        mapping(uint256 => Listing) listings;      // tokenId => Listing
+        mapping(uint256 => Auction) auctions;       // tokenId => Auction
+        
+        // Offers (both token-specific and collection-wide)
+        mapping(uint256 => Offer) offers;           // offerId => Offer
+        mapping(uint256 => uint256[]) tokenOffers;  // tokenId => offerIds[]
+        uint256[] collectionOffers;                 // Collection-wide offer IDs
+        
+        // Bundles
+        mapping(uint256 => Bundle) bundles;         // bundleId => Bundle
+        
+        // Config
+        uint256 marketplaceFeePercent;              // Basis points (250 = 2.5%)
+        uint256 maxAuctionDuration;                 // Maximum auction duration in seconds
+        uint256 minBidIncrementPercent;             // Minimum bid increase percentage (500 = 5%)
+        uint256 autoExtendDuration;                 // Time to extend auction if bid near end (600 = 10 min)
+        uint256 autoExtendThreshold;                // Time from end that triggers extension (600 = 10 min)
+        
+        // Tracking
+        uint256 totalFeesCollected;                 // Total marketplace fees
+        uint256 totalVolume;                        // Total sales volume
+        uint256 totalSales;                         // Total number of sales
+        uint256 nextBundleId;                       // Counter for bundle IDs
+        uint256 nextOfferId;                        // Counter for offer IDs
+    }
+
+    // ERC721 Storage for diamond pattern
+    struct ERC721Storage {
+        string name;
+        string symbol;
+        mapping(uint256 => address) _owners;
+        mapping(address => uint256) _balances;
+        mapping(uint256 => address) _tokenApprovals;
+        mapping(address => mapping(address => bool)) _operatorApprovals;
+        uint256 _currentTokenId;
     }
 
     struct RugConfig {
@@ -110,6 +191,20 @@ library LibRugStorage {
         bytes32 position = RUG_STORAGE_POSITION;
         assembly {
             rs.slot := position
+        }
+    }
+
+    function marketplaceStorage() internal pure returns (MarketplaceConfig storage ms) {
+        bytes32 position = MARKETPLACE_STORAGE_POSITION;
+        assembly {
+            ms.slot := position
+        }
+    }
+
+    function erc721Storage() internal pure returns (ERC721Storage storage es) {
+        bytes32 position = ERC721_STORAGE_POSITION;
+        assembly {
+            es.slot := position
         }
     }
 

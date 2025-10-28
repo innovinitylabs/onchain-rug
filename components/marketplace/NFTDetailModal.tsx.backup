@@ -1,0 +1,426 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { X, Tag, Gavel, DollarSign, Clock, User, TrendingUp, Sparkles, AlertCircle } from 'lucide-react'
+import { useAccount } from 'wagmi'
+import { formatEther } from 'viem'
+import LiquidGlass from '../LiquidGlass'
+import { useListingData } from '@/hooks/use-marketplace-data'
+import { useCreateListing, useBuyListing, useCancelListing, useUpdateListingPrice, useApprovalStatus, useApproveMarketplace } from '@/hooks/use-marketplace-contract'
+import { formatTimeRemaining, formatEth, isAuctionActive, isListingExpired, getConditionColor } from '@/utils/marketplace-utils'
+
+interface NFTDetailModalProps {
+  tokenId: number
+  isOpen: boolean
+  onClose: () => void
+  nftData: any // Full NFT data including traits, aging, etc.
+}
+
+type ModalView = 'details' | 'create-listing' | 'update-listing'
+
+export default function NFTDetailModal({ tokenId, isOpen, onClose, nftData }: NFTDetailModalProps) {
+  const { address, isConnected } = useAccount()
+  const [currentView, setCurrentView] = useState<ModalView>('details')
+  
+  // Fetch marketplace data
+  const { listing, refetch: refetchListing } = useListingData(tokenId)
+  
+  // Check if user is the owner
+  const isOwner = isConnected && address?.toLowerCase() === nftData?.owner?.toLowerCase()
+  
+  console.log('NFT Modal Debug:', {
+    tokenId,
+    userAddress: address?.toLowerCase(),
+    nftOwner: nftData?.owner?.toLowerCase(),
+    isOwner,
+    isConnected
+  })
+  
+  // Determine current status
+  const hasActiveListing = listing?.isActive && !isListingExpired(listing)
+
+  useEffect(() => {
+    if (isOpen) {
+      setCurrentView('details')
+      refetchListing()
+    }
+  }, [isOpen, refetchListing])
+
+  if (!isOpen) return null
+
+  return (
+    <AnimatePresence>
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          className="w-full max-w-6xl max-h-[90vh] overflow-hidden"
+        >
+          <LiquidGlass
+            blurAmount={0.15}
+            aberrationIntensity={2}
+            elasticity={0.1}
+            cornerRadius={16}
+          >
+            <div className="bg-gradient-to-br from-slate-900/95 via-slate-800/95 to-slate-900/95 p-6 max-h-[90vh] overflow-y-auto">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                  <Sparkles className="w-6 h-6 text-purple-400" />
+                  Rug #{tokenId}
+                </h2>
+                <button
+                  onClick={onClose}
+                  className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Left Column - NFT Display */}
+                <div>
+                  {/* NFT Preview */}
+                  <div 
+                    className="bg-black/30 rounded-lg overflow-hidden mb-4 relative"
+                    style={{
+                      paddingBottom: '69.7%', // 1320:920 aspect ratio
+                      position: 'relative'
+                    }}
+                  >
+                    <div className="absolute inset-0">
+                      {nftData?.animation_url ? (
+                        <iframe
+                          src={nftData.animation_url}
+                          className="w-full h-full"
+                          title={`Rug #${tokenId}`}
+                          style={{
+                            border: 'none',
+                            background: 'transparent'
+                          }}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-white/50">
+                          <div className="text-center">
+                            <div className="text-4xl mb-2">🧵</div>
+                            <div>#{tokenId}</div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Traits */}
+                  <div className="bg-white/5 rounded-lg p-4">
+                    <h3 className="text-white font-semibold mb-3">Traits</h3>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <span className="text-white/60">Palette:</span>
+                        <span className="text-white ml-2">{nftData?.traits?.paletteName || 'Unknown'}</span>
+                      </div>
+                      <div>
+                        <span className="text-white/60">Complexity:</span>
+                        <span className="text-white ml-2">{nftData?.traits?.complexity || 0}/5</span>
+                      </div>
+                      <div>
+                        <span className="text-white/60">Character Count:</span>
+                        <span className="text-white ml-2">{Number(nftData?.traits?.characterCount || 0)}</span>
+                      </div>
+                      <div>
+                        <span className="text-white/60">Stripe Count:</span>
+                        <span className="text-white ml-2">{Number(nftData?.traits?.stripeCount || 0)}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Condition */}
+                  <div className="bg-white/5 rounded-lg p-4 mt-4">
+                    <h3 className="text-white font-semibold mb-3">Condition</h3>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-white/60">Dirt Level:</span>
+                        <span className={`px-2 py-1 rounded text-xs ${getConditionColor(nftData?.aging?.dirtLevel || 0, 0)}`}>
+                          Level {nftData?.aging?.dirtLevel || 0}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-white/60">Aging Level:</span>
+                        <span className={`px-2 py-1 rounded text-xs ${getConditionColor(0, nftData?.aging?.agingLevel || 0)}`}>
+                          Level {nftData?.aging?.agingLevel || 0}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-white/60">Frame:</span>
+                        <span className="text-white">{nftData?.aging?.currentFrameLevel || 'None'}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Column - Marketplace Actions */}
+                <div>
+                  {currentView === 'details' && (
+                    <DetailsView
+                      tokenId={tokenId}
+                      nftData={nftData}
+                      isOwner={isOwner}
+                      listing={listing}
+                      onCreateListing={() => setCurrentView('create-listing')}
+                      onUpdateListing={() => setCurrentView('update-listing')}
+                    />
+                  )}
+
+                  {currentView === 'create-listing' && (
+                    <CreateListingView
+                      tokenId={tokenId}
+                      onBack={() => setCurrentView('details')}
+                      onSuccess={() => {
+                        refetchListing()
+                        setCurrentView('details')
+                      }}
+                    />
+                  )}
+
+                  {currentView === 'update-listing' && listing && (
+                    <UpdateListingView
+                      tokenId={tokenId}
+                      currentListing={listing}
+                      onBack={() => setCurrentView('details')}
+                      onSuccess={() => {
+                        refetchListing()
+                        setCurrentView('details')
+                      }}
+                    />
+                  )}
+
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </AnimatePresence>
+    </div>
+  )
+}
+
+// ===== VIEW COMPONENTS =====
+
+interface DetailsViewProps {
+  tokenId: number
+  nftData: any
+  isOwner: boolean
+  listing: any
+  onCreateListing: () => void
+  onUpdateListing: () => void
+}
+
+function DetailsView({ tokenId, nftData, isOwner, listing, onCreateListing, onUpdateListing }: DetailsViewProps) {
+  const hasActiveListing = listing?.isActive && !isListingExpired(listing)
+  const { approved, isLoading: approvalLoading } = useApprovalStatus(tokenId)
+
+  return (
+    <div className="space-y-4">
+      {/* NFT Info */}
+      <div className="bg-gray-900/50 border border-gray-500/30 rounded-lg p-4">
+        <h3 className="text-white font-semibold mb-2">#{tokenId}</h3>
+        <div className="text-sm text-gray-300">
+          <p>Owner: {nftData?.owner ? nftData.owner.slice(0, 6) + '...' + nftData.owner.slice(-4) : 'Unknown'}</p>
+        </div>
+      </div>
+
+      {/* Listing Status */}
+      {hasActiveListing ? (
+        <div className="bg-green-900/50 border border-green-500/30 rounded-lg p-4">
+          <h4 className="text-green-400 font-semibold mb-2">Active Listing</h4>
+          <p className="text-white">Price: {formatEth(listing.price)} ETH</p>
+          <p className="text-gray-300 text-sm">
+            Expires: {listing.expiresAt ? formatTimeRemaining(listing.expiresAt) : 'Never'}
+          </p>
+          {isOwner && (
+            <div className="mt-3 space-y-2">
+              <button
+                onClick={onUpdateListing}
+                className="w-full py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded transition-colors"
+              >
+                Update Price
+              </button>
+            </div>
+          )}
+        </div>
+      ) : isOwner ? (
+        <div className="bg-blue-900/50 border border-blue-500/30 rounded-lg p-4">
+          <h4 className="text-blue-400 font-semibold mb-2">Create Listing</h4>
+          <p className="text-gray-300 text-sm mb-3">List your NFT for sale</p>
+          {approvalLoading ? (
+            <div className="text-center py-4">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-400 mx-auto"></div>
+              <p className="text-blue-300 text-sm mt-2">Checking approval...</p>
+            </div>
+          ) : approved ? (
+            <button
+              onClick={onCreateListing}
+              className="w-full py-2 bg-blue-500 hover:bg-blue-600 text-white rounded transition-colors"
+            >
+              Create Listing
+            </button>
+          ) : (
+            <div className="text-center">
+              <p className="text-yellow-300 text-sm mb-2">Marketplace needs approval to transfer your NFT</p>
+              <ApproveMarketplaceButton tokenId={tokenId} onSuccess={onCreateListing} />
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="bg-gray-900/50 border border-gray-500/30 rounded-lg p-4 text-center">
+          <p className="text-gray-400">Not listed for sale</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ===== UTILITY COMPONENTS =====
+
+function ApproveMarketplaceButton({ tokenId, onSuccess }: { tokenId: number; onSuccess: () => void }) {
+  const { approve, isPending, isConfirmed, error } = useApproveMarketplace(tokenId)
+
+  useEffect(() => {
+    if (isConfirmed) {
+      onSuccess()
+    }
+  }, [isConfirmed, onSuccess])
+
+  return (
+    <button
+      onClick={approve}
+      disabled={isPending}
+      className="w-full py-2 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-300 rounded transition-colors disabled:opacity-50"
+    >
+      {isPending ? 'Approving...' : 'Approve Marketplace'}
+    </button>
+  )
+}
+
+function CreateListingView({ tokenId, onBack, onSuccess }: { tokenId: number; onBack: () => void; onSuccess: () => void }) {
+  const [price, setPrice] = useState('')
+  const [duration, setDuration] = useState('0')
+  const { createListing, isPending, isConfirmed, error } = useCreateListing()
+
+  useEffect(() => {
+    if (isConfirmed) {
+      onSuccess()
+    }
+  }, [isConfirmed, onSuccess])
+
+  const handleCreate = () => {
+    if (!price || parseFloat(price) <= 0) return
+    createListing(tokenId, price, parseInt(duration) || 0)
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-white font-semibold">Create Listing</h3>
+        <button onClick={onBack} className="text-white/60 hover:text-white">
+          <X size={20} />
+        </button>
+      </div>
+
+      <div className="space-y-3">
+        <div>
+          <label className="block text-sm text-gray-300 mb-1">Price (ETH)</label>
+          <input
+            type="number"
+            step="0.001"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded text-white"
+            placeholder="0.1"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm text-gray-300 mb-1">Duration (seconds, 0 = no expiry)</label>
+          <input
+            type="number"
+            value={duration}
+            onChange={(e) => setDuration(e.target.value)}
+            className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded text-white"
+            placeholder="86400"
+          />
+        </div>
+      </div>
+
+      <button
+        onClick={handleCreate}
+        disabled={isPending || !price}
+        className="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors disabled:opacity-50"
+      >
+        {isPending ? 'Creating Listing...' : 'Create Listing'}
+      </button>
+
+      {error && (
+        <div className="text-red-400 text-sm text-center">
+          Error: {error.message}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function UpdateListingView({ tokenId, currentListing, onBack, onSuccess }: { tokenId: number; currentListing: any; onBack: () => void; onSuccess: () => void }) {
+  const [price, setPrice] = useState(formatEth(currentListing.price))
+  const { updateListingPrice, isPending, isConfirmed, error } = useUpdateListingPrice()
+
+  useEffect(() => {
+    if (isConfirmed) {
+      onSuccess()
+    }
+  }, [isConfirmed, onSuccess])
+
+  const handleUpdate = () => {
+    if (!price || parseFloat(price) <= 0) return
+    updateListingPrice(tokenId, price)
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-white font-semibold">Update Listing Price</h3>
+        <button onClick={onBack} className="text-white/60 hover:text-white">
+          <X size={20} />
+        </button>
+      </div>
+
+      <div className="space-y-3">
+        <div>
+          <label className="block text-sm text-gray-300 mb-1">New Price (ETH)</label>
+          <input
+            type="number"
+            step="0.001"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded text-white"
+            placeholder="0.1"
+          />
+        </div>
+      </div>
+
+      <button
+        onClick={handleUpdate}
+        disabled={isPending || !price}
+        className="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors disabled:opacity-50"
+      >
+        {isPending ? 'Updating Price...' : 'Update Price'}
+      </button>
+
+      {error && (
+        <div className="text-red-400 text-sm text-center">
+          Error: {error.message}
+        </div>
+      )}
+    </div>
+  )
+}

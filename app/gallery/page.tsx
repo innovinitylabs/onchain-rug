@@ -61,7 +61,7 @@ export default function GalleryPage() {
   const [isFullscreen, setIsFullscreen] = useState(false)
 
   const itemsPerPage = 24
-  const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
+  const contractAddress = contractAddresses[chainId] // No fallback - safer to fail than use wrong contract
   const resolvedContractAddress = contractAddress || '0x0000000000000000000000000000000000000000'
 
   // Contract reads
@@ -113,8 +113,9 @@ export default function GalleryPage() {
 
         // Fetch collection data from our secure API proxy (no API key exposed)
         console.log('🔄 Step 1: Fetching NFT collection list via proxy...')
+        console.log('📍 Using chainId:', chainId, 'for network-specific Alchemy API')
         const response = await fetch(
-          `/api/alchemy?endpoint=getNFTsForCollection&contractAddress=${resolvedContractAddress}`
+          `/api/alchemy?endpoint=getNFTsForCollection&contractAddress=${resolvedContractAddress}&chainId=${chainId}`
         )
 
         if (!response.ok) {
@@ -132,7 +133,7 @@ export default function GalleryPage() {
           try {
             console.log(`📋 Fetching metadata for NFT #${nft.tokenId}...`)
             const metadataResponse = await fetch(
-              `/api/alchemy?endpoint=getNFTMetadata&contractAddress=${resolvedContractAddress}&tokenId=${nft.tokenId}`
+              `/api/alchemy?endpoint=getNFTMetadata&contractAddress=${resolvedContractAddress}&tokenId=${nft.tokenId}&chainId=${chainId}`
             )
 
             if (metadataResponse.ok) {
@@ -164,7 +165,7 @@ export default function GalleryPage() {
     }
 
     fetchAlchemyData()
-  }, [resolvedContractAddress])
+  }, [resolvedContractAddress, chainId])
 
   // Initialize loading state
   useEffect(() => {
