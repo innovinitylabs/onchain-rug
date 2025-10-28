@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useChainId, usePublicClient } from 'wagmi'
 import { parseEther } from 'viem'
-import { shapeSepolia, shapeMainnet } from '@/lib/web3'
+import { shapeSepolia, shapeMainnet, contractAddresses } from '@/lib/web3'
+import { config } from '@/lib/config'
 
 interface Web3MintingProps {
   textRows: string[]
@@ -37,6 +38,9 @@ export default function Web3Minting({
   const [gasEstimate, setGasEstimate] = useState<bigint | null>(null)
   const [gasError, setGasError] = useState<string | null>(null)
   const [gasLoading, setGasLoading] = useState(false)
+
+  // Get contract address for current network
+  const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
 
   // Calculate minting cost - NO TEXT IS FREE TO MINT
   const calculateCost = () => {
@@ -126,8 +130,8 @@ export default function Web3Minting({
       return
     }
 
-    if (!process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT) {
-      alert('Contract not deployed yet!')
+    if (!contractAddress || contractAddress === '0x0000000000000000000000000000000000000000') {
+      alert('Contract not deployed yet for this network!')
       return
     }
 
@@ -146,7 +150,7 @@ export default function Web3Minting({
       setGasLoading(true)
       try {
         const est = await publicClient.estimateContractGas({
-          address: process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT as `0x${string}`,
+          address: contractAddress as `0x${string}`,
           abi: [
             {
               "inputs": [
@@ -230,7 +234,9 @@ export default function Web3Minting({
       console.log('Using gas limit:', gasLimit.toString())
       
       console.log('Minting with optimized data:', {
-        contract: process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT,
+        contract: contractAddress,
+        chainId: chainId,
+        network: chainId === 84532 ? 'Base Sepolia' : chainId === 11011 ? 'Shape Sepolia' : 'Unknown',
         textRows: optimized.textRows,
         seed: seed, // Using the seed from the generator
         paletteName: optimized.palette.name,
@@ -251,7 +257,7 @@ export default function Web3Minting({
       })
 
       await writeContract({
-        address: process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT as `0x${string}`,
+        address: contractAddress as `0x${string}`,
         abi: [
           {
             "inputs": [
@@ -333,19 +339,25 @@ export default function Web3Minting({
   return (
     <div className="space-y-3">
       {/* Contract Status */}
-      {!process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT || process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT === '0x0000000000000000000000000000000000000000' ? (
+      {!contractAddress || contractAddress === '0x0000000000000000000000000000000000000000' ? (
         <div className="bg-orange-900/30 border border-orange-500/30 rounded p-2">
           <div className="text-orange-400 text-xs font-mono">
-            ⚠️ Contract address not set in environment variables
+            ⚠️ Contract not deployed on this network
           </div>
           <div className="text-orange-300 text-xs mt-1">
-            Set NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT in .env file
+            Network: {chainId === 84532 ? 'Base Sepolia' : chainId === 11011 ? 'Shape Sepolia' : `Chain ${chainId}`}
+          </div>
+          <div className="text-orange-300 text-xs mt-1">
+            Please switch to a supported network
           </div>
         </div>
       ) : (
         <div className="bg-green-900/30 border border-green-500/30 rounded p-2">
           <div className="text-green-400 text-xs font-mono">
-            ✅ Contract ready: {process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT?.slice(0, 6)}...{process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT?.slice(-4)}
+            ✅ Ready: {contractAddress?.slice(0, 6)}...{contractAddress?.slice(-4)}
+          </div>
+          <div className="text-green-300 text-xs mt-1">
+            Network: {chainId === 84532 ? 'Base Sepolia' : chainId === 11011 ? 'Shape Sepolia' : `Chain ${chainId}`}
           </div>
         </div>
       )}
