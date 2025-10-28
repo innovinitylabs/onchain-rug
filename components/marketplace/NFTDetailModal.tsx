@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Sparkles, Tag, ShoppingCart, Edit3, AlertCircle, CheckCircle, Loader2 } from 'lucide-react'
 import { useAccount } from 'wagmi'
@@ -52,6 +52,25 @@ export default function NFTDetailModal({ tokenId, isOpen, onClose, nftData }: NF
   const isListingActive = listing?.isActive
   const canList = isOwner && !isListingActive && approved
   const canBuy = isConnected && !isOwner && isListingActive
+
+  // Auto-refresh after successful transactions
+  useEffect(() => {
+    if (approveMarketplace.isConfirmed || createListing.isConfirmed || 
+        buyListing.isConfirmed || cancelListing.isConfirmed || 
+        updateListingPrice.isConfirmed) {
+      console.log('Transaction confirmed - refreshing modal data...')
+      // Trigger a page reload to refresh all data
+      setTimeout(() => {
+        window.location.reload()
+      }, 2000)
+    }
+  }, [
+    approveMarketplace.isConfirmed,
+    createListing.isConfirmed,
+    buyListing.isConfirmed,
+    cancelListing.isConfirmed,
+    updateListingPrice.isConfirmed
+  ])
 
   if (!isOpen) return null
 
@@ -159,16 +178,16 @@ export default function NFTDetailModal({ tokenId, isOpen, onClose, nftData }: NF
             elasticity={0.1}
             cornerRadius={16}
           >
-            <div className="bg-gradient-to-br from-blue-50/95 via-indigo-50/95 to-blue-50/95 backdrop-blur-xl p-6 max-h-[90vh] overflow-y-auto border border-blue-200/30">
+            <div className="p-6 max-h-[90vh] overflow-y-auto">
               {/* Header */}
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-blue-900 flex items-center gap-2">
-                  <Sparkles className="w-6 h-6 text-purple-600" />
+                <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                  <Sparkles className="w-6 h-6 text-yellow-300" />
                   Rug #{tokenId}
                 </h2>
                 <button
                   onClick={onClose}
-                  className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-700 transition-colors"
+                  className="p-2 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -218,7 +237,7 @@ function DetailsView({
               title={`Rug #${tokenId}`}
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-blue-400">
+            <div className="w-full h-full flex items-center justify-center text-white/60">
               Loading...
             </div>
           )}
@@ -226,12 +245,12 @@ function DetailsView({
 
         {/* NFT Traits */}
         <div className="space-y-3">
-          <h3 className="text-lg font-semibold text-blue-900">Traits</h3>
+          <h3 className="text-lg font-semibold text-white">Traits</h3>
           <div className="grid grid-cols-2 gap-3">
             {nftData?.traits && Object.entries(nftData.traits).map(([key, value]: [string, any]) => (
-              <div key={key} className="bg-blue-100/40 rounded-lg p-3 border border-blue-200/30">
-                <div className="text-xs text-blue-600 uppercase tracking-wide">{key}</div>
-                <div className="text-sm font-medium text-blue-900">{value}</div>
+              <div key={key} className="bg-white/10 rounded-lg p-3 border border-white/20">
+                <div className="text-xs text-white/70 uppercase tracking-wide">{key}</div>
+                <div className="text-sm font-medium text-white">{value}</div>
               </div>
             ))}
           </div>
@@ -242,15 +261,15 @@ function DetailsView({
       <div className="space-y-6">
         {/* Listing Status */}
         {listing?.isActive && (
-          <div className="bg-green-50 border border-green-300 rounded-lg p-4">
+          <div className="bg-green-500/20 border border-green-400/40 rounded-lg p-4">
             <div className="flex items-center gap-2 mb-2">
-              <Tag className="w-4 h-4 text-green-600" />
-              <span className="text-green-700 font-medium">Listed for Sale</span>
+              <Tag className="w-4 h-4 text-green-300" />
+              <span className="text-green-200 font-medium">Listed for Sale</span>
             </div>
-            <div className="text-2xl font-bold text-green-900 mb-1">
+            <div className="text-2xl font-bold text-white mb-1">
               {formatEth(listing.price)} ETH
             </div>
-            <div className="text-sm text-green-700">
+            <div className="text-sm text-green-100">
               Listed by: {listing.seller?.slice(0, 6)}...{listing.seller?.slice(-4)}
             </div>
           </div>
@@ -260,23 +279,23 @@ function DetailsView({
         <div className="space-y-3">
           {/* Loading state */}
           {ownerLoading && (
-            <div className="text-center text-blue-700 py-4">
-              <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-blue-600" />
+            <div className="text-center text-white/80 py-4">
+              <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-white" />
               Loading ownership data...
             </div>
           )}
 
           {/* Not connected */}
           {!isConnected && !ownerLoading && (
-            <div className="text-center text-blue-700 py-4">
+            <div className="text-center text-white/80 py-4">
               Connect your wallet to interact with this NFT
             </div>
           )}
 
           {/* Connected but ownership not determined yet */}
           {isConnected && ownerLoading && (
-            <div className="text-center text-blue-700 py-4">
-              <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-blue-600" />
+            <div className="text-center text-white/80 py-4">
+              <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-white" />
               Checking ownership...
             </div>
           )}
@@ -375,33 +394,33 @@ function CreateListingView({ price, setPrice, onSubmit, onCancel, isLoading }: a
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-xl font-semibold text-blue-900 mb-2">Create Listing</h3>
-        <p className="text-blue-700">Set a price for your NFT</p>
+        <h3 className="text-xl font-semibold text-white mb-2">Create Listing</h3>
+        <p className="text-white/80">Set a price for your NFT</p>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-blue-800 mb-2">Price (ETH)</label>
+        <label className="block text-sm font-medium text-white mb-2">Price (ETH)</label>
         <input
           type="number"
           step="0.001"
           value={price}
           onChange={(e) => setPrice(e.target.value)}
           placeholder="0.1"
-          className="w-full px-3 py-2 bg-white/60 border border-blue-200 rounded-lg text-blue-900 placeholder-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full px-3 py-2 bg-white/20 border border-white/30 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
         />
       </div>
 
       <div className="flex gap-3">
         <button
           onClick={onCancel}
-          className="flex-1 px-4 py-2 bg-blue-100 hover:bg-blue-200 border border-blue-200 text-blue-700 rounded-lg transition-colors"
+          className="flex-1 px-4 py-2 bg-white/20 hover:bg-white/30 border border-white/30 text-white rounded-lg transition-colors"
         >
           Cancel
         </button>
         <button
           onClick={onSubmit}
           disabled={isLoading || !price || parseFloat(price) <= 0}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-lg transition-colors"
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-white/10 disabled:text-white/40 text-white rounded-lg transition-colors"
         >
           {isLoading ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -420,33 +439,33 @@ function UpdateListingView({ currentPrice, price, setPrice, onSubmit, onCancel, 
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-xl font-semibold text-blue-900 mb-2">Update Listing Price</h3>
-        <p className="text-blue-700">Current price: {formatEth(currentPrice)} ETH</p>
+        <h3 className="text-xl font-semibold text-white mb-2">Update Listing Price</h3>
+        <p className="text-white/80">Current price: {formatEth(currentPrice)} ETH</p>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-blue-800 mb-2">New Price (ETH)</label>
+        <label className="block text-sm font-medium text-white mb-2">New Price (ETH)</label>
         <input
           type="number"
           step="0.001"
           value={price}
           onChange={(e) => setPrice(e.target.value)}
           placeholder={formatEth(currentPrice)}
-          className="w-full px-3 py-2 bg-white/60 border border-blue-200 rounded-lg text-blue-900 placeholder-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full px-3 py-2 bg-white/20 border border-white/30 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
         />
       </div>
 
       <div className="flex gap-3">
         <button
           onClick={onCancel}
-          className="flex-1 px-4 py-2 bg-blue-100 hover:bg-blue-200 border border-blue-200 text-blue-700 rounded-lg transition-colors"
+          className="flex-1 px-4 py-2 bg-white/20 hover:bg-white/30 border border-white/30 text-white rounded-lg transition-colors"
         >
           Cancel
         </button>
         <button
           onClick={onSubmit}
           disabled={isLoading || !price || parseFloat(price) <= 0}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg transition-colors"
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-white/10 disabled:text-white/40 text-white rounded-lg transition-colors"
         >
           {isLoading ? (
             <Loader2 className="w-4 h-4 animate-spin" />
