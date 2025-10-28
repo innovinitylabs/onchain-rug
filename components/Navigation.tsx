@@ -466,7 +466,7 @@ export default function Navigation() {
                   <Settings className="w-5 h-5" />
                   <svg
                     height="28px"
-                    viewBox="0 0 80 20"
+                    viewBox="0 0 85 20"
                     style={{
                       display: 'block',
                       height: '28px',
@@ -504,7 +504,7 @@ export default function Navigation() {
                       Manage
                     </text>
                   </svg>
-                  <ChevronDown className={`w-4 h-4 transition-transform ${isManageDropdownOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-4 h-4 -ml-2 transition-transform ${isManageDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
                 
                 <AnimatePresence>
