@@ -89,7 +89,7 @@ const marketplaceABI = [
 export function useApprovalStatus(tokenId: number) {
   const { address } = useAccount()
   const chainId = useChainId()
-  const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
+  const contractAddress = contractAddresses[chainId]
   // In diamond pattern, marketplace is part of the main contract
   const marketplaceAddress = contractAddress
 
@@ -119,7 +119,7 @@ export function useApprovalStatus(tokenId: number) {
 export function useApproveMarketplace(tokenId: number) {
   const { address } = useAccount()
   const chainId = useChainId()
-  const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
+  const contractAddress = contractAddresses[chainId]
   const wagmiConfig = useConfig()
 
   const { writeContract, data: hash, isPending, error } = useWriteContract()
@@ -154,7 +154,7 @@ export function useApproveMarketplace(tokenId: number) {
 export function useCreateListing() {
   const { address } = useAccount()
   const chainId = useChainId()
-  const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
+  const contractAddress = contractAddresses[chainId]
   const wagmiConfig = useConfig()
 
   const { writeContract, data: hash, isPending, error } = useWriteContract()
@@ -189,7 +189,7 @@ export function useCreateListing() {
 export function useBuyListing() {
   const { address } = useAccount()
   const chainId = useChainId()
-  const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
+  const contractAddress = contractAddresses[chainId]
   const wagmiConfig = useConfig()
 
   const { writeContract, data: hash, isPending, error } = useWriteContract()
@@ -225,7 +225,7 @@ export function useBuyListing() {
 export function useCancelListing() {
   const { address } = useAccount()
   const chainId = useChainId()
-  const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
+  const contractAddress = contractAddresses[chainId]
   const wagmiConfig = useConfig()
 
   const { writeContract, data: hash, isPending, error } = useWriteContract()
@@ -260,7 +260,7 @@ export function useCancelListing() {
 export function useUpdateListingPrice() {
   const { address } = useAccount()
   const chainId = useChainId()
-  const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
+  const contractAddress = contractAddresses[chainId]
   const wagmiConfig = useConfig()
 
   const { writeContract, data: hash, isPending, error } = useWriteContract()

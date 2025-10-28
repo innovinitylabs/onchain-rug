@@ -131,7 +131,7 @@ export default function MarketPage() {
   const [favorites, setFavorites] = useState<Set<number>>(new Set())
 
   const itemsPerPage = 24
-  const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
+  const contractAddress = contractAddresses[chainId]
 
   // Fetch NFT data from Alchemy
   useEffect(() => {

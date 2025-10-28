@@ -6,7 +6,7 @@ import { config } from '@/lib/config'
  * Hook to get contract configuration from blockchain
  */
 export function useContractConfig(chainId?: number) {
-  const contractAddress = contractAddresses[chainId || config.chainId] || config.contracts.onchainRugs
+  const contractAddress = contractAddresses[chainId || config.chainId]
 
   // Get aging thresholds from contract
   const {

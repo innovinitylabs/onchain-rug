@@ -36,7 +36,7 @@ const marketplaceViewABI = [
  */
 export function useListingData(tokenId: number) {
   const chainId = useChainId()
-  const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
+  const contractAddress = contractAddresses[chainId]
 
   const { data: listingData, isLoading, refetch } = useReadContract({
     address: contractAddress as `0x${string}`,
@@ -64,7 +64,7 @@ export function useListingData(tokenId: number) {
  */
 export function useMarketplaceStats() {
   const chainId = useChainId()
-  const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
+  const contractAddress = contractAddresses[chainId]
 
   const { data: statsData, isLoading, refetch } = useReadContract({
     address: contractAddress as `0x${string}`,
@@ -92,7 +92,7 @@ export function useMarketplaceStats() {
  */
 export function useMarketplaceActivity(limit: number = 20) {
   const chainId = useChainId()
-  const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
+  const contractAddress = contractAddresses[chainId]
   const publicClient = usePublicClient()
   const [activities, setActivities] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
