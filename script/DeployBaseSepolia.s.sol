@@ -61,7 +61,12 @@ contract DeployBaseSepolia is Script {
     uint256 constant DAY = 1 days;
 
     function setUp() public {
-        deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        // Try TESTNET_PRIVATE_KEY first, fallback to PRIVATE_KEY
+        try vm.envUint("TESTNET_PRIVATE_KEY") returns (uint256 key) {
+            deployerPrivateKey = key;
+        } catch {
+            deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        }
         deployer = vm.addr(deployerPrivateKey);
         console.log("Deployer address:", deployer);
         console.log("Deployer balance:", deployer.balance / 1e18, "ETH");
