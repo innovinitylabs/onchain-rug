@@ -82,7 +82,7 @@ export default function MarketPage() {
         setLoading(true)
         
         const response = await fetch(
-          `/api/alchemy?endpoint=getNFTsForCollection&contractAddress=${contractAddress}`
+          `/api/alchemy?endpoint=getNFTsForCollection&contractAddress=${contractAddress}&chainId=${chainId}`
         )
 
         if (!response.ok) {
@@ -95,7 +95,7 @@ export default function MarketPage() {
         for (const nft of collectionData.nfts || []) {
           try {
             const metadataResponse = await fetch(
-              `/api/alchemy?endpoint=getNFTMetadata&contractAddress=${contractAddress}&tokenId=${nft.tokenId}`
+              `/api/alchemy?endpoint=getNFTMetadata&contractAddress=${contractAddress}&tokenId=${nft.tokenId}&chainId=${chainId}`
             )
 
             if (metadataResponse.ok) {
@@ -159,7 +159,7 @@ export default function MarketPage() {
     }
 
     fetchNFTs()
-  }, [contractAddress])
+  }, [contractAddress, chainId])
 
   // Calculate rarity score
   const calculateRarityScore = (traits: any): number => {

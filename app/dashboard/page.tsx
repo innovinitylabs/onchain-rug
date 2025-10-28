@@ -290,7 +290,7 @@ export default function DashboardPage() {
         console.log('Current chain ID:', chainId)
 
         // Get NFTs owned by user from Alchemy
-        const ownerResponse = await fetch(`${window.location.origin}/api/alchemy?endpoint=getTokenIdByIndex&contractAddress=${contractAddress}&owner=${address}&index=0`)
+        const ownerResponse = await fetch(`${window.location.origin}/api/alchemy?endpoint=getTokenIdByIndex&contractAddress=${contractAddress}&owner=${address}&index=0&chainId=${chainId}`)
         const ownerData = await ownerResponse.json()
 
         console.log('Owner data response:', ownerData)
