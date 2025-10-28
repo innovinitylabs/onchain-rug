@@ -58,9 +58,9 @@ contract UpgradeRugNFTFacet is Script {
 
         // Rug-specific functions
         selectors[14] = RugNFTFacet.mintRug.selector;
-        selectors[15] = RugNFTFacet.burn.selector;
-        selectors[16] = RugNFTFacet.getRugData.selector;
-        selectors[17] = RugNFTFacet.getAgingData.selector;
+        selectors[15] = RugNFTFacet.getRugData.selector;
+        selectors[16] = RugNFTFacet.getAgingData.selector;
+        selectors[17] = RugNFTFacet.initializeERC721Metadata.selector;
 
         return selectors;
     }

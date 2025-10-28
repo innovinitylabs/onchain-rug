@@ -59,6 +59,20 @@ contract RugNFTFacet is ICreatorToken {
     }
 
     /**
+     * @notice Initialize ERC721 metadata (for diamond pattern)
+     * @dev This function should be called after the facet is added to the diamond
+     */
+    function initializeERC721Metadata() external {
+        LibRugStorage.ERC721Storage storage es = LibRugStorage.erc721Storage();
+        if (bytes(es.name).length == 0) {
+            es.name = "OnchainRugs";
+        }
+        if (bytes(es.symbol).length == 0) {
+            es.symbol = "RUGS";
+        }
+    }
+
+    /**
      * @notice Mint a new rug NFT (ERC721-C compatible)
      * @param textRows Array of text lines (1-5)
      * @param seed Random seed for generation (0 = auto-generate)

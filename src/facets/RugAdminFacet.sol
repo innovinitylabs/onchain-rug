@@ -294,6 +294,21 @@ contract RugAdminFacet {
     }
 
     /**
+     * @notice Set ERC721 metadata (name and symbol)
+     * @param _name Token name
+     * @param _symbol Token symbol
+     */
+    function setERC721Metadata(string calldata _name, string calldata _symbol) external {
+        LibDiamond.enforceIsContractOwner();
+        require(bytes(_name).length > 0, "Name cannot be empty");
+        require(bytes(_symbol).length > 0, "Symbol cannot be empty");
+
+        LibRugStorage.ERC721Storage storage es = LibRugStorage.erc721Storage();
+        es.name = _name;
+        es.symbol = _symbol;
+    }
+
+    /**
      * @notice Check if contract is properly configured
      * @return configured True if all required parameters are set
      */
