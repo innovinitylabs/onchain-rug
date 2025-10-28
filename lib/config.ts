@@ -42,7 +42,7 @@ export const config = {
   },
   
   // Default chain ID (can be switched via environment variable)
-  chainId: 11011, // Shape Sepolia (default)
+  chainId: 84532, // Base Sepolia (default - was 11011 for Shape Sepolia)
   
   // Minting configuration
   minting: {
