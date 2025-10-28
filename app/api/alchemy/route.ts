@@ -9,8 +9,9 @@ export async function GET(request: NextRequest) {
   const owner = searchParams.get('owner')
   const index = searchParams.get('index')
   const contractAddresses = searchParams.getAll('contractAddresses[]')
+  const chainId = searchParams.get('chainId') || '84532' // Default to Base Sepolia
 
-  console.log('Alchemy API params:', { endpoint, contractAddress, tokenId, owner, index, contractAddresses })
+  console.log('Alchemy API params:', { endpoint, contractAddress, tokenId, owner, index, contractAddresses, chainId })
 
   const alchemyApiKey = process.env.ALCHEMY_API_KEY
 
@@ -21,6 +22,25 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     )
   }
+
+  // Helper function to get Alchemy base URL based on chain ID
+  function getAlchemyBaseUrl(chainId: string): string {
+    switch (chainId) {
+      case '11011': // Shape Sepolia
+        return 'https://shape-sepolia.g.alchemy.com/nft/v3'
+      case '360': // Shape Mainnet
+        return 'https://shape-mainnet.g.alchemy.com/nft/v3'
+      case '84532': // Base Sepolia
+        return 'https://base-sepolia.g.alchemy.com/nft/v3'
+      case '8453': // Base Mainnet
+        return 'https://base-mainnet.g.alchemy.com/nft/v3'
+      default:
+        // Default to Base Sepolia
+        return 'https://base-sepolia.g.alchemy.com/nft/v3'
+    }
+  }
+
+  const alchemyBaseUrl = getAlchemyBaseUrl(chainId)
 
   if (!endpoint || (!contractAddress && contractAddresses.length === 0)) {
     return NextResponse.json(
@@ -34,7 +54,7 @@ export async function GET(request: NextRequest) {
 
     switch (endpoint) {
       case 'getNFTsForCollection':
-        url = `https://shape-sepolia.g.alchemy.com/nft/v3/${alchemyApiKey}/getNFTsForCollection?contractAddress=${contractAddress}&withMetadata=false&limit=100`
+        url = `${alchemyBaseUrl}/${alchemyApiKey}/getNFTsForCollection?contractAddress=${contractAddress}&withMetadata=false&limit=100`
         break
 
       case 'getNFTMetadata':
@@ -44,7 +64,7 @@ export async function GET(request: NextRequest) {
             { status: 400 }
           )
         }
-        url = `https://shape-sepolia.g.alchemy.com/nft/v3/${alchemyApiKey}/getNFTMetadata?contractAddress=${contractAddress}&tokenId=${tokenId}&refreshCache=false`
+        url = `${alchemyBaseUrl}/${alchemyApiKey}/getNFTMetadata?contractAddress=${contractAddress}&tokenId=${tokenId}&refreshCache=false`
         break
 
       case 'getTokenIdByIndex':
@@ -64,7 +84,7 @@ export async function GET(request: NextRequest) {
         }
         // Build the contract addresses parameter
         const indexContractParams = indexContracts.map(addr => `contractAddresses[]=${addr}`).join('&')
-        url = `https://shape-sepolia.g.alchemy.com/nft/v3/${alchemyApiKey}/getNFTsForOwner?owner=${owner}&${indexContractParams}&withMetadata=false`
+        url = `${alchemyBaseUrl}/${alchemyApiKey}/getNFTsForOwner?owner=${owner}&${indexContractParams}&withMetadata=false`
         break
 
       case 'getNFTsForOwner':
@@ -84,7 +104,7 @@ export async function GET(request: NextRequest) {
         }
         // Build the contract addresses parameter
         const ownerContractParams = ownerContracts.map(addr => `contractAddresses[]=${addr}`).join('&')
-        url = `https://shape-sepolia.g.alchemy.com/nft/v3/${alchemyApiKey}/getNFTsForOwner?owner=${owner}&${ownerContractParams}&withMetadata=true`
+        url = `${alchemyBaseUrl}/${alchemyApiKey}/getNFTsForOwner?owner=${owner}&${ownerContractParams}&withMetadata=true`
         break
 
       default:

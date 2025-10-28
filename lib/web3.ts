@@ -344,8 +344,27 @@ export const contractAddresses = {
 // Alchemy NFT API Configuration
 export const alchemyConfig = {
   apiKey: appConfig.alchemyApiKey,
-  network: 'shape-sepolia', // Shape Sepolia testnet (default)
-  baseUrl: 'https://shape-sepolia.g.alchemy.com/nft/v3'
+  network: 'base-sepolia', // Base Sepolia testnet (default - changed from shape-sepolia)
+  baseUrl: 'https://base-sepolia.g.alchemy.com/nft/v3'
+}
+
+// Helper function to get Alchemy NFT API URL based on chain ID
+export function getAlchemyNftApiUrl(chainId: number): string {
+  const apiKey = appConfig.alchemyApiKey
+  
+  switch (chainId) {
+    case shapeSepolia.id: // 11011
+      return `https://shape-sepolia.g.alchemy.com/nft/v3/${apiKey}`
+    case shapeMainnet.id: // 360
+      return `https://shape-mainnet.g.alchemy.com/nft/v3/${apiKey}`
+    case baseSepolia.id: // 84532
+      return `https://base-sepolia.g.alchemy.com/nft/v3/${apiKey}`
+    case baseMainnet.id: // 8453
+      return `https://base-mainnet.g.alchemy.com/nft/v3/${apiKey}`
+    default:
+      // Default to Base Sepolia
+      return `https://base-sepolia.g.alchemy.com/nft/v3/${apiKey}`
+  }
 }
 
 // Utility functions
@@ -522,8 +541,9 @@ export async function getNftsForCollection(contractAddress: string, options?: {
   pageKey?: string
   limit?: number
   withMetadata?: boolean
+  chainId?: number
 }) {
-  const { pageKey, limit = 100, withMetadata = true } = options || {}
+  const { pageKey, limit = 100, withMetadata = true, chainId = baseSepolia.id } = options || {}
 
   const params = new URLSearchParams({
     withMetadata: withMetadata.toString(),
@@ -531,7 +551,8 @@ export async function getNftsForCollection(contractAddress: string, options?: {
     ...(pageKey && { pageKey })
   })
 
-  const url = `${alchemyConfig.baseUrl}/${alchemyConfig.apiKey}/getNFTsForCollection?contractAddress=${contractAddress}&${params}`
+  const baseUrl = getAlchemyNftApiUrl(chainId)
+  const url = `${baseUrl}/getNFTsForCollection?contractAddress=${contractAddress}&${params}`
 
   const response = await fetch(url)
   if (!response.ok) {
@@ -541,12 +562,18 @@ export async function getNftsForCollection(contractAddress: string, options?: {
   return response.json()
 }
 
-export async function getNftMetadata(contractAddress: string, tokenId: string, refreshCache = false) {
+export async function getNftMetadata(contractAddress: string, tokenId: string, options?: {
+  refreshCache?: boolean
+  chainId?: number
+}) {
+  const { refreshCache = false, chainId = baseSepolia.id } = options || {}
+  
   const params = new URLSearchParams({
     ...(refreshCache && { refreshCache: 'true' })
   })
 
-  const url = `${alchemyConfig.baseUrl}/${alchemyConfig.apiKey}/getNFTMetadata?contractAddress=${contractAddress}&tokenId=${tokenId}&${params}`
+  const baseUrl = getAlchemyNftApiUrl(chainId)
+  const url = `${baseUrl}/getNFTMetadata?contractAddress=${contractAddress}&tokenId=${tokenId}&${params}`
 
   const response = await fetch(url)
   if (!response.ok) {
@@ -556,8 +583,9 @@ export async function getNftMetadata(contractAddress: string, tokenId: string, r
   return response.json()
 }
 
-export async function getContractMetadata(contractAddress: string) {
-  const url = `${alchemyConfig.baseUrl}/${alchemyConfig.apiKey}/getContractMetadata?contractAddress=${contractAddress}`
+export async function getContractMetadata(contractAddress: string, chainId: number = baseSepolia.id) {
+  const baseUrl = getAlchemyNftApiUrl(chainId)
+  const url = `${baseUrl}/getContractMetadata?contractAddress=${contractAddress}`
 
   const response = await fetch(url)
   if (!response.ok) {
