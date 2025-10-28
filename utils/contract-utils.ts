@@ -3,17 +3,19 @@
  */
 
 import { ethers } from 'ethers'
-import { contractAddresses, onchainRugsABI, shapeSepolia, shapeMainnet } from '@/lib/web3'
+import { contractAddresses, onchainRugsABI, shapeSepolia, shapeMainnet, baseSepolia, baseMainnet } from '@/lib/web3'
 
 // Contract address getter
 export function getContractAddress(chainId: number): string {
-  return contractAddresses[chainId] || ''
+  return contractAddresses[chainId] || '' // No fallback - safer to fail than use wrong contract
 }
 
 // Chain configurations
 export const SUPPORTED_CHAINS = {
   [shapeSepolia.id]: shapeSepolia,
   [shapeMainnet.id]: shapeMainnet,
+  [baseSepolia.id]: baseSepolia,
+  [baseMainnet.id]: baseMainnet,
 } as const
 
 // Function selectors for manual eth_call
@@ -66,8 +68,12 @@ export function getAlchemyRpcUrl(chainId: number, apiKey: string): string {
       return `https://shape-sepolia.g.alchemy.com/v2/${apiKey}`
     case shapeMainnet.id:
       return `https://shape-mainnet.g.alchemy.com/v2/${apiKey}`
+    case baseSepolia.id:
+      return `https://base-sepolia.g.alchemy.com/v2/${apiKey}`
+    case baseMainnet.id:
+      return `https://base-mainnet.g.alchemy.com/v2/${apiKey}`
     default:
-      return `https://shape-sepolia.g.alchemy.com/v2/${apiKey}` // Default to Sepolia
+      return `https://base-sepolia.g.alchemy.com/v2/${apiKey}` // Default to Base Sepolia
   }
 }
 
