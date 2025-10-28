@@ -249,7 +249,6 @@ export default function Web3Minting({
         stripeCount: optimized.stripeData.length,
         mintCost,
         gasLimit: gasLimit.toString(),
-        chainId,
         address,
         characterMapSize: Object.keys(optimized.characterMap).length,
         originalSize: optimized.originalSize,
