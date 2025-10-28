@@ -57,12 +57,64 @@ export const shapeMainnet = {
   testnet: false,
 }
 
+export const baseSepolia = {
+  id: 84532, // Base Sepolia testnet chain ID
+  name: 'Base Sepolia',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'Ethereum',
+    symbol: 'ETH',
+  },
+  rpcUrls: {
+    default: {
+      http: ['https://sepolia.base.org'],
+    },
+    public: {
+      http: ['https://sepolia.base.org'],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'Base Sepolia Explorer',
+      url: 'https://sepolia-explorer.base.org',
+    },
+  },
+  testnet: true,
+}
+
+export const baseMainnet = {
+  id: 8453, // Base mainnet chain ID
+  name: 'Base Mainnet',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'Ethereum',
+    symbol: 'ETH',
+  },
+  rpcUrls: {
+    default: {
+      http: ['https://mainnet.base.org'],
+    },
+    public: {
+      http: ['https://mainnet.base.org'],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'Base Explorer',
+      url: 'https://basescan.org',
+    },
+  },
+  testnet: false,
+}
+
 // Wagmi configuration
 export const wagmiConfig = createConfig({
-  chains: [shapeSepolia, shapeMainnet],
+  chains: [shapeSepolia, shapeMainnet, baseSepolia, baseMainnet],
   transports: {
     [shapeSepolia.id]: http(),
     [shapeMainnet.id]: http(),
+    [baseSepolia.id]: http(),
+    [baseMainnet.id]: http(),
   },
 })
 
@@ -285,12 +337,14 @@ export const onchainRugsABI = [
 export const contractAddresses = {
   [shapeSepolia.id]: appConfig.contracts.onchainRugs,
   [shapeMainnet.id]: appConfig.contracts.onchainRugs,
+  [baseSepolia.id]: appConfig.contracts.onchainRugs,
+  [baseMainnet.id]: appConfig.contracts.onchainRugs,
 }
 
 // Alchemy NFT API Configuration
 export const alchemyConfig = {
   apiKey: appConfig.alchemyApiKey,
-  network: 'shape-sepolia', // Shape Sepolia testnet
+  network: 'shape-sepolia', // Shape Sepolia testnet (default)
   baseUrl: 'https://shape-sepolia.g.alchemy.com/nft/v3'
 }
 
@@ -300,7 +354,8 @@ export function getContractAddress(chainId: number): string {
 }
 
 export function isSupportedChain(chainId: number): boolean {
-  return chainId === shapeSepolia.id || chainId === shapeMainnet.id
+  return chainId === shapeSepolia.id || chainId === shapeMainnet.id || 
+         chainId === baseSepolia.id || chainId === baseMainnet.id
 }
 
 export function getChainName(chainId: number): string {
@@ -309,6 +364,10 @@ export function getChainName(chainId: number): string {
       return 'Shape Sepolia'
     case shapeMainnet.id:
       return 'Shape Mainnet'
+    case baseSepolia.id:
+      return 'Base Sepolia'
+    case baseMainnet.id:
+      return 'Base Mainnet'
     default:
       return 'Unknown'
   }
@@ -324,10 +383,19 @@ export async function callContractWithAlchemyFallback(
 ) {
   // First try Alchemy RPC (primary)
   try {
-    // Use public Alchemy RPC endpoint for Shape Sepolia (no API key needed)
-    const alchemyRpcUrl = chainId === shapeSepolia.id
-      ? 'https://shape-sepolia.g.alchemy.com/public'
-      : `https://shape-mainnet.g.alchemy.com/v2/${appConfig.alchemyApiKey}`
+    // Determine Alchemy RPC URL based on chain
+    let alchemyRpcUrl: string
+    if (chainId === shapeSepolia.id) {
+      alchemyRpcUrl = 'https://shape-sepolia.g.alchemy.com/public'
+    } else if (chainId === shapeMainnet.id) {
+      alchemyRpcUrl = `https://shape-mainnet.g.alchemy.com/v2/${appConfig.alchemyApiKey}`
+    } else if (chainId === baseSepolia.id) {
+      alchemyRpcUrl = `https://base-sepolia.g.alchemy.com/v2/${appConfig.alchemyApiKey}`
+    } else if (chainId === baseMainnet.id) {
+      alchemyRpcUrl = `https://base-mainnet.g.alchemy.com/v2/${appConfig.alchemyApiKey}`
+    } else {
+      throw new Error(`Unsupported chain ID: ${chainId}`)
+    }
 
     const response = await fetch(alchemyRpcUrl, {
       method: 'POST',
@@ -373,10 +441,23 @@ export async function callContractWithAlchemyFallback(
   } catch (alchemyError) {
     console.warn(`Alchemy RPC failed for ${functionName}, trying Shape fallback:`, alchemyError)
 
-    // Fallback to Shape RPC
+    // Fallback to native RPC (Shape or Base)
     try {
+      let chain
+      if (chainId === shapeSepolia.id) {
+        chain = shapeSepolia
+      } else if (chainId === shapeMainnet.id) {
+        chain = shapeMainnet
+      } else if (chainId === baseSepolia.id) {
+        chain = baseSepolia
+      } else if (chainId === baseMainnet.id) {
+        chain = baseMainnet
+      } else {
+        throw new Error(`Unsupported chain ID: ${chainId}`)
+      }
+
       const publicClient = createPublicClient({
-        chain: chainId === shapeSepolia.id ? shapeSepolia : shapeMainnet,
+        chain,
         transport: http()
       })
 

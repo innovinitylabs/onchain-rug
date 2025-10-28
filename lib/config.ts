@@ -17,7 +17,7 @@ export const config = {
     onchainRugs: process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT || '',
   },
   
-  // Network configuration
+  // Network configuration (multi-network support)
   networks: {
     shapeSepolia: {
       chainId: 11011,
@@ -29,10 +29,20 @@ export const config = {
       name: 'Shape Mainnet', 
       rpcUrl: 'https://mainnet.shape.network',
     },
+    baseSepolia: {
+      chainId: 84532,
+      name: 'Base Sepolia',
+      rpcUrl: 'https://sepolia.base.org',
+    },
+    baseMainnet: {
+      chainId: 8453,
+      name: 'Base Mainnet',
+      rpcUrl: 'https://mainnet.base.org',
+    },
   },
   
-  // Default chain ID
-  chainId: 11011, // Shape Sepolia
+  // Default chain ID (can be switched via environment variable)
+  chainId: 11011, // Shape Sepolia (default)
   
   // Minting configuration
   minting: {
