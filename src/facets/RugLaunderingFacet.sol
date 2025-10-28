@@ -35,6 +35,10 @@ contract RugLaunderingFacet {
         require(IERC721(address(this)).ownerOf(tokenId) == to, "Buyer is not current owner");
         require(salePrice > 0, "Sale price must be greater than 0");
 
+        // Check if laundering should be triggered BEFORE updating sale history
+        // This prevents the current sale from being included in the "recent sales" calculation
+        bool shouldLaunder = _shouldTriggerLaundering(tokenId, salePrice);
+
         // Update sale tracking
         aging.lastSalePrice = salePrice;
 
@@ -46,8 +50,8 @@ contract RugLaunderingFacet {
         emit RugSold(tokenId, from, to, salePrice);
         emit SaleTracked(tokenId, salePrice, aging.recentSalePrices);
 
-        // Check if laundering should be triggered
-        if (_shouldTriggerLaundering(tokenId, salePrice)) {
+        // Trigger laundering if conditions were met
+        if (shouldLaunder) {
             _triggerLaundering(tokenId, to, salePrice);
         }
     }
