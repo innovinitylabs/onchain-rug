@@ -334,11 +334,12 @@ export const onchainRugsABI = [
 ] as const
 
 // Contract addresses per network
-export const contractAddresses = {
-  [shapeSepolia.id]: process.env.NEXT_PUBLIC_SHAPE_SEPOLIA_CONTRACT || appConfig.contracts.onchainRugs,
-  [shapeMainnet.id]: process.env.NEXT_PUBLIC_SHAPE_MAINNET_CONTRACT || appConfig.contracts.onchainRugs,
-  [baseSepolia.id]: process.env.NEXT_PUBLIC_BASE_SEPOLIA_CONTRACT || appConfig.contracts.onchainRugs,
-  [baseMainnet.id]: process.env.NEXT_PUBLIC_BASE_MAINNET_CONTRACT || appConfig.contracts.onchainRugs,
+// No fallback - safer to fail than use wrong contract on wrong network
+export const contractAddresses: Record<number, string | undefined> = {
+  [shapeSepolia.id]: process.env.NEXT_PUBLIC_SHAPE_SEPOLIA_CONTRACT,
+  [shapeMainnet.id]: process.env.NEXT_PUBLIC_SHAPE_MAINNET_CONTRACT,
+  [baseSepolia.id]: process.env.NEXT_PUBLIC_BASE_SEPOLIA_CONTRACT,
+  [baseMainnet.id]: process.env.NEXT_PUBLIC_BASE_MAINNET_CONTRACT,
 }
 
 // Alchemy NFT API Configuration

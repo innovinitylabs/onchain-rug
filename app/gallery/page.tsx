@@ -61,7 +61,7 @@ export default function GalleryPage() {
   const [isFullscreen, setIsFullscreen] = useState(false)
 
   const itemsPerPage = 24
-  const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
+  const contractAddress = contractAddresses[chainId] // No fallback - safer to fail than use wrong contract
   const resolvedContractAddress = contractAddress || '0x0000000000000000000000000000000000000000'
 
   // Contract reads

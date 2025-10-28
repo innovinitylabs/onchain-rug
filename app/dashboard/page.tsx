@@ -122,7 +122,7 @@ export default function DashboardPage() {
   const [fullScreenMode, setFullScreenMode] = useState(false)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
 
-  const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
+  const contractAddress = contractAddresses[chainId] // No fallback - prevents accidental wrong network transactions
 
   // Get user's rug balance
   const { data: balance, refetch: refetchBalance } = useReadContract({

@@ -27,8 +27,8 @@ export default function NFTDetailModal({ tokenId, isOpen, onClose, nftData }: NF
   const [currentView, setCurrentView] = useState<ModalView>('details')
   const [listingPrice, setListingPrice] = useState('')
 
-  // Get contract address
-  const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
+  // Get contract address (no fallback for safety)
+  const contractAddress = contractAddresses[chainId]
 
   // Fetch owner from contract (more reliable than Alchemy data)
   const { data: ownerAddress, isLoading: ownerLoading } = useReadContract({

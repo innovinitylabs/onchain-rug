@@ -68,7 +68,7 @@ export default function MarketPage() {
     agingLevel: ''
   })
 
-  const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
+  const contractAddress = contractAddresses[chainId] // No fallback - safer to show error
   const itemsPerPage = 24
 
   // Fetch NFT data

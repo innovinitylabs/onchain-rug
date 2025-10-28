@@ -39,8 +39,8 @@ export default function Web3Minting({
   const [gasError, setGasError] = useState<string | null>(null)
   const [gasLoading, setGasLoading] = useState(false)
 
-  // Get contract address for current network
-  const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
+  // Get contract address for current network (no fallback for safety)
+  const contractAddress = contractAddresses[chainId]
 
   // Calculate minting cost - NO TEXT IS FREE TO MINT
   const calculateCost = () => {

@@ -15,7 +15,7 @@ import { contractAddresses } from '@/lib/web3'
 
 export default function GeneratorPage() {
   const chainId = useChainId()
-  const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
+  const contractAddress = contractAddresses[chainId] // No fallback - safer to show error than use wrong contract
   
   const [isLoaded, setIsLoaded] = useState(false)
   const [currentSeed, setCurrentSeed] = useState(42)

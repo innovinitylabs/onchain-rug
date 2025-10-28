@@ -37,7 +37,7 @@ export default function PortfolioPage() {
   const [selectedNFT, setSelectedNFT] = useState<any>(null)
   const [selectedNFTs, setSelectedNFTs] = useState<Set<number>>(new Set())
 
-  const contractAddress = contractAddresses[chainId] || config.contracts.onchainRugs
+  const contractAddress = contractAddresses[chainId] // No fallback for safety
 
   // Fetch user's NFTs
   useEffect(() => {
