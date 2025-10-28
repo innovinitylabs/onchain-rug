@@ -278,7 +278,7 @@ export default function Navigation() {
           </Link>
 
           {/* Navigation Links - Desktop */}
-          <div className="hidden md:flex items-center gap-8">
+          <div className="hidden md:flex items-center gap-6">
             <Link
               href="/"
               className="flex items-center gap-2 hover:opacity-90 transition-all duration-300"
@@ -414,7 +414,46 @@ export default function Navigation() {
               className="flex items-center gap-2 hover:opacity-90 transition-all duration-300"
             >
               <ShoppingCart className="w-5 h-5" />
-              <span className="text-white/90 text-sm font-semibold">Market</span>
+              <svg
+                height="28px"
+                viewBox="0 0 70 20"
+                style={{
+                  display: 'block',
+                  height: '28px',
+                  filter: 'drop-shadow(0 0 6px rgba(108, 190, 230, 0.3))',
+                }}
+              >
+                <defs>
+                  <filter id="nav-link-depth-market" x="-100%" y="-100%" width="300%" height="300%">
+                    <feTurbulence baseFrequency="0.02" numOctaves="2" seed="45" type="fractalNoise" result="LINK_BASE_MARKET" />
+                    <feDisplacementMap in="SourceGraphic" in2="LINK_BASE_MARKET" scale="3" xChannelSelector="R" yChannelSelector="G" result="LINK_DISPLACED_MARKET" />
+                    <feGaussianBlur in="LINK_DISPLACED_MARKET" stdDeviation="0.5" result="LINK_BLUR_MARKET" />
+                  </filter>
+                  <linearGradient id="nav-link-gradient-market" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style={{ stopColor: 'rgba(255, 255, 255, 0.9)', stopOpacity: 1 }} />
+                    <stop offset="100%" style={{ stopColor: 'rgba(255, 255, 255, 0.9)', stopOpacity: 1 }} />
+                  </linearGradient>
+                </defs>
+                <text
+                  x="50%"
+                  y="12"
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  style={{
+                    fill: 'url(#nav-link-gradient-market)',
+                    filter: 'url(#nav-link-depth-market)',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    fontFamily: 'system-ui, -apple-system, sans-serif',
+                    WebkitFontSmoothing: 'antialiased',
+                    MozOsxFontSmoothing: 'grayscale',
+                    textRendering: 'optimizeLegibility',
+                    fontFeatureSettings: '"kern" 1',
+                  }}
+                >
+                  Market
+                </text>
+              </svg>
             </Link>
             
             {/* Manage Dropdown - Only visible when wallet connected */}
@@ -425,7 +464,46 @@ export default function Navigation() {
                   className="flex items-center gap-2 hover:opacity-90 transition-all duration-300"
                 >
                   <Settings className="w-5 h-5" />
-                  <span className="text-white/90 text-sm font-semibold">Manage</span>
+                  <svg
+                    height="28px"
+                    viewBox="0 0 80 20"
+                    style={{
+                      display: 'block',
+                      height: '28px',
+                      filter: 'drop-shadow(0 0 6px rgba(108, 190, 230, 0.3))',
+                    }}
+                  >
+                    <defs>
+                      <filter id="nav-link-depth-manage" x="-100%" y="-100%" width="300%" height="300%">
+                        <feTurbulence baseFrequency="0.02" numOctaves="2" seed="46" type="fractalNoise" result="LINK_BASE_MANAGE" />
+                        <feDisplacementMap in="SourceGraphic" in2="LINK_BASE_MANAGE" scale="3" xChannelSelector="R" yChannelSelector="G" result="LINK_DISPLACED_MANAGE" />
+                        <feGaussianBlur in="LINK_DISPLACED_MANAGE" stdDeviation="0.5" result="LINK_BLUR_MANAGE" />
+                      </filter>
+                      <linearGradient id="nav-link-gradient-manage" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style={{ stopColor: 'rgba(255, 255, 255, 0.9)', stopOpacity: 1 }} />
+                        <stop offset="100%" style={{ stopColor: 'rgba(255, 255, 255, 0.9)', stopOpacity: 1 }} />
+                      </linearGradient>
+                    </defs>
+                    <text
+                      x="50%"
+                      y="12"
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      style={{
+                        fill: 'url(#nav-link-gradient-manage)',
+                        filter: 'url(#nav-link-depth-manage)',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        fontFamily: 'system-ui, -apple-system, sans-serif',
+                        WebkitFontSmoothing: 'antialiased',
+                        MozOsxFontSmoothing: 'grayscale',
+                        textRendering: 'optimizeLegibility',
+                        fontFeatureSettings: '"kern" 1',
+                      }}
+                    >
+                      Manage
+                    </text>
+                  </svg>
                   <ChevronDown className={`w-4 h-4 transition-transform ${isManageDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
                 
