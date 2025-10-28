@@ -13,8 +13,13 @@ export const config = {
                  process.env.ALCHEMY_API_KEY || '',
 
   // 🔓 SAFE TO EXPOSE - Contract addresses (public blockchain data)
+  // Network-specific contract addresses
   contracts: {
-    onchainRugs: process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT || '',
+    onchainRugs: process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT || '', // Fallback/default
+    shapeSepolia: process.env.NEXT_PUBLIC_SHAPE_SEPOLIA_CONTRACT || process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT || '',
+    shapeMainnet: process.env.NEXT_PUBLIC_SHAPE_MAINNET_CONTRACT || process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT || '',
+    baseSepolia: process.env.NEXT_PUBLIC_BASE_SEPOLIA_CONTRACT || process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT || '',
+    baseMainnet: process.env.NEXT_PUBLIC_BASE_MAINNET_CONTRACT || process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT || '',
   },
   
   // Network configuration (multi-network support)
@@ -22,22 +27,22 @@ export const config = {
     shapeSepolia: {
       chainId: 11011,
       name: 'Shape Sepolia',
-      rpcUrl: 'https://sepolia.shape.network',
+      rpcUrl: process.env.NEXT_PUBLIC_SHAPE_SEPOLIA_RPC || 'https://sepolia.shape.network',
     },
     shapeMainnet: {
       chainId: 360,
       name: 'Shape Mainnet', 
-      rpcUrl: 'https://mainnet.shape.network',
+      rpcUrl: process.env.NEXT_PUBLIC_SHAPE_MAINNET_RPC || 'https://mainnet.shape.network',
     },
     baseSepolia: {
       chainId: 84532,
       name: 'Base Sepolia',
-      rpcUrl: 'https://sepolia.base.org',
+      rpcUrl: process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC || 'https://sepolia.base.org',
     },
     baseMainnet: {
       chainId: 8453,
       name: 'Base Mainnet',
-      rpcUrl: 'https://mainnet.base.org',
+      rpcUrl: process.env.NEXT_PUBLIC_BASE_MAINNET_RPC || 'https://mainnet.base.org',
     },
   },
   

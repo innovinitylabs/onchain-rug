@@ -17,10 +17,10 @@ export const shapeSepolia = {
   },
   rpcUrls: {
     default: {
-      http: ['https://sepolia.shape.network'],
+      http: [process.env.NEXT_PUBLIC_SHAPE_SEPOLIA_RPC || 'https://sepolia.shape.network'],
     },
     public: {
-      http: ['https://sepolia.shape.network'],
+      http: [process.env.NEXT_PUBLIC_SHAPE_SEPOLIA_RPC || 'https://sepolia.shape.network'],
     },
   },
   blockExplorers: {
@@ -42,10 +42,10 @@ export const shapeMainnet = {
   },
   rpcUrls: {
     default: {
-      http: ['https://mainnet.shape.network'],
+      http: [process.env.NEXT_PUBLIC_SHAPE_MAINNET_RPC || 'https://mainnet.shape.network'],
     },
     public: {
-      http: ['https://mainnet.shape.network'],
+      http: [process.env.NEXT_PUBLIC_SHAPE_MAINNET_RPC || 'https://mainnet.shape.network'],
     },
   },
   blockExplorers: {
@@ -67,10 +67,10 @@ export const baseSepolia = {
   },
   rpcUrls: {
     default: {
-      http: ['https://sepolia.base.org'],
+      http: [process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC || 'https://sepolia.base.org'],
     },
     public: {
-      http: ['https://sepolia.base.org'],
+      http: [process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC || 'https://sepolia.base.org'],
     },
   },
   blockExplorers: {
@@ -92,10 +92,10 @@ export const baseMainnet = {
   },
   rpcUrls: {
     default: {
-      http: ['https://mainnet.base.org'],
+      http: [process.env.NEXT_PUBLIC_BASE_MAINNET_RPC || 'https://mainnet.base.org'],
     },
     public: {
-      http: ['https://mainnet.base.org'],
+      http: [process.env.NEXT_PUBLIC_BASE_MAINNET_RPC || 'https://mainnet.base.org'],
     },
   },
   blockExplorers: {
@@ -333,12 +333,12 @@ export const onchainRugsABI = [
   },
 ] as const
 
-// Contract addresses
+// Contract addresses per network
 export const contractAddresses = {
-  [shapeSepolia.id]: appConfig.contracts.onchainRugs,
-  [shapeMainnet.id]: appConfig.contracts.onchainRugs,
-  [baseSepolia.id]: appConfig.contracts.onchainRugs,
-  [baseMainnet.id]: appConfig.contracts.onchainRugs,
+  [shapeSepolia.id]: process.env.NEXT_PUBLIC_SHAPE_SEPOLIA_CONTRACT || appConfig.contracts.onchainRugs,
+  [shapeMainnet.id]: process.env.NEXT_PUBLIC_SHAPE_MAINNET_CONTRACT || appConfig.contracts.onchainRugs,
+  [baseSepolia.id]: process.env.NEXT_PUBLIC_BASE_SEPOLIA_CONTRACT || appConfig.contracts.onchainRugs,
+  [baseMainnet.id]: process.env.NEXT_PUBLIC_BASE_MAINNET_CONTRACT || appConfig.contracts.onchainRugs,
 }
 
 // Alchemy NFT API Configuration

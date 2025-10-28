@@ -61,7 +61,12 @@ contract DeployShapeSepolia is Script {
     uint256 constant DAY = 1 days;
 
     function setUp() public {
-        deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        // Try TESTNET_PRIVATE_KEY first, fallback to PRIVATE_KEY
+        try vm.envUint("TESTNET_PRIVATE_KEY") returns (uint256 key) {
+            deployerPrivateKey = key;
+        } catch {
+            deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        }
         deployer = vm.addr(deployerPrivateKey);
         console.log("Deployer address:", deployer);
         console.log("Deployer balance:", deployer.balance / 1e18, "ETH");
@@ -296,6 +301,11 @@ contract DeployShapeSepolia is Script {
     function initializeSystem() internal {
         console.log("8. Initializing OnchainRugs system...");
 
+        // Initialize ERC721 metadata (name and symbol)
+        console.log("   Initializing ERC721 metadata...");
+        RugNFTFacet(diamondAddr).initializeERC721Metadata();
+        console.log("   Name: OnchainRugs, Symbol: RUGS");
+
         // Set Scripty contracts (includes HTML generator)
         RugAdminFacet(diamondAddr).setScriptyContracts(
             scriptyBuilderAddr,
@@ -386,7 +396,7 @@ contract DeployShapeSepolia is Script {
     }
 
     function _getRugNFTSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](28);
+        bytes4[] memory selectors = new bytes4[](29);
         // ERC721 Standard Functions (hardcoded selectors from forge inspect)
         selectors[0] = bytes4(0x70a08231); // balanceOf(address)
         selectors[1] = bytes4(0x6352211e); // ownerOf(uint256)
@@ -420,6 +430,9 @@ contract DeployShapeSepolia is Script {
         selectors[25] = RugNFTFacet.getWhitelistedOperators.selector;
         selectors[26] = RugNFTFacet.getPermittedContractReceivers.selector;
         selectors[27] = RugNFTFacet.isTransferAllowed.selector;
+
+        // Initialization function
+        selectors[28] = RugNFTFacet.initializeERC721Metadata.selector;
 
         return selectors;
     }
