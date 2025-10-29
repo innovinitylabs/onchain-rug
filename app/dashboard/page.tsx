@@ -125,7 +125,7 @@ export default function DashboardPage() {
   const contractAddress = contractAddresses[chainId] // No fallback - prevents accidental wrong network transactions
 
   // Get user's rug balance
-  const { data: balance, refetch: refetchBalance } = useReadContract({
+  const { data: balance, refetch: refetchBalance, isLoading: balanceLoading, isError: balanceError } = useReadContract({
     address: contractAddress as `0x${string}`,
     abi: [
       {
@@ -139,9 +139,10 @@ export default function DashboardPage() {
     functionName: 'balanceOf',
     args: address ? [address] : undefined,
     query: {
-      enabled: !!address,
+      enabled: !!address && !!contractAddress && contractAddress !== '0x0000000000000000000000000000000000000000',
     },
   })
+
 
   // Helper function to fetch rug data using new utilities
   const fetchRugData = async (tokenId: number): Promise<RugData | null> => {
@@ -300,7 +301,7 @@ export default function DashboardPage() {
         console.log(`User has ${balance} NFTs, proceeding with loading...`)
 
         // Get NFTs owned by user from Alchemy
-        const ownerResponse = await fetch(`${window.location.origin}/api/alchemy?endpoint=getNFTsForOwner&contractAddresses=${contractAddress}&owner=${address}&chainId=${chainId}`)
+        const ownerResponse = await fetch(`${window.location.origin}/api/alchemy?endpoint=getNFTsForOwner&contractAddresses[]=${contractAddress}&owner=${address}&chainId=${chainId}`)
         const ownerData = await ownerResponse.json()
 
         console.log('Owner data response:', ownerData)
