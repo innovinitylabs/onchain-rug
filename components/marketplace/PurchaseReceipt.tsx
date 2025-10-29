@@ -53,7 +53,7 @@ export default function PurchaseReceipt({
 
               {/* Creator Royalty */}
               {royaltyAmount > BigInt(0) && (
-                <div className="flex justify-between text-orange-300">
+                <div className="flex justify-between text-green-300">
                   <span>Creator Royalty:</span>
                   <span>-{formatEth(royaltyAmount)} ETH</span>
                 </div>
@@ -80,11 +80,11 @@ export default function PurchaseReceipt({
           </div>
 
           {/* Impact Message */}
-          <div className="bg-gradient-to-r from-orange-500/10 to-pink-500/10 border border-orange-500/20 rounded-lg p-4">
+          <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-lg p-4">
             <div className="flex items-start gap-3">
-              <Heart className="w-5 h-5 text-orange-400 mt-0.5 flex-shrink-0" />
+              <Heart className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
               <div>
-                <h4 className="text-orange-300 font-medium text-sm mb-1">Supporting Creators</h4>
+                <h4 className="text-green-300 font-medium text-sm mb-1">Supporting Creators</h4>
                 <p className="text-white/70 text-xs">
                   Your purchase helps creators earn from their work. Royalties ensure fair compensation for artists and builders in the ecosystem.
                 </p>

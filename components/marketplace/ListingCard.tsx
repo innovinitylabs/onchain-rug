@@ -39,7 +39,7 @@ export default function ListingCard({
 
   // Royalty badge
   const royaltyBadge = hasActiveListing && !royaltyLoading && royaltyPercentage > 0 && (
-    <div className="px-2 py-1 bg-orange-500/20 text-orange-300 text-xs rounded border border-orange-500/30 flex items-center gap-1">
+    <div className="px-2 py-1 bg-green-500/20 text-green-300 text-xs rounded border border-green-500/30 flex items-center gap-1">
       <span className="text-xs">💰</span>
       {royaltyPercentage}% Royalty
     </div>

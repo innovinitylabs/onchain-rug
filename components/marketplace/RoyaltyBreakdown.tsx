@@ -48,7 +48,7 @@ export default function RoyaltyBreakdown({ tokenId, listingPrice }: RoyaltyBreak
 
         {/* Creator Royalty */}
         {royaltyAmount && royaltyAmount > BigInt(0) && (
-          <div className="flex justify-between text-orange-300">
+          <div className="flex justify-between text-green-300">
             <span>Creator Royalty ({royaltyPercentage}%):</span>
             <span>-{formatEth(royaltyAmount)} ETH</span>
           </div>
