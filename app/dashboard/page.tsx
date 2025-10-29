@@ -452,6 +452,32 @@ export default function DashboardPage() {
     return `${dateStr} ${timeStr} (${relativeTime})`
   }
 
+  // If no contract address for this network, show error state
+  if (!contractAddress || contractAddress === '0x0000000000000000000000000000000000000000') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+        <Navigation />
+        <div className="pt-20 pb-12 px-4 max-w-6xl mx-auto">
+          <div className="text-center py-12">
+            <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold text-white mb-2">Unsupported Network</h1>
+            <p className="text-white/70 mb-6">
+              OnchainRugs is not available on the current network. Please switch to Shape Sepolia or Base Sepolia testnet.
+            </p>
+            <div className="bg-white/5 border border-white/10 rounded-lg p-4 max-w-md mx-auto">
+              <p className="text-sm text-white/60 mb-2">Supported Networks:</p>
+              <ul className="text-sm text-white/80 space-y-1">
+                <li>• Shape Sepolia (Chain ID: 11011)</li>
+                <li>• Base Sepolia (Chain ID: 84532)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    )
+  }
+
   if (!isConnected) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col">
