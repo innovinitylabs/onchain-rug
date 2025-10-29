@@ -397,6 +397,11 @@ contract DeployBaseSepolia is Script {
             recipientSplits
         );
         console.log("   - Royalties: 10% to deployer address");
+
+        // Enable laundering by default
+        console.log("   Enabling automatic laundering...");
+        RugAdminFacet(diamondAddr).setLaunderingEnabled(true);
+        console.log("   - Automatic laundering: ENABLED");
     }
 
     // Selector generation functions
