@@ -18,7 +18,7 @@ contract EnableLaundering is Script {
 
     // Contract addresses
     address constant BASE_SEPOLIA_CONTRACT = 0xa43532205Fc90b286Da98389a9883347Cc4064a8;
-    address constant SHAPE_SEPOLIA_CONTRACT = 0x5E63d07BDa3987da3A0CaCD69d829b9E11C1f325;
+    address constant SHAPE_SEPOLIA_CONTRACT = 0x5419436b1e97063B636c70ba2E829Ed26336aA0d;
 
     function run() external {
         // Default to Base Sepolia if no network specified
