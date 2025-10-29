@@ -125,7 +125,7 @@ export default function DashboardPage() {
   const contractAddress = contractAddresses[chainId] // No fallback - prevents accidental wrong network transactions
 
   // Get user's rug balance
-  const { data: balance, refetch: refetchBalance } = useReadContract({
+  const { data: balance, refetch: refetchBalance, isLoading: balanceLoading, isError: balanceError } = useReadContract({
     address: contractAddress as `0x${string}`,
     abi: [
       {
@@ -139,9 +139,10 @@ export default function DashboardPage() {
     functionName: 'balanceOf',
     args: address ? [address] : undefined,
     query: {
-      enabled: !!address,
+      enabled: !!address && !!contractAddress && contractAddress !== '0x0000000000000000000000000000000000000000',
     },
   })
+
 
   // Helper function to fetch rug data using new utilities
   const fetchRugData = async (tokenId: number): Promise<RugData | null> => {
@@ -300,7 +301,7 @@ export default function DashboardPage() {
         console.log(`User has ${balance} NFTs, proceeding with loading...`)
 
         // Get NFTs owned by user from Alchemy
-        const ownerResponse = await fetch(`${window.location.origin}/api/alchemy?endpoint=getNFTsForOwner&contractAddresses=${contractAddress}&owner=${address}&chainId=${chainId}`)
+        const ownerResponse = await fetch(`${window.location.origin}/api/alchemy?endpoint=getNFTsForOwner&contractAddresses[]=${contractAddress}&owner=${address}&chainId=${chainId}`)
         const ownerData = await ownerResponse.json()
 
         console.log('Owner data response:', ownerData)
@@ -450,6 +451,32 @@ export default function DashboardPage() {
     }
 
     return `${dateStr} ${timeStr} (${relativeTime})`
+  }
+
+  // If no contract address for this network, show error state
+  if (!contractAddress || contractAddress === '0x0000000000000000000000000000000000000000') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+        <Navigation />
+        <div className="pt-20 pb-12 px-4 max-w-6xl mx-auto">
+          <div className="text-center py-12">
+            <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold text-white mb-2">Unsupported Network</h1>
+            <p className="text-white/70 mb-6">
+              OnchainRugs is not available on the current network. Please switch to Shape Sepolia or Base Sepolia testnet.
+            </p>
+            <div className="bg-white/5 border border-white/10 rounded-lg p-4 max-w-md mx-auto">
+              <p className="text-sm text-white/60 mb-2">Supported Networks:</p>
+              <ul className="text-sm text-white/80 space-y-1">
+                <li>• Shape Sepolia (Chain ID: 11011)</li>
+                <li>• Base Sepolia (Chain ID: 84532)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    )
   }
 
   if (!isConnected) {
