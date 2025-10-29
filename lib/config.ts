@@ -22,32 +22,8 @@ export const config = {
     baseMainnet: process.env.NEXT_PUBLIC_BASE_MAINNET_CONTRACT || process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT || '',
   },
   
-  // Network configuration (multi-network support)
-  networks: {
-    shapeSepolia: {
-      chainId: 11011,
-      name: 'Shape Sepolia',
-      rpcUrl: process.env.NEXT_PUBLIC_SHAPE_SEPOLIA_RPC || 'https://sepolia.shape.network',
-    },
-    shapeMainnet: {
-      chainId: 360,
-      name: 'Shape Mainnet', 
-      rpcUrl: process.env.NEXT_PUBLIC_SHAPE_MAINNET_RPC || 'https://mainnet.shape.network',
-    },
-    baseSepolia: {
-      chainId: 84532,
-      name: 'Base Sepolia',
-      rpcUrl: process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC || 'https://sepolia.base.org',
-    },
-    baseMainnet: {
-      chainId: 8453,
-      name: 'Base Mainnet',
-      rpcUrl: process.env.NEXT_PUBLIC_BASE_MAINNET_RPC || 'https://mainnet.base.org',
-    },
-  },
-  
   // Default chain ID (can be switched via environment variable)
-  chainId: 84532, // Base Sepolia (default - was 11011 for Shape Sepolia)
+  chainId: process.env.NEXT_PUBLIC_DEFAULT_CHAIN_ID ? parseInt(process.env.NEXT_PUBLIC_DEFAULT_CHAIN_ID) : 84532, // Base Sepolia default
   
   // Minting configuration
   minting: {

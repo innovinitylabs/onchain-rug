@@ -6,6 +6,7 @@ import { useAccount, useWriteContract, useWaitForTransactionReceipt, useChainId,
 import { parseEther } from 'viem'
 import { shapeSepolia, shapeMainnet, contractAddresses } from '@/lib/web3'
 import { config } from '@/lib/config'
+import { getChainDisplayName } from '@/lib/networks'
 
 interface Web3MintingProps {
   textRows: string[]
@@ -236,7 +237,7 @@ export default function Web3Minting({
       console.log('Minting with optimized data:', {
         contract: contractAddress,
         chainId: chainId,
-        network: chainId === 84532 ? 'Base Sepolia' : chainId === 11011 ? 'Shape Sepolia' : 'Unknown',
+        network: getChainDisplayName(chainId),
         textRows: optimized.textRows,
         seed: seed, // Using the seed from the generator
         paletteName: optimized.palette.name,
@@ -344,7 +345,7 @@ export default function Web3Minting({
             ⚠️ Contract not deployed on this network
           </div>
           <div className="text-orange-300 text-xs mt-1">
-            Network: {chainId === 84532 ? 'Base Sepolia' : chainId === 11011 ? 'Shape Sepolia' : `Chain ${chainId}`}
+            Network: {getChainDisplayName(chainId)}
           </div>
           <div className="text-orange-300 text-xs mt-1">
             Please switch to a supported network
@@ -356,7 +357,7 @@ export default function Web3Minting({
             ✅ Ready: {contractAddress?.slice(0, 6)}...{contractAddress?.slice(-4)}
           </div>
           <div className="text-green-300 text-xs mt-1">
-            Network: {chainId === 84532 ? 'Base Sepolia' : chainId === 11011 ? 'Shape Sepolia' : `Chain ${chainId}`}
+            Network: {getChainDisplayName(chainId)}
           </div>
         </div>
       )}

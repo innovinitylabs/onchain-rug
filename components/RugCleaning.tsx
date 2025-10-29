@@ -9,6 +9,7 @@ import { motion } from 'framer-motion'
 import { Droplets, AlertCircle, CheckCircle, Clock, Sparkles, Crown } from 'lucide-react'
 import { config, agingConfig } from '@/lib/config'
 import { formatEther } from 'viem'
+import { SUPPORTED_CHAIN_IDS, getChainName } from '@/lib/networks'
 
 interface RugCleaningProps {
   tokenId: bigint
@@ -99,7 +100,7 @@ export function RugCleaning({ tokenId, mintTime, lastCleaned: propLastCleaned, o
   const [estimatingMasterRestoreGas, setEstimatingMasterRestoreGas] = useState(false)
 
   // Check if on any supported network (not just the default config chain)
-  const supportedChainIds = [11011, 360, 84532, 8453] // Shape Sepolia, Shape Mainnet, Base Sepolia, Base Mainnet
+  const supportedChainIds = SUPPORTED_CHAIN_IDS
   const isCorrectChain = supportedChainIds.includes(chainId)
 
   const getCleaningCost = () => {
@@ -642,7 +643,7 @@ export function RugCleaning({ tokenId, mintTime, lastCleaned: propLastCleaned, o
         <div className="bg-yellow-900/50 border border-yellow-500/30 rounded p-3">
           <div className="flex items-center gap-2 text-yellow-400 text-sm font-mono">
             <AlertCircle className="w-4 h-4" />
-            Please switch to a supported network: Shape Sepolia (11011), Shape Mainnet (360), Base Sepolia (84532), or Base Mainnet (8453)
+            Please switch to a supported network: {SUPPORTED_CHAIN_IDS.map(id => `${getChainName(id)} (${id})`).join(', ')}
           </div>
         </div>
       )}

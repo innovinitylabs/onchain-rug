@@ -12,6 +12,7 @@ import { initPRNG, getPRNG, createDerivedPRNG } from '@/lib/DeterministicPRNG'
 import { config } from '@/lib/config'
 import { useChainId } from 'wagmi'
 import { contractAddresses } from '@/lib/web3'
+import { getChainDisplayName } from '@/lib/networks'
 
 export default function GeneratorPage() {
   const chainId = useChainId()
@@ -2633,7 +2634,7 @@ export default function GeneratorPage() {
                       )}
                     </div>
                     <div className="text-green-500 text-xs font-mono mt-1">
-                      Network: {chainId === 84532 ? 'Base Sepolia' : chainId === 11011 ? 'Shape Sepolia' : chainId === 8453 ? 'Base Mainnet' : chainId === 360 ? 'Shape Mainnet' : `Chain ${chainId}`}
+                      Network: {getChainDisplayName(chainId)}
                     </div>
                   </div>
                 </div>

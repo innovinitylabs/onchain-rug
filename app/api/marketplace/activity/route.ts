@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { DEFAULT_CHAIN_ID } from '@/lib/networks'
 
 /**
  * Marketplace Activity Feed API
@@ -8,7 +9,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const limit = parseInt(searchParams.get('limit') || '20')
-    const chain = searchParams.get('chain') || '360'
+    const chain = searchParams.get('chain') || DEFAULT_CHAIN_ID.toString()
 
     // TODO: Implement actual event fetching from blockchain
     // For now, return empty array - will be populated when events are indexed

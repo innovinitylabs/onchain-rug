@@ -6,6 +6,7 @@ import { useContractRead, useWatchContractEvent, useAccount, useChainId } from '
 import { ExternalLink, Filter, SortAsc, Grid, List, RefreshCw, ChevronDown, ChevronUp, Code, X, Maximize2, Minimize2 } from 'lucide-react'
 import { onchainRugsABI, contractAddresses } from '@/lib/web3'
 import { config } from '@/lib/config'
+import { getExplorerUrl } from '@/lib/networks'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
 import LoadingAnimation from '@/components/LoadingAnimation'
@@ -960,7 +961,7 @@ export default function GalleryPage() {
                       {/* Actions */}
                       <div className="flex gap-2">
                         <a
-                          href={`https://sepolia.shapescan.xyz/token/${contractAddress}/instance/${nft.tokenId}`}
+                          href={`${getExplorerUrl(chainId)}/token/${contractAddress}/instance/${nft.tokenId}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="flex-1 flex items-center justify-center gap-2 bg-blue-100 hover:bg-blue-200 border border-blue-200 rounded-lg py-2 px-4 text-blue-700 transition-colors"
@@ -1163,7 +1164,7 @@ export default function GalleryPage() {
                     {/* Action Buttons */}
                     <div className="flex gap-3 mt-6 pt-6 border-t border-blue-200/50">
                       <a
-                        href={`https://sepolia.shapescan.xyz/token/${contractAddress}/instance/${selectedNFT.tokenId}`}
+                        href={`${getExplorerUrl(chainId)}/token/${contractAddress}/instance/${selectedNFT.tokenId}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium transition-colors"
