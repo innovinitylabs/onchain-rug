@@ -133,6 +133,11 @@ export function getAlchemyNetwork(chainId: number): string {
   return network?.alchemyNetwork || 'base-sepolia' // fallback
 }
 
+export function getAlchemyBaseUrl(chainId: number): string {
+  const alchemyNetwork = getAlchemyNetwork(chainId)
+  return `https://${alchemyNetwork}.g.alchemy.com/nft/v3`
+}
+
 export function getRpcUrl(chainId: number): string {
   const network = getNetworkByChainId(chainId)
   if (!network) return ''

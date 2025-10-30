@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAlchemyNftApiUrl, getNetworkByChainId, DEFAULT_CHAIN_ID } from '@/lib/networks'
+import { getAlchemyBaseUrl, DEFAULT_CHAIN_ID } from '@/lib/networks'
 
 // Server-side Alchemy API proxy to keep API key secure
 export async function GET(request: NextRequest) {
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  const alchemyBaseUrl = getAlchemyNftApiUrl(parseInt(chainId))
+  const alchemyBaseUrl = getAlchemyBaseUrl(parseInt(chainId))
 
   if (!endpoint || (!contractAddress && contractAddresses.length === 0)) {
     return NextResponse.json(
@@ -32,6 +32,10 @@ export async function GET(request: NextRequest) {
       { status: 400 }
     )
   }
+
+  // Log contract configuration for debugging
+  const chainIdNum = parseInt(chainId)
+  console.log(`🔍 Chain ${chainIdNum} contract:`, contractAddress)
 
   try {
     let url: string
@@ -107,6 +111,17 @@ export async function GET(request: NextRequest) {
     })
 
     if (!response.ok) {
+      // Handle common Alchemy errors gracefully
+      if (response.status === 500) {
+        console.warn(`⚠️ Alchemy returned 500 for contract ${contractAddress} on chain ${chainId} - likely no contract deployed there`)
+        // Return empty result instead of error
+        return NextResponse.json({
+          nfts: [],
+          totalCount: 0,
+          note: 'No NFTs found on this network'
+        })
+      }
+
       console.error(`❌ Alchemy API error: ${response.status} ${response.statusText}`)
       return NextResponse.json(
         { error: `Alchemy API error: ${response.status}` },
