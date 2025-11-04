@@ -45,16 +45,28 @@ export async function getRelayQuote(body: RelayQuoteRequest): Promise<RelayQuote
   }
   assertAmountMatchesTxs(body.amount, body.txs)
 
+  console.log('Relay Quote Request:', JSON.stringify(body, null, 2))
+  console.log('Using Relay API:', RELAY_BASE)
+
   const res = await fetch(`${RELAY_BASE}/quote`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   })
+  
+  const responseText = await res.text()
+  console.log('Relay Quote Response:', res.status, responseText)
+  
   if (!res.ok) {
-    const text = await res.text()
-    throw new Error(`Relay quote failed: ${res.status} ${text}`)
+    // Check if this is a route issue
+    if (responseText.includes('NO_SWAP_ROUTES_FOUND')) {
+      console.error('⚠️ Relay does not support this route for contract calls.')
+      console.error('Suggestion: Try Ethereum Sepolia → Shape Sepolia or Base Sepolia → Ethereum Sepolia')
+      console.error('Note: Some routes work for simple bridging but not for contract execution')
+    }
+    throw new Error(`Relay quote failed: ${res.status} ${responseText}`)
   }
-  return res.json()
+  return JSON.parse(responseText)
 }
 
 export async function getRelayStatus(requestId: string): Promise<any> {

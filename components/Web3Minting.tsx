@@ -43,7 +43,7 @@ export default function Web3Minting({
   const [gasError, setGasError] = useState<string | null>(null)
   const [gasLoading, setGasLoading] = useState(false)
 
-  const { mintCrossChain } = useRelayMint()
+  const { mintCrossChain, relayTxHash, isConfirming: isRelayConfirming, isSuccess: isRelaySuccess } = useRelayMint()
 
   // Modal state
   const [showModal, setShowModal] = useState(false)
@@ -385,12 +385,19 @@ export default function Web3Minting({
           valueWei,
         })
 
-        console.log('Relay quote created:', quote)
-        alert('Bridge + Mint requested via Relay. Please check the console/logs for status and follow up if needed.')
+        console.log('Relay quote result:', quote)
+        
+        if (quote.hash) {
+          alert(`Bridge + Mint transaction sent! Hash: ${quote.hash}\n\nPlease wait for confirmation. The NFT will be minted on ${getName(destinationChainId)} after the bridge completes.`)
+        } else {
+          alert('Bridge + Mint quote created. Transaction will be executed by wallet.')
+        }
       }
       
-      // Close modal on success
-      setShowModal(false)
+      // Modal stays open to show status - will close when tx confirms
+      if (isDirect) {
+        setShowModal(false)
+      }
     } catch (err) {
       console.error('Minting error:', err)
       console.error('Error details:', {
@@ -425,15 +432,20 @@ export default function Web3Minting({
       )}
 
       {/* Transaction Status */}
-      {hash && (
+      {(hash || relayTxHash) && (
         <div className="bg-blue-900/30 border border-blue-500/30 rounded p-2">
           <div className="text-blue-400 text-xs font-mono">
-            📝 Transaction: {hash.slice(0, 10)}...{hash.slice(-8)}
+            📝 Transaction: {(hash || relayTxHash)?.slice(0, 10)}...{(hash || relayTxHash)?.slice(-8)}
           </div>
+          {relayTxHash && isRelayConfirming && (
+            <div className="text-amber-400 text-xs mt-1">
+              ⏳ Waiting for bridge to complete...
+            </div>
+          )}
         </div>
       )}
 
-      {isSuccess && (
+      {(isSuccess || isRelaySuccess) && (
         <div className="bg-green-900/30 border border-green-500/30 rounded p-2">
           <div className="text-green-400 text-xs font-mono">
             ✅ NFT minted successfully!

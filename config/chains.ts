@@ -1,5 +1,5 @@
 import { NETWORKS, getNetworkByChainId, CONTRACT_ADDRESSES } from '@/lib/networks'
-import { shapeSepolia, shapeMainnet, baseMainnet, baseSepolia } from '@/lib/web3'
+import { ethereumSepolia, shapeSepolia, shapeMainnet, baseMainnet, baseSepolia } from '@/lib/web3'
 
 export type ChainMetadata = {
   name: string
@@ -66,6 +66,7 @@ export const DESTINATION_SHAPE_ID = getDestinationShapeChainId()
 
 export function getWagmiChainById(chainId: number) {
   const map: Record<number, any> = {
+    [ethereumSepolia.id]: ethereumSepolia,
     [shapeSepolia.id]: shapeSepolia,
     [shapeMainnet.id]: shapeMainnet,
     [baseMainnet.id]: baseMainnet,

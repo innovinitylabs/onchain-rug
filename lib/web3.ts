@@ -37,6 +37,7 @@ function createChainConfig(networkKey: keyof typeof NETWORKS) {
 }
 
 // Chain configurations (generated from centralized config)
+export const ethereumSepolia = createChainConfig('ethereumSepolia')
 export const shapeSepolia = createChainConfig('shapeSepolia')
 export const shapeMainnet = createChainConfig('shapeMainnet')
 export const baseSepolia = createChainConfig('baseSepolia')
@@ -45,8 +46,9 @@ export const testNet = createChainConfig('testNet')
 
 // Wagmi configuration
 export const wagmiConfig = createConfig({
-  chains: [shapeSepolia, shapeMainnet, baseSepolia, baseMainnet, testNet],
+  chains: [ethereumSepolia, shapeSepolia, shapeMainnet, baseSepolia, baseMainnet, testNet],
   transports: {
+    [ethereumSepolia.id]: http(),
     [shapeSepolia.id]: http(),
     [shapeMainnet.id]: http(),
     [baseSepolia.id]: http(),
@@ -360,7 +362,13 @@ export async function callContractWithAlchemyFallback(
 
     // Fallback to native RPC
     try {
-      const chains = { [shapeSepolia.id]: shapeSepolia, [shapeMainnet.id]: shapeMainnet, [baseSepolia.id]: baseSepolia, [baseMainnet.id]: baseMainnet }
+      const chains = { 
+        [ethereumSepolia.id]: ethereumSepolia,
+        [shapeSepolia.id]: shapeSepolia, 
+        [shapeMainnet.id]: shapeMainnet, 
+        [baseSepolia.id]: baseSepolia, 
+        [baseMainnet.id]: baseMainnet 
+      }
       const chain = chains[chainId]
       if (!chain) {
         throw new Error(`Unsupported chain ID: ${chainId}`)
@@ -395,7 +403,7 @@ export async function callContractWithAlchemyFallback(
       })
     } catch (shapeError) {
       console.error(`Both Alchemy RPC and Shape RPC failed for ${functionName}:`, { alchemyError, shapeError })
-      throw new Error(`All RPC endpoints failed: ${alchemyError.message} | ${shapeError.message}`)
+      throw new Error(`All RPC endpoints failed: ${alchemyError instanceof Error ? alchemyError.message : String(alchemyError)} | ${shapeError instanceof Error ? shapeError.message : String(shapeError)}`)
     }
   }
 }

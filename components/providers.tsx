@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { WagmiProvider } from 'wagmi'
 import { RainbowKitProvider, getDefaultConfig, Theme } from '@rainbow-me/rainbowkit'
 import { config as appConfig } from '@/lib/config'
-import { shapeSepolia, shapeMainnet, baseSepolia, baseMainnet } from '@/lib/web3'
+import { ethereumSepolia, shapeSepolia, shapeMainnet, baseSepolia, baseMainnet } from '@/lib/web3'
 
 // Simple wagmi config for basic functionality
 import { createConfig, http } from 'wagmi'
@@ -83,8 +83,9 @@ console.log('WalletConnect Project ID:', projectId)
 
 // Create a simple wagmi config as fallback
 const simpleWagmiConfig = createConfig({
-  chains: [shapeSepolia, shapeMainnet, baseSepolia, baseMainnet],
+  chains: [ethereumSepolia, shapeSepolia, shapeMainnet, baseSepolia, baseMainnet],
   transports: {
+    [ethereumSepolia.id]: http(),
     [shapeSepolia.id]: http(),
     [shapeMainnet.id]: http(),
     [baseSepolia.id]: http(),
@@ -100,7 +101,7 @@ try {
   rainbowKitConfig = getDefaultConfig({
   appName: 'Onchain Rugs',
   projectId: projectId,
-  chains: [shapeSepolia, shapeMainnet, baseSepolia, baseMainnet],
+  chains: [ethereumSepolia, shapeSepolia, shapeMainnet, baseSepolia, baseMainnet],
   ssr: true,
 })
 } catch (error) {

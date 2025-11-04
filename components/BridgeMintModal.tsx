@@ -40,7 +40,7 @@ export default function BridgeMintModal({
     // NETWORKS.baseMainnet.chainId,  // Enable after deploying to mainnet
   ].filter(id => !!contractAddresses[id])
 
-  // Pay options: common chains users might have funds on
+  // Pay options: all common chains users might have funds on
   const payOptions = [
     { id: 1, name: 'Ethereum Mainnet', symbol: 'ETH' },
     { id: 11155111, name: 'Ethereum Sepolia', symbol: 'ETH' },
@@ -54,6 +54,15 @@ export default function BridgeMintModal({
   const [payChainId, setPayChainId] = useState(currentChainId)
   const [payDropdownOpen, setPayDropdownOpen] = useState(false)
   const [isMinting, setIsMinting] = useState(false)
+  
+  // Check if route is likely supported (based on known Relay limitations)
+  const isLikelyUnsupportedRoute = () => {
+    // Base Sepolia → Shape Sepolia: Relay supports bridging but may not support contract calls
+    if (payChainId === NETWORKS.baseSepolia.chainId && destinationChainId === NETWORKS.shapeSepolia.chainId && !isDirect) {
+      return true
+    }
+    return false
+  }
 
   // Update pay chain when user's connected chain changes
   useEffect(() => {
@@ -224,10 +233,16 @@ export default function BridgeMintModal({
                   )}
                 </AnimatePresence>
               </div>
-              {!isDirect && (
+              {!isDirect && !isLikelyUnsupportedRoute() && (
                 <div className="mt-2 text-xs text-amber-400 flex items-center gap-1">
                   <Info size={12} />
                   <span>Cross-chain mint via Relay Protocol</span>
+                </div>
+              )}
+              {isLikelyUnsupportedRoute() && (
+                <div className="mt-2 text-xs text-red-400 flex items-center gap-1">
+                  <Info size={12} />
+                  <span>⚠️ Route may not be supported for contract calls. Try Ethereum Sepolia instead.</span>
                 </div>
               )}
             </div>

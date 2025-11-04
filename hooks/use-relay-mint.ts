@@ -1,12 +1,19 @@
 import { encodeFunctionData } from 'viem'
 import { getRelayQuote } from '@/utils/relay-api'
-import { useAccount } from 'wagmi'
+import { useAccount, useSendTransaction, useWaitForTransactionReceipt, useSwitchChain } from 'wagmi'
+import { useState } from 'react'
 
 type VisualConfig = { warpThickness: number; stripeCount: number }
 type ArtData = { paletteName: string; minifiedPalette: string; minifiedStripeData: string; filteredCharacterMap: string }
 
 export function useRelayMint() {
   const { address } = useAccount()
+  const { sendTransactionAsync } = useSendTransaction()
+  const { switchChainAsync } = useSwitchChain()
+  const [relayTxHash, setRelayTxHash] = useState<string | null>(null)
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
+    hash: relayTxHash as `0x${string}` | undefined,
+  })
 
   async function mintCrossChain(params: {
     originChainId: number
@@ -95,10 +102,50 @@ export function useRelayMint() {
       recipient,
     })
 
-    return quote
+    console.log('Relay quote received:', quote)
+
+    // Execute the first step (deposit transaction)
+    if (quote.steps && quote.steps.length > 0) {
+      const step = quote.steps[0]
+      if (step.items && step.items.length > 0) {
+        const txData = step.items[0].data
+        
+        console.log('Executing Relay deposit transaction:', txData)
+        
+        // Switch to origin chain if needed
+        if (txData.chainId !== originChainId) {
+          console.warn('Chain mismatch - switching to origin chain:', originChainId)
+        }
+        
+        try {
+          await switchChainAsync({ chainId: txData.chainId })
+          console.log('Switched to chain:', txData.chainId)
+        } catch (switchError) {
+          console.error('Failed to switch chain:', switchError)
+          throw new Error('Please switch your wallet to ' + (txData.chainId === 11155111 ? 'Ethereum Sepolia' : 'the origin chain') + ' to complete the transaction')
+        }
+        
+        const hash = await sendTransactionAsync({
+          to: txData.to as `0x${string}`,
+          data: txData.data as `0x${string}`,
+          value: BigInt(txData.value),
+          gas: BigInt(txData.gas),
+          maxFeePerGas: BigInt(txData.maxFeePerGas),
+          maxPriorityFeePerGas: BigInt(txData.maxPriorityFeePerGas),
+          chainId: txData.chainId,
+        })
+        
+        setRelayTxHash(hash)
+        console.log('Relay deposit transaction sent:', hash)
+        
+        return { quote, hash, requestId: step.requestId }
+      }
+    }
+
+    return { quote }
   }
 
-  return { mintCrossChain }
+  return { mintCrossChain, relayTxHash, isConfirming, isSuccess }
 }
 
 
