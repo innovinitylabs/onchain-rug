@@ -416,7 +416,7 @@ contract DeployBaseSepolia is Script {
     }
 
     function _getRugNFTSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](32);
+        bytes4[] memory selectors = new bytes4[](33);
         // ERC721 Standard Functions (hardcoded selectors from forge inspect)
         selectors[0] = bytes4(0x70a08231); // balanceOf(address)
         selectors[1] = bytes4(0x6352211e); // ownerOf(uint256)
@@ -434,30 +434,31 @@ contract DeployBaseSepolia is Script {
 
         // Rug-specific functions
         selectors[13] = RugNFTFacet.mintRug.selector;
-        selectors[14] = RugNFTFacet.burn.selector;
-        selectors[15] = RugNFTFacet.getRugData.selector;
-        selectors[16] = RugNFTFacet.getAgingData.selector;
-        selectors[17] = RugNFTFacet.getMintPrice.selector;
-        selectors[18] = RugNFTFacet.canMint.selector;
-        selectors[19] = RugNFTFacet.isTextAvailable.selector;
-        selectors[20] = RugNFTFacet.maxSupply.selector;
-        selectors[21] = RugNFTFacet.walletMints.selector;
-        selectors[22] = RugNFTFacet.isWalletException.selector;
+        selectors[14] = RugNFTFacet.mintRugFor.selector; // NEW: Cross-chain mint for Relay
+        selectors[15] = RugNFTFacet.burn.selector;
+        selectors[16] = RugNFTFacet.getRugData.selector;
+        selectors[17] = RugNFTFacet.getAgingData.selector;
+        selectors[18] = RugNFTFacet.getMintPrice.selector;
+        selectors[19] = RugNFTFacet.canMint.selector;
+        selectors[20] = RugNFTFacet.isTextAvailable.selector;
+        selectors[21] = RugNFTFacet.maxSupply.selector;
+        selectors[22] = RugNFTFacet.walletMints.selector;
+        selectors[23] = RugNFTFacet.isWalletException.selector;
 
         // ERC721-C functions
-        selectors[23] = RugNFTFacet.getTransferValidator.selector;
-        selectors[24] = RugNFTFacet.getSecurityPolicy.selector;
-        selectors[25] = RugNFTFacet.getWhitelistedOperators.selector;
-        selectors[26] = RugNFTFacet.getPermittedContractReceivers.selector;
-        selectors[27] = RugNFTFacet.isOperatorWhitelisted.selector;
-        selectors[28] = RugNFTFacet.isContractReceiverPermitted.selector;
-        selectors[29] = RugNFTFacet.isTransferAllowed.selector;
+        selectors[24] = RugNFTFacet.getTransferValidator.selector;
+        selectors[25] = RugNFTFacet.getSecurityPolicy.selector;
+        selectors[26] = RugNFTFacet.getWhitelistedOperators.selector;
+        selectors[27] = RugNFTFacet.getPermittedContractReceivers.selector;
+        selectors[28] = RugNFTFacet.isOperatorWhitelisted.selector;
+        selectors[29] = RugNFTFacet.isContractReceiverPermitted.selector;
+        selectors[30] = RugNFTFacet.isTransferAllowed.selector;
 
         // Marketplace function
-        selectors[30] = RugNFTFacet.marketplaceTransfer.selector;
+        selectors[31] = RugNFTFacet.marketplaceTransfer.selector;
 
         // Initialization function
-        selectors[31] = RugNFTFacet.initializeERC721Metadata.selector;
+        selectors[32] = RugNFTFacet.initializeERC721Metadata.selector;
 
         return selectors;
     }

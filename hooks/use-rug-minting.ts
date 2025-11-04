@@ -2,6 +2,9 @@ import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadCont
 import { useState } from 'react'
 import { config, mintingConfig } from '@/lib/config'
 import { shapeSepolia, shapeMainnet, contractAddresses } from '@/lib/web3'
+import { DESTINATION_SHAPE_ID } from '@/config/chains'
+import { encodeFunctionData } from 'viem'
+import { useRelayMint } from './use-relay-mint'
 
 // Hook for minting rugs with deterministic seed generation
 export function useRugMinting() {
@@ -12,6 +15,7 @@ export function useRugMinting() {
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
   })
+  const { mintCrossChain } = useRelayMint()
 
   // Get current mint price
   const { data: mintPrice } = useReadContract({
@@ -71,27 +75,82 @@ export function useRugMinting() {
     const finalSvgArt = svgArt || await generateRugSVG(finalSeed, textLines || [])
 
     try {
-      const chain = chainId === 360 ? shapeMainnet : shapeSepolia
-      await writeContract({
-        address: contractAddress as `0x${string}`,
+      // If already on destination chain (Shape), use direct path (legacy function kept for compatibility)
+      if (chainId === DESTINATION_SHAPE_ID) {
+        const chain = chainId === 360 ? shapeMainnet : shapeSepolia
+        await writeContract({
+          address: contractAddress as `0x${string}`,
+          abi: [
+            {
+              inputs: [
+                { name: 'textLines', type: 'string[]' },
+                { name: 'seed', type: 'uint256' },
+                { name: 'svgArt', type: 'string' }
+              ],
+              name: 'mintWithText',
+              outputs: [],
+              stateMutability: 'payable',
+              type: 'function',
+            },
+          ] as const,
+          functionName: 'mintWithText',
+          args: [textLines || [], BigInt(finalSeed), finalSvgArt],
+          value: BigInt(mintingPrice),
+          chain,
+          account: address,
+        })
+        return
+      }
+
+      // Else: prepare a cross-chain quote (example for Relay flow)
+      const recipient = address as `0x${string}`
+      const callData = encodeFunctionData({
         abi: [
           {
             inputs: [
-              { name: 'textLines', type: 'string[]' },
+              { name: 'recipient', type: 'address' },
+              { name: 'textRows', type: 'string[]' },
               { name: 'seed', type: 'uint256' },
-              { name: 'svgArt', type: 'string' }
+              { name: 'visual', type: 'tuple', components: [
+                { name: 'warpThickness', type: 'uint8' },
+                { name: 'stripeCount', type: 'uint256' },
+              ] },
+              { name: 'art', type: 'tuple', components: [
+                { name: 'paletteName', type: 'string' },
+                { name: 'minifiedPalette', type: 'string' },
+                { name: 'minifiedStripeData', type: 'string' },
+                { name: 'filteredCharacterMap', type: 'string' },
+              ] },
+              { name: 'complexity', type: 'uint8' },
+              { name: 'characterCount', type: 'uint256' },
             ],
-            name: 'mintWithText',
+            name: 'mintRugFor',
             outputs: [],
             stateMutability: 'payable',
             type: 'function',
-          },
+          }
         ] as const,
-        functionName: 'mintWithText',
-        args: [textLines || [], BigInt(finalSeed), finalSvgArt],
-        value: BigInt(mintingPrice),
-        chain,
-        account: address,
+        functionName: 'mintRugFor',
+        args: [
+          recipient,
+          textLines || [],
+          BigInt(finalSeed),
+          { warpThickness: 2, stripeCount: BigInt(0) },
+          { paletteName: 'Default', minifiedPalette: '{}', minifiedStripeData: '[]', filteredCharacterMap: '{}' },
+          0,
+          BigInt((textLines || []).join('').length),
+        ],
+      })
+
+      await mintCrossChain({
+        recipient,
+        textRows: textLines || [],
+        seed: BigInt(finalSeed),
+        visual: { warpThickness: 2, stripeCount: 0 },
+        art: { paletteName: 'Default', minifiedPalette: '{}', minifiedStripeData: '[]', filteredCharacterMap: '{}' },
+        complexity: 0,
+        characterCount: BigInt((textLines || []).join('').length),
+        valueWei: BigInt(mintingPrice),
       })
     } catch (err) {
       console.error('Failed to mint rug:', err)

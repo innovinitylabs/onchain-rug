@@ -22,11 +22,11 @@ import "../src/libraries/LibRugStorage.sol";
 import "../src/diamond/interfaces/IDiamondCut.sol";
 
 /**
- * @title Shape Sepolia Testnet Deployment Script
- * @dev Fresh deployment to Shape Sepolia testnet
+ * @title Ethereum Sepolia Testnet Deployment Script
+ * @dev Fresh deployment to Ethereum Sepolia testnet
  * @notice Deploys all contracts from scratch without any dependencies
  */
-contract DeployShapeSepolia is Script {
+contract DeployEthereumSepolia is Script {
     // Contracts to deploy
     FileStore public fileStore;
     ScriptyStorageV2 public scriptyStorage;
@@ -65,7 +65,7 @@ contract DeployShapeSepolia is Script {
         try vm.envUint("TESTNET_PRIVATE_KEY") returns (uint256 key) {
             deployerPrivateKey = key;
         } catch {
-        deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+            deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         }
         deployer = vm.addr(deployerPrivateKey);
         console.log("Deployer address:", deployer);
@@ -76,7 +76,7 @@ contract DeployShapeSepolia is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         console.log("=========================================");
-        console.log("Starting OnchainRugs Shape Sepolia Deployment");
+        console.log("Starting OnchainRugs Ethereum Sepolia Deployment");
         console.log("=========================================");
 
         deployInfrastructure();
@@ -86,7 +86,7 @@ contract DeployShapeSepolia is Script {
         initializeSystem();
 
         console.log("=========================================");
-        console.log("Shape Sepolia Deployment Complete!");
+        console.log("Ethereum Sepolia Deployment Complete!");
         console.log("=========================================");
         console.log("FileStore:", fileStoreAddr);
         console.log("ScriptyStorageV2:", scriptyStorageAddr);
@@ -100,9 +100,7 @@ contract DeployShapeSepolia is Script {
 
     function deployInfrastructure() internal {
         console.log("1. Deploying FileStore...");
-        // For Shape Sepolia, we'll use a simple deployer address
-        // In production, you'd want a proper CREATE2 deployer
-        fileStore = new FileStore(address(0x4e59b44847b379578588920cA78FbF26c0B4956C)); // Using a known address
+        fileStore = new FileStore(address(0x4e59b44847b379578588920cA78FbF26c0B4956C));
         fileStoreAddr = address(fileStore);
         console.log("   FileStore deployed at:", fileStoreAddr);
 
@@ -163,7 +161,7 @@ contract DeployShapeSepolia is Script {
         IDiamondCut(diamondAddr).diamondCut(loupeCut, address(0), "");
         console.log("   Added DiamondLoupeFacet");
 
-        // Add RugNFTFacet (manually specify selectors to avoid conflicts)
+        // Add RugNFTFacet
         IDiamondCut.FacetCut[] memory nftCut = new IDiamondCut.FacetCut[](1);
         nftCut[0] = IDiamondCut.FacetCut({
             facetAddress: address(rugNFTFacet),
@@ -265,8 +263,8 @@ contract DeployShapeSepolia is Script {
     function uploadFile(string memory fileName, string memory content) internal {
         bytes memory contentBytes = bytes(content);
 
-        // Split into 20KB chunks (like the legacy script)
-        uint256 chunkSize = 20000; // 20KB chunks
+        // Split into 20KB chunks
+        uint256 chunkSize = 20000;
         uint256 totalChunks = (contentBytes.length + chunkSize - 1) / chunkSize;
 
         console.log("   File:", fileName);
@@ -301,38 +299,28 @@ contract DeployShapeSepolia is Script {
     function initializeSystem() internal {
         console.log("8. Initializing OnchainRugs system...");
 
-        // Initialize ERC721 metadata (name and symbol)
+        // Initialize ERC721 metadata
         console.log("   Initializing ERC721 metadata...");
         RugNFTFacet(diamondAddr).initializeERC721Metadata();
         console.log("   Name: OnchainRugs, Symbol: RUGS");
 
-        // Set Scripty contracts (includes HTML generator)
+        // Set Scripty contracts
         RugAdminFacet(diamondAddr).setScriptyContracts(
             scriptyBuilderAddr,
             scriptyStorageAddr,
             htmlGeneratorAddr
         );
 
-        // ERC721-C transfer security already initialized in RugNFTFacet constructor
         console.log("   ERC721-C transfer validator initialized in RugNFTFacet");
 
-        // Marketplace uses default configuration (no initialization needed)
-
-        // Note: New O(1) aging system uses hardcoded constants, not configurable thresholds
-        // Test values use minutes instead of days for rapid testing
-        console.log("   O(1) Aging System:");
-        console.log("   - Dirt: 1min to 1, 2min to 2 (normally 3d to 1, 7d to 2)");
-        console.log("   - Texture: 3min/level progression (normally 30dto60dto90dto120d...)");
-        console.log("   - Free cleaning: 30min after mint, 11min after last clean");
-
-        // Set pricing (0.00003 ETH base price, others 0)
+        // Set pricing
         uint256[6] memory prices = [
-            uint256(30000000000000), // basePrice: 0.00003 ETH in wei
-            uint256(0),             // linePrice1
-            uint256(0),             // linePrice2
-            uint256(0),             // linePrice3
-            uint256(0),             // linePrice4
-            uint256(0)              // linePrice5
+            uint256(30000000000000), // basePrice: 0.00003 ETH
+            uint256(0),
+            uint256(0),
+            uint256(0),
+            uint256(0),
+            uint256(0)
         ];
         RugAdminFacet(diamondAddr).updateMintPricing(prices);
 
@@ -340,65 +328,52 @@ contract DeployShapeSepolia is Script {
         RugAdminFacet(diamondAddr).updateCollectionCap(10000);
         RugAdminFacet(diamondAddr).updateWalletLimit(7);
 
-        // Set aging thresholds for fresh mechanics system (test values in minutes)
-        // [dirtLevel1Minutes, dirtLevel2Minutes, agingAdvanceMinutes, freeCleanMinutes, freeCleanWindowMinutes]
+        // Set aging thresholds (test values in minutes)
         uint256[5] memory agingThresholds = [
-            uint256(1 minutes),    // dirtLevel1: 1 minute to level 1 (normally 1 day)
-            uint256(2 minutes),    // dirtLevel2: 2 minutes to level 2 (normally 3 days)
-            uint256(3 minutes),    // agingAdvance: 3 minutes between aging level advances (normally 7 days)
-            uint256(5 minutes),    // freeClean: 5 minutes after mint for free cleaning (normally 14 days)
-            uint256(2 minutes)     // freeCleanWindow: 2 minutes after cleaning for free cleaning (normally 5 days)
+            uint256(1 minutes),
+            uint256(2 minutes),
+            uint256(3 minutes),
+            uint256(5 minutes),
+            uint256(2 minutes)
         ];
         RugAdminFacet(diamondAddr).updateAgingThresholds(agingThresholds);
 
-        // Set service pricing [cleaningCost, restorationCost, masterRestorationCost, launderingThreshold]
+        // Set service pricing
         uint256[4] memory servicePrices = [
-            uint256(0.00001 ether),  // cleaningCost
-            uint256(0.00001 ether),  // restorationCost
-            uint256(0.00001 ether),  // masterRestorationCost
-            uint256(0.00001 ether)   // launderingThreshold
+            uint256(0.00001 ether),
+            uint256(0.00001 ether),
+            uint256(0.00001 ether),
+            uint256(0.00001 ether)
         ];
         RugAdminFacet(diamondAddr).updateServicePricing(servicePrices);
 
-        // Set frame progression thresholds (higher = harder to achieve)
+        // Set frame thresholds
         uint256[4] memory frameThresholds = [
-            uint256(50),   // bronzeThreshold: 50 points
-            uint256(150),  // silverThreshold: 150 points
-            uint256(300),  // goldThreshold: 300 points
-            uint256(600)   // diamondThreshold: 600 points
+            uint256(50),
+            uint256(150),
+            uint256(300),
+            uint256(600)
         ];
         RugAdminFacet(diamondAddr).updateFrameThresholds(frameThresholds);
 
-        console.log("   System initialized with:");
-        console.log("   - Base price: 0.00003 ETH");
-        console.log("   - Collection cap: 10,000");
-        console.log("   - Wallet limit: 7");
-        console.log("   - Aging thresholds (TEST VALUES): 1min/2min dirt, 3min aging progression");
-        console.log("   - Free cleaning: 5min after mint, 2min after cleaning");
-        console.log("   - Service costs: 0.00001 ETH each");
-        console.log("   - Frame thresholds: Bronze(50), Silver(150), Gold(300), Diamond(600)");
-        console.log("   - Aging protection: Bronze(25% slower), Silver(50%), Gold(80%), Diamond(90%)");
-        console.log("   - Dirt immunity: Silver+ frames never accumulate dirt");
-        console.log("   - Maintenance points: Clean(2), Restore(8), Master(12), Launder(20)");
-        console.log("   - Fresh mechanics: 3 dirt levels, 11 aging levels, 5 frames");
-        console.log("   - Scripty contracts configured");
+        console.log("   System initialized with test values");
 
         // Configure royalties (10% to deployer)
         console.log("   Configuring royalties...");
         address[] memory recipients = new address[](1);
-        recipients[0] = deployer; // Deployer's address
+        recipients[0] = deployer;
 
         uint256[] memory recipientSplits = new uint256[](1);
-        recipientSplits[0] = 1000; // 10% = 1000 basis points
+        recipientSplits[0] = 1000;
 
         RugCommerceFacet(diamondAddr).configureRoyalties(
-            1000, // 10% royalty (1000 basis points)
+            1000,
             recipients,
             recipientSplits
         );
         console.log("   - Royalties: 10% to deployer address");
 
-        // Enable laundering by default
+        // Enable laundering
         console.log("   Enabling automatic laundering...");
         RugAdminFacet(diamondAddr).setLaunderingEnabled(true);
         console.log("   - Automatic laundering: ENABLED");
@@ -417,7 +392,7 @@ contract DeployShapeSepolia is Script {
 
     function _getRugNFTSelectors() internal pure returns (bytes4[] memory) {
         bytes4[] memory selectors = new bytes4[](33);
-        // ERC721 Standard Functions (hardcoded selectors from forge inspect)
+        // ERC721 Standard Functions
         selectors[0] = bytes4(0x70a08231); // balanceOf(address)
         selectors[1] = bytes4(0x6352211e); // ownerOf(uint256)
         selectors[2] = bytes4(0x42842e0e); // safeTransferFrom(address,address,uint256)
@@ -462,7 +437,6 @@ contract DeployShapeSepolia is Script {
 
         return selectors;
     }
-
 
     function _getRugAdminSelectors() internal pure returns (bytes4[] memory) {
         bytes4[] memory selectors = new bytes4[](17);
@@ -513,13 +487,12 @@ contract DeployShapeSepolia is Script {
         selectors[7] = RugMaintenanceFacet.canRestoreRug.selector;
         selectors[8] = RugMaintenanceFacet.needsMasterRestoration.selector;
         selectors[9] = RugMaintenanceFacet.getMaintenanceOptions.selector;
-        selectors[10] = RugMaintenanceFacet.getMaintenanceHistory.selector; // Added
+        selectors[10] = RugMaintenanceFacet.getMaintenanceHistory.selector;
         return selectors;
     }
 
     function _getRugCommerceSelectors() internal pure returns (bytes4[] memory) {
         bytes4[] memory selectors = new bytes4[](19);
-        // Original selectors
         selectors[0] = RugCommerceFacet.withdraw.selector;
         selectors[1] = RugCommerceFacet.withdrawTo.selector;
         selectors[2] = RugCommerceFacet.configureRoyalties.selector;
@@ -530,7 +503,6 @@ contract DeployShapeSepolia is Script {
         selectors[7] = RugCommerceFacet.calculateRoyalty.selector;
         selectors[8] = RugCommerceFacet.getRoyaltyRecipients.selector;
         selectors[9] = RugCommerceFacet.areRoyaltiesConfigured.selector;
-        // Payment Processor integration selectors
         selectors[10] = RugCommerceFacet.setCollectionPricingBounds.selector;
         selectors[11] = RugCommerceFacet.setTokenPricingBounds.selector;
         selectors[12] = RugCommerceFacet.setApprovedPaymentCoin.selector;
@@ -539,8 +511,7 @@ contract DeployShapeSepolia is Script {
         selectors[15] = RugCommerceFacet.isCollectionPricingImmutable.selector;
         selectors[16] = RugCommerceFacet.isTokenPricingImmutable.selector;
         selectors[17] = RugCommerceFacet.getApprovedPaymentCoin.selector;
-        selectors[18] = RugCommerceFacet.getSaleHistory.selector; // Added
-        // Note: supportsInterface(bytes4) is already registered by DiamondLoupeFacet
+        selectors[18] = RugCommerceFacet.getSaleHistory.selector;
         return selectors;
     }
 
@@ -565,7 +536,6 @@ contract DeployShapeSepolia is Script {
         selectors[3] = RugTransferSecurityFacet.setToCustomSecurityPolicy.selector;
         selectors[4] = RugTransferSecurityFacet.setPaymentProcessorSecurityPolicy.selector;
         selectors[5] = RugTransferSecurityFacet.setTransferEnforcement.selector;
-        // selectors[6] = RugTransferSecurityFacet.getTransferValidator.selector; // Now in RugNFTFacet
         selectors[6] = RugTransferSecurityFacet.getSecurityPolicyId.selector;
         selectors[7] = RugTransferSecurityFacet.areTransfersEnforced.selector;
         selectors[8] = RugTransferSecurityFacet.isSecurityInitialized.selector;
@@ -574,17 +544,15 @@ contract DeployShapeSepolia is Script {
 
     function _getRugMarketplaceSelectors() internal pure returns (bytes4[] memory) {
         bytes4[] memory selectors = new bytes4[](8);
-        // Listing functions
         selectors[0] = RugMarketplaceFacet.createListing.selector;
         selectors[1] = RugMarketplaceFacet.cancelListing.selector;
         selectors[2] = RugMarketplaceFacet.updateListingPrice.selector;
         selectors[3] = RugMarketplaceFacet.buyListing.selector;
-        // Admin functions
         selectors[4] = RugMarketplaceFacet.setMarketplaceFee.selector;
         selectors[5] = RugMarketplaceFacet.withdrawFees.selector;
-        // View functions
         selectors[6] = RugMarketplaceFacet.getListing.selector;
         selectors[7] = RugMarketplaceFacet.getMarketplaceStats.selector;
         return selectors;
     }
 }
+

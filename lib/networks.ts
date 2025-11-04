@@ -20,6 +20,18 @@ export interface NetworkConfig {
 
 // Supported networks configuration
 export const NETWORKS: Record<string, NetworkConfig> = {
+  ethereumSepolia: {
+    chainId: 11155111,
+    name: 'ethereum-sepolia',
+    displayName: 'Ethereum Sepolia',
+    rpcUrl: 'https://ethereum-sepolia-rpc.publicnode.com',
+    envRpcKey: 'NEXT_PUBLIC_ETHEREUM_SEPOLIA_RPC',
+    explorerUrl: 'https://sepolia.etherscan.io',
+    explorerApiUrl: 'https://api-sepolia.etherscan.io/api',
+    alchemyNetwork: 'eth-sepolia',
+    isTestnet: true,
+    blockExplorerName: 'Etherscan Sepolia'
+  },
   shapeSepolia: {
     chainId: 11011,
     name: 'shape-sepolia',
@@ -149,6 +161,7 @@ export function getRpcUrl(chainId: number): string {
 
 // Contract addresses (still configurable via env vars for different deployments)
 export const CONTRACT_ADDRESSES: Record<number, string | undefined> = {
+  [NETWORKS.ethereumSepolia.chainId]: process.env.NEXT_PUBLIC_ETHEREUM_SEPOLIA_CONTRACT || process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT,
   [NETWORKS.shapeSepolia.chainId]: process.env.NEXT_PUBLIC_SHAPE_SEPOLIA_CONTRACT || process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT,
   [NETWORKS.shapeMainnet.chainId]: process.env.NEXT_PUBLIC_SHAPE_MAINNET_CONTRACT || process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT,
   [NETWORKS.baseSepolia.chainId]: process.env.NEXT_PUBLIC_BASE_SEPOLIA_CONTRACT || process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT,

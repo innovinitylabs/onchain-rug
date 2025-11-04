@@ -92,13 +92,27 @@ contract RugNFTFacet is ICreatorToken {
         uint8 complexity,
         uint256 characterCount
     ) external payable {
+        this.mintRugFor{value: msg.value}(msg.sender, textRows, seed, visual, art, complexity, characterCount);
+    }
+
+    function mintRugFor(
+        address recipient,
+        string[] calldata textRows,
+        uint256 seed,
+        VisualConfig calldata visual,
+        ArtData calldata art,
+        uint8 complexity,
+        uint256 characterCount
+    ) external payable {
+        require(recipient != address(0), "Invalid recipient");
+
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
 
         // Basic validation
         require(textRows.length > 0 && textRows.length <= 5, "Invalid text length");
         require(visual.warpThickness >= 1 && visual.warpThickness <= 5, "Invalid warp thickness");
         require(LibRugStorage.canMintSupply(), "Max supply reached");
-        require(LibRugStorage.canMint(msg.sender), "Wallet limit exceeded");
+        require(LibRugStorage.canMint(recipient), "Wallet limit exceeded");
 
         // Text uniqueness check
         require(LibRugStorage.isTextAvailable(textRows), "Text already used");
@@ -112,7 +126,7 @@ contract RugNFTFacet is ICreatorToken {
             seed = uint256(keccak256(abi.encodePacked(
                 block.timestamp,
                 block.prevrandao,
-                msg.sender,
+                recipient,
                 rs.tokenCounter
             )));
         }
@@ -153,12 +167,12 @@ contract RugNFTFacet is ICreatorToken {
 
         // Mark text as used and record mint
         LibRugStorage.markTextAsUsed(textRows);
-        LibRugStorage.recordMint(msg.sender);
+        LibRugStorage.recordMint(recipient);
 
         // Mint NFT -  use _mint instead of _safeMint to avoid ERC721c receiver checks. since this is open to all mint, owner checks aren't necessary.
-        _mint(msg.sender, tokenId);
+        _mint(recipient, tokenId);
 
-        emit RugMinted(tokenId, msg.sender, textRows, seed);
+        emit RugMinted(tokenId, recipient, textRows, seed);
     }
 
     /**
