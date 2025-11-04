@@ -388,7 +388,7 @@ export default function Web3Minting({
         console.log('Relay quote result:', quote)
         
         if (quote.hash) {
-          alert(`Bridge + Mint transaction sent! Hash: ${quote.hash}\n\nPlease wait for confirmation. The NFT will be minted on ${getName(destinationChainId)} after the bridge completes.`)
+          alert(`Bridge + Mint transaction sent! Hash: ${quote.hash}\n\nPlease wait for confirmation. The NFT will be minted on ${getChainDisplayName(destinationChainId)} after the bridge completes.`)
         } else {
           alert('Bridge + Mint quote created. Transaction will be executed by wallet.')
         }
