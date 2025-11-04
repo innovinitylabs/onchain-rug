@@ -137,6 +137,22 @@ export default function Web3Minting({
     mintCost: string
   }) => {
     const { destinationChainId, payChainId, contractAddress } = params
+    
+    // CRITICAL SAFETY CHECK: Prevent sending funds to wrong chain
+    if (payChainId === destinationChainId) {
+      // Direct mint - verify we're on the right chain
+      if (chainId !== destinationChainId) {
+        alert(`SAFETY ERROR: You are on ${getChainDisplayName(chainId)} but trying to mint on ${getChainDisplayName(destinationChainId)}. Please switch your wallet to the correct network first!`)
+        throw new Error('Chain mismatch - wallet on wrong network')
+      }
+    } else {
+      // Cross-chain mint - verify the destination contract is NOT deployed on origin chain
+      const originContract = contractAddresses[payChainId]
+      if (originContract && originContract.toLowerCase() === contractAddress.toLowerCase()) {
+        alert(`CRITICAL SAFETY ERROR: The destination contract address exists on both chains! This would send funds to the wrong chain. Aborting transaction.`)
+        throw new Error('Unsafe cross-chain configuration - same address on multiple chains')
+      }
+    }
 
     try {
       // Check if character map is available

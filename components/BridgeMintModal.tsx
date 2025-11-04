@@ -102,6 +102,12 @@ export default function BridgeMintModal({
       alert('Contract not deployed on selected destination chain')
       return
     }
+    
+    // CRITICAL SAFETY: For direct mints, verify wallet is on correct chain
+    if (isDirect && currentChainId !== destinationChainId) {
+      alert(`⚠️ SAFETY CHECK FAILED\n\nYou selected to mint on ${getName(destinationChainId)}, but your wallet is connected to ${getName(currentChainId)}.\n\nPlease switch your wallet to ${getName(destinationChainId)} first, or use a different "Pay on" chain for cross-chain minting.`)
+      return
+    }
 
     setIsMinting(true)
     try {
@@ -247,14 +253,28 @@ export default function BridgeMintModal({
               )}
             </div>
 
+            {/* Safety Warning for Chain Mismatch */}
+            {isDirect && currentChainId !== destinationChainId && (
+              <div className="bg-red-900/30 border-2 border-red-500 rounded-lg p-3">
+                <div className="text-red-400 text-sm font-bold mb-1">⚠️ SAFETY WARNING</div>
+                <div className="text-red-300 text-xs">
+                  Your wallet is on <span className="font-bold">{getName(currentChainId)}</span> but you're trying to mint on <span className="font-bold">{getName(destinationChainId)}</span>.
+                  This will fail and may send funds to the wrong chain!
+                </div>
+                <div className="text-red-200 text-xs mt-2">
+                  Switch wallet to {getName(destinationChainId)} or select a different "Pay on" chain for cross-chain minting.
+                </div>
+              </div>
+            )}
+
             {/* Mint Button */}
             <motion.button
               whileHover={{ scale: isConnected && !isMinting ? 1.02 : 1 }}
               whileTap={{ scale: isConnected && !isMinting ? 0.98 : 1 }}
               onClick={handleMint}
-              disabled={!isConnected || isMinting}
+              disabled={!isConnected || isMinting || (isDirect && currentChainId !== destinationChainId)}
               className={`w-full py-3 rounded-lg font-bold text-white transition-all ${
-                !isConnected || isMinting
+                !isConnected || isMinting || (isDirect && currentChainId !== destinationChainId)
                   ? 'bg-slate-700 cursor-not-allowed'
                   : 'bg-purple-600 hover:bg-purple-700'
               }`}
