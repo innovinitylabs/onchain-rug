@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getAlchemyBaseUrl, DEFAULT_CHAIN_ID } from '@/lib/networks'
 
 // Server-side Alchemy API proxy to keep API key secure
 export async function GET(request: NextRequest) {
@@ -9,7 +10,7 @@ export async function GET(request: NextRequest) {
   const owner = searchParams.get('owner')
   const index = searchParams.get('index')
   const contractAddresses = searchParams.getAll('contractAddresses[]')
-  const chainId = searchParams.get('chainId') || '84532' // Default to Base Sepolia
+  const chainId = searchParams.get('chainId') || DEFAULT_CHAIN_ID.toString()
 
   console.log('Alchemy API params:', { endpoint, contractAddress, tokenId, owner, index, contractAddresses, chainId })
 
@@ -23,24 +24,7 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  // Helper function to get Alchemy base URL based on chain ID
-  function getAlchemyBaseUrl(chainId: string): string {
-    switch (chainId) {
-      case '11011': // Shape Sepolia
-        return 'https://shape-sepolia.g.alchemy.com/nft/v3'
-      case '360': // Shape Mainnet
-        return 'https://shape-mainnet.g.alchemy.com/nft/v3'
-      case '84532': // Base Sepolia
-        return 'https://base-sepolia.g.alchemy.com/nft/v3'
-      case '8453': // Base Mainnet
-        return 'https://base-mainnet.g.alchemy.com/nft/v3'
-      default:
-        // Default to Base Sepolia
-        return 'https://base-sepolia.g.alchemy.com/nft/v3'
-    }
-  }
-
-  const alchemyBaseUrl = getAlchemyBaseUrl(chainId)
+  const alchemyBaseUrl = getAlchemyBaseUrl(parseInt(chainId))
 
   if (!endpoint || (!contractAddress && contractAddresses.length === 0)) {
     return NextResponse.json(
@@ -48,6 +32,10 @@ export async function GET(request: NextRequest) {
       { status: 400 }
     )
   }
+
+  // Log contract configuration for debugging
+  const chainIdNum = parseInt(chainId)
+  console.log(`🔍 Chain ${chainIdNum} contract:`, contractAddress)
 
   try {
     let url: string
@@ -123,6 +111,17 @@ export async function GET(request: NextRequest) {
     })
 
     if (!response.ok) {
+      // Handle common Alchemy errors gracefully
+      if (response.status === 500) {
+        console.warn(`⚠️ Alchemy returned 500 for contract ${contractAddress} on chain ${chainId} - likely no contract deployed there`)
+        // Return empty result instead of error
+        return NextResponse.json({
+          nfts: [],
+          totalCount: 0,
+          note: 'No NFTs found on this network'
+        })
+      }
+
       console.error(`❌ Alchemy API error: ${response.status} ${response.statusText}`)
       return NextResponse.json(
         { error: `Alchemy API error: ${response.status}` },

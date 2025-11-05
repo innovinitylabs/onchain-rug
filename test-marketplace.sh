@@ -9,6 +9,9 @@ echo "=================================================="
 echo "  ONCHAIN RUGS MARKETPLACE - AUTOMATED TESTING"
 echo "=================================================="
 echo ""
+echo "Usage: $0 [network]"
+echo "Networks: shape-sepolia (default), shape-mainnet, base-sepolia, base-mainnet"
+echo ""
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -41,8 +44,31 @@ fi
 echo "${GREEN}✅ Environment configured${NC}"
 echo ""
 
-# Set RPC URL
-RPC_URL="https://sepolia.shape.network"
+# Set network (default to shape-sepolia if not provided)
+NETWORK=${1:-shape-sepolia}
+
+# Map network names to RPC URLs
+case $NETWORK in
+  "shape-sepolia")
+    RPC_URL="https://sepolia.shape.network"
+    ;;
+  "shape-mainnet")
+    RPC_URL="https://mainnet.shape.network"
+    ;;
+  "base-sepolia")
+    RPC_URL="https://sepolia.base.org"
+    ;;
+  "base-mainnet")
+    RPC_URL="https://mainnet.base.org"
+    ;;
+  *)
+    echo "${RED}ERROR: Unknown network '$NETWORK'${NC}"
+    echo "Supported networks: shape-sepolia, shape-mainnet, base-sepolia, base-mainnet"
+    exit 1
+    ;;
+esac
+
+echo "Using network: $NETWORK"
 echo "Using RPC: $RPC_URL"
 echo ""
 
@@ -58,15 +84,35 @@ else
 fi
 echo ""
 
-# Step 2: Deploy contracts to testnet
-echo "${BLUE}[STEP 2] Deploying contracts to Shape Sepolia...${NC}"
+# Step 2: Deploy contracts to specified network
+echo "${BLUE}[STEP 2] Deploying contracts to $NETWORK...${NC}"
 echo "This will take 5-10 minutes..."
 echo ""
 
 # Set PRIVATE_KEY for deployment (use TESTNET_PRIVATE_KEY)
 export PRIVATE_KEY=${TESTNET_PRIVATE_KEY}
 
-DEPLOY_OUTPUT=$(forge script script/DeployShapeSepolia.s.sol \
+# Choose the appropriate deployment script based on network
+case $NETWORK in
+  "shape-sepolia")
+    DEPLOY_SCRIPT="script/DeployShapeSepolia.s.sol"
+    ;;
+  "shape-mainnet")
+    DEPLOY_SCRIPT="script/DeployShapeSepolia.s.sol"  # Reuse for mainnet if available
+    ;;
+  "base-sepolia")
+    DEPLOY_SCRIPT="script/DeployBaseSepolia.s.sol"
+    ;;
+  "base-mainnet")
+    DEPLOY_SCRIPT="script/DeployBaseSepolia.s.sol"  # Reuse for mainnet if available
+    ;;
+  *)
+    echo "${RED}ERROR: No deployment script for network '$NETWORK'${NC}"
+    exit 1
+    ;;
+esac
+
+DEPLOY_OUTPUT=$(forge script $DEPLOY_SCRIPT \
     --rpc-url $RPC_URL \
     --broadcast \
     --slow \
@@ -140,13 +186,14 @@ echo "  TESTING COMPLETE!"
 echo "=================================================="
 echo ""
 echo "${GREEN}✅ Unit Tests: 23/23 passing${NC}"
-echo "${GREEN}✅ Deployment: Successful${NC}"
+echo "${GREEN}✅ Deployment: Successful on $NETWORK${NC}"
 echo "${GREEN}✅ Integration Tests: Passed${NC}"
 echo ""
 echo "Diamond Address: ${BLUE}$DIAMOND_ADDRESS${NC}"
+echo "Network: ${BLUE}$NETWORK${NC}"
 echo ""
 echo "Next steps:"
-echo "1. Update lib/web3.ts with the diamond address"
+echo "1. Update .env with NEXT_PUBLIC_${NETWORK^^}_CONTRACT=$DIAMOND_ADDRESS"
 echo "2. Run 'npm run dev' to start the frontend"
 echo "3. Test the UI at http://localhost:3000/market"
 echo ""

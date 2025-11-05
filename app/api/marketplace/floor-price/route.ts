@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createPublicClient, http } from 'viem'
 import { shapeSepolia } from '@/lib/web3'
+import { DEFAULT_CHAIN_ID } from '@/lib/networks'
 
 /**
  * Floor Price API
@@ -9,7 +10,7 @@ import { shapeSepolia } from '@/lib/web3'
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const chain = searchParams.get('chain') || '360'
+    const chain = searchParams.get('chain') || DEFAULT_CHAIN_ID.toString()
 
     // TODO: Query all active listings and find minimum price
     // For now, return null - will calculate from on-chain data

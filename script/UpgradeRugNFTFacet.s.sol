@@ -38,7 +38,7 @@ contract UpgradeRugNFTFacet is Script {
     }
 
     function _getRugNFTSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](18);
+        bytes4[] memory selectors = new bytes4[](19);
 
         // ERC721 Standard Functions
         selectors[0] = RugNFTFacet.ownerOf.selector;
@@ -58,9 +58,10 @@ contract UpgradeRugNFTFacet is Script {
 
         // Rug-specific functions
         selectors[14] = RugNFTFacet.mintRug.selector;
-        selectors[15] = RugNFTFacet.getRugData.selector;
-        selectors[16] = RugNFTFacet.getAgingData.selector;
-        selectors[17] = RugNFTFacet.initializeERC721Metadata.selector;
+        selectors[15] = RugNFTFacet.mintRugFor.selector; // NEW: Cross-chain mint function
+        selectors[16] = RugNFTFacet.getRugData.selector;
+        selectors[17] = RugNFTFacet.getAgingData.selector;
+        selectors[18] = RugNFTFacet.initializeERC721Metadata.selector;
 
         return selectors;
     }

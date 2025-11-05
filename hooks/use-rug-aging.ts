@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { ethers } from 'ethers'
 import { config, agingConfig } from '@/lib/config'
 import { shapeSepolia, shapeMainnet, baseSepolia, baseMainnet, contractAddresses, onchainRugsABI } from '@/lib/web3'
+import { SUPPORTED_CHAIN_IDS, getChainName } from '@/lib/networks'
 import { useTokenURI } from './use-token-uri'
 import { getDirtDescription, getAgingDescription } from '@/utils/parsing-utils'
 import { estimateContractGasWithRetry, getRecommendedGasOptions, formatGasEstimate } from '@/utils/gas-estimation'
@@ -126,10 +127,10 @@ export function useRestoreRug() {
     }
 
     // Check if on supported network
-    const supportedChainIds = [11011, 360, 84532, 8453] // Shape Sepolia, Shape Mainnet, Base Sepolia, Base Mainnet
+    const supportedChainIds = SUPPORTED_CHAIN_IDS
     if (!supportedChainIds.includes(chainId)) {
       console.error('❌ Unsupported network:', chainId, 'Supported:', supportedChainIds)
-      throw new Error(`Please switch to a supported network: Shape Sepolia (${11011}), Shape Mainnet (${360}), Base Sepolia (${84532}), or Base Mainnet (${8453})`)
+      throw new Error(`Please switch to a supported network: ${SUPPORTED_CHAIN_IDS.map(id => `${getChainName(id)} (${id})`).join(', ')}`)
     }
 
     if (!writeContract) {
@@ -285,10 +286,10 @@ export function useMasterRestoreRug() {
     }
 
     // Check if on supported network
-    const supportedChainIds = [11011, 360, 84532, 8453] // Shape Sepolia, Shape Mainnet, Base Sepolia, Base Mainnet
+    const supportedChainIds = SUPPORTED_CHAIN_IDS
     if (!supportedChainIds.includes(chainId)) {
       console.error('❌ Unsupported network:', chainId, 'Supported:', supportedChainIds)
-      throw new Error(`Please switch to a supported network: Shape Sepolia (${11011}), Shape Mainnet (${360}), Base Sepolia (${84532}), or Base Mainnet (${8453})`)
+      throw new Error(`Please switch to a supported network: ${SUPPORTED_CHAIN_IDS.map(id => `${getChainName(id)} (${id})`).join(', ')}`)
     }
 
     if (!writeContract) {
@@ -444,10 +445,10 @@ export function useCleanRug() {
     }
 
     // Check if on supported network
-    const supportedChainIds = [11011, 360, 84532, 8453] // Shape Sepolia, Shape Mainnet, Base Sepolia, Base Mainnet
+    const supportedChainIds = SUPPORTED_CHAIN_IDS
     if (!supportedChainIds.includes(chainId)) {
       console.error('❌ Unsupported network:', chainId, 'Supported:', supportedChainIds)
-      throw new Error(`Please switch to a supported network: Shape Sepolia (${11011}), Shape Mainnet (${360}), Base Sepolia (${84532}), or Base Mainnet (${8453})`)
+      throw new Error(`Please switch to a supported network: ${SUPPORTED_CHAIN_IDS.map(id => `${getChainName(id)} (${id})`).join(', ')}`)
     }
 
     if (!writeContract) {

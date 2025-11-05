@@ -3,9 +3,13 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useChainId, usePublicClient } from 'wagmi'
-import { parseEther } from 'viem'
+import { parseEther, encodeFunctionData } from 'viem'
 import { shapeSepolia, shapeMainnet, contractAddresses } from '@/lib/web3'
 import { config } from '@/lib/config'
+import { getChainDisplayName, NETWORKS } from '@/lib/networks'
+import { DESTINATION_SHAPE_ID, getDestinationContractAddress, getWagmiChainById } from '@/config/chains'
+import { useRelayMint } from '@/hooks/use-relay-mint'
+import BridgeMintModal from './BridgeMintModal'
 
 interface Web3MintingProps {
   textRows: string[]
@@ -39,8 +43,10 @@ export default function Web3Minting({
   const [gasError, setGasError] = useState<string | null>(null)
   const [gasLoading, setGasLoading] = useState(false)
 
-  // Get contract address for current network (no fallback for safety)
-  const contractAddress = contractAddresses[chainId]
+  const { mintCrossChain, relayTxHash, isConfirming: isRelayConfirming, isSuccess: isRelaySuccess } = useRelayMint()
+
+  // Modal state
+  const [showModal, setShowModal] = useState(false)
 
   // Calculate minting cost - NO TEXT IS FREE TO MINT
   const calculateCost = () => {
@@ -124,15 +130,28 @@ export default function Web3Minting({
     }
   }
 
-  const handleMint = async () => {
-    if (!isConnected) {
-      alert('Please connect your wallet first!')
-      return
-    }
-
-    if (!contractAddress || contractAddress === '0x0000000000000000000000000000000000000000') {
-      alert('Contract not deployed yet for this network!')
-      return
+  const handleModalMint = async (params: {
+    destinationChainId: number
+    payChainId: number
+    contractAddress: string
+    mintCost: string
+  }) => {
+    const { destinationChainId, payChainId, contractAddress } = params
+    
+    // CRITICAL SAFETY CHECK: Prevent sending funds to wrong chain
+    if (payChainId === destinationChainId) {
+      // Direct mint - verify we're on the right chain
+      if (chainId !== destinationChainId) {
+        alert(`SAFETY ERROR: You are on ${getChainDisplayName(chainId)} but trying to mint on ${getChainDisplayName(destinationChainId)}. Please switch your wallet to the correct network first!`)
+        throw new Error('Chain mismatch - wallet on wrong network')
+      }
+    } else {
+      // Cross-chain mint - verify the destination contract is NOT deployed on origin chain
+      const originContract = contractAddresses[payChainId]
+      if (originContract && originContract.toLowerCase() === contractAddress.toLowerCase()) {
+        alert(`CRITICAL SAFETY ERROR: The destination contract address exists on both chains! This would send funds to the wrong chain. Aborting transaction.`)
+        throw new Error('Unsafe cross-chain configuration - same address on multiple chains')
+      }
     }
 
     try {
@@ -145,7 +164,10 @@ export default function Web3Minting({
       const optimized = optimizeData()
       // Use the seed from the generator (not random!)
 
-      // Try estimating gas first
+      // Route: direct if pay chain equals destination chain
+      const isDirect = payChainId === destinationChainId
+
+      // Try estimating gas first (only relevant for direct path)
       let gasLimit: bigint
       setGasLoading(true)
       try {
@@ -236,7 +258,7 @@ export default function Web3Minting({
       console.log('Minting with optimized data:', {
         contract: contractAddress,
         chainId: chainId,
-        network: chainId === 84532 ? 'Base Sepolia' : chainId === 11011 ? 'Shape Sepolia' : 'Unknown',
+        network: getChainDisplayName(chainId),
         textRows: optimized.textRows,
         seed: seed, // Using the seed from the generator
         paletteName: optimized.palette.name,
@@ -255,64 +277,143 @@ export default function Web3Minting({
         optimizedSize: optimized.optimizedSize
       })
 
-      await writeContract({
-        address: contractAddress as `0x${string}`,
-        abi: [
-          {
-            "inputs": [
-              {"internalType": "string[]", "name": "textRows", "type": "string[]"},
-              {"internalType": "uint256", "name": "seed", "type": "uint256"},
-              {
-                "components": [
-                  {"internalType": "uint8", "name": "warpThickness", "type": "uint8"},
-                  {"internalType": "uint256", "name": "stripeCount", "type": "uint256"}
-                ],
-                "internalType": "struct RugNFTFacet.VisualConfig",
-                "name": "visual",
-                "type": "tuple"
-              },
-              {
-                "components": [
-                  {"internalType": "string", "name": "paletteName", "type": "string"},
-                  {"internalType": "string", "name": "minifiedPalette", "type": "string"},
-                  {"internalType": "string", "name": "minifiedStripeData", "type": "string"},
-                  {"internalType": "string", "name": "filteredCharacterMap", "type": "string"}
-                ],
-                "internalType": "struct RugNFTFacet.ArtData",
-                "name": "art",
-                "type": "tuple"
-              },
-              {"internalType": "uint8", "name": "complexity", "type": "uint8"},
-              {"internalType": "uint256", "name": "characterCount", "type": "uint256"}
-            ],
-            "name": "mintRug",
-            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-            "stateMutability": "payable",
-            "type": "function"
-          }
-        ] as const,
-        functionName: 'mintRug',
-        args: [
-          optimized.textRows,
-          BigInt(seed), // Using the seed from the generator
-          {
-            warpThickness: warpThickness, // Using the actual warp thickness from generator
-            stripeCount: BigInt(optimized.stripeData.length)
-          },
-          {
+      if (isDirect) {
+        const destChain = getWagmiChainById(destinationChainId)
+        await writeContract({
+          address: contractAddress as `0x${string}`,
+          abi: [
+            {
+              "inputs": [
+                {"internalType": "string[]", "name": "textRows", "type": "string[]"},
+                {"internalType": "uint256", "name": "seed", "type": "uint256"},
+                {
+                  "components": [
+                    {"internalType": "uint8", "name": "warpThickness", "type": "uint8"},
+                    {"internalType": "uint256", "name": "stripeCount", "type": "uint256"}
+                  ],
+                  "internalType": "struct RugNFTFacet.VisualConfig",
+                  "name": "visual",
+                  "type": "tuple"
+                },
+                {
+                  "components": [
+                    {"internalType": "string", "name": "paletteName", "type": "string"},
+                    {"internalType": "string", "name": "minifiedPalette", "type": "string"},
+                    {"internalType": "string", "name": "minifiedStripeData", "type": "string"},
+                    {"internalType": "string", "name": "filteredCharacterMap", "type": "string"}
+                  ],
+                  "internalType": "struct RugNFTFacet.ArtData",
+                  "name": "art",
+                  "type": "tuple"
+                },
+                {"internalType": "uint8", "name": "complexity", "type": "uint8"},
+                {"internalType": "uint256", "name": "characterCount", "type": "uint256"}
+              ],
+              "name": "mintRug",
+              "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+              "stateMutability": "payable",
+              "type": "function"
+            }
+          ] as const,
+          functionName: 'mintRug',
+          args: [
+            optimized.textRows,
+            BigInt(seed),
+            {
+              warpThickness: warpThickness,
+              stripeCount: BigInt(optimized.stripeData.length)
+            },
+            {
+              paletteName: optimized.palette.name,
+              minifiedPalette: JSON.stringify(optimized.palette),
+              minifiedStripeData: JSON.stringify(optimized.stripeData),
+              filteredCharacterMap: JSON.stringify(optimized.characterMap)
+            },
+            complexity,
+            BigInt(optimized.textRows.join('').length)
+          ],
+          value: parseEther(mintCost.toString()),
+          gas: gasLimit,
+          chain: destChain,
+          account: address
+        })
+      } else {
+        const callData = encodeFunctionData({
+          abi: [
+            {
+              inputs: [
+                { name: 'recipient', type: 'address' },
+                { name: 'textRows', type: 'string[]' },
+                { name: 'seed', type: 'uint256' },
+                { name: 'visual', type: 'tuple', components: [
+                  { name: 'warpThickness', type: 'uint8' },
+                  { name: 'stripeCount', type: 'uint256' },
+                ] },
+                { name: 'art', type: 'tuple', components: [
+                  { name: 'paletteName', type: 'string' },
+                  { name: 'minifiedPalette', type: 'string' },
+                  { name: 'minifiedStripeData', type: 'string' },
+                  { name: 'filteredCharacterMap', type: 'string' },
+                ] },
+                { name: 'complexity', type: 'uint8' },
+                { name: 'characterCount', type: 'uint256' },
+              ],
+              name: 'mintRugFor',
+              outputs: [],
+              stateMutability: 'payable',
+              type: 'function',
+            }
+          ] as const,
+          functionName: 'mintRugFor',
+          args: [
+            address as `0x${string}`,
+            optimized.textRows,
+            BigInt(seed),
+            { warpThickness, stripeCount: BigInt(optimized.stripeData.length) },
+            {
+              paletteName: optimized.palette.name,
+              minifiedPalette: JSON.stringify(optimized.palette),
+              minifiedStripeData: JSON.stringify(optimized.stripeData),
+              filteredCharacterMap: JSON.stringify(optimized.characterMap)
+            },
+            complexity,
+            BigInt(optimized.textRows.join('').length)
+          ],
+        })
+
+        const valueWei = parseEther(mintCost.toString())
+        const quote = await mintCrossChain({
+          originChainId: payChainId,
+          destinationChainId,
+          contractAddress: contractAddress as string,
+          recipient: address as `0x${string}`,
+          textRows: optimized.textRows,
+          seed: BigInt(seed),
+          visual: { warpThickness, stripeCount: Number(BigInt(optimized.stripeData.length)) },
+          art: {
             paletteName: optimized.palette.name,
             minifiedPalette: JSON.stringify(optimized.palette),
             minifiedStripeData: JSON.stringify(optimized.stripeData),
             filteredCharacterMap: JSON.stringify(optimized.characterMap)
           },
-          complexity, // Using the calculated complexity from generator
-          BigInt(optimized.textRows.join('').length) // characterCount
-        ],
-        value: parseEther(mintCost.toString()),
-        gas: gasLimit,
-        chain: chainId === 11011 ? shapeSepolia : shapeMainnet,
-        account: address
-      })
+          complexity,
+          characterCount: BigInt(optimized.textRows.join('').length),
+          valueWei,
+        })
+
+        console.log('Relay quote result:', quote)
+        
+        if (quote.hash) {
+          alert(`Bridge + Mint transaction sent! Hash: ${quote.hash}\n\nPlease wait for confirmation. The NFT will be minted on ${getChainDisplayName(destinationChainId)} after the bridge completes.`)
+        } else {
+          alert('Bridge + Mint quote created. Transaction will be executed by wallet.')
+        }
+      }
+      
+      // Modal stays open to show status - will close when tx confirms
+      if (isDirect) {
+        setShowModal(false)
+      }
     } catch (err) {
       console.error('Minting error:', err)
       console.error('Error details:', {
@@ -321,7 +422,7 @@ export default function Web3Minting({
         gasEstimate,
         gasError
       })
-      alert(`Minting failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
+      throw err // Let modal handle the error display
     }
   }
 
@@ -337,30 +438,6 @@ export default function Web3Minting({
 
   return (
     <div className="space-y-3">
-      {/* Contract Status */}
-      {!contractAddress || contractAddress === '0x0000000000000000000000000000000000000000' ? (
-        <div className="bg-orange-900/30 border border-orange-500/30 rounded p-2">
-          <div className="text-orange-400 text-xs font-mono">
-            ⚠️ Contract not deployed on this network
-          </div>
-          <div className="text-orange-300 text-xs mt-1">
-            Network: {chainId === 84532 ? 'Base Sepolia' : chainId === 11011 ? 'Shape Sepolia' : `Chain ${chainId}`}
-          </div>
-          <div className="text-orange-300 text-xs mt-1">
-            Please switch to a supported network
-          </div>
-        </div>
-      ) : (
-        <div className="bg-green-900/30 border border-green-500/30 rounded p-2">
-          <div className="text-green-400 text-xs font-mono">
-            ✅ Ready: {contractAddress?.slice(0, 6)}...{contractAddress?.slice(-4)}
-          </div>
-          <div className="text-green-300 text-xs mt-1">
-            Network: {chainId === 84532 ? 'Base Sepolia' : chainId === 11011 ? 'Shape Sepolia' : `Chain ${chainId}`}
-          </div>
-        </div>
-      )}
-
       {/* Wallet Connection Status */}
       {!isConnected && (
         <div className="bg-yellow-900/30 border border-yellow-500/30 rounded p-2">
@@ -370,30 +447,21 @@ export default function Web3Minting({
         </div>
       )}
 
-      {/* Gas Limit Status */}
-      {isConnected && (
-        <div className="bg-green-900/30 border border-green-500/30 rounded p-2">
-          <div className="text-green-400 text-xs font-mono">
-            ⛽ {gasLoading ? "Estimating gas..." : gasEstimate ? `Estimated gas: ${gasEstimate.toString()}` : "Using fallback gas limits"}
+      {/* Transaction Status */}
+      {(hash || relayTxHash) && (
+        <div className="bg-blue-900/30 border border-blue-500/30 rounded p-2">
+          <div className="text-blue-400 text-xs font-mono">
+            📝 Transaction: {(hash || relayTxHash)?.slice(0, 10)}...{(hash || relayTxHash)?.slice(-8)}
           </div>
-          {gasError && (
-            <div className="text-red-300 text-xs mt-1">
-              Estimation error: {gasError}
+          {relayTxHash && isRelayConfirming && (
+            <div className="text-amber-400 text-xs mt-1">
+              ⏳ Waiting for bridge to complete...
             </div>
           )}
         </div>
       )}
 
-      {/* Transaction Status */}
-      {hash && (
-        <div className="bg-blue-900/30 border border-blue-500/30 rounded p-2">
-          <div className="text-blue-400 text-xs font-mono">
-            📝 Transaction: {hash.slice(0, 10)}...{hash.slice(-8)}
-          </div>
-        </div>
-      )}
-
-      {isSuccess && (
+      {(isSuccess || isRelaySuccess) && (
         <div className="bg-green-900/30 border border-green-500/30 rounded p-2">
           <div className="text-green-400 text-xs font-mono">
             ✅ NFT minted successfully!
@@ -413,7 +481,7 @@ export default function Web3Minting({
       <motion.button
         whileHover={{ scale: isButtonDisabled ? 1 : 1.02 }}
         whileTap={{ scale: isButtonDisabled ? 1 : 0.98 }}
-        onClick={handleMint}
+        onClick={() => setShowModal(true)}
         disabled={isButtonDisabled}
         className={`w-full py-3 px-4 rounded font-mono text-sm font-bold transition-all duration-200 ${
           isButtonDisabled 
@@ -424,7 +492,14 @@ export default function Web3Minting({
         {getButtonText()}
       </motion.button>
 
-
+      {/* Bridge Mint Modal */}
+      <BridgeMintModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        onMint={handleModalMint}
+        mintCostETH={mintCost}
+        textRows={textRows}
+      />
     </div>
   )
 }

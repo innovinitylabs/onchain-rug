@@ -28,7 +28,6 @@ export default function Hero() {
           >
             <svg
                 width="100%"
-                height="auto"
                 viewBox="0 0 1600 250"
                 style={{
                   display: 'block',
@@ -226,7 +225,6 @@ export default function Hero() {
           >
             <svg
               width="100%"
-              height="auto"
               viewBox="0 0 1600 350"
               preserveAspectRatio="xMidYMid meet"
               style={{
