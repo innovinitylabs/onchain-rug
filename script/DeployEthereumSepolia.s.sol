@@ -377,6 +377,18 @@ contract DeployEthereumSepolia is Script {
         console.log("   Enabling automatic laundering...");
         RugAdminFacet(diamondAddr).setLaunderingEnabled(true);
         console.log("   - Automatic laundering: ENABLED");
+
+        // Configure x402 AI maintenance fees
+        console.log("   Configuring x402 AI maintenance fees...");
+        RugAdminFacet(diamondAddr).setFeeRecipient(deployer);
+        uint256[3] memory serviceFees = [
+            uint256(0.001 ether), // cleanFee: 0.001 ETH
+            uint256(0.002 ether), // restoreFee: 0.002 ETH
+            uint256(0.005 ether)  // masterFee: 0.005 ETH
+        ];
+        RugAdminFacet(diamondAddr).setServiceFees(serviceFees);
+        console.log("   - Fee recipient: deployer address");
+        console.log("   - Service fees: Clean(0.001), Restore(0.002), Master(0.005) ETH");
     }
 
     // Selector generation functions

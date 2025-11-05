@@ -173,6 +173,18 @@ contract FreshDeployShapeSepolia is Script {
         // Set default security policy for royalty enforcement
         RugTransferSecurityFacet(diamondAddr).setToDefaultSecurityPolicy();
         console.log("  Set default ERC721-C security policy");
+
+        // Configure x402 AI maintenance fees
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        address deployer = vm.addr(deployerPrivateKey);
+        RugAdminFacet(diamondAddr).setFeeRecipient(deployer);
+        uint256[3] memory serviceFees = [
+            uint256(0.001 ether), // cleanFee: 0.001 ETH
+            uint256(0.002 ether), // restoreFee: 0.002 ETH
+            uint256(0.005 ether)  // masterFee: 0.005 ETH
+        ];
+        RugAdminFacet(diamondAddr).setServiceFees(serviceFees);
+        console.log("  Configured x402 AI maintenance fees");
     }
 
     function _getDiamondLoupeSelectors() internal pure returns (bytes4[] memory) {
