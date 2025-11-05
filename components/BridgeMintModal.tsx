@@ -258,11 +258,11 @@ export default function BridgeMintModal({
               <div className="bg-red-900/30 border-2 border-red-500 rounded-lg p-3">
                 <div className="text-red-400 text-sm font-bold mb-1">⚠️ SAFETY WARNING</div>
                 <div className="text-red-300 text-xs">
-                  Your wallet is on <span className="font-bold">{getName(currentChainId)}</span> but you're trying to mint on <span className="font-bold">{getName(destinationChainId)}</span>.
+                  Your wallet is on <span className="font-bold">{getName(currentChainId)}</span> but you&apos;re trying to mint on <span className="font-bold">{getName(destinationChainId)}</span>.
                   This will fail and may send funds to the wrong chain!
                 </div>
                 <div className="text-red-200 text-xs mt-2">
-                  Switch wallet to {getName(destinationChainId)} or select a different "Pay on" chain for cross-chain minting.
+                  Switch wallet to {getName(destinationChainId)} or select a different &quot;Pay on&quot; chain for cross-chain minting.
                 </div>
               </div>
             )}
