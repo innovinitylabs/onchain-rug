@@ -1,0 +1,17 @@
+{
+  "name": "rug-maintenance-ai-agent",
+  "version": "1.0.0",
+  "description": "AI Agent for x402 Rug Maintenance",
+  "main": "simple-ai-agent.js",
+  "scripts": {
+    "start": "node simple-ai-agent.js",
+    "test": "node simple-ai-agent.js",
+    "dev": "node --watch simple-ai-agent.js"
+  },
+  "dependencies": {
+    "viem": "^2.37.5"
+  },
+  "keywords": ["ai-agent", "blockchain", "nft", "maintenance", "x402"],
+  "author": "Your Project",
+  "license": "MIT"
+}

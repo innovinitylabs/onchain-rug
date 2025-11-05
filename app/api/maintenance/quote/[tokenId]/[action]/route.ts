@@ -41,7 +41,8 @@ export async function GET(_request: NextRequest, { params }: { params: { tokenId
     const tokenId = params.tokenId
     const action = params.action
     const chainId = DEFAULT_CHAIN_ID
-    const contract = getContractAddress(chainId)
+    // For testing, use hardcoded Base Sepolia contract
+    const contract = chainId === 84532 ? '0xa43532205Fc90b286Da98389a9883347Cc4064a8' : getContractAddress(chainId)
     if (!contract) {
       return NextResponse.json({ error: 'Contract not configured for this network' }, { status: 500 })
     }
@@ -54,13 +55,15 @@ export async function GET(_request: NextRequest, { params }: { params: { tokenId
       { chainId }
     ) as [boolean, boolean, boolean, bigint, bigint, bigint]
 
-    const [cleanFee, restoreFee, masterFee] = await callContractMultiFallback(
+    const feesResult = await callContractMultiFallback(
       contract,
       adminFeesAbi as any,
       'getAgentServiceFees',
       [],
       { chainId }
     ) as [bigint, bigint, bigint, string]
+
+    const [cleanFee, restoreFee, masterFee, feeRecipient] = feesResult
 
     let maintenanceWei = 0n
     let serviceFeeWei = 0n
@@ -120,7 +123,7 @@ export async function GET(_request: NextRequest, { params }: { params: { tokenId
       }
     }, { status: 402 })
   } catch (err) {
-    console.error('quote route error', err)
+    console.error('quote route error:', err)
     return NextResponse.json({ error: 'Failed to generate quote' }, { status: 500 })
   }
 }
