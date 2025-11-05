@@ -72,7 +72,7 @@ export function useRelayMint() {
         recipient as `0x${string}`,
         params.textRows,
         params.seed,
-        { warpThickness: params.visual.warpThickness, stripeCount: params.visual.stripeCount },
+        { warpThickness: params.visual.warpThickness, stripeCount: BigInt(params.visual.stripeCount) },
         {
           paletteName: params.art.paletteName,
           minifiedPalette: params.art.minifiedPalette,
