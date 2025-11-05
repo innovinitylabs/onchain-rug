@@ -185,6 +185,14 @@ library LibRugStorage {
 
         // Wallet tracking
         mapping(address => uint256) walletMints;   // Address => mint count
+
+        // ===== X402 + Agent Maintenance Configuration =====
+        address feeRecipient;                       // Recipient of service fees
+        uint256 serviceFeeClean;                    // Service fee for cleaning (wei)
+        uint256 serviceFeeRestore;                  // Service fee for restoration (wei)
+        uint256 serviceFeeMaster;                   // Service fee for master restoration (wei)
+        // Per-owner global allowlist: owner => agent => allowed
+        mapping(address => mapping(address => bool)) isOwnerAgentAllowed;
     }
 
     function rugStorage() internal pure returns (RugConfig storage rs) {

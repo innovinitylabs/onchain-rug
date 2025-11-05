@@ -20,6 +20,8 @@ contract RugAdminFacet {
     event LaunderingToggled(bool enabled);
     event LaunchStatusChanged(bool launched);
     event FrameThresholdsUpdated();
+    event ServiceFeesUpdated(uint256 cleanFee, uint256 restoreFee, uint256 masterFee);
+    event FeeRecipientUpdated(address indexed oldRecipient, address indexed newRecipient);
 
     /**
      * @notice Update collection cap (owner only)
@@ -246,6 +248,41 @@ contract RugAdminFacet {
     function getServicePricing() external view returns (uint256, uint256, uint256, uint256) {
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
         return (rs.cleaningCost, rs.restorationCost, rs.masterRestorationCost, rs.launderingThreshold);
+    }
+
+    /**
+     * @notice Set service fees for agent maintenance (owner only)
+     * @param fees Array of 3 fees: [cleanFee, restoreFee, masterFee]
+     */
+    function setServiceFees(uint256[3] calldata fees) external {
+        LibDiamond.enforceIsContractOwner();
+        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+        rs.serviceFeeClean = fees[0];
+        rs.serviceFeeRestore = fees[1];
+        rs.serviceFeeMaster = fees[2];
+        emit ServiceFeesUpdated(fees[0], fees[1], fees[2]);
+    }
+
+    /**
+     * @notice Set the fee recipient for agent service fees (owner only)
+     * @param recipient Address to receive service fees
+     */
+    function setFeeRecipient(address recipient) external {
+        LibDiamond.enforceIsContractOwner();
+        require(recipient != address(0), "Invalid recipient");
+        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+        address old = rs.feeRecipient;
+        rs.feeRecipient = recipient;
+        emit FeeRecipientUpdated(old, recipient);
+    }
+
+    /**
+     * @notice Get agent service fees and recipient
+     * @return cleanFee, restoreFee, masterFee, feeRecipient
+     */
+    function getAgentServiceFees() external view returns (uint256, uint256, uint256, address) {
+        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+        return (rs.serviceFeeClean, rs.serviceFeeRestore, rs.serviceFeeMaster, rs.feeRecipient);
     }
 
     /**

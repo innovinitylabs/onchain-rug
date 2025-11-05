@@ -233,7 +233,7 @@ contract FreshDeployShapeSepolia is Script {
     }
 
     function _getRugAdminSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](17);
+        bytes4[] memory selectors = new bytes4[](19);
         selectors[0] = RugAdminFacet.updateCollectionCap.selector;
         selectors[1] = RugAdminFacet.updateWalletLimit.selector;
         selectors[2] = RugAdminFacet.updateMintPricing.selector;
@@ -251,6 +251,8 @@ contract FreshDeployShapeSepolia is Script {
         selectors[14] = RugAdminFacet.getExceptionList.selector;
         selectors[15] = RugAdminFacet.setScriptyContracts.selector;
         selectors[16] = RugAdminFacet.isConfigured.selector;
+        selectors[17] = RugAdminFacet.setServiceFees.selector;
+        selectors[18] = RugAdminFacet.setFeeRecipient.selector;
         return selectors;
     }
 
@@ -270,7 +272,7 @@ contract FreshDeployShapeSepolia is Script {
     }
 
     function _getRugMaintenanceSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](10);
+        bytes4[] memory selectors = new bytes4[](15);
         selectors[0] = RugMaintenanceFacet.cleanRug.selector;
         selectors[1] = RugMaintenanceFacet.restoreRug.selector;
         selectors[2] = RugMaintenanceFacet.masterRestoreRug.selector;
@@ -281,6 +283,12 @@ contract FreshDeployShapeSepolia is Script {
         selectors[7] = RugMaintenanceFacet.canRestoreRug.selector;
         selectors[8] = RugMaintenanceFacet.needsMasterRestoration.selector;
         selectors[9] = RugMaintenanceFacet.getMaintenanceOptions.selector;
+        // Agent auth + entrypoints
+        selectors[10] = RugMaintenanceFacet.authorizeMaintenanceAgent.selector;
+        selectors[11] = RugMaintenanceFacet.revokeMaintenanceAgent.selector;
+        selectors[12] = RugMaintenanceFacet.cleanRugAgent.selector;
+        selectors[13] = RugMaintenanceFacet.restoreRugAgent.selector;
+        selectors[14] = RugMaintenanceFacet.masterRestoreRugAgent.selector;
         return selectors;
     }
 
