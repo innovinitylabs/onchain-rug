@@ -143,6 +143,9 @@ export function useRugMinting() {
       })
 
       await mintCrossChain({
+        originChainId: chainId,
+        destinationChainId: DESTINATION_SHAPE_ID,
+        contractAddress: contractAddresses[DESTINATION_SHAPE_ID] as string,
         recipient,
         textRows: textLines || [],
         seed: BigInt(finalSeed),
