@@ -280,7 +280,7 @@ contract FreshDeployShapeSepolia is Script {
     }
 
     function _getRugMaintenanceSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](15);
+        bytes4[] memory selectors = new bytes4[](17);
         selectors[0] = RugMaintenanceFacet.cleanRug.selector;
         selectors[1] = RugMaintenanceFacet.restoreRug.selector;
         selectors[2] = RugMaintenanceFacet.masterRestoreRug.selector;
@@ -297,6 +297,9 @@ contract FreshDeployShapeSepolia is Script {
         selectors[12] = RugMaintenanceFacet.cleanRugAgent.selector;
         selectors[13] = RugMaintenanceFacet.restoreRugAgent.selector;
         selectors[14] = RugMaintenanceFacet.masterRestoreRugAgent.selector;
+        // Agent management functions
+        selectors[15] = RugMaintenanceFacet.getAuthorizedAgents.selector;
+        selectors[16] = RugMaintenanceFacet.isAgentAuthorized.selector;
         return selectors;
     }
 

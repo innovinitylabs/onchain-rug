@@ -191,6 +191,8 @@ library LibRugStorage {
         uint256 serviceFee;                         // Flat service fee for all maintenance actions (wei)
         // Per-owner global allowlist: owner => agent => allowed
         mapping(address => mapping(address => bool)) isOwnerAgentAllowed;
+        // Per-owner authorized agents list: owner => agents[]
+        mapping(address => address[]) ownerAuthorizedAgents;
     }
 
     function rugStorage() internal pure returns (RugConfig storage rs) {

@@ -23,15 +23,54 @@ contract RugMaintenanceFacet {
     function authorizeMaintenanceAgent(address agent) external {
         require(agent != address(0), "Invalid agent");
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
-        rs.isOwnerAgentAllowed[msg.sender][agent] = true;
-        emit AgentAuthorized(msg.sender, agent);
+
+        // Only add if not already authorized
+        if (!rs.isOwnerAgentAllowed[msg.sender][agent]) {
+            rs.isOwnerAgentAllowed[msg.sender][agent] = true;
+            rs.ownerAuthorizedAgents[msg.sender].push(agent);
+            emit AgentAuthorized(msg.sender, agent);
+        }
     }
 
     function revokeMaintenanceAgent(address agent) external {
         require(agent != address(0), "Invalid agent");
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
-        rs.isOwnerAgentAllowed[msg.sender][agent] = false;
-        emit AgentRevoked(msg.sender, agent);
+
+        if (rs.isOwnerAgentAllowed[msg.sender][agent]) {
+            rs.isOwnerAgentAllowed[msg.sender][agent] = false;
+
+            // Remove from array
+            address[] storage agents = rs.ownerAuthorizedAgents[msg.sender];
+            for (uint256 i = 0; i < agents.length; i++) {
+                if (agents[i] == agent) {
+                    // Move last element to this position and pop
+                    agents[i] = agents[agents.length - 1];
+                    agents.pop();
+                    break;
+                }
+            }
+
+            emit AgentRevoked(msg.sender, agent);
+        }
+    }
+
+    /**
+     * @notice Get all authorized agents for the caller
+     * @return agents Array of authorized agent addresses
+     */
+    function getAuthorizedAgents() external view returns (address[] memory) {
+        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+        return rs.ownerAuthorizedAgents[msg.sender];
+    }
+
+    /**
+     * @notice Check if an agent is authorized for the caller
+     * @param agent Agent address to check
+     * @return isAuthorized True if the agent is authorized
+     */
+    function isAgentAuthorized(address agent) external view returns (bool) {
+        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+        return rs.isOwnerAgentAllowed[msg.sender][agent];
     }
 
     /**

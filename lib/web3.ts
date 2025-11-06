@@ -275,6 +275,20 @@ export const onchainRugsABI = [
     stateMutability: 'nonpayable',
     type: 'function',
   },
+  {
+    inputs: [],
+    name: 'getAuthorizedAgents',
+    outputs: [{ name: 'agents', type: 'address[]' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [{ name: 'agent', type: 'address' }],
+    name: 'isAgentAuthorized',
+    outputs: [{ name: 'isAuthorized', type: 'bool' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
   // Agent Maintenance Functions
   {
     inputs: [{ name: 'tokenId', type: 'uint256' }],

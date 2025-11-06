@@ -129,6 +129,8 @@ export default function DashboardPage() {
   // AI Agent Authorization State
   const [agentAddress, setAgentAddress] = useState('')
   const [isAuthorizing, setIsAuthorizing] = useState(false)
+  const [revokingAgent, setRevokingAgent] = useState<string | null>(null)
+  const [showRevokeConfirm, setShowRevokeConfirm] = useState<string | null>(null)
 
   const contractAddress = contractAddresses[chainId] // No fallback - prevents accidental wrong network transactions
 
@@ -161,6 +163,16 @@ export default function DashboardPage() {
     },
   })
 
+  // Get authorized agents
+  const { data: authorizedAgents, refetch: refetchAuthorizedAgents, isLoading: agentsLoading } = useReadContract({
+    address: contractAddress as `0x${string}`,
+    abi: onchainRugsABI,
+    functionName: 'getAuthorizedAgents',
+    args: [],
+    query: {
+      enabled: !!contractAddress && !!address,
+    },
+  })
 
   // Helper function to fetch rug data using new utilities
   const fetchRugData = async (tokenId: number): Promise<RugData | null> => {
@@ -477,9 +489,44 @@ export default function DashboardPage() {
     if (isConfirmed) {
       setAgentAddress('')
       setIsAuthorizing(false)
+      refetchAuthorizedAgents() // Refresh the authorized agents list
       alert('AI Agent successfully authorized! The agent can now maintain your rugs.')
     }
   }, [isConfirmed])
+
+  // Handle agent revocation
+  const handleRevokeAgent = async (agentToRevoke: string) => {
+    if (!contractAddress) {
+      alert(`Contract not available on this network (Chain ID: ${chainId}). Please switch to a supported network.`)
+      return
+    }
+
+    setRevokingAgent(agentToRevoke)
+
+    try {
+      console.log('Revoking agent:', agentToRevoke)
+      writeContract({
+        address: contractAddress as `0x${string}`,
+        abi: onchainRugsABI,
+        functionName: 'revokeMaintenanceAgent',
+        args: [agentToRevoke as `0x${string}`],
+      })
+    } catch (error) {
+      console.error('Revocation failed:', error)
+      alert(`Revocation failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      setRevokingAgent(null)
+    }
+  }
+
+  // Handle successful revocation
+  useEffect(() => {
+    if (revokingAgent && isConfirmed) {
+      setRevokingAgent(null)
+      setShowRevokeConfirm(null)
+      refetchAuthorizedAgents() // Refresh the authorized agents list
+      alert('AI Agent authorization successfully revoked!')
+    }
+  }, [isConfirmed, revokingAgent])
 
   const getDirtLevel = (lastCleaned: bigint) => {
     const now = Math.floor(Date.now() / 1000)
@@ -712,6 +759,94 @@ export default function DashboardPage() {
               <p>• Agent pays flat service fee (0.00042 ETH) for each maintenance action</p>
               <p>• You can revoke authorization anytime</p>
             </div>
+
+            {/* Authorized Agents List */}
+            {authorizedAgents && authorizedAgents.length > 0 && (
+              <div className="mt-6">
+                <h3 className="text-lg font-semibold text-white mb-3">Authorized Agents</h3>
+                <div className="space-y-3">
+                  {authorizedAgents.map((agent: string, index: number) => (
+                    <div key={agent} className="bg-slate-700/50 rounded-lg p-3 border border-slate-600/50">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Bot className="w-5 h-5 text-blue-400" />
+                          <div>
+                            <div className="text-white font-mono text-sm">
+                              {agent}
+                            </div>
+                            <div className="text-white/60 text-xs">
+                              Agent #{index + 1}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setShowRevokeConfirm(agent)}
+                            disabled={revokingAgent === agent || isPending}
+                            className="px-3 py-1 bg-red-600/20 hover:bg-red-600/30 text-red-400 hover:text-red-300 text-sm rounded border border-red-600/30 hover:border-red-500/50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {revokingAgent === agent ? 'Revoking...' : 'Revoke'}
+                          </button>
+                          <button
+                            onClick={() => navigator.clipboard.writeText(agent)}
+                            className="p-1 text-white/60 hover:text-white/80 transition-colors"
+                            title="Copy address"
+                          >
+                            <Copy className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Revoke Confirmation Modal */}
+            {showRevokeConfirm && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                <div className="bg-slate-800 border border-slate-600 rounded-lg p-6 max-w-md w-full mx-4">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 bg-red-600/20 rounded-full flex items-center justify-center">
+                      <Bot className="w-5 h-5 text-red-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-white">Revoke Agent Authorization</h3>
+                      <p className="text-white/60 text-sm">This action cannot be undone</p>
+                    </div>
+                  </div>
+
+                  <div className="mb-6">
+                    <p className="text-white/80 mb-2">Are you sure you want to revoke authorization for this agent?</p>
+                    <div className="bg-slate-700/50 rounded p-3 font-mono text-sm text-white/80 break-all">
+                      {showRevokeConfirm}
+                    </div>
+                    <p className="text-yellow-400 text-sm mt-2">
+                      ⚠️ The agent will no longer be able to perform maintenance on any of your rugs.
+                    </p>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setShowRevokeConfirm(null)}
+                      className="flex-1 px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleRevokeAgent(showRevokeConfirm)
+                        setShowRevokeConfirm(null)
+                      }}
+                      disabled={isPending}
+                      className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isPending ? 'Revoking...' : 'Revoke Authorization'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Transaction Status */}
             {(isPending || isConfirming || isConfirmed) && (
