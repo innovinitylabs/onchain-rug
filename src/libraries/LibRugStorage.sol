@@ -188,9 +188,7 @@ library LibRugStorage {
 
         // ===== X402 + Agent Maintenance Configuration =====
         address feeRecipient;                       // Recipient of service fees
-        uint256 serviceFeeClean;                    // Service fee for cleaning (wei)
-        uint256 serviceFeeRestore;                  // Service fee for restoration (wei)
-        uint256 serviceFeeMaster;                   // Service fee for master restoration (wei)
+        uint256 serviceFee;                         // Flat service fee for all maintenance actions (wei)
         // Per-owner global allowlist: owner => agent => allowed
         mapping(address => mapping(address => bool)) isOwnerAgentAllowed;
     }

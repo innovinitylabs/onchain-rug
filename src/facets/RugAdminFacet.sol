@@ -21,6 +21,7 @@ contract RugAdminFacet {
     event LaunchStatusChanged(bool launched);
     event FrameThresholdsUpdated();
     event ServiceFeesUpdated(uint256 cleanFee, uint256 restoreFee, uint256 masterFee);
+    event ServiceFeeUpdated(uint256 serviceFee);
     event FeeRecipientUpdated(address indexed oldRecipient, address indexed newRecipient);
 
     /**
@@ -251,16 +252,14 @@ contract RugAdminFacet {
     }
 
     /**
-     * @notice Set service fees for agent maintenance (owner only)
-     * @param fees Array of 3 fees: [cleanFee, restoreFee, masterFee]
+     * @notice Set flat service fee for all agent maintenance actions (owner only)
+     * @param fee Flat service fee in wei
      */
-    function setServiceFees(uint256[3] calldata fees) external {
+    function setServiceFee(uint256 fee) external {
         LibDiamond.enforceIsContractOwner();
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
-        rs.serviceFeeClean = fees[0];
-        rs.serviceFeeRestore = fees[1];
-        rs.serviceFeeMaster = fees[2];
-        emit ServiceFeesUpdated(fees[0], fees[1], fees[2]);
+        rs.serviceFee = fee;
+        emit ServiceFeeUpdated(fee);
     }
 
     /**
@@ -277,12 +276,12 @@ contract RugAdminFacet {
     }
 
     /**
-     * @notice Get agent service fees and recipient
-     * @return cleanFee, restoreFee, masterFee, feeRecipient
+     * @notice Get agent service fee and recipient
+     * @return serviceFee, feeRecipient
      */
-    function getAgentServiceFees() external view returns (uint256, uint256, uint256, address) {
+    function getAgentServiceFee() external view returns (uint256, address) {
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
-        return (rs.serviceFeeClean, rs.serviceFeeRestore, rs.serviceFeeMaster, rs.feeRecipient);
+        return (rs.serviceFee, rs.feeRecipient);
     }
 
     /**

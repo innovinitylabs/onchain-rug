@@ -646,7 +646,7 @@ export default function DashboardPage() {
             <div className="mt-4 text-sm text-white/60">
               <p>• Agent can only perform maintenance operations (cleaning, restoration)</p>
               <p>• Agent cannot transfer, sell, or modify ownership of your rugs</p>
-              <p>• Agent pays service fees (0.001-0.005 ETH) for each maintenance action</p>
+              <p>• Agent pays flat service fee (0.00042 ETH) for each maintenance action</p>
               <p>• You can revoke authorization anytime</p>
             </div>
 

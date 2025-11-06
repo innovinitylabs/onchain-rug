@@ -20,17 +20,15 @@ contract AIMaintenanceAdminAuthTest is Test {
         adminFacet = new RugAdminFacet();
     }
 
-    function testSetServiceFeesAndRecipient() public {
+    function testSetServiceFeeAndRecipient() public {
         vm.startPrank(owner);
 
-        uint256[3] memory fees = [uint256(1 ether), uint256(2 ether), uint256(3 ether)];
-        adminFacet.setServiceFees(fees);
+        uint256 serviceFee = uint256(0.00042 ether);
+        adminFacet.setServiceFee(serviceFee);
         adminFacet.setFeeRecipient(feeRecipient);
 
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
-        assertEq(rs.serviceFeeClean, 1 ether);
-        assertEq(rs.serviceFeeRestore, 2 ether);
-        assertEq(rs.serviceFeeMaster, 3 ether);
+        assertEq(rs.serviceFee, 0.00042 ether);
         assertEq(rs.feeRecipient, feeRecipient);
 
         vm.stopPrank();

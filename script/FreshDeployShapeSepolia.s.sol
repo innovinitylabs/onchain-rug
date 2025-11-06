@@ -178,12 +178,8 @@ contract FreshDeployShapeSepolia is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address deployer = vm.addr(deployerPrivateKey);
         RugAdminFacet(diamondAddr).setFeeRecipient(deployer);
-        uint256[3] memory serviceFees = [
-            uint256(0.001 ether), // cleanFee: 0.001 ETH
-            uint256(0.002 ether), // restoreFee: 0.002 ETH
-            uint256(0.005 ether)  // masterFee: 0.005 ETH
-        ];
-        RugAdminFacet(diamondAddr).setServiceFees(serviceFees);
+        uint256 serviceFee = uint256(0.00042 ether); // Flat service fee: 0.00042 ETH
+        RugAdminFacet(diamondAddr).setServiceFee(serviceFee);
         console.log("  Configured x402 AI maintenance fees");
     }
 
@@ -263,7 +259,7 @@ contract FreshDeployShapeSepolia is Script {
         selectors[14] = RugAdminFacet.getExceptionList.selector;
         selectors[15] = RugAdminFacet.setScriptyContracts.selector;
         selectors[16] = RugAdminFacet.isConfigured.selector;
-        selectors[17] = RugAdminFacet.setServiceFees.selector;
+        selectors[17] = RugAdminFacet.setServiceFee.selector;
         selectors[18] = RugAdminFacet.setFeeRecipient.selector;
         return selectors;
     }

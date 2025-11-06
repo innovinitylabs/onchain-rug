@@ -82,7 +82,7 @@ contract RugMaintenanceFacet {
         require(rs.isOwnerAgentAllowed[owner][msg.sender], "Agent not authorized");
 
         (uint256 maintenanceCost, bool wasFree) = _performClean(tokenId);
-        uint256 serviceFee = rs.serviceFeeClean;
+        uint256 serviceFee = rs.serviceFee;
         require(msg.value == maintenanceCost + serviceFee, "Incorrect payment");
 
         _payoutServiceFee(serviceFee);
@@ -96,7 +96,7 @@ contract RugMaintenanceFacet {
         require(rs.isOwnerAgentAllowed[owner][msg.sender], "Agent not authorized");
 
         (uint8 previousAging, uint8 newAging, uint256 maintenanceCost) = _performRestore(tokenId);
-        uint256 serviceFee = rs.serviceFeeRestore;
+        uint256 serviceFee = rs.serviceFee;
         require(msg.value == maintenanceCost + serviceFee, "Incorrect payment");
 
         _payoutServiceFee(serviceFee);
@@ -110,7 +110,7 @@ contract RugMaintenanceFacet {
         require(rs.isOwnerAgentAllowed[owner][msg.sender], "Agent not authorized");
 
         (uint8 prevDirt, uint8 prevAging, uint256 maintenanceCost) = _performMasterRestore(tokenId);
-        uint256 serviceFee = rs.serviceFeeMaster;
+        uint256 serviceFee = rs.serviceFee;
         require(msg.value == maintenanceCost + serviceFee, "Incorrect payment");
 
         _payoutServiceFee(serviceFee);

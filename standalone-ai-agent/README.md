@@ -24,9 +24,9 @@ A **completely self-contained** AI agent that autonomously maintains digital rug
 ### GUI Commands That Actually Work
 ```
 "check rug 1"           → Gets real blockchain status
-"clean rug 1"           → Executes transaction, pays 0.001 ETH service fee
-"restore rug 1"         → Executes transaction, pays 0.002 ETH service fee
-"master restore rug 1"  → Executes transaction, pays 0.005 ETH service fee
+"clean rug 1"           → Executes transaction, pays 0.00042 ETH service fee
+"restore rug 1"         → Executes transaction, pays 0.00042 ETH service fee
+"master restore rug 1"  → Executes transaction, pays 0.00042 ETH service fee
 "show my costs"         → Shows service fee costs
 "authorize me"          → Authorizes agent on blockchain
 ```
@@ -35,20 +35,18 @@ A **completely self-contained** AI agent that autonomously maintains digital rug
 ```
 You (in Ollama GUI): clean rug 1
 RugBot: I'll clean that rug right up! [Executes real transaction]
-       ✅ Done! Rug #1 cleaned. Paid 0.001 ETH service fee.
+       ✅ Done! Rug #1 cleaned. Paid 0.00042 ETH service fee.
 
 You: how much have I paid?
 RugBot: Let me check your stats! [Queries real blockchain]
-       You've paid 0.001 ETH in service fees from 1 maintenance action.
+       You've paid 0.00042 ETH in service fees from 1 maintenance action.
 ```
 
 **Yes, real blockchain transactions happen while chatting in Ollama GUI!** 🎉💰
 
 ### AI Agent Service Fees (What You Pay)
 ```
-Clean Rug:     0.001 ETH service fee (you pay this)
-Restore Rug:   0.002 ETH service fee (you pay this)
-Master Restore: 0.005 ETH service fee (you pay this)
+All Actions:   0.00042 ETH flat service fee (you pay this)
 ```
 
 ### Network: Shape Sepolia
@@ -148,19 +146,19 @@ You: check rug 1
 
 You: clean it
 🤖 I understand you want to clean rug #1. Should I proceed?
-   This will cost 0.00101 ETH total (0.00001 ETH maintenance + 0.001 ETH service fee)
-   You'll pay 0.001 ETH as the agent service fee.
+   This will cost 0.00043 ETH total (0.00001 ETH maintenance + 0.00042 ETH service fee)
+   You'll pay 0.00042 ETH as the agent service fee.
 
    Execute maintenance? (y/N): y
 
 🤖 Executing maintenance...
 ✅ Maintenance completed successfully!
-💰 Paid 0.001 ETH service fee
+💰 Paid 0.00042 ETH service fee
 
 You: how much did I pay?
 🤖 📊 Agent Statistics:
    Maintenances Performed: 1
-   Total Service Fees Paid: 0.001 ETH
+   Total Service Fees Paid: 0.00042 ETH
    Success Rate: 100%
 ```
 
@@ -201,8 +199,8 @@ You: how much did I pay?
 
 ### **Service Fee Model:**
 ```
-Total cost: 0.00101 ETH
-├── Service fee: 0.001 ETH (paid by agent)
+Total cost: 0.00043 ETH
+├── Service fee: 0.00042 ETH (paid by agent)
 └── Maintenance: 0.00001 ETH (paid by agent)
 ```
 
@@ -323,7 +321,7 @@ This standalone agent can be:
 - **Response Time**: < 2 seconds for AI decisions
 - **Transaction Speed**: < 30 seconds confirmation
 - **Uptime**: 99.9% (when blockchain is operational)
-- **Service Fee Costs**: 0.001-0.005 ETH per maintenance action
+- **Service Fee Costs**: 0.00042 ETH per maintenance action
 
 ---
 

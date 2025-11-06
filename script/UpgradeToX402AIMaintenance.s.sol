@@ -85,17 +85,11 @@ contract UpgradeToX402AIMaintenance is Script {
         RugAdminFacet(diamondAddr).setFeeRecipient(deployer);
         console.log("   - Fee recipient set to deployer:", deployer);
 
-        // Set service fees (example values - can be adjusted)
-        uint256[3] memory fees = [
-            uint256(0.001 ether), // cleanFee: 0.001 ETH
-            uint256(0.002 ether), // restoreFee: 0.002 ETH
-            uint256(0.005 ether)  // masterFee: 0.005 ETH
-        ];
-        RugAdminFacet(diamondAddr).setServiceFees(fees);
-        console.log("   - Service fees configured:");
-        console.log(string.concat("     * Clean fee: ", vm.toString(fees[0]), " wei"));
-        console.log(string.concat("     * Restore fee: ", vm.toString(fees[1]), " wei"));
-        console.log(string.concat("     * Master fee: ", vm.toString(fees[2]), " wei"));
+        // Set flat service fee (can be adjusted later)
+        uint256 serviceFee = uint256(0.00042 ether); // Flat service fee: 0.00042 ETH
+        RugAdminFacet(diamondAddr).setServiceFee(serviceFee);
+        console.log("   - Flat service fee configured:");
+        console.log(string.concat("     * Service fee: ", vm.toString(serviceFee), " wei (0.00042 ETH)"));
 
         console.log("=========================================");
         console.log("[SUCCESS] UPGRADE COMPLETE!");
@@ -129,9 +123,9 @@ contract UpgradeToX402AIMaintenance is Script {
         bytes4[] memory selectors = new bytes4[](3);
 
         // NEW: Only add service fee configuration (existing functions already registered)
-        selectors[0] = RugAdminFacet.setServiceFees.selector;
+        selectors[0] = RugAdminFacet.setServiceFee.selector;
         selectors[1] = RugAdminFacet.setFeeRecipient.selector;
-        selectors[2] = RugAdminFacet.getAgentServiceFees.selector;
+        selectors[2] = RugAdminFacet.getAgentServiceFee.selector;
 
         return selectors;
     }

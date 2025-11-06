@@ -22,11 +22,9 @@ const maintenanceAbi = [
 const adminFeesAbi = [
   {
     inputs: [],
-    name: 'getAgentServiceFees',
+    name: 'getAgentServiceFee',
     outputs: [
-      { name: 'cleanFee', type: 'uint256' },
-      { name: 'restoreFee', type: 'uint256' },
-      { name: 'masterFee', type: 'uint256' },
+      { name: 'serviceFee', type: 'uint256' },
       { name: 'feeRecipient', type: 'address' }
     ],
     stateMutability: 'view',
@@ -58,33 +56,30 @@ export async function GET(_request: NextRequest, { params }: { params: { tokenId
     const feesResult = await callContractMultiFallback(
       contract,
       adminFeesAbi as any,
-      'getAgentServiceFees',
+      'getAgentServiceFee',
       [],
       { chainId }
-    ) as [bigint, bigint, bigint, string]
+    ) as [bigint, string]
 
-    const [cleanFee, restoreFee, masterFee, feeRecipient] = feesResult
+    const [serviceFee, feeRecipient] = feesResult
 
     let maintenanceWei = 0n
-    let serviceFeeWei = 0n
+    let serviceFeeWei = serviceFee // Flat fee for all actions
     let functionName = ''
     if (action === 'clean') {
       maintenanceWei = cleaningCost
-      serviceFeeWei = cleanFee
       functionName = 'cleanRugAgent'
       if (!canClean && maintenanceWei === 0n) {
         return NextResponse.json({ error: 'Cleaning not needed' }, { status: 400 })
       }
     } else if (action === 'restore') {
       maintenanceWei = restorationCost
-      serviceFeeWei = restoreFee
       functionName = 'restoreRugAgent'
       if (!canRestore || maintenanceWei === 0n) {
         return NextResponse.json({ error: 'Restoration not available' }, { status: 400 })
       }
     } else if (action === 'master') {
       maintenanceWei = masterCost
-      serviceFeeWei = masterFee
       functionName = 'masterRestoreRugAgent'
       if (!needsMaster || maintenanceWei === 0n) {
         return NextResponse.json({ error: 'Master restoration not needed' }, { status: 400 })

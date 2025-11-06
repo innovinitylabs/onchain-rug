@@ -406,14 +406,10 @@ contract DeployBaseSepolia is Script {
         // Configure x402 AI maintenance fees
         console.log("   Configuring x402 AI maintenance fees...");
         RugAdminFacet(diamondAddr).setFeeRecipient(deployer);
-        uint256[3] memory serviceFees = [
-            uint256(0.001 ether), // cleanFee: 0.001 ETH
-            uint256(0.002 ether), // restoreFee: 0.002 ETH
-            uint256(0.005 ether)  // masterFee: 0.005 ETH
-        ];
-        RugAdminFacet(diamondAddr).setServiceFees(serviceFees);
+        uint256 serviceFee = uint256(0.00042 ether); // Flat service fee: 0.00042 ETH
+        RugAdminFacet(diamondAddr).setServiceFee(serviceFee);
         console.log("   - Fee recipient: deployer address");
-        console.log("   - Service fees: Clean(0.001), Restore(0.002), Master(0.005) ETH");
+        console.log("   - Flat service fee: 0.00042 ETH for all actions");
     }
 
     // Selector generation functions
@@ -495,9 +491,9 @@ contract DeployBaseSepolia is Script {
         selectors[14] = RugAdminFacet.updateServicePricing.selector;
         selectors[15] = RugAdminFacet.updateFrameThresholds.selector;
         selectors[16] = RugAdminFacet.isConfigured.selector;
-        selectors[17] = RugAdminFacet.setServiceFees.selector;
+        selectors[17] = RugAdminFacet.setServiceFee.selector;
         selectors[18] = RugAdminFacet.setFeeRecipient.selector;
-        selectors[19] = RugAdminFacet.getAgentServiceFees.selector;
+        selectors[19] = RugAdminFacet.getAgentServiceFee.selector;
         return selectors;
     }
 

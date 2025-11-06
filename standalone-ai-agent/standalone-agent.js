@@ -239,10 +239,8 @@ Rug Data:
 - Restoration Cost: ${formatEther(rugData.restorationCost)} ETH
 - Master Cost: ${formatEther(rugData.masterCost)} ETH
 
-Service Fees (you pay these):
-- Clean: 0.001 ETH
-- Restore: 0.002 ETH
-- Master: 0.005 ETH
+Service Fee (you pay this):
+- All Actions: 0.00042 ETH
 
 Your personality: ${config.agent.style}
 
