@@ -27,8 +27,9 @@ A **completely self-contained** AI agent that autonomously maintains digital rug
 "clean rug 1"           → Executes transaction, pays 0.00042 ETH service fee
 "restore rug 1"         → Executes transaction, pays 0.00042 ETH service fee
 "master restore rug 1"  → Executes transaction, pays 0.00042 ETH service fee
-"show my costs"         → Shows service fee costs
-"authorize me"          → Authorizes agent on blockchain
+"what rugs do I own?"   → Discovers all rugs owned by agent
+"show my costs"         → Shows service fee costs paid
+"authorize me"          → Authorizes agent on blockchain (done via dashboard)
 ```
 
 ### Real Money Example

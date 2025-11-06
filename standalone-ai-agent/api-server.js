@@ -150,6 +150,24 @@ const RugMaintenanceAbi = [
     ],
     stateMutability: 'view',
     type: 'function'
+  },
+  // ERC721 functions for rug discovery
+  {
+    inputs: [{ name: 'owner', type: 'address' }],
+    name: 'balanceOf',
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function'
+  },
+  {
+    inputs: [
+      { name: 'owner', type: 'address' },
+      { name: 'index', type: 'uint256' }
+    ],
+    name: 'tokenOfOwnerByIndex',
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function'
   }
 ];
 
@@ -160,7 +178,7 @@ class RugBotAPIServer {
     this.app.use(express.json());
 
     this.setupRoutes();
-    this.totalEarnings = 0n;
+    this.totalServiceFeesPaid = 0n;
     this.maintenanceCount = 0;
   }
 
@@ -298,7 +316,7 @@ class RugBotAPIServer {
 
         if (receipt.status === 'success') {
           this.maintenanceCount++;
-          this.totalEarnings += serviceFee;
+          this.totalServiceFeesPaid += serviceFee;
 
           const result = {
             success: true,
@@ -311,11 +329,11 @@ class RugBotAPIServer {
             serviceFeeEth: formatEther(serviceFee),
             totalCostEth: formatEther(totalValue),
             txHash: hash,
-            earnings: formatEther(this.totalEarnings),
+            serviceFeesPaid: formatEther(this.totalServiceFeesPaid),
             totalMaintenances: this.maintenanceCount
           };
 
-          console.log(chalk.green(`✅ API: ${action} completed! Earned ${formatEther(serviceFee)} ETH`));
+          console.log(chalk.green(`✅ API: ${action} completed! Paid ${formatEther(serviceFee)} ETH service fee`));
           res.json(result);
         } else {
           throw new Error('Transaction failed');
@@ -330,13 +348,61 @@ class RugBotAPIServer {
     this.app.get('/agent/stats', (req, res) => {
       res.json({
         agentName: config.agent.name,
-        totalEarnings: this.totalEarnings.toString(),
-        totalEarningsEth: formatEther(this.totalEarnings),
+        totalServiceFeesPaid: this.totalServiceFeesPaid.toString(),
+        totalServiceFeesPaidEth: formatEther(this.totalServiceFeesPaid),
         maintenanceCount: this.maintenanceCount,
         walletAddress: config.wallet.address || 'Not configured',
         contractAddress: config.blockchain.contractAddress,
-        network: 'Base Sepolia'
+        network: 'Shape Sepolia'
       });
+    });
+
+    // Get rugs owned by agent
+    this.app.get('/agent/rugs', async (req, res) => {
+      try {
+        console.log(chalk.blue('🔍 API: Discovering rugs owned by agent...'));
+
+        if (!config.wallet.address) {
+          throw new Error('Agent wallet not configured');
+        }
+
+        // Get balance of rugs owned by agent
+        const balance = await publicClient.readContract({
+          address: config.blockchain.contractAddress,
+          abi: RugMaintenanceAbi,
+          functionName: 'balanceOf',
+          args: [config.wallet.address]
+        });
+
+        console.log(chalk.gray(`   Agent owns ${balance} rugs`));
+
+        // Get all token IDs owned by agent
+        const ownedRugs = [];
+        for (let i = 0; i < Number(balance); i++) {
+          try {
+            const tokenId = await publicClient.readContract({
+              address: config.blockchain.contractAddress,
+              abi: RugMaintenanceAbi,
+              functionName: 'tokenOfOwnerByIndex',
+              args: [config.wallet.address, BigInt(i)]
+            });
+            ownedRugs.push(Number(tokenId));
+          } catch (error) {
+            console.log(chalk.yellow(`   Warning: Could not get token at index ${i}:`, error.message));
+          }
+        }
+
+        console.log(chalk.green(`✅ API: Found ${ownedRugs.length} rugs owned by agent`));
+        res.json({
+          success: true,
+          agentAddress: config.wallet.address,
+          ownedRugs,
+          totalOwned: ownedRugs.length
+        });
+      } catch (error) {
+        console.log(chalk.red('❌ API: Error discovering rugs:', error.message));
+        res.status(500).json({ success: false, error: error.message });
+      }
     });
 
     // AI analysis endpoint (for Ollama tool calling)
@@ -350,9 +416,11 @@ class RugBotAPIServer {
 
         const prompt = `You are ${config.agent.name}, an AI maintenance agent for digital rugs.
 
+You maintain rugs by paying service fees (0.00042 ETH per action) to keep them clean and well-maintained.
+
 Analyze this rug's condition and recommend the best maintenance action. Consider:
 - Current condition (canClean, canRestore, needsMaster)
-- Cost-effectiveness
+- Cost-effectiveness (you pay 0.00042 ETH service fee per action)
 - Urgency level
 - Your personality: ${config.agent.style}
 
@@ -360,7 +428,7 @@ Rug data: ${JSON.stringify(rugData)}
 
 Respond with a JSON object containing:
 - recommendedAction: "clean", "restore", "master", or "none"
-- reasoning: brief explanation
+- reasoning: brief explanation of why this action and the service fee cost
 - urgency: "low", "medium", or "high"
 - confidence: percentage 0-100
 - personalityNote: fun comment in your style about this rug
@@ -425,6 +493,7 @@ Keep the personalityNote enthusiastic and in character as ${config.agent.name}!`
       console.log(chalk.blue(`🏠 Rug Status: http://localhost:${config.server.port}/rug/1/status`));
       console.log(chalk.blue(`🔧 Maintenance: POST http://localhost:${config.server.port}/rug/1/maintain`));
       console.log(chalk.blue(`📊 Stats: http://localhost:${config.server.port}/agent/stats`));
+      console.log(chalk.blue(`🏘️  My Rugs: http://localhost:${config.server.port}/agent/rugs`));
       console.log(chalk.gray('\n💡 This server enables Ollama GUI to perform real blockchain transactions!'));
       console.log(chalk.gray('   Use tool calling in Ollama to interact with these endpoints.\n'));
     });
