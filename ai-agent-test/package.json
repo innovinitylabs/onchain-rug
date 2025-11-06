@@ -6,9 +6,11 @@
   "type": "module",
   "scripts": {
     "start": "node agent.js",
+    "chat": "node chat-agent.js",
     "test": "node test-agent.js",
     "dev": "node --watch agent.js",
-    "setup": "node setup.js"
+    "setup": "node setup.js",
+    "example": "node example.js"
   },
   "dependencies": {
     "viem": "^2.37.5",

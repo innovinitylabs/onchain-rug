@@ -49,7 +49,21 @@ npm test
 # Should show all ✅ if configured correctly
 ```
 
-### 5. Run Agent
+### 5. Choose Your Interface
+
+#### **Option A: Chat Interface (Talk to your AI agent)**
+```bash
+# Interactive chat with natural language
+npm run chat
+
+# Then talk to your agent:
+# "check rug 1"
+# "clean rug 1"
+# "how is my rug doing?"
+# "show me earnings"
+```
+
+#### **Option B: Command Line Scripts**
 ```bash
 # Test single maintenance cycle
 npm start once
@@ -88,11 +102,35 @@ AUTO_MAINTAIN=false
 MAINTENANCE_CHECK_INTERVAL=300000
 ```
 
-## 🛠️ Commands
+## 💬 Chat Interface
+
+**Talk to your AI agent conversationally!**
+
+```bash
+npm run chat
+```
+
+### **Natural Language Commands:**
+- `"check rug 1"` - Check rug status
+- `"clean rug 1"` - Clean a rug
+- `"how is my rug doing?"` - AI-powered status check
+- `"show me earnings"` - Display revenue stats
+- `"what can you do?"` - AI help and capabilities
+- `"maintain rug 1"` - Auto-maintain with AI decisions
+
+### **Chat Features:**
+- 🤖 **AI-Powered Responses** - Natural conversation
+- 🎯 **Smart Command Recognition** - Understands intent
+- ⚠️ **Safety Confirmations** - Confirms expensive actions
+- 📊 **Real-time Stats** - Earnings and performance
+- 🔄 **Autonomous Control** - Start/stop auto mode
+
+## 🛠️ Command Line Scripts
 
 | Command | Description |
 |---------|-------------|
-| `npm run setup` | Interactive setup wizard |
+| `npm run chat` | **NEW:** Interactive chat with AI agent |
+| `npm run setup` | Interactive configuration wizard |
 | `npm test` | Run test suite |
 | `npm start once` | Run one maintenance cycle |
 | `npm start auto` | Start autonomous mode |
