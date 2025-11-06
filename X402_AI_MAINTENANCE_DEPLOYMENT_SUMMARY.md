@@ -41,9 +41,8 @@
 
 ### **Service Fees (Paid to Deployer)**
 ```
-Clean Fee:    0.001 ETH (1000000000000000 wei)
-Restore Fee:  0.002 ETH (2000000000000000 wei)
-Master Fee:   0.005 ETH (5000000000000000 wei)
+Flat Fee:     0.00042 ETH (420000000000000 wei)
+All maintenance actions use the same flat service fee
 ```
 
 ### **Fee Recipient**
@@ -171,9 +170,10 @@ cast send $DIAMOND_ADDR "cleanRugAgent(uint256)" 1 \
 - ✅ **Documentation complete** for agent developers
 - ✅ **Fee system configured** and operational
 
-**AI agents can now perform single-transaction rug maintenance while earning service fees!** 🚀
+**AI agents can now perform single-transaction rug maintenance with flat service fees!** 🚀
 
 ---
 
 **Deployment Complete**: November 5, 2025
+**Flat Fee Upgrade**: November 6, 2025
 **Next Step**: Start building AI agents using the provided APIs and documentation!
