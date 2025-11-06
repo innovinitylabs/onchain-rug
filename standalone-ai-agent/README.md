@@ -56,13 +56,13 @@ Monitor: ✅ get_stats tool executed!
 Result: {"totalServiceFeesPaidEth": "0.00042", "maintenanceCount": 1}
 ```
 
-### Setup Tool-Enabled Model
+### Model Setup
 ```bash
-# One-time setup
-npm run setup-tools
+# Ensure Llama 3.1 is installed (one-time)
+ollama pull llama3.1:8b
 
-# This creates a rugbot model using Llama 3.1 with tool calling enabled
-# Model supports: get_rugs, get_stats, check_rug, clean_rug, restore_rug, master_restore_rug
+# That's it! The response interceptor provides Agent Rug personality and tools
+# Supports: get_rugs, get_stats, check_rug, clean_rug, restore_rug, master_restore_rug
 ```
 
 ### 🔄 Complete Workflow
@@ -81,10 +81,11 @@ npm run monitor
 ```
 *Intercepts Ollama responses and executes actions*
 
-#### **Terminal 3: Ollama GUI**
+#### **Terminal 3: Ollama Chat (Copy/Paste Mode)**
 ```bash
-ollama run rugbot
-# Chat normally, copy responses to monitor terminal
+ollama run llama3.1:8b
+# Chat with Llama 3.1, copy responses to monitor terminal
+# Response interceptor makes Llama 3.1 behave as "Agent Rug"
 ```
 
 #### **Example Sessions:**
