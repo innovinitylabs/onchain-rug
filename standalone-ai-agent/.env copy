@@ -10,16 +10,12 @@ CHAIN_ID=11011
 CONTRACT_ADDRESS=0x5E63d07BDa3987da3A0CaCD69d829b9E11C1f325
 
 # Agent Wallet Configuration (for real transactions)
-AGENT_PRIVATE_KEY=your_agent_private_key_here
-AGENT_ADDRESS=0x...
+AGENT_PRIVATE_KEY=0x4afa606c876bfae0a358d2aa8f6c5096fb50891858fd69a3a1fbed3df10335ab
+AGENT_ADDRESS=0x18aD3393691372821A05d08E6C30f4Fe4E150403
 
-# ⚠️  IMPORTANT: Authorize this agent first!
-# Before running the agent, rug owners must authorize it via dashboard:
-# 1. Go to /dashboard in your web app
-# 2. Find "AI Agent Authorization" section
-# 3. Enter this agent's address (AGENT_ADDRESS above)
-# 4. Click "Authorize Agent" and confirm in MetaMask
-# 5. Only THEN can the agent maintain rugs for that owner
+# Owner Wallet Configuration (for authorization)
+OWNER_PRIVATE_KEY=0xb7119853992b034626c89db1d66f2f7f1ee801264dac2e2ed04cef3e7a071e06
+OWNER_ADDRESS=0x14fb5d894d7E62F3E69Ea985273e9eE31e8fe72C
 
 # Test Configuration
 TEST_TOKEN_ID=1

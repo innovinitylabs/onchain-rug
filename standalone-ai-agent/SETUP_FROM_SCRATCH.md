@@ -66,7 +66,7 @@ code .env  # or use your preferred editor
 
 ### Step 3: Configure Environment
 
-#### 3.1 Edit .env File
+#### 3.1 Edit .env File (Secure Setup)
 ```bash
 # Ollama Configuration
 OLLAMA_BASE_URL=http://localhost:11434
@@ -77,13 +77,16 @@ RPC_URL=https://sepolia.shape.network
 CHAIN_ID=11011
 CONTRACT_ADDRESS=0x5E63d07BDa3987da3A0CaCD69d829b9E11C1f325
 
-# Agent Wallet Configuration (REQUIRED for transactions)
-AGENT_PRIVATE_KEY=your_private_key_here
-AGENT_ADDRESS=your_wallet_address_here
+# Agent Wallet Configuration (REQUIRED - Keep this permanently)
+AGENT_PRIVATE_KEY=your_agent_private_key_here
+AGENT_ADDRESS=your_agent_wallet_address_here
 
-# Owner Wallet Configuration (for authorization)
-OWNER_PRIVATE_KEY=your_owner_private_key_here
-OWNER_ADDRESS=your_owner_address_here
+# Owner Wallet Configuration (TEMPORARY - Remove after authorization!)
+# These are ONLY needed for the one-time authorization step
+# After running: npm run authorize-once
+# DELETE these lines for security!
+# OWNER_PRIVATE_KEY=your_main_wallet_private_key_here  # ⚠️ REMOVE AFTER AUTH!
+# OWNER_ADDRESS=your_main_wallet_address_here          # ⚠️ REMOVE AFTER AUTH!
 
 # Test Configuration
 TEST_TOKEN_ID=1
@@ -98,22 +101,42 @@ AGENT_STYLE=helpful,professional,enthusiastic
 API_PORT=3001
 ```
 
-#### 3.2 Get Wallet Private Key
-```bash
-# In MetaMask:
-# 1. Click account icon → Account Details
-# 2. Export Private Key
-# 3. Paste in .env as AGENT_PRIVATE_KEY
+#### 3.2 Create Secure Wallets
 
-# ⚠️  NEVER share your private key!
-# ⚠️  NEVER commit .env to git!
+**🔐 Agent Wallet (Keep this private key permanently):**
+```bash
+# Create a NEW wallet specifically for your AI agent
+# NEVER use your main wallet for this!
+# This wallet will:
+# - Perform maintenance transactions
+# - Earn service fees (0.001-0.005 ETH per action)
+# - Pay gas fees for operations
+
+# In MetaMask:
+# 1. Create Account → New Account
+# 2. Name it "RugBot Agent"
+# 3. Export Private Key → AGENT_PRIVATE_KEY in .env
+# 4. Get address → AGENT_ADDRESS in .env
+```
+
+**👤 Main Wallet (Temporary access only):**
+```bash
+# Your existing main wallet
+# Only needed for one-time authorization
+# Will authorize agent, then be removed from .env
+# NEVER stored permanently!
 ```
 
 #### 3.3 Get Shape Sepolia ETH
 ```bash
+# Fund both wallets with testnet ETH:
 # Visit: https://faucet.shape.network
-# Connect wallet and claim testnet ETH
-# Need ~0.01 ETH for testing
+
+# 1. Connect Agent Wallet → Claim 0.01 ETH (for gas)
+# 2. Connect Main Wallet → Claim 0.01 ETH (for authorization gas)
+
+# Agent wallet needs ETH for transaction gas fees
+# Main wallet needs ETH for authorization gas fee
 ```
 
 ### Step 4: Setup Ollama Models
@@ -131,9 +154,40 @@ ollama pull deepseek-r1:8b
 ollama list  # Should show: rugbot-updated:latest
 ```
 
-### Step 5: Test Everything
+### Step 5: Authorize Agent (Via Dashboard - Secure!)
 
-#### 5.1 Test Complete System
+#### 5.1 Dashboard Authorization (Much Safer!)
+```bash
+# 1. Start your web app:
+npm run dev
+
+# 2. Go to dashboard in your browser:
+# http://localhost:3000/dashboard
+
+# 3. Find "AI Agent Authorization" section (blue card with bot icon)
+
+# 4. Enter your agent wallet address:
+# Copy AGENT_ADDRESS from your .env file and paste it
+
+# 5. Click "Authorize Agent" button
+
+# 6. Confirm transaction in MetaMask
+
+# Expected result:
+# ✅ "Agent authorized successfully!"
+# 🔗 View transaction on Shape Sepolia explorer
+```
+
+#### 5.2 Why Dashboard Authorization is Better
+- ✅ **No private keys in files** - Your main wallet key never stored
+- ✅ **MetaMask handles security** - Secure transaction signing
+- ✅ **Visual feedback** - See transaction progress and status
+- ✅ **User-friendly** - No command-line complexity
+- ✅ **Safe by default** - Agent can only maintain, not transfer rugs
+
+### Step 6: Test Everything
+
+#### 6.1 Test Complete System
 ```bash
 npm test
 ```
@@ -225,17 +279,25 @@ npm run execute "[ACTION:clean_rug,tokenId:1] I'll clean that rug right up!"
 # Result: Real blockchain transaction! Earn 0.001 ETH!
 ```
 
-### Step 7: Monitor Earnings
+### Step 6: Monitor Earnings
 
-#### 7.1 Check Your Stats
+#### 6.1 Check Your Agent Stats
 ```bash
-npm run execute "[ACTION:get_earnings] Show me my earnings"
+# View earnings from standalone agent:
+npm start stats
+
+# Or check via Ollama GUI with API server running:
+# npm run api-server  (in another terminal)
+# Then in Ollama GUI: "show my earnings"
 ```
 
-#### 7.2 View Transaction History
+#### 6.2 View Transaction History
 ```bash
-# Check your wallet on Shape Sepolia explorer:
-# https://sepolia.shapescan.xyz/address/YOUR_ADDRESS
+# Check agent wallet on Shape Sepolia explorer:
+# https://sepolia.shapescan.xyz/address/YOUR_AGENT_ADDRESS
+
+# Check your rugs on explorer:
+# https://sepolia.shapescan.xyz/address/YOUR_MAIN_ADDRESS
 ```
 
 ---

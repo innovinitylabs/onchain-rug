@@ -67,10 +67,6 @@ const config = {
     privateKey: process.env.AGENT_PRIVATE_KEY,
     address: process.env.AGENT_ADDRESS
   },
-  owner: {
-    privateKey: process.env.OWNER_PRIVATE_KEY,
-    address: process.env.OWNER_ADDRESS
-  },
   test: {
     tokenId: parseInt(process.env.TEST_TOKEN_ID || '1'),
     autoMaintain: process.env.AUTO_MAINTAIN === 'true',
@@ -101,14 +97,8 @@ if (config.wallet.privateKey) {
   });
 }
 
-let ownerWallet = null;
-if (config.owner.privateKey) {
-  ownerWallet = createWalletClient({
-    chain: shapeSepolia,
-    transport: http(config.blockchain.rpcUrl),
-    account: config.owner.privateKey
-  });
-}
+// Note: Owner authorization is now handled via dashboard UI
+// Agent authorization happens in the web app, not here
 
 // Rug Maintenance Contract ABI
 const RugMaintenanceAbi = [
@@ -387,32 +377,8 @@ Respond in JSON format:
     }
   }
 
-  async authorizeAsAgent() {
-    if (!ownerWallet || !agentWallet) {
-      console.log(chalk.yellow('⚠️  Cannot authorize agent - missing wallet configuration'));
-      return false;
-    }
-
-    console.log(chalk.gray('🔐 Authorizing AI agent...'));
-
-    try {
-      const hash = await ownerWallet.writeContract({
-        address: config.blockchain.contractAddress,
-        abi: RugMaintenanceAbi,
-        functionName: 'authorizeMaintenanceAgent',
-        args: [this.agentAddress]
-      });
-
-      console.log(chalk.gray('⏳ Waiting for authorization...'));
-      await publicClient.waitForTransactionReceipt({ hash });
-
-      console.log(chalk.green('✅ Agent authorized successfully!'));
-      return true;
-    } catch (error) {
-      console.log(chalk.red('❌ Authorization failed:'), error.message);
-      return false;
-    }
-  }
+  // Note: Agent authorization is now handled via dashboard UI
+  // Rug owners authorize agents through the web app dashboard
 
   async runMaintenanceCycle() {
     console.log(chalk.blue('\n🏠 Starting maintenance cycle...\n'));
@@ -547,10 +513,6 @@ async function main() {
   }
 
   switch (command) {
-    case 'authorize':
-      await agent.authorizeAsAgent();
-      break;
-
     case 'check':
       const tokenId = args[1] || config.test.tokenId;
       await agent.checkRugStatus(tokenId);
@@ -582,12 +544,12 @@ async function main() {
 
     default:
       console.log(chalk.yellow('Usage:'));
-      console.log(chalk.gray('  npm start authorize    - Authorize agent'));
       console.log(chalk.gray('  npm start check [id]   - Check rug status'));
       console.log(chalk.gray('  npm start analyze      - AI analysis of rug'));
       console.log(chalk.gray('  npm start once         - Run one maintenance cycle'));
       console.log(chalk.gray('  npm start auto         - Start autonomous mode'));
       console.log(chalk.gray('  npm start stats        - Show agent statistics'));
+      console.log(chalk.gray('\n⚠️  Authorization: Use dashboard UI (/dashboard) to authorize agents'));
       console.log(chalk.gray('\nExamples:'));
       console.log(chalk.gray('  npm start check 5      - Check rug #5'));
       console.log(chalk.gray('  npm start once         - Maintain test rug'));
