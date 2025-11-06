@@ -1,0 +1,23 @@
+{
+  "name": "standalone-rug-maintenance-ai-agent",
+  "version": "1.0.0",
+  "description": "Standalone AI Agent for x402 Rug Maintenance - No external dependencies",
+  "main": "standalone-agent.js",
+  "type": "module",
+  "scripts": {
+    "start": "node standalone-agent.js",
+    "chat": "node chat-agent.js",
+    "test": "node test-standalone.js",
+    "dev": "node --watch standalone-agent.js"
+  },
+  "dependencies": {
+    "viem": "^2.37.5",
+    "ollama": "^0.5.0",
+    "dotenv": "^16.4.5",
+    "chalk": "^5.3.0",
+    "inquirer": "^10.1.0"
+  },
+  "keywords": ["ai-agent", "blockchain", "nft", "maintenance", "x402", "ollama", "standalone"],
+  "author": "Onchain Rugs",
+  "license": "MIT"
+}
