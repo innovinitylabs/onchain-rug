@@ -357,7 +357,55 @@ class RugBotAPIServer {
       });
     });
 
-    // Get rugs owned by agent
+    // Get rugs owned by owner (for Ollama to discover user's rugs)
+    this.app.get('/owner/rugs', async (req, res) => {
+      try {
+        console.log(chalk.blue('🔍 API: Discovering rugs owned by owner...'));
+
+        if (!config.owner.address) {
+          throw new Error('Owner address not configured');
+        }
+
+        // Get balance of rugs owned by owner
+        const balance = await publicClient.readContract({
+          address: config.blockchain.contractAddress,
+          abi: RugMaintenanceAbi,
+          functionName: 'balanceOf',
+          args: [config.owner.address]
+        });
+
+        console.log(chalk.gray(`   Owner owns ${balance} rugs`));
+
+        // Get all token IDs owned by owner
+        const ownedRugs = [];
+        for (let i = 0; i < Number(balance); i++) {
+          try {
+            const tokenId = await publicClient.readContract({
+              address: config.blockchain.contractAddress,
+              abi: RugMaintenanceAbi,
+              functionName: 'tokenOfOwnerByIndex',
+              args: [config.owner.address, BigInt(i)]
+            });
+            ownedRugs.push(Number(tokenId));
+          } catch (error) {
+            console.log(chalk.yellow(`   Warning: Could not get token at index ${i}:`, error.message));
+          }
+        }
+
+        console.log(chalk.green(`✅ API: Found ${ownedRugs.length} rugs owned by owner`));
+        res.json({
+          success: true,
+          ownerAddress: config.owner.address,
+          ownedRugs,
+          totalOwned: ownedRugs.length
+        });
+      } catch (error) {
+        console.log(chalk.red('❌ API: Error discovering owner rugs:', error.message));
+        res.status(500).json({ success: false, error: error.message });
+      }
+    });
+
+    // Get rugs owned by agent (for agent's own rugs)
     this.app.get('/agent/rugs', async (req, res) => {
       try {
         console.log(chalk.blue('🔍 API: Discovering rugs owned by agent...'));
@@ -400,7 +448,7 @@ class RugBotAPIServer {
           totalOwned: ownedRugs.length
         });
       } catch (error) {
-        console.log(chalk.red('❌ API: Error discovering rugs:', error.message));
+        console.log(chalk.red('❌ API: Error discovering agent rugs:', error.message));
         res.status(500).json({ success: false, error: error.message });
       }
     });
@@ -493,7 +541,8 @@ Keep the personalityNote enthusiastic and in character as ${config.agent.name}!`
       console.log(chalk.blue(`🏠 Rug Status: http://localhost:${config.server.port}/rug/1/status`));
       console.log(chalk.blue(`🔧 Maintenance: POST http://localhost:${config.server.port}/rug/1/maintain`));
       console.log(chalk.blue(`📊 Stats: http://localhost:${config.server.port}/agent/stats`));
-      console.log(chalk.blue(`🏘️  My Rugs: http://localhost:${config.server.port}/agent/rugs`));
+      console.log(chalk.blue(`🏘️  My Rugs: http://localhost:${config.server.port}/owner/rugs`));
+      console.log(chalk.blue(`🤖 Agent Rugs: http://localhost:${config.server.port}/agent/rugs`));
       console.log(chalk.gray('\n💡 This server enables Ollama GUI to perform real blockchain transactions!'));
       console.log(chalk.gray('   Use tool calling in Ollama to interact with these endpoints.\n'));
     });
