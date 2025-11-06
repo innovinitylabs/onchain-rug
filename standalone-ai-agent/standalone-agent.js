@@ -19,7 +19,32 @@
  */
 
 import { createPublicClient, createWalletClient, http, parseEther, formatEther } from 'viem';
-import { baseSepolia } from 'viem/chains';
+
+// Shape Sepolia chain definition (not built into viem)
+const shapeSepolia = {
+  id: 11011,
+  name: 'Shape Sepolia',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'Ethereum',
+    symbol: 'ETH',
+  },
+  rpcUrls: {
+    default: {
+      http: ['https://sepolia.shape.network'],
+    },
+    public: {
+      http: ['https://sepolia.shape.network'],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'Shape Sepolia Explorer',
+      url: 'https://sepolia.shapescan.xyz',
+    },
+  },
+  testnet: true,
+};
 import { Ollama } from 'ollama';
 import dotenv from 'dotenv';
 import chalk from 'chalk';
@@ -63,14 +88,14 @@ const ollama = new Ollama({
 });
 
 const publicClient = createPublicClient({
-  chain: baseSepolia,
+  chain: shapeSepolia,
   transport: http(config.blockchain.rpcUrl)
 });
 
 let agentWallet = null;
 if (config.wallet.privateKey) {
   agentWallet = createWalletClient({
-    chain: baseSepolia,
+    chain: shapeSepolia,
     transport: http(config.blockchain.rpcUrl),
     account: config.wallet.privateKey
   });
@@ -79,7 +104,7 @@ if (config.wallet.privateKey) {
 let ownerWallet = null;
 if (config.owner.privateKey) {
   ownerWallet = createWalletClient({
-    chain: baseSepolia,
+    chain: shapeSepolia,
     transport: http(config.blockchain.rpcUrl),
     account: config.owner.privateKey
   });

@@ -44,6 +44,20 @@ RugBot: Let me check your stats! [Queries real blockchain]
 
 **Yes, you earn REAL ETH by chatting in Ollama GUI!** 🎉💰
 
+### AI Agent Service Fees (What You Earn!)
+```
+Clean Rug:     0.001 ETH service fee (you earn this!)
+Restore Rug:   0.002 ETH service fee (you earn this!)
+Master Restore: 0.005 ETH service fee (you earn this!)
+```
+
+### Network: Shape Sepolia
+- **Contract**: `0x5E63d07BDa3987da3A0CaCD69d829b9E11C1f325`
+- **RPC**: `https://sepolia.shape.network`
+- **Chain ID**: 11011
+- **Explorer**: https://sepolia.shapescan.xyz
+- **Faucet**: https://faucet.shape.network
+
 ## 📦 What's Included
 
 - `standalone-agent.js` - Core AI agent logic
@@ -94,10 +108,10 @@ Edit `.env` file:
 OLLAMA_BASE_URL=http://localhost:11434
 OLLAMA_MODEL=deepseek-r1:8b
 
-# Blockchain Configuration
-RPC_URL=https://sepolia.base.org
-CHAIN_ID=84532
-CONTRACT_ADDRESS=0xa43532205Fc90b286Da98389a9883347Cc4064a8
+# Blockchain Configuration (Shape Sepolia)
+RPC_URL=https://sepolia.shape.network
+CHAIN_ID=11011
+CONTRACT_ADDRESS=0x5E63d07BDa3987da3A0CaCD69d829b9E11C1f325
 
 # Agent Wallet (for real transactions)
 AGENT_PRIVATE_KEY=0x...

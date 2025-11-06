@@ -318,8 +318,33 @@ Respond in JSON format:
 
 // Import required modules for chat
 import { createPublicClient, http } from 'viem';
-import { baseSepolia } from 'viem/chains';
 import { Ollama } from 'ollama';
+
+// Shape Sepolia chain definition (not built into viem)
+const shapeSepolia = {
+  id: 11011,
+  name: 'Shape Sepolia',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'Ethereum',
+    symbol: 'ETH',
+  },
+  rpcUrls: {
+    default: {
+      http: ['https://sepolia.shape.network'],
+    },
+    public: {
+      http: ['https://sepolia.shape.network'],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'Shape Sepolia Explorer',
+      url: 'https://sepolia.shapescan.xyz',
+    },
+  },
+  testnet: true,
+};
 
 // Initialize clients (needed for chat functions)
 const ollama = new Ollama({
@@ -328,7 +353,7 @@ const ollama = new Ollama({
 
 const config = {
   blockchain: {
-    contractAddress: process.env.CONTRACT_ADDRESS || '0xa43532205Fc90b286Da98389a9883347Cc4064a8'
+    contractAddress: process.env.CONTRACT_ADDRESS || '0x5E63d07BDa3987da3A0CaCD69d829b9E11C1f325'
   },
   agent: {
     name: process.env.AGENT_NAME || 'RugBot'
@@ -336,8 +361,8 @@ const config = {
 };
 
 const publicClient = createPublicClient({
-  chain: baseSepolia,
-  transport: http(process.env.RPC_URL || 'https://sepolia.base.org')
+  chain: shapeSepolia,
+  transport: http(process.env.RPC_URL || 'https://sepolia.shape.network')
 });
 
 // ABI for chat functions
