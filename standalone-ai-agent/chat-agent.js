@@ -352,6 +352,10 @@ const ollama = new Ollama({
 });
 
 const config = {
+  ollama: {
+    baseUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434',
+    model: process.env.OLLAMA_MODEL || 'rugbot-updated:latest'
+  },
   blockchain: {
     contractAddress: process.env.CONTRACT_ADDRESS || '0x5E63d07BDa3987da3A0CaCD69d829b9E11C1f325'
   },

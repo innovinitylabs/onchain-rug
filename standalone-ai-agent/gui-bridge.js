@@ -25,7 +25,7 @@ dotenv.config();
 const config = {
   ollama: {
     baseUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434',
-    model: process.env.OLLAMA_MODEL || 'rugbot:latest'
+    model: process.env.OLLAMA_MODEL || 'rugbot-updated:latest'
   },
   api: {
     baseUrl: process.env.API_BASE_URL || 'http://localhost:3001'

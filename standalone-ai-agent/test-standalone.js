@@ -25,8 +25,8 @@ const config = {
     model: process.env.OLLAMA_MODEL || 'deepseek-r1:8b'
   },
   blockchain: {
-    rpcUrl: process.env.RPC_URL || 'https://sepolia.base.org',
-    contractAddress: process.env.CONTRACT_ADDRESS || '0xa43532205Fc90b286Da98389a9883347Cc4064a8'
+    rpcUrl: process.env.RPC_URL || 'https://sepolia.shape.network',
+    contractAddress: process.env.CONTRACT_ADDRESS || '0x5E63d07BDa3987da3A0CaCD69d829b9E11C1f325'
   },
   test: {
     tokenId: parseInt(process.env.TEST_TOKEN_ID || '1')

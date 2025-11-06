@@ -8,7 +8,9 @@
     "start": "node standalone-agent.js",
     "chat": "node chat-agent.js",
     "api-server": "node api-server.js",
+    "execute": "node execute-action.js",
     "gui-bridge": "node gui-bridge.js",
+    "response-interceptor": "node response-interceptor.js",
     "test": "node test-standalone.js",
     "dev": "node --watch standalone-agent.js"
   },

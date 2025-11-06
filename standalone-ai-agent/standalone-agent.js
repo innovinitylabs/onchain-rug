@@ -56,12 +56,12 @@ dotenv.config();
 const config = {
   ollama: {
     baseUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434',
-    model: process.env.OLLAMA_MODEL || 'deepseek-r1:8b'
+    model: process.env.OLLAMA_MODEL || 'rugbot-updated:latest'
   },
   blockchain: {
-    rpcUrl: process.env.RPC_URL || 'https://sepolia.base.org',
-    chainId: parseInt(process.env.CHAIN_ID || '84532'),
-    contractAddress: process.env.CONTRACT_ADDRESS || '0xa43532205Fc90b286Da98389a9883347Cc4064a8'
+    rpcUrl: process.env.RPC_URL || 'https://sepolia.shape.network',
+    chainId: parseInt(process.env.CHAIN_ID || '11011'),
+    contractAddress: process.env.CONTRACT_ADDRESS || '0x5E63d07BDa3987da3A0CaCD69d829b9E11C1f325'
   },
   wallet: {
     privateKey: process.env.AGENT_PRIVATE_KEY,
