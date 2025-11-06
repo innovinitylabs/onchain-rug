@@ -11,7 +11,7 @@
 
 import express from 'express';
 import cors from 'cors';
-import { createPublicClient, createWalletClient, http, parseEther, formatEther } from 'viem';
+import { createPublicClient, createWalletClient, http, parseEther, formatEther, privateKeyToAccount } from 'viem';
 
 // Shape Sepolia chain definition (not built into viem)
 const shapeSepolia = {
@@ -81,11 +81,15 @@ const publicClient = createPublicClient({
 
 let agentWallet = null;
 if (config.wallet.privateKey) {
+  const account = privateKeyToAccount(config.wallet.privateKey);
   agentWallet = createWalletClient({
     chain: shapeSepolia,
     transport: http(config.blockchain.rpcUrl),
-    account: config.wallet.privateKey
+    account: account
   });
+  console.log(chalk.green(`✅ Agent wallet loaded: ${account.address}`));
+} else {
+  console.log(chalk.yellow('⚠️  No AGENT_PRIVATE_KEY set - maintenance actions will fail'));
 }
 
 // Owner wallet not needed - authorization happens via dashboard/website
