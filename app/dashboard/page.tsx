@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useAccount, useReadContract, useChainId, usePublicClient } from 'wagmi'
+import { useAccount, useReadContract, useChainId, usePublicClient, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import { onchainRugsABI, contractAddresses, callContractMultiFallback } from '@/lib/web3'
-import { Wallet, AlertCircle, RefreshCw, Droplets, Sparkles, Crown, TrendingUp, Clock, ExternalLink, Copy, CheckCircle, Maximize2, Minimize2 } from 'lucide-react'
+import { Wallet, AlertCircle, RefreshCw, Droplets, Sparkles, Crown, TrendingUp, Clock, ExternalLink, Copy, CheckCircle, Maximize2, Minimize2, Bot, Zap } from 'lucide-react'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
 import LoadingAnimation from '@/components/LoadingAnimation'
@@ -115,12 +115,20 @@ export default function DashboardPage() {
   const { address, isConnected } = useAccount()
   const chainId = useChainId()
   const publicClient = usePublicClient()
+  const { writeContract, data: hash, isPending, isSuccess } = useWriteContract()
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+    hash,
+  })
   const [userRugs, setUserRugs] = useState<RugData[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedRug, setSelectedRug] = useState<RugData | null>(null)
   const [refreshing, setRefreshing] = useState(false)
   const [fullScreenMode, setFullScreenMode] = useState(false)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
+
+  // AI Agent Authorization State
+  const [agentAddress, setAgentAddress] = useState('')
+  const [isAuthorizing, setIsAuthorizing] = useState(false)
 
   const contractAddress = contractAddresses[chainId] // No fallback - prevents accidental wrong network transactions
 
@@ -403,6 +411,42 @@ export default function DashboardPage() {
     }
   }
 
+  // AI Agent Authorization
+  const handleAuthorizeAgent = async () => {
+    if (!agentAddress || !agentAddress.startsWith('0x') || agentAddress.length !== 42) {
+      alert('Please enter a valid Ethereum address for the AI agent')
+      return
+    }
+
+    if (!contractAddress) {
+      alert('Contract not available on this network')
+      return
+    }
+
+    setIsAuthorizing(true)
+
+    try {
+      writeContract({
+        address: contractAddress as `0x${string}`,
+        abi: onchainRugsABI,
+        functionName: 'authorizeMaintenanceAgent',
+        args: [agentAddress as `0x${string}`],
+      })
+    } catch (error) {
+      console.error('Authorization failed:', error)
+      setIsAuthorizing(false)
+    }
+  }
+
+  // Reset form after successful authorization
+  useEffect(() => {
+    if (isConfirmed) {
+      setAgentAddress('')
+      setIsAuthorizing(false)
+      alert('AI Agent successfully authorized! The agent can now maintain your rugs.')
+    }
+  }, [isConfirmed])
+
   const getDirtLevel = (lastCleaned: bigint) => {
     const now = Math.floor(Date.now() / 1000)
     const timeSinceCleaned = now - Number(lastCleaned)
@@ -551,6 +595,88 @@ export default function DashboardPage() {
               </div>
               <div className="text-sm text-white/60">Laundered</div>
             </div>
+          </div>
+        </motion.div>
+
+        {/* AI Agent Authorization Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="mb-8"
+        >
+          <div className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 rounded-xl p-6 backdrop-blur-sm">
+            <div className="flex items-center gap-3 mb-4">
+              <Bot className="w-6 h-6 text-blue-400" />
+              <h2 className="text-xl font-bold text-white">AI Agent Authorization</h2>
+              <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded-full">NEW</span>
+            </div>
+
+            <p className="text-white/70 mb-4">
+              Authorize an AI agent to automatically maintain your rugs. The agent will earn service fees while keeping your rugs clean and well-maintained.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <input
+                type="text"
+                placeholder="Enter AI Agent wallet address (0x...)"
+                value={agentAddress}
+                onChange={(e) => setAgentAddress(e.target.value)}
+                className="flex-1 px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <button
+                onClick={handleAuthorizeAgent}
+                disabled={isAuthorizing || isPending || isConfirming || !agentAddress}
+                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-600 disabled:to-gray-600 text-white font-medium rounded-lg transition-all duration-200 flex items-center gap-2 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"
+              >
+                {isAuthorizing || isPending ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    {isConfirming ? 'Confirming...' : 'Authorizing...'}
+                  </>
+                ) : (
+                  <>
+                    <Zap className="w-4 h-4" />
+                    Authorize Agent
+                  </>
+                )}
+              </button>
+            </div>
+
+            <div className="mt-4 text-sm text-white/60">
+              <p>• Agent can only perform maintenance operations (cleaning, restoration)</p>
+              <p>• Agent cannot transfer, sell, or modify ownership of your rugs</p>
+              <p>• Agent earns service fees (0.001-0.005 ETH) for each maintenance action</p>
+              <p>• You can revoke authorization anytime</p>
+            </div>
+
+            {/* Transaction Status */}
+            {(isPending || isConfirming || isConfirmed) && (
+              <div className="mt-4 p-3 bg-slate-700/50 rounded-lg">
+                <div className="flex items-center gap-2">
+                  {isConfirmed ? (
+                    <CheckCircle className="w-4 h-4 text-green-400" />
+                  ) : (
+                    <RefreshCw className="w-4 h-4 animate-spin text-blue-400" />
+                  )}
+                  <span className="text-white text-sm">
+                    {isConfirmed ? 'Authorization successful!' :
+                     isConfirming ? 'Confirming transaction...' :
+                     'Transaction submitted'}
+                  </span>
+                </div>
+                {hash && (
+                  <a
+                    href={`https://sepolia.shapescan.xyz/tx/${hash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-400 hover:text-blue-300 text-xs mt-1 inline-flex items-center gap-1"
+                  >
+                    View on ShapeScan <ExternalLink className="w-3 h-3" />
+                  </a>
+                )}
+              </div>
+            )}
           </div>
         </motion.div>
 
