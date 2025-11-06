@@ -115,7 +115,7 @@ export default function DashboardPage() {
   const { address, isConnected } = useAccount()
   const chainId = useChainId()
   const publicClient = usePublicClient()
-  const { writeContract, data: hash, isPending, isSuccess } = useWriteContract()
+  const { writeContract, data: hash, isPending, isSuccess, error: writeError } = useWriteContract()
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
     hash,
   })
@@ -413,30 +413,54 @@ export default function DashboardPage() {
 
   // AI Agent Authorization
   const handleAuthorizeAgent = async () => {
+    console.log('Starting agent authorization...')
+
     if (!agentAddress || !agentAddress.startsWith('0x') || agentAddress.length !== 42) {
       alert('Please enter a valid Ethereum address for the AI agent')
       return
     }
 
-    if (!contractAddress) {
-      alert('Contract not available on this network')
+    if (!isConnected) {
+      alert('Please connect your wallet first')
       return
     }
+
+    if (!contractAddress) {
+      alert(`Contract not available on this network (Chain ID: ${chainId}). Please switch to a supported network.`)
+      console.error('No contract address for chainId:', chainId)
+      return
+    }
+
+    console.log('Contract address:', contractAddress)
+    console.log('Agent address:', agentAddress)
+    console.log('User address:', address)
 
     setIsAuthorizing(true)
 
     try {
+      console.log('Calling writeContract...')
       writeContract({
         address: contractAddress as `0x${string}`,
         abi: onchainRugsABI,
         functionName: 'authorizeMaintenanceAgent',
         args: [agentAddress as `0x${string}`],
       })
+      console.log('writeContract called successfully')
     } catch (error) {
       console.error('Authorization failed:', error)
+      alert(`Authorization failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
       setIsAuthorizing(false)
     }
   }
+
+  // Handle authorization errors
+  useEffect(() => {
+    if (writeError) {
+      console.error('Write contract error:', writeError)
+      alert(`Transaction failed: ${writeError.message || 'Unknown error'}`)
+      setIsAuthorizing(false)
+    }
+  }, [writeError])
 
   // Reset form after successful authorization
   useEffect(() => {

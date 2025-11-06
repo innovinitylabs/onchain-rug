@@ -120,40 +120,13 @@ contract UpgradeToX402AIMaintenance is Script {
     }
 
     function _getAdminSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](5);
+        bytes4[] memory selectors = new bytes4[](3);
 
-        // REPLACE: Old functions with new flat fee functions
-        selectors[0] = RugAdminFacet.setServiceFees.selector; // Remove old
-        selectors[1] = RugAdminFacet.getAgentServiceFees.selector; // Remove old
-        selectors[2] = RugAdminFacet.setServiceFee.selector; // Add new
-        selectors[3] = RugAdminFacet.setFeeRecipient.selector; // Keep existing
-        selectors[4] = RugAdminFacet.getAgentServiceFee.selector; // Add new
+        // NEW: Only add service fee configuration (existing functions already registered)
+        selectors[0] = RugAdminFacet.setServiceFee.selector;
+        selectors[1] = RugAdminFacet.setFeeRecipient.selector;
+        selectors[2] = RugAdminFacet.getAgentServiceFee.selector;
 
         return selectors;
-    }
-
-    function _getAdminFacetCuts() internal view returns (IDiamondCut.FacetCut[] memory) {
-        IDiamondCut.FacetCut[] memory cuts = new IDiamondCut.FacetCut[](2);
-
-        // Replace old admin functions with new ones
-        cuts[0] = IDiamondCut.FacetCut({
-            facetAddress: address(adminFacet),
-            action: IDiamondCut.FacetCutAction.Replace,
-            functionSelectors: _getAdminSelectors()
-        });
-
-        // Maintenance facet cuts (agent functions)
-        bytes4[] memory maintenanceSelectors = new bytes4[](3);
-        maintenanceSelectors[0] = RugMaintenanceFacet.cleanRugAgent.selector;
-        maintenanceSelectors[1] = RugMaintenanceFacet.restoreRugAgent.selector;
-        maintenanceSelectors[2] = RugMaintenanceFacet.masterRestoreRugAgent.selector;
-
-        cuts[1] = IDiamondCut.FacetCut({
-            facetAddress: address(maintenanceFacet),
-            action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: maintenanceSelectors
-        });
-
-        return cuts;
     }
 }

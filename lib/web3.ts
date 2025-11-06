@@ -260,6 +260,68 @@ export const onchainRugsABI = [
     stateMutability: 'view',
     type: 'function',
   },
+  // AI Agent Authorization Functions
+  {
+    inputs: [{ name: 'agent', type: 'address' }],
+    name: 'authorizeMaintenanceAgent',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [{ name: 'agent', type: 'address' }],
+    name: 'revokeMaintenanceAgent',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  // Agent Maintenance Functions
+  {
+    inputs: [{ name: 'tokenId', type: 'uint256' }],
+    name: 'cleanRugAgent',
+    outputs: [],
+    stateMutability: 'payable',
+    type: 'function',
+  },
+  {
+    inputs: [{ name: 'tokenId', type: 'uint256' }],
+    name: 'restoreRugAgent',
+    outputs: [],
+    stateMutability: 'payable',
+    type: 'function',
+  },
+  {
+    inputs: [{ name: 'tokenId', type: 'uint256' }],
+    name: 'masterRestoreRugAgent',
+    outputs: [],
+    stateMutability: 'payable',
+    type: 'function',
+  },
+  // Fee Management Functions
+  {
+    inputs: [{ name: 'fee', type: 'uint256' }],
+    name: 'setServiceFee',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'getAgentServiceFee',
+    outputs: [
+      { name: 'serviceFee', type: 'uint256' },
+      { name: 'feeRecipient', type: 'address' }
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [{ name: 'recipient', type: 'address' }],
+    name: 'setFeeRecipient',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
   // Events for listening to new mints
   {
     anonymous: false,
