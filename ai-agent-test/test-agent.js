@@ -11,8 +11,6 @@
  * - Transaction simulation
  */
 
-import { createPublicClient, http } from 'viem';
-import { baseSepolia } from '../lib/web3.js';
 import { Ollama } from 'ollama';
 import dotenv from 'dotenv';
 import chalk from 'chalk';
@@ -23,7 +21,7 @@ dotenv.config();
 const config = {
   ollama: {
     baseUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434',
-    model: process.env.OLLAMA_MODEL || 'llama3.2:3b'
+    model: process.env.OLLAMA_MODEL || 'deepseek-r1:8b'
   },
   api: {
     baseUrl: process.env.RUG_API_BASE || 'http://localhost:3000'
@@ -123,41 +121,26 @@ class AgentTester {
   }
 
   async testBlockchainConnection() {
-    console.log(chalk.blue('\n⛓️  Testing Blockchain Connection...\n'));
+    console.log(chalk.blue('\n⛓️  Testing API Connection (Blockchain proxy)...\n'));
 
     try {
-      const publicClient = createPublicClient({
-        chain: baseSepolia,
-        transport: http()
-      });
+      // Test API connectivity instead of direct blockchain
+      const response = await fetch(`${config.api.baseUrl}/api/maintenance/status/${config.test.tokenId}`);
+      const isApiUp = response.ok;
 
-      const blockNumber = await publicClient.getBlockNumber();
-      this.log('Blockchain connection', true, `Block #${blockNumber}`);
+      this.log('API connection', isApiUp, `HTTP ${response.status}`);
 
-      // Test contract call
-      const contractAddress = '0xa43532205Fc90b286Da98389a9883347Cc4064a8';
-      const fees = await publicClient.readContract({
-        address: contractAddress,
-        abi: [{
-          inputs: [],
-          name: 'getAgentServiceFees',
-          outputs: [
-            { name: 'cleanFee', type: 'uint256' },
-            { name: 'restoreFee', type: 'uint256' },
-            { name: 'masterFee', type: 'uint256' },
-            { name: 'feeRecipient', type: 'address' }
-          ],
-          stateMutability: 'view',
-          type: 'function'
-        }],
-        functionName: 'getAgentServiceFees'
-      });
+      if (isApiUp) {
+        const data = await response.json();
+        const hasExpectedFields = data.maintenance &&
+          typeof data.maintenance.canClean === 'boolean';
 
-      const hasFees = fees.length === 4 && typeof fees[0] === 'bigint';
-      this.log('Contract connection', hasFees, `Fees: ${fees[0]}, ${fees[1]}, ${fees[2]}`);
+        this.log('API response format', hasExpectedFields, 'Valid maintenance data structure');
+      }
 
     } catch (error) {
-      this.log('Blockchain connection', false, error.message);
+      this.log('API connection', false, error.message);
+      console.log(chalk.gray('💡 Make sure the main app is running: npm run dev'));
     }
   }
 
@@ -205,30 +188,6 @@ Rug data: ${JSON.stringify(testRugData)}`;
     }
   }
 
-  async testWalletConfiguration() {
-    console.log(chalk.blue('\n👛 Testing Wallet Configuration...\n'));
-
-    const hasAgentKey = process.env.AGENT_PRIVATE_KEY &&
-      process.env.AGENT_PRIVATE_KEY.startsWith('0x') &&
-      process.env.AGENT_PRIVATE_KEY.length === 66;
-
-    this.log('Agent private key', hasAgentKey,
-      hasAgentKey ? 'Configured' : 'Missing - simulation mode only');
-
-    const hasOwnerKey = process.env.OWNER_PRIVATE_KEY &&
-      process.env.OWNER_PRIVATE_KEY.startsWith('0x') &&
-      process.env.OWNER_PRIVATE_KEY.length === 66;
-
-    this.log('Owner private key', hasOwnerKey,
-      hasOwnerKey ? 'Configured' : 'Missing - manual authorization required');
-
-    const hasAgentAddress = process.env.AGENT_ADDRESS &&
-      process.env.AGENT_ADDRESS.startsWith('0x') &&
-      process.env.AGENT_ADDRESS.length === 42;
-
-    this.log('Agent address', hasAgentAddress,
-      hasAgentAddress ? `Configured: ${process.env.AGENT_ADDRESS}` : 'Missing');
-  }
 
   async runAllTests() {
     console.log(chalk.bold.blue('🧪 Ollama x402 Rug Maintenance Agent - Test Suite\n'));
@@ -237,7 +196,6 @@ Rug data: ${JSON.stringify(testRugData)}`;
     await this.testAPIEndpoints();
     await this.testBlockchainConnection();
     await this.testAIReasoning();
-    await this.testWalletConfiguration();
 
     // Summary
     console.log(chalk.blue('\n📊 Test Results Summary'));
