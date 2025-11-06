@@ -14,48 +14,55 @@ A **completely self-contained** AI agent that autonomously maintains digital rug
 
 ## 🎮 Revolutionary GUI Integration
 
-**Chat in Ollama GUI and execute REAL blockchain transactions!**
+**Chat in Ollama GUI and execute REAL blockchain transactions using native Ollama tool calling!**
 
 ### How It Works
-1. Start API server: `npm run api-server`
-2. Start Response Monitor: `npm run monitor` (in separate terminal)
-3. Open Ollama GUI → Select "rugbot" model
-4. Chat naturally → Copy Ollama responses → Paste into monitor terminal
-5. Real blockchain transactions execute automatically!
+1. Setup Tool Model: `npm run setup-tools` (one-time setup)
+2. Start API server: `npm run api-server`
+3. Start Response Monitor: `npm run monitor` (in separate terminal)
+4. Open Ollama GUI → Select "rugbot" model
+5. Chat naturally - Ollama automatically calls blockchain tools!
 
-### GUI Commands That Actually Work
+### Native Tool Calling Commands
 ```
-"check rug 1"           → Gets real blockchain status (automatic)
-"what rugs do I own?"   → Discovers all rugs owned by you (automatic)
-"show my costs"         → Shows service fee costs paid (automatic)
-"clean rug 1"           → Asks for confirmation, then executes transaction
-"restore rug 1"         → Asks for confirmation, then executes transaction
-"master restore rug 1"  → Asks for confirmation, then executes transaction
-"authorize me"          → Authorizes agent on blockchain (done via dashboard)
+"check rug 1"           → Calls check_rug tool automatically
+"what rugs do I own?"   → Calls get_rugs tool automatically
+"show my costs"         → Calls get_stats tool automatically
+"clean rug 1"           → Asks confirmation, then calls clean_rug tool
+"restore rug 1"         → Asks confirmation, then calls restore_rug tool
+"master restore rug 1"  → Asks confirmation, then calls master_restore_rug tool
 ```
 
-### Real Money Example
+### Tool Calling vs Manual Approach
+- **Native Tool Calling**: Ollama directly calls blockchain functions
+- **Manual Approach**: Copy/paste responses to monitor (still works as backup)
+- **Both methods**: Execute real blockchain transactions!
+
+### Real Money Example (Tool Calling)
 ```
 You (in Ollama GUI): clean rug 1
 Agent Rug: I'll clean rug #1 for 0.00042 ETH service fee. Confirm? (yes/no)
 
 You (in Ollama GUI): yes
-Agent Rug: [ACTION:clean_rug,tokenId:1] Cleaning rug #1 now!
+Agent Rug: (calls clean_rug tool with tokenId: 1)
 
-You (copy to monitor terminal):
-[ACTION:clean_rug,tokenId:1] Cleaning rug #1 now!
-
-Monitor: ✅ clean_rug completed!
+Monitor: ✅ clean_rug tool executed!
 Result: {"success": true, "serviceFeeEth": "0.00042"}
 
 You (in Ollama GUI): how much have I paid?
-Agent Rug: Let me check your service fees! [ACTION:get_stats]
+Agent Rug: (calls get_stats tool automatically)
 
-You (copy to monitor terminal):
-Let me check your service fees! [ACTION:get_stats]
-
-Monitor: ✅ get_stats completed!
+Monitor: ✅ get_stats tool executed!
 Result: {"totalServiceFeesPaidEth": "0.00042", "maintenanceCount": 1}
+```
+
+### Setup Tool-Enabled Model
+```bash
+# One-time setup
+npm run setup-tools
+
+# This creates a rugbot model using Llama 3.1 with tool calling enabled
+# Model supports: get_rugs, get_stats, check_rug, clean_rug, restore_rug, master_restore_rug
 ```
 
 ### 🔄 Complete Workflow

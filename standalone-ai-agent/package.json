@@ -12,6 +12,7 @@
     "gui-bridge": "node gui-bridge.js",
     "response-interceptor": "node response-interceptor.js",
     "monitor": "node response-interceptor.js monitor",
+    "setup-tools": "node response-interceptor.js create-model",
     "test": "node test-standalone.js",
     "dev": "node --watch standalone-agent.js"
   },
