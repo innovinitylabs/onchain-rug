@@ -132,7 +132,27 @@ export default function DashboardPage() {
   const [revokingAgent, setRevokingAgent] = useState<string | null>(null)
   const [showRevokeConfirm, setShowRevokeConfirm] = useState<string | null>(null)
 
-  const contractAddress = contractAddresses[chainId] // No fallback - prevents accidental wrong network transactions
+  // Get contract address dynamically from environment variables
+  const getContractAddress = (chainId: number): string => {
+    switch (chainId) {
+      case 11155111: // Ethereum Sepolia
+        return process.env.NEXT_PUBLIC_ETHEREUM_SEPOLIA_CONTRACT || process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT || ''
+      case 11011: // Shape Sepolia
+        return process.env.NEXT_PUBLIC_SHAPE_SEPOLIA_CONTRACT || process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT || ''
+      case 360: // Shape Mainnet
+        return process.env.NEXT_PUBLIC_SHAPE_MAINNET_CONTRACT || process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT || ''
+      case 84532: // Base Sepolia
+        return process.env.NEXT_PUBLIC_BASE_SEPOLIA_CONTRACT || process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT || ''
+      case 8453: // Base Mainnet
+        return process.env.NEXT_PUBLIC_BASE_MAINNET_CONTRACT || process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT || ''
+      case 99999: // TestNet
+        return process.env.NEXT_PUBLIC_TEST_NET_CONTRACT || process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT || ''
+      default:
+        return ''
+    }
+  }
+
+  const contractAddress = getContractAddress(chainId)
 
   // Debug logging for network changes
   useEffect(() => {
