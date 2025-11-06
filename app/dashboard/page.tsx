@@ -194,6 +194,18 @@ export default function DashboardPage() {
     },
   })
 
+  // Test authorization for a specific agent (for debugging)
+  const testAgent = '0x742d35Cc6634C0532925a3b844Bc454e4438f44e' // Common test agent
+  const { data: isTestAgentAuthorized, isLoading: testAgentLoading } = useReadContract({
+    address: contractAddress as `0x${string}`,
+    abi: onchainRugsABI,
+    functionName: 'isAgentAuthorized',
+    args: [testAgent as `0x${string}`],
+    query: {
+      enabled: !!contractAddress && !!address,
+    },
+  })
+
   // Debug logging for authorized agents
   console.log('Authorized agents data:', {
     authorizedAgents,
@@ -793,6 +805,9 @@ export default function DashboardPage() {
             {/* Debug Info */}
             <div className="mt-4 p-3 bg-slate-800/50 rounded-lg text-xs text-white/60">
               <div>Debug: Contract: {contractAddress || 'none'} | Agents: {agentsLoading ? 'loading...' : authorizedAgents?.length || 0} | Error: {agentsError ? 'yes' : 'no'}</div>
+              <div>User Address: {address || 'not connected'} | Chain: {chainId}</div>
+              <div>Test Agent (0x742d...f44e): {testAgentLoading ? 'checking...' : isTestAgentAuthorized ? 'AUTHORIZED' : 'not authorized'}</div>
+              {agentsError && <div className="text-red-400">Error: {agentsError.message}</div>}
             </div>
 
             {/* Authorized Agents List */}
