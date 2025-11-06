@@ -164,7 +164,7 @@ export default function DashboardPage() {
   })
 
   // Get authorized agents
-  const { data: authorizedAgents, refetch: refetchAuthorizedAgents, isLoading: agentsLoading } = useReadContract({
+  const { data: authorizedAgents, refetch: refetchAuthorizedAgents, isLoading: agentsLoading, error: agentsError } = useReadContract({
     address: contractAddress as `0x${string}`,
     abi: onchainRugsABI,
     functionName: 'getAuthorizedAgents',
@@ -172,6 +172,16 @@ export default function DashboardPage() {
     query: {
       enabled: !!contractAddress && !!address,
     },
+  })
+
+  // Debug logging for authorized agents
+  console.log('Authorized agents data:', {
+    authorizedAgents,
+    agentsLoading,
+    agentsError,
+    contractAddress,
+    address,
+    isConnected
   })
 
   // Helper function to fetch rug data using new utilities
@@ -760,10 +770,17 @@ export default function DashboardPage() {
               <p>• You can revoke authorization anytime</p>
             </div>
 
+            {/* Debug Info */}
+            <div className="mt-4 p-3 bg-slate-800/50 rounded-lg text-xs text-white/60">
+              <div>Debug: Contract: {contractAddress || 'none'} | Agents: {agentsLoading ? 'loading...' : authorizedAgents?.length || 0} | Error: {agentsError ? 'yes' : 'no'}</div>
+            </div>
+
             {/* Authorized Agents List */}
-            {authorizedAgents && authorizedAgents.length > 0 && (
-              <div className="mt-6">
-                <h3 className="text-lg font-semibold text-white mb-3">Authorized Agents</h3>
+            <div className="mt-6">
+              <h3 className="text-lg font-semibold text-white mb-3">Authorized Agents</h3>
+              {agentsLoading ? (
+                <div className="text-white/60 text-sm">Loading authorized agents...</div>
+              ) : authorizedAgents && authorizedAgents.length > 0 ? (
                 <div className="space-y-3">
                   {authorizedAgents.map((agent: string, index: number) => (
                     <div key={agent} className="bg-slate-700/50 rounded-lg p-3 border border-slate-600/50">
@@ -799,8 +816,12 @@ export default function DashboardPage() {
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
+              ) : (
+                <div className="text-white/60 text-sm">
+                  {agentsError ? 'Error loading agents' : 'No authorized agents yet. Authorize an agent above to get started.'}
+                </div>
+              )}
+            </div>
 
             {/* Revoke Confirmation Modal */}
             {showRevokeConfirm && (
