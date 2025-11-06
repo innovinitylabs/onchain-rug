@@ -88,14 +88,7 @@ if (config.wallet.privateKey) {
   });
 }
 
-let ownerWallet = null;
-if (config.owner.privateKey) {
-  ownerWallet = createWalletClient({
-    chain: shapeSepolia,
-    transport: http(config.blockchain.rpcUrl),
-    account: config.owner.privateKey
-  });
-}
+// Owner wallet not needed - authorization happens via dashboard/website
 
 // Rug Maintenance Contract ABI
 const RugMaintenanceAbi = [
@@ -222,32 +215,7 @@ class RugBotAPIServer {
       }
     });
 
-    // Authorize agent
-    this.app.post('/agent/authorize', async (req, res) => {
-      try {
-        console.log(chalk.blue('🔐 API: Authorizing agent...'));
-
-        if (!ownerWallet || !agentWallet) {
-          throw new Error('Wallet not configured');
-        }
-
-        const hash = await ownerWallet.writeContract({
-          address: config.blockchain.contractAddress,
-          abi: RugMaintenanceAbi,
-          functionName: 'authorizeMaintenanceAgent',
-          args: [config.wallet.address]
-        });
-
-        console.log(chalk.gray('⏳ Waiting for authorization...'));
-        await publicClient.waitForTransactionReceipt({ hash });
-
-        console.log(chalk.green('✅ API: Agent authorized successfully'));
-        res.json({ success: true, message: 'Agent authorized', txHash: hash });
-      } catch (error) {
-        console.log(chalk.red('❌ API: Authorization failed:', error.message));
-        res.status(500).json({ success: false, error: error.message });
-      }
-    });
+    // Authorization happens via dashboard/website, not through API
 
     // Perform maintenance
     this.app.post('/rug/:tokenId/maintain', async (req, res) => {

@@ -84,9 +84,8 @@ Your personality: witty, professional, and enthusiastic about rug maintenance!
 IMPORTANT CAPABILITIES:
 - You can perform REAL blockchain transactions
 - You can check rug status from the blockchain
-- You can execute maintenance and earn service fees
-- You can authorize yourself as an agent
-- You can check your earnings
+- You can execute maintenance (agents pay 0.00042 ETH service fees)
+- You can check service fees paid
 
 HOW TO PERFORM ACTIONS:
 When a user asks you to do something, respond with exactly this format:
@@ -103,19 +102,16 @@ Time for a restoration on rug #2!
 [ACTION:master_restore_rug,tokenId:3]
 Master restoration for rug #3 - this will really shine!
 
-[ACTION:authorize_agent]
-I'll authorize myself as your maintenance agent!
-
 [ACTION:get_earnings]
-Let me check your earnings!
+Let me check your service fees paid!
 
 The [ACTION:...] part will be automatically detected and executed.
 Always include the action tag first, then your enthusiastic response!
 
-SERVICE FEES YOU EARN:
-- Clean: 0.001 ETH
-- Restore: 0.002 ETH
-- Master: 0.005 ETH
+NOTE: Authorization happens through the website dashboard, not here.
+
+SERVICE FEES (agents pay):
+- All maintenance actions: 0.00042 ETH flat fee
 
 Stay in character as enthusiastic RugBot! Use exclamation points! Be excited about rug maintenance!
 
@@ -191,10 +187,7 @@ For questions about capabilities, explain that you can actually perform real blo
           body = JSON.stringify({ action: 'master' });
           break;
 
-        case 'authorize_agent':
-          url = `${config.api.baseUrl}/agent/authorize`;
-          method = 'POST';
-          break;
+        // Authorization happens via website dashboard, not API
 
         case 'get_earnings':
           url = `${config.api.baseUrl}/agent/stats`;
@@ -263,11 +256,10 @@ For questions about capabilities, explain that you can actually perform real blo
     // Example conversations that would trigger actions
     const testConversations = [
       { input: "Check rug 1 for me", expected: "[ACTION:check_rug,tokenId:1]" },
-      { input: "Clean rug 2", expected: "[ACTION:clean_rug,tokenId:2]" },
-      { input: "Please restore rug 3", expected: "[ACTION:restore_rug,tokenId:3]" },
-      { input: "Master restore rug 1", expected: "[ACTION:master_restore_rug,tokenId:1]" },
-      { input: "Authorize yourself", expected: "[ACTION:authorize_agent]" },
-      { input: "How much have I earned?", expected: "[ACTION:get_earnings]" }
+      { input: "Clean rug 0", expected: "[ACTION:clean_rug,tokenId:0]" },
+      { input: "Please restore rug 0", expected: "[ACTION:restore_rug,tokenId:0]" },
+      { input: "Master restore rug 0", expected: "[ACTION:master_restore_rug,tokenId:0]" },
+      { input: "How much have I paid in fees?", expected: "[ACTION:get_earnings]" }
     ];
 
     for (const test of testConversations) {
