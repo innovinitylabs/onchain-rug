@@ -130,6 +130,12 @@ library LibRugStorage {
         mapping(uint256 => address) _tokenApprovals;
         mapping(address => mapping(address => bool)) _operatorApprovals;
         uint256 _currentTokenId;
+
+        // ERC721 enumerable storage
+        mapping(address => mapping(uint256 => uint256)) _ownedTokens;
+        mapping(uint256 => uint256) _ownedTokensIndex;
+        uint256[] _allTokens;
+        mapping(uint256 => uint256) _allTokensIndex;
     }
 
     struct RugConfig {

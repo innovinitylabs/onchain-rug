@@ -366,29 +366,40 @@ class RugBotAPIServer {
           throw new Error('Owner address not configured');
         }
 
-        // Get balance of rugs owned by owner
-        const balance = await publicClient.readContract({
+        // Get total supply to know how many tokens to check
+        const totalSupply = await publicClient.readContract({
           address: config.blockchain.contractAddress,
           abi: RugMaintenanceAbi,
-          functionName: 'balanceOf',
-          args: [config.owner.address]
+          functionName: 'totalSupply'
         });
 
-        console.log(chalk.gray(`   Owner owns ${balance} rugs`));
+        console.log(chalk.gray(`   Scanning ${totalSupply} total tokens...`));
 
-        // Get all token IDs owned by owner
+        // Scan through all possible token IDs to find ones owned by the owner
         const ownedRugs = [];
-        for (let i = 0; i < Number(balance); i++) {
-          try {
-            const tokenId = await publicClient.readContract({
-              address: config.blockchain.contractAddress,
-              abi: RugMaintenanceAbi,
-              functionName: 'tokenOfOwnerByIndex',
-              args: [config.owner.address, BigInt(i)]
-            });
-            ownedRugs.push(Number(tokenId));
-          } catch (error) {
-            console.log(chalk.yellow(`   Warning: Could not get token at index ${i}:`, error.message));
+        const batchSize = 10; // Check 10 tokens at a time
+
+        for (let i = 1; i <= Number(totalSupply); i += batchSize) {
+          const promises = [];
+          for (let j = 0; j < batchSize && i + j <= Number(totalSupply); j++) {
+            promises.push(
+              publicClient.readContract({
+                address: config.blockchain.contractAddress,
+                abi: RugMaintenanceAbi,
+                functionName: 'ownerOf',
+                args: [BigInt(i + j)]
+              }).then(owner => ({
+                tokenId: i + j,
+                owner: owner.toLowerCase()
+              })).catch(() => null) // Skip tokens that don't exist
+            );
+          }
+
+          const results = await Promise.all(promises);
+          for (const result of results) {
+            if (result && result.owner === config.owner.address.toLowerCase()) {
+              ownedRugs.push(result.tokenId);
+            }
           }
         }
 
