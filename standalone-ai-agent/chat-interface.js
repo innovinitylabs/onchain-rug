@@ -10,6 +10,7 @@
  */
 
 import { Ollama } from 'ollama';
+import { MerchantExecutor } from 'x402';
 import dotenv from 'dotenv';
 import chalk from 'chalk';
 import readline from 'readline';

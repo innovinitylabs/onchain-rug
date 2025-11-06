@@ -56,14 +56,29 @@ Monitor: ✅ get_stats tool executed!
 Result: {"totalServiceFeesPaidEth": "0.00042", "maintenanceCount": 1}
 ```
 
-### Model Setup
+### x402 Setup (Real Payments!)
 ```bash
-# Ensure Llama 3.1 is installed (one-time)
+# Install Llama 3.1
 ollama pull llama3.1:8b
 
-# That's it! The response interceptor provides Agent Rug personality and tools
-# Supports: get_rugs, get_stats, check_rug, clean_rug, restore_rug, master_restore_rug
+# Configure x402 payments in .env:
+X402_FACILITATOR_URL=https://x402.org/facilitator
+X402_FACILITATOR_API_KEY=your_api_key
+X402_PAY_TO_ADDRESS=0x_your_merchant_wallet
+
+# Start API server
+npm run api-server
+
+# Chat with real x402 payments!
+npm run chat
 ```
+
+### 🔒 **x402 Security & Payments**
+- ✅ **All queries require payment** (0.001 ETH for stats, dynamic for maintenance)
+- ✅ **Payments verified by x402 facilitator** (not just API trust)
+- ✅ **Real ETH transactions** settled through x402 protocol
+- ✅ **Agent authorization** required via dashboard
+- ✅ **Dynamic pricing** from smart contract
 
 ### 🚀 **Seamless Chat Interface (RECOMMENDED)**
 
@@ -84,25 +99,30 @@ npm run chat          # Terminal 2: Seamless chat with Agent Rug!
 - ✅ **Real blockchain transactions**
 - ✅ **Confirmation prompts for payable actions**
 
-### 💬 **Example Chat Session:**
+### 💬 **Example x402 Chat Session:**
 ```
-🤖 Agent Rug - Seamless Blockchain Chat
+🤖 Agent Rug - x402 Blockchain Chat
 
 You: how many rugs do I own?
-Agent Rug: Let me discover your rug collection! [Tool call executed]
+Agent Rug: Let me discover your rug collection! [x402 payment processed]
 ✅ get_rugs completed successfully!
 Result: {"ownedRugs": [1, 2], "totalOwned": 2}
 
+You: check rug 1 status
+Agent Rug: Getting rug status... [x402 payment processed]
+✅ check_rug completed successfully!
+Result: {"dirtLevel": 0, "agingLevel": 3, "canClean": true, "canRestore": true}
+
 You: clean rug 1
-Agent Rug: I'll clean rug #1 for 0.00042 ETH service fee. Confirm? (yes/no)
+Agent Rug: I'll clean rug #1 for 0.00043 ETH total. Confirm? (yes/no)
 
 You: yes
-Agent Rug: Executing maintenance... [Tool call executed]
+Agent Rug: Executing maintenance... [x402 payment processed]
 ✅ clean_rug completed successfully!
-💰 Paid 0.00042 ETH service fee!
+💰 Paid 0.00043 ETH (maintenance + service fee)!
 
-You: how much have I spent?
-Agent Rug: Checking your service fees... [Tool call executed]
+You: show my costs
+Agent Rug: Checking your service fees... [x402 payment processed]
 ✅ get_stats completed successfully!
 Result: {"totalServiceFeesPaidEth": "0.00042", "maintenanceCount": 1}
 ```
