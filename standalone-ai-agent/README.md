@@ -25,24 +25,37 @@ A **completely self-contained** AI agent that autonomously maintains digital rug
 
 ### GUI Commands That Actually Work
 ```
-"check rug 1"           → Gets real blockchain status
-"clean rug 1"           → Executes transaction, pays 0.00042 ETH service fee
-"restore rug 1"         → Executes transaction, pays 0.00042 ETH service fee
-"master restore rug 1"  → Executes transaction, pays 0.00042 ETH service fee
-"what rugs do I own?"   → Discovers all rugs owned by you (OWNER_ADDRESS)
-"show my costs"         → Shows service fee costs paid
+"check rug 1"           → Gets real blockchain status (automatic)
+"what rugs do I own?"   → Discovers all rugs owned by you (automatic)
+"show my costs"         → Shows service fee costs paid (automatic)
+"clean rug 1"           → Asks for confirmation, then executes transaction
+"restore rug 1"         → Asks for confirmation, then executes transaction
+"master restore rug 1"  → Asks for confirmation, then executes transaction
 "authorize me"          → Authorizes agent on blockchain (done via dashboard)
 ```
 
 ### Real Money Example
 ```
 You (in Ollama GUI): clean rug 1
-RugBot: I'll clean that rug right up! [Executes real transaction]
-       ✅ Done! Rug #1 cleaned. Paid 0.00042 ETH service fee.
+Agent Rug: I'll clean rug #1 for 0.00042 ETH service fee. Confirm? (yes/no)
 
-You: how much have I paid?
-RugBot: Let me check your stats! [Queries real blockchain]
-       You've paid 0.00042 ETH in service fees from 1 maintenance action.
+You (in Ollama GUI): yes
+Agent Rug: [ACTION:clean_rug,tokenId:1] Cleaning rug #1 now!
+
+You (copy to monitor terminal):
+[ACTION:clean_rug,tokenId:1] Cleaning rug #1 now!
+
+Monitor: ✅ clean_rug completed!
+Result: {"success": true, "serviceFeeEth": "0.00042"}
+
+You (in Ollama GUI): how much have I paid?
+Agent Rug: Let me check your service fees! [ACTION:get_stats]
+
+You (copy to monitor terminal):
+Let me check your service fees! [ACTION:get_stats]
+
+Monitor: ✅ get_stats completed!
+Result: {"totalServiceFeesPaidEth": "0.00042", "maintenanceCount": 1}
 ```
 
 ### 🔄 Complete Workflow
@@ -67,7 +80,9 @@ ollama run rugbot
 # Chat normally, copy responses to monitor terminal
 ```
 
-#### **Example Session:**
+#### **Example Sessions:**
+
+**Read-Only Actions (Automatic):**
 ```
 User (Ollama GUI): "What rugs do I own?"
 Agent Rug: "Let me discover your rug collection! [ACTION:get_rugs]"
@@ -77,6 +92,21 @@ Let me discover your rug collection! [ACTION:get_rugs]
 
 Monitor: ✅ get_rugs completed!
 Result: {"ownedRugs": [1, 2], "totalOwned": 2}
+```
+
+**Payable Actions (With Confirmation):**
+```
+User (Ollama GUI): "Clean rug 1"
+Agent Rug: "I'll clean rug #1 for 0.00042 ETH service fee. Confirm? (yes/no)"
+
+User (Ollama GUI): "yes"
+Agent Rug: "[ACTION:clean_rug,tokenId:1] Cleaning rug #1 now!"
+
+User (copies to monitor terminal):
+[ACTION:clean_rug,tokenId:1] Cleaning rug #1 now!
+
+Monitor: ✅ clean_rug completed!
+Result: {"success": true, "serviceFeeEth": "0.00042"}
 ```
 
 **Yes, real blockchain transactions happen while chatting in Ollama GUI!** 🎉💰

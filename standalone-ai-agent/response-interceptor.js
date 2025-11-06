@@ -37,6 +37,7 @@ class ResponseInterceptor {
   constructor() {
     this.ollama = new Ollama({ host: config.ollama.baseUrl });
     this.isRunning = false;
+    this.pendingConfirmations = new Map(); // Track pending confirmations
   }
 
   async initialize() {
@@ -98,29 +99,35 @@ You have access to real APIs that provide accurate blockchain data. When a user 
 4. For stats: Call /agent/stats to get accurate fee information
 
 TOOL CALLING FORMAT:
-When you need to perform an action or get data, respond with:
+You have two types of actions: READ and WRITE.
 
-First, explain what you're doing, then provide the tool call in this exact format:
+READ actions (safe, no confirmation needed):
+- [ACTION:get_rugs] - Discover user's rugs
+- [ACTION:get_stats] - Check service fees paid
+- [ACTION:check_rug,tokenId:X] - Check rug status
 
-[ACTION:check_rug,tokenId:1]
-I'll check the status of rug #1 for you!
+WRITE actions (payable, require confirmation):
+For payable actions, FIRST ask for confirmation, THEN provide the action tag.
 
-[ACTION:clean_rug,tokenId:1]
-I'll clean rug #1 right up!
+Example workflow:
+User: "clean rug 1"
+You: "I'll clean rug #1 for 0.00042 ETH service fee. This will execute a real blockchain transaction. Confirm? (yes/no)"
 
-[ACTION:restore_rug,tokenId:2]
-Time for a restoration on rug #2!
+If user confirms: "yes"
+You: "[ACTION:clean_rug,tokenId:1] Cleaning rug #1 now!"
 
-[ACTION:master_restore_rug,tokenId:3]
-Master restoration for rug #3!
+If user declines: "no"
+You: "Operation cancelled. Let me know if you need anything else!"
 
-[ACTION:get_rugs]
-Let me discover your rug collection!
+Action Tags:
+[ACTION:get_rugs] - Discover rugs
+[ACTION:get_stats] - Check fees
+[ACTION:check_rug,tokenId:X] - Check status
+[ACTION:clean_rug,tokenId:X] - Clean rug
+[ACTION:restore_rug,tokenId:X] - Restore rug
+[ACTION:master_restore_rug,tokenId:X] - Master restore
 
-[ACTION:get_stats]
-I'll check the service fees paid!
-
-The [ACTION:...] part will automatically execute the corresponding API call and provide real results.
+Always ask for confirmation before executing payable actions!
 
 IMPORTANT NOTES:
 - Always get accurate data from APIs - never make up numbers
@@ -128,6 +135,8 @@ IMPORTANT NOTES:
 - Service fees are 0.00042 ETH flat for all maintenance actions
 - Authorization happens through the website dashboard
 - You work on Shape Sepolia testnet
+- When user confirms with "yes", immediately respond with the action tag
+- When user says "no", politely cancel the operation
 
 FEATURES YOU CAN EXPLAIN:
 - OnchainRugs is an NFT project on Shape Sepolia
@@ -179,6 +188,28 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!"""`;
     }
 
     return actions;
+  }
+
+  handleConfirmation(response, input) {
+    const lowerInput = input.toLowerCase().trim();
+    const lowerResponse = response.toLowerCase();
+
+    // Check if this is a confirmation response
+    if (lowerInput === 'yes' || lowerInput === 'y' || lowerInput === 'confirm') {
+      // Look for pending confirmations in the response
+      if (lowerResponse.includes('clean') && lowerResponse.includes('rug')) {
+        return { type: 'confirmed_clean', response };
+      } else if (lowerResponse.includes('restore') && lowerResponse.includes('rug')) {
+        return { type: 'confirmed_restore', response };
+      } else if (lowerResponse.includes('master') && lowerResponse.includes('rug')) {
+        return { type: 'confirmed_master', response };
+      }
+    } else if (lowerInput === 'no' || lowerInput === 'n' || lowerInput === 'cancel') {
+      console.log(chalk.yellow('❌ Operation cancelled by user'));
+      return { type: 'cancelled' };
+    }
+
+    return null;
   }
 
   async executeAction(action) {
@@ -254,8 +285,44 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!"""`;
     }
   }
 
-  async interceptAndExecute(response) {
-    // Parse action tags from the response
+  async interceptAndExecute(response, userInput = '') {
+    // First, check if this is a confirmation response
+    if (userInput) {
+      const confirmation = this.handleConfirmation(response, userInput);
+      if (confirmation) {
+        if (confirmation.type === 'cancelled') {
+          return; // Already logged the cancellation
+        }
+
+        // Extract action from the confirmation
+        const actions = this.parseActionTags(response);
+        if (actions.length > 0) {
+          console.log(chalk.magenta(`\n✅ Confirmed! Executing ${actions.length} action(s):\n`));
+
+          for (const action of actions) {
+            console.log(chalk.cyan(`Action: ${action.type}`));
+            if (Object.keys(action.params).length > 0) {
+              console.log(chalk.gray(`Params: ${JSON.stringify(action.params)}`));
+            }
+
+            const result = await this.executeAction(action);
+            if (result) {
+              console.log(chalk.green(`Result: ${JSON.stringify(result, null, 2)}\n`));
+            }
+          }
+        }
+        return;
+      }
+    }
+
+    // Check if response contains confirmation request (asking yes/no)
+    if (response.toLowerCase().includes('confirm') &&
+        (response.toLowerCase().includes('yes') || response.toLowerCase().includes('no'))) {
+      console.log(chalk.yellow(`⏳ Awaiting user confirmation...`));
+      return;
+    }
+
+    // Parse action tags from the response (for immediate actions like get_rugs, get_stats, check_rug)
     const actions = this.parseActionTags(response);
 
     if (actions.length > 0) {
@@ -353,13 +420,23 @@ async function main() {
     console.log(chalk.gray('💡 Copy/paste Ollama responses here to execute actions'));
     console.log(chalk.gray('💡 Press Ctrl+C to exit\n'));
 
-    // Set up stdin monitoring
+    // Set up stdin monitoring for Ollama responses and confirmations
+    let lastResponse = '';
     process.stdin.setEncoding('utf8');
     process.stdin.on('data', async (chunk) => {
       const input = chunk.trim();
       if (input) {
         console.log(chalk.cyan(`📥 Input: ${input}`));
-        await interceptor.interceptAndExecute(input);
+
+        // Check if this is a confirmation response (yes/no)
+        if (input.toLowerCase().match(/^(yes|y|no|n|confirm|cancel)$/)) {
+          await interceptor.interceptAndExecute(lastResponse, input);
+        } else {
+          // This is an Ollama response - store it and check for actions
+          lastResponse = input;
+          await interceptor.interceptAndExecute(input);
+        }
+
         console.log(chalk.gray('─'.repeat(50)));
       }
     });
