@@ -143,11 +143,9 @@ const RugMaintenanceAbi = [
   },
   {
     inputs: [],
-    name: 'getAgentServiceFees',
+    name: 'getAgentServiceFee',
     outputs: [
-      { name: 'cleanFee', type: 'uint256' },
-      { name: 'restoreFee', type: 'uint256' },
-      { name: 'masterFee', type: 'uint256' },
+      { name: 'serviceFee', type: 'uint256' },
       { name: 'feeRecipient', type: 'address' }
     ],
     stateMutability: 'view',
@@ -249,11 +247,11 @@ class RugBotAPIServer {
           throw new Error('Agent wallet not configured');
         }
 
-        // Get current fees
-        const fees = await publicClient.readContract({
+        // Get current flat service fee
+        const [serviceFee, feeRecipient] = await publicClient.readContract({
           address: config.blockchain.contractAddress,
           abi: RugMaintenanceAbi,
-          functionName: 'getAgentServiceFees'
+          functionName: 'getAgentServiceFee'
         });
 
         // Get maintenance costs
@@ -264,21 +262,18 @@ class RugBotAPIServer {
           args: [BigInt(tokenId)]
         });
 
-        let maintenanceCost, serviceFee, functionName;
+        let maintenanceCost, functionName;
         switch (action) {
           case 'clean':
             maintenanceCost = cleaningCost;
-            serviceFee = fees[0];
             functionName = 'cleanRugAgent';
             break;
           case 'restore':
             maintenanceCost = restorationCost;
-            serviceFee = fees[1];
             functionName = 'restoreRugAgent';
             break;
           case 'master':
             maintenanceCost = masterCost;
-            serviceFee = fees[2];
             functionName = 'masterRestoreRugAgent';
             break;
         }
@@ -403,12 +398,12 @@ Keep the personalityNote enthusiastic and in character as ${config.agent.name}!`
 
     try {
       console.log(chalk.gray('📋 Testing contract connection...'));
-      const fees = await publicClient.readContract({
+      const [serviceFee, feeRecipient] = await publicClient.readContract({
         address: config.blockchain.contractAddress,
         abi: RugMaintenanceAbi,
-        functionName: 'getAgentServiceFees'
+        functionName: 'getAgentServiceFee'
       });
-      console.log(chalk.green('✅ Contract connected'));
+      console.log(chalk.green(`✅ Contract connected (Service fee: ${formatEther(serviceFee)} ETH)`));
     } catch (error) {
       console.log(chalk.red('❌ Contract connection failed:', error.message));
       console.log(chalk.yellow('💡 Check your CONTRACT_ADDRESS configuration'));

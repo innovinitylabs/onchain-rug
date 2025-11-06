@@ -146,11 +146,9 @@ const RugMaintenanceAbi = [
   },
   {
     inputs: [],
-    name: 'getAgentServiceFees',
+    name: 'getAgentServiceFee',
     outputs: [
-      { name: 'cleanFee', type: 'uint256' },
-      { name: 'restoreFee', type: 'uint256' },
-      { name: 'masterFee', type: 'uint256' },
+      { name: 'serviceFee', type: 'uint256' },
       { name: 'feeRecipient', type: 'address' }
     ],
     stateMutability: 'view',
@@ -201,13 +199,13 @@ class StandaloneRugMaintenanceAgent {
     // Check contract
     try {
       console.log(chalk.gray('📋 Testing contract connection...'));
-      const fees = await publicClient.readContract({
+      const [serviceFee, feeRecipient] = await publicClient.readContract({
         address: config.blockchain.contractAddress,
         abi: RugMaintenanceAbi,
-        functionName: 'getAgentServiceFees'
+        functionName: 'getAgentServiceFee'
       });
       console.log(chalk.green('✅ Contract connected'));
-      console.log(chalk.gray(`   Service fees: Clean=${formatEther(fees[0])} ETH, Restore=${formatEther(fees[1])} ETH, Master=${formatEther(fees[2])} ETH`));
+      console.log(chalk.gray(`   Service fee: ${formatEther(serviceFee)} ETH flat for all actions`));
     } catch (error) {
       console.log(chalk.red('❌ Contract connection failed:'), error.message);
       console.log(chalk.yellow('💡 Check your CONTRACT_ADDRESS configuration'));
@@ -381,17 +379,17 @@ Respond in JSON format:
   async runMaintenanceCycle() {
     console.log(chalk.blue('\n🏠 Starting maintenance cycle...\n'));
 
-    // Get service fees
-    let serviceFees;
+    // Get service fee
+    let serviceFee;
     try {
-      const fees = await publicClient.readContract({
+      const [fee, feeRecipient] = await publicClient.readContract({
         address: config.blockchain.contractAddress,
         abi: RugMaintenanceAbi,
-        functionName: 'getAgentServiceFees'
+        functionName: 'getAgentServiceFee'
       });
-      serviceFees = { clean: fees[0], restore: fees[1], master: fees[2] };
+      serviceFee = fee;
     } catch (error) {
-      console.log(chalk.red('❌ Could not get service fees:'), error.message);
+      console.log(chalk.red('❌ Could not get service fee:'), error.message);
       return;
     }
 
@@ -410,19 +408,16 @@ Respond in JSON format:
     }
 
     // Get the appropriate costs
-    let maintenanceCost, serviceFee;
+    let maintenanceCost;
     switch (analysis.recommendedAction) {
       case 'clean':
         maintenanceCost = rugData.cleaningCost;
-        serviceFee = serviceFees.clean;
         break;
       case 'restore':
         maintenanceCost = rugData.restorationCost;
-        serviceFee = serviceFees.restore;
         break;
       case 'master':
         maintenanceCost = rugData.masterCost;
-        serviceFee = serviceFees.master;
         break;
       default:
         console.log(chalk.red('❌ Unknown action recommended by AI'));

@@ -207,17 +207,14 @@ class StandaloneChatAgent {
     // Get service fees
     let serviceFee;
     try {
-      const fees = await publicClient.readContract({
+      const [serviceFeeFromContract, feeRecipient] = await publicClient.readContract({
         address: config.blockchain.contractAddress,
         abi: RugMaintenanceAbi,
-        functionName: 'getAgentServiceFees'
+        functionName: 'getAgentServiceFee'
       });
 
-      switch (action) {
-        case 'clean': serviceFee = fees[0]; break;
-        case 'restore': serviceFee = fees[1]; break;
-        case 'master': serviceFee = fees[2]; break;
-      }
+      // Use the flat service fee for all actions
+      serviceFee = serviceFeeFromContract;
     } catch (error) {
       console.log(chalk.red('❌ Could not get service fees:'), error.message);
       return;
@@ -373,11 +370,9 @@ const publicClient = createPublicClient({
 const RugMaintenanceAbi = [
   {
     inputs: [],
-    name: 'getAgentServiceFees',
+    name: 'getAgentServiceFee',
     outputs: [
-      { name: 'cleanFee', type: 'uint256' },
-      { name: 'restoreFee', type: 'uint256' },
-      { name: 'masterFee', type: 'uint256' },
+      { name: 'serviceFee', type: 'uint256' },
       { name: 'feeRecipient', type: 'address' }
     ],
     stateMutability: 'view',

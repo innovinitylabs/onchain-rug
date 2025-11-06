@@ -51,11 +51,9 @@ const RugMaintenanceAbi = [
   },
   {
     inputs: [],
-    name: 'getAgentServiceFees',
+    name: 'getAgentServiceFee',
     outputs: [
-      { name: 'cleanFee', type: 'uint256' },
-      { name: 'restoreFee', type: 'uint256' },
-      { name: 'masterFee', type: 'uint256' },
+      { name: 'serviceFee', type: 'uint256' },
       { name: 'feeRecipient', type: 'address' }
     ],
     stateMutability: 'view',
@@ -126,14 +124,14 @@ class StandaloneAgentTester {
       this.log('Blockchain connection', true, `Block #${blockNumber}`);
 
       // Test contract call
-      const fees = await publicClient.readContract({
+      const [serviceFee, feeRecipient] = await publicClient.readContract({
         address: config.blockchain.contractAddress,
         abi: RugMaintenanceAbi,
-        functionName: 'getAgentServiceFees'
+        functionName: 'getAgentServiceFee'
       });
 
-      const hasFees = fees.length === 4 && typeof fees[0] === 'bigint';
-      this.log('Contract connection', hasFees, `Fees configured`);
+      const hasFees = typeof serviceFee === 'bigint' && serviceFee > 0n;
+      this.log('Contract connection', hasFees, `Service fee: ${formatEther(serviceFee)} ETH`);
 
     } catch (error) {
       this.log('Blockchain connection', false, error.message);
