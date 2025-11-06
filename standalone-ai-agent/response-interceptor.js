@@ -307,6 +307,72 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!"""`;
     return null;
   }
 
+  async executeToolCall(toolCall) {
+    try {
+      const { name, arguments: args } = toolCall.function;
+      let url, method = 'GET', body = null;
+
+      switch (name) {
+        case 'get_rugs':
+          url = `${config.api.baseUrl}/owner/rugs`;
+          break;
+        case 'get_stats':
+          url = `${config.api.baseUrl}/agent/stats`;
+          break;
+        case 'check_rug':
+          url = `${config.api.baseUrl}/rug/${args.tokenId}/status`;
+          break;
+        case 'clean_rug':
+          url = `${config.api.baseUrl}/rug/${args.tokenId}/maintain`;
+          method = 'POST';
+          body = JSON.stringify({ action: 'clean' });
+          break;
+        case 'restore_rug':
+          url = `${config.api.baseUrl}/rug/${args.tokenId}/maintain`;
+          method = 'POST';
+          body = JSON.stringify({ action: 'restore' });
+          break;
+        case 'master_restore_rug':
+          url = `${config.api.baseUrl}/rug/${args.tokenId}/maintain`;
+          method = 'POST';
+          body = JSON.stringify({ action: 'master' });
+          break;
+        default:
+          console.log(chalk.red(`❌ Unknown tool: ${name}`));
+          return null;
+      }
+
+      console.log(chalk.blue(`🔧 Executing ${name}...`));
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        console.log(chalk.green(`✅ ${name} completed successfully!`));
+
+        // Log fees if this was a maintenance action
+        if (name.includes('_rug') && result.serviceFeeEth) {
+          console.log(chalk.green(`💰 Paid ${result.serviceFeeEth} ETH service fee!`));
+        }
+
+        return result;
+      } else {
+        console.log(chalk.red(`❌ ${name} failed: ${result.error}`));
+        return null;
+      }
+    } catch (error) {
+      console.log(chalk.red(`❌ Tool execution failed: ${error.message}`));
+      return null;
+    }
+  }
+
   async executeAction(action) {
     try {
       let url, method = 'GET', body = null;
@@ -381,7 +447,23 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!"""`;
   }
 
   async interceptAndExecute(response, userInput = '') {
-    // First, check if this is a confirmation response
+    // Handle Ollama's native tool_calls format (preferred)
+    if (response && response.tool_calls && response.tool_calls.length > 0) {
+      console.log(chalk.magenta(`\n🎯 Detected ${response.tool_calls.length} native tool call(s) to execute:\n`));
+
+      for (const toolCall of response.tool_calls) {
+        console.log(chalk.cyan(`Tool: ${toolCall.function.name}`));
+        console.log(chalk.gray(`Args: ${JSON.stringify(toolCall.function.arguments)}`));
+
+        const result = await this.executeToolCall(toolCall);
+        if (result) {
+          console.log(chalk.green(`Result: ${JSON.stringify(result, null, 2)}\n`));
+        }
+      }
+      return;
+    }
+
+    // Handle confirmation responses for payable actions
     if (userInput) {
       const confirmation = this.handleConfirmation(response, userInput);
       if (confirmation) {
@@ -389,7 +471,7 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!"""`;
           return; // Already logged the cancellation
         }
 
-        // Extract action from the confirmation
+        // Extract action from the confirmation (fallback to text parsing)
         const actions = this.parseToolCalls(response);
         if (actions.length > 0) {
           console.log(chalk.magenta(`\n✅ Confirmed! Executing ${actions.length} action(s):\n`));
@@ -411,27 +493,29 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!"""`;
     }
 
     // Check if response contains confirmation request (asking yes/no)
-    if (response.toLowerCase().includes('confirm') &&
+    if (response && typeof response === 'string' && response.toLowerCase().includes('confirm') &&
         (response.toLowerCase().includes('yes') || response.toLowerCase().includes('no'))) {
       console.log(chalk.yellow(`⏳ Awaiting user confirmation...`));
       return;
     }
 
-    // Parse tool calls from the response
-    const actions = this.parseToolCalls(response);
+    // Fallback: Parse tool calls from text response
+    if (response && typeof response === 'string') {
+      const actions = this.parseToolCalls(response);
 
-    if (actions.length > 0) {
-      console.log(chalk.magenta(`\n🎯 Detected ${actions.length} action(s) to execute:\n`));
+      if (actions.length > 0) {
+        console.log(chalk.magenta(`\n🎯 Detected ${actions.length} action(s) to execute:\n`));
 
-      for (const action of actions) {
-        console.log(chalk.cyan(`Action: ${action.type}`));
-        if (Object.keys(action.params).length > 0) {
-          console.log(chalk.gray(`Params: ${JSON.stringify(action.params)}`));
-        }
+        for (const action of actions) {
+          console.log(chalk.cyan(`Action: ${action.type}`));
+          if (Object.keys(action.params).length > 0) {
+            console.log(chalk.gray(`Params: ${JSON.stringify(action.params)}`));
+          }
 
-        const result = await this.executeAction(action);
-        if (result) {
-          console.log(chalk.green(`Result: ${JSON.stringify(result, null, 2)}\n`));
+          const result = await this.executeAction(action);
+          if (result) {
+            console.log(chalk.green(`Result: ${JSON.stringify(result, null, 2)}\n`));
+          }
         }
       }
     }
