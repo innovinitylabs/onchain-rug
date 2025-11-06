@@ -26,7 +26,7 @@ dotenv.config();
 const config = {
   ollama: {
     baseUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434',
-    model: 'rugbot' // Use the rugbot model with proper tool calling
+    model: 'llama3.1:8b' // Use Llama 3.1 which has native tool calling support
   },
   api: {
     baseUrl: process.env.API_BASE_URL || 'http://localhost:3001'
@@ -142,12 +142,12 @@ class ResponseInterceptor {
     // Test Ollama connection
     try {
       const models = await this.ollama.list();
-      const hasModel = models.models.some(m => m.name.includes('rugbot'));
+      const hasModel = models.models.some(m => m.name.includes('llama3.1'));
       if (!hasModel) {
-        console.log(chalk.yellow('⚠️  rugbot model not found. Creating it...'));
-        await this.createRugBotModel();
+        console.log(chalk.red('❌ Llama 3.1 model not found. Please run: ollama pull llama3.1:8b'));
+        return false;
       }
-      console.log(chalk.green('✅ Ollama connected'));
+      console.log(chalk.green('✅ Ollama connected with Llama 3.1 (tool calling enabled)'));
     } catch (error) {
       console.log(chalk.red('❌ Ollama connection failed:'), error.message);
       return false;
