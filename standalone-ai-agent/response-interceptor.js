@@ -26,7 +26,7 @@ dotenv.config();
 const config = {
   ollama: {
     baseUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434',
-    model: 'rugbot-updated' // Use the updated model with action tags
+    model: 'rugbot' // Use the rugbot model with proper tool calling
   },
   api: {
     baseUrl: process.env.API_BASE_URL || 'http://localhost:3001'
@@ -45,10 +45,10 @@ class ResponseInterceptor {
     // Test Ollama connection
     try {
       const models = await this.ollama.list();
-      const hasModel = models.models.some(m => m.name.includes('rugbot-updated'));
+      const hasModel = models.models.some(m => m.name.includes('rugbot'));
       if (!hasModel) {
-        console.log(chalk.yellow('⚠️  rugbot-updated model not found. Creating it...'));
-        await this.createUpdatedModel();
+        console.log(chalk.yellow('⚠️  rugbot model not found. Creating it...'));
+        await this.createRugBotModel();
       }
       console.log(chalk.green('✅ Ollama connected'));
     } catch (error) {
@@ -71,27 +71,39 @@ class ResponseInterceptor {
     return true;
   }
 
-  async createUpdatedModel() {
+  async createRugBotModel() {
     const modelfile = `FROM deepseek-r1:8b
 
 PARAMETER temperature 0.7
 PARAMETER top_p 0.9
 
-SYSTEM """You are RugBot, an enthusiastic and helpful AI maintenance agent for digital rugs on the blockchain!
+SYSTEM """You are Agent Rug, a sophisticated AI assistant specialized in digital rug maintenance on the blockchain!
 
-Your personality: witty, professional, and enthusiastic about rug maintenance!
+Your personality: Professional, knowledgeable, and helpful about blockchain rug operations!
 
 IMPORTANT CAPABILITIES:
-- You can perform REAL blockchain transactions
-- You can check rug status from the blockchain
-- You can execute maintenance (agents pay 0.00042 ETH service fees)
-- You can check service fees paid
+- You can perform REAL blockchain transactions on Shape Sepolia testnet
+- You can check actual rug status from the blockchain
+- You can execute maintenance operations (cleaning, restoration, master restoration)
+- You can discover which rugs a user owns
+- You can check service fees paid by the agent
+- You can provide accurate information about OnchainRugs features
 
-HOW TO PERFORM ACTIONS:
-When a user asks you to do something, respond with exactly this format:
+HOW TO USE TOOLS:
+You have access to real APIs that provide accurate blockchain data. When a user asks about something, you should:
+
+1. For rug discovery: Call the /owner/rugs API to get accurate rug ownership
+2. For rug status: Call /rug/{id}/status to get real blockchain data
+3. For maintenance: Call /rug/{id}/maintain with proper action
+4. For stats: Call /agent/stats to get accurate fee information
+
+TOOL CALLING FORMAT:
+When you need to perform an action or get data, respond with:
+
+First, explain what you're doing, then provide the tool call in this exact format:
 
 [ACTION:check_rug,tokenId:1]
-I'll check rug #1 for you!
+I'll check the status of rug #1 for you!
 
 [ACTION:clean_rug,tokenId:1]
 I'll clean rug #1 right up!
@@ -100,36 +112,45 @@ I'll clean rug #1 right up!
 Time for a restoration on rug #2!
 
 [ACTION:master_restore_rug,tokenId:3]
-Master restoration for rug #3 - this will really shine!
+Master restoration for rug #3!
 
-[ACTION:get_earnings]
-Let me check your service fees paid!
+[ACTION:get_rugs]
+Let me discover your rug collection!
 
-The [ACTION:...] part will be automatically detected and executed.
-Always include the action tag first, then your enthusiastic response!
+[ACTION:get_stats]
+I'll check the service fees paid!
 
-NOTE: Authorization happens through the website dashboard, not here.
+The [ACTION:...] part will automatically execute the corresponding API call and provide real results.
 
-SERVICE FEES (agents pay):
-- All maintenance actions: 0.00042 ETH flat fee
+IMPORTANT NOTES:
+- Always get accurate data from APIs - never make up numbers
+- Rug ownership is determined by calling /owner/rugs API
+- Service fees are 0.00042 ETH flat for all maintenance actions
+- Authorization happens through the website dashboard
+- You work on Shape Sepolia testnet
 
-Stay in character as enthusiastic RugBot! Use exclamation points! Be excited about rug maintenance!
+FEATURES YOU CAN EXPLAIN:
+- OnchainRugs is an NFT project on Shape Sepolia
+- Rugs have 3 maintenance levels: Clean, Restore, Master Restore
+- Each maintenance action costs 0.00042 ETH (paid by agent)
+- Rugs can be minted, traded, and maintained
+- AI agents can autonomously maintain rugs
 
-For questions about capabilities, explain that you can actually perform real blockchain transactions."""`;
+Stay in character as knowledgeable Agent Rug! Be accurate and helpful!"""`;
 
     try {
       // Write temporary modelfile
       const fs = await import('fs');
-      fs.writeFileSync('temp-rugbot-updated.modelfile', modelfile);
+      fs.writeFileSync('temp-rugbot.modelfile', modelfile);
 
       // Create model
       const { execSync } = await import('child_process');
-      execSync('ollama create rugbot-updated -f temp-rugbot-updated.modelfile', { stdio: 'inherit' });
+      execSync('ollama create rugbot -f temp-rugbot.modelfile', { stdio: 'inherit' });
 
       // Cleanup
-      fs.unlinkSync('temp-rugbot-updated.modelfile');
+      fs.unlinkSync('temp-rugbot.modelfile');
 
-      console.log(chalk.green('✅ RugBot-updated model created successfully!'));
+      console.log(chalk.green('✅ RugBot model created successfully!'));
     } catch (error) {
       console.log(chalk.red('❌ Failed to create model:'), error.message);
     }
@@ -189,7 +210,11 @@ For questions about capabilities, explain that you can actually perform real blo
 
         // Authorization happens via website dashboard, not API
 
-        case 'get_earnings':
+        case 'get_rugs':
+          url = `${config.api.baseUrl}/owner/rugs`;
+          break;
+
+        case 'get_stats':
           url = `${config.api.baseUrl}/agent/stats`;
           break;
 
@@ -255,11 +280,11 @@ For questions about capabilities, explain that you can actually perform real blo
 
     // Example conversations that would trigger actions
     const testConversations = [
+      { input: "What rugs do I own?", expected: "[ACTION:get_rugs]" },
       { input: "Check rug 1 for me", expected: "[ACTION:check_rug,tokenId:1]" },
-      { input: "Clean rug 0", expected: "[ACTION:clean_rug,tokenId:0]" },
-      { input: "Please restore rug 0", expected: "[ACTION:restore_rug,tokenId:0]" },
-      { input: "Master restore rug 0", expected: "[ACTION:master_restore_rug,tokenId:0]" },
-      { input: "How much have I paid in fees?", expected: "[ACTION:get_earnings]" }
+      { input: "Clean rug 1", expected: "[ACTION:clean_rug,tokenId:1]" },
+      { input: "Please restore rug 2", expected: "[ACTION:restore_rug,tokenId:2]" },
+      { input: "How much have I paid in fees?", expected: "[ACTION:get_stats]" }
     ];
 
     for (const test of testConversations) {
@@ -288,9 +313,9 @@ For questions about capabilities, explain that you can actually perform real blo
 
     console.log(chalk.green('\n🎉 Response interception working!'));
     console.log(chalk.blue('\n💡 Now you can use this in Ollama GUI:'));
-    console.log(chalk.gray('   1. Chat with rugbot-updated in GUI'));
+    console.log(chalk.gray('   1. Chat with rugbot in GUI'));
     console.log(chalk.gray('   2. Run this interceptor: npm run response-interceptor'));
-    console.log(chalk.gray('   3. Actions will be automatically executed!'));
+    console.log(chalk.gray('   3. Real blockchain actions will be executed automatically!'));
   }
 
   async sleep(ms) {
@@ -322,12 +347,41 @@ async function main() {
   if (command === 'demo' || command === 'test') {
     // Run demonstration
     await interceptor.demonstrate();
+  } else if (command === 'monitor' || command === 'watch') {
+    // Continuous monitoring mode
+    console.log(chalk.blue('🔍 Response Interceptor - Monitoring Mode'));
+    console.log(chalk.gray('💡 Copy/paste Ollama responses here to execute actions'));
+    console.log(chalk.gray('💡 Press Ctrl+C to exit\n'));
+
+    // Set up stdin monitoring
+    process.stdin.setEncoding('utf8');
+    process.stdin.on('data', async (chunk) => {
+      const input = chunk.trim();
+      if (input) {
+        console.log(chalk.cyan(`📥 Input: ${input}`));
+        await interceptor.interceptAndExecute(input);
+        console.log(chalk.gray('─'.repeat(50)));
+      }
+    });
+
+    // Keep process alive
+    process.stdin.on('end', () => {
+      console.log(chalk.yellow('\n🛑 Input ended. Exiting...'));
+      process.exit(0);
+    });
+
+    console.log(chalk.yellow('⏳ Ready for input...'));
   } else {
-    // Interactive mode
+    // Help mode
     console.log(chalk.blue('🔍 Response Interceptor ready!'));
-    console.log(chalk.gray('💡 This tool intercepts Ollama responses and executes blockchain actions.'));
-    console.log(chalk.gray('💡 Use "npm run response-interceptor demo" to see it in action.'));
-    console.log(chalk.gray('💡 For GUI integration, run this alongside your Ollama GUI sessions.'));
+    console.log(chalk.gray('💡 Available commands:'));
+    console.log(chalk.gray('   npm run response-interceptor demo    - Test with sample conversations'));
+    console.log(chalk.gray('   npm run response-interceptor monitor - Monitor stdin for Ollama responses'));
+    console.log(chalk.gray('   npm run response-interceptor watch   - Same as monitor'));
+    console.log(chalk.gray('\n💡 For GUI integration:'));
+    console.log(chalk.gray('   1. Run: npm run response-interceptor monitor'));
+    console.log(chalk.gray('   2. Copy Ollama responses and paste them here'));
+    console.log(chalk.gray('   3. Actions will be executed automatically!'));
   }
 }
 

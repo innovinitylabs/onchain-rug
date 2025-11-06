@@ -49,7 +49,7 @@ dotenv.config();
 const config = {
   ollama: {
     baseUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434',
-    model: process.env.OLLAMA_MODEL || 'rugbot-updated:latest'
+    model: process.env.OLLAMA_MODEL || 'rugbot:latest'
   },
   blockchain: {
     rpcUrl: process.env.RPC_URL || 'https://sepolia.shape.network',
@@ -146,9 +146,23 @@ const RugMaintenanceAbi = [
   },
   // ERC721 functions for rug discovery
   {
+    inputs: [],
+    name: 'totalSupply',
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function'
+  },
+  {
     inputs: [{ name: 'owner', type: 'address' }],
     name: 'balanceOf',
     outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function'
+  },
+  {
+    inputs: [{ name: 'tokenId', type: 'uint256' }],
+    name: 'ownerOf',
+    outputs: [{ name: '', type: 'address' }],
     stateMutability: 'view',
     type: 'function'
   },
@@ -347,27 +361,24 @@ class RugBotAPIServer {
         const ownedRugs = [];
         const batchSize = 10; // Check 10 tokens at a time
 
-        for (let i = 1; i <= Number(totalSupply); i += batchSize) {
-          const promises = [];
-          for (let j = 0; j < batchSize && i + j <= Number(totalSupply); j++) {
-            promises.push(
-              publicClient.readContract({
-                address: config.blockchain.contractAddress,
-                abi: RugMaintenanceAbi,
-                functionName: 'ownerOf',
-                args: [BigInt(i + j)]
-              }).then(owner => ({
-                tokenId: i + j,
-                owner: owner.toLowerCase()
-              })).catch(() => null) // Skip tokens that don't exist
-            );
-          }
+        console.log(chalk.gray(`   Scanning tokens 0 to ${totalSupply}...`));
 
-          const results = await Promise.all(promises);
-          for (const result of results) {
-            if (result && result.owner === config.owner.address.toLowerCase()) {
-              ownedRugs.push(result.tokenId);
+        for (let tokenId = 0; tokenId <= Number(totalSupply); tokenId++) {
+          try {
+            const owner = await publicClient.readContract({
+              address: config.blockchain.contractAddress,
+              abi: RugMaintenanceAbi,
+              functionName: 'ownerOf',
+              args: [BigInt(tokenId)]
+            });
+
+            if (owner.toLowerCase() === config.owner.address.toLowerCase()) {
+              console.log(chalk.gray(`   Found owned token: ${tokenId}`));
+              ownedRugs.push(tokenId);
             }
+          } catch (error) {
+            // Token doesn't exist or other error - skip
+            console.log(chalk.gray(`   Token ${tokenId} error: ${error.message.substring(0, 50)}...`));
           }
         }
 

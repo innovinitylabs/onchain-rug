@@ -18,8 +18,10 @@ A **completely self-contained** AI agent that autonomously maintains digital rug
 
 ### How It Works
 1. Start API server: `npm run api-server`
-2. Open Ollama GUI → Select "rugbot" model
-3. Chat naturally - real transactions happen automatically!
+2. Start Response Monitor: `npm run monitor` (in separate terminal)
+3. Open Ollama GUI → Select "rugbot" model
+4. Chat naturally → Copy Ollama responses → Paste into monitor terminal
+5. Real blockchain transactions execute automatically!
 
 ### GUI Commands That Actually Work
 ```
@@ -41,6 +43,40 @@ RugBot: I'll clean that rug right up! [Executes real transaction]
 You: how much have I paid?
 RugBot: Let me check your stats! [Queries real blockchain]
        You've paid 0.00042 ETH in service fees from 1 maintenance action.
+```
+
+### 🔄 Complete Workflow
+
+#### **Terminal 1: API Server**
+```bash
+cd standalone-ai-agent
+npm run api-server
+```
+*Serves blockchain APIs and handles transactions*
+
+#### **Terminal 2: Response Monitor**
+```bash
+cd standalone-ai-agent
+npm run monitor
+```
+*Intercepts Ollama responses and executes actions*
+
+#### **Terminal 3: Ollama GUI**
+```bash
+ollama run rugbot
+# Chat normally, copy responses to monitor terminal
+```
+
+#### **Example Session:**
+```
+User (Ollama GUI): "What rugs do I own?"
+Agent Rug: "Let me discover your rug collection! [ACTION:get_rugs]"
+
+User (copies to monitor terminal):
+Let me discover your rug collection! [ACTION:get_rugs]
+
+Monitor: ✅ get_rugs completed!
+Result: {"ownedRugs": [1, 2], "totalOwned": 2}
 ```
 
 **Yes, real blockchain transactions happen while chatting in Ollama GUI!** 🎉💰
