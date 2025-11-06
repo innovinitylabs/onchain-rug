@@ -82,6 +82,14 @@ function restoreRugAgent(uint256 tokenId) external payable
 function masterRestoreRugAgent(uint256 tokenId) external payable
 ```
 
+### **Agent Management**
+```solidity
+function authorizeMaintenanceAgent(address agent) external
+function revokeMaintenanceAgent(address agent) external
+function getAuthorizedAgents() external view returns (address[])
+function isAgentAuthorized(address agent) external view returns (bool)
+```
+
 ### **Fee Management**
 ```solidity
 function setServiceFees(uint256[3] fees) external // owner only
@@ -166,14 +174,16 @@ cast send $DIAMOND_ADDR "cleanRugAgent(uint256)" 1 \
 
 - ✅ **ETH collected** from existing contracts
 - ✅ **Contracts upgraded** with new agent functions
+- ✅ **Agent management UI** with authorized agents list and revoke functionality
 - ✅ **APIs ready** for status checks and quotes
 - ✅ **Documentation complete** for agent developers
 - ✅ **Fee system configured** and operational
 
-**AI agents can now perform single-transaction rug maintenance with flat service fees!** 🚀
+**AI agents can now perform single-transaction rug maintenance with flat service fees and full agent management!** 🚀
 
 ---
 
 **Deployment Complete**: November 5, 2025
 **Flat Fee Upgrade**: November 6, 2025
+**Agent Management Upgrade**: November 6, 2025
 **Next Step**: Start building AI agents using the provided APIs and documentation!
