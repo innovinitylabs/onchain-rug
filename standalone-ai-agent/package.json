@@ -14,7 +14,8 @@
     "monitor": "node response-interceptor.js monitor",
     "setup-tools": "node response-interceptor.js create-model",
     "test": "node test-standalone.js",
-    "dev": "node --watch standalone-agent.js"
+    "dev": "node --watch standalone-agent.js",
+    "chat": "node chat-interface.js"
   },
   "dependencies": {
     "viem": "^2.37.5",

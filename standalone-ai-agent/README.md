@@ -65,28 +65,50 @@ ollama pull llama3.1:8b
 # Supports: get_rugs, get_stats, check_rug, clean_rug, restore_rug, master_restore_rug
 ```
 
-### 🔄 Complete Workflow
+### 🚀 **Seamless Chat Interface (RECOMMENDED)**
 
-#### **Terminal 1: API Server**
+#### **Single Terminal - Everything Automated:**
 ```bash
 cd standalone-ai-agent
-npm run api-server
-```
-*Serves blockchain APIs and handles transactions*
+npm run api-server    # Terminal 1: Start API server
 
-#### **Terminal 2: Response Monitor**
-```bash
-cd standalone-ai-agent
-npm run monitor
+# Then in another terminal:
+npm run chat          # Terminal 2: Seamless chat with Agent Rug!
 ```
-*Intercepts Ollama responses and executes actions*
 
-#### **Terminal 3: Ollama Chat (Copy/Paste Mode)**
-```bash
-ollama run llama3.1:8b
-# Chat with Llama 3.1, copy responses to monitor terminal
-# Response interceptor makes Llama 3.1 behave as "Agent Rug"
+**That's it!** 🤖✨
+
+- ✅ **No copy/paste required**
+- ✅ **Chat naturally with Agent Rug**
+- ✅ **Tools execute automatically**
+- ✅ **Real blockchain transactions**
+- ✅ **Confirmation prompts for payable actions**
+
+### 💬 **Example Chat Session:**
 ```
+🤖 Agent Rug - Seamless Blockchain Chat
+
+You: how many rugs do I own?
+Agent Rug: Let me discover your rug collection! [Tool call executed]
+✅ get_rugs completed successfully!
+Result: {"ownedRugs": [1, 2], "totalOwned": 2}
+
+You: clean rug 1
+Agent Rug: I'll clean rug #1 for 0.00042 ETH service fee. Confirm? (yes/no)
+
+You: yes
+Agent Rug: Executing maintenance... [Tool call executed]
+✅ clean_rug completed successfully!
+💰 Paid 0.00042 ETH service fee!
+
+You: how much have I spent?
+Agent Rug: Checking your service fees... [Tool call executed]
+✅ get_stats completed successfully!
+Result: {"totalServiceFeesPaidEth": "0.00042", "maintenanceCount": 1}
+```
+
+### 🔧 **Legacy Copy/Paste Mode (if needed):**
+If you prefer manual control, you can still use the copy/paste workflow with `npm run monitor`
 
 #### **Example Sessions:**
 
