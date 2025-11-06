@@ -64,6 +64,16 @@ contract RugMaintenanceFacet {
     }
 
     /**
+     * @notice Get all authorized agents for a specific owner
+     * @param owner Owner address to check
+     * @return agents Array of authorized agent addresses
+     */
+    function getAuthorizedAgentsFor(address owner) external view returns (address[] memory) {
+        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+        return rs.ownerAuthorizedAgents[owner];
+    }
+
+    /**
      * @notice Check if an agent is authorized for the caller
      * @param agent Agent address to check
      * @return isAuthorized True if the agent is authorized

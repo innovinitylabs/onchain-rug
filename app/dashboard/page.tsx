@@ -187,8 +187,8 @@ export default function DashboardPage() {
   const { data: authorizedAgents, refetch: refetchAuthorizedAgents, isLoading: agentsLoading, error: agentsError } = useReadContract({
     address: contractAddress as `0x${string}`,
     abi: onchainRugsABI,
-    functionName: 'getAuthorizedAgents',
-    args: [],
+    functionName: 'getAuthorizedAgentsFor',
+    args: address ? [address] : undefined,
     query: {
       enabled: !!contractAddress && !!address,
     },

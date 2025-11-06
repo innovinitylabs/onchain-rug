@@ -283,6 +283,13 @@ export const onchainRugsABI = [
     type: 'function',
   },
   {
+    inputs: [{ name: 'owner', type: 'address' }],
+    name: 'getAuthorizedAgentsFor',
+    outputs: [{ name: 'agents', type: 'address[]' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
     inputs: [{ name: 'agent', type: 'address' }],
     name: 'isAgentAuthorized',
     outputs: [{ name: 'isAuthorized', type: 'bool' }],
