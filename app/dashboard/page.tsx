@@ -132,6 +132,16 @@ export default function DashboardPage() {
 
   const contractAddress = contractAddresses[chainId] // No fallback - prevents accidental wrong network transactions
 
+  // Debug logging for network changes
+  useEffect(() => {
+    console.log('Network changed:', {
+      chainId,
+      contractAddress,
+      isConnected,
+      address
+    })
+  }, [chainId, contractAddress, isConnected, address])
+
   // Get user's rug balance
   const { data: balance, refetch: refetchBalance, isLoading: balanceLoading, isError: balanceError } = useReadContract({
     address: contractAddress as `0x${string}`,
@@ -618,6 +628,35 @@ export default function DashboardPage() {
                 {userRugs.filter(rug => rug.needsCleaning).length}
               </div>
               <div className="text-sm text-white/60">Laundered</div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Network Status Indicator */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="mb-6"
+        >
+          <div className="bg-slate-800/50 border border-slate-600/50 rounded-lg p-4 backdrop-blur-sm">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`w-3 h-3 rounded-full ${contractAddress ? 'bg-green-400' : 'bg-red-400'}`}></div>
+                <div>
+                  <div className="text-white font-medium">
+                    {contractAddress ? 'Contract Available' : 'Contract Not Available'}
+                  </div>
+                  <div className="text-white/60 text-sm">
+                    Chain ID: {chainId} | Contract: {contractAddress || 'Not configured'}
+                  </div>
+                </div>
+              </div>
+              {!contractAddress && (
+                <div className="text-yellow-400 text-sm">
+                  Switch to Shape Sepolia or Base Sepolia
+                </div>
+              )}
             </div>
           </div>
         </motion.div>
