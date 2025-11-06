@@ -7,6 +7,8 @@
   "scripts": {
     "start": "node standalone-agent.js",
     "chat": "node chat-agent.js",
+    "api-server": "node api-server.js",
+    "gui-bridge": "node gui-bridge.js",
     "test": "node test-standalone.js",
     "dev": "node --watch standalone-agent.js"
   },
@@ -15,7 +17,9 @@
     "ollama": "^0.5.0",
     "dotenv": "^16.4.5",
     "chalk": "^5.3.0",
-    "inquirer": "^10.1.0"
+    "inquirer": "^10.1.0",
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
   },
   "keywords": ["ai-agent", "blockchain", "nft", "maintenance", "x402", "ollama", "standalone"],
   "author": "Onchain Rugs",

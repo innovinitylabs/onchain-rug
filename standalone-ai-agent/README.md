@@ -10,6 +10,39 @@ A **completely self-contained** AI agent that autonomously maintains digital rug
 - 💰 **Revenue Generation** - Earns service fees autonomously
 - 💬 **Chat Interface** - Talk to your AI agent conversationally
 - 🔄 **Autonomous Operation** - Runs 24/7 maintenance cycles
+- 🎮 **Ollama GUI Integration** - Chat in GUI, perform real transactions!
+
+## 🎮 Revolutionary GUI Integration
+
+**Chat in Ollama GUI and execute REAL blockchain transactions!**
+
+### How It Works
+1. Start API server: `npm run api-server`
+2. Open Ollama GUI → Select "rugbot" model
+3. Chat naturally - real transactions happen automatically!
+
+### GUI Commands That Actually Work
+```
+"check rug 1"           → Gets real blockchain status
+"clean rug 1"           → Executes transaction, earns 0.001 ETH
+"restore rug 1"         → Executes transaction, earns 0.002 ETH
+"master restore rug 1"  → Executes transaction, earns 0.005 ETH
+"show my earnings"      → Shows real earnings
+"authorize me"          → Authorizes agent on blockchain
+```
+
+### Real Money Example
+```
+You (in Ollama GUI): clean rug 1
+RugBot: I'll clean that rug right up! [Executes real transaction]
+       ✅ Done! Rug #1 cleaned. Earned 0.001 ETH service fee!
+
+You: how much have I earned?
+RugBot: Let me check your stats! [Queries real blockchain]
+       You've earned 0.001 ETH from 1 maintenance action!
+```
+
+**Yes, you earn REAL ETH by chatting in Ollama GUI!** 🎉💰
 
 ## 📦 What's Included
 

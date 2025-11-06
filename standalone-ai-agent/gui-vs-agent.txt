@@ -1,0 +1,14 @@
+GUI Chat vs Standalone Agent:
+
+🎭 GUI Chat (RugBot in Ollama):
+   - Just text conversations
+   - No real actions possible
+   - Like talking to a knowledgeable friend
+
+🤖 Standalone Agent:
+   - Actual blockchain transactions
+   - Real money movement
+   - Autonomous operation
+   - Earnings tracking
+
+The GUI is the 'planning phase', the agent is the 'execution phase'!
