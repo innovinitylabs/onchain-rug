@@ -7,7 +7,7 @@ A **completely self-contained** AI agent that autonomously maintains digital rug
 - 🚀 **100% Standalone** - No dependencies on main project
 - 🧠 **AI-Powered Decisions** - Uses Ollama for intelligent maintenance
 - ⛓️ **Direct Blockchain** - Connects directly to contracts
-- 💰 **Revenue Generation** - Earns service fees autonomously
+- 💰 **Service Fees** - Pays service fees for maintenance actions
 - 💬 **Chat Interface** - Talk to your AI agent conversationally
 - 🔄 **Autonomous Operation** - Runs 24/7 maintenance cycles
 - 🎮 **Ollama GUI Integration** - Chat in GUI, perform real transactions!
@@ -24,10 +24,10 @@ A **completely self-contained** AI agent that autonomously maintains digital rug
 ### GUI Commands That Actually Work
 ```
 "check rug 1"           → Gets real blockchain status
-"clean rug 1"           → Executes transaction, earns 0.001 ETH
-"restore rug 1"         → Executes transaction, earns 0.002 ETH
-"master restore rug 1"  → Executes transaction, earns 0.005 ETH
-"show my earnings"      → Shows real earnings
+"clean rug 1"           → Executes transaction, pays 0.001 ETH service fee
+"restore rug 1"         → Executes transaction, pays 0.002 ETH service fee
+"master restore rug 1"  → Executes transaction, pays 0.005 ETH service fee
+"show my costs"         → Shows service fee costs
 "authorize me"          → Authorizes agent on blockchain
 ```
 
@@ -35,20 +35,20 @@ A **completely self-contained** AI agent that autonomously maintains digital rug
 ```
 You (in Ollama GUI): clean rug 1
 RugBot: I'll clean that rug right up! [Executes real transaction]
-       ✅ Done! Rug #1 cleaned. Earned 0.001 ETH service fee!
+       ✅ Done! Rug #1 cleaned. Paid 0.001 ETH service fee.
 
-You: how much have I earned?
+You: how much have I paid?
 RugBot: Let me check your stats! [Queries real blockchain]
-       You've earned 0.001 ETH from 1 maintenance action!
+       You've paid 0.001 ETH in service fees from 1 maintenance action.
 ```
 
-**Yes, you earn REAL ETH by chatting in Ollama GUI!** 🎉💰
+**Yes, real blockchain transactions happen while chatting in Ollama GUI!** 🎉💰
 
-### AI Agent Service Fees (What You Earn!)
+### AI Agent Service Fees (What You Pay)
 ```
-Clean Rug:     0.001 ETH service fee (you earn this!)
-Restore Rug:   0.002 ETH service fee (you earn this!)
-Master Restore: 0.005 ETH service fee (you earn this!)
+Clean Rug:     0.001 ETH service fee (you pay this)
+Restore Rug:   0.002 ETH service fee (you pay this)
+Master Restore: 0.005 ETH service fee (you pay this)
 ```
 
 ### Network: Shape Sepolia
@@ -149,18 +149,18 @@ You: check rug 1
 You: clean it
 🤖 I understand you want to clean rug #1. Should I proceed?
    This will cost 0.00101 ETH total (0.00001 ETH maintenance + 0.001 ETH service fee)
-   You'll earn 0.001 ETH as the agent.
+   You'll pay 0.001 ETH as the agent service fee.
 
    Execute maintenance? (y/N): y
 
 🤖 Executing maintenance...
 ✅ Maintenance completed successfully!
-💰 Earned 0.001 ETH service fee
+💰 Paid 0.001 ETH service fee
 
-You: how much did I earn?
+You: how much did I pay?
 🤖 📊 Agent Statistics:
    Maintenances Performed: 1
-   Total Earnings: 0.001 ETH
+   Total Service Fees Paid: 0.001 ETH
    Success Rate: 100%
 ```
 
@@ -168,7 +168,7 @@ You: how much did I earn?
 - `"check rug 1"` - Check rug status
 - `"clean rug 1"` - Clean a rug
 - `"how is my rug doing?"` - AI-powered status
-- `"show me earnings"` - Display revenue
+- `"show me costs"` - Display service fee costs
 - `"what can you do?"` - AI help
 - `"start auto mode"` - Autonomous operation
 
@@ -199,11 +199,11 @@ You: how much did I earn?
 └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
-### **Revenue Model:**
+### **Service Fee Model:**
 ```
-User pays: 0.00101 ETH total
-├── Service fee: 0.001 ETH (agent earns)
-└── Maintenance: 0.00001 ETH (contract treasury)
+Total cost: 0.00101 ETH
+├── Service fee: 0.001 ETH (paid by agent)
+└── Maintenance: 0.00001 ETH (paid by agent)
 ```
 
 ### **AI Decision Flow:**
@@ -211,7 +211,7 @@ User pays: 0.00101 ETH total
 2. **Analyze** - AI evaluates urgency and cost-effectiveness
 3. **Decide** - Choose optimal maintenance action
 4. **Execute** - Perform single-transaction maintenance
-5. **Earn** - Collect service fees automatically
+5. **Pay** - Pay service fees automatically
 
 ## 🧪 Testing
 
@@ -323,20 +323,20 @@ This standalone agent can be:
 - **Response Time**: < 2 seconds for AI decisions
 - **Transaction Speed**: < 30 seconds confirmation
 - **Uptime**: 99.9% (when blockchain is operational)
-- **Earnings**: 0.001-0.005 ETH per maintenance action
+- **Service Fee Costs**: 0.001-0.005 ETH per maintenance action
 
 ---
 
-## 🎯 Ready to Earn!
+## 🎯 Ready to Maintain!
 
 Your standalone AI agent is configured to:
 
 1. **Analyze** rug conditions with AI
 2. **Decide** optimal maintenance autonomously
 3. **Execute** transactions directly on blockchain
-4. **Earn** service fees automatically
+4. **Pay** service fees automatically
 5. **Chat** with you conversationally
 
-**Start earning: `npm run chat`** 💰🤖
+**Start maintaining: `npm run chat`** 💰🤖
 
 *Completely standalone - no external dependencies required!* 🚀

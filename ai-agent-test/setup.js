@@ -11,7 +11,7 @@
  */
 
 import { createWalletClient, http } from 'viem';
-import { baseSepolia } from '../lib/web3.js';
+import { baseSepolia } from 'viem/chains';
 import { Ollama } from 'ollama';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { execSync } from 'child_process';

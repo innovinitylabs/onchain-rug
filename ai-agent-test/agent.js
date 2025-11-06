@@ -20,7 +20,7 @@
  */
 
 import { createPublicClient, createWalletClient, http, parseEther, formatEther } from 'viem';
-import { baseSepolia } from '../lib/web3.js';
+import { baseSepolia } from 'viem/chains';
 import { Ollama } from 'ollama';
 import dotenv from 'dotenv';
 import chalk from 'chalk';
@@ -176,7 +176,7 @@ class OllamaRugMaintenanceAgent {
       console.log(chalk.yellow('⚠️  No agent wallet configured - running in simulation mode'));
       console.log(chalk.gray('   Set AGENT_PRIVATE_KEY in .env for real transactions'));
     } else {
-      console.log(chalk.green('✅ Agent wallet configured:'), this.agentAddress);
+      console.log(chalk.green('✅ Agent wallet configured:'), config.wallet.address);
     }
 
     return true;

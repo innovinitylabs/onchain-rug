@@ -613,7 +613,7 @@ export default function DashboardPage() {
             </div>
 
             <p className="text-white/70 mb-4">
-              Authorize an AI agent to automatically maintain your rugs. The agent will earn service fees while keeping your rugs clean and well-maintained.
+              Authorize an AI agent to automatically maintain your rugs. The agent will pay service fees while keeping your rugs clean and well-maintained.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3">
@@ -646,7 +646,7 @@ export default function DashboardPage() {
             <div className="mt-4 text-sm text-white/60">
               <p>• Agent can only perform maintenance operations (cleaning, restoration)</p>
               <p>• Agent cannot transfer, sell, or modify ownership of your rugs</p>
-              <p>• Agent earns service fees (0.001-0.005 ETH) for each maintenance action</p>
+              <p>• Agent pays service fees (0.001-0.005 ETH) for each maintenance action</p>
               <p>• You can revoke authorization anytime</p>
             </div>
 

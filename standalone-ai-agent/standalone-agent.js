@@ -7,7 +7,7 @@
  * - Connect directly to Ollama for AI decisions
  * - Interact directly with blockchain contracts
  * - Maintain rugs autonomously
- * - Earn service fees
+ * - Pay service fees
  *
  * No external API dependencies - works standalone!
  *
@@ -161,7 +161,7 @@ const RugMaintenanceAbi = [
 class StandaloneRugMaintenanceAgent {
   constructor() {
     this.agentAddress = config.wallet.address;
-    this.totalEarnings = 0n;
+    this.totalServiceFeesPaid = 0n;
     this.maintenanceCount = 0;
     this.isRunning = false;
   }
@@ -239,7 +239,7 @@ Rug Data:
 - Restoration Cost: ${formatEther(rugData.restorationCost)} ETH
 - Master Cost: ${formatEther(rugData.masterCost)} ETH
 
-Service Fees (you earn these):
+Service Fees (you pay these):
 - Clean: 0.001 ETH
 - Restore: 0.002 ETH
 - Master: 0.005 ETH
@@ -331,10 +331,10 @@ Respond in JSON format:
     if (!agentWallet) {
       console.log(chalk.yellow('⚠️  SIMULATION MODE - No wallet configured'));
       console.log(chalk.gray(`   Would send ${formatEther(totalValue)} ETH to contract`));
-      console.log(chalk.gray(`   Would earn ${formatEther(serviceFee)} ETH service fee`));
+      console.log(chalk.gray(`   Would pay ${formatEther(serviceFee)} ETH service fee`));
 
       // Simulate success
-      this.totalEarnings += serviceFee;
+      this.totalServiceFeesPaid += serviceFee;
       this.maintenanceCount++;
       return true;
     }
@@ -362,9 +362,9 @@ Respond in JSON format:
 
       if (receipt.status === 'success') {
         console.log(chalk.green('✅ Maintenance completed successfully!'));
-        console.log(chalk.green(`💰 Earned ${formatEther(serviceFee)} ETH service fee`));
+        console.log(chalk.green(`💰 Paid ${formatEther(serviceFee)} ETH service fee`));
 
-        this.totalEarnings += serviceFee;
+        this.totalServiceFeesPaid += serviceFee;
         this.maintenanceCount++;
         return true;
       } else {
@@ -457,7 +457,7 @@ Respond in JSON format:
 
     if (success) {
       console.log(chalk.green('\n🎉 Maintenance cycle completed!'));
-      console.log(chalk.blue(`📊 Stats: ${this.maintenanceCount} maintenances, ${formatEther(this.totalEarnings)} ETH earned`));
+      console.log(chalk.blue(`📊 Stats: ${this.maintenanceCount} maintenances, ${formatEther(this.totalServiceFeesPaid)} ETH in service fees paid`));
     }
   }
 
@@ -483,7 +483,7 @@ Respond in JSON format:
     console.log(chalk.gray('═'.repeat(40)));
     console.log(chalk.gray(`   Agent Name: ${config.agent.name}`));
     console.log(chalk.gray(`   Maintenances Performed: ${this.maintenanceCount}`));
-    console.log(chalk.gray(`   Total Earnings: ${formatEther(this.totalEarnings)} ETH`));
+    console.log(chalk.gray(`   Total Service Fees Paid: ${formatEther(this.totalServiceFeesPaid)} ETH`));
     console.log(chalk.gray(`   Agent Address: ${this.agentAddress || 'Not configured'}`));
     console.log(chalk.gray(`   Ollama Model: ${config.ollama.model}`));
     console.log(chalk.gray(`   Contract: ${config.blockchain.contractAddress}`));
