@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { callContractMultiFallback, onchainRugsABI } from '@/lib/web3'
 import { getContractAddress, DEFAULT_CHAIN_ID, getNetworkByChainId } from '@/lib/networks'
+import { createPaymentRequiredResponse, verifyAndSettlePayment } from '@/lib/x402'
 
 // Minimal ABI fragment for getMaintenanceOptions if not included
 const maintenanceAbi = [
@@ -20,8 +21,9 @@ const maintenanceAbi = [
   }
 ] as const
 
-export async function GET(_request: NextRequest, { params }: { params: { tokenId: string } }) {
+export async function GET(request: NextRequest, context: { params: Promise<{ tokenId: string }> }) {
   try {
+    const params = await context.params
     const tokenId = params.tokenId
     const chainId = DEFAULT_CHAIN_ID
     // For testing, use hardcoded Base Sepolia contract
@@ -30,6 +32,8 @@ export async function GET(_request: NextRequest, { params }: { params: { tokenId
       return NextResponse.json({ error: 'Contract not configured for this network' }, { status: 500 })
     }
 
+    // Status queries are FREE - no X402 payment required for reading from blockchain
+    console.log(`📖 Getting maintenance status for rug #${tokenId} (free read operation)`)
     const [canClean, canRestore, needsMaster, cleaningCost, restorationCost, masterCost] = await callContractMultiFallback(
       contract,
       maintenanceAbi as any,

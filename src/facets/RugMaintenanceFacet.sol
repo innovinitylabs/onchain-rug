@@ -17,6 +17,7 @@ contract RugMaintenanceFacet {
     event RugMasterRestored(uint256 indexed tokenId, address indexed owner, uint8 previousDirt, uint8 previousAging, uint256 cost);
     event AgentAuthorized(address indexed owner, address indexed agent);
     event AgentRevoked(address indexed owner, address indexed agent);
+    event AuthorizationTokenUsed(bytes32 indexed tokenHash, address indexed agent, uint256 tokenId, string action);
 
     // ========= Agent Authorization (Per-Owner Global Allowlist) =========
 
@@ -122,47 +123,184 @@ contract RugMaintenanceFacet {
         emit RugMasterRestored(tokenId, owner, prevDirt, prevAging, cost);
     }
 
-    // ========= Agent Entry Points (Single-Tx with Service Fee) =========
+    // ========= Authorization Token Verification =========
 
-    function cleanRugAgent(uint256 tokenId) external payable {
+    /**
+     * @notice Verify and consume an X402 authorization token
+     * @param tokenHash Hash of the authorization token
+     * @param agent Agent address
+     * @param tokenId Token ID
+     * @param action Action being performed
+     * @param expires Expiration timestamp
+     * @param nonce Unique nonce used in token generation
+     * @return isValid Whether the token is valid and consumed
+     */
+    function _verifyAuthorizationToken(
+        bytes32 tokenHash,
+        address agent,
+        uint256 tokenId,
+        string memory action,
+        uint256 expires,
+        string calldata nonce
+    ) internal returns (bool) {
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+
+        // Check if token already used (prevent replay attacks)
+        require(!rs.usedAuthorizationTokens[tokenHash], "Token already used");
+
+        // Check expiration
+        require(block.timestamp <= expires, "Token expired");
+
+        // Verify agent is authorized for this token's owner
+        address owner = IERC721(address(this)).ownerOf(tokenId);
+        require(rs.isOwnerAgentAllowed[owner][agent], "Agent not authorized for this token");
+
+        // CRYPTOGRAPHIC VERIFICATION: Recreate hash and verify it matches
+        bytes32 expectedHash = keccak256(abi.encodePacked(agent, tokenId, action, expires, nonce));
+        require(tokenHash == expectedHash, "Invalid token hash - cryptographic verification failed");
+
+        // Mark token as used
+        rs.usedAuthorizationTokens[tokenHash] = true;
+
+        emit AuthorizationTokenUsed(tokenHash, agent, tokenId, action);
+
+        return true;
+    }
+
+    /**
+     * @notice Check if an authorization token is valid (without consuming it)
+     * @param tokenHash Hash of the authorization token
+     * @return isValid Whether the token exists and is unused
+     */
+    function isAuthorizationTokenValid(bytes32 tokenHash) external view returns (bool) {
+        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+        return !rs.usedAuthorizationTokens[tokenHash];
+    }
+
+    // ========= Agent Entry Points (X402 Authorized - Require Token) =========
+
+    function cleanRugAgent(uint256 tokenId, bytes32 authorizationToken, string calldata nonce, uint256 expires) external payable {
         address owner = IERC721(address(this)).ownerOf(tokenId);
         require(owner != address(0), "Token does not exist");
-        require(rs.isOwnerAgentAllowed[owner][msg.sender], "Agent not authorized");
+
+        // Verify X402 authorization token with cryptographic validation
+        require(
+            _verifyAuthorizationToken(authorizationToken, msg.sender, tokenId, "clean", expires, nonce),
+            "Invalid X402 authorization"
+        );
 
         (uint256 maintenanceCost, bool wasFree) = _performClean(tokenId);
-        uint256 serviceFee = rs.serviceFee;
-        require(msg.value == maintenanceCost + serviceFee, "Incorrect payment");
 
-        _payoutServiceFee(serviceFee);
+        // X402-authorized agents pay 0 (payment already verified)
+        require(msg.value == 0, "X402 authorized calls must send 0 value");
+
         emit RugCleaned(tokenId, owner, maintenanceCost, wasFree);
     }
 
-    function restoreRugAgent(uint256 tokenId) external payable {
-        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+    function restoreRugAgent(uint256 tokenId, bytes32 authorizationToken, string calldata nonce, uint256 expires) external payable {
         address owner = IERC721(address(this)).ownerOf(tokenId);
         require(owner != address(0), "Token does not exist");
-        require(rs.isOwnerAgentAllowed[owner][msg.sender], "Agent not authorized");
+
+        // Verify X402 authorization token with cryptographic validation
+        require(
+            _verifyAuthorizationToken(authorizationToken, msg.sender, tokenId, "restore", expires, nonce),
+            "Invalid X402 authorization"
+        );
 
         (uint8 previousAging, uint8 newAging, uint256 maintenanceCost) = _performRestore(tokenId);
-        uint256 serviceFee = rs.serviceFee;
-        require(msg.value == maintenanceCost + serviceFee, "Incorrect payment");
 
-        _payoutServiceFee(serviceFee);
+        // X402-authorized agents pay 0 (payment already verified)
+        require(msg.value == 0, "X402 authorized calls must send 0 value");
+
         emit RugRestored(tokenId, owner, previousAging, newAging, maintenanceCost);
     }
 
-    function masterRestoreRugAgent(uint256 tokenId) external payable {
+    function masterRestoreRugAgent(uint256 tokenId, bytes32 authorizationToken, string calldata nonce, uint256 expires) external payable {
+        address owner = IERC721(address(this)).ownerOf(tokenId);
+        require(owner != address(0), "Token does not exist");
+
+        // Verify X402 authorization token with cryptographic validation
+        require(
+            _verifyAuthorizationToken(authorizationToken, msg.sender, tokenId, "master", expires, nonce),
+            "Invalid X402 authorization"
+        );
+
+        (uint8 prevDirt, uint8 prevAging, uint256 maintenanceCost) = _performMasterRestore(tokenId);
+
+        // X402-authorized agents pay 0 (payment already verified)
+        require(msg.value == 0, "X402 authorized calls must send 0 value");
+
+        emit RugMasterRestored(tokenId, owner, prevDirt, prevAging, maintenanceCost);
+    }
+
+    // ========= Authorized Agent Direct Payment (Intermediate Security) =========
+
+    /**
+     * @notice Clean rug using authorized agent wallet (direct payment)
+     * @param tokenId Token ID to clean
+     */
+    function cleanRugAuthorized(uint256 tokenId) external payable {
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
         address owner = IERC721(address(this)).ownerOf(tokenId);
         require(owner != address(0), "Token does not exist");
-        require(rs.isOwnerAgentAllowed[owner][msg.sender], "Agent not authorized");
+
+        // Verify caller is authorized agent for this NFT owner
+        require(rs.isOwnerAgentAllowed[owner][msg.sender], "Agent not authorized for this owner");
+
+        (uint256 maintenanceCost, bool wasFree) = _performClean(tokenId);
+
+        // Charge the maintenance cost directly
+        require(msg.value == maintenanceCost, "Must pay exact maintenance cost");
+
+        // Payout service fee to fee recipient
+        _payoutServiceFee(msg.value);
+
+        emit RugCleaned(tokenId, owner, maintenanceCost, wasFree);
+    }
+
+    /**
+     * @notice Restore rug using authorized agent wallet (direct payment)
+     * @param tokenId Token ID to restore
+     */
+    function restoreRugAuthorized(uint256 tokenId) external payable {
+        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+        address owner = IERC721(address(this)).ownerOf(tokenId);
+        require(owner != address(0), "Token does not exist");
+
+        // Verify caller is authorized agent for this NFT owner
+        require(rs.isOwnerAgentAllowed[owner][msg.sender], "Agent not authorized for this owner");
+
+        (uint8 previousAging, uint8 newAging, uint256 maintenanceCost) = _performRestore(tokenId);
+
+        // Charge the maintenance cost directly
+        require(msg.value == maintenanceCost, "Must pay exact maintenance cost");
+
+        // Payout service fee to fee recipient
+        _payoutServiceFee(msg.value);
+
+        emit RugRestored(tokenId, owner, previousAging, newAging, maintenanceCost);
+    }
+
+    /**
+     * @notice Master restore rug using authorized agent wallet (direct payment)
+     * @param tokenId Token ID to master restore
+     */
+    function masterRestoreRugAuthorized(uint256 tokenId) external payable {
+        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+        address owner = IERC721(address(this)).ownerOf(tokenId);
+        require(owner != address(0), "Token does not exist");
+
+        // Verify caller is authorized agent for this NFT owner
+        require(rs.isOwnerAgentAllowed[owner][msg.sender], "Agent not authorized for this owner");
 
         (uint8 prevDirt, uint8 prevAging, uint256 maintenanceCost) = _performMasterRestore(tokenId);
-        uint256 serviceFee = rs.serviceFee;
-        require(msg.value == maintenanceCost + serviceFee, "Incorrect payment");
 
-        _payoutServiceFee(serviceFee);
+        // Charge the maintenance cost directly
+        require(msg.value == maintenanceCost, "Must pay exact maintenance cost");
+
+        // Payout service fee to fee recipient
+        _payoutServiceFee(msg.value);
+
         emit RugMasterRestored(tokenId, owner, prevDirt, prevAging, maintenanceCost);
     }
 

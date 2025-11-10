@@ -11,8 +11,9 @@
 
 import express from 'express';
 import cors from 'cors';
-import { createPublicClient, createWalletClient, http, parseEther, formatEther, privateKeyToAccount } from 'viem';
-import { MerchantExecutor } from 'x402';
+import { createPublicClient, createWalletClient, http, parseEther, formatEther } from 'viem';
+import { privateKeyToAccount } from 'viem/accounts';
+// Custom X402 facilitator integration (no external dependencies)
 
 // Shape Sepolia chain definition (not built into viem)
 const shapeSepolia = {
@@ -73,10 +74,9 @@ const config = {
     style: process.env.AGENT_STYLE || 'helpful,professional,enthusiastic'
   },
   x402: {
-    facilitatorUrl: process.env.X402_FACILITATOR_URL || 'https://x402.org/facilitator',
-    facilitatorApiKey: process.env.X402_FACILITATOR_API_KEY,
-    payToAddress: process.env.X402_PAY_TO_ADDRESS || config.blockchain.contractAddress,
-    network: 'shape-sepolia' as const,
+    facilitatorUrl: process.env.X402_FACILITATOR_URL || 'http://localhost:3000/api/x402/facilitator',
+    payToAddress: process.env.X402_PAY_TO_ADDRESS || process.env.CONTRACT_ADDRESS,
+    network: 'shape-sepolia',
     assetAddress: '0x0000000000000000000000000000000000000000', // ETH
     assetName: 'ETH'
   }
@@ -101,24 +101,69 @@ if (config.wallet.privateKey) {
   console.log(chalk.yellow('⚠️  No AGENT_PRIVATE_KEY set - maintenance actions will fail'));
 }
 
-// Initialize x402 Merchant Executor
-let merchantExecutor = null;
-try {
-  merchantExecutor = new MerchantExecutor({
-    facilitatorUrl: config.x402.facilitatorUrl,
-    facilitatorApiKey: config.x402.facilitatorApiKey,
-    payToAddress: config.x402.payToAddress,
-    network: config.x402.network,
-    assetAddress: config.x402.assetAddress,
-    assetName: config.x402.assetName,
-    privateKey: config.wallet.privateKey,
-    rpcUrl: config.blockchain.rpcUrl
-  });
-  console.log(chalk.green('✅ x402 Merchant Executor initialized'));
-} catch (error) {
-  console.log(chalk.yellow('⚠️  x402 initialization failed - payments will not work'));
-  console.log(chalk.gray(`   Error: ${error.message}`));
-}
+// Initialize x402 Facilitator Client (HTTP-based)
+const facilitatorClient = {
+  url: config.x402.facilitatorUrl,
+
+  async createPaymentRequirement(price, description, payTo, resource) {
+    const response = await fetch(this.url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'create_payment_requirement',
+        price: price.toString(),
+        description,
+        payTo,
+        resource,
+        scheme: 'exact',
+        network: config.x402.network
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Facilitator error: ${response.status}`);
+    }
+
+    return await response.json();
+  },
+
+  async verifyPayment(paymentPayload) {
+    const response = await fetch(this.url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'verify_payment',
+        paymentPayload: JSON.stringify(paymentPayload)
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Facilitator verification error: ${response.status}`);
+    }
+
+    return await response.json();
+  },
+
+  async settlePayment(paymentPayload) {
+    const response = await fetch(this.url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'settle_payment',
+        paymentPayload: JSON.stringify(paymentPayload)
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Facilitator settlement error: ${response.status}`);
+    }
+
+    return await response.json();
+  }
+};
+
+console.log(chalk.green('✅ Custom x402 Facilitator Client initialized'));
+console.log(chalk.gray(`   Facilitator URL: ${config.x402.facilitatorUrl}`));
 
 // Owner wallet not needed - authorization happens via dashboard/website
 
@@ -227,52 +272,89 @@ class RugBotAPIServer {
       res.json({ status: 'ok', agent: config.agent.name, timestamp: new Date().toISOString() });
     });
 
-    // Get rug status (requires x402 payment)
+    // Get maintenance quote (FREE - read operation)
+    this.app.get('/rug/:tokenId/quote/:action', async (req, res) => {
+      try {
+        const tokenId = parseInt(req.params.tokenId);
+        const action = req.params.action;
+
+        console.log(chalk.blue(`💰 API: Getting ${action} quote for rug #${tokenId} (free)`));
+
+        const [canClean, canRestore, needsMaster, cleaningCost, restorationCost, masterCost] = await publicClient.readContract({
+          address: config.blockchain.contractAddress,
+          abi: RugMaintenanceAbi,
+          functionName: 'getMaintenanceOptions',
+          args: [BigInt(tokenId)]
+        });
+
+        console.log(chalk.gray(`   Contract data: canClean=${canClean}, canRestore=${canRestore}, needsMaster=${needsMaster}`));
+        console.log(chalk.gray(`   Costs: clean=${formatEther(cleaningCost)}, restore=${formatEther(restorationCost)}, master=${formatEther(masterCost)}`));
+
+        const feesResult = await publicClient.readContract({
+          address: config.blockchain.contractAddress,
+          abi: RugMaintenanceAbi,
+          functionName: 'getAgentServiceFee'
+        });
+
+        const [serviceFee] = feesResult;
+
+        let maintenanceCost = 0n;
+        let functionName = '';
+        let description = '';
+
+        switch (action) {
+          case 'clean':
+            maintenanceCost = cleaningCost;
+            functionName = 'cleanRugAgent';
+            description = `Clean rug #${tokenId}`;
+            if (!canClean && maintenanceCost === 0n) {
+              return res.json({ error: 'Cleaning not needed', maintenanceCost: '0', serviceFee: formatEther(serviceFee), totalCost: formatEther(serviceFee) });
+        }
+            break;
+          case 'restore':
+            maintenanceCost = restorationCost;
+            functionName = 'restoreRugAgent';
+            description = `Restore rug #${tokenId}`;
+            if (!canRestore || maintenanceCost === 0n) {
+              return res.json({ error: 'Restoration not available', maintenanceCost: '0', serviceFee: formatEther(serviceFee), totalCost: formatEther(serviceFee) });
+            }
+            break;
+          case 'master':
+            maintenanceCost = masterCost;
+            functionName = 'masterRestoreRugAgent';
+            description = `Master restore rug #${tokenId}`;
+            if (!needsMaster || maintenanceCost === 0n) {
+              return res.json({ error: 'Master restoration not needed', maintenanceCost: '0', serviceFee: formatEther(serviceFee), totalCost: formatEther(serviceFee) });
+        }
+            break;
+          default:
+            return res.status(400).json({ error: 'Invalid action' });
+        }
+
+        const totalCost = maintenanceCost + serviceFee;
+
+        res.json({
+          success: true,
+          tokenId,
+          action,
+          description,
+          maintenanceCost: formatEther(maintenanceCost),
+          serviceFee: formatEther(serviceFee),
+          totalCost: formatEther(totalCost),
+          canExecute: true
+        });
+      } catch (error) {
+        console.log(chalk.red(`❌ API: Quote failed:`, error.message));
+        res.status(500).json({ success: false, error: error.message });
+      }
+    });
+
+    // Get rug status (FREE - read operation)
     this.app.get('/rug/:tokenId/status', async (req, res) => {
       try {
-        // Check for x402 payment
-        const paymentPayload = req.headers['x402-payment-payload'];
-        const paymentStatus = req.headers['x402-payment-status'];
-
-        if (!merchantExecutor || !paymentPayload || paymentStatus !== 'payment-submitted') {
-          // Return x402 payment required
-          const paymentRequired = merchantExecutor?.createPaymentRequiredResponse({
-            price: '0.001', // Small fee for stats queries
-            description: `Rug #${req.params.tokenId} status query`
-          });
-
-          console.log(chalk.yellow(`💰 x402 payment required for rug #${req.params.tokenId} status`));
-          return res.status(402).json({
-            error: 'Payment Required',
-            x402: {
-              x402Version: 1,
-              accepts: paymentRequired ? [paymentRequired] : []
-            }
-          });
-        }
-
-        // Verify x402 payment
-        const verifyResult = await merchantExecutor.verifyPayment(JSON.parse(paymentPayload));
-        if (!verifyResult.isValid) {
-          console.log(chalk.red(`❌ x402 payment verification failed: ${verifyResult.invalidReason}`));
-          return res.status(402).json({
-            error: 'Payment verification failed',
-            reason: verifyResult.invalidReason
-          });
-        }
-
-        // Settle the payment
-        const settlement = await merchantExecutor.settlePayment(JSON.parse(paymentPayload));
-        if (!settlement.success) {
-          console.log(chalk.red(`❌ x402 payment settlement failed: ${settlement.errorReason}`));
-          return res.status(402).json({
-            error: 'Payment settlement failed',
-            reason: settlement.errorReason
-          });
-        }
 
         const tokenId = parseInt(req.params.tokenId);
-        console.log(chalk.blue(`🔍 API: Checking rug #${tokenId} status (paid)...`));
+        console.log(chalk.blue(`🔍 API: Checking rug #${tokenId} status (free)`));
 
         const [canClean, canRestore, needsMaster, cleaningCost, restorationCost, masterCost] = await publicClient.readContract({
           address: config.blockchain.contractAddress,
@@ -333,7 +415,8 @@ class RugBotAPIServer {
         const tokenId = req.params.tokenId;
         const { action } = req.body;
 
-        if (!merchantExecutor || !paymentPayload || paymentStatus !== 'payment-submitted') {
+        if (!paymentPayload || paymentStatus !== 'payment-submitted') {
+          try {
           // Get the cost first to create payment requirement
           const [canClean, canRestore, needsMaster, cleaningCost, restorationCost, masterCost] = await publicClient.readContract({
             address: config.blockchain.contractAddress,
@@ -371,24 +454,30 @@ class RugBotAPIServer {
           const totalCost = cost + serviceFee;
           const price = formatEther(totalCost);
 
-          // Return x402 payment required
-          const paymentRequired = merchantExecutor?.createPaymentRequiredResponse({
-            price: price,
-            description: description
-          });
+            // Get payment requirement from facilitator
+            const paymentRequired = await facilitatorClient.createPaymentRequirement(
+              price,
+              description,
+              config.x402.payToAddress,
+              `/rug/${tokenId}/maintain`
+            );
 
           console.log(chalk.yellow(`💰 x402 payment required for ${action} on rug #${tokenId}: ${price} ETH`));
           return res.status(402).json({
             error: 'Payment Required',
-            x402: {
-              x402Version: 1,
-              accepts: paymentRequired ? [paymentRequired] : []
-            }
-          });
+              x402: paymentRequired
+            });
+          } catch (error) {
+            console.log(chalk.red(`❌ Failed to create payment requirement: ${error.message}`));
+            return res.status(500).json({
+              error: 'Failed to create payment requirement',
+              details: error.message
+            });
+          }
         }
 
         // Verify x402 payment
-        const verifyResult = await merchantExecutor.verifyPayment(JSON.parse(paymentPayload));
+        const verifyResult = await facilitatorClient.verifyPayment(JSON.parse(paymentPayload));
         if (!verifyResult.isValid) {
           console.log(chalk.red(`❌ x402 payment verification failed: ${verifyResult.invalidReason}`));
           return res.status(402).json({
@@ -398,7 +487,7 @@ class RugBotAPIServer {
         }
 
         // Settle the payment
-        const settlement = await merchantExecutor.settlePayment(JSON.parse(paymentPayload));
+        const settlement = await facilitatorClient.settlePayment(JSON.parse(paymentPayload));
         if (!settlement.success) {
           console.log(chalk.red(`❌ x402 payment settlement failed: ${settlement.errorReason}`));
           return res.status(402).json({
@@ -498,49 +587,90 @@ class RugBotAPIServer {
       }
     });
 
-    // Get agent stats (requires x402 payment)
+    // Execute authorized maintenance action (called after X402 payment verification)
+    this.app.post('/rug/:tokenId/execute', async (req, res) => {
+      try {
+        const tokenId = parseInt(req.params.tokenId);
+        const { authorization } = req.body;
+
+        console.log(chalk.blue(`🔧 API: Executing authorized ${authorization.action} on rug #${tokenId}`));
+
+        // Verify authorization token (new X402 format)
+        if (!authorization || !authorization.authorizationToken) {
+          return res.status(403).json({ success: false, error: 'Missing authorization token' });
+        }
+
+        // For now, we trust the website issued valid tokens after X402 verification
+        // The contract will validate the token and ensure it hasn't been used
+
+        // Execute the blockchain transaction
+        if (!['clean', 'restore', 'master'].includes(authorization.action)) {
+          throw new Error('Invalid action. Must be: clean, restore, or master');
+        }
+
+        if (!agentWallet) {
+          throw new Error('Agent wallet not configured');
+        }
+
+        // For X402-authorized agents, contract payment is 0 (X402 already covered fees)
+        // The authorization contains the cost breakdown for logging only
+        const maintenanceCost = BigInt(authorization.maintenanceCost || '0');
+        const serviceFee = BigInt(authorization.serviceFee || '0');
+
+        // Determine contract function to call
+        let functionName = '';
+        switch (authorization.action) {
+          case 'clean':
+            functionName = 'cleanRugAgent';
+            break;
+          case 'restore':
+            functionName = 'restoreRugAgent';
+            break;
+          case 'master':
+            functionName = 'masterRestoreRugAgent';
+            break;
+        }
+
+        console.log(chalk.gray(`   X402 Payment Covered: ${formatEther(maintenanceCost + serviceFee)} ETH`));
+        console.log(chalk.gray(`   Contract Payment: 0 ETH (just gas)`));
+
+        // Execute transaction with 0 value (X402 already covered the service costs)
+        // Include authorization token, nonce, and expires as parameters
+        const hash = await agentWallet.writeContract({
+          address: config.blockchain.contractAddress,
+          abi: RugMaintenanceAbi,
+          functionName: functionName,
+          args: [BigInt(tokenId), authorization.authorizationToken, authorization.nonce, BigInt(authorization.expires)],
+          value: 0n
+        });
+
+        console.log(chalk.gray('⏳ Waiting for confirmation...'));
+        const receipt = await publicClient.waitForTransactionReceipt({ hash });
+
+        console.log(chalk.green(`✅ API: ${authorization.action} completed! Tx: ${hash}`));
+
+        res.json({
+          success: true,
+          action: authorization.action,
+          tokenId: tokenId,
+          transactionHash: hash,
+          blockNumber: receipt.blockNumber.toString(),
+          gasUsed: receipt.gasUsed.toString(),
+          authorizationToken: authorization.authorizationToken, // Token used
+          contractPayment: '0', // Contract execution is free for authorized agents
+          message: 'Maintenance completed successfully via X402 authorization token'
+        });
+
+      } catch (error) {
+        console.log(chalk.red(`❌ API: Execution failed:`, error.message));
+        res.status(500).json({ success: false, error: error.message });
+      }
+    });
+
+    // Get agent stats (FREE read operation - no X402 payment required)
     this.app.get('/agent/stats', async (req, res) => {
       try {
-        // Check for x402 payment
-        const paymentPayload = req.headers['x402-payment-payload'];
-        const paymentStatus = req.headers['x402-payment-status'];
-
-        if (!merchantExecutor || !paymentPayload || paymentStatus !== 'payment-submitted') {
-          // Return x402 payment required
-          const paymentRequired = merchantExecutor?.createPaymentRequiredResponse({
-            price: '0.0005', // Small fee for stats queries
-            description: 'Agent performance statistics'
-          });
-
-          console.log(chalk.yellow(`💰 x402 payment required for agent stats`));
-          return res.status(402).json({
-            error: 'Payment Required',
-            x402: {
-              x402Version: 1,
-              accepts: paymentRequired ? [paymentRequired] : []
-            }
-          });
-        }
-
-        // Verify x402 payment
-        const verifyResult = await merchantExecutor.verifyPayment(JSON.parse(paymentPayload));
-        if (!verifyResult.isValid) {
-          console.log(chalk.red(`❌ x402 payment verification failed: ${verifyResult.invalidReason}`));
-          return res.status(402).json({
-            error: 'Payment verification failed',
-            reason: verifyResult.invalidReason
-          });
-        }
-
-        // Settle the payment
-        const settlement = await merchantExecutor.settlePayment(JSON.parse(paymentPayload));
-        if (!settlement.success) {
-          console.log(chalk.red(`❌ x402 payment settlement failed: ${settlement.errorReason}`));
-          return res.status(402).json({
-            error: 'Payment settlement failed',
-            reason: settlement.errorReason
-          });
-        }
+        console.log(chalk.blue(`📊 API: Getting agent stats (free)`));
 
         res.json({
           agentName: config.agent.name,
@@ -551,53 +681,19 @@ class RugBotAPIServer {
         contractAddress: config.blockchain.contractAddress,
         network: 'Shape Sepolia'
       });
+      } catch (error) {
+        console.error('Agent stats error:', error);
+        res.status(500).json({
+          error: 'Failed to get agent stats',
+          details: error.message
+        });
+      }
     });
 
-    // Get rugs owned by owner (requires x402 payment)
+    // Get rugs owned by owner (FREE read operation - no X402 payment required)
     this.app.get('/owner/rugs', async (req, res) => {
       try {
-        // Check for x402 payment
-        const paymentPayload = req.headers['x402-payment-payload'];
-        const paymentStatus = req.headers['x402-payment-status'];
-
-        if (!merchantExecutor || !paymentPayload || paymentStatus !== 'payment-submitted') {
-          // Return x402 payment required
-          const paymentRequired = merchantExecutor?.createPaymentRequiredResponse({
-            price: '0.0005', // Small fee for rug discovery
-            description: 'Discover rugs owned by wallet'
-          });
-
-          console.log(chalk.yellow(`💰 x402 payment required for rug discovery`));
-          return res.status(402).json({
-            error: 'Payment Required',
-            x402: {
-              x402Version: 1,
-              accepts: paymentRequired ? [paymentRequired] : []
-            }
-          });
-        }
-
-        // Verify x402 payment
-        const verifyResult = await merchantExecutor.verifyPayment(JSON.parse(paymentPayload));
-        if (!verifyResult.isValid) {
-          console.log(chalk.red(`❌ x402 payment verification failed: ${verifyResult.invalidReason}`));
-          return res.status(402).json({
-            error: 'Payment verification failed',
-            reason: verifyResult.invalidReason
-          });
-        }
-
-        // Settle the payment
-        const settlement = await merchantExecutor.settlePayment(JSON.parse(paymentPayload));
-        if (!settlement.success) {
-          console.log(chalk.red(`❌ x402 payment settlement failed: ${settlement.errorReason}`));
-          return res.status(402).json({
-            error: 'Payment settlement failed',
-            reason: settlement.errorReason
-          });
-        }
-
-        console.log(chalk.blue('🔍 API: Discovering rugs owned by owner (x402 paid)...'));
+        console.log(chalk.blue('🔍 API: Discovering rugs owned by owner (free read operation)...'));
 
         if (!config.owner.address) {
           throw new Error('Owner address not configured');

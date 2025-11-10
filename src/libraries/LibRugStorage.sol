@@ -195,10 +195,15 @@ library LibRugStorage {
         // ===== X402 + Agent Maintenance Configuration =====
         address feeRecipient;                       // Recipient of service fees
         uint256 serviceFee;                         // Flat service fee for all maintenance actions (wei)
+        uint256 aiServiceFee;                       // Optional AI service fee for X402 monetization (wei)
         // Per-owner global allowlist: owner => agent => allowed
         mapping(address => mapping(address => bool)) isOwnerAgentAllowed;
         // Per-owner authorized agents list: owner => agents[]
         mapping(address => address[]) ownerAuthorizedAgents;
+
+        // ===== X402 Authorization Tokens =====
+        // tokenHash => used (prevent replay attacks)
+        mapping(bytes32 => bool) usedAuthorizationTokens;
     }
 
     function rugStorage() internal pure returns (RugConfig storage rs) {

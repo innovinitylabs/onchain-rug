@@ -23,6 +23,7 @@ contract RugAdminFacet {
     event ServiceFeesUpdated(uint256 cleanFee, uint256 restoreFee, uint256 masterFee);
     event ServiceFeeUpdated(uint256 serviceFee);
     event FeeRecipientUpdated(address indexed oldRecipient, address indexed newRecipient);
+    event AIServiceFeeUpdated(uint256 newFee);
 
     /**
      * @notice Update collection cap (owner only)
@@ -150,6 +151,19 @@ contract RugAdminFacet {
         rs.diamondThreshold = thresholds[3];
 
         emit FrameThresholdsUpdated();
+    }
+
+    /**
+     * @notice Update AI service fee for X402 monetization
+     * @param newFee New AI service fee in wei (0 to disable)
+     */
+    function updateAIServiceFee(uint256 newFee) external {
+        LibDiamond.enforceIsContractOwner();
+
+        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+        rs.aiServiceFee = newFee;
+
+        emit AIServiceFeeUpdated(newFee);
     }
 
     /**

@@ -27,6 +27,9 @@ import "../src/diamond/interfaces/IDiamondCut.sol";
  * @notice Deploys all contracts from scratch without any dependencies
  */
 contract DeployBaseSepolia is Script {
+    // Base Sepolia Configuration
+    uint256 constant BASE_SEPOLIA_CHAIN_ID = 84532;
+
     // Contracts to deploy
     FileStore public fileStore;
     ScriptyStorageV2 public scriptyStorage;
@@ -360,6 +363,10 @@ contract DeployBaseSepolia is Script {
         ];
         RugAdminFacet(diamondAddr).updateServicePricing(servicePrices);
 
+        // Set AI service fee for X402 monetization (set to 0 for now - can be enabled later)
+        uint256 aiServiceFee = 0 ether; // AI service fee for maintenance operations (disabled)
+        RugAdminFacet(diamondAddr).updateAIServiceFee(aiServiceFee);
+
         // Set frame progression thresholds (higher = harder to achieve)
         uint256[4] memory frameThresholds = [
             uint256(50),   // bronzeThreshold: 50 points
@@ -408,12 +415,8 @@ contract DeployBaseSepolia is Script {
         RugAdminFacet(diamondAddr).setFeeRecipient(deployer);
         uint256 serviceFee = uint256(0.00042 ether); // Flat service fee: 0.00042 ETH
         RugAdminFacet(diamondAddr).setServiceFee(serviceFee);
-        // Set AI service fee for X402 monetization (set to 0 for now - can be enabled later)
-        uint256 aiServiceFee = 0 ether; // AI service fee for maintenance operations (disabled)
-        RugAdminFacet(diamondAddr).updateAIServiceFee(aiServiceFee);
         console.log("   - Fee recipient: deployer address");
         console.log("   - Flat service fee: 0.00042 ETH for all actions");
-        console.log("   - AI service fee: 0 ETH (disabled)");
     }
 
     // Selector generation functions
@@ -519,7 +522,7 @@ contract DeployBaseSepolia is Script {
     }
 
     function _getRugMaintenanceSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](19);
+        bytes4[] memory selectors = new bytes4[](23);
         selectors[0] = RugMaintenanceFacet.cleanRug.selector;
         selectors[1] = RugMaintenanceFacet.restoreRug.selector;
         selectors[2] = RugMaintenanceFacet.masterRestoreRug.selector;
@@ -537,10 +540,15 @@ contract DeployBaseSepolia is Script {
         selectors[13] = RugMaintenanceFacet.cleanRugAgent.selector;
         selectors[14] = RugMaintenanceFacet.restoreRugAgent.selector;
         selectors[15] = RugMaintenanceFacet.masterRestoreRugAgent.selector;
+        // Authorized agent direct payment functions
+        selectors[16] = RugMaintenanceFacet.cleanRugAuthorized.selector;
+        selectors[17] = RugMaintenanceFacet.restoreRugAuthorized.selector;
+        selectors[18] = RugMaintenanceFacet.masterRestoreRugAuthorized.selector;
         // Agent management functions
-        selectors[16] = RugMaintenanceFacet.getAuthorizedAgents.selector;
-        selectors[17] = RugMaintenanceFacet.getAuthorizedAgentsFor.selector;
-        selectors[18] = RugMaintenanceFacet.isAgentAuthorized.selector;
+        selectors[19] = RugMaintenanceFacet.getAuthorizedAgents.selector;
+        selectors[20] = RugMaintenanceFacet.getAuthorizedAgentsFor.selector;
+        selectors[21] = RugMaintenanceFacet.isAgentAuthorized.selector;
+        selectors[22] = RugMaintenanceFacet.isAuthorizationTokenValid.selector;
         return selectors;
     }
 

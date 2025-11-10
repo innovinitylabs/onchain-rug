@@ -198,9 +198,9 @@ async function main() {
 }
 
 // Export for testing
-module.exports = X402FlowTester;
+export default X402FlowTester;
 
 // Run if called directly
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch(console.error);
 }

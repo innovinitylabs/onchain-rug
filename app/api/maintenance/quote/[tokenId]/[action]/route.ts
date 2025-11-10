@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { callContractMultiFallback } from '@/lib/web3'
 import { getContractAddress, DEFAULT_CHAIN_ID, getNetworkByChainId } from '@/lib/networks'
+import { createPaymentRequiredResponse } from '@/lib/x402'
+import { formatEther } from 'viem'
 
 const maintenanceAbi = [
   {
@@ -34,8 +36,9 @@ const adminFeesAbi = [
 
 type Action = 'clean' | 'restore' | 'master'
 
-export async function GET(_request: NextRequest, { params }: { params: { tokenId: string, action: Action } }) {
+export async function GET(_request: NextRequest, context: { params: Promise<{ tokenId: string, action: Action }> }) {
   try {
+    const params = await context.params
     const tokenId = params.tokenId
     const action = params.action
     const chainId = DEFAULT_CHAIN_ID
@@ -63,60 +66,58 @@ export async function GET(_request: NextRequest, { params }: { params: { tokenId
 
     const [serviceFee, feeRecipient] = feesResult
 
-    let maintenanceWei = 0n
+    let maintenanceWei = BigInt(0)
     let serviceFeeWei = serviceFee // Flat fee for all actions
     let functionName = ''
     if (action === 'clean') {
       maintenanceWei = cleaningCost
       functionName = 'cleanRugAgent'
-      if (!canClean && maintenanceWei === 0n) {
+      if (!canClean && maintenanceWei === BigInt(0)) {
         return NextResponse.json({ error: 'Cleaning not needed' }, { status: 400 })
       }
     } else if (action === 'restore') {
       maintenanceWei = restorationCost
       functionName = 'restoreRugAgent'
-      if (!canRestore || maintenanceWei === 0n) {
+      if (!canRestore || maintenanceWei === BigInt(0)) {
         return NextResponse.json({ error: 'Restoration not available' }, { status: 400 })
       }
     } else if (action === 'master') {
       maintenanceWei = masterCost
       functionName = 'masterRestoreRugAgent'
-      if (!needsMaster || maintenanceWei === 0n) {
+      if (!needsMaster || maintenanceWei === BigInt(0)) {
         return NextResponse.json({ error: 'Master restoration not needed' }, { status: 400 })
       }
     } else {
       return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
     }
 
-    const totalWei = (maintenanceWei + serviceFeeWei).toString()
-    const network = getNetworkByChainId(chainId)
+    const totalWei = maintenanceWei + serviceFeeWei
+    const price = (Number(totalWei) / 1e18).toString() // Convert to ETH
 
-    // Return x402-style 402 for agent UX (quote only; agent will call contract directly)
-    return NextResponse.json({
-      error: 'Payment Required',
-      x402: {
-        x402Version: 1,
-        accepts: [
-          {
-            scheme: 'exact',
-            network: network?.name || 'unknown',
-            asset: '0x0000000000000000000000000000000000000000',
-            payTo: contract,
-            maxAmountRequired: totalWei,
-            resource: `/api/maintenance/quote/${tokenId}/${action}`,
+    // Use X402 facilitator to generate proper payment requirement
+    const paymentRequired = await createPaymentRequiredResponse({
+      price: price,
             description: `Rug ${action} service (agent single-tx)`,
-            mimeType: 'application/json',
-            maxTimeoutSeconds: 900,
-            extra: {
-              function: functionName,
+      contractAddress: contract,
+      functionName: functionName,
+      tokenId: tokenId,
+      maintenanceCost: formatEther(maintenanceWei),
+      serviceFee: formatEther(serviceFeeWei)
+    })
+
+    // Add extra metadata for agent UX
+    if (paymentRequired.x402?.accepts?.[0]) {
+      paymentRequired.x402.accepts[0].extra = {
+        ...paymentRequired.x402.accepts[0].extra,
+        functionName: functionName,
               maintenanceWei: maintenanceWei.toString(),
               serviceFeeWei: serviceFeeWei.toString(),
-              totalWei
-            }
-          }
-        ]
+        totalWei: totalWei.toString()
       }
-    }, { status: 402 })
+    }
+
+    console.log(`💰 X402 quote generated for ${action} on rug #${tokenId}: ${price} ETH`)
+    return NextResponse.json(paymentRequired, { status: 402 })
   } catch (err) {
     console.error('quote route error:', err)
     return NextResponse.json({ error: 'Failed to generate quote' }, { status: 500 })

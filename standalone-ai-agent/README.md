@@ -62,8 +62,7 @@ Result: {"totalServiceFeesPaidEth": "0.00042", "maintenanceCount": 1}
 ollama pull llama3.1:8b
 
 # Configure x402 payments in .env:
-X402_FACILITATOR_URL=https://x402.org/facilitator
-X402_FACILITATOR_API_KEY=your_api_key
+X402_FACILITATOR_URL=http://localhost:3000/api/x402/facilitator
 X402_PAY_TO_ADDRESS=0x_your_merchant_wallet
 
 # Start API server
@@ -75,7 +74,7 @@ npm run chat
 
 ### 🔒 **x402 Security & Payments**
 - ✅ **All queries require payment** (0.001 ETH for stats, dynamic for maintenance)
-- ✅ **Payments verified by x402 facilitator** (not just API trust)
+- ✅ **Payments verified by custom x402 facilitator on Base Sepolia** (full control)
 - ✅ **Real ETH transactions** settled through x402 protocol
 - ✅ **Agent authorization** required via dashboard
 - ✅ **Dynamic pricing** from smart contract
@@ -166,12 +165,12 @@ Result: {"success": true, "serviceFeeEth": "0.00042"}
 All Actions:   0.00042 ETH flat service fee (you pay this)
 ```
 
-### Network: Shape Sepolia
-- **Contract**: `0x5E63d07BDa3987da3A0CaCD69d829b9E11C1f325`
-- **RPC**: `https://sepolia.shape.network`
-- **Chain ID**: 11011
-- **Explorer**: https://sepolia.shapescan.xyz
-- **Faucet**: https://faucet.shape.network
+### Network: Base Sepolia (X402 Enabled)
+- **Contract**: `0xa46228a11e6C79f4f5D25038a3b712EBCB8F3459`
+- **RPC**: `https://sepolia.base.org`
+- **Chain ID**: 84532
+- **Explorer**: https://sepolia-explorer.base.org
+- **Faucet**: https://www.coinbase.com/faucets/base-ethereum-goerli-faucet
 
 ## 📦 What's Included
 
@@ -223,10 +222,10 @@ Edit `.env` file:
 OLLAMA_BASE_URL=http://localhost:11434
 OLLAMA_MODEL=deepseek-r1:8b
 
-# Blockchain Configuration (Shape Sepolia)
-RPC_URL=https://sepolia.shape.network
-CHAIN_ID=11011
-CONTRACT_ADDRESS=0x5E63d07BDa3987da3A0CaCD69d829b9E11C1f325
+# Blockchain Configuration (Base Sepolia - X402 Enabled)
+RPC_URL=https://sepolia.base.org
+CHAIN_ID=84532
+CONTRACT_ADDRESS=0xa46228a11e6C79f4f5D25038a3b712EBCB8F3459
 
 # Agent Wallet (for real transactions)
 AGENT_PRIVATE_KEY=0x...
@@ -236,6 +235,11 @@ AGENT_ADDRESS=0x...
 TEST_TOKEN_ID=1
 AUTO_MAINTAIN=false
 MAINTENANCE_CHECK_INTERVAL=300000
+
+# x402 Payment Configuration (Custom Facilitator)
+# Uses our built-in X402 facilitator on Base Sepolia
+X402_FACILITATOR_URL=http://localhost:3000/api/x402/facilitator
+X402_PAY_TO_ADDRESS=0x_your_merchant_wallet_address
 
 # Agent Personality
 AGENT_NAME=RugBot
