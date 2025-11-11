@@ -42,6 +42,7 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ to
     const tokenId = params.tokenId
     const action = params.action
     const chainId = DEFAULT_CHAIN_ID
+    console.log('Quote endpoint - chainId:', chainId, 'contract:', getContractAddress(chainId))
     const contract = getContractAddress(chainId)
     if (!contract) {
       return NextResponse.json({ error: 'Contract not configured for this network' }, { status: 500 })

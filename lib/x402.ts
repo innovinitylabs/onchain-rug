@@ -33,7 +33,6 @@ export async function createPaymentRequiredResponse(options: {
   serviceFee?: string
 }) {
   const config = getX402Config()
-  console.log('X402 config:', config)
 
   if (!config.payToAddress) {
     console.warn('X402 pay-to address not configured')
