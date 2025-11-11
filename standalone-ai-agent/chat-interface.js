@@ -106,7 +106,7 @@ class AgentRugChat {
         type: 'function',
         function: {
           name: 'get_stats',
-          description: 'Check the service fees paid by the agent',
+          description: 'Check agent wallet balance and service fees paid',
           parameters: {
             type: 'object',
             properties: {},
@@ -246,6 +246,9 @@ FREE INFO QUERY:
 User: "how many rugs do I own?"
 AI: Calls get_rugs() → Returns rug list (no payment required)
 
+User: "what's my balance?" or "check agent balance"
+AI: Calls get_stats() → Returns wallet balance and fees (no payment required)
+
 User: "is rug 1 clean?" or "check rug 1"
 AI: Calls check_rug(tokenId=1) → Returns rug status (no payment required)
 
@@ -268,6 +271,7 @@ AI: Calls restore_rug(tokenId=2, confirmed=false) → "Restoration not available
 IMPORTANT NOTES:
 - Always get accurate data from APIs - never make up numbers
 - Rug ownership is determined by calling get_rugs() API
+- Agent wallet balance and fees are checked with get_stats()
 - Service fees are 0.00042 ETH flat for all maintenance actions
 - If a tool returns an error, acknowledge the failure and don't claim success
 - Only report success when tool results confirm the operation worked

@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+console.log('🔥 API SERVER STARTING...');
+
 /**
  * 🛠️ RugBot API Server - Blockchain Backend for Ollama GUI
  *
@@ -8,6 +10,14 @@
  *
  * Usage: npm run api-server
  */
+
+console.log('🚀 Starting RugBot API Server...');
+
+// Load environment variables first
+import dotenv from 'dotenv';
+dotenv.config();
+
+console.log('📋 Loading configuration...');
 
 import express from 'express';
 import cors from 'cors';
@@ -41,11 +51,7 @@ const baseSepolia = {
   testnet: true,
 };
 import { Ollama } from 'ollama';
-import dotenv from 'dotenv';
 import chalk from 'chalk';
-
-// Load environment variables
-dotenv.config();
 
 // Configuration
 const config = {
@@ -726,15 +732,36 @@ class RugBotAPIServer {
       try {
         console.log(chalk.blue(`📊 API: Getting agent stats (free)`));
 
+        // Get agent wallet balance (direct on-chain read - no X402 needed)
+        let walletBalance = '0';
+        let walletBalanceEth = '0';
+        try {
+          if (config.wallet.address) {
+            console.log(chalk.gray(`   Reading balance for address: ${config.wallet.address}`));
+            const balance = await publicClient.getBalance({
+              address: config.wallet.address
+            });
+            walletBalance = balance.toString();
+            walletBalanceEth = formatEther(balance);
+            console.log(chalk.gray(`   Balance: ${walletBalanceEth} ETH`));
+          } else {
+            console.log(chalk.yellow(`   No agent wallet address configured`));
+          }
+        } catch (error) {
+          console.log(chalk.yellow(`   Could not get wallet balance: ${error.message}`));
+        }
+
         res.json({
           agentName: config.agent.name,
+          walletAddress: config.wallet.address || 'Not configured',
+          walletBalance: walletBalance,
+          walletBalanceEth: walletBalanceEth,
           totalServiceFeesPaid: this.totalServiceFeesPaid.toString(),
           totalServiceFeesPaidEth: formatEther(this.totalServiceFeesPaid),
           maintenanceCount: this.maintenanceCount,
-        walletAddress: config.wallet.address || 'Not configured',
-        contractAddress: config.blockchain.contractAddress,
-        network: 'Shape Sepolia'
-      });
+          contractAddress: config.blockchain.contractAddress,
+          network: config.blockchain.chainId === 84532 ? 'Base Sepolia' : 'Shape Sepolia'
+        });
       } catch (error) {
         console.error('Agent stats error:', error);
         res.status(500).json({
