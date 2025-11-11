@@ -607,21 +607,30 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
           };
         } else if (['clean_rug', 'restore_rug', 'master_restore_rug'].includes(name) && !args?.confirmed) {
           // This was a successful quote, format the cost info
-          console.log(`💰 Quote details:`, {
-            action: result.action,
-            maintenanceCost: result.maintenanceCost,
-            serviceFee: result.serviceFee,
-            totalCost: result.totalCost,
-            maintenanceCostEth: result.maintenanceCostEth,
-            serviceFeeEth: result.serviceFeeEth,
-            totalCostEth: result.totalCostEth
-          });
+          const extra = result.x402?.accepts?.[0]?.extra;
+          if (extra) {
+            const totalCostEth = formatEther(BigInt(result.x402.accepts[0].maxAmountRequired));
+            const maintenanceCostEth = formatEther(BigInt(extra.maintenanceWei || '0'));
+            const serviceFeeEth = formatEther(BigInt(extra.serviceFeeWei || '0'));
+            const action = name.replace('_rug', '');
 
-          return {
-            ...result,
-            message: `Quote for ${result.action}: ${result.totalCostEth} ETH total (${result.maintenanceCostEth} ETH maintenance + ${result.serviceFeeEth} ETH service fee)`,
-            formatted: true
-          };
+            console.log(`💰 Quote details:`, {
+              action,
+              maintenanceCostEth,
+              serviceFeeEth,
+              totalCostEth
+            });
+
+            return {
+              ...result,
+              action,
+              maintenanceCostEth,
+              serviceFeeEth,
+              totalCostEth,
+              message: `Quote for ${action}: ${totalCostEth} ETH total (${maintenanceCostEth} ETH maintenance + ${serviceFeeEth} ETH service fee). Confirm?`,
+              formatted: true
+            };
+          }
         }
 
         return result;

@@ -128,9 +128,14 @@ export async function POST(request: NextRequest, context: { params: Promise<{ to
 
     // If no payment headers, return payment required
     if (!paymentPayload || paymentStatus !== 'payment-submitted') {
-      const paymentRequired = createPaymentRequiredResponse({
+      const paymentRequired = await createPaymentRequiredResponse({
         price: price,
-        description: description
+        description: `${action.charAt(0).toUpperCase() + action.slice(1)} ${description} (agent single-tx)`,
+        contractAddress: contract,
+        functionName: functionName,
+        tokenId: tokenId,
+        maintenanceCost: formatEther(maintenanceWei),
+        serviceFee: formatEther(serviceFee)
       })
 
       console.log(`💰 X402 payment required for ${action} on rug #${tokenId}: ${price} ETH`)
