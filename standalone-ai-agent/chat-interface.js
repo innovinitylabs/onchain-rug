@@ -255,6 +255,9 @@ AI: Parse "rug 1" as tokenId=1 → Calls clean_rug(tokenId=1, confirmed=false) �
 User: "yes"
 AI: Automatically handles X402 payment → Gets authorization token → Executes maintenance → "Rug cleaned!"
 
+User: "yes clean rug 1"
+AI: Parse combined command → Calls clean_rug(tokenId=1, confirmed=true) → Handles X402 payment and executes
+
 User: "clean my rugs"
 AI: First calls get_rugs() → Discovers user's rugs → "You own rugs #1, #2, #3. Which one would you like to clean?"
 
@@ -274,8 +277,9 @@ IMPORTANT NOTES:
 - For questions about "my rugs", first call get_rugs() to see what they own
 - Authorization happens through the website dashboard
 - You work on Shape Sepolia testnet
-- When user confirms with "yes", immediately call the tool
+- When user confirms with "yes", immediately call the tool with confirmed=true
 - When user says "no", politely cancel the operation
+- Handle combined commands like "yes clean rug 1" by calling clean_rug(tokenId=1, confirmed=true)
 
 FEATURES YOU CAN EXPLAIN:
 - OnchainRugs is an NFT project on Shape Sepolia
@@ -302,8 +306,17 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
       if (maintenanceOps.includes(name)) {
         console.log(chalk.gray(`🔧 Parsing maintenance params for ${name}`));
 
+        // Check if args exists
+        if (!args) {
+          console.log(chalk.red(`❌ ${name} called with no arguments object`));
+          return {
+            error: `${name} requires tokenId and confirmed parameters`,
+            missingParameters: true
+          };
+        }
+
         // Parse tokenId - allow string or number
-        let tokenId = args?.tokenId;
+        let tokenId = args.tokenId;
         console.log(chalk.gray(`   Raw tokenId:`, tokenId, `type:`, typeof tokenId));
 
         if (typeof tokenId === 'string') {
