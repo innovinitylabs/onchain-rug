@@ -58,8 +58,8 @@ Result: {"totalServiceFeesPaidEth": "0.00042", "maintenanceCount": 1}
 
 ### x402 Setup (Real Payments!)
 ```bash
-# Install DeepSeek R1
-ollama pull deepseek-r1:8b
+# Install Llama 3.1
+ollama pull llama3.1:8b
 
 # Configure x402 payments in .env:
 X402_FACILITATOR_URL=http://localhost:3000/api/x402/facilitator

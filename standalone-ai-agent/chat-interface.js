@@ -23,7 +23,7 @@ dotenv.config();
 const config = {
   ollama: {
     baseUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434',
-    model: 'deepseek-r1:8b'
+    model: 'llama3.1:8b'
   },
   api: {
     baseUrl: process.env.API_BASE_URL || 'http://localhost:3001'
