@@ -15,10 +15,10 @@ import { createPublicClient, createWalletClient, http, parseEther, formatEther }
 import { privateKeyToAccount } from 'viem/accounts';
 // Custom X402 facilitator integration (no external dependencies)
 
-// Shape Sepolia chain definition (not built into viem)
-const shapeSepolia = {
-  id: 11011,
-  name: 'Shape Sepolia',
+// Base Sepolia chain definition (not built into viem)
+const baseSepolia = {
+  id: 84532,
+  name: 'Base Sepolia',
   nativeCurrency: {
     decimals: 18,
     name: 'Ethereum',
@@ -26,16 +26,16 @@ const shapeSepolia = {
   },
   rpcUrls: {
     default: {
-      http: ['https://sepolia.shape.network'],
+      http: ['https://sepolia.base.org'],
     },
     public: {
-      http: ['https://sepolia.shape.network'],
+      http: ['https://sepolia.base.org'],
     },
   },
   blockExplorers: {
     default: {
-      name: 'Shape Sepolia Explorer',
-      url: 'https://sepolia.shapescan.xyz',
+      name: 'Base Sepolia Explorer',
+      url: 'https://sepolia-explorer.base.org',
     },
   },
   testnet: true,
@@ -76,7 +76,7 @@ const config = {
   x402: {
     facilitatorUrl: process.env.X402_FACILITATOR_URL || 'http://localhost:3000/api/x402/facilitator',
     payToAddress: process.env.X402_PAY_TO_ADDRESS || process.env.CONTRACT_ADDRESS,
-    network: 'shape-sepolia',
+    network: 'base-sepolia',
     assetAddress: '0x0000000000000000000000000000000000000000', // ETH
     assetName: 'ETH'
   }
@@ -84,7 +84,7 @@ const config = {
 
 // Initialize clients
 const publicClient = createPublicClient({
-  chain: shapeSepolia,
+  chain: baseSepolia,
   transport: http(config.blockchain.rpcUrl)
 });
 
@@ -92,7 +92,7 @@ let agentWallet = null;
 if (config.wallet.privateKey) {
   const account = privateKeyToAccount(config.wallet.privateKey);
   agentWallet = createWalletClient({
-    chain: shapeSepolia,
+    chain: baseSepolia,
     transport: http(config.blockchain.rpcUrl),
     account: account
   });
