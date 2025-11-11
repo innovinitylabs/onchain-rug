@@ -751,7 +751,7 @@ class RugBotAPIServer {
           console.log(chalk.yellow(`   Could not get wallet balance: ${error.message}`));
         }
 
-        res.json({
+        const stats = {
           agentName: config.agent.name,
           walletAddress: config.wallet.address || 'Not configured',
           walletBalance: walletBalance,
@@ -761,6 +761,12 @@ class RugBotAPIServer {
           maintenanceCount: this.maintenanceCount,
           contractAddress: config.blockchain.contractAddress,
           network: config.blockchain.chainId === 84532 ? 'Base Sepolia' : 'Shape Sepolia'
+        };
+
+        console.log(chalk.green(`✅ API: Agent stats retrieved (free)`));
+        res.json({
+          success: true,
+          data: stats
         });
       } catch (error) {
         console.error('Agent stats error:', error);

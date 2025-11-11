@@ -462,6 +462,7 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
       });
 
       let result = await response.json();
+      console.log(chalk.gray(`   API response status: ${response.status}, result:`, JSON.stringify(result)));
 
       // Handle different response types
       if (!isFreeOperation && response.status === 402 && result.x402) {
@@ -581,6 +582,14 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
             ...result,
             message: `Cannot perform ${actionName} on this rug: ${result.error}`,
             operationNotAvailable: true,
+            formatted: true
+          };
+        } else if (name === 'get_stats' && result.data) {
+          // Format agent stats nicely
+          const stats = result.data;
+          return {
+            ...result,
+            message: `Agent Stats: ${stats.agentName} has ${stats.walletBalanceEth} ETH in wallet, paid ${stats.totalServiceFeesPaidEth} ETH in service fees, performed ${stats.maintenanceCount} maintenance operations.`,
             formatted: true
           };
         } else if (['clean_rug', 'restore_rug', 'master_restore_rug'].includes(name) && !args?.confirmed) {
