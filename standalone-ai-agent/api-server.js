@@ -363,28 +363,27 @@ class RugBotAPIServer {
           args: [BigInt(tokenId)]
         });
 
-        // Get additional rug data
-        const [dirtLevel, agingLevel, frameLevel, maintenanceScore] = await publicClient.readContract({
-          address: config.blockchain.contractAddress,
-          abi: RugMaintenanceAbi,
-          functionName: 'getRugData',
-          args: [BigInt(tokenId)]
-        });
+        // Calculate derived status from maintenance options
+        const dirtLevel = canClean ? 1 : 0; // Simplified - if can clean, has dirt
+        const agingLevel = canRestore ? 1 : 0; // Simplified - if can restore, has aging
+        const frameLevel = 0; // Not available in current contract
+        const maintenanceScore = needsMaster ? 50 : 100; // Simplified score
 
         const status = {
           tokenId,
           canClean,
           canRestore,
           needsMaster,
+          dirtLevel,
+          agingLevel,
+          frameLevel,
+          maintenanceScore,
           cleaningCost: cleaningCost.toString(),
           restorationCost: restorationCost.toString(),
           masterCost: masterCost.toString(),
           cleaningCostEth: formatEther(cleaningCost),
           restorationCostEth: formatEther(restorationCost),
           masterCostEth: formatEther(masterCost),
-          dirtLevel: parseInt(dirtLevel),
-          agingLevel: parseInt(agingLevel),
-          frameLevel: parseInt(frameLevel),
           maintenanceScore: parseInt(maintenanceScore)
         };
 
