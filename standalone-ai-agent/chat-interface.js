@@ -294,11 +294,17 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
       // Validate required parameters for maintenance operations
       const maintenanceOps = ['clean_rug', 'restore_rug', 'master_restore_rug'];
       if (maintenanceOps.includes(name)) {
+        console.log(chalk.gray(`🔧 Parsing maintenance params for ${name}`));
+
         // Parse tokenId - allow string or number
         let tokenId = args?.tokenId;
+        console.log(chalk.gray(`   Raw tokenId:`, tokenId, `type:`, typeof tokenId));
+
         if (typeof tokenId === 'string') {
           tokenId = parseInt(tokenId, 10);
+          console.log(chalk.gray(`   Parsed tokenId:`, tokenId));
         }
+
         if (!args || isNaN(tokenId) || typeof tokenId !== 'number') {
           console.log(chalk.red(`❌ ${name} requires valid tokenId (number) parameter, got:`, args?.tokenId));
           return {
@@ -307,15 +313,23 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
           };
         }
 
-        // Parse confirmed - default to false if not provided
+        // Parse confirmed - handle string booleans and defaults
         let confirmed = args?.confirmed;
-        if (typeof confirmed !== 'boolean') {
+        console.log(chalk.gray(`   Raw confirmed:`, confirmed, `type:`, typeof confirmed));
+
+        if (typeof confirmed === 'string') {
+          confirmed = confirmed.toLowerCase() === 'true';
+          console.log(chalk.gray(`   Parsed confirmed from string:`, confirmed));
+        } else if (typeof confirmed !== 'boolean') {
           confirmed = false; // Default to quote mode
+          console.log(chalk.gray(`   Defaulted confirmed to:`, confirmed));
         }
 
         // Update args with parsed values
         args.tokenId = tokenId;
         args.confirmed = confirmed;
+
+        console.log(chalk.green(`✅ Parsed params: tokenId=${tokenId}, confirmed=${confirmed}`));
       }
 
       // Validate required parameters for check_rug

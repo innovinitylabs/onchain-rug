@@ -185,6 +185,14 @@ console.log(chalk.gray(`   Facilitator URL: ${config.x402.facilitatorUrl}`));
 
 // Rug Maintenance Contract ABI
 const RugMaintenanceAbi = [
+  // ERC721 tokenURI function
+  {
+    inputs: [{ name: 'tokenId', type: 'uint256' }],
+    name: 'tokenURI',
+    outputs: [{ name: '', type: 'string' }],
+    stateMutability: 'view',
+    type: 'function'
+  },
   {
     inputs: [{ name: 'agent', type: 'address' }],
     name: 'authorizeMaintenanceAgent',
@@ -372,6 +380,7 @@ class RugBotAPIServer {
         const tokenId = parseInt(req.params.tokenId);
         console.log(chalk.blue(`🔍 API: Checking rug #${tokenId} status (free)`));
 
+        // Get maintenance options from contract
         const [canClean, canRestore, needsMaster, cleaningCost, restorationCost, masterCost] = await publicClient.readContract({
           address: config.blockchain.contractAddress,
           abi: RugMaintenanceAbi,
@@ -379,11 +388,47 @@ class RugBotAPIServer {
           args: [BigInt(tokenId)]
         });
 
-        // Calculate derived status from maintenance options
-        const dirtLevel = canClean ? 1 : 0; // Simplified - if can clean, has dirt
-        const agingLevel = canRestore ? 1 : 0; // Simplified - if can restore, has aging
-        const frameLevel = 0; // Not available in current contract
-        const maintenanceScore = needsMaster ? 50 : 100; // Simplified score
+        // Get real rug data from tokenURI metadata
+        const tokenUri = await publicClient.readContract({
+          address: config.blockchain.contractAddress,
+          abi: RugMaintenanceAbi,
+          functionName: 'tokenURI',
+          args: [BigInt(tokenId)]
+        });
+
+        console.log(chalk.gray(`   Token URI: ${tokenUri}`));
+
+        // Fetch metadata from tokenURI
+        let metadata = {};
+        try {
+          const metadataResponse = await fetch(tokenUri);
+          if (metadataResponse.ok) {
+            metadata = await metadataResponse.json();
+            console.log(chalk.gray(`   Fetched metadata with ${Object.keys(metadata).length} properties`));
+          } else {
+            console.log(chalk.yellow(`   Failed to fetch metadata: ${metadataResponse.status}`));
+          }
+        } catch (error) {
+          console.log(chalk.yellow(`   Error fetching metadata: ${error.message}`));
+        }
+
+        // Extract traits from metadata
+        const attributes = metadata.attributes || metadata.traits || [];
+        const traits = {};
+        attributes.forEach(attr => {
+          if (attr.trait_type && attr.value !== undefined) {
+            traits[attr.trait_type.toLowerCase().replace(/\s+/g, '')] = attr.value;
+          }
+        });
+
+        // Get real values from traits
+        const dirtLevel = parseInt(traits.dirtlevel || traits.dirt_level || '0') || 0;
+        const agingLevel = parseInt(traits.aginglevel || traits.aging_level || '0') || 0;
+        const frameLevel = parseInt(traits.frame || traits.framelevel || '0') || 0;
+        const maintenanceScore = parseInt(traits.maintenancescore || traits.maintenance_score || '100') || 100;
+
+        console.log(chalk.gray(`   Real status: dirt=${dirtLevel}, aging=${agingLevel}, frame=${frameLevel}, score=${maintenanceScore}`));
+        console.log(chalk.gray(`   Contract status: canClean=${canClean}, canRestore=${canRestore}, needsMaster=${needsMaster}`));
 
         const status = {
           tokenId,
