@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { callContractMultiFallback } from '@/lib/web3'
-import { getContractAddress, DEFAULT_CHAIN_ID, getNetworkByChainId } from '@/lib/networks'
+import { getContractAddress, DEFAULT_CHAIN_ID, getNetworkByChainId, CONTRACT_ADDRESSES } from '@/lib/networks'
 import { createPaymentRequiredResponse } from '@/lib/x402'
 import { formatEther } from 'viem'
 
@@ -42,7 +42,6 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ to
     const tokenId = params.tokenId
     const action = params.action
     const chainId = DEFAULT_CHAIN_ID
-    console.log('Quote endpoint - chainId:', chainId, 'contract:', getContractAddress(chainId))
     const contract = getContractAddress(chainId)
     if (!contract) {
       return NextResponse.json({ error: 'Contract not configured for this network' }, { status: 500 })

@@ -258,6 +258,8 @@ IMPORTANT NOTES:
 - Always get accurate data from APIs - never make up numbers
 - Rug ownership is determined by calling /owner/rugs API
 - Service fees are 0.00042 ETH flat for all maintenance actions
+- If a tool returns an error, acknowledge the failure and don't claim success
+- Only report success when tool results confirm the operation worked
 - Authorization happens through the website dashboard
 - You work on Shape Sepolia testnet
 - When user confirms with "yes", immediately call the tool
@@ -600,12 +602,13 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
           const result = await this.executeToolCall(toolCall);
 
           if (result === null) {
-            // Tool failed - add error message to conversation instead of null
+            // Tool failed - add clear error message to conversation
             this.conversationHistory.push({
               role: 'tool',
               content: JSON.stringify({
-                error: 'Tool execution failed - payment may be required',
-                suggestion: 'Please try again or check your wallet connection'
+                error: `The ${name} operation failed`,
+                status: 'failed',
+                suggestion: 'The operation could not be completed. Check your wallet connection and try again.'
               }),
               tool_call_id: toolCall.id
             });
