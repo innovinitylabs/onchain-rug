@@ -234,7 +234,10 @@ WORKFLOW:
 4. User confirms → Agent automatically handles X402 payment and executes
 5. No manual payments - all X402 transactions are automatic
 
-REQUIRED PARAMETER: confirmed must ALWAYS be included - false for quotes, true for execution
+PARAMETER HANDLING:
+- Parse rug numbers from user input (e.g., "rug 1" = tokenId: 1)
+- confirmed must ALWAYS be included - false for quotes, true for execution
+- tokenId should be a number (will be auto-parsed from strings)
 
 EXAMPLE FLOWS:
 
@@ -244,7 +247,7 @@ AI: Calls get_rugs() → Returns rug list (no payment required)
 
 MAINTENANCE WITH PAYMENT:
 User: "clean rug 1"
-AI: Calls clean_rug(tokenId=1, confirmed=false) → Gets quote → Shows cost and asks confirmation
+AI: Parse "rug 1" as tokenId=1 → Calls clean_rug(tokenId=1, confirmed=false) → Gets quote → Shows cost and asks confirmation
 User: "yes"
 AI: Automatically handles X402 payment → Gets authorization token → Executes maintenance → "Rug cleaned!"
 
@@ -286,28 +289,49 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
   async executeToolCall(toolCall) {
     try {
       const { name, arguments: args } = toolCall.function;
+      console.log(chalk.blue(`🔍 Tool call: ${name}, args:`, JSON.stringify(args)));
 
       // Validate required parameters for maintenance operations
       const maintenanceOps = ['clean_rug', 'restore_rug', 'master_restore_rug'];
       if (maintenanceOps.includes(name)) {
-        if (!args || typeof args.tokenId !== 'number' || typeof args.confirmed !== 'boolean') {
-          console.log(chalk.red(`❌ ${name} requires tokenId (number) and confirmed (boolean) parameters`));
+        // Parse tokenId - allow string or number
+        let tokenId = args?.tokenId;
+        if (typeof tokenId === 'string') {
+          tokenId = parseInt(tokenId, 10);
+        }
+        if (!args || isNaN(tokenId) || typeof tokenId !== 'number') {
+          console.log(chalk.red(`❌ ${name} requires valid tokenId (number) parameter, got:`, args?.tokenId));
           return {
-            error: `${name} requires tokenId and confirmed parameters`,
+            error: `${name} requires valid tokenId (number) parameter`,
             missingParameters: true
           };
         }
+
+        // Parse confirmed - default to false if not provided
+        let confirmed = args?.confirmed;
+        if (typeof confirmed !== 'boolean') {
+          confirmed = false; // Default to quote mode
+        }
+
+        // Update args with parsed values
+        args.tokenId = tokenId;
+        args.confirmed = confirmed;
       }
 
       // Validate required parameters for check_rug
       if (name === 'check_rug') {
-        if (!args || typeof args.tokenId !== 'number') {
-          console.log(chalk.red(`❌ check_rug requires tokenId parameter`));
+        let tokenId = args?.tokenId;
+        if (typeof tokenId === 'string') {
+          tokenId = parseInt(tokenId, 10);
+        }
+        if (!args || isNaN(tokenId) || typeof tokenId !== 'number') {
+          console.log(chalk.red(`❌ check_rug requires valid tokenId (number) parameter, got:`, args?.tokenId));
           return {
-            error: `check_rug requires tokenId parameter`,
+            error: `check_rug requires valid tokenId (number) parameter`,
             missingParameters: true
           };
         }
+        args.tokenId = tokenId;
       }
 
       // Validate that get_stats has no parameters
