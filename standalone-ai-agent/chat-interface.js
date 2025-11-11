@@ -221,37 +221,36 @@ Available Tools (ALL FREE within paid session):
 - restore_rug: Restore a rug (get quote first, then confirm)
 - master_restore_rug: Master restore a rug (get quote first, then confirm)
 
-X402 PAYMENT MODEL - SESSION-BASED ACCESS:
-- Pay once (0.001 ETH) for 5-minute agent access session
-- Get unlimited use of all agent features within session
-- Agent handles blockchain transactions as part of service
-- No per-operation payments - all included in session fee
+X402 PAYMENT MODEL - PER-OPERATION:
+- Information queries (rug ownership, status) are FREE
+- Maintenance operations (cleaning, restoration) require X402 payment
+- Pay per maintenance action using X402 facilitator
+- Agent handles X402 payments and blockchain execution
 
 WORKFLOW:
-1. User starts chat → Agent requires 0.001 ETH payment
-2. User pays → Gets full agent access for 5 minutes
-3. User can request maintenance, check status, etc. (all free)
-4. Agent executes blockchain operations using its wallet
-5. Session expires after 5 minutes
+1. User asks questions → Free info queries work immediately
+2. User requests maintenance → Agent shows X402 payment requirement
+3. User pays X402 → Gets authorization token
+4. Agent executes maintenance using token (free on-chain)
+5. No session limits - pay per maintenance operation
 
 REQUIRED PARAMETER: confirmed must ALWAYS be included - false for quotes, true for execution
 
 EXAMPLE FLOWS:
 
-SUCCESSFUL FLOW:
+FREE INFO QUERY:
+User: "how many rugs do I own?"
+AI: Calls get_rugs() → Returns rug list (no payment required)
+
+MAINTENANCE WITH PAYMENT:
 User: "clean rug 1"
-AI: Calls clean_rug(tokenId=1, confirmed=false) → Gets quote → "Cost is 0.00043 ETH. Confirm? (yes/no)"
-User: "yes"
-AI: Calls clean_rug(tokenId=1, confirmed=true) → Executes with payment → "Rug cleaned!"
+AI: Calls clean_rug(tokenId=1, confirmed=false) → Gets quote → Shows X402 payment requirement
+User: Pays X402 → AI gets authorization token
+AI: Calls clean_rug(tokenId=1, confirmed=true) → Executes maintenance → "Rug cleaned!"
 
 UNAVAILABLE OPERATION:
 User: "restore rug 2"
-AI: Calls restore_rug(tokenId=2, confirmed=false) → Gets "Restoration not available"
-AI: Tells user "Cannot perform restore on rug 2: Restoration not available"
-4. You call the appropriate tool
-5. User says "no" - you politely decline
-
-For read-only actions (get_rugs, get_stats, check_rug), you can call the tools immediately without confirmation.
+AI: Calls restore_rug(tokenId=2, confirmed=false) → "Restoration not available for this rug"
 
 IMPORTANT NOTES:
 - Always get accurate data from APIs - never make up numbers
@@ -324,8 +323,9 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
 
       console.log(chalk.blue(`🔧 Executing ${name}...`));
 
-      // Since user has paid for agent access, all operations are free within the session
-      const isFreeOperation = true;
+      // Define which operations are free vs require payment
+      const freeOperations = ['get_rugs', 'get_stats', 'check_rug'];
+      const isFreeOperation = freeOperations.includes(name);
 
       // Add agent address header for X402 authorization
       const headers = {
@@ -537,51 +537,7 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
 
   async chatWithAgent(userInput) {
     try {
-      // Check if user has paid for agent access
-      if (!this.hasPaidForAccess) {
-        console.log(chalk.yellow(`💰 User hasn't paid for agent access yet`));
-
-        // Check if this is an X402 payment submission
-        if (userInput.includes('x402-payment-payload') || userInput.includes('payment-submitted')) {
-          // Handle payment verification for agent access
-          console.log(chalk.blue(`🔐 Processing agent access payment...`));
-
-          // For now, simulate payment verification (in production, verify with facilitator)
-          this.hasPaidForAccess = true;
-          console.log(chalk.green(`✅ Agent access granted!`));
-
-          return {
-            success: true,
-            message: 'Payment verified! You now have access to Agent Rug for 5 minutes. How can I help you with your digital rugs?',
-            accessGranted: true,
-            sessionDuration: 300000 // 5 minutes
-          };
-        }
-
-        // Return X402 payment requirement for agent access
-        return {
-          error: 'Payment Required',
-          x402: {
-            x402Version: 1,
-            accepts: [{
-              scheme: 'exact',
-              network: 'base-sepolia',
-              asset: '0x0000000000000000000000000000000000000000', // ETH
-              payTo: process.env.X402_PAY_TO_ADDRESS || '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
-              maxAmountRequired: '1000000000000000', // 0.001 ETH for agent access
-              resource: '/agent/access',
-              description: 'Agent Rug access session (5 minutes)',
-              mimeType: 'application/json',
-              maxTimeoutSeconds: 300, // 5 minutes
-              extra: {
-                facilitatorUrl: `${this.apiBaseUrl}/api/x402/facilitator`,
-                accessDuration: 300000, // 5 minutes in ms
-                service: 'AI Agent Access'
-              }
-            }]
-          }
-        };
-      }
+      // No global payment requirement - operations handle their own payment logic
 
       // Add user message to conversation
       this.conversationHistory.push({ role: 'user', content: userInput });
