@@ -118,13 +118,13 @@ class AgentRugChat {
         type: 'function',
         function: {
           name: 'check_rug',
-          description: 'Check the status of a specific rug',
+          description: 'Check the status of a specific rug by token ID',
           parameters: {
             type: 'object',
             properties: {
               tokenId: {
                 type: 'integer',
-                description: 'The token ID of the rug to check'
+                description: 'The token ID number of the rug to check (e.g., 1 for rug #1)'
               }
             },
             required: ['tokenId']
@@ -235,15 +235,19 @@ WORKFLOW:
 5. No manual payments - all X402 transactions are automatic
 
 PARAMETER HANDLING:
-- Parse rug numbers from user input (e.g., "rug 1" = tokenId: 1)
-- confirmed must ALWAYS be included - false for quotes, true for execution
-- tokenId should be a number (will be auto-parsed from strings)
+- Parse rug numbers from user input: "rug 1" or "rug #1" or "token 1" = tokenId: 1
+- For check_rug: ONLY provide tokenId (integer), no other parameters
+- For maintenance operations: provide tokenId (integer) and confirmed (boolean)
+- Always extract the specific rug number mentioned by the user
 
 EXAMPLE FLOWS:
 
 FREE INFO QUERY:
 User: "how many rugs do I own?"
 AI: Calls get_rugs() → Returns rug list (no payment required)
+
+User: "is rug 1 clean?" or "check rug 1"
+AI: Calls check_rug(tokenId=1) → Returns rug status (no payment required)
 
 MAINTENANCE WITH PAYMENT:
 User: "clean rug 1"
@@ -266,6 +270,8 @@ IMPORTANT NOTES:
 - Only report success when tool results confirm the operation worked
 - NEVER call tools with incorrect parameters - check the tool definitions first
 - When operations fail, explain what went wrong and ask for clarification
+- For questions like "is rug X clean/dirty/status", immediately call check_rug(tokenId=X)
+- For questions about "my rugs", first call get_rugs() to see what they own
 - Authorization happens through the website dashboard
 - You work on Shape Sepolia testnet
 - When user confirms with "yes", immediately call the tool
