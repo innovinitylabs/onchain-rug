@@ -29,7 +29,8 @@ const config = {
     baseUrl: process.env.API_BASE_URL || 'http://localhost:3001'
   },
   wallet: {
-    address: process.env.AGENT_ADDRESS
+    address: process.env.AGENT_ADDRESS,
+    privateKey: process.env.AGENT_PRIVATE_KEY
   }
 };
 
@@ -42,6 +43,12 @@ class AgentRugChat {
     // Use website API instead of agent API for proper X402 flow
     this.apiBaseUrl = process.env.WEBSITE_API_URL || 'http://localhost:3000';
     this.hasPaidForAccess = false; // Track if user has paid for agent access
+
+    // Debug wallet configuration
+    console.log('🔑 Agent wallet config:', {
+      address: config.wallet.address,
+      privateKeyLength: config.wallet.privateKey ? config.wallet.privateKey.length : 'undefined'
+    });
     this.ollamaProcess = null; // Track Ollama process if we start it
   }
 
