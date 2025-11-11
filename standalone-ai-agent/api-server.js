@@ -855,15 +855,24 @@ Keep the personalityNote enthusiastic and in character as ${config.agent.name}!`
 
     try {
       console.log(chalk.gray('📋 Testing contract connection...'));
-      const [serviceFee, feeRecipient] = await publicClient.readContract({
+      console.log(chalk.gray(`   Contract: ${config.blockchain.contractAddress}`));
+      console.log(chalk.gray(`   RPC: ${config.blockchain.rpcUrl}`));
+      console.log(chalk.gray(`   Chain ID: ${config.blockchain.chainId}`));
+
+      const result = await publicClient.readContract({
         address: config.blockchain.contractAddress,
         abi: RugMaintenanceAbi,
         functionName: 'getAgentServiceFee'
       });
-      console.log(chalk.green(`✅ Contract connected (Service fee: ${formatEther(serviceFee)} ETH)`));
+
+      console.log(chalk.gray(`   Raw result: [${result[0]?.toString()}, ${result[1]}]`));
+
+      const [serviceFee, feeRecipient] = result;
+      console.log(chalk.green(`✅ Contract connected (Service fee: ${formatEther(serviceFee)} ETH, Recipient: ${feeRecipient})`));
     } catch (error) {
       console.log(chalk.red('❌ Contract connection failed:', error.message));
-      console.log(chalk.yellow('💡 Check your CONTRACT_ADDRESS configuration'));
+      console.log(chalk.red('   Full error:', error));
+      console.log(chalk.yellow('💡 Check your CONTRACT_ADDRESS and network configuration'));
       return;
     }
 
