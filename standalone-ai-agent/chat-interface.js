@@ -536,7 +536,7 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
         network: paymentReq.network,
         asset: paymentReq.asset,
         amount: paymentReq.maxAmountRequired,
-        from: process.env.AGENT_ADDRESS || '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
+        from: process.env.AGENT_ADDRESS,
         to: paymentReq.payTo,
         nonce: Math.floor(Math.random() * 1000000).toString(),
         deadline: Math.floor(Date.now() / 1000) + 900 // 15 minutes

@@ -61,7 +61,7 @@ const config = {
   blockchain: {
     rpcUrl: process.env.RPC_URL || 'https://sepolia.shape.network',
     chainId: parseInt(process.env.CHAIN_ID || '11011'),
-    contractAddress: process.env.CONTRACT_ADDRESS || '0x5E63d07BDa3987da3A0CaCD69d829b9E11C1f325'
+    contractAddress: process.env.CONTRACT_ADDRESS
   },
   wallet: {
     privateKey: process.env.AGENT_PRIVATE_KEY,

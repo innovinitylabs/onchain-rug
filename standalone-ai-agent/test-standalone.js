@@ -26,7 +26,7 @@ const config = {
   },
   blockchain: {
     rpcUrl: process.env.RPC_URL || 'https://sepolia.shape.network',
-    contractAddress: process.env.CONTRACT_ADDRESS || '0x5E63d07BDa3987da3A0CaCD69d829b9E11C1f325'
+    contractAddress: process.env.CONTRACT_ADDRESS
   },
   test: {
     tokenId: parseInt(process.env.TEST_TOKEN_ID || '1')

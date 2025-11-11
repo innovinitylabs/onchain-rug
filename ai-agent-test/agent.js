@@ -37,7 +37,7 @@ const config = {
   },
   api: {
     baseUrl: process.env.RUG_API_BASE || 'http://localhost:3000',
-    contractAddress: process.env.CONTRACT_ADDRESS || '0xa43532205Fc90b286Da98389a9883347Cc4064a8'
+    contractAddress: process.env.CONTRACT_ADDRESS
   },
   wallet: {
     privateKey: process.env.AGENT_PRIVATE_KEY,
@@ -57,6 +57,22 @@ const config = {
     chainId: parseInt(process.env.CHAIN_ID || '84532')
   }
 };
+
+// Validate required environment variables
+if (!config.api.contractAddress) {
+  console.log('❌ CONTRACT_ADDRESS environment variable is required');
+  process.exit(1);
+}
+
+if (!config.wallet.address) {
+  console.log('❌ AGENT_ADDRESS environment variable is required');
+  process.exit(1);
+}
+
+if (!config.owner.address) {
+  console.log('❌ OWNER_ADDRESS environment variable is required');
+  process.exit(1);
+}
 
 // Initialize clients
 const ollama = new Ollama({

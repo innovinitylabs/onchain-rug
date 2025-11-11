@@ -56,7 +56,7 @@ const config = {
   blockchain: {
     rpcUrl: process.env.RPC_URL || 'https://sepolia.shape.network',
     chainId: parseInt(process.env.CHAIN_ID || '11011'),
-    contractAddress: process.env.CONTRACT_ADDRESS || '0x5E63d07BDa3987da3A0CaCD69d829b9E11C1f325'
+    contractAddress: process.env.CONTRACT_ADDRESS
   },
   wallet: {
     privateKey: process.env.AGENT_PRIVATE_KEY,
@@ -87,6 +87,22 @@ const publicClient = createPublicClient({
   chain: baseSepolia,
   transport: http(config.blockchain.rpcUrl)
 });
+
+// Validate required environment variables
+if (!config.blockchain.contractAddress) {
+  console.log(chalk.red('❌ CONTRACT_ADDRESS environment variable is required'));
+  process.exit(1);
+}
+
+if (!config.wallet.address) {
+  console.log(chalk.red('❌ AGENT_ADDRESS environment variable is required'));
+  process.exit(1);
+}
+
+if (!config.owner.address) {
+  console.log(chalk.red('❌ OWNER_ADDRESS environment variable is required'));
+  process.exit(1);
+}
 
 let agentWallet = null;
 if (config.wallet.privateKey) {
