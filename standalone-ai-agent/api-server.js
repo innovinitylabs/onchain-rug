@@ -387,14 +387,10 @@ class RugBotAPIServer {
           maintenanceScore: parseInt(maintenanceScore)
         };
 
-        console.log(chalk.green(`✅ API: Rug #${tokenId} status retrieved (x402 paid)`));
+        console.log(chalk.green(`✅ API: Rug #${tokenId} status retrieved (free)`));
         res.json({
           success: true,
-          data: status,
-          x402: {
-            paymentVerified: true,
-            settlement: settlement
-          }
+          data: status
         });
       } catch (error) {
         console.log(chalk.red(`❌ API: Error checking rug status:`, error.message));
