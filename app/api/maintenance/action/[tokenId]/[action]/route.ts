@@ -138,6 +138,18 @@ export async function POST(request: NextRequest, context: { params: Promise<{ to
         serviceFee: formatEther(serviceFee)
       })
 
+      // Add extra metadata for agent UX
+      if (paymentRequired.x402?.accepts?.[0]) {
+        paymentRequired.x402.accepts[0].extra = {
+          ...paymentRequired.x402.accepts[0].extra,
+          functionName: functionName,
+          tokenId: tokenId,
+          maintenanceWei: maintenanceWei.toString(),
+          serviceFeeWei: serviceFee.toString(),
+          totalWei: totalWei.toString()
+        }
+      }
+
       console.log(`💰 X402 payment required for ${action} on rug #${tokenId}: ${price} ETH`)
       return NextResponse.json(paymentRequired, { status: 402 })
     }
