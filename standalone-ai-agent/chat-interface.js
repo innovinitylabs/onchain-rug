@@ -23,7 +23,7 @@ dotenv.config();
 const config = {
   ollama: {
     baseUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434',
-    model: 'llama3.1:8b'
+    model: 'deepseek-r1:8b'
   },
   api: {
     baseUrl: process.env.API_BASE_URL || 'http://localhost:3001'
@@ -284,6 +284,12 @@ IMPORTANT NOTES:
 - When user confirms with "yes", immediately call the tool with confirmed=true
 - When user says "no", politely cancel the operation
 - Handle combined commands like "yes clean rug 1" by calling clean_rug(tokenId=1, confirmed=true)
+
+FORMATTED RESPONSES:
+- When you see a tool result that is just a plain text message (not JSON), use it as your final answer EXACTLY as provided
+- Do not modify, rephrase, or add extra information to formatted messages
+- These messages are already perfectly formatted for the user
+- For agent stats, use the message exactly: "Agent Stats: [name] has [balance] ETH in wallet, paid [fees] ETH in service fees, performed [count] maintenance operations."
 
 FEATURES YOU CAN EXPLAIN:
 - OnchainRugs is an NFT project on Shape Sepolia
@@ -746,11 +752,21 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
             });
           } else {
             // Tool succeeded - add result to conversation
-          this.conversationHistory.push({
-            role: 'tool',
-            content: JSON.stringify(result),
-            tool_call_id: toolCall.id
-          });
+            if (result.formatted && result.message) {
+              // For formatted results, use only the message
+              this.conversationHistory.push({
+                role: 'tool',
+                content: result.message,
+                tool_call_id: toolCall.id
+              });
+            } else {
+              // For regular results, use full JSON
+              this.conversationHistory.push({
+                role: 'tool',
+                content: JSON.stringify(result),
+                tool_call_id: toolCall.id
+              });
+            }
           }
         }
 
