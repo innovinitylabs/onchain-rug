@@ -181,31 +181,28 @@ async function verifyPayment(params: { paymentPayload: string }): Promise<NextRe
 
     // For 'exact' scheme, verify the signature
     if (payload.payment.scheme === 'exact') {
-      // Check if this is a mock signature for testing
-      if (payload.signature === '0x' + '00'.repeat(65)) {
-        console.log('✅ Mock signature detected - accepting for testing');
-      } else {
-        // Real signature verification
-        const message = `X402 Payment\nVersion: ${payload.x402Version}\nScheme: ${payload.payment.scheme}\nNetwork: ${payload.payment.network}\nAsset: ${payload.payment.asset}\nAmount: ${payload.payment.amount}\nFrom: ${payload.payment.from}\nTo: ${payload.payment.to}\nNonce: ${payload.payment.nonce}\nDeadline: ${payload.payment.deadline}`
+      // Real signature verification - production ready
+      const message = JSON.stringify(payload.payment);
 
-        try {
-          const recoveredAddress = await recoverMessageAddress({
-            message,
-            signature: payload.signature as `0x${string}`
-          })
+      try {
+        const recoveredAddress = await recoverMessageAddress({
+          message,
+          signature: payload.signature as `0x${string}`
+        })
 
-          if (recoveredAddress.toLowerCase() !== payload.payment.from.toLowerCase()) {
-            return NextResponse.json({
-              isValid: false,
-              invalidReason: 'Invalid signature'
-            })
-          }
-        } catch (error) {
+        if (recoveredAddress.toLowerCase() !== payload.payment.from.toLowerCase()) {
           return NextResponse.json({
             isValid: false,
-            invalidReason: 'Signature verification failed'
+            invalidReason: `Signature verification failed: expected ${payload.payment.from}, got ${recoveredAddress}`
           })
         }
+
+        console.log(`✅ Real signature verified for payment from ${recoveredAddress}`);
+      } catch (error) {
+        return NextResponse.json({
+          isValid: false,
+          invalidReason: `Signature verification error: ${error.message}`
+        })
       }
     }
 

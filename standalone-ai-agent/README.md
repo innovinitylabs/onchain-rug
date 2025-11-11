@@ -7,7 +7,7 @@ A **completely self-contained** AI agent that autonomously maintains digital rug
 - 🚀 **100% Standalone** - No dependencies on main project
 - 🧠 **AI-Powered Decisions** - Uses Ollama for intelligent maintenance
 - ⛓️ **Direct Blockchain** - Connects directly to contracts
-- 💰 **Service Fees** - Pays service fees for maintenance actions
+- 💰 **Production X402** - Real cryptographic signatures (not mock)
 - 💬 **Chat Interface** - Talk to your AI agent conversationally
 - 🔄 **Autonomous Operation** - Runs 24/7 maintenance cycles
 - 🎮 **Ollama GUI Integration** - Chat in GUI, perform real transactions!
@@ -166,7 +166,7 @@ All Actions:   0.00042 ETH flat service fee (you pay this)
 ```
 
 ### Network: Base Sepolia (X402 Enabled)
-- **Contract**: `0xa46228a11e6C79f4f5D25038a3b712EBCB8F3459`
+- **Contract**: `0x15c5a551b8aA39a3A4E73643a681E71F76093b62`
 - **RPC**: `https://sepolia.base.org`
 - **Chain ID**: 84532
 - **Explorer**: https://sepolia-explorer.base.org
@@ -225,7 +225,7 @@ OLLAMA_MODEL=deepseek-r1:8b
 # Blockchain Configuration (Base Sepolia - X402 Enabled)
 RPC_URL=https://sepolia.base.org
 CHAIN_ID=84532
-CONTRACT_ADDRESS=0xa46228a11e6C79f4f5D25038a3b712EBCB8F3459
+CONTRACT_ADDRESS=0x15c5a551b8aA39a3A4E73643a681E71F76093b62
 
 # Agent Wallet (for real transactions)
 AGENT_PRIVATE_KEY=0x...

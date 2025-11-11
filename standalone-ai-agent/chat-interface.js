@@ -450,6 +450,8 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
   }
 
   async createX402PaymentPayload(paymentReq) {
+    const { keccak256, encodeAbiParameters } = await import('viem');
+
     // Create X402 payment payload
     const paymentPayload = {
       x402Version: 1,
@@ -462,12 +464,28 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
         to: paymentReq.payTo,
         nonce: Math.floor(Math.random() * 1000000).toString(),
         deadline: Math.floor(Date.now() / 1000) + 900 // 15 minutes
-      },
-      signature: '0x' + '00'.repeat(65) // Placeholder signature (would be real in production)
+      }
     };
 
-    // In production, you would sign this payload with the agent's private key
-    // For now, we'll use a mock signature that the facilitator will accept for testing
+    // Create message to sign (the payment object)
+    const messageToSign = JSON.stringify(paymentPayload.payment);
+
+    // Sign with agent's private key using viem
+    const { privateKeyToAccount, hashMessage } = await import('viem/accounts');
+
+    if (!process.env.AGENT_PRIVATE_KEY) {
+      throw new Error('AGENT_PRIVATE_KEY environment variable is required for X402 signing');
+    }
+
+    const account = privateKeyToAccount(process.env.AGENT_PRIVATE_KEY);
+    const signature = await account.signMessage({ message: messageToSign });
+
+    // Add signature to payload
+    paymentPayload.signature = signature;
+
+    console.log(chalk.blue(`🔏 Signed X402 payment payload with agent address: ${account.address}`));
+    console.log(chalk.gray(`   Amount: ${paymentPayload.payment.amount} ETH`));
+    console.log(chalk.gray(`   Nonce: ${paymentPayload.payment.nonce}`));
 
     return paymentPayload;
   }
