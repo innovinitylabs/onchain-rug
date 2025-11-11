@@ -251,9 +251,9 @@ AI: Calls check_rug(tokenId=1) → Returns rug status (no payment required)
 
 MAINTENANCE WITH PAYMENT:
 User: "clean rug 1"
-AI: Parse "rug 1" as tokenId=1 → Calls clean_rug(tokenId=1, confirmed=false) → Gets quote → Shows cost and asks confirmation
+AI: Parse "rug 1" as tokenId=1 → Calls clean_rug(tokenId=1, confirmed=false) → Gets quote → Shows cost: "Cost for cleaning rug 1: 0.000430 ETH. Confirm?"
 User: "yes"
-AI: Automatically handles X402 payment → Gets authorization token → Executes maintenance → "Rug cleaned!"
+AI: Calls clean_rug(tokenId=1, confirmed=true) → Automatically handles X402 payment → Executes maintenance → "Rug cleaned!"
 
 User: "yes clean rug 1"
 AI: Parse combined command → Calls clean_rug(tokenId=1, confirmed=true) → Handles X402 payment and executes
@@ -459,36 +459,53 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
 
       let result = await response.json();
 
-      // Handle X402 payment requirements (only for non-free operations)
+      // Handle different response types
       if (!isFreeOperation && response.status === 402 && result.x402) {
-        console.log(chalk.yellow(`💰 X402 payment required for ${name}`));
+        if (args?.confirmed) {
+          // Confirmed action call - handle X402 payment automatically
+          console.log(chalk.yellow(`💰 X402 payment required for ${name} execution`));
 
-        // Create signed payment payload
-        const paymentPayload = await this.createX402PaymentPayload(result.x402.accepts[0]);
+          // Create signed payment payload
+          const paymentPayload = await this.createX402PaymentPayload(result.x402.accepts[0]);
 
-        console.log(chalk.blue(`🔏 Submitting X402 payment...`));
+          console.log(chalk.blue(`🔏 Submitting X402 payment...`));
 
-        // Retry with payment headers
-        console.log(chalk.gray(`   Submitting payment to: ${url}`));
-        const paymentHeaders = {
-          'Content-Type': 'application/json',
-          'x402-payment-payload': JSON.stringify(paymentPayload),
-          'x402-payment-status': 'payment-submitted'
-        };
+          // Retry with payment headers
+          console.log(chalk.gray(`   Submitting payment to: ${url}`));
+          const paymentHeaders = {
+            'Content-Type': 'application/json',
+            'x402-payment-payload': JSON.stringify(paymentPayload),
+            'x402-payment-status': 'payment-submitted'
+          };
 
-        if (config.wallet.address) {
-          paymentHeaders['x-agent-address'] = config.wallet.address;
+          if (config.wallet.address) {
+            paymentHeaders['x-agent-address'] = config.wallet.address;
+          }
+
+          response = await fetch(url, {
+            method,
+            headers: paymentHeaders,
+            body
+          });
+
+          console.log(chalk.gray(`   Payment response status: ${response.status}`));
+          result = await response.json();
+          console.log(chalk.gray(`   Payment result: ${JSON.stringify(result)}`));
+        } else {
+          // Quote call - show cost to user and ask for confirmation
+          console.log(chalk.blue(`💰 Quote received for ${name}`));
+          const requirement = result.x402.accepts[0];
+          const costEth = parseFloat(requirement.maxAmountRequired) / 1e18;
+
+          return {
+            quote: true,
+            action: name.replace('_rug', ''),
+            tokenId: args.tokenId,
+            cost: costEth.toFixed(6),
+            description: requirement.description,
+            message: `Cost for ${name.replace('_rug', 'ing')} rug ${args.tokenId}: ${costEth.toFixed(6)} ETH. Confirm?`
+          };
         }
-
-        response = await fetch(url, {
-          method,
-          headers: paymentHeaders,
-          body
-        });
-
-        console.log(chalk.gray(`   Payment response status: ${response.status}`));
-        result = await response.json();
-        console.log(chalk.gray(`   Payment result: ${JSON.stringify(result)}`));
       }
 
       if (response.ok && result.success) {
@@ -696,6 +713,21 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
                 suggestion: result?.missingParameters
                   ? 'Please provide the required parameters and try again.'
                   : 'The operation could not be completed. Check your input and try again.'
+              }),
+              tool_call_id: toolCall.id
+            });
+          } else if (result.quote) {
+            // Quote response - user needs to confirm
+            this.conversationHistory.push({
+              role: 'tool',
+              content: JSON.stringify({
+                quote: result,
+                status: 'quote',
+                operation: name,
+                message: result.message,
+                cost: result.cost,
+                action: result.action,
+                tokenId: result.tokenId
               }),
               tool_call_id: toolCall.id
             });
