@@ -404,7 +404,6 @@ class RugBotAPIServer {
           const metadataResponse = await fetch(tokenUri);
           if (metadataResponse.ok) {
             metadata = await metadataResponse.json();
-            console.log(chalk.gray(`   Fetched metadata with ${Object.keys(metadata).length} properties`));
           } else {
             console.log(chalk.yellow(`   Failed to fetch metadata: ${metadataResponse.status}`));
           }
@@ -427,8 +426,7 @@ class RugBotAPIServer {
         const frameLevel = parseInt(traits.frame || traits.framelevel || '0') || 0;
         const maintenanceScore = parseInt(traits.maintenancescore || traits.maintenance_score || '100') || 100;
 
-        console.log(chalk.gray(`   Real status: dirt=${dirtLevel}, aging=${agingLevel}, frame=${frameLevel}, score=${maintenanceScore}`));
-        console.log(chalk.gray(`   Contract status: canClean=${canClean}, canRestore=${canRestore}, needsMaster=${needsMaster}`));
+        console.log(chalk.gray(`   Status: dirt=${dirtLevel}, aging=${agingLevel}, score=${maintenanceScore}, clean=${canClean}, restore=${canRestore}, master=${needsMaster}`));
 
         const status = {
           tokenId,
