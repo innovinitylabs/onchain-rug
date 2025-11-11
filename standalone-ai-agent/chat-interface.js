@@ -852,15 +852,16 @@ async function main() {
     process.exit(1);
   }
 
-  // Check for Llama 3.1 model
+  // Check for configured model
   try {
     const models = await chat.ollama.list();
-    const hasModel = models.models.some(m => m.name.includes('llama3.1'));
+    const modelName = config.ollama.model.split(':')[0]; // Get base name (e.g., 'deepseek-r1' from 'deepseek-r1:8b')
+    const hasModel = models.models.some(m => m.name.includes(modelName));
     if (!hasModel) {
-      console.log(chalk.red('❌ Llama 3.1 model not found. Please run: ollama pull llama3.1:8b'));
+      console.log(chalk.red(`❌ ${modelName} model not found. Please run: ollama pull ${config.ollama.model}`));
       process.exit(1);
     }
-    console.log(chalk.green('✅ Llama 3.1 ready with tool calling'));
+    console.log(chalk.green(`✅ ${modelName} ready with tool calling`));
   } catch (error) {
     console.log(chalk.red('❌ Failed to check models:'), error.message);
     process.exit(1);
