@@ -243,12 +243,13 @@ User: "how many rugs do I own?"
 AI: Calls get_rugs() → Returns rug list (no payment required)
 
 MAINTENANCE WITH PAYMENT:
-User: "clean my rugs"
-AI: First calls get_rugs() → Discovers user's rugs → "You own rugs #1, #2, #3. Which one would you like to clean?"
 User: "clean rug 1"
 AI: Calls clean_rug(tokenId=1, confirmed=false) → Gets quote → Shows cost and asks confirmation
 User: "yes"
 AI: Automatically handles X402 payment → Gets authorization token → Executes maintenance → "Rug cleaned!"
+
+User: "clean my rugs"
+AI: First calls get_rugs() → Discovers user's rugs → "You own rugs #1, #2, #3. Which one would you like to clean?"
 
 UNAVAILABLE OPERATION:
 User: "restore rug 2"
@@ -256,10 +257,12 @@ AI: Calls restore_rug(tokenId=2, confirmed=false) → "Restoration not available
 
 IMPORTANT NOTES:
 - Always get accurate data from APIs - never make up numbers
-- Rug ownership is determined by calling /owner/rugs API
+- Rug ownership is determined by calling get_rugs() API
 - Service fees are 0.00042 ETH flat for all maintenance actions
 - If a tool returns an error, acknowledge the failure and don't claim success
 - Only report success when tool results confirm the operation worked
+- NEVER call tools with incorrect parameters - check the tool definitions first
+- When operations fail, explain what went wrong and ask for clarification
 - Authorization happens through the website dashboard
 - You work on Shape Sepolia testnet
 - When user confirms with "yes", immediately call the tool
@@ -302,6 +305,28 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
           console.log(chalk.red(`❌ check_rug requires tokenId parameter`));
           return {
             error: `check_rug requires tokenId parameter`,
+            missingParameters: true
+          };
+        }
+      }
+
+      // Validate that get_stats has no parameters
+      if (name === 'get_stats') {
+        if (args && Object.keys(args).length > 0) {
+          console.log(chalk.red(`❌ get_stats does not accept any parameters`));
+          return {
+            error: `get_stats does not accept any parameters`,
+            missingParameters: true
+          };
+        }
+      }
+
+      // Validate that get_rugs has no parameters
+      if (name === 'get_rugs') {
+        if (args && Object.keys(args).length > 0) {
+          console.log(chalk.red(`❌ get_rugs does not accept any parameters`));
+          return {
+            error: `get_rugs does not accept any parameters`,
             missingParameters: true
           };
         }
@@ -599,16 +624,21 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
         console.log(chalk.magenta(`🎯 Executing ${assistantMessage.tool_calls.length} tool call(s)...`));
 
         for (const toolCall of assistantMessage.tool_calls) {
+          const { name } = toolCall.function;
           const result = await this.executeToolCall(toolCall);
 
-          if (result === null) {
+          if (result === null || result.error || result.missingParameters) {
             // Tool failed - add clear error message to conversation
+            const errorMessage = result?.error || `The ${name} operation failed`;
             this.conversationHistory.push({
               role: 'tool',
               content: JSON.stringify({
-                error: `The ${name} operation failed`,
+                error: errorMessage,
                 status: 'failed',
-                suggestion: 'The operation could not be completed. Check your wallet connection and try again.'
+                operation: name,
+                suggestion: result?.missingParameters
+                  ? 'Please provide the required parameters and try again.'
+                  : 'The operation could not be completed. Check your input and try again.'
               }),
               tool_call_id: toolCall.id
             });
