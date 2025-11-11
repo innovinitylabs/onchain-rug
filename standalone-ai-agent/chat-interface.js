@@ -135,7 +135,7 @@ class AgentRugChat {
         type: 'function',
         function: {
           name: 'clean_rug',
-          description: 'Get quote for cleaning a rug, or execute cleaning if confirmed=true. ALWAYS call with confirmed=false first to get cost, then confirmed=true after user approval.',
+          description: 'Get quote for cleaning a specific rug, or execute cleaning if confirmed=true. You must know the tokenId first - call get_rugs() if you dont know what rugs the user owns. ALWAYS call with confirmed=false first to get cost, then confirmed=true after user approval.',
           parameters: {
             type: 'object',
             properties: {
@@ -229,10 +229,10 @@ X402 PAYMENT MODEL - PER-OPERATION:
 
 WORKFLOW:
 1. User asks questions → Free info queries work immediately
-2. User requests maintenance → Agent shows X402 payment requirement
-3. User pays X402 → Gets authorization token
-4. Agent executes maintenance using token (free on-chain)
-5. No session limits - pay per maintenance operation
+2. User requests maintenance on "my rugs" → First call get_rugs() to discover what they own
+3. User requests specific maintenance → Call with confirmed=false to get quote
+4. User confirms → Agent automatically handles X402 payment and executes
+5. No manual payments - all X402 transactions are automatic
 
 REQUIRED PARAMETER: confirmed must ALWAYS be included - false for quotes, true for execution
 
@@ -243,10 +243,12 @@ User: "how many rugs do I own?"
 AI: Calls get_rugs() → Returns rug list (no payment required)
 
 MAINTENANCE WITH PAYMENT:
+User: "clean my rugs"
+AI: First calls get_rugs() → Discovers user's rugs → "You own rugs #1, #2, #3. Which one would you like to clean?"
 User: "clean rug 1"
-AI: Calls clean_rug(tokenId=1, confirmed=false) → Gets quote → Shows X402 payment requirement
-User: Pays X402 → AI gets authorization token
-AI: Calls clean_rug(tokenId=1, confirmed=true) → Executes maintenance → "Rug cleaned!"
+AI: Calls clean_rug(tokenId=1, confirmed=false) → Gets quote → Shows cost and asks confirmation
+User: "yes"
+AI: Automatically handles X402 payment → Gets authorization token → Executes maintenance → "Rug cleaned!"
 
 UNAVAILABLE OPERATION:
 User: "restore rug 2"
@@ -268,12 +270,41 @@ FEATURES YOU CAN EXPLAIN:
 - Rugs can be minted, traded, and maintained
 - AI agents can autonomously maintain rugs
 
+IMPORTANT: When user mentions cleaning/restoring rugs without specifying which rug:
+1. ALWAYS call get_rugs() first to discover what rugs they own
+2. Ask user which specific rug they want to maintain
+3. NEVER call maintenance tools without a specific tokenId
+
 Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
   }
 
   async executeToolCall(toolCall) {
     try {
       const { name, arguments: args } = toolCall.function;
+
+      // Validate required parameters for maintenance operations
+      const maintenanceOps = ['clean_rug', 'restore_rug', 'master_restore_rug'];
+      if (maintenanceOps.includes(name)) {
+        if (!args || typeof args.tokenId !== 'number' || typeof args.confirmed !== 'boolean') {
+          console.log(chalk.red(`❌ ${name} requires tokenId (number) and confirmed (boolean) parameters`));
+          return {
+            error: `${name} requires tokenId and confirmed parameters`,
+            missingParameters: true
+          };
+        }
+      }
+
+      // Validate required parameters for check_rug
+      if (name === 'check_rug') {
+        if (!args || typeof args.tokenId !== 'number') {
+          console.log(chalk.red(`❌ check_rug requires tokenId parameter`));
+          return {
+            error: `check_rug requires tokenId parameter`,
+            missingParameters: true
+          };
+        }
+      }
+
       let url, method = 'GET', body = null;
 
       switch (name) {
