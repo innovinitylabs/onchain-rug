@@ -15,7 +15,7 @@ const facilitatorWallet = facilitatorAccount ? createWalletClient({
 
 // Supported schemes for Shape network
 const SUPPORTED_SCHEMES = ['exact']
-const SUPPORTED_NETWORKS = ['shape-sepolia']
+const SUPPORTED_NETWORKS = ['shape-sepolia', 'base-sepolia']
 const SUPPORTED_ASSETS = ['0x0000000000000000000000000000000000000000'] // ETH
 
 interface PaymentRequirement {
