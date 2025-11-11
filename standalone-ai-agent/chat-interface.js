@@ -15,6 +15,7 @@ import { formatEther } from 'viem';
 import dotenv from 'dotenv';
 import chalk from 'chalk';
 import readline from 'readline';
+import { spawn } from 'child_process';
 
 // Load environment variables
 dotenv.config();
@@ -41,6 +42,50 @@ class AgentRugChat {
     // Use website API instead of agent API for proper X402 flow
     this.apiBaseUrl = process.env.WEBSITE_API_URL || 'http://localhost:3000';
     this.hasPaidForAccess = false; // Track if user has paid for agent access
+    this.ollamaProcess = null; // Track Ollama process if we start it
+  }
+
+  // Start Ollama server if not running
+  async ensureOllamaRunning() {
+    console.log(chalk.blue('🔍 Checking Ollama connection...'));
+
+    try {
+      // Try to connect first
+      await this.ollama.list();
+      console.log(chalk.green('✅ Ollama already running'));
+      return true;
+    } catch (error) {
+      console.log(chalk.yellow('⚠️  Ollama not running, starting it...'));
+
+      // Start Ollama server
+      this.ollamaProcess = spawn('ollama', ['serve'], {
+        detached: true,
+        stdio: 'ignore'
+      });
+
+      // Wait for Ollama to start up
+      console.log(chalk.blue('⏳ Waiting for Ollama to start...'));
+
+      let retries = 0;
+      const maxRetries = 30; // 30 seconds max wait
+
+      while (retries < maxRetries) {
+        try {
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+          await this.ollama.list();
+          console.log(chalk.green('✅ Ollama started successfully'));
+          return true;
+        } catch (e) {
+          retries++;
+          if (retries % 5 === 0) {
+            console.log(chalk.blue(`   Still waiting... (${retries}/${maxRetries})`));
+          }
+        }
+      }
+
+      console.log(chalk.red('❌ Failed to start Ollama after 30 seconds'));
+      return false;
+    }
   }
 
   defineTools() {
@@ -623,6 +668,11 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
         if (input.toLowerCase() === 'exit') {
           console.log(chalk.yellow('👋 Goodbye!'));
           rl.close();
+          // Kill Ollama if we started it
+          if (this.ollamaProcess) {
+            console.log(chalk.gray('🛑 Stopping Ollama server...'));
+            this.ollamaProcess.kill();
+          }
           return;
         }
 
@@ -657,7 +707,14 @@ async function main() {
     process.exit(1);
   }
 
-  // Test Ollama connection
+  // Ensure Ollama is running and check model
+  const ollamaReady = await chat.ensureOllamaRunning();
+  if (!ollamaReady) {
+    console.log(chalk.red('❌ Could not start Ollama. Please install Ollama and run: ollama serve'));
+    process.exit(1);
+  }
+
+  // Check for Llama 3.1 model
   try {
     const models = await chat.ollama.list();
     const hasModel = models.models.some(m => m.name.includes('llama3.1'));
@@ -667,7 +724,7 @@ async function main() {
     }
     console.log(chalk.green('✅ Llama 3.1 ready with tool calling'));
   } catch (error) {
-    console.log(chalk.red('❌ Ollama connection failed:'), error.message);
+    console.log(chalk.red('❌ Failed to check models:'), error.message);
     process.exit(1);
   }
 
