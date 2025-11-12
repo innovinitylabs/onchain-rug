@@ -66,7 +66,7 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ to
     const [serviceFee, feeRecipient] = feesResult
 
     let maintenanceWei = BigInt(0)
-    let serviceFeeWei = serviceFee // Flat fee for all actions
+    const serviceFeeWei = serviceFee // Flat fee for all actions
     let functionName = ''
     if (action === 'clean') {
       maintenanceWei = cleaningCost
