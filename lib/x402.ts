@@ -10,7 +10,7 @@ interface X402Config {
 }
 
 export function getX402Config(): X402Config {
-  return {
+  const config = {
     facilitatorUrl: process.env.X402_FACILITATOR_URL || 'https://x402.org/facilitator',
     facilitatorApiKey: process.env.X402_FACILITATOR_API_KEY || '',
     payToAddress: process.env.X402_PAY_TO_ADDRESS || '',
@@ -19,6 +19,10 @@ export function getX402Config(): X402Config {
     assetName: 'ETH',
     rpcUrl: process.env.RPC_URL
   }
+
+  console.log(`🔧 X402 Config: payTo=${!!config.payToAddress}, network=${config.network}`)
+
+  return config
 }
 
 // Create payment requirements using our custom facilitator
@@ -34,13 +38,37 @@ export async function createPaymentRequiredResponse(options: {
 }) {
   const config = getX402Config()
 
+  // console.log(`🔧 createPaymentRequiredResponse called with:`, {
+  //   price: options.price,
+  //   contractAddress: options.contractAddress,
+  //   functionName: options.functionName,
+  //   tokenId: options.tokenId
+  // })
+
   if (!config.payToAddress) {
-    console.warn('X402 pay-to address not configured')
+    console.log('🔄 Using X402 fallback (no payTo configured)')
+    // Fallback: create basic payment requirement
     return {
-      error: 'Payment Required',
       x402: {
         x402Version: 1,
-        accepts: []
+        accepts: [{
+          scheme: 'exact',
+          network: config.network,
+          asset: config.assetAddress,
+          payTo: options.contractAddress || '0x0000000000000000000000000000000000000000',
+          maxAmountRequired: (parseFloat(options.price || '0') * 1e18).toString(),
+          resource: options.contractAddress ? `/api/maintenance/action/${options.tokenId || '0'}/${options.functionName || 'unknown'}` : '/api/payment',
+          description: options.description || 'Payment required',
+          mimeType: 'application/json',
+          maxTimeoutSeconds: 900,
+          extra: {
+            fallback: true,
+            functionName: options.functionName,
+            tokenId: options.tokenId,
+            maintenanceCost: options.maintenanceCost,
+            serviceFee: options.serviceFee
+          }
+        }]
       }
     }
   }
@@ -51,29 +79,40 @@ export async function createPaymentRequiredResponse(options: {
       ? `${process.env.NEXT_PUBLIC_APP_URL}/api/x402/facilitator`
       : 'http://localhost:3000/api/x402/facilitator'
 
-        const response = await fetch(facilitatorUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            action: 'create_payment_requirement',
-            price: options.price,
-            description: options.description,
-            payTo: options.contractAddress || config.payToAddress,
-            resource: `/api/maintenance/action/${options.tokenId}/${options.functionName}`,
-            scheme: 'exact',
-            network: config.network,
-            maintenanceCost: options.maintenanceCost,
-            serviceFee: options.serviceFee
-          })
-        })
+    console.log(`🔗 Calling facilitator: ${facilitatorUrl}`)
+
+    const response = await fetch(facilitatorUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'create_payment_requirement',
+        price: options.price,
+        description: options.description,
+        payTo: options.contractAddress || config.payToAddress,
+        resource: `/api/maintenance/action/${options.tokenId}/${options.functionName}`,
+        scheme: 'exact',
+        network: config.network,
+        maintenanceCost: options.maintenanceCost,
+        serviceFee: options.serviceFee
+      })
+    })
 
     if (!response.ok) {
-      throw new Error(`Facilitator error: ${response.status}`)
+      const errorText = await response.text()
+      console.error(`❌ Facilitator HTTP error: ${response.status} ${response.statusText}`)
+      console.error(`❌ Facilitator error response:`, errorText)
+      throw new Error(`Facilitator error: ${response.status} - ${errorText}`)
     }
 
     const facilitatorResponse = await response.json()
+    console.log(`✅ Facilitator response received, has x402: ${!!facilitatorResponse.x402}`)
+
+    if (!facilitatorResponse.x402) {
+      console.error(`❌ Facilitator returned invalid response:`, facilitatorResponse)
+      throw new Error('Facilitator returned response without x402 structure')
+    }
 
     // Add our extra metadata for agent UX
     if (facilitatorResponse.x402?.accepts?.[0]) {
@@ -81,30 +120,27 @@ export async function createPaymentRequiredResponse(options: {
         ...facilitatorResponse.x402.accepts[0].extra,
         functionName: options.functionName,
         tokenId: options.tokenId,
-        maintenanceWei: '0', // These would be calculated by the maintenance API
+        maintenanceWei: '0',
         serviceFeeWei: '0',
         totalWei: '0'
       }
     }
 
-    return {
-      error: 'Payment Required',
-      x402: facilitatorResponse
-    }
+    return facilitatorResponse
 
   } catch (error) {
-    console.error('Failed to create payment requirement:', error)
+    console.error('❌ Failed to create payment requirement via facilitator:', error)
+    console.log('🔄 Using fallback payment requirement after facilitator error')
     // Fallback to basic response if facilitator fails
     return {
-      error: 'Payment Required',
       x402: {
         x402Version: 1,
         accepts: [{
           scheme: 'exact',
           network: config.network,
-          asset: '0x0000000000000000000000000000000000000000',
-          payTo: options.contractAddress || config.payToAddress,
-          maxAmountRequired: (parseFloat(options.price) * 1e18).toString(),
+          asset: config.assetAddress,
+          payTo: options.contractAddress || config.payToAddress || '0x0000000000000000000000000000000000000000',
+          maxAmountRequired: (parseFloat(options.price || '0') * 1e18).toString(),
           resource: `/api/maintenance/action/${options.tokenId}/${options.functionName}`,
           description: options.description,
           mimeType: 'application/json',
@@ -112,7 +148,9 @@ export async function createPaymentRequiredResponse(options: {
           extra: {
             functionName: options.functionName,
             tokenId: options.tokenId,
-            fallback: true // Indicates this is a fallback response
+            maintenanceCost: options.maintenanceCost,
+            serviceFee: options.serviceFee,
+            fallback: true
           }
         }]
       }

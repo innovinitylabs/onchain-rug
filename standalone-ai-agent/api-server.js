@@ -207,21 +207,36 @@ const RugMaintenanceAbi = [
     type: 'function'
   },
   {
-    inputs: [{ name: 'tokenId', type: 'uint256' }],
+    inputs: [
+      { name: 'tokenId', type: 'uint256' },
+      { name: 'authorizationToken', type: 'bytes32' },
+      { name: 'nonce', type: 'string' },
+      { name: 'expires', type: 'uint256' }
+    ],
     name: 'cleanRugAgent',
     outputs: [],
     stateMutability: 'payable',
     type: 'function'
   },
   {
-    inputs: [{ name: 'tokenId', type: 'uint256' }],
+    inputs: [
+      { name: 'tokenId', type: 'uint256' },
+      { name: 'authorizationToken', type: 'bytes32' },
+      { name: 'nonce', type: 'string' },
+      { name: 'expires', type: 'uint256' }
+    ],
     name: 'restoreRugAgent',
     outputs: [],
     stateMutability: 'payable',
     type: 'function'
   },
   {
-    inputs: [{ name: 'tokenId', type: 'uint256' }],
+    inputs: [
+      { name: 'tokenId', type: 'uint256' },
+      { name: 'authorizationToken', type: 'bytes32' },
+      { name: 'nonce', type: 'string' },
+      { name: 'expires', type: 'uint256' }
+    ],
     name: 'masterRestoreRugAgent',
     outputs: [],
     stateMutability: 'payable',
@@ -522,11 +537,11 @@ class RugBotAPIServer {
               `/rug/${tokenId}/maintain`
             );
 
-          console.log(chalk.yellow(`💰 x402 payment required for ${action} on rug #${tokenId}: ${price} ETH`));
-          return res.status(402).json({
-            error: 'Payment Required',
-              x402: paymentRequired
-            });
+          // This endpoint is obsolete - maintenance operations now use website API directly
+          return res.status(410).json({
+            error: 'Endpoint obsolete',
+            message: 'Use website API for maintenance operations'
+          });
           } catch (error) {
             console.log(chalk.red(`❌ Failed to create payment requirement: ${error.message}`));
             return res.status(500).json({
@@ -649,11 +664,15 @@ class RugBotAPIServer {
 
     // Execute authorized maintenance action (called after X402 payment verification)
     this.app.post('/rug/:tokenId/execute', async (req, res) => {
+      console.log(chalk.blue(`🔧 API: Execute endpoint called for rug ${req.params.tokenId}`));
+      console.log(chalk.gray(`   Request body:`, JSON.stringify(req.body, null, 2)));
+
       try {
         const tokenId = parseInt(req.params.tokenId);
         const { authorization } = req.body;
 
         console.log(chalk.blue(`🔧 API: Executing authorized ${authorization.action} on rug #${tokenId}`));
+        console.log(chalk.gray(`   Authorization object:`, JSON.stringify(authorization, null, 2)));
 
         // Verify authorization token (new X402 format)
         if (!authorization || !authorization.authorizationToken) {
@@ -664,7 +683,9 @@ class RugBotAPIServer {
         // The contract will validate the token and ensure it hasn't been used
 
         // Execute the blockchain transaction
+        console.log(chalk.gray(`   Checking action: "${authorization.action}" against ['clean', 'restore', 'master']`));
         if (!['clean', 'restore', 'master'].includes(authorization.action)) {
+          console.log(chalk.red(`   Action "${authorization.action}" not in allowed list`));
           throw new Error('Invalid action. Must be: clean, restore, or master');
         }
 
@@ -696,6 +717,14 @@ class RugBotAPIServer {
 
         // Execute transaction with 0 value (X402 already covered the service costs)
         // Include authorization token, nonce, and expires as parameters
+        console.log(chalk.blue(`🔧 Calling contract function: ${functionName}`));
+        console.log(chalk.gray(`   Address: ${config.blockchain.contractAddress}`));
+        console.log(chalk.gray(`   Args: [${tokenId}, ${authorization.authorizationToken}, "${authorization.nonce}", ${authorization.expires}]`));
+
+        // Find the function in ABI to verify
+        const abiFunction = RugMaintenanceAbi.find(f => f.name === functionName);
+        console.log(chalk.gray(`   ABI function found:`, abiFunction));
+
         const hash = await agentWallet.writeContract({
           address: config.blockchain.contractAddress,
           abi: RugMaintenanceAbi,
@@ -707,7 +736,13 @@ class RugBotAPIServer {
         console.log(chalk.gray('⏳ Waiting for confirmation...'));
         const receipt = await publicClient.waitForTransactionReceipt({ hash });
 
+        // Update agent statistics
+        this.maintenanceCount++;
+        // Note: Service fees are paid to facilitator, not tracked by agent
+        // Agent only pays gas fees for transactions
+
         console.log(chalk.green(`✅ API: ${authorization.action} completed! Tx: ${hash}`));
+        console.log(chalk.gray(`   Maintenance count updated: ${this.maintenanceCount}`));
 
         res.json({
           success: true,
@@ -751,16 +786,26 @@ class RugBotAPIServer {
           console.log(chalk.yellow(`   Could not get wallet balance: ${error.message}`));
         }
 
+        // Calculate gas fees paid by agent (rough estimate based on transaction count)
+        // Each maintenance operation costs ~0.00001 ETH in gas
+        const estimatedGasFees = BigInt(this.maintenanceCount) * BigInt('10000000000000000'); // 0.01 ETH per tx
+        const estimatedGasFeesEth = formatEther(estimatedGasFees);
+
         const stats = {
           agentName: config.agent.name,
           walletAddress: config.wallet.address || 'Not configured',
           walletBalance: walletBalance,
           walletBalanceEth: walletBalanceEth,
-          totalServiceFeesPaid: this.totalServiceFeesPaid.toString(),
-          totalServiceFeesPaidEth: formatEther(this.totalServiceFeesPaid),
+          // Service fees are paid to facilitator, not by agent
+          totalServiceFeesPaid: '0', // Agent doesn't pay service fees directly
+          totalServiceFeesPaidEth: '0',
+          // Agent pays gas fees for transactions
+          estimatedGasFeesPaid: estimatedGasFees.toString(),
+          estimatedGasFeesPaidEth: estimatedGasFeesEth,
           maintenanceCount: this.maintenanceCount,
           contractAddress: config.blockchain.contractAddress,
-          network: config.blockchain.chainId === 84532 ? 'Base Sepolia' : 'Shape Sepolia'
+          network: config.blockchain.chainId === 84532 ? 'Base Sepolia' : 'Shape Sepolia',
+          note: 'Service fees are collected by facilitator. Agent only pays gas fees.'
         };
 
         console.log(chalk.green(`✅ API: Agent stats retrieved (free)`));

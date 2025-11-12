@@ -113,7 +113,7 @@ Total: ~21 KB of on-chain JavaScript
 
 ## 🚀 Frontend Configuration
 
-Update your `.env` or `.env.local`:
+Update your `.env`:
 
 ```bash
 # Main contract address (REQUIRED)

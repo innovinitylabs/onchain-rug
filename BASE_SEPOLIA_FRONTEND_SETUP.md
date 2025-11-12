@@ -2,7 +2,7 @@
 
 ## Required .env Variables
 
-To make your frontend work with Base Sepolia, you need these environment variables in your `.env` or `.env.local` file:
+To make your frontend work with Base Sepolia, you need these environment variables in your `.env` file:
 
 ```bash
 # ============================================

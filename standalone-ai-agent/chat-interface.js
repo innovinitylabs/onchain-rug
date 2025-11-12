@@ -62,17 +62,30 @@ class AgentRugChat {
       console.log(chalk.green('✅ Ollama already running'));
       return true;
     } catch (error) {
-      console.log(chalk.yellow('⚠️  Ollama not running, starting it...'));
+      console.log(chalk.yellow('⚠️  Ollama not running, attempting to start it...'));
 
-      // Start Ollama server
-      this.ollamaProcess = spawn('ollama', ['serve'], {
-        detached: true,
-        stdio: 'ignore'
-      });
+      // Check if ollama command is available
+      try {
+        const { spawn } = await import('child_process');
+        this.ollamaProcess = spawn('ollama', ['serve'], {
+          detached: true,
+          stdio: 'ignore'
+        });
+
+        // Check if process started
+        if (this.ollamaProcess.pid) {
+          console.log(chalk.blue('⏳ Waiting for Ollama to start...'));
+        } else {
+          console.log(chalk.red('❌ Failed to spawn Ollama process'));
+          return false;
+        }
+      } catch (spawnError) {
+        console.log(chalk.red('❌ Ollama command not found in PATH'));
+        console.log(chalk.yellow('💡 Install Ollama from: https://ollama.ai'));
+        return false;
+      }
 
       // Wait for Ollama to start up
-      console.log(chalk.blue('⏳ Waiting for Ollama to start...'));
-
       let retries = 0;
       const maxRetries = 30; // 30 seconds max wait
 
@@ -91,6 +104,7 @@ class AgentRugChat {
       }
 
       console.log(chalk.red('❌ Failed to start Ollama after 30 seconds'));
+      console.log(chalk.yellow('💡 Try running: ollama serve'));
       return false;
     }
   }
@@ -140,64 +154,52 @@ class AgentRugChat {
       },
       {
         type: 'function',
-        function: {
+        function:         {
           name: 'clean_rug',
-          description: 'Get quote for cleaning a specific rug, or execute cleaning if confirmed=true. You must know the tokenId first - call get_rugs() if you dont know what rugs the user owns. ALWAYS call with confirmed=false first to get cost, then confirmed=true after user approval.',
+          description: 'Clean a specific rug immediately. Handles X402 payment automatically and executes the blockchain transaction. You must know the tokenId first - call get_rugs() if you dont know what rugs the user owns.',
           parameters: {
             type: 'object',
             properties: {
               tokenId: {
                 type: 'integer',
                 description: 'The token ID of the rug to clean'
-              },
-              confirmed: {
-                type: 'boolean',
-                description: 'MUST be false for quotes, true only for execution after user confirmation'
               }
             },
-            required: ['tokenId', 'confirmed']
+            required: ['tokenId']
           }
         }
       },
       {
         type: 'function',
-        function: {
+        function:         {
           name: 'restore_rug',
-          description: 'Get quote for restoring a rug, or execute restoration if confirmed=true. ALWAYS call with confirmed=false first to get cost, then confirmed=true after user approval.',
+          description: 'Restore a specific rug immediately. Handles X402 payment automatically and executes the blockchain transaction. You must know the tokenId first - call get_rugs() if you dont know what rugs the user owns.',
           parameters: {
             type: 'object',
             properties: {
               tokenId: {
                 type: 'integer',
                 description: 'The token ID of the rug to restore'
-              },
-              confirmed: {
-                type: 'boolean',
-                description: 'MUST be false for quotes, true only for execution after user confirmation'
               }
             },
-            required: ['tokenId', 'confirmed']
+            required: ['tokenId']
           }
         }
       },
       {
         type: 'function',
-        function: {
+        function:         {
           name: 'master_restore_rug',
-          description: 'Get quote for master restoring a rug, or execute master restoration if confirmed=true. ALWAYS call with confirmed=false first to get cost, then confirmed=true after user approval.',
+          description: 'Master restore a specific rug immediately. Handles X402 payment automatically and executes the blockchain transaction. You must know the tokenId first - call get_rugs() if you dont know what rugs the user owns.',
           parameters: {
             type: 'object',
             properties: {
               tokenId: {
                 type: 'integer',
                 description: 'The token ID of the rug to master restore'
-              },
-              confirmed: {
-                type: 'boolean',
-                description: 'MUST be false for quotes, true only for execution after user confirmation'
               }
             },
-            required: ['tokenId', 'confirmed']
+            required: ['tokenId']
           }
         }
       }
@@ -244,7 +246,7 @@ WORKFLOW:
 PARAMETER HANDLING:
 - Parse rug numbers from user input: "rug 1" or "rug #1" or "token 1" = tokenId: 1
 - For check_rug: ONLY provide tokenId (integer), no other parameters
-- For maintenance operations: provide tokenId (integer) and confirmed (boolean)
+- For maintenance operations: provide tokenId (integer)
 - Always extract the specific rug number mentioned by the user
 
 EXAMPLE FLOWS:
@@ -254,26 +256,21 @@ User: "how many rugs do I own?"
 AI: Calls get_rugs() → Returns rug list (no payment required)
 
 User: "what's my balance?" or "check agent balance"
-AI: Calls get_stats() → Returns wallet balance and fees (no payment required)
+AI: Calls get_stats() → Returns wallet balance and maintenance stats (no payment required)
 
 User: "is rug 1 clean?" or "check rug 1"
 AI: Calls check_rug(tokenId=1) → Returns rug status (no payment required)
 
 MAINTENANCE WITH PAYMENT:
 User: "clean rug 1"
-AI: Parse "rug 1" as tokenId=1 → Calls clean_rug(tokenId=1, confirmed=false) → Gets quote → Shows cost: "Cost for cleaning rug 1: 0.000430 ETH. Confirm?"
-User: "yes"
-AI: Calls clean_rug(tokenId=1, confirmed=true) → Automatically handles X402 payment → Executes maintenance → "Rug cleaned!"
-
-User: "yes clean rug 1"
-AI: Parse combined command → Calls clean_rug(tokenId=1, confirmed=true) → Handles X402 payment and executes
+AI: Parse "rug 1" as tokenId=1 → Calls clean_rug(tokenId=1) → Automatically handles X402 payment → Executes maintenance → "Rug cleaned!"
 
 User: "clean my rugs"
 AI: First calls get_rugs() → Discovers user's rugs → "You own rugs #1, #2, #3. Which one would you like to clean?"
 
 UNAVAILABLE OPERATION:
 User: "restore rug 2"
-AI: Calls restore_rug(tokenId=2, confirmed=false) → "Restoration not available for this rug"
+AI: Calls restore_rug(tokenId=2) → "Restoration not available for this rug"
 
 IMPORTANT NOTES:
 - Always get accurate data from APIs - never make up numbers
@@ -288,15 +285,18 @@ IMPORTANT NOTES:
 - For questions about "my rugs", first call get_rugs() to see what they own
 - Authorization happens through the website dashboard
 - You work on Shape Sepolia testnet
-- When user confirms with "yes", immediately call the tool with confirmed=true
-- When user says "no", politely cancel the operation
-- Handle combined commands like "yes clean rug 1" by calling clean_rug(tokenId=1, confirmed=true)
+- Maintenance operations execute immediately without user confirmation
 
 FORMATTED RESPONSES:
 - When you see a tool result that is just a plain text message (not JSON), use it as your final answer EXACTLY as provided
 - Do not modify, rephrase, or add extra information to formatted messages
 - These messages are already perfectly formatted for the user
-- For agent stats, use the message exactly: "Agent Stats: [name] has [balance] ETH in wallet, paid [fees] ETH in service fees, performed [count] maintenance operations."
+- For agent stats, use the message exactly: "Agent Stats: [name] has [balance] ETH in wallet, performed [count] maintenance operations. Service fees collected by facilitator, agent pays gas fees (~[gas] ETH estimated)."
+
+MAINTENANCE OPERATIONS:
+- Maintenance operations (clean_rug, restore_rug, master_restore_rug) execute immediately without confirmation
+- They handle X402 payments automatically and return the result
+- No need to ask for user confirmation - just call the appropriate tool
 
 FEATURES YOU CAN EXPLAIN:
 - OnchainRugs is an NFT project on Shape Sepolia
@@ -318,93 +318,6 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
       const { name, arguments: args } = toolCall.function;
       console.log(chalk.blue(`🔍 Tool call: ${name}, args:`, JSON.stringify(args)));
 
-      // Validate required parameters for maintenance operations
-      const maintenanceOps = ['clean_rug', 'restore_rug', 'master_restore_rug'];
-      if (maintenanceOps.includes(name)) {
-        console.log(chalk.gray(`🔧 Parsing maintenance params for ${name}`));
-
-        // Check if args exists
-        if (!args) {
-          console.log(chalk.red(`❌ ${name} called with no arguments object`));
-          return {
-            error: `${name} requires tokenId and confirmed parameters`,
-            missingParameters: true
-          };
-        }
-
-        // Parse tokenId - allow string or number
-        let tokenId = args.tokenId;
-        console.log(chalk.gray(`   Raw tokenId:`, tokenId, `type:`, typeof tokenId));
-
-        if (typeof tokenId === 'string') {
-          tokenId = parseInt(tokenId, 10);
-          console.log(chalk.gray(`   Parsed tokenId:`, tokenId));
-        }
-
-        if (!args || isNaN(tokenId) || typeof tokenId !== 'number') {
-          console.log(chalk.red(`❌ ${name} requires valid tokenId (number) parameter, got:`, args?.tokenId));
-          return {
-            error: `${name} requires valid tokenId (number) parameter`,
-            missingParameters: true
-          };
-        }
-
-        // Parse confirmed - handle string booleans and defaults
-        let confirmed = args?.confirmed;
-        console.log(chalk.gray(`   Raw confirmed:`, confirmed, `type:`, typeof confirmed));
-
-        if (typeof confirmed === 'string') {
-          confirmed = confirmed.toLowerCase() === 'true';
-          console.log(chalk.gray(`   Parsed confirmed from string:`, confirmed));
-        } else if (typeof confirmed !== 'boolean') {
-          confirmed = false; // Default to quote mode
-          console.log(chalk.gray(`   Defaulted confirmed to:`, confirmed));
-        }
-
-        // Update args with parsed values
-        args.tokenId = tokenId;
-        args.confirmed = confirmed;
-
-        console.log(chalk.green(`✅ Parsed params: tokenId=${tokenId}, confirmed=${confirmed}`));
-      }
-
-      // Validate required parameters for check_rug
-      if (name === 'check_rug') {
-        let tokenId = args?.tokenId;
-        if (typeof tokenId === 'string') {
-          tokenId = parseInt(tokenId, 10);
-        }
-        if (!args || isNaN(tokenId) || typeof tokenId !== 'number') {
-          console.log(chalk.red(`❌ check_rug requires valid tokenId (number) parameter, got:`, args?.tokenId));
-          return {
-            error: `check_rug requires valid tokenId (number) parameter`,
-            missingParameters: true
-          };
-        }
-        args.tokenId = tokenId;
-      }
-
-      // Validate that get_stats has no parameters
-      if (name === 'get_stats') {
-        if (args && Object.keys(args).length > 0) {
-          console.log(chalk.red(`❌ get_stats does not accept any parameters`));
-          return {
-            error: `get_stats does not accept any parameters`,
-            missingParameters: true
-          };
-        }
-      }
-
-      // Validate that get_rugs has no parameters
-      if (name === 'get_rugs') {
-        if (args && Object.keys(args).length > 0) {
-          console.log(chalk.red(`❌ get_rugs does not accept any parameters`));
-          return {
-            error: `get_rugs does not accept any parameters`,
-            missingParameters: true
-          };
-        }
-      }
 
       let url, method = 'GET', body = null;
 
@@ -419,34 +332,22 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
           url = `${config.api.baseUrl}/rug/${args.tokenId}/status`;
           break;
         case 'clean_rug':
-          if (args.confirmed) {
-            url = `${this.apiBaseUrl}/api/maintenance/action/${args.tokenId}/clean`;
+          // Always execute immediately - no confirmation needed
+          url = `${this.apiBaseUrl}/api/maintenance/action/${args.tokenId}/clean`;
           method = 'POST';
           body = JSON.stringify({ action: 'clean' });
-          } else {
-            url = `${this.apiBaseUrl}/api/maintenance/quote/${args.tokenId}/clean`;
-            method = 'GET';
-          }
           break;
         case 'restore_rug':
-          if (args.confirmed) {
-            url = `${this.apiBaseUrl}/api/maintenance/action/${args.tokenId}/restore`;
+          // Always execute immediately - no confirmation needed
+          url = `${this.apiBaseUrl}/api/maintenance/action/${args.tokenId}/restore`;
           method = 'POST';
           body = JSON.stringify({ action: 'restore' });
-          } else {
-            url = `${this.apiBaseUrl}/api/maintenance/quote/${args.tokenId}/restore`;
-            method = 'GET';
-          }
           break;
         case 'master_restore_rug':
-          if (args.confirmed) {
-            url = `${this.apiBaseUrl}/api/maintenance/action/${args.tokenId}/master`;
+          // Always execute immediately - no confirmation needed
+          url = `${this.apiBaseUrl}/api/maintenance/action/${args.tokenId}/master`;
           method = 'POST';
           body = JSON.stringify({ action: 'master' });
-          } else {
-            url = `${this.apiBaseUrl}/api/maintenance/quote/${args.tokenId}/master`;
-            method = 'GET';
-          }
           break;
         default:
           console.log(chalk.red(`❌ Unknown tool: ${name}`));
@@ -474,85 +375,158 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
         body
       });
 
-      let result = await response.json();
-      console.log(chalk.gray(`   API response status: ${response.status}, result:`, JSON.stringify(result)));
+      // Check if response is JSON before parsing
+      const contentType = response.headers.get('content-type');
+      let result;
 
-      // Handle different response types
-      if (!isFreeOperation && response.status === 402 && result.x402) {
-        if (args?.confirmed) {
-          // Confirmed action call - handle X402 payment automatically
-          console.log(chalk.yellow(`💰 X402 payment required for ${name} execution`));
+      if (contentType && contentType.includes('application/json')) {
+        result = await response.json();
+        console.log(chalk.gray(`   API response status: ${response.status}, result:`, JSON.stringify(result)));
+      } else {
+        // Handle non-JSON responses (HTML error pages, etc.)
+        const text = await response.text();
+        console.log(chalk.red(`   API returned non-JSON response: ${response.status} ${response.statusText}`));
+        console.log(chalk.gray(`   Content-Type: ${contentType}`));
+        console.log(chalk.gray(`   Response preview: ${text.substring(0, 200)}...`));
 
-          // Create signed payment payload
-          const paymentPayload = await this.createX402PaymentPayload(result.x402.accepts[0]);
-
-          console.log(chalk.blue(`🔏 Submitting X402 payment...`));
-
-          // Retry with payment headers
-          console.log(chalk.gray(`   Submitting payment to: ${url}`));
-          const paymentHeaders = {
-            'Content-Type': 'application/json',
-            'x402-payment-payload': JSON.stringify(paymentPayload),
-            'x402-payment-status': 'payment-submitted'
-          };
-
-          if (config.wallet.address) {
-            paymentHeaders['x-agent-address'] = config.wallet.address;
-          }
-
-          response = await fetch(url, {
-            method,
-            headers: paymentHeaders,
-            body
-          });
-
-          console.log(chalk.gray(`   Payment response status: ${response.status}`));
-          result = await response.json();
-          console.log(chalk.gray(`   Payment result: ${JSON.stringify(result)}`));
-        } else {
-          // Quote call - show cost to user and ask for confirmation
-          console.log(chalk.blue(`💰 Quote received for ${name}`));
-          const requirement = result.x402.accepts[0];
-          const costEth = parseFloat(requirement.maxAmountRequired) / 1e18;
-
-          return {
-            quote: true,
-            action: name.replace('_rug', ''),
-            tokenId: args.tokenId,
-            cost: costEth.toFixed(6),
-            description: requirement.description,
-            message: `Cost for ${name.replace('_rug', 'ing')} rug ${args.tokenId}: ${costEth.toFixed(6)} ETH. Confirm?`
-          };
-        }
+        throw new Error(`API returned HTML instead of JSON. Server may not be running or endpoint doesn't exist. Status: ${response.status}`);
       }
 
-      if (response.ok && result.success) {
-        console.log(chalk.green(`✅ ${name} completed successfully!`));
+      // Handle different response types
+      if (response.status >= 400 && result?.error) {
+        // Error response from facilitator or API
+        console.log(chalk.red(`❌ API/Facilitator error: ${result.error}`));
+        if (result.details) {
+          console.log(chalk.gray(`   Details: ${result.details}`));
+        }
+        throw new Error(`Operation failed: ${result.error}`);
+      } else if (!isFreeOperation && response.status === 402 && result.x402) {
+        // Handle X402 payment automatically for maintenance operations
+        console.log(chalk.yellow(`💰 X402 payment required for ${name} execution`));
+
+        // Validate X402 response structure
+        if (!result.x402.accepts || !result.x402.accepts[0]) {
+          console.log(chalk.red(`❌ Invalid X402 response structure:`, result.x402));
+          throw new Error('Invalid X402 payment requirement format');
+        }
+
+        const paymentReq = result.x402.accepts[0];
+        if (!paymentReq.maxAmountRequired || !paymentReq.payTo) {
+          console.log(chalk.red(`❌ Missing required X402 fields:`, paymentReq));
+          throw new Error('X402 payment requirement missing required fields');
+        }
+
+        // First, send the actual ETH payment to the facilitator
+        const paymentAmount = paymentReq.maxAmountRequired;
+        const facilitatorAddress = paymentReq.payTo;
+
+        console.log(chalk.blue(`💸 Sending ${parseFloat(paymentAmount) / 1e18} ETH to facilitator: ${facilitatorAddress}`));
+
+        let paymentTx;
+
+        try {
+          // Import viem functions
+          const { createWalletClient, http, parseEther } = await import('viem');
+          const { privateKeyToAccount } = await import('viem/accounts');
+          const { baseSepolia } = await import('viem/chains');
+
+          // Create agent wallet
+          const agentAccount = privateKeyToAccount(config.wallet.privateKey);
+          const agentWallet = createWalletClient({
+            account: agentAccount,
+            chain: baseSepolia,
+            transport: http(process.env.RPC_URL || 'https://sepolia.base.org')
+          });
+
+          // Send ETH to facilitator
+          paymentTx = await agentWallet.sendTransaction({
+            to: facilitatorAddress,
+            value: BigInt(paymentAmount)
+          });
+
+          console.log(chalk.green(`✅ Payment sent: ${paymentTx}`));
+
+          // Wait for confirmation
+          const publicClient = await import('viem').then(m => m.createPublicClient({
+            chain: baseSepolia,
+            transport: http(process.env.RPC_URL || 'https://sepolia.base.org')
+          }));
+
+          const receipt = await publicClient.waitForTransactionReceipt({ hash: paymentTx });
+          console.log(chalk.green(`✅ Payment confirmed in block ${receipt.blockNumber}`));
+
+        } catch (paymentError) {
+          console.log(chalk.red(`❌ Payment failed: ${paymentError.message}`));
+          throw new Error(`Failed to send payment: ${paymentError.message}`);
+        }
+
+        // Now create signed payment payload and submit
+        const paymentPayload = await this.createX402PaymentPayload(result.x402.accepts[0]);
+
+        console.log(chalk.blue(`🔏 Submitting X402 authorization request...`));
+
+        // Submit with payment headers including transaction hash
+        console.log(chalk.gray(`   Submitting to: ${url}`));
+        const paymentHeaders = {
+          'Content-Type': 'application/json',
+          'x402-payment-payload': JSON.stringify(paymentPayload),
+          'x402-payment-status': 'payment-submitted',
+          'x402-payment-tx': paymentTx // Include the payment transaction hash
+        };
+
+        if (config.wallet.address) {
+          paymentHeaders['x-agent-address'] = config.wallet.address;
+        }
+
+        response = await fetch(url, {
+          method,
+          headers: paymentHeaders,
+          body
+        });
+
+        console.log(chalk.gray(`   Authorization response status: ${response.status}`));
+        result = await response.json();
+        console.log(chalk.gray(`   Authorization result: ${JSON.stringify(result)}`));
+        console.log(chalk.gray(`   Result type check: ${typeof result}, has error: ${!!result?.error}`));
+      }
+
+      console.log(chalk.gray(`   Final check - response.ok: ${response.ok}, result exists: ${!!result}, has auth token: ${!!result?.authorizationToken}`));
+      if (response.ok && result.authorizationToken) {
+        console.log(chalk.green(`✅ ${name} authorized successfully!`));
 
         // Handle authorization token response - execute transaction via agent API
-        if (result.authorized && result.authorizationToken) {
+        if (result.authorizationToken) {
           console.log(chalk.blue(`🔑 Received authorization token, executing transaction...`));
 
           // Call agent API server to execute the actual transaction
-          // Extract tokenId and action from the URL or result
+          // Extract tokenId and action from the URL
+          // URL format: /api/maintenance/action/{tokenId}/{action}
           const urlParts = url.split('/');
-          const tokenId = urlParts[urlParts.length - 1]; // Last part of URL
-          const action = urlParts[urlParts.length - 2]; // Second to last part
+          const action = urlParts[urlParts.length - 1]; // Last part = action (clean/restore/master)
+          const tokenId = urlParts[urlParts.length - 2]; // Second to last = tokenId
+
+          // Action is already correctly extracted from URL
 
           const agentApiUrl = `${config.api.baseUrl}/rug/${tokenId}/execute`;
+          console.log(chalk.gray(`   URL extracted action: "${action}", tokenId: "${tokenId}"`));
+
+          const authObject = {
+            authorization: {
+              authorizationToken: result.authorizationToken,
+              action: action,
+              tokenId: tokenId,
+              nonce: result.nonce,
+              expires: result.expires
+            }
+          };
+          console.log(chalk.gray(`   Auth object:`, JSON.stringify(authObject, null, 2)));
+
           const executeResponse = await fetch(agentApiUrl, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-              authorization: {
-                authorizationToken: result.authorizationToken,
-                action: action,
-                tokenId: tokenId,
-                expires: result.expires
-              }
-            })
+            body: JSON.stringify(authObject)
           });
 
           const executeResult = await executeResponse.json();
@@ -579,7 +553,7 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
         }
 
         // Format the response for better user experience
-        if (['clean_rug', 'restore_rug', 'master_restore_rug'].includes(name) && args?.confirmed) {
+        if (['clean_rug', 'restore_rug', 'master_restore_rug'].includes(name)) {
           // This was an execution, format nicely
           const actionName = name.replace('_rug', '').replace('_', ' ');
           const paymentAmount = result.x402Payment ? formatEther(BigInt(result.x402Payment)) : '0';
@@ -602,40 +576,15 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
           const stats = result.data;
           return {
             ...result,
-            message: `Agent Stats: ${stats.agentName} has ${stats.walletBalanceEth} ETH in wallet, paid ${stats.totalServiceFeesPaidEth} ETH in service fees, performed ${stats.maintenanceCount} maintenance operations.`,
+            message: `Agent Stats: ${stats.agentName} has ${stats.walletBalanceEth} ETH in wallet, performed ${stats.maintenanceCount} maintenance operations. Service fees collected by facilitator, agent pays gas fees (~${stats.estimatedGasFeesPaidEth} ETH estimated).`,
             formatted: true
           };
-        } else if (['clean_rug', 'restore_rug', 'master_restore_rug'].includes(name) && !args?.confirmed) {
-          // This was a successful quote, format the cost info
-          const extra = result.x402?.accepts?.[0]?.extra;
-          if (extra) {
-            const totalCostEth = formatEther(BigInt(result.x402.accepts[0].maxAmountRequired));
-            const maintenanceCostEth = formatEther(BigInt(extra.maintenanceWei || '0'));
-            const serviceFeeEth = formatEther(BigInt(extra.serviceFeeWei || '0'));
-            const action = name.replace('_rug', '');
-
-            console.log(`💰 Quote details:`, {
-              action,
-              maintenanceCostEth,
-              serviceFeeEth,
-              totalCostEth
-            });
-
-            return {
-              ...result,
-              action,
-              maintenanceCostEth,
-              serviceFeeEth,
-              totalCostEth,
-              message: `Quote for ${action}: ${totalCostEth} ETH total (${maintenanceCostEth} ETH maintenance + ${serviceFeeEth} ETH service fee). Confirm?`,
-              formatted: true
-            };
-          }
-        }
 
         return result;
       } else {
-        const errorMsg = result.error || result.message || 'Unknown error';
+        console.log(chalk.gray(`   Error handling - result: ${JSON.stringify(result)}, response.ok: ${response.ok}, result type: ${typeof result}`));
+        console.log(chalk.gray(`   Error handling - result keys: ${result ? Object.keys(result) : 'undefined'}`));
+        const errorMsg = result?.error || result?.message || 'Unknown error';
         console.log(chalk.red(`❌ ${name} failed: ${errorMsg}`));
 
         // Handle specific error cases
@@ -654,6 +603,7 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
         }
 
         return null;
+      }
       }
     } catch (error) {
       console.log(chalk.red(`❌ Tool execution failed: ${error.message}`));
@@ -702,9 +652,10 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
     return paymentPayload;
   }
 
+
   async chatWithAgent(userInput) {
     try {
-      // No global payment requirement - operations handle their own payment logic
+      // Operations execute immediately without confirmation
 
       // Add user message to conversation
       this.conversationHistory.push({ role: 'user', content: userInput });
@@ -777,11 +728,16 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
               });
             } else {
               // For regular results, use full JSON
-              this.conversationHistory.push({
-                role: 'tool',
-                content: JSON.stringify(result),
-                tool_call_id: toolCall.id
-              });
+          this.conversationHistory.push({
+            role: 'tool',
+            content: JSON.stringify(result),
+            tool_call_id: toolCall.id
+          });
+            }
+
+            // If this was a quote waiting for confirmation, don't call LLM again
+            if (result.waitingForConfirmation) {
+              return result.message;
             }
           }
         }
@@ -847,9 +803,33 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
 
 // Main execution
 async function main() {
-  const chat = new AgentRugChat();
+  try {
+    console.log(chalk.bold.blue('🤖 Agent Rug - Seamless Blockchain Chat'));
+    console.log(chalk.gray('💡 Chat naturally with Agent Rug!'));
+    console.log(chalk.gray('💡 Type "exit" to quit\n'));
+
+    console.log(chalk.blue('🔧 Initializing chat interface...'));
+
+    // Initialize chat instance
+    let chat;
+    try {
+      console.log(chalk.blue('📦 Loading dependencies...'));
+      // Test Ollama import
+      const { Ollama } = await import('ollama');
+      console.log(chalk.green('✅ Ollama import successful'));
+
+      chat = new AgentRugChat();
+      console.log(chalk.green('✅ Chat interface initialized'));
+    } catch (error) {
+      console.log(chalk.red('❌ Failed to initialize chat interface:'), error.message);
+      console.log(chalk.yellow('Stack trace:'), error.stack);
+      console.log(chalk.yellow('💡 Check if Ollama package is installed: npm install'));
+      console.log(chalk.yellow('💡 Check if Ollama server is running: ollama serve'));
+      process.exit(1);
+    }
 
   // Test API connection
+    console.log(chalk.blue('🔗 Testing API connection...'));
   try {
     const response = await fetch(`${config.api.baseUrl}/health`);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -858,32 +838,41 @@ async function main() {
   } catch (error) {
     console.log(chalk.red('❌ API server connection failed:'), error.message);
     console.log(chalk.yellow('💡 Make sure API server is running: npm run api-server'));
+      console.log(chalk.yellow('💡 Continuing anyway - some features may not work'));
+    }
+
+    // Ensure Ollama is running
+    console.log(chalk.blue('🔍 Checking Ollama connection...'));
+    const ollamaReady = await chat.ensureOllamaRunning();
+    if (!ollamaReady) {
+      console.log(chalk.red('❌ Could not start Ollama. Please install Ollama and run: ollama serve'));
     process.exit(1);
   }
 
-  // Ensure Ollama is running and check model
-  const ollamaReady = await chat.ensureOllamaRunning();
-  if (!ollamaReady) {
-    console.log(chalk.red('❌ Could not start Ollama. Please install Ollama and run: ollama serve'));
-    process.exit(1);
-  }
-
-  // Check for configured model
+    // Check for configured model
+    console.log(chalk.blue('🤖 Checking AI model...'));
   try {
     const models = await chat.ollama.list();
-    const modelName = config.ollama.model.split(':')[0]; // Get base name (e.g., 'deepseek-r1' from 'deepseek-r1:8b')
-    const hasModel = models.models.some(m => m.name.includes(modelName));
+      const modelName = config.ollama.model.split(':')[0]; // Get base name (e.g., 'llama3.1' from 'llama3.1:8b')
+      const hasModel = models.models.some(m => m.name.includes(modelName));
     if (!hasModel) {
-      console.log(chalk.red(`❌ ${modelName} model not found. Please run: ollama pull ${config.ollama.model}`));
+        console.log(chalk.red(`❌ ${modelName} model not found. Please run: ollama pull ${config.ollama.model}`));
       process.exit(1);
+      }
+      console.log(chalk.green(`✅ ${modelName} ready with tool calling`));
+    } catch (error) {
+      console.log(chalk.red('❌ Failed to check models:'), error.message);
+      console.log(chalk.yellow('💡 Continuing without model check - may not work properly'));
     }
-    console.log(chalk.green(`✅ ${modelName} ready with tool calling`));
+
+    console.log(chalk.green('\n🚀 Starting interactive chat...\n'));
+    await chat.startInteractiveChat();
+
   } catch (error) {
-    console.log(chalk.red('❌ Failed to check models:'), error.message);
+    console.log(chalk.red('\n❌ Fatal error starting chat:'), error.message);
+    console.log(chalk.yellow('Stack trace:'), error.stack);
     process.exit(1);
   }
-
-  await chat.startInteractiveChat();
 }
 
 main().catch(console.error);

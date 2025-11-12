@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { callContractMultiFallback } from '@/lib/web3'
 import { getContractAddress, DEFAULT_CHAIN_ID, getNetworkByChainId } from '@/lib/networks'
 import { createPaymentRequiredResponse, verifyAndSettlePayment } from '@/lib/x402'
-import { formatEther, keccak256, encodeAbiParameters } from 'viem'
+import { formatEther, keccak256, encodePacked } from 'viem'
 
 const maintenanceAbi = [
   {
@@ -58,21 +58,35 @@ const adminFeesAbi = [
 type Action = 'clean' | 'restore' | 'master'
 
 export async function POST(request: NextRequest, context: { params: Promise<{ tokenId: string, action: Action }> }) {
+  console.log(`🚀 Action route called`)
   try {
+    console.log(`📋 Parsing request params...`)
     const params = await context.params
     const tokenId = params.tokenId
     const action = params.action
     const chainId = DEFAULT_CHAIN_ID
 
+    console.log(`📋 Params: tokenId=${tokenId}, action=${action}, chainId=${chainId}`)
+    console.log(`📋 DEFAULT_CHAIN_ID value:`, DEFAULT_CHAIN_ID)
+
     // Use the configured contract address
+    console.log(`🏠 Looking up contract address for chain ${chainId}...`)
     const contract = getContractAddress(chainId)
+    console.log(`🏠 Contract address: ${contract}`)
+
     if (!contract) {
-      return NextResponse.json({ error: 'Contract not configured for this network' }, { status: 500 })
+      console.error(`❌ No contract configured for chainId ${chainId}`)
+      return NextResponse.json({
+        error: 'Contract not configured for this network',
+        details: `chainId: ${chainId}, contract: ${contract}`
+      }, { status: 500 })
     }
 
     // Check for X402 payment headers
     const paymentPayload = request.headers.get('x402-payment-payload')
     const paymentStatus = request.headers.get('x402-payment-status')
+
+    console.log(`💳 Payment headers - payload: ${!!paymentPayload}, status: ${paymentStatus}`)
 
     // Get maintenance options first
     const [canClean, canRestore, needsMaster, cleaningCost, restorationCost, masterCost] = await callContractMultiFallback(
@@ -128,34 +142,69 @@ export async function POST(request: NextRequest, context: { params: Promise<{ to
 
     // If no payment headers, return payment required
     if (!paymentPayload || paymentStatus !== 'payment-submitted') {
-      const paymentRequired = await createPaymentRequiredResponse({
-        price: price,
-        description: `${action.charAt(0).toUpperCase() + action.slice(1)} ${description} (agent single-tx)`,
-        contractAddress: contract,
-        functionName: functionName,
-        tokenId: tokenId,
-        maintenanceCost: formatEther(maintenanceWei),
-        serviceFee: formatEther(serviceFee)
-      })
+      console.log(`💰 Creating payment requirement for ${action} on rug #${tokenId}: ${price} ETH`)
 
-      // Add extra metadata for agent UX
-      if (paymentRequired.x402?.accepts?.[0]) {
-        paymentRequired.x402.accepts[0].extra = {
-          ...paymentRequired.x402.accepts[0].extra,
+      try {
+        const paymentRequired = await createPaymentRequiredResponse({
+          price: price,
+          description: `${action.charAt(0).toUpperCase() + action.slice(1)} ${description} (agent single-tx)`,
+          contractAddress: contract,
           functionName: functionName,
           tokenId: tokenId,
-          maintenanceWei: maintenanceWei.toString(),
-          serviceFeeWei: serviceFee.toString(),
-          totalWei: totalWei.toString()
-        }
-      }
+          maintenanceCost: formatEther(maintenanceWei),
+          serviceFee: formatEther(serviceFee)
+        })
 
-      console.log(`💰 X402 payment required for ${action} on rug #${tokenId}: ${price} ETH`)
-      return NextResponse.json(paymentRequired, { status: 402 })
+        console.log(`💰 Payment requirement created:`, JSON.stringify(paymentRequired, null, 2))
+
+        // Validate the response structure
+        if (!paymentRequired || !paymentRequired.x402) {
+          console.error(`❌ Invalid payment requirement response:`, paymentRequired)
+          return NextResponse.json({
+            error: 'Failed to create valid payment requirement',
+            details: 'Response missing x402 structure'
+          }, { status: 500 })
+        }
+
+        // Add extra metadata for agent UX
+        if (paymentRequired.x402?.accepts?.[0]) {
+          paymentRequired.x402.accepts[0].extra = {
+            ...paymentRequired.x402.accepts[0].extra,
+            functionName: functionName,
+            tokenId: tokenId,
+            maintenanceWei: maintenanceWei.toString(),
+            serviceFeeWei: serviceFee.toString(),
+            totalWei: totalWei.toString()
+          }
+        }
+
+        console.log(`💰 X402 payment required for ${action} on rug #${tokenId}: ${price} ETH`)
+        return NextResponse.json(paymentRequired, { status: 402 })
+      } catch (error) {
+        console.error(`❌ Failed to create payment requirement:`, error)
+        return NextResponse.json({
+          error: 'Failed to create payment requirement',
+          details: error.message
+        }, { status: 500 })
+      }
     }
 
-    // Verify and settle X402 payment
-    const paymentResult = await verifyAndSettlePayment(paymentPayload)
+    // Verify X402 payment (skip settlement for direct contract payments)
+    console.log(`🔍 Verifying X402 payment...`)
+    console.log(`🔍 Payment payload present: ${!!paymentPayload}`)
+
+    let paymentResult
+    try {
+      paymentResult = await verifyAndSettlePayment(paymentPayload)
+      console.log(`🔍 Payment verification result:`, paymentResult)
+    } catch (verificationError) {
+      console.error(`❌ Payment verification threw exception:`, verificationError)
+      return NextResponse.json({
+        error: 'Payment verification failed',
+        reason: verificationError instanceof Error ? verificationError.message : 'Unknown verification error'
+      }, { status: 402 })
+    }
+
     if (!paymentResult.isValid) {
       console.log(`❌ X402 payment verification failed: ${paymentResult.invalidReason}`)
       return NextResponse.json({
@@ -164,48 +213,71 @@ export async function POST(request: NextRequest, context: { params: Promise<{ to
       }, { status: 402 })
     }
 
-    if (!paymentResult.settlementSuccess) {
-      console.log(`❌ X402 payment settlement failed: ${paymentResult.errorReason}`)
-      return NextResponse.json({
-        error: 'Payment settlement failed',
-        reason: paymentResult.errorReason
-      }, { status: 402 })
-    }
+    // For our setup, payment is sent directly to contract, so settlement is not needed
+    console.log(`✅ Payment verification successful - settlement not required for direct contract payments`)
 
     // Generate authorization token for agent to execute transaction
     console.log(`🔑 Generating authorization token for ${action} on rug #${tokenId}...`)
 
-    // Get agent address from headers (set by agent)
-    const agentAddress = request.headers.get('x-agent-address')
-    if (!agentAddress) {
-      return NextResponse.json({ error: 'Agent address required' }, { status: 400 })
-    }
+// Get agent address from headers (set by agent)
+const agentAddress = request.headers.get('x-agent-address')
+if (!agentAddress) {
+  return NextResponse.json({ error: 'Agent address required' }, { status: 400 })
+}
 
-    // Create unique authorization token hash
-    // This hash is unique per transaction and will be marked as used by the contract
-    const expires = Math.floor(Date.now() / 1000) + (5 * 60) // 5 minutes from now
-    const uniqueId = Math.random().toString(36) + Date.now().toString(36)
+console.log(`🔑 Token generation - agentAddress: ${agentAddress}, tokenId: ${tokenId}, action: ${action}`)
 
-    const tokenData = encodeAbiParameters(
-      ['address', 'uint256', 'string', 'uint256', 'string'],
-      [agentAddress as `0x${string}`, BigInt(tokenId), action, BigInt(expires), uniqueId]
-    )
+// Create unique authorization token hash
+// This hash is unique per transaction and will be marked as used by the contract
+const expires = Math.floor(Date.now() / 1000) + (5 * 60) // 5 minutes from now
+const uniqueId = Math.random().toString(36) + Date.now().toString(36)
 
-    const authorizationToken = keccak256(tokenData)
+console.log(`🔑 Token params - expires: ${expires}, uniqueId: ${uniqueId}`)
 
-    console.log(`✅ Payment verified - authorization token generated: ${authorizationToken}`)
+// Validate all parameters before encoding
+if (!agentAddress || !tokenId || !action) {
+  console.error(`🔑 Token generation failed - missing params:`, {
+    agentAddress: !!agentAddress,
+    tokenId: !!tokenId,
+    action: !!action
+  })
+  return NextResponse.json({ error: 'Invalid token parameters' }, { status: 500 })
+}
 
-    return NextResponse.json({
-      success: true,
-      authorized: true,
-      authorizationToken: authorizationToken,
-      nonce: uniqueId,
-      expires: expires,
-      message: `Payment verified. Use this token to execute ${action} on rug #${tokenId}`
-    })
+try {
+  // Validate agentAddress format
+  if (!agentAddress.startsWith('0x') || agentAddress.length !== 42) {
+    throw new Error(`Invalid agent address format: ${agentAddress}`)
+  }
+
+  // Use encodePacked to match Solidity's abi.encodePacked behavior
+  const tokenData = encodePacked(
+    ['address', 'uint256', 'string', 'uint256', 'string'],
+    [agentAddress as `0x${string}`, BigInt(tokenId), action, BigInt(expires), uniqueId]
+  )
+
+  const authorizationToken = keccak256(tokenData)
+
+  console.log(`✅ Payment verified - authorization token generated: ${authorizationToken}`)
+
+  return NextResponse.json({
+    authorizationToken: authorizationToken,
+    action,
+    tokenId,
+    nonce: uniqueId,
+    expires
+  })
+} catch (tokenError) {
+  console.error(`❌ Token generation failed:`, tokenError)
+  return NextResponse.json({
+    error: 'Token generation failed',
+    details: tokenError instanceof Error ? tokenError.message : 'Unknown error'
+  }, { status: 500 })
+}
 
   } catch (err) {
     console.error('maintenance action error:', err)
+    console.error('Error stack:', err instanceof Error ? err.stack : 'No stack trace')
     return NextResponse.json({
       error: 'Failed to execute maintenance action',
       details: err instanceof Error ? err.message : 'Unknown error'

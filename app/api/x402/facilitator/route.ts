@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createWalletClient, http, parseEther, formatEther, recoverMessageAddress } from 'viem'
-import { shapeSepolia } from 'viem/chains'
+import { createWalletClient, createPublicClient, http, parseEther, formatEther, recoverMessageAddress } from 'viem'
+import { baseSepolia } from 'viem/chains'
 import { privateKeyToAccount } from 'viem/accounts'
 
 // Facilitator wallet for settlement operations
@@ -8,10 +8,15 @@ const facilitatorPrivateKey = process.env.FACILITATOR_PRIVATE_KEY
 const facilitatorAccount = facilitatorPrivateKey ? privateKeyToAccount(facilitatorPrivateKey as `0x${string}`) : null
 
 const facilitatorWallet = facilitatorAccount ? createWalletClient({
-  chain: shapeSepolia,
-  transport: http(process.env.RPC_URL || 'https://sepolia.shape.network'),
+  chain: baseSepolia,
+  transport: http(process.env.RPC_URL || 'https://sepolia.base.org'),
   account: facilitatorAccount
 }) : null
+
+const publicClient = createPublicClient({
+  chain: baseSepolia,
+  transport: http(process.env.RPC_URL || 'https://sepolia.base.org')
+})
 
 // Supported schemes for Shape network
 const SUPPORTED_SCHEMES = ['exact']
@@ -57,7 +62,7 @@ export async function POST(request: NextRequest) {
       case 'verify_payment':
         return await verifyPayment(params)
       case 'settle_payment':
-        return await settlePayment(params)
+        return await settlePayment(params, request)
       case 'get_supported':
         return await getSupported()
       default:
@@ -236,7 +241,7 @@ async function verifyPayment(params: { paymentPayload: string }): Promise<NextRe
   }
 }
 
-async function settlePayment(params: { paymentPayload: string }): Promise<NextResponse> {
+async function settlePayment(params: { paymentPayload: string }, request: NextRequest): Promise<NextResponse> {
   const { paymentPayload } = params
 
   try {
@@ -250,39 +255,125 @@ async function settlePayment(params: { paymentPayload: string }): Promise<NextRe
       console.log('❌ Settlement failed: Payment verification failed')
       return NextResponse.json({
         success: false,
-        errorReason: verifyData.invalidReason
-      })
+        error: 'Payment verification failed',
+        details: verifyData.invalidReason
+      }, { status: 400 })
     }
 
     const payload: PaymentPayload = JSON.parse(paymentPayload)
-    console.log(`💰 Settling payment: ${formatEther(BigInt(payload.payment.amount))} ETH from ${payload.payment.from} to ${payload.payment.to}`)
+    console.log(`💰 Processing payment: ${formatEther(BigInt(payload.payment.amount))} ETH from ${payload.payment.from} to ${payload.payment.to}`)
 
-    // For Shape network settlement, we would normally check the blockchain
-    // But for this implementation, we'll simulate settlement
-    // In production, you'd check the actual transaction on-chain
+    // Verify the actual payment transaction on-chain
+    console.log('🔍 Verifying payment transaction on blockchain...')
 
-    console.log('✅ Using simulated settlement for testing')
+    try {
+      // Get the payment transaction hash from headers
+      const paymentTxHash = request.headers.get('x402-payment-tx')
+      if (!paymentTxHash) {
+        console.log('❌ No payment transaction hash provided')
+        return NextResponse.json({
+          success: false,
+          error: 'Payment transaction hash required'
+        }, { status: 400 })
+      }
 
-    // Simulate settlement by checking if the payment would be valid
-    // In a real implementation, you'd:
-    // 1. Check the blockchain for the actual payment transaction
-    // 2. Transfer funds if settlement is required
-    // 3. Update payment status
+      console.log(`🔍 Checking transaction: ${paymentTxHash}`)
 
-    console.log(`✅ Simulated settlement for payment from ${payload.payment.from} to ${payload.payment.to} of ${formatEther(BigInt(payload.payment.amount))} ETH`)
+      // Get the transaction receipt
+      const receipt = await publicClient.getTransactionReceipt({
+        hash: paymentTxHash as `0x${string}`
+      })
 
-    return NextResponse.json({
-      success: true,
-      transactionHash: '0x' + Math.random().toString(16).substring(2, 66), // Simulated tx hash
-      settledAmount: payload.payment.amount,
-      network: payload.payment.network
-    })
+      if (!receipt) {
+        console.log('❌ Payment transaction not found on blockchain')
+        return NextResponse.json({
+          success: false,
+          error: 'Payment transaction not found'
+        }, { status: 400 })
+      }
+
+      if (receipt.status !== 'success') {
+        console.log('❌ Payment transaction failed')
+        return NextResponse.json({
+          success: false,
+          error: 'Payment transaction failed'
+        }, { status: 400 })
+      }
+
+      // Verify transaction details match the payment request
+      const tx = await publicClient.getTransaction({
+        hash: paymentTxHash as `0x${string}`
+      })
+
+      if (!tx) {
+        console.log('❌ Could not retrieve transaction details')
+        return NextResponse.json({
+          success: false,
+          error: 'Could not verify transaction details'
+        }, { status: 400 })
+      }
+
+      // Verify the transaction matches our payment request
+      const expectedFrom = payload.payment.from.toLowerCase()
+      const expectedTo = payload.payment.to.toLowerCase()
+      const expectedAmount = BigInt(payload.payment.amount)
+
+      const actualFrom = tx.from.toLowerCase()
+      const actualTo = tx.to?.toLowerCase()
+      const actualAmount = tx.value
+
+      if (actualFrom !== expectedFrom) {
+        console.log(`❌ Transaction from address mismatch: expected ${expectedFrom}, got ${actualFrom}`)
+        return NextResponse.json({
+          success: false,
+          error: 'Transaction sender mismatch'
+        }, { status: 400 })
+      }
+
+      if (actualTo !== expectedTo) {
+        console.log(`❌ Transaction to address mismatch: expected ${expectedTo}, got ${actualTo}`)
+        return NextResponse.json({
+          success: false,
+          error: 'Transaction recipient mismatch'
+        }, { status: 400 })
+      }
+
+      if (actualAmount !== expectedAmount) {
+        console.log(`❌ Transaction amount mismatch: expected ${expectedAmount}, got ${actualAmount}`)
+        return NextResponse.json({
+          success: false,
+          error: 'Transaction amount mismatch'
+        }, { status: 400 })
+      }
+
+      console.log('✅ Payment transaction verified on blockchain')
+      console.log(`📝 Ready to issue authorization token for ${payload.payment.amount} wei payment`)
+
+      return NextResponse.json({
+        success: true,
+        transactionHash: paymentTxHash,
+        settledAmount: payload.payment.amount,
+        network: payload.payment.network,
+        note: 'Testnet settlement - transaction verified on blockchain'
+      })
+
+    } catch (verificationError: any) {
+      console.log(`❌ Payment verification error: ${verificationError.message}`)
+      console.log('🚫 SECURITY: NOT issuing token due to verification failure')
+
+      return NextResponse.json({
+        success: false,
+        error: 'Payment verification failed - transaction check failed',
+        details: verificationError.message
+      }, { status: 400 })
+    }
 
   } catch (error) {
     return NextResponse.json({
       success: false,
-      errorReason: 'Settlement failed'
-    })
+      error: 'Settlement failed',
+      details: error.message
+    }, { status: 500 })
   }
 }
 

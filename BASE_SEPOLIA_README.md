@@ -149,7 +149,7 @@ Follow the comprehensive guide in [`BASE_SEPOLIA_DEPLOYMENT_GUIDE.md`](./BASE_SE
 ### Environment Variables
 
 ```bash
-# Add to .env or .env.local
+# Add to .env
 NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT=YOUR_DIAMOND_ADDRESS
 NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=your_project_id
 NEXT_PUBLIC_ALCHEMY_API_KEY=your_alchemy_key
