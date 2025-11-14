@@ -192,12 +192,6 @@ export async function POST(request: NextRequest, context: { params: Promise<{ to
     // Generate authorization token for agent to execute transaction
     console.log(`🔑 Generating authorization token for ${action} on rug #${tokenId}...`)
 
-// Get agent address from headers (set by agent)
-const agentAddress = request.headers.get('x-agent-address')
-if (!agentAddress) {
-  return NextResponse.json({ error: 'Agent address required' }, { status: 400 })
-}
-
 console.log(`🔑 Token generation - agentAddress: ${agentAddress}, tokenId: ${tokenId}, action: ${action}`)
 
 // Create unique authorization token hash
