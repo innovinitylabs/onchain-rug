@@ -365,7 +365,7 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
         'Content-Type': 'application/json',
       };
 
-      if (config.wallet.address && url.includes('/api/maintenance/action/')) {
+      if (config.wallet.address && url.includes('/api/maintenance/')) {
         headers['x-agent-address'] = config.wallet.address;
       }
 
