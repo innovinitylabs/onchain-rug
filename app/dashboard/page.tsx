@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useAccount, useReadContract, useChainId, usePublicClient, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
+import { useAccount, useReadContract, useChains, useChainId, usePublicClient, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import { onchainRugsABI, contractAddresses, callContractMultiFallback } from '@/lib/web3'
 import { Wallet, AlertCircle, RefreshCw, Droplets, Sparkles, Crown, TrendingUp, Clock, ExternalLink, Copy, CheckCircle, Maximize2, Minimize2, Bot, Zap } from 'lucide-react'
 import Navigation from '@/components/Navigation'
@@ -113,7 +113,9 @@ interface RugData {
 
 export default function DashboardPage() {
   const { address, isConnected } = useAccount()
+  const chains = useChains()
   const chainId = useChainId()
+  const chain = chains.find(c => c.id === chainId)
   const publicClient = usePublicClient()
   const { writeContract, data: hash, isPending, isSuccess, error: writeError } = useWriteContract()
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
@@ -152,17 +154,17 @@ export default function DashboardPage() {
     }
   }
 
-  const contractAddress = getContractAddress(chainId)
+  const contractAddress = chain ? getContractAddress(chain.id) : ''
 
   // Debug logging for network changes
   useEffect(() => {
     console.log('Network changed:', {
-      chainId,
+      chainId: chain?.id,
       contractAddress,
       isConnected,
       address
     })
-  }, [chainId, contractAddress, isConnected, address])
+  }, [chain?.id, contractAddress, isConnected, address])
 
   // Get user's rug balance
   const { data: balance, refetch: refetchBalance, isLoading: balanceLoading, isError: balanceError } = useReadContract({
@@ -215,7 +217,7 @@ export default function DashboardPage() {
         onchainRugsABI,
         'tokenURI',
         [BigInt(tokenId)],
-        { chainId }
+        { chainId: chain?.id }
       ) as unknown as string
 
       console.log(`Got tokenURI for rug #${tokenId}:`, tokenURI ? 'success' : 'empty')
@@ -236,7 +238,7 @@ export default function DashboardPage() {
             onchainRugsABI,
             'ownerOf',
             [BigInt(tokenId)],
-            { chainId }
+            { chainId: chain?.id }
           ) as unknown as string
 
           // Create rug data object
@@ -281,7 +283,7 @@ export default function DashboardPage() {
         onchainRugsABI,
         'tokenURI',
         [BigInt(tokenId)],
-        { chainId }
+        { chainId: chain?.id }
       ) as unknown as string
 
       if (tokenURI && tokenURI.startsWith('data:application/json;base64,')) {
@@ -307,7 +309,7 @@ export default function DashboardPage() {
           onchainRugsABI,
           'ownerOf',
           [BigInt(tokenId)],
-          { chainId }
+          { chainId: chain?.id }
         ) as unknown as string
 
         return {
@@ -349,7 +351,7 @@ export default function DashboardPage() {
 
         console.log('Fetching rugs for address:', address)
         console.log('Using contract address:', contractAddress)
-        console.log('Current chain ID:', chainId)
+        console.log('Current chain ID:', chain?.id)
 
         // First, check if user has any balance to avoid unnecessary API calls
         if (!balance || balance === BigInt(0)) {
@@ -362,7 +364,7 @@ export default function DashboardPage() {
         console.log(`User has ${balance} NFTs, proceeding with loading...`)
 
         // Get NFTs owned by user from Alchemy
-        const ownerResponse = await fetch(`${window.location.origin}/api/alchemy?endpoint=getNFTsForOwner&contractAddresses[]=${contractAddress}&owner=${address}&chainId=${chainId}`)
+        const ownerResponse = await fetch(`${window.location.origin}/api/alchemy?endpoint=getNFTsForOwner&contractAddresses[]=${contractAddress}&owner=${address}&chainId=${chain?.id}`)
         const ownerData = await ownerResponse.json()
 
         console.log('Owner data response:', ownerData)
@@ -479,8 +481,8 @@ export default function DashboardPage() {
     }
 
     if (!contractAddress) {
-      alert(`Contract not available on this network (Chain ID: ${chainId}). Please switch to a supported network.`)
-      console.error('No contract address for chainId:', chainId)
+      alert(`Contract not available on this network (Chain ID: ${chain?.id}). Please switch to a supported network.`)
+      console.error('No contract address for chainId:', chain.id)
       return
     }
 
@@ -498,7 +500,7 @@ export default function DashboardPage() {
         functionName: 'authorizeMaintenanceAgent',
         args: [agentAddress as `0x${string}`],
         account: address,
-        chain: chainId,
+        chain,
       })
       console.log('writeContract called successfully')
     } catch (error) {
@@ -530,7 +532,7 @@ export default function DashboardPage() {
   // Handle agent revocation
   const handleRevokeAgent = async (agentToRevoke: string) => {
     if (!contractAddress) {
-      alert(`Contract not available on this network (Chain ID: ${chainId}). Please switch to a supported network.`)
+      alert(`Contract not available on this network (Chain ID: ${chain?.id}). Please switch to a supported network.`)
       return
     }
 
@@ -544,7 +546,7 @@ export default function DashboardPage() {
         functionName: 'revokeMaintenanceAgent',
         args: [agentToRevoke as `0x${string}`],
         account: address,
-        chain: chainId,
+        chain,
       })
     } catch (error) {
       console.error('Revocation failed:', error)
@@ -730,7 +732,7 @@ export default function DashboardPage() {
                     {contractAddress ? 'Contract Available' : 'Contract Not Available'}
                   </div>
                   <div className="text-white/60 text-sm">
-                    Chain ID: {chainId} | Contract: {contractAddress || 'Not configured'}
+                    Chain ID: {chain?.id} | Contract: {contractAddress || 'Not configured'}
                   </div>
                 </div>
               </div>
@@ -798,7 +800,7 @@ export default function DashboardPage() {
             {/* Debug Info */}
             <div className="mt-4 p-3 bg-slate-800/50 rounded-lg text-xs text-white/60">
               <div>Debug: Contract: {contractAddress || 'none'} | Agents: {agentsLoading ? 'loading...' : authorizedAgents?.length || 0} | Error: {agentsError ? 'yes' : 'no'}</div>
-              <div>User Address: {address || 'not connected'} | Chain: {chainId}</div>
+              <div>User Address: {address || 'not connected'} | Chain: {chain?.id}</div>
               {agentsError && <div className="text-red-400">Error: {agentsError.message}</div>}
             </div>
 
