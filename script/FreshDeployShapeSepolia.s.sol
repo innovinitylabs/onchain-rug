@@ -173,6 +173,14 @@ contract FreshDeployShapeSepolia is Script {
         // Set default security policy for royalty enforcement
         RugTransferSecurityFacet(diamondAddr).setToDefaultSecurityPolicy();
         console.log("  Set default ERC721-C security policy");
+
+        // Configure x402 AI maintenance fees
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        address deployer = vm.addr(deployerPrivateKey);
+        RugAdminFacet(diamondAddr).setFeeRecipient(deployer);
+        uint256 serviceFee = uint256(0.00042 ether); // Flat service fee: 0.00042 ETH
+        RugAdminFacet(diamondAddr).setServiceFee(serviceFee);
+        console.log("  Configured x402 AI maintenance fees");
     }
 
     function _getDiamondLoupeSelectors() internal pure returns (bytes4[] memory) {
@@ -233,7 +241,7 @@ contract FreshDeployShapeSepolia is Script {
     }
 
     function _getRugAdminSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](17);
+        bytes4[] memory selectors = new bytes4[](19);
         selectors[0] = RugAdminFacet.updateCollectionCap.selector;
         selectors[1] = RugAdminFacet.updateWalletLimit.selector;
         selectors[2] = RugAdminFacet.updateMintPricing.selector;
@@ -251,6 +259,8 @@ contract FreshDeployShapeSepolia is Script {
         selectors[14] = RugAdminFacet.getExceptionList.selector;
         selectors[15] = RugAdminFacet.setScriptyContracts.selector;
         selectors[16] = RugAdminFacet.isConfigured.selector;
+        selectors[17] = RugAdminFacet.setServiceFee.selector;
+        selectors[18] = RugAdminFacet.setFeeRecipient.selector;
         return selectors;
     }
 
@@ -270,7 +280,7 @@ contract FreshDeployShapeSepolia is Script {
     }
 
     function _getRugMaintenanceSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](10);
+        bytes4[] memory selectors = new bytes4[](17);
         selectors[0] = RugMaintenanceFacet.cleanRug.selector;
         selectors[1] = RugMaintenanceFacet.restoreRug.selector;
         selectors[2] = RugMaintenanceFacet.masterRestoreRug.selector;
@@ -281,6 +291,15 @@ contract FreshDeployShapeSepolia is Script {
         selectors[7] = RugMaintenanceFacet.canRestoreRug.selector;
         selectors[8] = RugMaintenanceFacet.needsMasterRestoration.selector;
         selectors[9] = RugMaintenanceFacet.getMaintenanceOptions.selector;
+        // Agent auth + entrypoints
+        selectors[10] = RugMaintenanceFacet.authorizeMaintenanceAgent.selector;
+        selectors[11] = RugMaintenanceFacet.revokeMaintenanceAgent.selector;
+        selectors[12] = RugMaintenanceFacet.cleanRugAgent.selector;
+        selectors[13] = RugMaintenanceFacet.restoreRugAgent.selector;
+        selectors[14] = RugMaintenanceFacet.masterRestoreRugAgent.selector;
+        // Agent management functions
+        selectors[15] = RugMaintenanceFacet.getAuthorizedAgents.selector;
+        selectors[16] = RugMaintenanceFacet.isAgentAuthorized.selector;
         return selectors;
     }
 

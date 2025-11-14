@@ -30,7 +30,7 @@ NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=your_walletconnect_project_id
 # NEXT_PUBLIC_SHAPE_MAINNET_CONTRACT=0x...
 
 # Base Sepolia Testnet (Chain ID: 84532)
-NEXT_PUBLIC_BASE_SEPOLIA_CONTRACT=0xa43532205Fc90b286Da98389a9883347Cc4064a8
+NEXT_PUBLIC_BASE_SEPOLIA_CONTRACT=0x15c5a551b8aA39a3A4E73643a681E71F76093b62
 
 # Base Mainnet (Chain ID: 8453)
 # NEXT_PUBLIC_BASE_MAINNET_CONTRACT=0x...
@@ -69,3 +69,29 @@ NEXT_PUBLIC_SHAPE_TARGET=sepolia
 # Destination contracts (if not already set via NEXT_PUBLIC_*_CONTRACT)
 # NEXT_PUBLIC_SHAPE_SEPOLIA_CONTRACT=
 # NEXT_PUBLIC_SHAPE_MAINNET_CONTRACT=
+
+# ============================================
+# OPTIONAL: X402 Facilitator Configuration
+# ============================================
+
+# X402 Facilitator URL (defaults to https://x402.org/facilitator)
+# X402_FACILITATOR_URL=https://x402.org/facilitator
+
+# X402 Facilitator API Key (required for payment processing)
+# X402_FACILITATOR_API_KEY=your_facilitator_api_key_here
+
+# X402 Merchant Pay-to Address (where service fees are collected)
+# X402_PAY_TO_ADDRESS=your_merchant_wallet_address_here
+
+# X402 Network (Coinbase facilitator supports: base-sepolia, ethereum-sepolia)
+# For Shape, we're using our custom facilitator
+X402_NETWORK=shape-sepolia
+
+# Custom Facilitator Configuration (for Shape network)
+# Private key for facilitator wallet (used to verify settlements)
+# FACILITATOR_PRIVATE_KEY=your_facilitator_wallet_private_key
+
+# Public app URL (used by facilitator for self-referencing)
+# NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# Agent controls its own wallet - NOT stored on website

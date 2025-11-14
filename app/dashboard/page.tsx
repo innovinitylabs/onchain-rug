@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useAccount, useReadContract, useChainId, usePublicClient } from 'wagmi'
+import { useAccount, useReadContract, useChains, useChainId, usePublicClient, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import { onchainRugsABI, contractAddresses, callContractMultiFallback } from '@/lib/web3'
-import { Wallet, AlertCircle, RefreshCw, Droplets, Sparkles, Crown, TrendingUp, Clock, ExternalLink, Copy, CheckCircle, Maximize2, Minimize2 } from 'lucide-react'
+import { Wallet, AlertCircle, RefreshCw, Droplets, Sparkles, Crown, TrendingUp, Clock, ExternalLink, Copy, CheckCircle, Maximize2, Minimize2, Bot, Zap } from 'lucide-react'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
 import LoadingAnimation from '@/components/LoadingAnimation'
@@ -113,8 +113,14 @@ interface RugData {
 
 export default function DashboardPage() {
   const { address, isConnected } = useAccount()
+  const chains = useChains()
   const chainId = useChainId()
+  const chain = chains.find(c => c.id === chainId)
   const publicClient = usePublicClient()
+  const { writeContract, data: hash, isPending, isSuccess, error: writeError } = useWriteContract()
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+    hash,
+  })
   const [userRugs, setUserRugs] = useState<RugData[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedRug, setSelectedRug] = useState<RugData | null>(null)
@@ -122,7 +128,43 @@ export default function DashboardPage() {
   const [fullScreenMode, setFullScreenMode] = useState(false)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
 
-  const contractAddress = contractAddresses[chainId] // No fallback - prevents accidental wrong network transactions
+  // AI Agent Authorization State
+  const [agentAddress, setAgentAddress] = useState('')
+  const [isAuthorizing, setIsAuthorizing] = useState(false)
+  const [revokingAgent, setRevokingAgent] = useState<string | null>(null)
+  const [showRevokeConfirm, setShowRevokeConfirm] = useState<string | null>(null)
+
+  // Get contract address dynamically from environment variables
+  const getContractAddress = (chainId: number): string => {
+    switch (chainId) {
+      case 11155111: // Ethereum Sepolia
+        return process.env.NEXT_PUBLIC_ETHEREUM_SEPOLIA_CONTRACT || process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT || ''
+      case 11011: // Shape Sepolia
+        return process.env.NEXT_PUBLIC_SHAPE_SEPOLIA_CONTRACT || process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT || ''
+      case 360: // Shape Mainnet
+        return process.env.NEXT_PUBLIC_SHAPE_MAINNET_CONTRACT || process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT || ''
+      case 84532: // Base Sepolia
+        return process.env.NEXT_PUBLIC_BASE_SEPOLIA_CONTRACT || process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT || ''
+      case 8453: // Base Mainnet
+        return process.env.NEXT_PUBLIC_BASE_MAINNET_CONTRACT || process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT || ''
+      case 99999: // TestNet
+        return process.env.NEXT_PUBLIC_TEST_NET_CONTRACT || process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT || ''
+      default:
+        return ''
+    }
+  }
+
+  const contractAddress = chain ? getContractAddress(chain.id) : ''
+
+  // Debug logging for network changes
+  useEffect(() => {
+    console.log('Network changed:', {
+      chainId: chain?.id,
+      contractAddress,
+      isConnected,
+      address
+    })
+  }, [chain?.id, contractAddress, isConnected, address])
 
   // Get user's rug balance
   const { data: balance, refetch: refetchBalance, isLoading: balanceLoading, isError: balanceError } = useReadContract({
@@ -143,6 +185,27 @@ export default function DashboardPage() {
     },
   })
 
+  // Get authorized agents
+  const { data: authorizedAgents, refetch: refetchAuthorizedAgents, isLoading: agentsLoading, error: agentsError } = useReadContract({
+    address: contractAddress as `0x${string}`,
+    abi: onchainRugsABI,
+    functionName: 'getAuthorizedAgentsFor',
+    args: address ? [address] : undefined,
+    query: {
+      enabled: !!contractAddress && !!address,
+    },
+  })
+
+
+  // Debug logging for authorized agents
+  console.log('Authorized agents data:', {
+    authorizedAgents,
+    agentsLoading,
+    agentsError,
+    contractAddress,
+    address,
+    isConnected
+  })
 
   // Helper function to fetch rug data using new utilities
   const fetchRugData = async (tokenId: number): Promise<RugData | null> => {
@@ -154,7 +217,7 @@ export default function DashboardPage() {
         onchainRugsABI,
         'tokenURI',
         [BigInt(tokenId)],
-        { chainId }
+        { chainId: chain?.id }
       ) as unknown as string
 
       console.log(`Got tokenURI for rug #${tokenId}:`, tokenURI ? 'success' : 'empty')
@@ -175,7 +238,7 @@ export default function DashboardPage() {
             onchainRugsABI,
             'ownerOf',
             [BigInt(tokenId)],
-            { chainId }
+            { chainId: chain?.id }
           ) as unknown as string
 
           // Create rug data object
@@ -220,7 +283,7 @@ export default function DashboardPage() {
         onchainRugsABI,
         'tokenURI',
         [BigInt(tokenId)],
-        { chainId }
+        { chainId: chain?.id }
       ) as unknown as string
 
       if (tokenURI && tokenURI.startsWith('data:application/json;base64,')) {
@@ -246,7 +309,7 @@ export default function DashboardPage() {
           onchainRugsABI,
           'ownerOf',
           [BigInt(tokenId)],
-          { chainId }
+          { chainId: chain?.id }
         ) as unknown as string
 
         return {
@@ -288,7 +351,7 @@ export default function DashboardPage() {
 
         console.log('Fetching rugs for address:', address)
         console.log('Using contract address:', contractAddress)
-        console.log('Current chain ID:', chainId)
+        console.log('Current chain ID:', chain?.id)
 
         // First, check if user has any balance to avoid unnecessary API calls
         if (!balance || balance === BigInt(0)) {
@@ -301,7 +364,7 @@ export default function DashboardPage() {
         console.log(`User has ${balance} NFTs, proceeding with loading...`)
 
         // Get NFTs owned by user from Alchemy
-        const ownerResponse = await fetch(`${window.location.origin}/api/alchemy?endpoint=getNFTsForOwner&contractAddresses[]=${contractAddress}&owner=${address}&chainId=${chainId}`)
+        const ownerResponse = await fetch(`${window.location.origin}/api/alchemy?endpoint=getNFTsForOwner&contractAddresses[]=${contractAddress}&owner=${address}&chainId=${chain?.id}`)
         const ownerData = await ownerResponse.json()
 
         console.log('Owner data response:', ownerData)
@@ -402,6 +465,105 @@ export default function DashboardPage() {
       console.error(`Failed to refresh NFT #${tokenId}:`, error)
     }
   }
+
+  // AI Agent Authorization
+  const handleAuthorizeAgent = async () => {
+    console.log('Starting agent authorization...')
+
+    if (!agentAddress || !agentAddress.startsWith('0x') || agentAddress.length !== 42) {
+      alert('Please enter a valid Ethereum address for the AI agent')
+      return
+    }
+
+    if (!isConnected) {
+      alert('Please connect your wallet first')
+      return
+    }
+
+    if (!contractAddress) {
+      alert(`Contract not available on this network (Chain ID: ${chain?.id}). Please switch to a supported network.`)
+      console.error('No contract address for chainId:', chain.id)
+      return
+    }
+
+    console.log('Contract address:', contractAddress)
+    console.log('Agent address:', agentAddress)
+    console.log('User address:', address)
+
+    setIsAuthorizing(true)
+
+    try {
+      console.log('Calling writeContract for authorization...')
+      writeContract({
+        address: contractAddress as `0x${string}`,
+        abi: onchainRugsABI,
+        functionName: 'authorizeMaintenanceAgent',
+        args: [agentAddress as `0x${string}`],
+        account: address,
+        chain,
+      })
+      console.log('writeContract called successfully')
+    } catch (error) {
+      console.error('Authorization failed:', error)
+      alert(`Authorization failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      setIsAuthorizing(false)
+    }
+  }
+
+  // Handle authorization errors
+  useEffect(() => {
+    if (writeError) {
+      console.error('Write contract error:', writeError)
+      alert(`Transaction failed: ${writeError.message || 'Unknown error'}`)
+      setIsAuthorizing(false)
+    }
+  }, [writeError])
+
+  // Reset form after successful authorization
+  useEffect(() => {
+    if (isConfirmed) {
+      setAgentAddress('')
+      setIsAuthorizing(false)
+      refetchAuthorizedAgents() // Refresh the authorized agents list
+      alert('AI Agent successfully authorized! The agent can now maintain your rugs.')
+    }
+  }, [isConfirmed])
+
+  // Handle agent revocation
+  const handleRevokeAgent = async (agentToRevoke: string) => {
+    if (!contractAddress) {
+      alert(`Contract not available on this network (Chain ID: ${chain?.id}). Please switch to a supported network.`)
+      return
+    }
+
+    setRevokingAgent(agentToRevoke)
+
+    try {
+      console.log('Revoking agent:', agentToRevoke)
+      writeContract({
+        address: contractAddress as `0x${string}`,
+        abi: onchainRugsABI,
+        functionName: 'revokeMaintenanceAgent',
+        args: [agentToRevoke as `0x${string}`],
+        account: address,
+        chain,
+      })
+    } catch (error) {
+      console.error('Revocation failed:', error)
+      alert(`Revocation failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      setRevokingAgent(null)
+    }
+  }
+
+  // Handle successful revocation
+  useEffect(() => {
+    if (revokingAgent && isConfirmed) {
+      setRevokingAgent(null)
+      setShowRevokeConfirm(null)
+      refetchAuthorizedAgents() // Refresh the authorized agents list
+      alert('AI Agent authorization successfully revoked!')
+    }
+  }, [isConfirmed, revokingAgent])
 
   const getDirtLevel = (lastCleaned: bigint) => {
     const now = Math.floor(Date.now() / 1000)
@@ -551,6 +713,218 @@ export default function DashboardPage() {
               </div>
               <div className="text-sm text-white/60">Laundered</div>
             </div>
+          </div>
+        </motion.div>
+
+        {/* Network Status Indicator */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="mb-6"
+        >
+          <div className="bg-slate-800/50 border border-slate-600/50 rounded-lg p-4 backdrop-blur-sm">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`w-3 h-3 rounded-full ${contractAddress ? 'bg-green-400' : 'bg-red-400'}`}></div>
+                <div>
+                  <div className="text-white font-medium">
+                    {contractAddress ? 'Contract Available' : 'Contract Not Available'}
+                  </div>
+                  <div className="text-white/60 text-sm">
+                    Chain ID: {chain?.id} | Contract: {contractAddress || 'Not configured'}
+                  </div>
+                </div>
+              </div>
+              {!contractAddress && (
+                <div className="text-yellow-400 text-sm">
+                  Switch to Shape Sepolia or Base Sepolia
+                </div>
+              )}
+            </div>
+          </div>
+        </motion.div>
+
+        {/* AI Agent Authorization Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="mb-8"
+        >
+          <div className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 rounded-xl p-6 backdrop-blur-sm">
+            <div className="flex items-center gap-3 mb-4">
+              <Bot className="w-6 h-6 text-blue-400" />
+              <h2 className="text-xl font-bold text-white">AI Agent Authorization</h2>
+              <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded-full">NEW</span>
+            </div>
+
+            <p className="text-white/70 mb-4">
+              Authorize an AI agent to automatically maintain your rugs. The agent will pay service fees while keeping your rugs clean and well-maintained.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <input
+                type="text"
+                placeholder="Enter AI Agent wallet address (0x...)"
+                value={agentAddress}
+                onChange={(e) => setAgentAddress(e.target.value)}
+                className="flex-1 px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <button
+                onClick={handleAuthorizeAgent}
+                disabled={isAuthorizing || isPending || isConfirming || !agentAddress}
+                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-600 disabled:to-gray-600 text-white font-medium rounded-lg transition-all duration-200 flex items-center gap-2 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"
+              >
+                {isAuthorizing || isPending ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    {isConfirming ? 'Confirming...' : 'Authorizing...'}
+                  </>
+                ) : (
+                  <>
+                    <Zap className="w-4 h-4" />
+                    Authorize Agent
+                  </>
+                )}
+              </button>
+            </div>
+
+            <div className="mt-4 text-sm text-white/60">
+              <p>• Agent can only perform maintenance operations (cleaning, restoration)</p>
+              <p>• Agent cannot transfer, sell, or modify ownership of your rugs</p>
+              <p>• Agent pays flat service fee (0.00042 ETH) for each maintenance action</p>
+              <p>• You can revoke authorization anytime</p>
+            </div>
+
+            {/* Debug Info */}
+            <div className="mt-4 p-3 bg-slate-800/50 rounded-lg text-xs text-white/60">
+              <div>Debug: Contract: {contractAddress || 'none'} | Agents: {agentsLoading ? 'loading...' : authorizedAgents?.length || 0} | Error: {agentsError ? 'yes' : 'no'}</div>
+              <div>User Address: {address || 'not connected'} | Chain: {chain?.id}</div>
+              {agentsError && <div className="text-red-400">Error: {agentsError.message}</div>}
+            </div>
+
+            {/* Authorized Agents List */}
+            <div className="mt-6">
+              <h3 className="text-lg font-semibold text-white mb-3">Authorized Agents</h3>
+              {agentsLoading ? (
+                <div className="text-white/60 text-sm">Loading authorized agents...</div>
+              ) : authorizedAgents && authorizedAgents.length > 0 ? (
+                <div className="space-y-3">
+                  {authorizedAgents.map((agent: string, index: number) => (
+                    <div key={agent} className="bg-slate-700/50 rounded-lg p-3 border border-slate-600/50">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Bot className="w-5 h-5 text-blue-400" />
+                          <div>
+                            <div className="text-white font-mono text-sm">
+                              {agent}
+                            </div>
+                            <div className="text-white/60 text-xs">
+                              Agent #{index + 1}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setShowRevokeConfirm(agent)}
+                            disabled={revokingAgent === agent || isPending}
+                            className="px-3 py-1 bg-red-600/20 hover:bg-red-600/30 text-red-400 hover:text-red-300 text-sm rounded border border-red-600/30 hover:border-red-500/50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {revokingAgent === agent ? 'Revoking...' : 'Revoke'}
+                          </button>
+                          <button
+                            onClick={() => navigator.clipboard.writeText(agent)}
+                            className="p-1 text-white/60 hover:text-white/80 transition-colors"
+                            title="Copy address"
+                          >
+                            <Copy className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-white/60 text-sm">
+                  {agentsError ? 'Error loading agents' : 'No authorized agents yet. Authorize an agent above to get started.'}
+                </div>
+              )}
+            </div>
+
+            {/* Revoke Confirmation Modal */}
+            {showRevokeConfirm && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                <div className="bg-slate-800 border border-slate-600 rounded-lg p-6 max-w-md w-full mx-4">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 bg-red-600/20 rounded-full flex items-center justify-center">
+                      <Bot className="w-5 h-5 text-red-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-white">Revoke Agent Authorization</h3>
+                      <p className="text-white/60 text-sm">This action cannot be undone</p>
+                    </div>
+                  </div>
+
+                  <div className="mb-6">
+                    <p className="text-white/80 mb-2">Are you sure you want to revoke authorization for this agent?</p>
+                    <div className="bg-slate-700/50 rounded p-3 font-mono text-sm text-white/80 break-all">
+                      {showRevokeConfirm}
+                    </div>
+                    <p className="text-yellow-400 text-sm mt-2">
+                      ⚠️ The agent will no longer be able to perform maintenance on any of your rugs.
+                    </p>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setShowRevokeConfirm(null)}
+                      className="flex-1 px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleRevokeAgent(showRevokeConfirm)
+                        setShowRevokeConfirm(null)
+                      }}
+                      disabled={isPending}
+                      className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isPending ? 'Revoking...' : 'Revoke Authorization'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Transaction Status */}
+            {(isPending || isConfirming || isConfirmed) && (
+              <div className="mt-4 p-3 bg-slate-700/50 rounded-lg">
+                <div className="flex items-center gap-2">
+                  {isConfirmed ? (
+                    <CheckCircle className="w-4 h-4 text-green-400" />
+                  ) : (
+                    <RefreshCw className="w-4 h-4 animate-spin text-blue-400" />
+                  )}
+                  <span className="text-white text-sm">
+                    {isConfirmed ? 'Authorization successful!' :
+                     isConfirming ? 'Confirming transaction...' :
+                     'Transaction submitted'}
+                  </span>
+                </div>
+                {hash && (
+                  <a
+                    href={`https://sepolia.shapescan.xyz/tx/${hash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-400 hover:text-blue-300 text-xs mt-1 inline-flex items-center gap-1"
+                  >
+                    View on ShapeScan <ExternalLink className="w-3 h-3" />
+                  </a>
+                )}
+              </div>
+            )}
           </div>
         </motion.div>
 

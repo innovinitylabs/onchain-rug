@@ -168,7 +168,7 @@ You can:
 
 ## 🖥️ Frontend Setup
 
-Update your frontend `.env` or `.env.local`:
+Update your frontend `.env`:
 
 ```bash
 # Base Sepolia Configuration

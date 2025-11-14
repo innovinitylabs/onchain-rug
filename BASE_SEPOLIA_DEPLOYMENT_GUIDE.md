@@ -183,7 +183,7 @@ The contract will work without ERC-721-C features. The deployment includes:
 
 ### Update Environment Variables
 
-Ensure your frontend `.env` or `.env.local` has:
+Ensure your frontend `.env` has:
 
 ```bash
 # Base Sepolia Configuration

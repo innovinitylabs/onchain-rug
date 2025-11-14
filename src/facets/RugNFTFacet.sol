@@ -420,6 +420,19 @@ contract RugNFTFacet is ICreatorToken {
         return rs.totalSupply;
     }
 
+    // ERC721 enumerable functions
+    function tokenOfOwnerByIndex(address owner, uint256 index) public view returns (uint256) {
+        LibRugStorage.ERC721Storage storage es = LibRugStorage.erc721Storage();
+        require(index < es._balances[owner], "ERC721Enumerable: owner index out of bounds");
+        return es._ownedTokens[owner][index];
+    }
+
+    function tokenByIndex(uint256 index) public view returns (uint256) {
+        LibRugStorage.ERC721Storage storage es = LibRugStorage.erc721Storage();
+        require(index < es._allTokens.length, "ERC721Enumerable: global index out of bounds");
+        return es._allTokens[index];
+    }
+
     function _exists(uint256 tokenId) internal view returns (bool) {
         LibRugStorage.ERC721Storage storage es = LibRugStorage.erc721Storage();
         return es._owners[tokenId] != address(0);
@@ -509,6 +522,50 @@ contract RugNFTFacet is ICreatorToken {
         delete es._owners[tokenId];
 
         emit Transfer(owner, address(0), tokenId);
+    }
+
+    // ERC721 enumerable helper functions
+    function _addTokenToOwnerEnumeration(address to, uint256 tokenId) internal {
+        LibRugStorage.ERC721Storage storage es = LibRugStorage.erc721Storage();
+        uint256 length = es._balances[to];
+        es._ownedTokens[to][length] = tokenId;
+        es._ownedTokensIndex[tokenId] = length;
+    }
+
+    function _removeTokenFromOwnerEnumeration(address from, uint256 tokenId) internal {
+        LibRugStorage.ERC721Storage storage es = LibRugStorage.erc721Storage();
+
+        uint256 lastTokenIndex = es._balances[from] - 1;
+        uint256 tokenIndex = es._ownedTokensIndex[tokenId];
+
+        if (tokenIndex != lastTokenIndex) {
+            uint256 lastTokenId = es._ownedTokens[from][lastTokenIndex];
+            es._ownedTokens[from][tokenIndex] = lastTokenId;
+            es._ownedTokensIndex[lastTokenId] = tokenIndex;
+        }
+
+        delete es._ownedTokensIndex[tokenId];
+        delete es._ownedTokens[from][lastTokenIndex];
+    }
+
+    function _addTokenToAllTokensEnumeration(uint256 tokenId) internal {
+        LibRugStorage.ERC721Storage storage es = LibRugStorage.erc721Storage();
+        es._allTokensIndex[tokenId] = es._allTokens.length;
+        es._allTokens.push(tokenId);
+    }
+
+    function _removeTokenFromAllTokensEnumeration(uint256 tokenId) internal {
+        LibRugStorage.ERC721Storage storage es = LibRugStorage.erc721Storage();
+
+        uint256 lastTokenIndex = es._allTokens.length - 1;
+        uint256 tokenIndex = es._allTokensIndex[tokenId];
+        uint256 lastTokenId = es._allTokens[lastTokenIndex];
+
+        es._allTokens[tokenIndex] = lastTokenId;
+        es._allTokensIndex[lastTokenId] = tokenIndex;
+
+        delete es._allTokensIndex[tokenId];
+        es._allTokens.pop();
     }
 
     // Internal helper functions
@@ -644,6 +701,23 @@ contract RugNFTFacet is ICreatorToken {
 
     /// @dev ERC721-C transfer validation hook
     function _beforeTokenTransfer(address from, address to, uint256 tokenId) internal {
+        // Handle enumerable data structures
+        if (from == address(0)) {
+            // Mint: token added to 'to' enumeration
+            _addTokenToAllTokensEnumeration(tokenId);
+        } else if (from != to) {
+            // Transfer: remove from 'from' enumeration
+            _removeTokenFromOwnerEnumeration(from, tokenId);
+        }
+
+        if (to == address(0)) {
+            // Burn: token removed from 'from' enumeration (already done above)
+            _removeTokenFromAllTokensEnumeration(tokenId);
+        } else if (to != from) {
+            // Transfer or Mint: add to 'to' enumeration
+            _addTokenToOwnerEnumeration(to, tokenId);
+        }
+
         // Validate transfer using ERC721-C validator for transfers only (not mints)
         // For open mints, we don't need validation during minting (from == address(0))
         if (LibTransferSecurity.areTransfersEnforced() && from != address(0) && to != address(0)) {

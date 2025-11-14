@@ -20,6 +20,10 @@ contract RugAdminFacet {
     event LaunderingToggled(bool enabled);
     event LaunchStatusChanged(bool launched);
     event FrameThresholdsUpdated();
+    event ServiceFeesUpdated(uint256 cleanFee, uint256 restoreFee, uint256 masterFee);
+    event ServiceFeeUpdated(uint256 serviceFee);
+    event FeeRecipientUpdated(address indexed oldRecipient, address indexed newRecipient);
+    event AIServiceFeeUpdated(uint256 newFee);
 
     /**
      * @notice Update collection cap (owner only)
@@ -150,6 +154,19 @@ contract RugAdminFacet {
     }
 
     /**
+     * @notice Update AI service fee for X402 monetization
+     * @param newFee New AI service fee in wei (0 to disable)
+     */
+    function updateAIServiceFee(uint256 newFee) external {
+        LibDiamond.enforceIsContractOwner();
+
+        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+        rs.aiServiceFee = newFee;
+
+        emit AIServiceFeeUpdated(newFee);
+    }
+
+    /**
      * @notice Add address to exception list (bypasses wallet limits)
      * @param account Address to add
      */
@@ -246,6 +263,39 @@ contract RugAdminFacet {
     function getServicePricing() external view returns (uint256, uint256, uint256, uint256) {
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
         return (rs.cleaningCost, rs.restorationCost, rs.masterRestorationCost, rs.launderingThreshold);
+    }
+
+    /**
+     * @notice Set flat service fee for all agent maintenance actions (owner only)
+     * @param fee Flat service fee in wei
+     */
+    function setServiceFee(uint256 fee) external {
+        LibDiamond.enforceIsContractOwner();
+        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+        rs.serviceFee = fee;
+        emit ServiceFeeUpdated(fee);
+    }
+
+    /**
+     * @notice Set the fee recipient for agent service fees (owner only)
+     * @param recipient Address to receive service fees
+     */
+    function setFeeRecipient(address recipient) external {
+        LibDiamond.enforceIsContractOwner();
+        require(recipient != address(0), "Invalid recipient");
+        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+        address old = rs.feeRecipient;
+        rs.feeRecipient = recipient;
+        emit FeeRecipientUpdated(old, recipient);
+    }
+
+    /**
+     * @notice Get agent service fee and recipient
+     * @return serviceFee, feeRecipient
+     */
+    function getAgentServiceFee() external view returns (uint256, address) {
+        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+        return (rs.serviceFee, rs.feeRecipient);
     }
 
     /**

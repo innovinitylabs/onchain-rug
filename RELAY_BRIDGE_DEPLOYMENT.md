@@ -36,7 +36,7 @@
 
 ## Updated .env Configuration
 
-Add these to your `.env.local`:
+Add these to your `.env`:
 
 ```bash
 # Relay Protocol

@@ -15,48 +15,86 @@ contract RugMaintenanceFacet {
     event RugCleaned(uint256 indexed tokenId, address indexed owner, uint256 cost, bool wasFree);
     event RugRestored(uint256 indexed tokenId, address indexed owner, uint8 previousLevel, uint8 newLevel, uint256 cost);
     event RugMasterRestored(uint256 indexed tokenId, address indexed owner, uint8 previousDirt, uint8 previousAging, uint256 cost);
+    event AgentAuthorized(address indexed owner, address indexed agent);
+    event AgentRevoked(address indexed owner, address indexed agent);
+    event AuthorizationTokenUsed(bytes32 indexed tokenHash, address indexed agent, uint256 tokenId, string action);
+
+    // ========= Agent Authorization (Per-Owner Global Allowlist) =========
+
+    function authorizeMaintenanceAgent(address agent) external {
+        require(agent != address(0), "Invalid agent");
+        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+
+        // Only add if not already authorized
+        if (!rs.isOwnerAgentAllowed[msg.sender][agent]) {
+            rs.isOwnerAgentAllowed[msg.sender][agent] = true;
+            rs.ownerAuthorizedAgents[msg.sender].push(agent);
+            emit AgentAuthorized(msg.sender, agent);
+        }
+    }
+
+    function revokeMaintenanceAgent(address agent) external {
+        require(agent != address(0), "Invalid agent");
+        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+
+        if (rs.isOwnerAgentAllowed[msg.sender][agent]) {
+            rs.isOwnerAgentAllowed[msg.sender][agent] = false;
+
+            // Remove from array
+            address[] storage agents = rs.ownerAuthorizedAgents[msg.sender];
+            for (uint256 i = 0; i < agents.length; i++) {
+                if (agents[i] == agent) {
+                    // Move last element to this position and pop
+                    agents[i] = agents[agents.length - 1];
+                    agents.pop();
+                    break;
+                }
+            }
+
+            emit AgentRevoked(msg.sender, agent);
+        }
+    }
+
+    /**
+     * @notice Get all authorized agents for the caller
+     * @return agents Array of authorized agent addresses
+     */
+    function getAuthorizedAgents() external view returns (address[] memory) {
+        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+        return rs.ownerAuthorizedAgents[msg.sender];
+    }
+
+    /**
+     * @notice Get all authorized agents for a specific owner
+     * @param owner Owner address to check
+     * @return agents Array of authorized agent addresses
+     */
+    function getAuthorizedAgentsFor(address owner) external view returns (address[] memory) {
+        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+        return rs.ownerAuthorizedAgents[owner];
+    }
+
+    /**
+     * @notice Check if an agent is authorized for the caller
+     * @param agent Agent address to check
+     * @return isAuthorized True if the agent is authorized
+     */
+    function isAgentAuthorized(address agent) external view returns (bool) {
+        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+        return rs.isOwnerAgentAllowed[msg.sender][agent];
+    }
 
     /**
      * @notice Clean a rug (resets dirt to level 0, earns maintenance points)
      * @param tokenId Token ID to clean
      */
     function cleanRug(uint256 tokenId) external payable {
-        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
-        LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
-
-        // Verify ownership FIRST (before complex calculations for gas estimation)
-        require(IERC721(address(this)).ownerOf(tokenId) == msg.sender, "Not token owner");
-
-        // Check if cleaning is beneficial (has dirt or free cleaning available)
-        uint8 currentDirt = _getDirtLevel(tokenId);
-        bool isFree = _isCleaningFree(tokenId);
-        bool needsCleaning = currentDirt > 0 || isFree;
-        require(needsCleaning, "Rug doesn't need cleaning right now");
-
-        // Calculate cost
-        uint256 cost = isFree ? 0 : rs.cleaningCost;
-
-        // Require exact payment (no refunds to avoid complexity)
+        // Owner-only direct call
+        address owner = IERC721(address(this)).ownerOf(tokenId);
+        require(owner == msg.sender, "Not token owner");
+        (uint256 cost, bool wasFree) = _performClean(tokenId);
         require(msg.value == cost, "Must send exact payment amount");
-
-        // Clean dirt (reset to level 0) and delay aging progression
-        // Preserve current aging level by committing it to storage
-        uint8 currentAging = _getAgingLevel(tokenId);
-        aging.agingLevel = currentAging;
-        aging.lastCleaned = block.timestamp;
-
-        // Earn maintenance points
-        aging.cleaningCount++;
-
-        // Update frame level based on new score
-        uint256 newScore = LibRugStorage.calculateMaintenanceScore(aging);
-        uint8 newFrameLevel = LibRugStorage.getFrameLevelFromScore(newScore);
-        if (newFrameLevel != aging.frameLevel) {
-            aging.frameLevel = newFrameLevel;
-            aging.frameAchievedTime = block.timestamp;
-        }
-
-        emit RugCleaned(tokenId, msg.sender, cost, isFree);
+        emit RugCleaned(tokenId, owner, cost, wasFree);
     }
 
     /**
@@ -64,39 +102,12 @@ contract RugMaintenanceFacet {
      * @param tokenId Token ID to restore
      */
     function restoreRug(uint256 tokenId) external payable {
-        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
-        LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
-
-        // Verify ownership
-        require(IERC721(address(this)).ownerOf(tokenId) == msg.sender, "Not token owner");
-
-        // Check if restoration is available (aging level > 0)
-        uint8 currentAging = _getAgingLevel(tokenId);
-        require(currentAging > 0, "Rug has no aging to restore");
-
-        // Require exact payment (no refunds to avoid complexity)
-        require(msg.value == rs.restorationCost, "Must send exact payment amount");
-
-        // Record previous state
-        uint8 previousAging = currentAging;
-
-        // Clean dirt and reduce aging level by 1 from current calculated level
-        aging.lastCleaned = block.timestamp;
-        // Reduce visible aging by 1 level (can't go below 0)
-        aging.agingLevel = currentAging > 0 ? currentAging - 1 : 0;
-
-        // Earn maintenance points
-        aging.restorationCount++;
-
-        // Update frame level based on new score
-        uint256 newScore = LibRugStorage.calculateMaintenanceScore(aging);
-        uint8 newFrameLevel = LibRugStorage.getFrameLevelFromScore(newScore);
-        if (newFrameLevel != aging.frameLevel) {
-            aging.frameLevel = newFrameLevel;
-            aging.frameAchievedTime = block.timestamp;
-        }
-
-        emit RugRestored(tokenId, msg.sender, previousAging, aging.agingLevel, rs.restorationCost);
+        // Owner-only direct call
+        address owner = IERC721(address(this)).ownerOf(tokenId);
+        require(owner == msg.sender, "Not token owner");
+        (uint8 previousAging, uint8 newAging, uint256 cost) = _performRestore(tokenId);
+        require(msg.value == cost, "Must send exact payment amount");
+        emit RugRestored(tokenId, owner, previousAging, newAging, cost);
     }
 
     /**
@@ -104,40 +115,193 @@ contract RugMaintenanceFacet {
      * @param tokenId Token ID to master restore
      */
     function masterRestoreRug(uint256 tokenId) external payable {
+        // Owner-only direct call
+        address owner = IERC721(address(this)).ownerOf(tokenId);
+        require(owner == msg.sender, "Not token owner");
+        (uint8 prevDirt, uint8 prevAging, uint256 cost) = _performMasterRestore(tokenId);
+        require(msg.value == cost, "Must send exact payment amount");
+        emit RugMasterRestored(tokenId, owner, prevDirt, prevAging, cost);
+    }
+
+    // ========= Authorization Token Verification =========
+
+    /**
+     * @notice Verify and consume an X402 authorization token
+     * @param tokenHash Hash of the authorization token
+     * @param agent Agent address
+     * @param tokenId Token ID
+     * @param action Action being performed
+     * @param expires Expiration timestamp
+     * @param nonce Unique nonce used in token generation
+     * @return isValid Whether the token is valid and consumed
+     */
+    function _verifyAuthorizationToken(
+        bytes32 tokenHash,
+        address agent,
+        uint256 tokenId,
+        string memory action,
+        uint256 expires,
+        string calldata nonce
+    ) internal returns (bool) {
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
-        LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
 
-        // Verify ownership
-        require(IERC721(address(this)).ownerOf(tokenId) == msg.sender, "Not token owner");
+        // Check if token already used (prevent replay attacks)
+        require(!rs.usedAuthorizationTokens[tokenHash], "Token already used");
 
-        // Check if any aging exists
-        uint8 currentDirt = _getDirtLevel(tokenId);
-        uint8 currentAging = _getAgingLevel(tokenId);
-        require(currentDirt > 0 || currentAging > 0, "Rug is already pristine");
+        // Check expiration
+        require(block.timestamp <= expires, "Token expired");
 
-        // Require exact payment (no refunds to avoid complexity)
-        require(msg.value == rs.masterRestorationCost, "Must send exact payment amount");
+        // Verify agent is authorized for this token's owner
+        address owner = IERC721(address(this)).ownerOf(tokenId);
+        require(rs.isOwnerAgentAllowed[owner][agent], "Agent not authorized for this token");
 
-        // Record previous state
-        uint8 previousDirt = currentDirt;
-        uint8 previousAging = currentAging;
+        // CRYPTOGRAPHIC VERIFICATION: Recreate hash and verify it matches
+        bytes32 expectedHash = keccak256(abi.encodePacked(agent, tokenId, action, expires, nonce));
+        require(tokenHash == expectedHash, "Invalid token hash - cryptographic verification failed");
 
-        // Complete reset: dirt to 0, aging to 0
-        aging.lastCleaned = block.timestamp;
-        aging.agingLevel = 0;
+        // Mark token as used
+        rs.usedAuthorizationTokens[tokenHash] = true;
 
-        // Earn maintenance points
-        aging.masterRestorationCount++;
+        emit AuthorizationTokenUsed(tokenHash, agent, tokenId, action);
 
-        // Update frame level based on new score
-        uint256 newScore = LibRugStorage.calculateMaintenanceScore(aging);
-        uint8 newFrameLevel = LibRugStorage.getFrameLevelFromScore(newScore);
-        if (newFrameLevel != aging.frameLevel) {
-            aging.frameLevel = newFrameLevel;
-            aging.frameAchievedTime = block.timestamp;
-        }
+        return true;
+    }
 
-        emit RugMasterRestored(tokenId, msg.sender, previousDirt, previousAging, rs.masterRestorationCost);
+    /**
+     * @notice Check if an authorization token is valid (without consuming it)
+     * @param tokenHash Hash of the authorization token
+     * @return isValid Whether the token exists and is unused
+     */
+    function isAuthorizationTokenValid(bytes32 tokenHash) external view returns (bool) {
+        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+        return !rs.usedAuthorizationTokens[tokenHash];
+    }
+
+    // ========= Agent Entry Points (X402 Authorized - Require Token) =========
+
+    function cleanRugAgent(uint256 tokenId, bytes32 authorizationToken, string calldata nonce, uint256 expires) external payable {
+        address owner = IERC721(address(this)).ownerOf(tokenId);
+        require(owner != address(0), "Token does not exist");
+
+        // Verify X402 authorization token with cryptographic validation
+        require(
+            _verifyAuthorizationToken(authorizationToken, msg.sender, tokenId, "clean", expires, nonce),
+            "Invalid X402 authorization"
+        );
+
+        (uint256 maintenanceCost, bool wasFree) = _performClean(tokenId);
+
+        // X402-authorized agents pay 0 (payment already verified)
+        require(msg.value == 0, "X402 authorized calls must send 0 value");
+
+        emit RugCleaned(tokenId, owner, maintenanceCost, wasFree);
+    }
+
+    function restoreRugAgent(uint256 tokenId, bytes32 authorizationToken, string calldata nonce, uint256 expires) external payable {
+        address owner = IERC721(address(this)).ownerOf(tokenId);
+        require(owner != address(0), "Token does not exist");
+
+        // Verify X402 authorization token with cryptographic validation
+        require(
+            _verifyAuthorizationToken(authorizationToken, msg.sender, tokenId, "restore", expires, nonce),
+            "Invalid X402 authorization"
+        );
+
+        (uint8 previousAging, uint8 newAging, uint256 maintenanceCost) = _performRestore(tokenId);
+
+        // X402-authorized agents pay 0 (payment already verified)
+        require(msg.value == 0, "X402 authorized calls must send 0 value");
+
+        emit RugRestored(tokenId, owner, previousAging, newAging, maintenanceCost);
+    }
+
+    function masterRestoreRugAgent(uint256 tokenId, bytes32 authorizationToken, string calldata nonce, uint256 expires) external payable {
+        address owner = IERC721(address(this)).ownerOf(tokenId);
+        require(owner != address(0), "Token does not exist");
+
+        // Verify X402 authorization token with cryptographic validation
+        require(
+            _verifyAuthorizationToken(authorizationToken, msg.sender, tokenId, "master", expires, nonce),
+            "Invalid X402 authorization"
+        );
+
+        (uint8 prevDirt, uint8 prevAging, uint256 maintenanceCost) = _performMasterRestore(tokenId);
+
+        // X402-authorized agents pay 0 (payment already verified)
+        require(msg.value == 0, "X402 authorized calls must send 0 value");
+
+        emit RugMasterRestored(tokenId, owner, prevDirt, prevAging, maintenanceCost);
+    }
+
+    // ========= Authorized Agent Direct Payment (Intermediate Security) =========
+
+    /**
+     * @notice Clean rug using authorized agent wallet (direct payment)
+     * @param tokenId Token ID to clean
+     */
+    function cleanRugAuthorized(uint256 tokenId) external payable {
+        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+        address owner = IERC721(address(this)).ownerOf(tokenId);
+        require(owner != address(0), "Token does not exist");
+
+        // Verify caller is authorized agent for this NFT owner
+        require(rs.isOwnerAgentAllowed[owner][msg.sender], "Agent not authorized for this owner");
+
+        (uint256 maintenanceCost, bool wasFree) = _performClean(tokenId);
+
+        // Charge the maintenance cost directly
+        require(msg.value == maintenanceCost, "Must pay exact maintenance cost");
+
+        // Payout service fee to fee recipient
+        _payoutServiceFee(msg.value);
+
+        emit RugCleaned(tokenId, owner, maintenanceCost, wasFree);
+    }
+
+    /**
+     * @notice Restore rug using authorized agent wallet (direct payment)
+     * @param tokenId Token ID to restore
+     */
+    function restoreRugAuthorized(uint256 tokenId) external payable {
+        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+        address owner = IERC721(address(this)).ownerOf(tokenId);
+        require(owner != address(0), "Token does not exist");
+
+        // Verify caller is authorized agent for this NFT owner
+        require(rs.isOwnerAgentAllowed[owner][msg.sender], "Agent not authorized for this owner");
+
+        (uint8 previousAging, uint8 newAging, uint256 maintenanceCost) = _performRestore(tokenId);
+
+        // Charge the maintenance cost directly
+        require(msg.value == maintenanceCost, "Must pay exact maintenance cost");
+
+        // Payout service fee to fee recipient
+        _payoutServiceFee(msg.value);
+
+        emit RugRestored(tokenId, owner, previousAging, newAging, maintenanceCost);
+    }
+
+    /**
+     * @notice Master restore rug using authorized agent wallet (direct payment)
+     * @param tokenId Token ID to master restore
+     */
+    function masterRestoreRugAuthorized(uint256 tokenId) external payable {
+        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+        address owner = IERC721(address(this)).ownerOf(tokenId);
+        require(owner != address(0), "Token does not exist");
+
+        // Verify caller is authorized agent for this NFT owner
+        require(rs.isOwnerAgentAllowed[owner][msg.sender], "Agent not authorized for this owner");
+
+        (uint8 prevDirt, uint8 prevAging, uint256 maintenanceCost) = _performMasterRestore(tokenId);
+
+        // Charge the maintenance cost directly
+        require(msg.value == maintenanceCost, "Must pay exact maintenance cost");
+
+        // Payout service fee to fee recipient
+        _payoutServiceFee(msg.value);
+
+        emit RugMasterRestored(tokenId, owner, prevDirt, prevAging, maintenanceCost);
     }
 
     /**
@@ -256,6 +420,83 @@ contract RugMaintenanceFacet {
     }
 
     // Internal helper functions
+
+    function _payoutServiceFee(uint256 serviceFee) internal {
+        if (serviceFee == 0) return;
+        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+        require(rs.feeRecipient != address(0), "Fee recipient not set");
+        (bool ok, ) = payable(rs.feeRecipient).call{value: serviceFee}("");
+        require(ok, "Fee transfer failed");
+    }
+
+    function _performClean(uint256 tokenId) internal returns (uint256 cost, bool wasFree) {
+        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+        LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
+
+        uint8 currentDirt = _getDirtLevel(tokenId);
+        bool isFree = _isCleaningFree(tokenId);
+        bool needsCleaning = currentDirt > 0 || isFree;
+        require(needsCleaning, "Rug doesn't need cleaning right now");
+
+        uint256 maintenanceCost = isFree ? 0 : rs.cleaningCost;
+
+        uint8 currentAging = _getAgingLevel(tokenId);
+        aging.agingLevel = currentAging;
+        aging.lastCleaned = block.timestamp;
+        aging.cleaningCount++;
+
+        uint256 newScore = LibRugStorage.calculateMaintenanceScore(aging);
+        uint8 newFrameLevel = LibRugStorage.getFrameLevelFromScore(newScore);
+        if (newFrameLevel != aging.frameLevel) {
+            aging.frameLevel = newFrameLevel;
+            aging.frameAchievedTime = block.timestamp;
+        }
+        return (maintenanceCost, isFree);
+    }
+
+    function _performRestore(uint256 tokenId) internal returns (uint8 previousAging, uint8 newAging, uint256 cost) {
+        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+        LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
+
+        uint8 currentAging = _getAgingLevel(tokenId);
+        require(currentAging > 0, "Rug has no aging to restore");
+
+        uint8 prev = currentAging;
+        aging.lastCleaned = block.timestamp;
+        aging.agingLevel = currentAging > 0 ? currentAging - 1 : 0;
+        aging.restorationCount++;
+
+        uint256 newScore = LibRugStorage.calculateMaintenanceScore(aging);
+        uint8 newFrameLevel = LibRugStorage.getFrameLevelFromScore(newScore);
+        if (newFrameLevel != aging.frameLevel) {
+            aging.frameLevel = newFrameLevel;
+            aging.frameAchievedTime = block.timestamp;
+        }
+        return (prev, aging.agingLevel, rs.restorationCost);
+    }
+
+    function _performMasterRestore(uint256 tokenId) internal returns (uint8 previousDirt, uint8 previousAging, uint256 cost) {
+        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+        LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
+
+        uint8 currentDirt = _getDirtLevel(tokenId);
+        uint8 currentAging = _getAgingLevel(tokenId);
+        require(currentDirt > 0 || currentAging > 0, "Rug is already pristine");
+
+        uint8 prevDirt = currentDirt;
+        uint8 prevAging = currentAging;
+        aging.lastCleaned = block.timestamp;
+        aging.agingLevel = 0;
+        aging.masterRestorationCount++;
+
+        uint256 newScore = LibRugStorage.calculateMaintenanceScore(aging);
+        uint8 newFrameLevel = LibRugStorage.getFrameLevelFromScore(newScore);
+        if (newFrameLevel != aging.frameLevel) {
+            aging.frameLevel = newFrameLevel;
+            aging.frameAchievedTime = block.timestamp;
+        }
+        return (prevDirt, prevAging, rs.masterRestorationCost);
+    }
 
     function _getDirtLevel(uint256 tokenId) internal view returns (uint8) {
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
