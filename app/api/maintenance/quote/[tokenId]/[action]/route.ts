@@ -47,6 +47,9 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ to
       return NextResponse.json({ error: 'Contract not configured for this network' }, { status: 500 })
     }
 
+    // 🚨 VULNERABILITY NOTE: Quote endpoint does expensive contract calls without validation
+    // This can be abused by hallucinating agents. Consider adding rate limiting for production.
+
     const [canClean, canRestore, needsMaster, cleaningCost, restorationCost, masterCost] = await callContractMultiFallback(
       contract,
       maintenanceAbi as any,

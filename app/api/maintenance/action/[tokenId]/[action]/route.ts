@@ -82,11 +82,31 @@ export async function POST(request: NextRequest, context: { params: Promise<{ to
       }, { status: 500 })
     }
 
-    // Check for X402 payment headers
+    // 🚨 EARLY VALIDATION: Check for X402 payment headers BEFORE expensive operations
     const paymentPayload = request.headers.get('x402-payment-payload')
     const paymentStatus = request.headers.get('x402-payment-status')
+    const agentAddress = request.headers.get('x-agent-address')
 
-    console.log(`💳 Payment headers - payload: ${!!paymentPayload}, status: ${paymentStatus}`)
+    console.log(`💳 Payment headers - payload: ${!!paymentPayload}, status: ${paymentStatus}, agent: ${agentAddress}`)
+
+    // 🚨 FAIL FAST: Reject requests without proper payment setup
+    if (!paymentPayload || paymentStatus !== 'payment-submitted') {
+      console.log(`🚫 Request rejected: Missing or invalid payment headers`)
+      return NextResponse.json({
+        error: 'Payment required',
+        details: 'Valid x402-payment-payload and x402-payment-status=payment-submitted required'
+      }, { status: 402 })
+    }
+
+    if (!agentAddress) {
+      console.log(`🚫 Request rejected: Missing agent address`)
+      return NextResponse.json({
+        error: 'Agent address required',
+        details: 'x-agent-address header required'
+      }, { status: 400 })
+    }
+
+    // ✅ PAYMENT VALIDATION PASSED - Now safe to do expensive operations
 
     // Get maintenance options first
     const [canClean, canRestore, needsMaster, cleaningCost, restorationCost, masterCost] = await callContractMultiFallback(
@@ -140,54 +160,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ to
     const totalWei = maintenanceWei + serviceFee
     const price = (Number(totalWei) / 1e18).toString() // Convert to ETH
 
-    // If no payment headers, return payment required
-    if (!paymentPayload || paymentStatus !== 'payment-submitted') {
-      console.log(`💰 Creating payment requirement for ${action} on rug #${tokenId}: ${price} ETH`)
-
-      try {
-        const paymentRequired = await createPaymentRequiredResponse({
-          price: price,
-          description: `${action.charAt(0).toUpperCase() + action.slice(1)} ${description} (agent single-tx)`,
-          contractAddress: contract,
-          functionName: functionName,
-          tokenId: tokenId,
-          maintenanceCost: formatEther(maintenanceWei),
-          serviceFee: formatEther(serviceFee)
-        })
-
-        console.log(`💰 Payment requirement created:`, JSON.stringify(paymentRequired, null, 2))
-
-        // Validate the response structure
-        if (!paymentRequired || !paymentRequired.x402) {
-          console.error(`❌ Invalid payment requirement response:`, paymentRequired)
-          return NextResponse.json({
-            error: 'Failed to create valid payment requirement',
-            details: 'Response missing x402 structure'
-          }, { status: 500 })
-        }
-
-        // Add extra metadata for agent UX
-        if (paymentRequired.x402?.accepts?.[0]) {
-          paymentRequired.x402.accepts[0].extra = {
-            ...paymentRequired.x402.accepts[0].extra,
-            functionName: functionName,
-            tokenId: tokenId,
-            maintenanceWei: maintenanceWei.toString(),
-            serviceFeeWei: serviceFee.toString(),
-            totalWei: totalWei.toString()
-          }
-        }
-
-        console.log(`💰 X402 payment required for ${action} on rug #${tokenId}: ${price} ETH`)
-        return NextResponse.json(paymentRequired, { status: 402 })
-      } catch (error) {
-        console.error(`❌ Failed to create payment requirement:`, error)
-        return NextResponse.json({
-          error: 'Failed to create payment requirement',
-          details: error.message
-        }, { status: 500 })
-      }
-    }
+    // ✅ Payment validation already passed above, proceed with verification
 
     // Verify X402 payment (skip settlement for direct contract payments)
     console.log(`🔍 Verifying X402 payment...`)
