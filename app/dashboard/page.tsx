@@ -498,7 +498,7 @@ export default function DashboardPage() {
         functionName: 'authorizeMaintenanceAgent',
         args: [agentAddress as `0x${string}`],
         account: address,
-        chainId,
+        chain: chainId,
       })
       console.log('writeContract called successfully')
     } catch (error) {
@@ -544,7 +544,7 @@ export default function DashboardPage() {
         functionName: 'revokeMaintenanceAgent',
         args: [agentToRevoke as `0x${string}`],
         account: address,
-        chainId,
+        chain: chainId,
       })
     } catch (error) {
       console.error('Revocation failed:', error)
