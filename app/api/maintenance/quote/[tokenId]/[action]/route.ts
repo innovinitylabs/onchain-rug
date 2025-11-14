@@ -4,6 +4,10 @@ import { getContractAddress, DEFAULT_CHAIN_ID, getNetworkByChainId, CONTRACT_ADD
 import { createPaymentRequiredResponse } from '@/lib/x402'
 import { formatEther } from 'viem'
 
+// Simple in-memory cache for quote results (prevents repeated expensive calls)
+const quoteCache = new Map<string, { result: any, timestamp: number }>()
+const CACHE_DURATION = 30 * 1000 // 30 seconds
+
 const maintenanceAbi = [
   {
     inputs: [{ name: 'tokenId', type: 'uint256' }],
@@ -47,26 +51,79 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ to
       return NextResponse.json({ error: 'Contract not configured for this network' }, { status: 500 })
     }
 
-    // 🚨 VULNERABILITY NOTE: Quote endpoint does expensive contract calls without validation
-    // This can be abused by hallucinating agents. Consider adding rate limiting for production.
+    // 🛡️ QUOTE ENDPOINT PROTECTION: Prevent abuse by hallucinating agents
+    const agentAddress = _request.headers.get('x-agent-address')
 
-    const [canClean, canRestore, needsMaster, cleaningCost, restorationCost, masterCost] = await callContractMultiFallback(
-      contract,
-      maintenanceAbi as any,
-      'getMaintenanceOptions',
-      [BigInt(tokenId)],
-      { chainId }
-    ) as [boolean, boolean, boolean, bigint, bigint, bigint]
+    if (!agentAddress) {
+      console.log(`🚫 Quote request rejected: Missing agent address`)
+      return NextResponse.json({
+        error: 'Agent address required for quotes',
+        details: 'x-agent-address header required even for informational quotes'
+      }, { status: 400 })
+    }
 
-    const feesResult = await callContractMultiFallback(
-      contract,
-      adminFeesAbi as any,
-      'getAgentServiceFee',
-      [],
-      { chainId }
-    ) as [bigint, string]
+    // Validate agent address format
+    if (!agentAddress.startsWith('0x') || agentAddress.length !== 42) {
+      console.log(`🚫 Quote request rejected: Invalid agent address format: ${agentAddress}`)
+      return NextResponse.json({
+        error: 'Invalid agent address format',
+        details: 'Agent address must be a valid 42-character hex string starting with 0x'
+      }, { status: 400 })
+    }
 
-    const [serviceFee, feeRecipient] = feesResult
+    // ✅ Agent validation passed - now safe to do expensive operations
+
+    // 📦 Check cache first to avoid repeated expensive calls
+    const cacheKey = `${tokenId}-${action}-${chainId}`
+    const cached = quoteCache.get(cacheKey)
+    const now = Date.now()
+
+    let canClean: boolean, canRestore: boolean, needsMaster: boolean
+    let cleaningCost: bigint, restorationCost: bigint, masterCost: bigint
+    let serviceFee: bigint, feeRecipient: string
+
+    if (cached && (now - cached.timestamp) < CACHE_DURATION) {
+      console.log(`📦 Using cached quote for ${cacheKey}`)
+      ;({ canClean, canRestore, needsMaster, cleaningCost, restorationCost, masterCost, serviceFee, feeRecipient } = cached.result)
+    } else {
+      console.log(`🔄 Fetching fresh quote for ${cacheKey}`)
+
+      const [canCleanResult, canRestoreResult, needsMasterResult, cleaningCostResult, restorationCostResult, masterCostResult] = await callContractMultiFallback(
+        contract,
+        maintenanceAbi as any,
+        'getMaintenanceOptions',
+        [BigInt(tokenId)],
+        { chainId }
+      ) as [boolean, boolean, boolean, bigint, bigint, bigint]
+
+      const feesResult = await callContractMultiFallback(
+        contract,
+        adminFeesAbi as any,
+        'getAgentServiceFee',
+        [],
+        { chainId }
+      ) as [bigint, string]
+
+      canClean = canCleanResult
+      canRestore = canRestoreResult
+      needsMaster = needsMasterResult
+      cleaningCost = cleaningCostResult
+      restorationCost = restorationCostResult
+      masterCost = masterCostResult
+      serviceFee = feesResult[0]
+      feeRecipient = feesResult[1]
+
+      // Cache the result
+      const cacheData = { canClean, canRestore, needsMaster, cleaningCost, restorationCost, masterCost, serviceFee, feeRecipient }
+      quoteCache.set(cacheKey, { result: cacheData, timestamp: now })
+
+      // Clean old cache entries (simple cleanup)
+      for (const [key, value] of quoteCache.entries()) {
+        if (now - value.timestamp > CACHE_DURATION) {
+          quoteCache.delete(key)
+        }
+      }
+    }
 
     let maintenanceWei = BigInt(0)
     const serviceFeeWei = serviceFee // Flat fee for all actions
