@@ -491,7 +491,7 @@ export default function DashboardPage() {
     setIsAuthorizing(true)
 
     try {
-      console.log('Calling writeContract...')
+      console.log('Calling writeContract for authorization...')
       writeContract({
         address: contractAddress as `0x${string}`,
         abi: onchainRugsABI,
