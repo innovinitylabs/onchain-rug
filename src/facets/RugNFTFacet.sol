@@ -390,7 +390,6 @@ contract RugNFTFacet is ICreatorToken {
     }
 
     function transferFrom(address from, address to, uint256 tokenId) public {
-        LibRugStorage.ERC721Storage storage es = LibRugStorage.erc721Storage();
         require(_isApprovedOrOwner(msg.sender, tokenId), "ERC721: caller is not token owner or approved");
         _transfer(from, to, tokenId);
     }
@@ -580,7 +579,7 @@ contract RugNFTFacet is ICreatorToken {
         return 0;
     }
 
-    function _getTextureLevel(uint256 tokenId) internal view returns (uint8) {
+    function _getTextureLevel(uint256 /* tokenId */) internal pure returns (uint8) {
         // Texture system removed - return default level
         return 0;
     }
@@ -735,7 +734,7 @@ contract RugNFTFacet is ICreatorToken {
     }
 
     /// @dev ERC721 supportsInterface
-    function supportsInterface(bytes4 interfaceId) public view returns (bool) {
+    function supportsInterface(bytes4 interfaceId) public pure returns (bool) {
         return interfaceId == type(IERC721).interfaceId ||
                interfaceId == type(IERC721Metadata).interfaceId ||
                interfaceId == type(ICreatorToken).interfaceId ||

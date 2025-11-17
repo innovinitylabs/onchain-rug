@@ -134,16 +134,16 @@ contract RugMarketplaceFacet is ReentrancyGuard {
         
         address seller = listing.seller;
         uint256 price = listing.price;
-        
+
         // Deactivate listing
         listing.isActive = false;
-        
-        // Process payment with fees and royalties
-        _processPayment(tokenId, seller, price);
-        
-        // Transfer NFT from seller to buyer using transferFrom
+
+        // Transfer NFT from seller to buyer FIRST to prevent reentrancy
         // Since marketplace is approved (was approved during listing), this should work
         IERC721(address(this)).transferFrom(seller, msg.sender, tokenId);
+
+        // Process payment with fees and royalties AFTER transfer is complete
+        _processPayment(tokenId, seller, price);
         
 
         // Record sale for laundering tracking (tracks last 3 sale prices)
@@ -242,8 +242,8 @@ contract RugMarketplaceFacet is ReentrancyGuard {
     function _processPayment(uint256 tokenId, address seller, uint256 price) internal {
         LibRugStorage.MarketplaceConfig storage ms = LibRugStorage.marketplaceStorage();
 
-        // Calculate marketplace fee
-        uint256 marketplaceFee = (price * ms.marketplaceFeePercent) / 10000;
+        // Calculate marketplace fee with SafeMath
+        uint256 marketplaceFee = LibRugStorage.safeMul(price, ms.marketplaceFeePercent) / 10000;
 
         // Calculate and distribute royalties immediately
         RugCommerceFacet commerceFacet = RugCommerceFacet(address(this));
@@ -255,12 +255,12 @@ contract RugMarketplaceFacet is ReentrancyGuard {
             if (!royaltySuccess) revert TransferFailed();
         }
 
-        // Calculate seller proceeds after fees and royalties
-        uint256 totalDeductions = marketplaceFee + royaltyAmount;
-        uint256 sellerProceeds = price - totalDeductions;
+        // Calculate seller proceeds after fees and royalties with SafeMath
+        uint256 totalDeductions = LibRugStorage.safeAdd(marketplaceFee, royaltyAmount);
+        uint256 sellerProceeds = LibRugStorage.safeSub(price, totalDeductions);
 
-        // Record marketplace fees
-        ms.totalFeesCollected += marketplaceFee;
+        // Record marketplace fees with SafeMath
+        ms.totalFeesCollected = LibRugStorage.safeAdd(ms.totalFeesCollected, marketplaceFee);
 
         // Send proceeds to seller
         (bool success, ) = seller.call{value: sellerProceeds}("");

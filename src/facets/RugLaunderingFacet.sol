@@ -27,11 +27,16 @@ contract RugLaunderingFacet {
      * @param salePrice Sale price in wei
      */
     function recordSale(uint256 tokenId, address from, address to, uint256 salePrice) external {
+        // Access control: only marketplace facet or owner can record sales
+        require(
+            msg.sender == address(this) || msg.sender == LibDiamond.contractOwner(),
+            "Only marketplace or owner can record sales"
+        );
+
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
         LibRugStorage.AgingData storage aging = rs.agingData[tokenId];
 
-        // Verify the sale (caller should be a trusted marketplace or owner)
-        // For now, allow anyone to call but verify basic constraints
+        // Verify the sale
         require(IERC721(address(this)).ownerOf(tokenId) == to, "Buyer is not current owner");
         require(salePrice > 0, "Sale price must be greater than 0");
 
