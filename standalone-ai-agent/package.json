@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "node standalone-agent.js",
-    "chat": "node chat-interface.js",
+    "chat": "NODE_ENV=production node chat-interface.js",
     "api-server": "node api-server.js",
     "execute": "node execute-action.js",
     "gui-bridge": "node gui-bridge.js",
