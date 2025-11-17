@@ -162,6 +162,9 @@ class StandaloneRugMaintenanceAgent {
     this.totalServiceFeesPaid = 0n;
     this.maintenanceCount = 0;
     this.isRunning = false;
+    this.transactionHistory = [];
+    this.lastWalletBalance = null;
+    this.lastBalanceCheck = null;
   }
 
   async initialize() {
@@ -362,6 +365,20 @@ Respond in JSON format:
 
         this.totalServiceFeesPaid += serviceFee;
         this.maintenanceCount++;
+
+        // Record transaction in history
+        this.transactionHistory.push({
+          action: action,
+          tokenId: tokenId,
+          serviceFee: serviceFee,
+          maintenanceCost: maintenanceCost,
+          totalCost: totalValue,
+          txHash: hash,
+          timestamp: new Date().toLocaleString(),
+          blockNumber: receipt.blockNumber.toString(),
+          gasUsed: receipt.gasUsed.toString()
+        });
+
         return true;
       } else {
         console.log(chalk.red('❌ Transaction failed'));
@@ -471,16 +488,91 @@ Respond in JSON format:
     }
   }
 
+  async getRealWalletBalance() {
+    if (!this.agentAddress) {
+      return { balance: '0', balanceEth: '0', error: 'No agent wallet configured' };
+    }
+
+    try {
+      const balance = await publicClient.getBalance({
+        address: this.agentAddress
+      });
+      const balanceEth = formatEther(balance);
+      this.lastWalletBalance = balance;
+      this.lastBalanceCheck = new Date();
+
+      return {
+        balance: balance.toString(),
+        balanceEth,
+        address: this.agentAddress,
+        lastChecked: this.lastBalanceCheck
+      };
+    } catch (error) {
+      console.log(chalk.yellow('⚠️ Could not fetch wallet balance:'), error.message);
+      return { balance: '0', balanceEth: '0', error: error.message };
+    }
+  }
+
+  async getTransactionHistory() {
+    // In a real implementation, you'd query the blockchain for transaction history
+    // For now, we'll track what we know from our operations
+    return {
+      totalTransactions: this.transactionHistory.length,
+      maintenanceOperations: this.maintenanceCount,
+      totalServiceFees: this.totalServiceFeesPaid.toString(),
+      totalServiceFeesEth: formatEther(this.totalServiceFeesPaid),
+      recentTransactions: this.transactionHistory.slice(-5) // Last 5 transactions
+    };
+  }
+
   async showStats() {
-    console.log(chalk.blue('\n📊 Agent Statistics:'));
-    console.log(chalk.gray('═'.repeat(40)));
-    console.log(chalk.gray(`   Agent Name: ${config.agent.name}`));
-    console.log(chalk.gray(`   Maintenances Performed: ${this.maintenanceCount}`));
-    console.log(chalk.gray(`   Total Service Fees Paid: ${formatEther(this.totalServiceFeesPaid)} ETH`));
-    console.log(chalk.gray(`   Agent Address: ${this.agentAddress || 'Not configured'}`));
-    console.log(chalk.gray(`   Ollama Model: ${config.ollama.model}`));
-    console.log(chalk.gray(`   Contract: ${config.blockchain.contractAddress}`));
-    console.log(chalk.gray(`   Network: Base Sepolia`));
+    console.log(chalk.blue('\n📊 Agent Statistics (Real-time data):'));
+    console.log(chalk.gray('═'.repeat(60)));
+
+    // Get real wallet balance
+    const walletData = await this.getRealWalletBalance();
+    if (walletData.error) {
+      console.log(chalk.yellow(`⚠️ Wallet: ${walletData.error}`));
+    } else {
+      console.log(chalk.cyan(`💰 Wallet Balance: ${walletData.balanceEth} ETH`));
+      console.log(chalk.gray(`   Address: ${walletData.address}`));
+      console.log(chalk.gray(`   Last checked: ${walletData.lastChecked?.toLocaleTimeString() || 'Never'}`));
+    }
+
+    // Show maintenance stats
+    console.log(chalk.cyan(`🔧 Maintenances Performed: ${this.maintenanceCount}`));
+    console.log(chalk.cyan(`💵 Service Fees Paid: ${formatEther(this.totalServiceFeesPaid)} ETH`));
+
+    if (this.maintenanceCount > 0) {
+      const avgFee = Number(formatEther(this.totalServiceFeesPaid)) / this.maintenanceCount;
+      console.log(chalk.gray(`   Average fee per maintenance: ${avgFee.toFixed(6)} ETH`));
+    }
+
+    // Configuration info
+    console.log(chalk.cyan(`🤖 Agent Name: ${config.agent.name}`));
+    console.log(chalk.cyan(`🧠 AI Model: ${config.ollama.model}`));
+    console.log(chalk.cyan(`📋 Contract: ${config.blockchain.contractAddress}`));
+    console.log(chalk.cyan(`🌐 Network: Shape Sepolia`));
+
+    // Transaction history summary
+    const txHistory = await this.getTransactionHistory();
+    if (txHistory.recentTransactions.length > 0) {
+      console.log(chalk.gray(`\n📜 Recent Transactions (${txHistory.recentTransactions.length}):`));
+      txHistory.recentTransactions.forEach((tx, index) => {
+        console.log(chalk.gray(`   ${index + 1}. ${tx.action} rug #${tx.tokenId} - ${formatEther(tx.serviceFee)} ETH (${tx.timestamp})`));
+      });
+    } else {
+      console.log(chalk.gray('\n📜 No transactions recorded yet'));
+    }
+
+    // Helpful insights
+    if (this.maintenanceCount === 0) {
+      console.log(chalk.gray('\n💡 Try "clean rug 1" to perform your first maintenance operation!'));
+    }
+
+    if (walletData.balanceEth && parseFloat(walletData.balanceEth) < 0.001) {
+      console.log(chalk.yellow('\n⚠️ Low wallet balance - may need funds for gas fees'));
+    }
   }
 
   stop() {

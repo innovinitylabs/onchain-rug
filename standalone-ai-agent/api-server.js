@@ -449,6 +449,9 @@ class RugBotAPIServer {
 
         console.log(chalk.gray(`   Status: dirt=${dirtLevel}, aging=${agingLevel}, score=${maintenanceScore}, clean=${canClean}, restore=${canRestore}, master=${needsMaster}`));
 
+        // Get detailed analysis using the same logic as bulk analysis
+        const analysis = await this.analyzeRugCondition(tokenId);
+
         const status = {
           tokenId,
           canClean,
@@ -464,10 +467,15 @@ class RugBotAPIServer {
           cleaningCostEth: formatEther(cleaningCost),
           restorationCostEth: formatEther(restorationCost),
           masterCostEth: formatEther(masterCost),
-          maintenanceScore: parseInt(maintenanceScore)
+          // Include detailed analysis and raw traits
+          condition: analysis?.condition || 'unknown',
+          priority: analysis?.priority || 'unknown',
+          recommendations: analysis?.recommendations || [],
+          rawTraits: analysis?.rawTraits || {},
+          summary: analysis?.summary || `Rug #${tokenId} status retrieved`
         };
 
-        console.log(chalk.green(`✅ API: Rug #${tokenId} status retrieved (free)`));
+        console.log(chalk.green(`✅ API: Rug #${tokenId} detailed status retrieved (free)`));
         res.json({
           success: true,
           data: status
@@ -789,55 +797,93 @@ class RugBotAPIServer {
       try {
         console.log(chalk.blue(`📊 API: Getting agent stats (free)`));
 
-        // Get agent wallet balance (direct on-chain read - no X402 needed)
+        // Get real agent wallet balance from blockchain
         let walletBalance = '0';
         let walletBalanceEth = '0';
+        let walletError = null;
         try {
           if (config.wallet.address) {
-            console.log(chalk.gray(`   Reading balance for address: ${config.wallet.address}`));
+            console.log(chalk.gray(`   Reading real balance for address: ${config.wallet.address}`));
             const balance = await publicClient.getBalance({
               address: config.wallet.address
             });
             walletBalance = balance.toString();
             walletBalanceEth = formatEther(balance);
-            console.log(chalk.gray(`   Balance: ${walletBalanceEth} ETH`));
+            console.log(chalk.gray(`   Real balance: ${walletBalanceEth} ETH`));
           } else {
-            console.log(chalk.yellow(`   No agent wallet address configured`));
+            walletError = 'No agent wallet address configured';
+            console.log(chalk.yellow(`   ${walletError}`));
           }
         } catch (error) {
+          walletError = error.message;
           console.log(chalk.yellow(`   Could not get wallet balance: ${error.message}`));
         }
 
-        // Calculate gas fees paid by agent (rough estimate based on transaction count)
-        // Each maintenance operation costs ~0.00001 ETH in gas
-        const estimatedGasFees = BigInt(this.maintenanceCount) * BigInt('10000000000000000'); // 0.01 ETH per tx
+        // Get current gas price for estimates
+        let gasPrice = '20000000000'; // 20 gwei default
+        let gasPriceGwei = '20';
+        try {
+          const currentGasPrice = await publicClient.getGasPrice();
+          gasPrice = currentGasPrice.toString();
+          gasPriceGwei = (Number(currentGasPrice) / 1e9).toFixed(2);
+          console.log(chalk.gray(`   Current gas price: ${gasPriceGwei} gwei`));
+        } catch (error) {
+          console.log(chalk.yellow(`   Could not get gas price: ${error.message}`));
+        }
+
+        // Calculate more accurate gas fee estimates based on actual transaction costs
+        // Typical maintenance transaction uses ~50,000 gas
+        const gasPerTx = 50000n;
+        const estimatedGasFees = BigInt(this.maintenanceCount) * gasPerTx * BigInt(gasPrice);
         const estimatedGasFeesEth = formatEther(estimatedGasFees);
+
+        // Get service fee information
+        let serviceFeeInfo = '0.00042 ETH flat for all maintenance actions';
+        try {
+          const [serviceFee] = await publicClient.readContract({
+            address: config.blockchain.contractAddress,
+            abi: RugMaintenanceAbi,
+            functionName: 'getAgentServiceFee'
+          });
+          serviceFeeInfo = `${formatEther(serviceFee)} ETH flat for all maintenance actions`;
+        } catch (error) {
+          console.log(chalk.yellow(`   Could not get service fee: ${error.message}`));
+        }
 
         const stats = {
           agentName: config.agent.name,
           walletAddress: config.wallet.address || 'Not configured',
           walletBalance: walletBalance,
           walletBalanceEth: walletBalanceEth,
-          // Service fees are paid to facilitator, not by agent
-          totalServiceFeesPaid: '0', // Agent doesn't pay service fees directly
-          totalServiceFeesPaidEth: '0',
-          // Agent pays gas fees for transactions
+          walletError: walletError,
+          // Real service fees paid by agent (not facilitator)
+          totalServiceFeesPaid: this.totalServiceFeesPaid.toString(),
+          totalServiceFeesPaidEth: formatEther(this.totalServiceFeesPaid),
+          // Estimated gas fees (agent pays these)
           estimatedGasFeesPaid: estimatedGasFees.toString(),
           estimatedGasFeesPaidEth: estimatedGasFeesEth,
+          // Current gas price for user awareness
+          currentGasPrice: gasPrice,
+          currentGasPriceGwei: gasPriceGwei,
           maintenanceCount: this.maintenanceCount,
           contractAddress: config.blockchain.contractAddress,
           network: config.blockchain.chainId === 84532 ? 'Base Sepolia' : 'Shape Sepolia',
-          note: 'Service fees are collected by facilitator. Agent only pays gas fees.'
+          serviceFeeInfo: serviceFeeInfo,
+          transactionHistory: this.maintenanceCount > 0 ? 'Available' : 'None',
+          note: 'Real blockchain data - balances checked live from network'
         };
 
-        console.log(chalk.green(`✅ API: Agent stats retrieved (free)`));
+        console.log(chalk.green(`✅ API: Real agent stats retrieved (free)`));
         res.json({
           success: true,
-          data: stats
+          data: stats,
+          timestamp: new Date().toISOString(),
+          dataSource: 'live-blockchain'
         });
       } catch (error) {
         console.error('Agent stats error:', error);
         res.status(500).json({
+          success: false,
           error: 'Failed to get agent stats',
           details: error.message
         });
@@ -896,6 +942,80 @@ class RugBotAPIServer {
         });
       } catch (error) {
         console.log(chalk.red('❌ API: Error discovering owner rugs:', error.message));
+        res.status(500).json({ success: false, error: error.message });
+      }
+    });
+
+    // Analyze rug conditions with smart assessments
+    this.app.get('/rugs/analyze', async (req, res) => {
+      try {
+        console.log(chalk.blue('🧠 API: Analyzing rug conditions with AI assessment...'));
+
+        if (!req.query.owner) {
+          return res.status(400).json({ success: false, error: 'Owner address required' });
+        }
+
+        const ownerAddress = req.query.owner;
+
+        // Use the same approach as /owner/rugs endpoint to find owned rugs
+        console.log(chalk.gray(`   Finding rugs owned by: ${ownerAddress}`));
+
+        // Get total supply to know how many tokens to check
+        const totalSupply = await publicClient.readContract({
+          address: config.blockchain.contractAddress,
+          abi: RugMaintenanceAbi,
+          functionName: 'totalSupply'
+        });
+
+        // Scan through all possible token IDs to find ones owned by the owner
+        const ownedRugs = [];
+        for (let tokenId = 0; tokenId <= Number(totalSupply); tokenId++) {
+          try {
+            const owner = await publicClient.readContract({
+              address: config.blockchain.contractAddress,
+              abi: RugMaintenanceAbi,
+              functionName: 'ownerOf',
+              args: [BigInt(tokenId)]
+            });
+
+            if (owner.toLowerCase() === ownerAddress.toLowerCase()) {
+              ownedRugs.push(tokenId);
+            }
+          } catch (error) {
+            // Token doesn't exist or other error - skip
+          }
+        }
+
+        console.log(chalk.gray(`   Found ${ownedRugs.length} rug(s) owned by ${ownerAddress}`));
+
+        const rugAnalyses = [];
+
+        for (const tokenId of ownedRugs) {
+          try {
+            const analysis = await this.analyzeRugCondition(tokenId);
+            if (analysis) {
+              rugAnalyses.push(analysis);
+            }
+          } catch (error) {
+            console.log(chalk.yellow(`   Error analyzing rug #${tokenId}: ${error.message}`));
+          }
+        }
+
+        const overallAssessment = this.generateOverallAssessment(rugAnalyses);
+
+        console.log(chalk.green(`✅ API: Analyzed ${rugAnalyses.length} rug(s)`));
+
+        res.json({
+          success: true,
+          ownerAddress,
+          totalRugs: rugAnalyses.length,
+          analyses: rugAnalyses,
+          overallAssessment,
+          timestamp: new Date().toISOString()
+        });
+
+      } catch (error) {
+        console.log(chalk.red('❌ API: Rug analysis failed:', error.message));
         res.status(500).json({ success: false, error: error.message });
       }
     });
@@ -993,6 +1113,223 @@ Keep the personalityNote enthusiastic and in character as ${config.agent.name}!`
     });
   }
 
+  async analyzeRugCondition(tokenId) {
+    try {
+      console.log(chalk.gray(`   Analyzing rug #${tokenId}...`));
+
+      // Get tokenURI metadata
+      const tokenUri = await publicClient.readContract({
+        address: config.blockchain.contractAddress,
+        abi: RugMaintenanceAbi,
+        functionName: 'tokenURI',
+        args: [BigInt(tokenId)]
+      });
+
+      let metadata = {};
+      try {
+        const metadataResponse = await fetch(tokenUri);
+        if (metadataResponse.ok) {
+          metadata = await metadataResponse.json();
+        }
+      } catch (error) {
+        console.log(chalk.yellow(`   Failed to fetch metadata for rug #${tokenId}: ${error.message}`));
+        return null;
+      }
+
+      // Extract traits
+      const attributes = metadata.attributes || metadata.traits || [];
+      const traits = {};
+      attributes.forEach(attr => {
+        if (attr.trait_type && attr.value !== undefined) {
+          const key = attr.trait_type.toLowerCase().replace(/\s+/g, '');
+          traits[key] = attr.value;
+        }
+      });
+
+      // Get current stats
+      const dirtLevel = parseInt(traits.dirtlevel || '0') || 0;
+      const agingLevel = parseInt(traits.aginglevel || '0') || 0;
+      const cleaningCount = parseInt(traits.cleaningcount || '0') || 0;
+      const restorationCount = parseInt(traits.restorationcount || '0') || 0;
+      const masterRestorationCount = parseInt(traits.masterrestorationcount || '0') || 0;
+      const maintenanceScore = parseInt(traits.maintenancescore || '100') || 100;
+      const lastSalePrice = parseInt(traits.lastsaleprice || '0') || 0;
+      const lastCleaned = parseInt(traits.lastcleaned || '0') || 0;
+
+      // Analyze condition
+      let condition = 'excellent';
+      let priority = 'low';
+      let recommendations = [];
+
+      // Dirt analysis - primary maintenance indicator
+      if (dirtLevel >= 3) {
+        condition = 'very dirty - needs immediate cleaning';
+        priority = 'high';
+        recommendations.push('URGENT: Schedule cleaning immediately - high dirt accumulation');
+      } else if (dirtLevel >= 2) {
+        condition = 'dirty - needs cleaning';
+        priority = 'medium';
+        recommendations.push('Schedule cleaning - moderate dirt buildup');
+      } else if (dirtLevel >= 1) {
+        condition = 'slightly dirty';
+        recommendations.push('Consider cleaning when convenient');
+      } else {
+        condition = 'clean';
+      }
+
+      // Aging analysis - wear and tear assessment
+      if (agingLevel >= 10) {
+        if (condition === 'clean') condition = 'aged but clean';
+        priority = 'high';
+        recommendations.push('URGENT: Showing significant wear - restoration needed');
+      } else if (agingLevel >= 8) {
+        if (condition === 'clean') condition = 'showing age';
+        priority = priority === 'high' ? 'high' : 'medium';
+        recommendations.push('Consider restoration - showing wear');
+      } else if (agingLevel >= 5) {
+        if (priority === 'low') priority = 'low';
+        recommendations.push('Minor aging visible');
+      }
+
+      // Maintenance score assessment
+      if (maintenanceScore < 40) {
+        priority = 'high';
+        recommendations.push('CRITICAL: Very low maintenance score - immediate attention required');
+      } else if (maintenanceScore < 60) {
+        if (priority !== 'high') priority = 'high';
+        recommendations.push('Low maintenance score - needs maintenance attention');
+      } else if (maintenanceScore < 75) {
+        if (priority === 'low') priority = 'medium';
+        recommendations.push('Moderate maintenance score - could use improvement');
+      } else if (maintenanceScore >= 85) {
+        recommendations.push('Excellent maintenance score - well cared for');
+      }
+
+      // Maintenance history analysis
+      const totalMaintenances = cleaningCount + restorationCount + masterRestorationCount;
+      if (totalMaintenances === 0) {
+        if (priority === 'low') priority = 'medium';
+        recommendations.push('Never maintained - consider initial cleaning');
+      } else if (totalMaintenances >= 10) {
+        recommendations.push('Heavily maintained - showing extensive care');
+      } else if (totalMaintenances >= 5) {
+        recommendations.push('Well-maintained rug');
+      }
+
+      // Time since last maintenance
+      if (lastCleaned > 0) {
+        const daysSinceLastClean = Math.floor((Date.now() / 1000 - lastCleaned) / 86400);
+        if (daysSinceLastClean > 90) {
+          if (priority !== 'high') priority = 'medium';
+          recommendations.push(`Overdue for maintenance - last cleaned ${daysSinceLastClean} days ago`);
+        } else if (daysSinceLastClean > 30) {
+          recommendations.push(`Last cleaned ${daysSinceLastClean} days ago`);
+        }
+      }
+
+      // Restoration history insights
+      if (restorationCount > masterRestorationCount * 2) {
+        recommendations.push('Multiple restorations performed - consider master restoration');
+      }
+
+      if (masterRestorationCount > 0) {
+        recommendations.push('Has undergone master restoration - premium maintenance');
+      }
+
+      return {
+        tokenId,
+        condition,
+        priority,
+        dirtLevel,
+        agingLevel,
+        maintenanceScore,
+        cleaningCount,
+        restorationCount,
+        masterRestorationCount,
+        totalMaintenances,
+        lastSalePrice,
+        recommendations,
+        rawTraits: {
+          textLines: traits.textlines,
+          characterCount: traits.charactercount,
+          paletteName: traits.palettename,
+          stripeCount: traits.stripecount,
+          complexity: traits.complexity,
+          warpThickness: traits.warpthickness,
+          dirtLevel: traits.dirtlevel,
+          agingLevel: traits.aginglevel,
+          cleaningCount: traits.cleaningcount,
+          restorationCount: traits.restorationcount,
+          masterRestorationCount: traits.masterrestorationcount,
+          maintenanceScore: traits.maintenancescore,
+          lastSalePrice: traits.lastsaleprice,
+          mintTime: traits.minttime,
+          lastCleaned: traits.lastcleaned
+        },
+        summary: `Rug #${tokenId}: ${condition} (maintenance score: ${maintenanceScore})`
+      };
+
+    } catch (error) {
+      console.log(chalk.yellow(`   Error analyzing rug #${tokenId}: ${error.message}`));
+      return null;
+    }
+  }
+
+  generateOverallAssessment(analyses) {
+    if (analyses.length === 0) {
+      return {
+        summary: 'No rugs found to analyze',
+        recommendations: ['Make sure you own rugs on this network']
+      };
+    }
+
+    const totalRugs = analyses.length;
+    const highPriority = analyses.filter(a => a.priority === 'high').length;
+    const mediumPriority = analyses.filter(a => a.priority === 'medium').length;
+    const lowPriority = analyses.filter(a => a.priority === 'low').length;
+
+    const avgMaintenanceScore = analyses.reduce((sum, a) => sum + a.maintenanceScore, 0) / totalRugs;
+    const totalMaintenances = analyses.reduce((sum, a) => sum + a.totalMaintenances, 0);
+
+    let summary = `You have ${totalRugs} rug${totalRugs > 1 ? 's' : ''}. `;
+    let recommendations = [];
+
+    if (highPriority > 0) {
+      summary += `${highPriority} need${highPriority > 1 ? '' : 's'} immediate attention. `;
+      recommendations.push(`${highPriority} rug${highPriority > 1 ? 's need' : ' needs'} urgent maintenance`);
+    }
+
+    if (mediumPriority > 0) {
+      summary += `${mediumPriority} could use maintenance. `;
+      recommendations.push(`${mediumPriority} rug${mediumPriority > 1 ? 's could' : ' could'} benefit from maintenance`);
+    }
+
+    if (lowPriority > 0) {
+      summary += `${lowPriority} ${lowPriority > 1 ? 'are' : 'is'} in good condition. `;
+    }
+
+    summary += `Average maintenance score: ${avgMaintenanceScore.toFixed(1)}. Total maintenances performed: ${totalMaintenances}.`;
+
+    if (avgMaintenanceScore < 60) {
+      recommendations.push('Overall collection needs maintenance attention');
+    } else if (avgMaintenanceScore > 80) {
+      recommendations.push('Collection is well-maintained');
+    }
+
+    return {
+      summary,
+      recommendations,
+      stats: {
+        totalRugs,
+        highPriority,
+        mediumPriority,
+        lowPriority,
+        avgMaintenanceScore: avgMaintenanceScore.toFixed(1),
+        totalMaintenances
+      }
+    };
+  }
+
   async start() {
     console.log(chalk.blue(`🚀 Starting ${config.agent.name} API Server...\n`));
 
@@ -1045,6 +1382,7 @@ Keep the personalityNote enthusiastic and in character as ${config.agent.name}!`
       console.log(chalk.blue(`🏠 Rug Status: http://localhost:${config.server.port}/rug/1/status`));
       console.log(chalk.blue(`🔧 Maintenance: POST http://localhost:${config.server.port}/rug/1/maintain`));
       console.log(chalk.blue(`📊 Stats: http://localhost:${config.server.port}/agent/stats`));
+      console.log(chalk.blue(`🧠 Rug Analysis: http://localhost:${config.server.port}/rugs/analyze?owner=0x...`));
       console.log(chalk.blue(`🏘️  My Rugs: http://localhost:${config.server.port}/owner/rugs`));
       console.log(chalk.blue(`🤖 Agent Rugs: http://localhost:${config.server.port}/agent/rugs`));
       console.log(chalk.gray('\n💡 This server enables Ollama GUI to perform real blockchain transactions!'));

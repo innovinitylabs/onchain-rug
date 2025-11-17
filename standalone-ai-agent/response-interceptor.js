@@ -86,7 +86,7 @@ class ResponseInterceptor {
         type: 'function',
         function: {
           name: 'clean_rug',
-          description: 'Clean a rug (costs 0.00042 ETH service fee)',
+          description: 'Clean a rug (0.00042 ETH service fee + maintenance cost)',
           parameters: {
             type: 'object',
             properties: {
@@ -103,7 +103,7 @@ class ResponseInterceptor {
         type: 'function',
         function: {
           name: 'restore_rug',
-          description: 'Restore a rug (costs 0.00042 ETH service fee)',
+          description: 'Restore a rug (0.00042 ETH service fee + maintenance cost)',
           parameters: {
             type: 'object',
             properties: {
@@ -120,7 +120,7 @@ class ResponseInterceptor {
         type: 'function',
         function: {
           name: 'master_restore_rug',
-          description: 'Master restore a rug (costs 0.00042 ETH service fee)',
+          description: 'Master restore a rug (0.00042 ETH service fee + maintenance cost)',
           parameters: {
             type: 'object',
             properties: {
@@ -205,7 +205,7 @@ Available Tools:
 - restore_rug: Restore a rug (requires confirmation)
 - master_restore_rug: Master restore a rug (requires confirmation)
 
-IMPORTANT: For maintenance actions (clean_rug, restore_rug, master_restore_rug), you MUST ask the user for confirmation before calling the tool, because these execute real blockchain transactions that cost 0.00042 ETH each.
+IMPORTANT: For maintenance actions (clean_rug, restore_rug, master_restore_rug), you MUST ask the user for confirmation before calling the tool, because these execute real blockchain transactions that cost 0.00042 ETH service fee plus the actual maintenance cost.
 
 Workflow for maintenance actions:
 1. User requests maintenance
@@ -228,7 +228,7 @@ IMPORTANT NOTES:
 FEATURES YOU CAN EXPLAIN:
 - OnchainRugs is an NFT project on Shape Sepolia
 - Rugs have 3 maintenance levels: Clean, Restore, Master Restore
-- Each maintenance action costs 0.00042 ETH (paid by agent)
+- Each maintenance action costs 0.00042 ETH service fee + actual maintenance cost (paid by agent)
 - Rugs can be minted, traded, and maintained
 - AI agents can autonomously maintain rugs
 
@@ -576,7 +576,7 @@ Available Tools:
 - restore_rug: Restore a rug (requires confirmation)
 - master_restore_rug: Master restore a rug (requires confirmation)
 
-IMPORTANT: For maintenance actions (clean_rug, restore_rug, master_restore_rug), you MUST ask the user for confirmation before calling the tool, because these execute real blockchain transactions that cost 0.00042 ETH each.
+IMPORTANT: For maintenance actions (clean_rug, restore_rug, master_restore_rug), you MUST ask the user for confirmation before calling the tool, because these execute real blockchain transactions that cost 0.00042 ETH service fee plus the actual maintenance cost.
 
 Workflow for maintenance actions:
 1. User requests maintenance
@@ -599,7 +599,7 @@ IMPORTANT NOTES:
 FEATURES YOU CAN EXPLAIN:
 - OnchainRugs is an NFT project on Shape Sepolia
 - Rugs have 3 maintenance levels: Clean, Restore, Master Restore
-- Each maintenance action costs 0.00042 ETH (paid by agent)
+- Each maintenance action costs 0.00042 ETH service fee + actual maintenance cost (paid by agent)
 - Rugs can be minted, traded, and maintained
 - AI agents can autonomously maintain rugs
 

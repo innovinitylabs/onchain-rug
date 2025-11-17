@@ -31,6 +31,9 @@ const config = {
   wallet: {
     address: process.env.AGENT_ADDRESS,
     privateKey: process.env.AGENT_PRIVATE_KEY
+  },
+  owner: {
+    address: process.env.OWNER_ADDRESS
   }
 };
 
@@ -147,6 +150,18 @@ class AgentRugChat {
       {
         type: 'function',
         function: {
+          name: 'analyze_rugs',
+          description: 'Get AI-powered analysis of all user-owned rugs including condition assessment, maintenance recommendations, and overall collection health. Use this for questions like "how are my rugs doing?" or "what\'s the condition of my rugs?"',
+          parameters: {
+            type: 'object',
+            properties: {},
+            required: []
+          }
+        }
+      },
+      {
+        type: 'function',
+        function: {
           name: 'check_rug',
           description: 'Check the status of a specific rug by token ID',
           parameters: {
@@ -234,6 +249,7 @@ You have access to tools that allow you to interact with the OnchainRugs blockch
 Available Tools (ALL FREE within paid session):
 - get_rugs: Discover which rugs the user owns
 - get_stats: Check service fees paid
+- analyze_rugs: Get AI-powered analysis of all user's rugs (recommended for "how are my rugs doing")
 - check_rug: Check the status of a specific rug
 - clean_rug: Clean a rug (get quote first, then confirm)
 - restore_rug: Restore a rug (get quote first, then confirm)
@@ -260,15 +276,14 @@ PARAMETER HANDLING:
 
 EXAMPLE FLOWS:
 
-FREE INFO QUERY:
-User: "how many rugs do I own?"
-AI: Calls get_rugs() → Returns rug list (no payment required)
-
-User: "what's my balance?" or "check agent balance"
-AI: Calls get_stats() → Returns wallet balance and maintenance stats (no payment required)
-
-User: "is rug 1 clean?" or "check rug 1"
-AI: Calls check_rug(tokenId=1) → Returns rug status (no payment required)
+TOOL USAGE GUIDELINES:
+- For rug ownership questions: Call get_rugs()
+- For specific rug status: Call check_rug(tokenId=X)
+- For overall rug condition analysis: Call analyze_rugs() (best for "how are my rugs doing?")
+- For maintenance operations: Call clean_rug/restore_rug/master_restore_rug
+- DO NOT call get_stats() unless specifically asked about agent statistics
+- For general questions about capabilities: Respond directly without tools
+- For balance questions: Respond directly without tools
 
 MAINTENANCE WITH PAYMENT:
 User: "clean rug 1"
@@ -310,7 +325,7 @@ MAINTENANCE OPERATIONS:
 FEATURES YOU CAN EXPLAIN:
 - OnchainRugs is an NFT project on Shape Sepolia
 - Rugs have 3 maintenance levels: Clean, Restore, Master Restore
-- Each maintenance action costs 0.00042 ETH (paid by agent)
+- Each maintenance action costs a flat 0.00042 ETH service fee plus the actual maintenance cost (varies by operation)
 - Rugs can be minted, traded, and maintained
 - AI agents can autonomously maintain rugs
 
@@ -336,6 +351,9 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
           break;
         case 'get_stats':
           url = `${config.api.baseUrl}/agent/stats`;
+          break;
+        case 'analyze_rugs':
+          url = `${config.api.baseUrl}/rugs/analyze?owner=${config.owner.address}`;
           break;
         case 'check_rug':
           url = `${config.api.baseUrl}/rug/${args.tokenId}/status`;
@@ -386,11 +404,22 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
 
       // Check if response is JSON before parsing
       const contentType = response.headers.get('content-type');
-      let result;
+      let result = null; // Initialize result to prevent undefined errors
 
       if (contentType && contentType.includes('application/json')) {
         result = await response.json();
         console.log(chalk.gray(`   API response status: ${response.status}, result:`, JSON.stringify(result)));
+
+        // Format get_stats result
+        if (name === 'get_stats' && result.data) {
+          console.log(chalk.gray(`   Formatting get_stats result`));
+          const stats = result.data;
+          return {
+            ...result,
+            message: `Agent Stats: ${stats.agentName} has ${stats.walletBalanceEth} ETH in wallet, performed ${stats.maintenanceCount} maintenance operations. Service fees collected by facilitator, agent pays gas fees (~${stats.estimatedGasFeesPaidEth} ETH estimated).`,
+            formatted: true
+          };
+        }
       } else {
         // Handle non-JSON responses (HTML error pages, etc.)
         const text = await response.text();
@@ -400,6 +429,8 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
 
         throw new Error(`API returned HTML instead of JSON. Server may not be running or endpoint doesn't exist. Status: ${response.status}`);
       }
+
+      console.log(chalk.gray(`   Handling response - status: ${response.status}, has error: ${!!result?.error}, is free: ${isFreeOperation}`));
 
       // Handle different response types
       if (response.status >= 400 && result?.error) {
@@ -500,7 +531,80 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
       }
 
       console.log(chalk.gray(`   Final check - response.ok: ${response.ok}, result exists: ${!!result}, has auth token: ${!!result?.authorizationToken}`));
-      if (response.ok && result.authorizationToken) {
+
+      // Handle successful free operations (no X402 payment required)
+      if (response.ok && result && !result.authorizationToken && !result.x402) {
+        console.log(chalk.green(`✅ ${name} completed successfully (free operation)`));
+        console.log(chalk.gray(`   SUCCESS PATH: Reached success handling for ${name}`));
+
+        // Log X402 payment if this was a maintenance action
+        if (name.includes('_rug') && result.x402Payment) {
+          console.log(chalk.green(`💰 Paid ${formatEther(BigInt(result.x402Payment))} ETH via X402 for maintenance!`));
+        }
+
+        // Format the response for better user experience
+
+        // Handle get_stats first since it needs special formatting
+        if (name === 'get_stats' && result.data) {
+          const stats = result.data;
+          return {
+            ...result,
+            message: `Agent Stats: ${stats.agentName} has ${stats.walletBalanceEth} ETH in wallet, performed ${stats.maintenanceCount} maintenance operations. Service fees collected by facilitator, agent pays gas fees (~${stats.estimatedGasFeesPaidEth} ETH estimated).`,
+            formatted: true
+          };
+        }
+
+        // Handle analyze_rugs with comprehensive formatting
+        if (name === 'analyze_rugs' && result.analyses) {
+          let message = result.overallAssessment.summary + '\n\n';
+
+          // Add individual rug assessments
+          result.analyses.forEach(analysis => {
+            message += `• ${analysis.summary}\n`;
+            if (analysis.recommendations && analysis.recommendations.length > 0) {
+              message += `  Recommendations: ${analysis.recommendations.join(', ')}\n`;
+            }
+          });
+
+          // Add overall recommendations
+          if (result.overallAssessment.recommendations && result.overallAssessment.recommendations.length > 0) {
+            message += `\n💡 Overall Recommendations:\n`;
+            result.overallAssessment.recommendations.forEach(rec => {
+              message += `• ${rec}\n`;
+            });
+          }
+
+          return {
+            ...result,
+            message: message.trim(),
+            formatted: true
+          };
+        }
+
+        if (['clean_rug', 'restore_rug', 'master_restore_rug'].includes(name)) {
+          // This was an execution, format nicely
+          const actionName = name.replace('_rug', '').replace('_', ' ');
+          const paymentAmount = result.x402Payment ? formatEther(BigInt(result.x402Payment)) : '0';
+          return {
+            ...result,
+            message: `${actionName.charAt(0).toUpperCase() + actionName.slice(1)} completed successfully! Paid ${paymentAmount} ETH via X402.`,
+            formatted: true
+          };
+        } else if (result.operationNotAvailable) {
+          // Operation is not available for this rug
+          const actionName = name.replace('_rug', '').replace('_', ' ');
+          return {
+            ...result,
+            message: `Cannot perform ${actionName} on this rug: ${result.error}`,
+            operationNotAvailable: true,
+            formatted: true
+          };
+        } else {
+          // Default success case
+          console.log(chalk.gray(`   Returning result for ${name}:`, JSON.stringify(result).substring(0, 200) + '...'));
+          return result;
+        }
+      } else if (response.ok && result.authorizationToken) {
         console.log(chalk.green(`✅ ${name} authorized successfully!`));
 
         // Handle authorization token response - execute transaction via agent API
@@ -555,45 +659,10 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
             };
           }
         }
-
-        // Log X402 payment if this was a maintenance action
-        if (name.includes('_rug') && result.x402Payment) {
-          console.log(chalk.green(`💰 Paid ${formatEther(BigInt(result.x402Payment))} ETH via X402 for maintenance!`));
-        }
-
-        // Format the response for better user experience
-        if (['clean_rug', 'restore_rug', 'master_restore_rug'].includes(name)) {
-          // This was an execution, format nicely
-          const actionName = name.replace('_rug', '').replace('_', ' ');
-          const paymentAmount = result.x402Payment ? formatEther(BigInt(result.x402Payment)) : '0';
-          return {
-            ...result,
-            message: `${actionName.charAt(0).toUpperCase() + actionName.slice(1)} completed successfully! Paid ${paymentAmount} ETH via X402.`,
-            formatted: true
-          };
-        } else if (result.operationNotAvailable) {
-          // Operation is not available for this rug
-          const actionName = name.replace('_rug', '').replace('_', ' ');
-          return {
-            ...result,
-            message: `Cannot perform ${actionName} on this rug: ${result.error}`,
-            operationNotAvailable: true,
-            formatted: true
-          };
-        } else if (name === 'get_stats' && result.data) {
-          // Format agent stats nicely
-          const stats = result.data;
-          return {
-            ...result,
-            message: `Agent Stats: ${stats.agentName} has ${stats.walletBalanceEth} ETH in wallet, performed ${stats.maintenanceCount} maintenance operations. Service fees collected by facilitator, agent pays gas fees (~${stats.estimatedGasFeesPaidEth} ETH estimated).`,
-            formatted: true
-          };
-
-        return result;
       } else {
         console.log(chalk.gray(`   Error handling - result: ${JSON.stringify(result)}, response.ok: ${response.ok}, result type: ${typeof result}`));
         console.log(chalk.gray(`   Error handling - result keys: ${result ? Object.keys(result) : 'undefined'}`));
-        const errorMsg = result?.error || result?.message || 'Unknown error';
+        const errorMsg = result && typeof result === 'object' ? (result.error || result.message || 'Unknown error') : 'Unknown error';
         console.log(chalk.red(`❌ ${name} failed: ${errorMsg}`));
 
         // Handle specific error cases
@@ -612,7 +681,6 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
         }
 
         return null;
-      }
       }
     } catch (error) {
       console.log(chalk.red(`❌ Tool execution failed: ${error.message}`));
@@ -682,11 +750,14 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
       const assistantMessage = response.message;
 
       // Add assistant response to conversation
-      this.conversationHistory.push({
-        role: 'assistant',
-        content: assistantMessage.content,
-        tool_calls: assistantMessage.tool_calls
-      });
+      // Ollama format: don't include content if there are tool_calls
+      const message = { role: 'assistant' };
+      if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
+        message.tool_calls = assistantMessage.tool_calls;
+      } else {
+        message.content = assistantMessage.content;
+      }
+      this.conversationHistory.push(message);
 
       // Handle tool calls if any
       if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
@@ -694,7 +765,9 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
 
         for (const toolCall of assistantMessage.tool_calls) {
           const { name } = toolCall.function;
+          console.log(chalk.gray(`🔧 Processing tool: ${name}`));
           const result = await this.executeToolCall(toolCall);
+          console.log(chalk.gray(`🔧 Tool result type: ${typeof result}, has message: ${!!(result && result.message)}, formatted: ${!!(result && result.formatted)}`));
 
           if (result === null || result.error || result.missingParameters) {
             // Tool failed - add clear error message to conversation
@@ -711,57 +784,77 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
               }),
               tool_call_id: toolCall.id
             });
-          } else if (result.quote) {
-            // Quote response - user needs to confirm
-            this.conversationHistory.push({
-              role: 'tool',
-              content: JSON.stringify({
-                quote: result,
-                status: 'quote',
-                operation: name,
-                message: result.message,
-                cost: result.cost,
-                action: result.action,
-                tokenId: result.tokenId
-              }),
-              tool_call_id: toolCall.id
-            });
           } else {
-            // Tool succeeded - add result to conversation
+            // Tool succeeded - format the result and return directly
+            let responseMessage = '';
+
             if (result.formatted && result.message) {
-              // For formatted results, use only the message
-              this.conversationHistory.push({
-                role: 'tool',
-                content: result.message,
-                tool_call_id: toolCall.id
-              });
+              // Already formatted result (like get_stats)
+              responseMessage = result.message;
+            } else if (result.quote) {
+              // Quote response - user needs to confirm
+              responseMessage = `I need to confirm this action with you. ${result.message || 'Please confirm to proceed.'}`;
             } else {
-              // For regular results, use full JSON
-          this.conversationHistory.push({
-            role: 'tool',
-            content: JSON.stringify(result),
-            tool_call_id: toolCall.id
-          });
+              // Format raw API result
+              if (name === 'check_rug' && result.data) {
+                const data = result.data;
+                let message = `Rug #${data.tokenId}: ${data.condition} (${data.summary ? data.summary.split(' (')[1].replace(')', '') : 'detailed status'})\n`;
+
+                // Add raw NFT traits if available
+                if (data.rawTraits && Object.keys(data.rawTraits).length > 0) {
+                  message += `📊 Raw Stats: Text Lines: ${data.rawTraits.textLines}, Characters: ${data.rawTraits.characterCount}, Palette: ${data.rawTraits.paletteName}, Stripes: ${data.rawTraits.stripeCount}, Complexity: ${data.rawTraits.complexity}, Warp: ${data.rawTraits.warpThickness}\n`;
+                  message += `🧹 Maintenance: Dirt ${data.rawTraits.dirtLevel}, Aging ${data.rawTraits.agingLevel}, Score ${data.rawTraits.maintenanceScore}, Cleanings ${data.rawTraits.cleaningCount}, Restorations ${data.rawTraits.restorationCount}, Master Restore ${data.rawTraits.masterRestorationCount}\n`;
+                  message += `📅 History: Minted ${new Date(parseInt(data.rawTraits.mintTime) * 1000).toLocaleDateString()}, Last Cleaned ${data.rawTraits.lastCleaned > 0 ? new Date(parseInt(data.rawTraits.lastCleaned) * 1000).toLocaleDateString() : 'Never'}\n`;
+                }
+
+                // Add maintenance options
+                message += `🔧 Maintenance Options: Can Clean: ${data.canClean}, Can Restore: ${data.canRestore}, Needs Master: ${data.needsMaster}\n`;
+
+                // Add recommendations if available
+                if (data.recommendations && data.recommendations.length > 0) {
+                  message += `💡 Recommendations: ${data.recommendations.join(', ')}\n`;
+                }
+
+                responseMessage = message.trim();
+              } else if (name === 'get_rugs' && result.ownedRugs) {
+                responseMessage = `You own ${result.ownedRugs.length} rug(s): ${result.ownedRugs.join(', ')}`;
+              } else {
+                // Generic success message
+                responseMessage = `${name.replace('_', ' ')} completed successfully.`;
+              }
             }
 
-            // If this was a quote waiting for confirmation, don't call LLM again
-            if (result.waitingForConfirmation) {
-              return result.message;
-            }
+            // Add tool result to conversation for context
+            this.conversationHistory.push({
+              role: 'tool',
+              content: result.formatted && result.message ? result.message : JSON.stringify(result),
+              tool_call_id: toolCall.id
+            });
+
+            // Return the formatted message directly
+            console.log(chalk.gray('📝 Returning result directly without Ollama'));
+            return responseMessage;
           }
         }
 
-        // Get final response after tool execution
-        const finalResponse = await this.ollama.chat({
-          model: config.ollama.model,
-          messages: [
+        // Get final response after tool execution (fallback for complex queries)
+        try {
+          const messages = [
             { role: 'system', content: this.systemPrompt },
             ...this.conversationHistory
-          ],
-          stream: false
-        });
+          ];
 
-        return finalResponse.message.content;
+          const finalResponse = await this.ollama.chat({
+            model: config.ollama.model,
+            messages: messages,
+            stream: false
+          });
+
+          return finalResponse.message.content;
+        } catch (ollamaError) {
+          // Return a fallback response instead of crashing
+          return 'I successfully executed the blockchain operation, but had trouble generating a response. The action completed successfully.';
+        }
       }
 
       return assistantMessage.content;
@@ -769,6 +862,105 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
     } catch (error) {
       console.error(chalk.red('❌ Chat error:'), error.message);
       return 'Sorry, I encountered an error. Please try again.';
+    }
+  }
+
+  getCapabilitiesMessage() {
+    return `I'm Agent Rug, your AI assistant for digital rug maintenance on the blockchain! Here's what I can do:
+
+🧹 **Maintenance Operations:**
+• Clean rugs (removes dirt accumulation)
+• Restore rugs (repairs wear and tear)
+• Master restore rugs (complete restoration)
+
+🔍 **Smart Information & Analysis:**
+• Check individual rug status and NFT metadata
+• Discover all rugs you own on the blockchain
+• **AI-powered collection analysis** - intelligent condition assessment
+• Wallet balance and transaction history
+• Comprehensive maintenance statistics
+
+💬 **Natural Language Commands:**
+• "clean rug 1" - Clean specific rug
+• "how are my rugs doing?" - **Smart AI analysis** of your entire collection
+• "how much ETH do I have?" - Check wallet balance
+• "how many maintenances?" - Show operation history
+• "what can you do?" - Show this help
+
+🧠 **AI Intelligence Features:**
+• **Real-time NFT metadata analysis** from tokenURI
+• **Smart condition assessment** based on dirt levels, aging, maintenance scores
+• **Priority-based recommendations** (urgent, needed, optional)
+• **Maintenance history insights** and overdue tracking
+• **Personalized care suggestions** for each rug
+• Context-aware conversations and error recovery
+
+🌐 **Network:** Shape Sepolia testnet
+
+**Try asking: "how are my rugs doing?" for intelligent analysis!**
+
+Just tell me what you'd like to do with your rugs!`;
+  }
+
+  async getBalanceMessage() {
+    try {
+      // Get real balance from API
+      const response = await fetch(`${config.api.baseUrl}/agent/stats`);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data) {
+          const stats = result.data;
+          return `Your agent wallet balance is ${stats.walletBalanceEth} ETH. You've performed ${stats.maintenanceCount} maintenance operations.`;
+        }
+      }
+      return 'I\'m having trouble checking your balance right now. Please try again later.';
+    } catch (error) {
+      console.error('Balance check error:', error.message);
+      return 'I\'m having trouble checking your balance right now. Please try again later.';
+    }
+  }
+
+  async getRugAnalysisMessage() {
+    try {
+      // Get rug analysis from API
+      const response = await fetch(`${config.api.baseUrl}/rugs/analyze?owner=${config.owner.address}`);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.analyses) {
+          let message = result.overallAssessment.summary + '\n\n';
+
+          // Add individual rug assessments
+          result.analyses.forEach(analysis => {
+            message += `• ${analysis.summary}\n`;
+
+            // Add raw NFT traits
+            if (analysis.rawTraits) {
+              message += `  📊 Raw Stats: Text Lines: ${analysis.rawTraits.textLines}, Characters: ${analysis.rawTraits.characterCount}, Palette: ${analysis.rawTraits.paletteName}, Stripes: ${analysis.rawTraits.stripeCount}, Complexity: ${analysis.rawTraits.complexity}, Warp: ${analysis.rawTraits.warpThickness}\n`;
+              message += `  🧹 Maintenance: Dirt ${analysis.rawTraits.dirtLevel}, Aging ${analysis.rawTraits.agingLevel}, Score ${analysis.rawTraits.maintenanceScore}, Cleanings ${analysis.rawTraits.cleaningCount}, Restorations ${analysis.rawTraits.restorationCount}, Master Restore ${analysis.rawTraits.masterRestorationCount}\n`;
+              message += `  📅 History: Minted ${new Date(parseInt(analysis.rawTraits.mintTime) * 1000).toLocaleDateString()}, Last Cleaned ${analysis.rawTraits.lastCleaned > 0 ? new Date(parseInt(analysis.rawTraits.lastCleaned) * 1000).toLocaleDateString() : 'Never'}\n`;
+            }
+
+            if (analysis.recommendations && analysis.recommendations.length > 0) {
+              message += `  💡 Recommendations: ${analysis.recommendations.join(', ')}\n`;
+            }
+            message += '\n';
+          });
+
+          // Add overall recommendations
+          if (result.overallAssessment.recommendations && result.overallAssessment.recommendations.length > 0) {
+            message += `\n💡 Overall Recommendations:\n`;
+            result.overallAssessment.recommendations.forEach(rec => {
+              message += `• ${rec}\n`;
+            });
+          }
+
+          return message.trim();
+        }
+      }
+      return 'I\'m having trouble analyzing your rugs right now. Please make sure you own rugs and try again later.';
+    } catch (error) {
+      console.error('Rug analysis error:', error.message);
+      return 'I\'m having trouble analyzing your rugs right now. Please try again later.';
     }
   }
 
@@ -792,6 +984,44 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
             console.log(chalk.gray('🛑 Stopping Ollama server...'));
             this.ollamaProcess.kill();
           }
+          return;
+        }
+
+        // Handle direct queries that should not trigger tool calls
+        const lowerInput = input.toLowerCase().trim();
+
+        // Help and capability queries
+        if (lowerInput.includes('what can') || lowerInput.includes('help') ||
+            lowerInput.includes('commands') || lowerInput.includes('options') ||
+            lowerInput === 'capabilities' || lowerInput === 'abilities') {
+          console.log(chalk.green('Agent Rug:'), this.getCapabilitiesMessage());
+          console.log(''); // Empty line for readability
+          askQuestion(); // Continue the conversation
+          return;
+        }
+
+        // Balance queries - handle directly to avoid tool call conflicts
+        if (lowerInput.includes('balance') || lowerInput.includes('wallet') ||
+            lowerInput.includes('how much eth') || lowerInput.includes('how much money')) {
+          console.log(chalk.gray('Agent Rug:'), 'Thinking...');
+          const balanceResponse = await this.getBalanceMessage();
+          console.log(chalk.green('Agent Rug:'), balanceResponse);
+          console.log(''); // Empty line for readability
+          askQuestion(); // Continue the conversation
+          return;
+        }
+
+        // Bulk rug condition queries - handle directly with smart analysis
+        // Only trigger for queries about ALL rugs, not specific ones
+        if ((lowerInput.includes('how are my') && lowerInput.includes('rug') && !/\d/.test(lowerInput)) ||
+            (lowerInput.includes('rug') && lowerInput.includes('doing') && !/\d/.test(lowerInput)) ||
+            lowerInput.includes('rug condition') || lowerInput.includes('rug status') ||
+            lowerInput.includes('all my rugs')) {
+          console.log(chalk.gray('Agent Rug:'), 'Analyzing your rug collection...');
+          const analysisResponse = await this.getRugAnalysisMessage();
+          console.log(chalk.green('Agent Rug:'), analysisResponse);
+          console.log(''); // Empty line for readability
+          askQuestion(); // Continue the conversation
           return;
         }
 

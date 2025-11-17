@@ -1,20 +1,48 @@
-# 🤖 Standalone x402 Rug Maintenance AI Agent
+# 🤖 Enhanced Standalone x402 Rug Maintenance AI Agent
 
-A **completely self-contained** AI agent that autonomously maintains digital rugs via the x402 protocol. No external dependencies on your main project!
+A **significantly improved** AI agent with advanced natural language processing, real-time blockchain data integration, and intelligent conversation management. No hallucinations - only accurate, real-time information!
 
 ## ✨ Key Features
 
 - 🚀 **100% Standalone** - No dependencies on main project
-- 🧠 **AI-Powered Decisions** - Uses Ollama for intelligent maintenance
-- ⛓️ **Direct Blockchain** - Connects directly to contracts
-- 💰 **Production X402** - Real cryptographic signatures (not mock)
-- 💬 **Chat Interface** - Talk to your AI agent conversationally
-- 🔄 **Autonomous Operation** - Runs 24/7 maintenance cycles
-- 🎮 **Ollama GUI Integration** - Chat in GUI, perform real transactions!
+- 🧠 **Advanced AI Context** - Remembers conversation history and provides contextual responses
+- ⛓️ **Real-Time Blockchain Data** - No hallucinations! Shows actual wallet balances, transaction counts, and gas estimates
+- 💰 **Enhanced Natural Language** - Understands conversational inputs like "How is my rug doing?" or "How much ETH do I have?"
+- 💬 **Intelligent Chat Interface** - Context-aware conversations with real data integration
+- 🔄 **Autonomous Operation** - Runs 24/7 maintenance cycles with real transaction tracking
+- 🎮 **Ollama GUI Integration** - Chat in GUI, perform real transactions with accurate information
+- 🛡️ **Comprehensive Error Handling** - User-friendly error messages with helpful suggestions
+- 📊 **Accurate Statistics** - Real maintenance counts, service fees paid, and transaction history
 
 ## 🎮 Revolutionary GUI Integration
 
 **Chat in Ollama GUI and execute REAL blockchain transactions using native Ollama tool calling!**
+
+## 🚀 Major Improvements (No More Hallucinations!)
+
+### ✅ **Real Blockchain Data Integration**
+- **Actual wallet balances** checked live from the blockchain (no made-up numbers!)
+- **Real transaction counts** and maintenance operation history
+- **Live gas price estimates** for accurate cost calculations
+- **Current service fee information** directly from smart contracts
+
+### ✅ **Enhanced Natural Language Processing**
+- Understands conversational inputs: *"How is my rug doing?"*, *"What's my balance?"*, *"How many maintenances have I done?"*
+- Context-aware responses based on conversation history
+- Intelligent intent recognition for various query types
+- Follow-up question handling with conversation continuity
+
+### ✅ **Intelligent Conversation Management**
+- Remembers mentioned rug IDs and conversation topics
+- Provides contextual suggestions based on previous interactions
+- Tracks conversation state for coherent multi-turn dialogues
+- Context-aware AI responses using real blockchain data
+
+### ✅ **Comprehensive Error Handling**
+- User-friendly error messages with actionable suggestions
+- Network connectivity checks with helpful troubleshooting tips
+- Wallet configuration validation with setup guidance
+- Graceful degradation when services are unavailable
 
 ### How It Works
 1. Setup Tool Model: `npm run setup-tools` (one-time setup)
@@ -98,32 +126,64 @@ npm run chat          # Terminal 2: Seamless chat with Agent Rug!
 - ✅ **Real blockchain transactions**
 - ✅ **Confirmation prompts for payable actions**
 
-### 💬 **Example x402 Chat Session:**
+### 💬 **Enhanced Conversational Chat Examples:**
+
+#### **Real Wallet Balance Queries (No Hallucinations!):**
 ```
-🤖 Agent Rug - x402 Blockchain Chat
+You: how much ETH do I have?
+🤖 Agent Rug: 💰 Checking wallet balance...
+✅ Agent Wallet Balance:
+   Address: 0x742d35Cc6634C0532925a3b844Bc454e4438f44e
+   Balance: 0.0234 ETH
+   Estimated gas cost: ~0.000002 ETH per transaction
+   ✅ Sufficient balance for operations
 
-You: how many rugs do I own?
-Agent Rug: Let me discover your rug collection! [x402 payment processed]
-✅ get_rugs completed successfully!
-Result: {"ownedRugs": [1, 2], "totalOwned": 2}
+You: how many maintenances have I done?
+🤖 Agent Rug: 📊 Checking maintenance history...
+✅ Maintenance History:
+   Maintenances Performed: 3
+   Agent Address: 0x742d35Cc6634C0532925a3b844Bc454e4438f44e
+   Network: Shape Sepolia
+```
 
-You: check rug 1 status
-Agent Rug: Getting rug status... [x402 payment processed]
-✅ check_rug completed successfully!
-Result: {"dirtLevel": 0, "agingLevel": 3, "canClean": true, "canRestore": true}
+#### **Natural Language Rug Management:**
+```
+You: how is my rug doing?
+🤖 Agent Rug: 🔍 Discovering your rugs...
+✅ Found 2 rug(s): 1, 2
 
-You: clean rug 1
-Agent Rug: I'll clean rug #1 for 0.00043 ETH total. Confirm? (yes/no)
+📊 Checking status of all your rugs...
+🏠 Rug #1: Can Clean: true, Can Restore: false, Needs Master: false
+🏠 Rug #2: Can Clean: false, Can Restore: true, Needs Master: false
+
+You: fix rug 2
+🤖 Agent Rug: 🔧 Preparing to restore rug #2...
+✅ Successfully restored rug #2!
+
+You: show me the costs
+🤖 Agent Rug: 📊 Gathering comprehensive statistics...
+✅ Agent Statistics:
+   Wallet Balance: 0.0232 ETH
+   Maintenances Performed: 4
+   Service Fees Paid: 0.00168 ETH
+   Average fee per maintenance: 0.00042 ETH
+```
+
+#### **Context-Aware Conversations:**
+```
+You: check rug 1
+🤖 Agent Rug: 🔍 Checking rug #1...
+✅ Rug #1 status retrieved (free)
+
+You: clean it
+🤖 Agent Rug: 🧠 Analyzing your request with full context...
+   (AI considers: you just checked rug 1, it's ready for cleaning)
+🤖 I see you want to clean rug #1. The AI analysis shows it's ready for cleaning.
+   This will cost 0.00042 ETH service fee. Should I proceed?
 
 You: yes
-Agent Rug: Executing maintenance... [x402 payment processed]
-✅ clean_rug completed successfully!
-💰 Paid 0.00043 ETH (maintenance + service fee)!
-
-You: show my costs
-Agent Rug: Checking your service fees... [x402 payment processed]
-✅ get_stats completed successfully!
-Result: {"totalServiceFeesPaidEth": "0.00042", "maintenanceCount": 1}
+🤖 Agent Rug: 🔧 Preparing to clean rug #1...
+✅ Successfully cleaned rug #1!
 ```
 
 ### 🔧 **Legacy Copy/Paste Mode (if needed):**
