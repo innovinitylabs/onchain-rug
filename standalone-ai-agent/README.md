@@ -95,7 +95,7 @@ OLLAMA_MODEL=llama3.1:8b
 # Blockchain Configuration (Base Sepolia Testnet - Change for Mainnet)
 RPC_URL=https://sepolia.base.org          # Use https://mainnet.base.org for mainnet
 CHAIN_ID=84532                            # Use 8453 for mainnet
-CONTRACT_ADDRESS=0x15c5a551b8aA39a3A4E73643a681E71F76093b62
+CONTRACT_ADDRESS=0x15c5a551b8aA39a3A4E73643a681E71F76093b62  # ⚠️ NOT FINALIZED - Verify before use
 
 # Agent Wallet (for real transactions)
 AGENT_PRIVATE_KEY=0x_your_private_key_here
@@ -212,7 +212,7 @@ OLLAMA_MODEL=different-model-name
 
 ### **Testnet (Recommended for Testing):**
 - **Network**: Base Sepolia
-- **Contract**: `0x15c5a551b8aA39a3A4E73643a681E71F76093b62`
+- **Contract**: `0x15c5a551b8aA39a3A4E73643a681E71F76093b62` ⚠️ **Not Finalized**
 - **RPC URL**: `https://sepolia.base.org`
 - **Chain ID**: 84532
 - **Explorer**: [Base Sepolia Explorer](https://sepolia-explorer.base.org)
@@ -220,11 +220,13 @@ OLLAMA_MODEL=different-model-name
 
 ### **Mainnet (Production - Use with Caution):**
 - **Network**: Base Mainnet
-- **Contract**: `0x15c5a551b8aA39a3A4E73643a681E71F76093b62` *(same contract)*
+- **Contract**: `0x15c5a551b8aA39a3A4E73643a681E71F76093b62` ⚠️ **Not Finalized**
 - **RPC URL**: `https://mainnet.base.org`
 - **Chain ID**: 8453
 - **Explorer**: [Base Mainnet Explorer](https://basescan.org)
 - **Bridge**: [Base Bridge](https://bridge.base.org)
+
+⚠️ **Contract Address Disclaimer**: The contract address is not yet finalized and may change. Always verify the current contract address before authorizing or sending transactions. Check official sources for the latest deployment address.
 
 ⚠️ **Warning**: Mainnet uses real ETH. Start with small amounts and test extensively on testnet first.
 
