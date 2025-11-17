@@ -219,6 +219,95 @@ OLLAMA_MODEL=different-model-name
 
 ---
 
+## ⚠️ **IMPORTANT SAFETY & SECURITY NOTICE**
+
+### **🚨 CRITICAL WARNINGS:**
+
+**This software is provided "AS IS" without warranty of any kind, express or implied.**
+
+- **NO WARRANTY**: This AI agent is provided without any warranties. Use at your own risk.
+- **FUND LOSS RISK**: The agent performs real blockchain transactions. You may lose funds due to:
+  - Smart contract bugs
+  - Network issues
+  - Incorrect configurations
+  - Unauthorized access to your wallet
+- **NO LIABILITY**: The developers are not responsible for any loss of funds, data, or other damages.
+
+### **🔐 SECURITY REQUIREMENTS:**
+
+#### **1. Private Key Protection**
+```
+❌ NEVER share your private keys
+❌ NEVER commit .env files to Git repositories
+❌ NEVER store private keys in plain text
+❌ NEVER share wallet backups publicly
+```
+
+#### **2. Wallet Authorization**
+```
+✅ ONLY authorize the agent wallet on official dashboards
+✅ Verify contract addresses before authorizing
+✅ Use read-only permissions when possible
+✅ Regularly review and revoke authorizations
+```
+
+#### **3. Environment Security**
+```bash
+# Create .env file (NEVER commit to git)
+AGENT_PRIVATE_KEY=your_private_key_here
+OWNER_ADDRESS=your_wallet_address
+
+# Add .env to .gitignore
+echo ".env" >> .gitignore
+```
+
+#### **4. Network Safety**
+```
+✅ Only use on test networks (Base Sepolia) for testing
+✅ Verify all contract addresses before use
+✅ Test with small amounts first
+✅ Monitor transactions on blockchain explorers
+```
+
+#### **5. Operational Safety**
+```
+✅ Backup your wallet before use
+✅ Test all operations on testnet first
+✅ Start with small transactions
+✅ Monitor wallet balance regularly
+✅ Use hardware wallets when possible
+```
+
+### **🛡️ RECOMMENDED SAFETY MEASURES:**
+
+1. **Use Test Networks First**: Always test on Base Sepolia before mainnet
+2. **Small Amounts**: Start with minimal ETH amounts for testing
+3. **Monitor Transactions**: Check all transactions on blockchain explorers
+4. **Regular Backups**: Backup your wallet regularly
+5. **Secure Environment**: Run on dedicated, secure machines
+6. **Limited Permissions**: Only grant necessary permissions
+
+### **📞 SUPPORT & RESPONSIBILITY:**
+
+- **Self-Support**: This is open-source software. Use at your own risk.
+- **Community**: Check GitHub issues for known problems
+- **No Official Support**: No official support or warranty provided
+- **Your Responsibility**: You are solely responsible for:
+  - Securing your private keys
+  - Verifying transaction safety
+  - Understanding blockchain risks
+  - Backing up your data
+
+---
+
+## **🎯 FINAL REMINDER:**
+
+**Blockchain transactions are irreversible. Lost funds cannot be recovered.**
+
+**If you are not comfortable with these risks, do not use this software.**
+
+---
+
 ## 🎯 **Ready to Launch!**
 
 Your standalone AI agent is configured for:
