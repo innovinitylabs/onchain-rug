@@ -21,7 +21,7 @@ console.log('📋 Loading configuration...');
 
 import express from 'express';
 import cors from 'cors';
-import { createPublicClient, createWalletClient, http, parseEther, formatEther } from 'viem';
+import { createPublicClient, createWalletClient, http, parseEther, formatEther, keccak256, encodePacked } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 // Custom X402 facilitator integration (no external dependencies)
 
@@ -80,7 +80,7 @@ const config = {
     style: process.env.AGENT_STYLE || 'helpful,professional,enthusiastic'
   },
   x402: {
-    facilitatorUrl: process.env.X402_FACILITATOR_URL || 'http://localhost:3000/api/x402/facilitator',
+    facilitatorUrl: process.env.X402_FACILITATOR_URL,
     payToAddress: process.env.X402_PAY_TO_ADDRESS || process.env.CONTRACT_ADDRESS,
     network: 'base-sepolia',
     assetAddress: '0x0000000000000000000000000000000000000000', // ETH
@@ -679,8 +679,8 @@ class RugBotAPIServer {
           return res.status(403).json({ success: false, error: 'Missing authorization token' });
         }
 
-        // For now, we trust the website issued valid tokens after X402 verification
-        // The contract will validate the token and ensure it hasn't been used
+        // Token validation is handled by the smart contract
+        console.log(chalk.gray('   🔐 Token validation handled by smart contract'));
 
         // Execute the blockchain transaction
         console.log(chalk.gray(`   Checking action: "${authorization.action}" against ['clean', 'restore', 'master']`));
@@ -715,21 +715,43 @@ class RugBotAPIServer {
         console.log(chalk.gray(`   X402 Payment Covered: ${formatEther(maintenanceCost + serviceFee)} ETH`));
         console.log(chalk.gray(`   Contract Payment: 0 ETH (just gas)`));
 
+        // Determine contract function
+        let contractFunction;
+        switch (authorization.action) {
+          case 'clean':
+            contractFunction = 'cleanRugAgent';
+            break;
+          case 'restore':
+            contractFunction = 'restoreRugAgent';
+            break;
+          case 'master':
+            contractFunction = 'masterRestoreRugAgent';
+            break;
+        }
+
         // Execute transaction with 0 value (X402 already covered the service costs)
-        // Include authorization token, nonce, and expires as parameters
-        console.log(chalk.blue(`🔧 Calling contract function: ${functionName}`));
+        console.log(chalk.blue(`🔧 Calling contract function: ${contractFunction}`));
         console.log(chalk.gray(`   Address: ${config.blockchain.contractAddress}`));
+
+        // Always use Agent functions with authorization tokens
         console.log(chalk.gray(`   Args: [${tokenId}, ${authorization.authorizationToken}, "${authorization.nonce}", ${authorization.expires}]`));
 
+        const contractArgs = [
+          BigInt(tokenId),
+          authorization.authorizationToken,
+          authorization.nonce,
+          BigInt(authorization.expires)
+        ];
+
         // Find the function in ABI to verify
-        const abiFunction = RugMaintenanceAbi.find(f => f.name === functionName);
-        console.log(chalk.gray(`   ABI function found:`, abiFunction));
+        const abiFunction = RugMaintenanceAbi.find(f => f.name === contractFunction);
+        console.log(chalk.gray(`   ABI function found:`, !!abiFunction));
 
         const hash = await agentWallet.writeContract({
           address: config.blockchain.contractAddress,
           abi: RugMaintenanceAbi,
-          functionName: functionName,
-          args: [BigInt(tokenId), authorization.authorizationToken, authorization.nonce, BigInt(authorization.expires)],
+          functionName: contractFunction,
+          args: contractArgs,
           value: 0n
         });
 
@@ -751,7 +773,7 @@ class RugBotAPIServer {
           transactionHash: hash,
           blockNumber: receipt.blockNumber.toString(),
           gasUsed: receipt.gasUsed.toString(),
-          authorizationToken: authorization.authorizationToken, // Token used
+          authorizationToken: authorization.authorizationToken,
           contractPayment: '0', // Contract execution is free for authorized agents
           message: 'Maintenance completed successfully via X402 authorization token'
         });

@@ -40,8 +40,17 @@ class AgentRugChat {
     this.conversationHistory = [];
     this.tools = this.defineTools();
     this.systemPrompt = this.getSystemPrompt();
-    // Use website API instead of agent API for proper X402 flow
-    this.apiBaseUrl = process.env.WEBSITE_API_URL || 'http://localhost:3000';
+    // Use website API for X402 flow, agent API for execution
+    // These must be configured in environment variables
+    this.apiBaseUrl = process.env.WEBSITE_API_URL;
+    this.agentApiUrl = process.env.AGENT_API_URL;
+
+    if (!this.apiBaseUrl) {
+      throw new Error('WEBSITE_API_URL environment variable is required');
+    }
+    if (!this.agentApiUrl) {
+      throw new Error('AGENT_API_URL environment variable is required');
+    }
     this.hasPaidForAccess = false; // Track if user has paid for agent access
 
     // Debug wallet configuration
@@ -332,19 +341,19 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
           url = `${config.api.baseUrl}/rug/${args.tokenId}/status`;
           break;
         case 'clean_rug':
-          // Always execute immediately - no confirmation needed
+          // Use full X402 flow - agent will handle payment automatically
           url = `${this.apiBaseUrl}/api/maintenance/action/${args.tokenId}/clean`;
           method = 'POST';
           body = JSON.stringify({ action: 'clean' });
           break;
         case 'restore_rug':
-          // Always execute immediately - no confirmation needed
+          // Use full X402 flow - agent will handle payment automatically
           url = `${this.apiBaseUrl}/api/maintenance/action/${args.tokenId}/restore`;
           method = 'POST';
           body = JSON.stringify({ action: 'restore' });
           break;
         case 'master_restore_rug':
-          // Always execute immediately - no confirmation needed
+          // Use full X402 flow - agent will handle payment automatically
           url = `${this.apiBaseUrl}/api/maintenance/action/${args.tokenId}/master`;
           method = 'POST';
           body = JSON.stringify({ action: 'master' });
@@ -507,7 +516,7 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
 
           // Action is already correctly extracted from URL
 
-          const agentApiUrl = `${config.api.baseUrl}/rug/${tokenId}/execute`;
+          const agentApiUrl = `${this.agentApiUrl}/rug/${tokenId}/execute`;
           console.log(chalk.gray(`   URL extracted action: "${action}", tokenId: "${tokenId}"`));
 
           const authObject = {

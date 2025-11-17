@@ -1,3 +1,5 @@
+import { parseEther } from 'viem'
+
 interface X402Config {
   facilitatorUrl: string
   facilitatorApiKey: string
@@ -75,9 +77,10 @@ export async function createPaymentRequiredResponse(options: {
 
   try {
     // Call our custom facilitator to generate payment requirements
-    const facilitatorUrl = process.env.NEXT_PUBLIC_APP_URL
-      ? `${process.env.NEXT_PUBLIC_APP_URL}/api/x402/facilitator`
-      : 'http://localhost:3000/api/x402/facilitator'
+    if (!process.env.NEXT_PUBLIC_APP_URL) {
+      throw new Error('NEXT_PUBLIC_APP_URL environment variable is required for facilitator calls')
+    }
+    const facilitatorUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/x402/facilitator`
 
     console.log(`🔗 Calling facilitator: ${facilitatorUrl}`)
 
@@ -171,66 +174,62 @@ export async function verifyAndSettlePayment(paymentPayload: string): Promise<{
   }
 
   try {
-    // Call our custom facilitator to verify and settle payment
-    const facilitatorUrl = process.env.NEXT_PUBLIC_APP_URL
-      ? `${process.env.NEXT_PUBLIC_APP_URL}/api/x402/facilitator`
-      : 'http://localhost:3000/api/x402/facilitator'
+    // Parse and validate the payment payload directly (no facilitator calls)
+    const payload: any = JSON.parse(paymentPayload)
 
-    // First verify the payment
-    const verifyResponse = await fetch(facilitatorUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        action: 'verify_payment',
-        paymentPayload
-      })
-    })
-
-    if (!verifyResponse.ok) {
-      return { isValid: false, invalidReason: 'Facilitator verification failed' }
+    // Validate X402 version
+    if (payload.x402Version !== 1) {
+      return { isValid: false, invalidReason: 'Unsupported X402 version' }
     }
 
-    const verifyResult = await verifyResponse.json()
-
-    if (!verifyResult.isValid) {
-      return {
-        isValid: false,
-        invalidReason: verifyResult.invalidReason
-      }
+    // Validate basic structure
+    if (!payload.payment || !payload.signature) {
+      return { isValid: false, invalidReason: 'Invalid payment payload structure' }
     }
 
-    // If verification passed, attempt settlement
-    const settleResponse = await fetch(facilitatorUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        action: 'settle_payment',
-        paymentPayload
-      })
-    })
+    const payment = payload.payment
 
-    if (!settleResponse.ok) {
-      return {
-        isValid: true, // Payment is valid but settlement failed
-        settlementSuccess: false,
-        errorReason: 'Settlement request failed'
-      }
+    // Validate required fields
+    if (!payment.scheme || !payment.network || !payment.asset || !payment.amount || !payment.from || !payment.to || !payment.nonce || !payment.deadline) {
+      return { isValid: false, invalidReason: 'Missing required payment fields' }
     }
 
-    const settleResult = await settleResponse.json()
+    // Validate scheme and network
+    if (!['exact'].includes(payment.scheme)) {
+      return { isValid: false, invalidReason: `Unsupported payment scheme: ${payment.scheme}` }
+    }
 
+    if (!['shape-sepolia', 'base-sepolia'].includes(payment.network)) {
+      return { isValid: false, invalidReason: `Unsupported network: ${payment.network}` }
+    }
+
+    // Validate asset (must be ETH)
+    if (payment.asset !== '0x0000000000000000000000000000000000000000') {
+      return { isValid: false, invalidReason: `Unsupported asset: ${payment.asset}` }
+    }
+
+    // Validate deadline (not expired)
+    if (payment.deadline < Date.now() / 1000) {
+      return { isValid: false, invalidReason: 'Payment deadline expired' }
+    }
+
+    // Validate amount is reasonable
+    const amountWei = BigInt(payment.amount)
+    const maxReasonableAmount = parseEther('1') // 1 ETH max
+    if (amountWei > maxReasonableAmount) {
+      return { isValid: false, invalidReason: 'Payment amount too large' }
+    }
+
+    // For our simplified flow, payment verification is complete
+    // Transaction verification happens separately in the action route
     return {
       isValid: true,
-      settlementSuccess: settleResult.success,
-      errorReason: settleResult.success ? undefined : settleResult.errorReason
+      settlementSuccess: true, // Direct contract payments don't need separate settlement
+      errorReason: undefined
     }
 
   } catch (error) {
-    console.error('Payment verification/settlement error:', error)
+    console.error('Payment verification error:', error)
     return {
       isValid: false,
       invalidReason: `Payment processing error: ${error instanceof Error ? error.message : 'Unknown error'}`
