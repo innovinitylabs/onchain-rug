@@ -10,8 +10,8 @@ import "../src/facets/RugCommerceFacet.sol";
 contract UpgradeMarketplaceFacet is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("TESTNET_PRIVATE_KEY");
-        // Use the deployed contract address from latest deployment
-        address diamondAddr = 0x20241d50bd923ADb3B0d1398F62dfcaA39895B33;
+        // Use the deployed contract address from environment
+        address diamondAddr = vm.envAddress("NEXT_PUBLIC_BASE_SEPOLIA_CONTRACT");
 
         vm.startBroadcast(deployerPrivateKey);
 

@@ -204,6 +204,10 @@ library LibRugStorage {
         // ===== X402 Authorization Tokens =====
         // tokenHash => used (prevent replay attacks)
         mapping(bytes32 => bool) usedAuthorizationTokens;
+
+        // ===== Trusted Marketplace Whitelist =====
+        // External marketplaces (like OpenSea) that can record sales
+        mapping(address => bool) trustedMarketplaces;
     }
 
     function rugStorage() internal pure returns (RugConfig storage rs) {
@@ -281,6 +285,12 @@ library LibRugStorage {
             }
         }
         return false;
+    }
+
+    // Check if a marketplace is trusted (can record sales)
+    function isTrustedMarketplace(address marketplace) internal view returns (bool) {
+        RugConfig storage rs = rugStorage();
+        return rs.trustedMarketplaces[marketplace];
     }
 
     function recordMint(address account) internal {

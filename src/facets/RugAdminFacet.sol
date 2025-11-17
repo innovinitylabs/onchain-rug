@@ -366,4 +366,42 @@ contract RugAdminFacet {
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
         return rs.collectionCap > 0 && rs.walletLimit > 0;
     }
+
+    /**
+     * @notice Add a trusted marketplace that can record sales (e.g., OpenSea)
+     * @param marketplace Address of the marketplace contract
+     */
+    function addTrustedMarketplace(address marketplace) external {
+        LibDiamond.enforceIsContractOwner();
+        require(marketplace != address(0), "Invalid marketplace address");
+
+        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+        require(!rs.trustedMarketplaces[marketplace], "Marketplace already trusted");
+
+        rs.trustedMarketplaces[marketplace] = true;
+        emit ExceptionAdded(marketplace); // Reuse existing event
+    }
+
+    /**
+     * @notice Remove a trusted marketplace
+     * @param marketplace Address of the marketplace contract
+     */
+    function removeTrustedMarketplace(address marketplace) external {
+        LibDiamond.enforceIsContractOwner();
+
+        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+        require(rs.trustedMarketplaces[marketplace], "Marketplace not trusted");
+
+        rs.trustedMarketplaces[marketplace] = false;
+        emit ExceptionRemoved(marketplace); // Reuse existing event
+    }
+
+    /**
+     * @notice Check if a marketplace is trusted
+     * @param marketplace Address of the marketplace contract
+     * @return True if trusted
+     */
+    function isTrustedMarketplace(address marketplace) external view returns (bool) {
+        return LibRugStorage.isTrustedMarketplace(marketplace);
+    }
 }
