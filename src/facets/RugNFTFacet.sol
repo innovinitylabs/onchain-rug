@@ -579,10 +579,6 @@ contract RugNFTFacet is ICreatorToken {
         return 0;
     }
 
-    function _getTextureLevel(uint256 /* tokenId */) internal pure returns (uint8) {
-        // Texture system removed - return default level
-        return 0;
-    }
 
     function _getAgingLevel(uint256 tokenId) internal view returns (uint8) {
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
