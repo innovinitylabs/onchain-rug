@@ -53,6 +53,18 @@ const baseSepolia = {
 import { Ollama } from 'ollama';
 import chalk from 'chalk';
 
+// Check if running in embedded mode (for chat interface)
+const isEmbedded = process.env.EMBEDDED_MODE === 'true';
+const isDevelopment = process.env.NODE_ENV !== 'production';
+
+// Suppress logs when embedded or in production
+if (isEmbedded || !isDevelopment) {
+  console.log = () => {};
+  console.warn = () => {};
+  console.info = () => {};
+  // Keep error logging for debugging
+}
+
 // Configuration
 const config = {
   ollama: {

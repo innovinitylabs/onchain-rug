@@ -40,6 +40,32 @@ const config = {
 class AgentRugChat {
   constructor() {
     this.ollama = new Ollama({ host: config.ollama.baseUrl });
+    this.isDevelopment = process.env.NODE_ENV !== 'production';
+    this.apiProcess = null;
+
+    // Suppress verbose logs in production/chat mode but keep essential output
+    if (!this.isDevelopment) {
+      // Override console methods to suppress debug/info logs
+      const originalLog = console.log;
+      const originalWarn = console.warn;
+      const originalInfo = console.info;
+
+      console.log = (...args) => {
+        // Only suppress logs that don't start with Agent Rug or key UI messages
+        if (args[0] && typeof args[0] === 'string' &&
+            !args[0].includes('Agent Rug') &&
+            !args[0].includes('🤖') &&
+            !args[0].includes('❌') &&
+            !args[0].includes('👋')) {
+          return; // Suppress this log
+        }
+        originalLog.apply(console, args);
+      };
+
+      console.warn = this.silentLog;
+      console.info = this.silentLog;
+      // Keep error logging
+    }
     this.conversationHistory = [];
     this.tools = this.defineTools();
     this.systemPrompt = this.getSystemPrompt();
@@ -119,6 +145,54 @@ class AgentRugChat {
       console.log(chalk.yellow('💡 Try running: ollama serve'));
       return false;
     }
+  }
+
+  silentLog() {
+    // Suppress logs in production mode
+  }
+
+  async startEmbeddedAPIServer() {
+    console.log(chalk.blue('🔧 Starting embedded API server...'));
+
+    // Set environment for embedded mode
+    const env = { ...process.env, EMBEDDED_MODE: 'true' };
+
+    this.apiProcess = spawn('node', ['api-server.js'], {
+      stdio: ['pipe', 'pipe', 'pipe'], // Suppress all output
+      detached: false,
+      env: env,
+      cwd: process.cwd()
+    });
+
+    // Handle process events
+    this.apiProcess.on('error', (error) => {
+      console.error(chalk.red('❌ Failed to start embedded API server:'), error.message);
+    });
+
+    this.apiProcess.on('exit', (code) => {
+      if (code !== 0) {
+        console.error(chalk.red(`❌ API server exited with code ${code}`));
+      }
+    });
+
+    // Wait for API server to be ready
+    let retries = 0;
+    while (retries < 10) {
+      try {
+        const response = await fetch(`${config.api.baseUrl}/health`);
+        if (response.ok) {
+          console.log(chalk.green('✅ Embedded API server ready'));
+          return true;
+        }
+      } catch (error) {
+        // API not ready yet
+      }
+      await new Promise(resolve => setTimeout(resolve, 500));
+      retries++;
+    }
+
+    console.error(chalk.red('❌ Embedded API server failed to start'));
+    return false;
   }
 
   defineTools() {
@@ -979,6 +1053,12 @@ Just tell me what you'd like to do with your rugs!`;
         if (input.toLowerCase() === 'exit') {
           console.log(chalk.yellow('👋 Goodbye!'));
           rl.close();
+          // Kill embedded API server if we started it
+          if (this.apiProcess) {
+            console.log(chalk.gray('🛑 Stopping embedded API server...'));
+            this.apiProcess.kill();
+          }
+
           // Kill Ollama if we started it
           if (this.ollamaProcess) {
             console.log(chalk.gray('🛑 Stopping Ollama server...'));
@@ -1068,16 +1148,12 @@ async function main() {
     }
 
   // Test API connection
-    console.log(chalk.blue('🔗 Testing API connection...'));
-  try {
-    const response = await fetch(`${config.api.baseUrl}/health`);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const health = await response.json();
-    console.log(chalk.green(`✅ API server connected (${health.agent})`));
-  } catch (error) {
-    console.log(chalk.red('❌ API server connection failed:'), error.message);
-    console.log(chalk.yellow('💡 Make sure API server is running: npm run api-server'));
-      console.log(chalk.yellow('💡 Continuing anyway - some features may not work'));
+    // Start embedded API server
+    console.log(chalk.blue('🔗 Starting embedded API server...'));
+    const apiStarted = await chat.startEmbeddedAPIServer();
+    if (!apiStarted) {
+      console.log(chalk.red('❌ Failed to start embedded API server'));
+      console.log(chalk.yellow('💡 Some features may not work without the API server'));
     }
 
     // Ensure Ollama is running
