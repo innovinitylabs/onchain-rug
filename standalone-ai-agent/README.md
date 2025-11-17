@@ -92,9 +92,9 @@ Create a `.env` file with your settings:
 OLLAMA_BASE_URL=http://localhost:11434
 OLLAMA_MODEL=llama3.1:8b
 
-# Blockchain Configuration (Base Sepolia)
-RPC_URL=https://sepolia.base.org
-CHAIN_ID=84532
+# Blockchain Configuration (Base Sepolia Testnet - Change for Mainnet)
+RPC_URL=https://sepolia.base.org          # Use https://mainnet.base.org for mainnet
+CHAIN_ID=84532                            # Use 8453 for mainnet
 CONTRACT_ADDRESS=0x15c5a551b8aA39a3A4E73643a681E71F76093b62
 
 # Agent Wallet (for real transactions)
@@ -210,12 +210,23 @@ OLLAMA_MODEL=different-model-name
 
 ## 📊 **Network Information**
 
-- **Network**: Base Sepolia (Testnet)
+### **Testnet (Recommended for Testing):**
+- **Network**: Base Sepolia
 - **Contract**: `0x15c5a551b8aA39a3A4E73643a681E71F76093b62`
 - **RPC URL**: `https://sepolia.base.org`
 - **Chain ID**: 84532
 - **Explorer**: [Base Sepolia Explorer](https://sepolia-explorer.base.org)
 - **Faucet**: [Coinbase Faucet](https://www.coinbase.com/faucets/base-ethereum-goerli-faucet)
+
+### **Mainnet (Production - Use with Caution):**
+- **Network**: Base Mainnet
+- **Contract**: `0x15c5a551b8aA39a3A4E73643a681E71F76093b62` *(same contract)*
+- **RPC URL**: `https://mainnet.base.org`
+- **Chain ID**: 8453
+- **Explorer**: [Base Mainnet Explorer](https://basescan.org)
+- **Bridge**: [Base Bridge](https://bridge.base.org)
+
+⚠️ **Warning**: Mainnet uses real ETH. Start with small amounts and test extensively on testnet first.
 
 ---
 
