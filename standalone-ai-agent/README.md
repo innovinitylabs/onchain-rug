@@ -1,521 +1,237 @@
-# 🤖 Enhanced Standalone x402 Rug Maintenance AI Agent
+# 🤖 OnchainRug Standalone AI Agent
 
-A **significantly improved** AI agent with advanced natural language processing, real-time blockchain data integration, and intelligent conversation management. No hallucinations - only accurate, real-time information!
+A **production-ready, local AI assistant** for digital rug maintenance on the blockchain. Features intelligent NFT analysis, real-time blockchain data, and seamless chat interface. Runs completely locally with no external dependencies.
 
 ## ✨ Key Features
 
-- 🚀 **100% Standalone** - No dependencies on main project
-- 🧠 **Advanced AI Context** - Remembers conversation history and provides contextual responses
-- ⛓️ **Real-Time Blockchain Data** - No hallucinations! Shows actual wallet balances, transaction counts, and gas estimates
-- 💰 **Enhanced Natural Language** - Understands conversational inputs like "How is my rug doing?" or "How much ETH do I have?"
-- 💬 **Intelligent Chat Interface** - Context-aware conversations with real data integration
-- 🔄 **Autonomous Operation** - Runs 24/7 maintenance cycles with real transaction tracking
-- 🎮 **Ollama GUI Integration** - Chat in GUI, perform real transactions with accurate information
-- 🛡️ **Comprehensive Error Handling** - User-friendly error messages with helpful suggestions
-- 📊 **Accurate Statistics** - Real maintenance counts, service fees paid, and transaction history
+- 🚀 **Single Command Launch** - Everything starts automatically with `npm run chat`
+- 🧠 **AI-Powered NFT Analysis** - Smart condition assessment using real tokenURI metadata
+- ⛓️ **Real-Time Blockchain Data** - Direct contract calls, no hallucinations
+- 💬 **Natural Language Chat** - Conversational interface with context awareness
+- 📊 **Comprehensive Statistics** - Accurate maintenance counts and cost tracking
+- 🔧 **Automated Operations** - Clean, restore, and master restore rugs
+- 🛡️ **Clean UX** - No debug logs, professional chat experience
+- 💰 **Transparent Costs** - Clear service fee breakdown
 
-## 🎮 Revolutionary GUI Integration
+## 🚀 Quick Start (3 Steps)
 
-**Chat in Ollama GUI and execute REAL blockchain transactions using native Ollama tool calling!**
-
-## 🚀 Major Improvements (No More Hallucinations!)
-
-### ✅ **Real Blockchain Data Integration**
-- **Actual wallet balances** checked live from the blockchain (no made-up numbers!)
-- **Real transaction counts** and maintenance operation history
-- **Live gas price estimates** for accurate cost calculations
-- **Current service fee information** directly from smart contracts
-
-### ✅ **Enhanced Natural Language Processing**
-- Understands conversational inputs: *"How is my rug doing?"*, *"What's my balance?"*, *"How many maintenances have I done?"*
-- Context-aware responses based on conversation history
-- Intelligent intent recognition for various query types
-- Follow-up question handling with conversation continuity
-
-### ✅ **Intelligent Conversation Management**
-- Remembers mentioned rug IDs and conversation topics
-- Provides contextual suggestions based on previous interactions
-- Tracks conversation state for coherent multi-turn dialogues
-- Context-aware AI responses using real blockchain data
-
-### ✅ **Comprehensive Error Handling**
-- User-friendly error messages with actionable suggestions
-- Network connectivity checks with helpful troubleshooting tips
-- Wallet configuration validation with setup guidance
-- Graceful degradation when services are unavailable
-
-### How It Works
-1. Setup Tool Model: `npm run setup-tools` (one-time setup)
-2. Start API server: `npm run api-server`
-3. Start Response Monitor: `npm run monitor` (in separate terminal)
-4. Open Ollama GUI → Select "rugbot" model
-5. Chat naturally - Ollama automatically calls blockchain tools!
-
-### Native Tool Calling Commands
-```
-"check rug 1"           → Calls check_rug tool automatically
-"what rugs do I own?"   → Calls get_rugs tool automatically
-"show my costs"         → Calls get_stats tool automatically
-"clean rug 1"           → Asks confirmation, then calls clean_rug tool
-"restore rug 1"         → Asks confirmation, then calls restore_rug tool
-"master restore rug 1"  → Asks confirmation, then calls master_restore_rug tool
-```
-
-### Tool Calling vs Manual Approach
-- **Native Tool Calling**: Ollama directly calls blockchain functions
-- **Manual Approach**: Copy/paste responses to monitor (still works as backup)
-- **Both methods**: Execute real blockchain transactions!
-
-### Real Money Example (Tool Calling)
-```
-You (in Ollama GUI): clean rug 1
-Agent Rug: I'll clean rug #1 for 0.00042 ETH service fee. Confirm? (yes/no)
-
-You (in Ollama GUI): yes
-Agent Rug: (calls clean_rug tool with tokenId: 1)
-
-Monitor: ✅ clean_rug tool executed!
-Result: {"success": true, "serviceFeeEth": "0.00042"}
-
-You (in Ollama GUI): how much have I paid?
-Agent Rug: (calls get_stats tool automatically)
-
-Monitor: ✅ get_stats tool executed!
-Result: {"totalServiceFeesPaidEth": "0.00042", "maintenanceCount": 1}
-```
-
-### x402 Setup (Real Payments!)
-```bash
-# Install Llama 3.1
-ollama pull llama3.1:8b
-
-# Configure x402 payments in .env:
-X402_FACILITATOR_URL=http://localhost:3000/api/x402/facilitator
-X402_PAY_TO_ADDRESS=0x_your_merchant_wallet
-
-# Start API server
-npm run api-server
-
-# Chat with real x402 payments!
-npm run chat
-```
-
-### 🔒 **x402 Security & Payments**
-- ✅ **All queries require payment** (0.001 ETH for stats, dynamic for maintenance)
-- ✅ **Payments verified by custom x402 facilitator on Base Sepolia** (full control)
-- ✅ **Real ETH transactions** settled through x402 protocol
-- ✅ **Agent authorization** required via dashboard
-- ✅ **Dynamic pricing** from smart contract
-
-### 🚀 **Seamless Chat Interface (RECOMMENDED)**
-
-#### **Single Terminal - Everything Automated:**
-```bash
-cd standalone-ai-agent
-npm run api-server    # Terminal 1: Start API server
-
-# Then in another terminal:
-npm run chat          # Terminal 2: Seamless chat with Agent Rug!
-```
-
-**That's it!** 🤖✨
-
-- ✅ **No copy/paste required**
-- ✅ **Chat naturally with Agent Rug**
-- ✅ **Tools execute automatically**
-- ✅ **Real blockchain transactions**
-- ✅ **Confirmation prompts for payable actions**
-
-### 💬 **Enhanced Conversational Chat Examples:**
-
-#### **Real Wallet Balance Queries (No Hallucinations!):**
-```
-You: how much ETH do I have?
-🤖 Agent Rug: 💰 Checking wallet balance...
-✅ Agent Wallet Balance:
-   Address: 0x742d35Cc6634C0532925a3b844Bc454e4438f44e
-   Balance: 0.0234 ETH
-   Estimated gas cost: ~0.000002 ETH per transaction
-   ✅ Sufficient balance for operations
-
-You: how many maintenances have I done?
-🤖 Agent Rug: 📊 Checking maintenance history...
-✅ Maintenance History:
-   Maintenances Performed: 3
-   Agent Address: 0x742d35Cc6634C0532925a3b844Bc454e4438f44e
-   Network: Shape Sepolia
-```
-
-#### **Natural Language Rug Management:**
-```
-You: how is my rug doing?
-🤖 Agent Rug: 🔍 Discovering your rugs...
-✅ Found 2 rug(s): 1, 2
-
-📊 Checking status of all your rugs...
-🏠 Rug #1: Can Clean: true, Can Restore: false, Needs Master: false
-🏠 Rug #2: Can Clean: false, Can Restore: true, Needs Master: false
-
-You: fix rug 2
-🤖 Agent Rug: 🔧 Preparing to restore rug #2...
-✅ Successfully restored rug #2!
-
-You: show me the costs
-🤖 Agent Rug: 📊 Gathering comprehensive statistics...
-✅ Agent Statistics:
-   Wallet Balance: 0.0232 ETH
-   Maintenances Performed: 4
-   Service Fees Paid: 0.00168 ETH
-   Average fee per maintenance: 0.00042 ETH
-```
-
-#### **Context-Aware Conversations:**
-```
-You: check rug 1
-🤖 Agent Rug: 🔍 Checking rug #1...
-✅ Rug #1 status retrieved (free)
-
-You: clean it
-🤖 Agent Rug: 🧠 Analyzing your request with full context...
-   (AI considers: you just checked rug 1, it's ready for cleaning)
-🤖 I see you want to clean rug #1. The AI analysis shows it's ready for cleaning.
-   This will cost 0.00042 ETH service fee. Should I proceed?
-
-You: yes
-🤖 Agent Rug: 🔧 Preparing to clean rug #1...
-✅ Successfully cleaned rug #1!
-```
-
-### 🔧 **Legacy Copy/Paste Mode (if needed):**
-If you prefer manual control, you can still use the copy/paste workflow with `npm run monitor`
-
-#### **Example Sessions:**
-
-**Read-Only Actions (Automatic):**
-```
-User (Ollama GUI): "What rugs do I own?"
-Agent Rug: "Let me discover your rug collection! [ACTION:get_rugs]"
-
-User (copies to monitor terminal):
-Let me discover your rug collection! [ACTION:get_rugs]
-
-Monitor: ✅ get_rugs completed!
-Result: {"ownedRugs": [1, 2], "totalOwned": 2}
-```
-
-**Payable Actions (With Confirmation):**
-```
-User (Ollama GUI): "Clean rug 1"
-Agent Rug: "I'll clean rug #1 for 0.00042 ETH service fee. Confirm? (yes/no)"
-
-User (Ollama GUI): "yes"
-Agent Rug: "[ACTION:clean_rug,tokenId:1] Cleaning rug #1 now!"
-
-User (copies to monitor terminal):
-[ACTION:clean_rug,tokenId:1] Cleaning rug #1 now!
-
-Monitor: ✅ clean_rug completed!
-Result: {"success": true, "serviceFeeEth": "0.00042"}
-```
-
-**Yes, real blockchain transactions happen while chatting in Ollama GUI!** 🎉💰
-
-### AI Agent Service Fees (What You Pay)
-```
-All Actions:   0.00042 ETH flat service fee (you pay this)
-```
-
-### Network: Base Sepolia (X402 Enabled)
-- **Contract**: `0x15c5a551b8aA39a3A4E73643a681E71F76093b62`
-- **RPC**: `https://sepolia.base.org`
-- **Chain ID**: 84532
-- **Explorer**: https://sepolia-explorer.base.org
-- **Faucet**: https://www.coinbase.com/faucets/base-ethereum-goerli-faucet
-
-## 📦 What's Included
-
-- `standalone-agent.js` - Core AI agent logic
-- `chat-agent.js` - Interactive chat interface
-- `test-standalone.js` - Comprehensive test suite
-- `config.example.env` - Configuration template
-- `package.json` - Dependencies and scripts
-
-## 🚀 Quick Start
-
-### 1. Install Dependencies
+### 1. **Install Dependencies**
 ```bash
 cd standalone-ai-agent
 npm install
 ```
 
-### 2. Configure Environment
+### 2. **Setup Environment**
 ```bash
+# Copy and edit configuration
 cp config.example.env .env
-# Edit .env with your settings
+
+# Edit .env with your settings (see Configuration section below)
 ```
 
-### 3. Test Setup
+### 3. **Launch the Agent**
 ```bash
-npm test
-```
-
-### 4. Run Your AI Agent
-
-#### **Chat with your AI agent:**
-```bash
+# Single command - starts everything automatically!
 npm run chat
 ```
 
-#### **Command line:**
-```bash
-npm start once    # Single maintenance cycle
-npm start auto    # Autonomous mode
-npm start stats   # Show earnings
+**That's it!** 🤖✨ The agent handles everything else automatically.
+
+---
+
+## 💬 **What You Can Ask**
+
+### **NFT Analysis & Status**
+```
+"how are my rugs doing?"     → AI analysis of all your rugs
+"how is my rug 1 doing?"     → Detailed analysis of specific rug
+"what rugs do I have?"       → List all rugs you own
+"check rug 1"               → Basic status of rug #1
 ```
 
-## ⚙️ Configuration
+### **Wallet & Costs**
+```
+"how much ETH do I have?"    → Real wallet balance
+"how many maintenances?"    → Operation history
+"what can you do?"          → Show all capabilities
+```
 
-Edit `.env` file:
+### **Maintenance Operations**
+```
+"clean rug 1"               → Clean a rug
+"restore rug 1"             → Restore a rug
+"master restore rug 1"      → Complete restoration
+```
+
+---
+
+## 🧠 **AI Intelligence Features**
+
+### **Smart NFT Analysis**
+- **Real tokenURI data** - Direct blockchain metadata reading
+- **Condition assessment** - Clean/dirty/needs cleaning status
+- **Priority scoring** - Urgent/needs attention/optional
+- **Cost analysis** - Service fees + maintenance costs
+- **Maintenance recommendations** - Personalized care suggestions
+
+### **Example AI Response:**
+```
+• Rug #1: dirty - needs cleaning (maintenance score: 52)
+  📊 Raw Stats: Text Lines: 1, Characters: 4, Palette: Indian Flag, Stripes: 25, Complexity: 2, Warp: 3
+  🧹 Maintenance: Dirt 2, Aging 1, Score 64, Cleanings 8, Restorations 0, Masters 4
+  📅 History: Minted 11/11/2025, Last Cleaned 11/17/2025
+  💡 Recommendations: Schedule cleaning - moderate dirt buildup, Moderate maintenance score - could use improvement
+```
+
+## ⚙️ **Configuration**
+
+Create a `.env` file with your settings:
 
 ```bash
 # Ollama Configuration
 OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL=deepseek-r1:8b
+OLLAMA_MODEL=llama3.1:8b
 
-# Blockchain Configuration (Base Sepolia - X402 Enabled)
+# Blockchain Configuration (Base Sepolia)
 RPC_URL=https://sepolia.base.org
 CHAIN_ID=84532
 CONTRACT_ADDRESS=0x15c5a551b8aA39a3A4E73643a681E71F76093b62
 
 # Agent Wallet (for real transactions)
-AGENT_PRIVATE_KEY=0x...
-AGENT_ADDRESS=0x...
+AGENT_PRIVATE_KEY=0x_your_private_key_here
+AGENT_ADDRESS=0x_your_wallet_address_here
 
-# Test Configuration
-TEST_TOKEN_ID=1
-AUTO_MAINTAIN=false
-MAINTENANCE_CHECK_INTERVAL=300000
+# User Wallet (whose rugs to analyze)
+OWNER_ADDRESS=0x_your_user_wallet_address_here
 
-# x402 Payment Configuration (Custom Facilitator)
-# Uses our built-in X402 facilitator on Base Sepolia
+# Optional: x402 Payment Configuration
 X402_FACILITATOR_URL=http://localhost:3000/api/x402/facilitator
-X402_PAY_TO_ADDRESS=0x_your_merchant_wallet_address
-
-# Agent Personality
-AGENT_NAME=RugBot
-AGENT_STYLE=helpful,professional,enthusiastic
+X402_PAY_TO_ADDRESS=0x_your_merchant_wallet
 ```
 
-## 💬 Chat Interface
+### **Required Setup:**
 
-Talk to your AI agent naturally:
+1. **Install Ollama**: Download from [ollama.ai](https://ollama.ai)
+2. **Pull AI Model**: `ollama pull llama3.1:8b`
+3. **Get Wallet**: Create or use existing Base Sepolia wallet
+4. **Fund Wallet**: Get test ETH from [Base Sepolia Faucet](https://www.coinbase.com/faucets/base-ethereum-goerli-faucet)
+5. **Configure .env**: Add your wallet addresses and keys
 
+---
+
+## 💰 **Cost Structure**
+
+### **Service Fees:**
+- **All maintenance operations**: 0.00042 ETH flat service fee
+- **Plus actual maintenance cost**: Variable based on operation and rug condition
+- **Total example**: Clean operation = 0.00042 ETH (service) + 0.00001 ETH (maintenance) = 0.00043 ETH
+
+### **Free Operations:**
+- Checking rug status
+- Getting wallet balance
+- NFT metadata analysis
+- Listing owned rugs
+
+---
+
+## 🔧 **Available Commands**
+
+| Command | Description |
+|---------|-------------|
+| `npm run chat` | **Launch the agent** (single command) |
+| `npm test` | Run test suite |
+| `npm run api-server` | Start API server only (for debugging) |
+
+---
+
+## 🛠️ **How It Works**
+
+### **Single Process Architecture:**
+```
+User Command → npm run chat
+                    ↓
+        ┌─────────────────────┐
+        │  Chat Interface     │
+        │  (User Interface)   │
+        └─────────────────────┘
+                    ↓
+        ┌─────────────────────┐
+        │  Embedded API       │
+        │  (Blockchain Ops)   │
+        └─────────────────────┘
+                    ↓
+        ┌─────────────────────┐
+        │  Smart Contracts    │
+        │  (Base Sepolia)     │
+        └─────────────────────┘
+```
+
+### **AI Decision Flow:**
+1. **User Query** → Natural language input
+2. **Intent Analysis** → AI determines user intent
+3. **Data Retrieval** → Fetch real blockchain data
+4. **Smart Analysis** → AI assesses conditions and priorities
+5. **Response Generation** → Provide insights and recommendations
+6. **Action Execution** → Perform maintenance operations (with confirmation)
+
+---
+
+## 🚨 **Troubleshooting**
+
+### **"Connection failed"**
+```bash
+# Check if Ollama is running
+ollama list
+
+# Start Ollama if needed
+ollama serve
+```
+
+### **"No rugs found"**
+- Verify `OWNER_ADDRESS` in `.env` owns rugs on Base Sepolia
+- Check contract address is correct
+- Ensure you're on the right network
+
+### **"Transaction failed"**
+- Check wallet has sufficient ETH for gas + service fees
+- Verify private key is correct in `.env`
+- Confirm contract is deployed on Base Sepolia
+
+### **"Model not found"**
+```bash
+# Pull the required model
+ollama pull llama3.1:8b
+
+# Or change model in .env
+OLLAMA_MODEL=different-model-name
+```
+
+---
+
+## 📊 **Network Information**
+
+- **Network**: Base Sepolia (Testnet)
+- **Contract**: `0x15c5a551b8aA39a3A4E73643a681E71F76093b62`
+- **RPC URL**: `https://sepolia.base.org`
+- **Chain ID**: 84532
+- **Explorer**: [Base Sepolia Explorer](https://sepolia-explorer.base.org)
+- **Faucet**: [Coinbase Faucet](https://www.coinbase.com/faucets/base-ethereum-goerli-faucet)
+
+---
+
+## 🎯 **Ready to Launch!**
+
+Your standalone AI agent is configured for:
+
+1. ✅ **Intelligent NFT analysis** using real blockchain data
+2. ✅ **Natural language conversations** with context awareness
+3. ✅ **Automated maintenance operations** with cost transparency
+4. ✅ **Clean, professional user experience** with no debug noise
+5. ✅ **Complete local operation** - no external dependencies
+
+**Launch your AI rug maintenance assistant:**
 ```bash
 npm run chat
 ```
 
-**Example conversation:**
-```
-🤖 Hello! I'm RugBot, your AI rug maintenance agent. What would you like to do?
-
-You: check rug 1
-🤖 Checking rug #1...
-✅ Rug #1 status:
-   Can Clean: true
-   Can Restore: false
-   Needs Master: false
-
-You: clean it
-🤖 I understand you want to clean rug #1. Should I proceed?
-   This will cost 0.00043 ETH total (0.00001 ETH maintenance + 0.00042 ETH service fee)
-   You'll pay 0.00042 ETH as the agent service fee.
-
-   Execute maintenance? (y/N): y
-
-🤖 Executing maintenance...
-✅ Maintenance completed successfully!
-💰 Paid 0.00042 ETH service fee
-
-You: how much did I pay?
-🤖 📊 Agent Statistics:
-   Maintenances Performed: 1
-   Total Service Fees Paid: 0.00042 ETH
-   Success Rate: 100%
-```
-
-### **Chat Commands:**
-- `"check rug 1"` - Check rug status
-- `"clean rug 1"` - Clean a rug
-- `"how is my rug doing?"` - AI-powered status
-- `"show me costs"` - Display service fee costs
-- `"what can you do?"` - AI help
-- `"start auto mode"` - Autonomous operation
-
-## 🛠️ Command Line Scripts
-
-| Command | Description |
-|---------|-------------|
-| `npm run chat` | Interactive chat with AI agent |
-| `npm test` | Run comprehensive test suite |
-| `npm start once` | Run one maintenance cycle |
-| `npm start auto` | Start autonomous mode |
-| `npm start stats` | Show agent statistics |
-| `npm start authorize` | Authorize agent |
-| `npm start check [id]` | Check specific rug |
-| `npm start analyze` | AI analysis of rug |
-
-## 🧠 How It Works
-
-### **Standalone Architecture:**
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Ollama AI     │    │  Your AI Agent  │    │   Blockchain    │
-│   (Local)       │◄──►│  (Standalone)   │◄──►│   (Direct)      │
-│                 │    │                 │    │                 │
-│ • DeepSeek R1   │    │ • Decision AI   │    │ • Contract Calls│
-│ • Analysis      │    │ • Chat Interface│    │ • Transactions  │
-│ • Reasoning     │    │ • Auto Operation│    │ • Fee Collection│
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-```
-
-### **Service Fee Model:**
-```
-Total cost: 0.00043 ETH
-├── Service fee: 0.00042 ETH (paid by agent)
-└── Maintenance: 0.00001 ETH (paid by agent)
-```
-
-### **AI Decision Flow:**
-1. **Monitor** - Check rug condition via blockchain
-2. **Analyze** - AI evaluates urgency and cost-effectiveness
-3. **Decide** - Choose optimal maintenance action
-4. **Execute** - Perform single-transaction maintenance
-5. **Pay** - Pay service fees automatically
-
-## 🧪 Testing
-
-Run the comprehensive test suite:
-
-```bash
-npm test
-```
-
-**Tests include:**
-- ✅ Ollama connectivity and AI responses
-- ✅ Blockchain RPC connection
-- ✅ Smart contract interactions
-- ✅ AI reasoning and decision making
-- ✅ Wallet configuration validation
-
-## 🔧 Advanced Configuration
-
-### **Custom AI Models:**
-```bash
-# Use different models
-OLLAMA_MODEL=gemma3:1b
-OLLAMA_MODEL=gpt-oss:20b
-OLLAMA_MODEL=llama3.2:3b
-```
-
-### **Agent Personality:**
-```bash
-AGENT_NAME=MaintenanceMaster
-AGENT_STYLE=witty,enthusiastic,professional
-```
-
-### **Autonomous Settings:**
-```bash
-AUTO_MAINTAIN=true              # Skip confirmations
-MAINTENANCE_CHECK_INTERVAL=60000 # Check every minute
-```
-
-### **Multi-Rug Monitoring:**
-Modify the agent to monitor multiple rugs by updating the `runMaintenanceCycle()` method.
-
-## 🛡️ Security & Safety
-
-- **Private Keys**: Never commit `.env` to git
-- **Simulation Mode**: Test without real transactions first
-- **Scoped Permissions**: Only maintenance operations allowed
-- **AI Safety**: All expensive actions require confirmation
-
-## 📊 Monitoring & Analytics
-
-The agent provides real-time statistics:
-
-```
-📊 Agent Statistics:
-   Agent Name: RugBot
-   Maintenances Performed: 5
-   Total Earnings: 0.007 ETH
-   Agent Address: 0x742d35Cc6634C0532925a3b844Bc454e4438f44e
-   Ollama Model: deepseek-r1:8b
-   Contract: 0xa43532205Fc90b286Da98389a9883347Cc4064a8
-   Network: Base Sepolia
-```
-
-## 🚨 Troubleshooting
-
-### **Common Issues:**
-
-**"Ollama server not running"**
-```bash
-# Check if Ollama GUI is open
-# Or run: ollama serve
-```
-
-**"Blockchain connection failed"**
-```bash
-# Check RPC_URL in .env
-# Try different RPC endpoint
-```
-
-**"Contract connection failed"**
-```bash
-# Verify CONTRACT_ADDRESS
-# Check network (Base Sepolia)
-```
-
-**"AI model not found"**
-```bash
-ollama pull deepseek-r1:8b
-# Or change OLLAMA_MODEL in .env
-```
-
-### **Debug Mode:**
-```bash
-DEBUG=true npm start once
-```
-
-## 🤝 Integration
-
-This standalone agent can be:
-
-- **Extended** for multi-rug monitoring
-- **Modified** for different AI models
-- **Integrated** with external services
-- **Deployed** to different networks
-- **Customized** for specific maintenance logic
-
-## 📈 Performance
-
-- **Response Time**: < 2 seconds for AI decisions
-- **Transaction Speed**: < 30 seconds confirmation
-- **Uptime**: 99.9% (when blockchain is operational)
-- **Service Fee Costs**: 0.00042 ETH per maintenance action
-
----
-
-## 🎯 Ready to Maintain!
-
-Your standalone AI agent is configured to:
-
-1. **Analyze** rug conditions with AI
-2. **Decide** optimal maintenance autonomously
-3. **Execute** transactions directly on blockchain
-4. **Pay** service fees automatically
-5. **Chat** with you conversationally
-
-**Start maintaining: `npm run chat`** 💰🤖
-
-*Completely standalone - no external dependencies required!* 🚀
+*Completely standalone - runs entirely on your local machine!* 🚀🤖
