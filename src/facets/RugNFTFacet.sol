@@ -110,6 +110,12 @@ contract RugNFTFacet is ICreatorToken {
 
         // Basic validation
         require(textRows.length > 0 && textRows.length <= 5, "Invalid text length");
+        
+        // Validate each text row length to prevent gas griefing
+        for (uint256 i = 0; i < textRows.length; i++) {
+            require(bytes(textRows[i]).length <= 100, "Text row too long");
+        }
+        
         require(visual.warpThickness >= 1 && visual.warpThickness <= 5, "Invalid warp thickness");
         require(LibRugStorage.canMintSupply(), "Max supply reached");
         require(LibRugStorage.canMint(recipient), "Wallet limit exceeded");
@@ -123,11 +129,15 @@ contract RugNFTFacet is ICreatorToken {
 
         // Generate seed if not provided
         if (seed == 0) {
+            // Auto-generate seed with multiple entropy sources to prevent prediction
+            // Includes: block data, transaction data, recipient, and token counter
             seed = uint256(keccak256(abi.encodePacked(
                 block.timestamp,
                 block.prevrandao,
-                recipient,
-                rs.tokenCounter
+                block.number,        // Additional entropy from block number
+                tx.origin,          // Transaction origin for additional unpredictability
+                recipient,          // msg.sender (already present)
+                rs.tokenCounter     // Token counter for uniqueness
             )));
         }
 
@@ -390,7 +400,6 @@ contract RugNFTFacet is ICreatorToken {
     }
 
     function transferFrom(address from, address to, uint256 tokenId) public {
-        LibRugStorage.ERC721Storage storage es = LibRugStorage.erc721Storage();
         require(_isApprovedOrOwner(msg.sender, tokenId), "ERC721: caller is not token owner or approved");
         _transfer(from, to, tokenId);
     }
@@ -580,10 +589,6 @@ contract RugNFTFacet is ICreatorToken {
         return 0;
     }
 
-    function _getTextureLevel(uint256 tokenId) internal view returns (uint8) {
-        // Texture system removed - return default level
-        return 0;
-    }
 
     function _getAgingLevel(uint256 tokenId) internal view returns (uint8) {
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
@@ -735,21 +740,12 @@ contract RugNFTFacet is ICreatorToken {
     }
 
     /// @dev ERC721 supportsInterface
-    function supportsInterface(bytes4 interfaceId) public view returns (bool) {
+    function supportsInterface(bytes4 interfaceId) public pure returns (bool) {
         return interfaceId == type(IERC721).interfaceId ||
                interfaceId == type(IERC721Metadata).interfaceId ||
                interfaceId == type(ICreatorToken).interfaceId ||
                interfaceId == 0x01ffc9a7; // ERC165
     }
 
-    /// @notice Marketplace transfer - allows marketplace to transfer tokens securely
-    /// @param from Address to transfer from
-    /// @param to Address to transfer to
-    /// @param tokenId Token ID to transfer
-    function marketplaceTransfer(address from, address to, uint256 tokenId) external {
-        // Only allow calls from marketplace facet (same contract in diamond)
-        // Direct transfer without approval checks
-        _transfer(from, to, tokenId);
-    }
 
 }

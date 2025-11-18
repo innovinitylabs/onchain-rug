@@ -16,6 +16,7 @@
 
 import dotenv from 'dotenv';
 import chalk from 'chalk';
+import { isRateLimitError, handleRateLimitError } from './rate-limit-handler.js';
 
 // Load environment variables
 dotenv.config();
@@ -109,6 +110,14 @@ class ActionExecutor {
         },
         body
       });
+
+      // Check for rate limit before parsing JSON
+      if (isRateLimitError(response)) {
+        const result = await response.json().catch(() => ({ error: 'Rate limit exceeded' }));
+        const rateLimitError = handleRateLimitError(response, result);
+        console.log(chalk.red(`❌ ${action.type} failed: Rate limit exceeded`));
+        return null;
+      }
 
       const result = await response.json();
 

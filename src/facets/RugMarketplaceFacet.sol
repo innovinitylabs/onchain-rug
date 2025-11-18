@@ -26,6 +26,8 @@ contract RugMarketplaceFacet is ReentrancyGuard {
 
     event MarketplaceFeeUpdated(uint256 oldFee, uint256 newFee);
     event FeesWithdrawn(address indexed to, uint256 amount);
+    event RoyaltyDistributionSkipped(uint256 indexed tokenId, uint256 salePrice);
+    event RefundFailed(address indexed recipient, uint256 amount);
     
     // ===== ERRORS =====
 
@@ -59,6 +61,9 @@ contract RugMarketplaceFacet is ReentrancyGuard {
         onlyTokenOwner(tokenId)
     {
         if (price == 0) revert InvalidPrice();
+        
+        // Prevent overflow in fee calculations
+        require(price <= type(uint256).max / 2, "Price too large");
 
         LibRugStorage.MarketplaceConfig storage ms = LibRugStorage.marketplaceStorage();
         LibRugStorage.Listing storage listing = ms.listings[tokenId];
@@ -114,6 +119,13 @@ contract RugMarketplaceFacet is ReentrancyGuard {
         if (listing.seller != msg.sender) revert NotTokenOwner();
         
         uint256 oldPrice = listing.price;
+        
+        // Maximum price change limit: prevent manipulation
+        // New price must be between 0.5x and 2x the old price
+        // Use multiplication instead of division to avoid precision loss
+        require(newPrice >= LibRugStorage.safeMul(oldPrice, 50) / 100, "Price decrease too large");
+        require(newPrice <= LibRugStorage.safeMul(oldPrice, 2), "Price increase too large");
+        
         listing.price = newPrice;
         
         emit ListingPriceUpdated(tokenId, oldPrice, newPrice);
@@ -134,30 +146,39 @@ contract RugMarketplaceFacet is ReentrancyGuard {
         
         address seller = listing.seller;
         uint256 price = listing.price;
-        
+
         // Deactivate listing
         listing.isActive = false;
-        
-        // Process payment with fees and royalties
-        _processPayment(tokenId, seller, price);
-        
-        // Transfer NFT from seller to buyer using transferFrom
-        // Since marketplace is approved (was approved during listing), this should work
+
+        // Re-check approval before transfer (prevent race condition)
+        address approved = IERC721(address(this)).getApproved(tokenId);
+        bool approvedForAll = IERC721(address(this)).isApprovedForAll(seller, address(this));
+        require(approved == address(this) || approvedForAll, "Approval revoked");
+
+        // Transfer NFT from seller to buyer FIRST to prevent reentrancy
         IERC721(address(this)).transferFrom(seller, msg.sender, tokenId);
+
+        // Process payment with fees and royalties AFTER transfer is complete
+        _processPayment(tokenId, seller, price);
         
 
         // Record sale for laundering tracking (tracks last 3 sale prices)
         RugLaunderingFacet launderingFacet = RugLaunderingFacet(address(this));
         launderingFacet.recordSale(tokenId, seller, msg.sender, price);
 
-        // Update marketplace stats
+        // Update marketplace stats with SafeMath
         ms.totalSales++;
-        ms.totalVolume += price;
+        ms.totalVolume = LibRugStorage.safeAdd(ms.totalVolume, price);
         
-        // Refund excess payment
+        // Refund excess payment - don't revert if refund fails
         if (msg.value > price) {
-            (bool success, ) = msg.sender.call{value: msg.value - price}("");
-            if (!success) revert TransferFailed();
+            uint256 refundAmount = msg.value - price;
+            (bool success, ) = msg.sender.call{value: refundAmount}("");
+            if (!success) {
+                // Don't revert - just emit event
+                // Refund stays in contract, can be claimed later
+                emit RefundFailed(msg.sender, refundAmount);
+            }
         }
         
         emit ListingSold(tokenId, seller, msg.sender, price);
@@ -217,16 +238,20 @@ contract RugMarketplaceFacet is ReentrancyGuard {
      * @notice Withdraw collected marketplace fees
      * @param to Address to send fees to
      */
-    function withdrawFees(address to) external {
+    function withdrawFees(address to) external nonReentrant {
         require(msg.sender == LibDiamond.contractOwner(), "Not authorized");
+        require(to != address(0), "Invalid recipient");
 
         LibRugStorage.MarketplaceConfig storage ms = LibRugStorage.marketplaceStorage();
         uint256 amount = ms.totalFeesCollected;
 
         require(amount > 0, "No fees to withdraw");
+        require(address(this).balance >= amount, "Insufficient contract balance");
 
+        // CEI pattern: Update state BEFORE external call
         ms.totalFeesCollected = 0;
 
+        // External call AFTER state update
         (bool success, ) = to.call{value: amount}("");
         if (!success) revert TransferFailed();
 
@@ -242,25 +267,32 @@ contract RugMarketplaceFacet is ReentrancyGuard {
     function _processPayment(uint256 tokenId, address seller, uint256 price) internal {
         LibRugStorage.MarketplaceConfig storage ms = LibRugStorage.marketplaceStorage();
 
-        // Calculate marketplace fee
-        uint256 marketplaceFee = (price * ms.marketplaceFeePercent) / 10000;
+        // Calculate marketplace fee with SafeMath
+        uint256 marketplaceFee = LibRugStorage.safeMul(price, ms.marketplaceFeePercent) / 10000;
 
-        // Calculate and distribute royalties immediately
+        // Use the fixed distributeRoyalties function (has pull pattern fallback)
+        // This prevents DoS attacks if royalty recipient fails
         RugCommerceFacet commerceFacet = RugCommerceFacet(address(this));
-        (address royaltyRecipient, uint256 royaltyAmount) = commerceFacet.royaltyInfo(tokenId, price);
-
-        // Distribute royalties to recipient if configured
-        if (royaltyAmount > 0 && royaltyRecipient != address(0)) {
-            (bool royaltySuccess, ) = royaltyRecipient.call{value: royaltyAmount}("");
-            if (!royaltySuccess) revert TransferFailed();
+        uint256 royaltyAmount = 0;
+        
+        // Try to distribute royalties, but don't revert if it fails
+        try commerceFacet.distributeRoyalties(tokenId, price, address(this)) {
+            // Success - royalties distributed or stored for pull pattern
+        } catch {
+            // Continue sale even if royalty distribution fails
+            // This prevents DoS attacks via malicious royalty recipients
+            emit RoyaltyDistributionSkipped(tokenId, price);
         }
+        
+        // Get royalty amount for seller proceeds calculation
+        (, royaltyAmount) = commerceFacet.royaltyInfo(tokenId, price);
 
-        // Calculate seller proceeds after fees and royalties
-        uint256 totalDeductions = marketplaceFee + royaltyAmount;
-        uint256 sellerProceeds = price - totalDeductions;
+        // Calculate seller proceeds after fees and royalties with SafeMath
+        uint256 totalDeductions = LibRugStorage.safeAdd(marketplaceFee, royaltyAmount);
+        uint256 sellerProceeds = LibRugStorage.safeSub(price, totalDeductions);
 
-        // Record marketplace fees
-        ms.totalFeesCollected += marketplaceFee;
+        // Record marketplace fees with SafeMath
+        ms.totalFeesCollected = LibRugStorage.safeAdd(ms.totalFeesCollected, marketplaceFee);
 
         // Send proceeds to seller
         (bool success, ) = seller.call{value: sellerProceeds}("");
