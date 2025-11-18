@@ -457,8 +457,10 @@ contract RugMaintenanceFacet {
         uint256 newScore = LibRugStorage.calculateMaintenanceScore(aging);
         uint8 newFrameLevel = LibRugStorage.getFrameLevelFromScore(newScore);
         if (newFrameLevel != aging.frameLevel) {
+            uint8 oldFrameLevel = aging.frameLevel;
             aging.frameLevel = newFrameLevel;
             aging.frameAchievedTime = block.timestamp;
+            LibRugStorage.updateDiamondFrameCount(tokenId, oldFrameLevel, newFrameLevel);
         }
         return (maintenanceCost, isFree);
     }
@@ -478,8 +480,10 @@ contract RugMaintenanceFacet {
         uint256 newScore = LibRugStorage.calculateMaintenanceScore(aging);
         uint8 newFrameLevel = LibRugStorage.getFrameLevelFromScore(newScore);
         if (newFrameLevel != aging.frameLevel) {
+            uint8 oldFrameLevel = aging.frameLevel;
             aging.frameLevel = newFrameLevel;
             aging.frameAchievedTime = block.timestamp;
+            LibRugStorage.updateDiamondFrameCount(tokenId, oldFrameLevel, newFrameLevel);
         }
         return (prev, aging.agingLevel, rs.restorationCost);
     }
@@ -501,8 +505,10 @@ contract RugMaintenanceFacet {
         uint256 newScore = LibRugStorage.calculateMaintenanceScore(aging);
         uint8 newFrameLevel = LibRugStorage.getFrameLevelFromScore(newScore);
         if (newFrameLevel != aging.frameLevel) {
+            uint8 oldFrameLevel = aging.frameLevel;
             aging.frameLevel = newFrameLevel;
             aging.frameAchievedTime = block.timestamp;
+            LibRugStorage.updateDiamondFrameCount(tokenId, oldFrameLevel, newFrameLevel);
         }
         return (prevDirt, prevAging, rs.masterRestorationCost);
     }
