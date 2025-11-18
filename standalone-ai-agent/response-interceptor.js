@@ -18,6 +18,7 @@
 
 import { Ollama } from 'ollama';
 import dotenv from 'dotenv';
+import { isRateLimitError, handleRateLimitError } from './rate-limit-handler.js';
 import chalk from 'chalk';
 
 // Load environment variables
@@ -352,6 +353,14 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!"""`;
         body
       });
 
+      // Check for rate limit before parsing JSON
+      if (isRateLimitError(response)) {
+        const result = await response.json().catch(() => ({ error: 'Rate limit exceeded' }));
+        const rateLimitError = handleRateLimitError(response, result);
+        console.log(chalk.red(`❌ ${name} failed: Rate limit exceeded`));
+        return null;
+      }
+
       const result = await response.json();
 
       if (result.success) {
@@ -424,6 +433,14 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!"""`;
         },
         body
       });
+
+      // Check for rate limit before parsing JSON
+      if (isRateLimitError(response)) {
+        const result = await response.json().catch(() => ({ error: 'Rate limit exceeded' }));
+        const rateLimitError = handleRateLimitError(response, result);
+        console.log(chalk.red(`❌ ${action.type} failed: Rate limit exceeded`));
+        return null;
+      }
 
       const result = await response.json();
 

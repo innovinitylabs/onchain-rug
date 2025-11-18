@@ -144,7 +144,8 @@ library LibRugStorage {
         uint256 reserveAmount;          // Team reserve allocation
         bool isLaunched;               // Launch state
         bool launderingEnabled;        // Global laundering toggle
-        address[] exceptionList;       // Addresses exempt from wallet limits
+        address[] exceptionList;       // Addresses exempt from wallet limits (for enumeration)
+        mapping(address => bool) exceptionMap; // O(1) lookup for exception checks
 
         // Scripty integration
         address rugScriptyBuilder;      // ScriptyBuilderV2 contract
@@ -204,6 +205,8 @@ library LibRugStorage {
         // ===== X402 Authorization Tokens =====
         // tokenHash => used (prevent replay attacks)
         mapping(bytes32 => bool) usedAuthorizationTokens;
+        // nonce => used (prevent nonce reuse)
+        mapping(bytes32 => bool) usedNonces;
 
         // ===== Trusted Marketplace Whitelist =====
         // External marketplaces (like OpenSea) that can record sales
@@ -279,12 +282,8 @@ library LibRugStorage {
 
     function isException(address account) internal view returns (bool) {
         RugConfig storage rs = rugStorage();
-        for (uint256 i = 0; i < rs.exceptionList.length; i++) {
-            if (rs.exceptionList[i] == account) {
-                return true;
-            }
-        }
-        return false;
+        // Use mapping for O(1) lookup instead of array iteration
+        return rs.exceptionMap[account];
     }
 
     // Check if a marketplace is trusted (can record sales)

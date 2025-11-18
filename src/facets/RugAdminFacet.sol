@@ -176,14 +176,15 @@ contract RugAdminFacet {
 
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
 
-        // Check if already exists
-        for (uint256 i = 0; i < rs.exceptionList.length; i++) {
-            if (rs.exceptionList[i] == account) {
-                return; // Already in list
-            }
-        }
+        // Check if already exists using mapping (O(1))
+        require(!rs.exceptionMap[account], "Address already in exception list");
+        
+        // Maximum limit to prevent gas griefing
+        require(rs.exceptionList.length < 100, "Exception list too large");
 
+        // Add to both array (for enumeration) and mapping (for O(1) checks)
         rs.exceptionList.push(account);
+        rs.exceptionMap[account] = true;
         emit ExceptionAdded(account);
     }
 
@@ -196,6 +197,13 @@ contract RugAdminFacet {
 
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
 
+        // Check if exists using mapping (O(1))
+        require(rs.exceptionMap[account], "Address not in exception list");
+
+        // Remove from mapping
+        rs.exceptionMap[account] = false;
+
+        // Remove from array (for enumeration)
         for (uint256 i = 0; i < rs.exceptionList.length; i++) {
             if (rs.exceptionList[i] == account) {
                 // Move last element to this position

@@ -424,7 +424,7 @@ contract DeployShapeSepolia is Script {
     }
 
     function _getRugNFTSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](33);
+        bytes4[] memory selectors = new bytes4[](32);
         // ERC721 Standard Functions (hardcoded selectors from forge inspect)
         selectors[0] = bytes4(0x70a08231); // balanceOf(address)
         selectors[1] = bytes4(0x6352211e); // ownerOf(uint256)
@@ -462,11 +462,8 @@ contract DeployShapeSepolia is Script {
         selectors[29] = RugNFTFacet.isContractReceiverPermitted.selector;
         selectors[30] = RugNFTFacet.isTransferAllowed.selector;
 
-        // Marketplace function
-        selectors[31] = RugNFTFacet.marketplaceTransfer.selector;
-
         // Initialization function
-        selectors[32] = RugNFTFacet.initializeERC721Metadata.selector;
+        selectors[31] = RugNFTFacet.initializeERC721Metadata.selector;
 
         return selectors;
     }

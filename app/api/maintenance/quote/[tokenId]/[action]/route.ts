@@ -3,6 +3,7 @@ import { callContractMultiFallback } from '@/lib/web3'
 import { getContractAddress, DEFAULT_CHAIN_ID, getNetworkByChainId, CONTRACT_ADDRESSES } from '@/lib/networks'
 import { createPaymentRequiredResponse } from '@/lib/x402'
 import { formatEther } from 'viem'
+import { checkRateLimit, getRateLimitStatus } from '@/utils/rate-limiter'
 
 // Simple in-memory cache for quote results (prevents repeated expensive calls)
 const quoteCache = new Map<string, { result: any, timestamp: number }>()
@@ -69,6 +70,27 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ to
         error: 'Invalid agent address format',
         details: 'Agent address must be a valid 42-character hex string starting with 0x'
       }, { status: 400 })
+    }
+
+    // Check rate limit (10 requests/minute per agent)
+    const rateLimitCheck = checkRateLimit(agentAddress)
+    if (!rateLimitCheck.allowed) {
+      const resetInSeconds = Math.ceil((rateLimitCheck.resetAt - Date.now()) / 1000)
+      console.log(`🚫 Rate limit exceeded for agent ${agentAddress}. Reset in ${resetInSeconds}s`)
+      return NextResponse.json({
+        error: 'Rate limit exceeded',
+        details: `Maximum 10 requests per minute. Try again in ${resetInSeconds} seconds.`,
+        resetAt: rateLimitCheck.resetAt,
+        resetInSeconds
+      }, { 
+        status: 429,
+        headers: {
+          'X-RateLimit-Limit': '10',
+          'X-RateLimit-Remaining': '0',
+          'X-RateLimit-Reset': rateLimitCheck.resetAt.toString(),
+          'Retry-After': resetInSeconds.toString()
+        }
+      })
     }
 
     // ✅ Agent validation passed - now safe to do expensive operations
@@ -176,7 +198,18 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ to
     }
 
     console.log(`💰 X402 quote generated for ${action} on rug #${tokenId}: ${price} ETH`)
-    return NextResponse.json(paymentRequired, { status: 402 })
+    
+    // Get current rate limit status for headers (without incrementing counter)
+    const currentRateLimit = getRateLimitStatus(agentAddress)
+    
+    return NextResponse.json(paymentRequired, { 
+      status: 402,
+      headers: {
+        'X-RateLimit-Limit': '10',
+        'X-RateLimit-Remaining': currentRateLimit.remaining.toString(),
+        'X-RateLimit-Reset': currentRateLimit.resetAt.toString()
+      }
+    })
   } catch (err) {
     console.error('quote route error:', err)
     return NextResponse.json({ error: 'Failed to generate quote' }, { status: 500 })

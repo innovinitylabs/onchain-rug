@@ -18,12 +18,16 @@ contract RugCommerceFacet {
     event RoyaltiesConfigured(uint256 royaltyPercentage, address[] recipients, uint256[] splits);
     event RevenueReceived(uint256 amount, string source);
     event PricingBoundsSet(address indexed tokenAddress, uint256 floorPrice, uint256 ceilingPrice);
+    event RoyaltyDistributed(address indexed recipient, uint256 amount);
+    event RoyaltyDistributionFailed(address indexed recipient, uint256 amount);
 
     // Royalty storage (separate from main storage for EIP-2981 compliance)
     struct RoyaltyConfig {
         uint256 royaltyPercentage; // Basis points (e.g., 500 = 5%)
         address[] recipients;
         uint256[] recipientSplits; // Basis points for each recipient
+        // Pull pattern fallback: pending royalties for failed distributions
+        mapping(address => uint256) pendingRoyalties;
     }
 
     bytes32 constant ROYALTY_STORAGE_POSITION = keccak256("rug.royalty.storage");
@@ -93,12 +97,13 @@ contract RugCommerceFacet {
         require(royaltyPercentage <= 10000, "Royalty percentage too high");
         require(recipients.length == splits.length, "Recipients and splits length mismatch");
         require(recipients.length > 0, "Must have at least one recipient");
+        require(recipients.length <= 20, "Too many recipients"); // Maximum recipients limit
 
-        // Validate splits sum to royalty percentage
+        // Validate splits sum to royalty percentage using SafeMath
         uint256 totalSplits = 0;
         for (uint256 i = 0; i < splits.length; i++) {
             require(splits[i] > 0, "Split must be greater than 0");
-            totalSplits += splits[i];
+            totalSplits = LibRugStorage.safeAdd(totalSplits, splits[i]);
         }
         require(totalSplits == royaltyPercentage, "Splits must sum to royalty percentage");
 
@@ -134,8 +139,8 @@ contract RugCommerceFacet {
             return (address(0), 0);
         }
 
-        // Calculate total royalty amount
-        royaltyAmount = (salePrice * rs.royaltyPercentage) / 10000;
+        // Calculate total royalty amount using SafeMath to prevent overflow
+        royaltyAmount = LibRugStorage.safeMul(salePrice, rs.royaltyPercentage) / 10000;
 
         // For multiple recipients, return the first recipient
         // The full royalty amount will be split among all recipients
@@ -152,23 +157,78 @@ contract RugCommerceFacet {
      * @param saleContract Address of the marketplace contract
      */
     function distributeRoyalties(uint256 tokenId, uint256 salePrice, address saleContract) external {
+        // Access control: only marketplace facet or owner
+        require(
+            msg.sender == address(this) || 
+            msg.sender == LibDiamond.contractOwner(),
+            "Only marketplace or owner"
+        );
+
         RoyaltyConfig storage rs = royaltyStorage();
 
         require(rs.recipients.length > 0, "Royalties not configured");
         require(rs.royaltyPercentage > 0, "Royalty percentage not set");
+        
+        // Maximum recipients limit to prevent gas griefing
+        require(rs.recipients.length <= 20, "Too many recipients");
 
-        uint256 totalRoyalty = (salePrice * rs.royaltyPercentage) / 10000;
+        // Use SafeMath for royalty calculations to prevent overflow
+        uint256 totalRoyalty = LibRugStorage.safeMul(salePrice, rs.royaltyPercentage) / 10000;
         require(address(this).balance >= totalRoyalty, "Insufficient contract balance");
 
         // Distribute to each recipient according to their split
+        // Continue even if individual recipients fail (prevent DoS)
         for (uint256 i = 0; i < rs.recipients.length; i++) {
-            uint256 recipientRoyalty = (totalRoyalty * rs.recipientSplits[i]) / rs.royaltyPercentage;
+            // Use SafeMath for recipient royalty calculation
+            uint256 recipientRoyalty = LibRugStorage.safeMul(totalRoyalty, rs.recipientSplits[i]) / rs.royaltyPercentage;
 
             if (recipientRoyalty > 0) {
-                (bool success,) = rs.recipients[i].call{value: recipientRoyalty}("");
-                require(success, "Royalty distribution failed");
+                // Try to send with gas limit to prevent DoS
+                (bool success,) = rs.recipients[i].call{value: recipientRoyalty, gas: 5000}("");
+                
+                if (success) {
+                    emit RoyaltyDistributed(rs.recipients[i], recipientRoyalty);
+                } else {
+                    // Store failed distribution for pull pattern fallback using SafeMath
+                    rs.pendingRoyalties[rs.recipients[i]] = LibRugStorage.safeAdd(
+                        rs.pendingRoyalties[rs.recipients[i]], 
+                        recipientRoyalty
+                    );
+                    emit RoyaltyDistributionFailed(rs.recipients[i], recipientRoyalty);
+                }
             }
         }
+    }
+    
+    /**
+     * @notice Claim pending royalties (pull pattern fallback)
+     * @dev Allows recipients to claim royalties that failed during push distribution
+     */
+    function claimPendingRoyalties() external {
+        RoyaltyConfig storage rs = royaltyStorage();
+        uint256 amount = rs.pendingRoyalties[msg.sender];
+        
+        require(amount > 0, "No pending royalties");
+        require(address(this).balance >= amount, "Insufficient contract balance");
+        
+        // Transfer first, then clear state (prevents loss if transfer fails)
+        (bool success,) = msg.sender.call{value: amount}("");
+        require(success, "Royalty claim failed");
+        
+        // Only clear state after successful transfer
+        rs.pendingRoyalties[msg.sender] = 0;
+        
+        emit RoyaltyDistributed(msg.sender, amount);
+    }
+    
+    /**
+     * @notice Get pending royalties for an address
+     * @param recipient Address to check
+     * @return amount Pending royalty amount in wei
+     */
+    function getPendingRoyalties(address recipient) external view returns (uint256) {
+        RoyaltyConfig storage rs = royaltyStorage();
+        return rs.pendingRoyalties[recipient];
     }
 
     // View functions
@@ -203,7 +263,8 @@ contract RugCommerceFacet {
      */
     function calculateRoyalty(uint256 salePrice) external view returns (uint256) {
         RoyaltyConfig storage rs = royaltyStorage();
-        return (salePrice * rs.royaltyPercentage) / 10000;
+        // Use SafeMath to prevent overflow
+        return LibRugStorage.safeMul(salePrice, rs.royaltyPercentage) / 10000;
     }
 
     /**

@@ -20,6 +20,9 @@ import { spawn } from 'child_process';
 // Load environment variables
 dotenv.config();
 
+// Import rate limit handler
+import { isRateLimitError, handleRateLimitError } from './rate-limit-handler.js';
+
 const config = {
   ollama: {
     baseUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434',
@@ -505,6 +508,12 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
       }
 
       console.log(chalk.gray(`   Handling response - status: ${response.status}, has error: ${!!result?.error}, is free: ${isFreeOperation}`));
+
+      // Handle rate limit errors first (429)
+      if (isRateLimitError(response)) {
+        const rateLimitError = handleRateLimitError(response, result);
+        throw new Error(`Rate limit exceeded: ${rateLimitError.details}. Please wait ${rateLimitError.rateLimit.resetInSeconds} seconds before retrying.`);
+      }
 
       // Handle different response types
       if (response.status >= 400 && result?.error) {

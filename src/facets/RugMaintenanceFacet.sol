@@ -147,9 +147,17 @@ contract RugMaintenanceFacet {
 
         // Check if token already used (prevent replay attacks)
         require(!rs.usedAuthorizationTokens[tokenHash], "Token already used");
+        
+        // Check if nonce already used (prevent nonce reuse)
+        bytes32 nonceHash = keccak256(abi.encodePacked(nonce));
+        require(!rs.usedNonces[nonceHash], "Nonce already used");
 
-        // Check expiration
+        // Check expiration (reduced to 2 minutes - checked in API, but verify here too)
         require(block.timestamp <= expires, "Token expired");
+        
+        // Check expiration window more carefully to avoid edge cases
+        uint256 timeUntilExpiry = expires > block.timestamp ? expires - block.timestamp : 0;
+        require(timeUntilExpiry <= 120, "Token expiration too far in future"); // Max 2 minutes
 
         // Verify agent is authorized for this token's owner
         address owner = IERC721(address(this)).ownerOf(tokenId);
@@ -159,8 +167,9 @@ contract RugMaintenanceFacet {
         bytes32 expectedHash = keccak256(abi.encodePacked(agent, tokenId, action, expires, nonce));
         require(tokenHash == expectedHash, "Invalid token hash - cryptographic verification failed");
 
-        // Mark token as used
+        // CEI pattern: Mark token and nonce as used BEFORE any external calls
         rs.usedAuthorizationTokens[tokenHash] = true;
+        rs.usedNonces[nonceHash] = true;
 
         emit AuthorizationTokenUsed(tokenHash, agent, tokenId, action);
 
