@@ -16,9 +16,10 @@ contract DiamondFramePool is ReentrancyGuard {
     event Claim(address indexed claimant, uint256[] tokenIds, uint256 amount);
     event MinimumClaimableAmountSet(uint256 newAmount);
     event RoyaltyDistributed(uint256 amount, uint256 totalDiamondFrames);
+    event EmergencyWithdrawal(address indexed owner, uint256 amount);
 
     // Constants
-    uint256 constant MAGNITUDE = 2**128; // Magnification factor for precision
+    uint256 constant MAGNITUDE = 2**64; // Magnification factor for precision (optimized for ETH)
 
     // State
     address public immutable diamondContract; // Diamond contract address
@@ -44,6 +45,7 @@ contract DiamondFramePool is ReentrancyGuard {
     /**
      * @notice Receive ETH from any source (diamond contract or others)
      * @dev Updates magnified per-share when royalties are deposited
+     * @dev For maximum gas efficiency, diamond contract should use depositWithCount
      */
     receive() external payable nonReentrant {
         if (msg.value > 0) {
@@ -53,14 +55,64 @@ contract DiamondFramePool is ReentrancyGuard {
     }
 
     /**
+     * @notice Deposit ETH with pre-calculated diamond frame count (gas optimized)
+     * @param amount Amount of ETH being deposited (for validation)
+     * @param totalFrames Current total number of diamond frame NFTs
+     * @dev Called by diamond contract to avoid external count query
+     */
+    function depositWithCount(uint256 amount, uint256 totalFrames) external payable onlyDiamond nonReentrant {
+        require(msg.value == amount, "Amount mismatch");
+        if (amount > 0) {
+            _distributeWithCount(amount, totalFrames);
+            emit PoolDeposit(msg.sender, amount, totalFrames);
+        }
+    }
+
+    /**
+     * @notice Emergency withdrawal function (diamond contract only)
+     * @dev Allows diamond contract to withdraw funds in case of emergency or bugs
+     * @dev Diamond contract should implement its own owner checks before calling this
+     * @dev This is a safety mechanism to prevent funds from being permanently locked
+     * @param recipient Address to send withdrawn funds to
+     * @param amount Amount to withdraw (0 = withdraw all)
+     */
+    function emergencyWithdraw(address recipient, uint256 amount) external onlyDiamond nonReentrant {
+        require(recipient != address(0), "Invalid recipient");
+
+        uint256 balance = address(this).balance;
+        require(balance > 0, "No funds to withdraw");
+
+        if (amount == 0) {
+            amount = balance;
+        } else {
+            require(amount <= balance, "Insufficient balance");
+        }
+
+        // Transfer to specified recipient
+        (bool success,) = payable(recipient).call{value: amount, gas: 2300}("");
+        require(success, "Emergency withdrawal failed");
+
+        emit EmergencyWithdrawal(recipient, amount);
+    }
+
+    /**
      * @notice Internal function to distribute royalties using magnified per-share system
      * @param amount Amount of ETH deposited
      */
     function _distributeRoyalties(uint256 amount) internal {
         uint256 totalDiamondFrames = _getTotalDiamondFrames();
+        _distributeWithCount(amount, totalDiamondFrames);
+    }
+
+    /**
+     * @notice Internal function to distribute royalties with pre-provided count (gas optimized)
+     * @param amount Amount of ETH deposited
+     * @param totalFrames Current total number of diamond frame NFTs
+     */
+    function _distributeWithCount(uint256 amount, uint256 totalFrames) internal {
         totalRoyaltiesDeposited += amount;
-        
-        if (totalDiamondFrames == 0) {
+
+        if (totalFrames == 0) {
             // No diamond frames exist yet, accumulate royalties
             // When diamond frames appear, accumulated royalties will be distributed proportionally
             accumulatedRoyaltiesBeforeFirstFrame += amount;
@@ -70,16 +122,16 @@ contract DiamondFramePool is ReentrancyGuard {
         // If there are accumulated royalties and diamond frames now exist, distribute them first
         if (accumulatedRoyaltiesBeforeFirstFrame > 0) {
             // Distribute accumulated royalties proportionally to all diamond frame NFTs
-            magnifiedRoyaltyPerNFT += (accumulatedRoyaltiesBeforeFirstFrame * MAGNITUDE) / totalDiamondFrames;
+            magnifiedRoyaltyPerNFT += (accumulatedRoyaltiesBeforeFirstFrame * MAGNITUDE) / totalFrames;
             accumulatedRoyaltiesBeforeFirstFrame = 0;
         }
 
         // Update magnified royalty per NFT with new deposit
-        // Formula: magnifiedRoyaltyPerNFT += (amount * MAGNITUDE) / totalDiamondFrames
+        // Formula: magnifiedRoyaltyPerNFT += (amount * MAGNITUDE) / totalFrames
         // This ensures each NFT gets equal share regardless of when they claim
-        magnifiedRoyaltyPerNFT += (amount * MAGNITUDE) / totalDiamondFrames;
-        
-        emit RoyaltyDistributed(amount, totalDiamondFrames);
+        magnifiedRoyaltyPerNFT += (amount * MAGNITUDE) / totalFrames;
+
+        emit RoyaltyDistributed(amount, totalFrames);
     }
 
     /**
@@ -119,7 +171,7 @@ contract DiamondFramePool is ReentrancyGuard {
         require(totalClaimableAmount <= address(this).balance, "Insufficient pool balance");
 
         // Update withdrawn amounts BEFORE transfer (Checks-Effects-Interactions)
-        _updateWithdrawnAmounts(tokenIds, totalClaimableAmount);
+        _updateWithdrawnAmounts(tokenIds);
 
         // Transfer to user with gas limit for additional safety
         (bool transferSuccess, ) = payable(user).call{value: totalClaimableAmount, gas: 2300}("");
@@ -159,9 +211,8 @@ contract DiamondFramePool is ReentrancyGuard {
     /**
      * @notice Internal function to update withdrawn amounts for tokens
      * @param tokenIds Array of token IDs to update
-     * @param totalAmount Total amount being claimed (for validation)
      */
-    function _updateWithdrawnAmounts(uint256[] memory tokenIds, uint256 totalAmount) internal {
+    function _updateWithdrawnAmounts(uint256[] memory tokenIds) internal {
         // Update withdrawn amounts for each token based on their individual claimable amounts
         // Accumulated royalties are already distributed proportionally in _distributeRoyalties()
         for (uint256 i = 0; i < tokenIds.length; i++) {

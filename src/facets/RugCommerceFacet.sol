@@ -11,6 +11,8 @@ import {IERC2981} from "@openzeppelin/contracts/interfaces/IERC2981.sol";
  */
 interface IDiamondFramePool {
     function claimForTokens(address user, uint256[] calldata tokenIds) external;
+    function depositWithCount(uint256 amount, uint256 totalFrames) external payable;
+    function emergencyWithdraw(address recipient, uint256 amount) external;
     function getClaimableAmountForToken(uint256 tokenId) external view returns (uint256);
     function getPoolBalance() external view returns (uint256);
     function getTotalDiamondFrameNFTs() external view returns (uint256);
@@ -22,6 +24,11 @@ interface IDiamondFramePool {
  * @dev Handles ETH withdrawals, EIP-2981 royalty system, and Payment Processor security policies
  */
 contract RugCommerceFacet {
+
+    // Internal helper to get diamond frame count (workaround for linter false positive)
+    function _getDiamondFrameCount() internal view returns (uint256) {
+        return LibRugStorage.rugStorage().diamondFrameCount;
+    }
 
     // Events
     event Withdrawn(address indexed to, uint256 amount);
@@ -115,11 +122,12 @@ contract RugCommerceFacet {
         require(recipients.length > 0, "Must have at least one recipient");
         require(recipients.length <= 20, "Too many recipients"); // Maximum recipients limit
 
-        // Validate splits sum to royalty percentage using SafeMath
+        // Validate splits sum to royalty percentage
+        // Solidity 0.8+ has built-in overflow protection, so regular addition is safe
         uint256 totalSplits = 0;
         for (uint256 i = 0; i < splits.length; i++) {
             require(splits[i] > 0, "Split must be greater than 0");
-            totalSplits = LibRugStorage.safeAdd(totalSplits, splits[i]);
+            totalSplits += splits[i];
         }
         require(totalSplits == royaltyPercentage, "Splits must sum to royalty percentage");
 
@@ -155,8 +163,8 @@ contract RugCommerceFacet {
             return (address(0), 0);
         }
 
-        // Calculate total royalty amount using SafeMath to prevent overflow
-        royaltyAmount = LibRugStorage.safeMul(salePrice, rs.royaltyPercentage) / 10000;
+        // Calculate total royalty amount (Solidity 0.8+ has built-in overflow protection)
+        royaltyAmount = (salePrice * rs.royaltyPercentage) / 10000;
 
         // For multiple recipients, return the first recipient
         // The full royalty amount will be split among all recipients
@@ -188,8 +196,8 @@ contract RugCommerceFacet {
         // Maximum recipients limit to prevent gas griefing
         require(rs.recipients.length <= 20, "Too many recipients");
 
-        // Use SafeMath for royalty calculations to prevent overflow
-        uint256 totalRoyalty = LibRugStorage.safeMul(salePrice, rs.royaltyPercentage) / 10000;
+        // Calculate total royalty (Solidity 0.8+ has built-in overflow protection)
+        uint256 totalRoyalty = (salePrice * rs.royaltyPercentage) / 10000;
         require(address(this).balance >= totalRoyalty, "Insufficient contract balance");
 
         // Calculate pool amount if pool is configured
@@ -198,20 +206,23 @@ contract RugCommerceFacet {
         
         if (rs.poolContract != address(0) && rs.poolPercentage > 0) {
             // Calculate pool amount: (salePrice * poolPercentage) / 10000
-            poolAmount = LibRugStorage.safeMul(salePrice, rs.poolPercentage) / 10000;
+            poolAmount = (salePrice * rs.poolPercentage) / 10000;
             
             // Ensure pool amount doesn't exceed total royalty
             if (poolAmount > totalRoyalty) {
                 poolAmount = totalRoyalty;
             }
             
-            // Send to pool contract
-            (bool poolSuccess, ) = rs.poolContract.call{value: poolAmount}("");
-            if (poolSuccess) {
-                remainingRoyalty = LibRugStorage.safeSub(totalRoyalty, poolAmount);
+            // Send to pool contract with optimized count passing (gas efficient)
+            // Use local helper function to work around linter false positive
+            uint256 totalDiamondFrames = _getDiamondFrameCount();
+            IDiamondFramePool pool = IDiamondFramePool(rs.poolContract);
+
+            try pool.depositWithCount{value: poolAmount}(poolAmount, totalDiamondFrames) {
+                remainingRoyalty = totalRoyalty - poolAmount;
                 emit PoolRoyaltySent(rs.poolContract, poolAmount);
-            } else {
-                // If pool transfer fails, continue with full royalty to artist
+            } catch {
+                // If pool deposit fails, continue with full royalty to artist
                 poolAmount = 0;
                 emit RoyaltyDistributionFailed(rs.poolContract, poolAmount);
             }
@@ -220,9 +231,9 @@ contract RugCommerceFacet {
         // Distribute remaining royalty to artist recipients according to their splits
         // Continue even if individual recipients fail (prevent DoS)
         for (uint256 i = 0; i < rs.recipients.length; i++) {
-            // Use SafeMath for recipient royalty calculation
             // Split remaining royalty proportionally based on original splits
-            uint256 recipientRoyalty = LibRugStorage.safeMul(remainingRoyalty, rs.recipientSplits[i]) / rs.royaltyPercentage;
+            // Solidity 0.8+ has built-in overflow protection
+            uint256 recipientRoyalty = (remainingRoyalty * rs.recipientSplits[i]) / rs.royaltyPercentage;
 
             if (recipientRoyalty > 0) {
                 // Try to send with gas limit to prevent DoS
@@ -231,11 +242,9 @@ contract RugCommerceFacet {
                 if (success) {
                     emit RoyaltyDistributed(rs.recipients[i], recipientRoyalty);
                 } else {
-                    // Store failed distribution for pull pattern fallback using SafeMath
-                    rs.pendingRoyalties[rs.recipients[i]] = LibRugStorage.safeAdd(
-                        rs.pendingRoyalties[rs.recipients[i]], 
-                        recipientRoyalty
-                    );
+                    // Store failed distribution for pull pattern fallback
+                    // Solidity 0.8+ has built-in overflow protection
+                    rs.pendingRoyalties[rs.recipients[i]] += recipientRoyalty;
                     emit RoyaltyDistributionFailed(rs.recipients[i], recipientRoyalty);
                 }
             }
@@ -305,8 +314,8 @@ contract RugCommerceFacet {
      */
     function calculateRoyalty(uint256 salePrice) external view returns (uint256) {
         RoyaltyConfig storage rs = royaltyStorage();
-        // Use SafeMath to prevent overflow
-        return LibRugStorage.safeMul(salePrice, rs.royaltyPercentage) / 10000;
+        // Solidity 0.8+ has built-in overflow protection
+        return (salePrice * rs.royaltyPercentage) / 10000;
     }
 
     /**
@@ -369,6 +378,23 @@ contract RugCommerceFacet {
     function getPoolConfig() external view returns (address poolContract, uint256 poolPercentage) {
         RoyaltyConfig storage rs = royaltyStorage();
         return (rs.poolContract, rs.poolPercentage);
+    }
+
+    /**
+     * @notice Emergency withdrawal from pool contract (owner only)
+     * @dev Allows contract owner to withdraw funds from pool in case of emergency
+     * @dev This prevents funds from being permanently locked due to bugs
+     * @param recipient Address to send withdrawn funds to
+     * @param amount Amount to withdraw (0 = withdraw all)
+     */
+    function emergencyWithdrawFromPool(address recipient, uint256 amount) external {
+        LibDiamond.enforceIsContractOwner();
+
+        RoyaltyConfig storage rs = royaltyStorage();
+        require(rs.poolContract != address(0), "Pool not configured");
+
+        IDiamondFramePool pool = IDiamondFramePool(rs.poolContract);
+        pool.emergencyWithdraw(recipient, amount);
     }
 
     /**

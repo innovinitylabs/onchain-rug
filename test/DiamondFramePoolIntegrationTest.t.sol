@@ -5,6 +5,7 @@ import {Test} from "forge-std/Test.sol";
 import {RugCommerceFacet} from "../src/facets/RugCommerceFacet.sol";
 import {DiamondFramePool} from "../src/DiamondFramePool.sol";
 import {LibRugStorage} from "../src/libraries/LibRugStorage.sol";
+import {LibDiamond} from "../src/diamond/libraries/LibDiamond.sol";
 import {MockERC721} from "./mocks/MockERC721.sol";
 
 contract DiamondFramePoolIntegrationTest is Test {
@@ -20,6 +21,10 @@ contract DiamondFramePoolIntegrationTest is Test {
 
     function setUp() public {
         vm.startPrank(owner);
+
+        // Set up diamond storage owner
+        LibDiamond.DiamondStorage storage ds = LibDiamond.diamondStorage();
+        ds.contractOwner = owner;
 
         // Deploy NFT contract
         nft = new MockERC721();

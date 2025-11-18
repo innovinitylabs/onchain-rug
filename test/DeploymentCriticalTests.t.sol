@@ -53,6 +53,14 @@ contract DeploymentCriticalTests is Test {
         // Setup initial configuration (including collection cap)
         _setupInitialConfiguration();
 
+        // Double-check collection cap is set correctly
+        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+        rs.collectionCap = 10000; // Ensure cap is set
+        rs.totalSupply = 0;       // Ensure supply starts at 0
+
+        // Debug: Check if we can mint
+        assertTrue(LibRugStorage.canMintSupply(), "Collection should not be full");
+
         // Mint test token
         _mintTestToken();
     }

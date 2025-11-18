@@ -72,8 +72,8 @@ contract DiamondFramePoolTest is Test {
         assertEq(pool.totalRoyaltiesDeposited(), 10 ether);
         assertEq(pool.accumulatedRoyaltiesBeforeFirstFrame(), 0);
 
-        // magnifiedRoyaltyPerNFT = (10 ether * 2^128) / 2
-        uint256 expectedMagnified = (10 ether * (1 << 128)) / 2;
+        // magnifiedRoyaltyPerNFT = (10 ether * 2^64) / 2
+        uint256 expectedMagnified = (10 ether * (1 << 64)) / 2;
         assertEq(pool.magnifiedRoyaltyPerNFT(), expectedMagnified);
     }
 
