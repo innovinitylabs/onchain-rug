@@ -120,17 +120,32 @@ contract SecurityFixesTest is Test {
     }
 
     function _setupDiamondMinimal() internal {
-        // Add only essential facets to avoid function collisions
-        IDiamondCut.FacetCut[] memory cuts = new IDiamondCut.FacetCut[](2);
+        // Add essential facets - tests need marketplace functionality
+        IDiamondCut.FacetCut[] memory cuts = new IDiamondCut.FacetCut[](4);
 
-        // Only add NFT and Commerce facets (most essential for testing)
+        // Add NFT facet
         cuts[0] = IDiamondCut.FacetCut({
             facetAddress: address(rugNFTFacet),
             action: IDiamondCut.FacetCutAction.Add,
             functionSelectors: _getRugNFTSelectors()
         });
 
+        // Add Admin facet (needed for configuration)
         cuts[1] = IDiamondCut.FacetCut({
+            facetAddress: address(rugAdminFacet),
+            action: IDiamondCut.FacetCutAction.Add,
+            functionSelectors: _getRugAdminSelectors()
+        });
+
+        // Add Marketplace facet (needed for security tests)
+        cuts[2] = IDiamondCut.FacetCut({
+            facetAddress: address(rugMarketplaceFacet),
+            action: IDiamondCut.FacetCutAction.Add,
+            functionSelectors: _getMarketplaceSelectors()
+        });
+
+        // Add Commerce facet
+        cuts[3] = IDiamondCut.FacetCut({
             facetAddress: address(rugCommerceFacet),
             action: IDiamondCut.FacetCutAction.Add,
             functionSelectors: _getCommerceSelectors()
@@ -502,10 +517,12 @@ contract SecurityFixesTest is Test {
         selectors[12] = bytes4(0xb88d4fde); // safeTransferFrom(address,address,uint256,bytes)
         
         // Rug-specific functions
-        selectors[13] = RugNFTFacet.mintRugFor.selector;
-        selectors[14] = RugNFTFacet.burn.selector;
-        selectors[15] = RugNFTFacet.getRugData.selector;
-        selectors[16] = RugNFTFacet.getAgingData.selector;
+        selectors[13] = RugNFTFacet.mintRug.selector;
+        selectors[14] = RugNFTFacet.mintRugFor.selector;
+        selectors[15] = RugNFTFacet.burn.selector;
+        selectors[16] = RugNFTFacet.getRugData.selector;
+        selectors[17] = RugNFTFacet.getAgingData.selector;
+        // Note: transferFrom and approve are already included above as bytes4 selectors
         return selectors;
     }
     
