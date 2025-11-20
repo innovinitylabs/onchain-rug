@@ -33,7 +33,7 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
             <div className="text-center mb-8">
               <Palette className="w-16 h-16 text-cyan-400 mx-auto mb-4" />
               <h2 className="text-3xl font-bold text-white mb-2">Artistic Vision</h2>
-              <p className="text-white/80">Living Digital Art That Evolves With Time</p>
+              <p className="text-white/80">Living fully OnChain Digital Art That Evolves With Time</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -417,6 +417,67 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
               </div>
             </div>
 
+            <div className="bg-white/5 border border-white/10 rounded-lg p-6">
+              <h3 className="text-xl font-semibold text-purple-300 mb-4">How Users Can Use x402</h3>
+              <div className="space-y-4">
+                <p className="text-white/80 leading-relaxed">
+                  Users can interact with x402 through various interfaces - from direct API calls to AI agents.
+                  Here are common ways to use x402 for rug maintenance:
+                </p>
+
+                <div className="bg-slate-800/50 rounded p-4">
+                  <h5 className="text-cyan-300 font-medium mb-2">Direct API Usage</h5>
+                  <p className="text-white/70 text-sm mb-3">
+                    Make HTTP requests to maintenance endpoints with payment payloads:
+                  </p>
+                  <div className="bg-black/50 rounded p-3 font-mono text-xs text-green-400 overflow-x-auto">
+                    <div className="mb-2">POST /api/maintenance/action/123/clean</div>
+                    <div className="text-white/60">Headers:</div>
+                    <div>x402-payment-payload: {"{...}"}</div>
+                    <div>x402-payment-status: payment-submitted</div>
+                    <div>x402-payment-tx: 0x...</div>
+                  </div>
+                </div>
+
+                <div className="bg-slate-800/50 rounded p-4">
+                  <h5 className="text-cyan-300 font-medium mb-2">Sample 402 Request</h5>
+                  <p className="text-white/70 text-sm mb-3">
+                    When requesting rug maintenance, you'll receive a 402 response with payment requirements:
+                  </p>
+                  <div className="bg-black/50 rounded p-3 font-mono text-xs text-yellow-400 overflow-x-auto">
+                    <div>HTTP 402 Payment Required</div>
+                    <div className="mt-2 text-white/60">Response Body:</div>
+                    <div className="text-blue-400">{"{"}</div>
+                    <div className="ml-4">"x402Version": 1,</div>
+                    <div className="ml-4">"accepts": [{"{"}</div>
+                    <div className="ml-8">"scheme": "exact",</div>
+                    <div className="ml-8">"network": "shape-sepolia",</div>
+                    <div className="ml-8">"asset": "0x000...000",</div>
+                    <div className="ml-8">"payTo": "0xFacilitatorAddress",</div>
+                    <div className="ml-8">"maxAmountRequired": "1000000000000000",</div>
+                    <div className="ml-8">"description": "Rug cleaning service"</div>
+                    <div className="ml-4">{"}"}]</div>
+                    <div className="text-blue-400">{"}"}</div>
+                  </div>
+                </div>
+
+                <div className="bg-slate-800/50 rounded p-4">
+                  <h5 className="text-cyan-300 font-medium mb-2">AI Agent Commands</h5>
+                  <p className="text-white/70 text-sm mb-3">
+                    Use natural language commands with AI agents:
+                  </p>
+                  <div className="bg-black/50 rounded p-3">
+                    <div className="text-green-400 font-mono text-sm">
+                      "Clean my rug #123" → AI handles payment & execution
+                    </div>
+                    <div className="text-green-400 font-mono text-sm mt-2">
+                      "Restore texture on rug #456" → AI manages the process
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div className="bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-400/30 rounded-lg p-6">
               <h3 className="text-xl font-semibold text-white mb-4">AI Agent Integration</h3>
               <p className="text-white/90 leading-relaxed">
@@ -492,6 +553,70 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
                     <li>• Transparent pricing & limits</li>
                     <li>• Unique text hash enforcement</li>
                   </ul>
+                </div>
+              </div>
+
+              <div className="bg-white/5 border border-white/10 rounded-lg p-6">
+                <h3 className="text-xl font-semibold text-purple-300 mb-4">x402 Integration</h3>
+                <div className="space-y-4">
+                  <p className="text-white/80 leading-relaxed">
+                    x402 protocol integration enables programmable payments for maintenance operations:
+                  </p>
+
+                  <div className="bg-slate-800/50 rounded p-4">
+                    <h5 className="text-cyan-300 font-medium mb-2">API Endpoints</h5>
+                    <div className="space-y-2 font-mono text-xs text-green-400">
+                      <div>POST /api/maintenance/action/{'{tokenId}'}/clean</div>
+                      <div>POST /api/maintenance/action/{'{tokenId}'}/restore</div>
+                      <div>POST /api/maintenance/action/{'{tokenId}'}/master-restore</div>
+                      <div>GET /api/maintenance/quote/{'{tokenId}'}/{'{action}'}</div>
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-800/50 rounded p-4">
+                    <h5 className="text-cyan-300 font-medium mb-2">Payment Flow</h5>
+                    <div className="space-y-3 text-sm">
+                      <div className="flex items-start gap-3">
+                        <div className="w-6 h-6 bg-cyan-400 rounded-full flex items-center justify-center text-xs font-bold text-black mt-0.5">1</div>
+                        <div>
+                          <h6 className="text-white font-medium">Request Quote</h6>
+                          <p className="text-white/70">GET quote endpoint returns 402 with payment requirements</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="w-6 h-6 bg-cyan-400 rounded-full flex items-center justify-center text-xs font-bold text-black mt-0.5">2</div>
+                        <div>
+                          <h6 className="text-white font-medium">Submit Payment</h6>
+                          <p className="text-white/70">Send transaction to facilitator address with exact amount</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="w-6 h-6 bg-cyan-400 rounded-full flex items-center justify-center text-xs font-bold text-black mt-0.5">3</div>
+                        <div>
+                          <h6 className="text-white font-medium">Execute Action</h6>
+                          <p className="text-white/70">POST to action endpoint with payment proof</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-800/50 rounded p-4">
+                    <h5 className="text-cyan-300 font-medium mb-2">Supported Networks</h5>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                        <span className="text-white/80">Shape L2 (Primary)</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                        <span className="text-white/80">Base Sepolia (Testnet)</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
+                        <span className="text-white/80">Ethereum Mainnet (Future)</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
