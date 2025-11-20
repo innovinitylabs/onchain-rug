@@ -184,7 +184,7 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
                   <div className="bg-slate-800/50 rounded p-3">
                     <h5 className="text-cyan-300 font-medium mb-2">Restoration Mechanics:</h5>
                     <ul className="text-white/70 text-sm space-y-1">
-                      <li>• <strong>Regular Cleaning:</strong> Resets dirt only (texture aging continues)</li>
+                      <li>• <strong>Regular Cleaning:</strong> Resets dirt + delays texture aging (resets aging timer)</li>
                       <li>• <strong>Texture Restoration:</strong> Reduces texture age by 1 level + cleans dirt</li>
                       <li>• <strong>Master Restoration:</strong> Resets both dirt AND texture age to 0</li>
                     </ul>
@@ -402,6 +402,7 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
                       <li>• Texture aging: Weeks/months-based</li>
                       <li>• Free cleaning windows: Days-based</li>
                       <li>• Frame grace periods: Days-based</li>
+                      <li>• <strong>Regular cleaning delays aging</strong></li>
                     </ul>
                   </div>
                   <div className="mt-4">
@@ -411,6 +412,7 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
                       <li>• Texture aging: Hours-based</li>
                       <li>• Free cleaning windows: Minutes-based</li>
                       <li>• Frame grace periods: Hours-based</li>
+                      <li>• <strong>Regular cleaning delays aging</strong></li>
                     </ul>
                   </div>
                 </div>
@@ -912,7 +914,8 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
                 <h3 className="text-xl font-semibold text-cyan-300 mb-4">How does the aging system work?</h3>
                 <p className="text-white/80 leading-relaxed">
                   <strong>Dirt Accumulation:</strong> Builds up every 3-7 days from last cleaning. Regular cleaning resets dirt to 0.<br/><br/>
-                  <strong>Texture Aging:</strong> Occurs over time from your last cleaning (30-180+ days). Texture age is not reversible until restored.<br/><br/>
+                  <strong>Texture Aging:</strong> Occurs over time from your last cleaning (30-180+ days). Texture age advances to the next level based on time since last maintenance.<br/><br/>
+                  <strong>Regular Cleaning Delays Aging:</strong> Each cleaning resets the aging timer, preventing texture aging from advancing to the next level until the timer restarts.<br/><br/>
                   <strong>Restoration Options:</strong> Texture restoration reduces age by 1 level + cleans dirt. Master restoration resets both dirt and texture age completely.<br/><br/>
                   Higher frame levels slow texture aging progression and provide dirt immunity benefits.
                 </p>
