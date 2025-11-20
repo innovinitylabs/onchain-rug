@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, FileText, Palette, Target, Gamepad2, Cpu, Zap, Clock, Users, Gem, Star } from 'lucide-react'
+import { X, FileText, Palette, Target, Gamepad2, Cpu, Zap, Clock, Users, Gem, Star, HelpCircle } from 'lucide-react'
 import LiquidGlass from './LiquidGlass'
 
 interface WhitePaperModalProps {
@@ -21,7 +21,8 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
     { id: 'project', label: 'Project Vision', icon: Target },
     { id: 'gameplay', label: 'Gameplay', icon: Gamepad2 },
     { id: 'x402', label: 'x402 Technology', icon: Cpu },
-    { id: 'tech', label: 'Technical Details', icon: Zap }
+    { id: 'tech', label: 'Technical Details', icon: Zap },
+    { id: 'faq', label: 'FAQ', icon: HelpCircle }
   ] as const
 
   const renderSectionContent = () => {
@@ -518,6 +519,99 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
                     <li>• Trading History & Prices</li>
                   </ul>
                 </div>
+              </div>
+            </div>
+          </div>
+        )
+
+      case 'faq':
+        return (
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <HelpCircle className="w-16 h-16 text-cyan-400 mx-auto mb-4" />
+              <h2 className="text-3xl font-bold text-white mb-2">Frequently Asked Questions</h2>
+              <p className="text-white/80">Everything you need to know about OnchainRugs</p>
+            </div>
+
+            <div className="space-y-6">
+              <div className="bg-white/5 border border-white/10 rounded-lg p-6">
+                <h3 className="text-xl font-semibold text-cyan-300 mb-4">What are OnchainRugs?</h3>
+                <p className="text-white/80 leading-relaxed">
+                  OnchainRugs are fully on-chain generative NFT rugs that evolve over time. Each rug develops dirt and texture naturally,
+                  requiring regular maintenance to stay pristine. They combine authentic textile art with blockchain mechanics for a unique
+                  living digital artifact experience.
+                </p>
+              </div>
+
+              <div className="bg-white/5 border border-white/10 rounded-lg p-6">
+                <h3 className="text-xl font-semibold text-cyan-300 mb-4">How does the aging system work?</h3>
+                <p className="text-white/80 leading-relaxed">
+                  Rugs accumulate dirt every 3-7 days and develop texture over weeks to months. Dirt can be cleaned to reset it,
+                  while texture requires restoration services. Higher frame levels slow the aging process and provide immunity benefits.
+                </p>
+              </div>
+
+              <div className="bg-white/5 border border-white/10 rounded-lg p-6">
+                <h3 className="text-xl font-semibold text-cyan-300 mb-4">What are frame levels?</h3>
+                <p className="text-white/80 leading-relaxed">
+                  Frame levels (Bronze, Silver, Gold, Platinum, Diamond) are earned through maintenance points from cleaning and restoration services.
+                  Each level provides benefits: dirt immunity, slower texture aging, and eventually permanent museum status for Diamond frames.
+                </p>
+              </div>
+
+              <div className="bg-white/5 border border-white/10 rounded-lg p-6">
+                <h3 className="text-xl font-semibold text-cyan-300 mb-4">What's the difference between testnet and mainnet?</h3>
+                <p className="text-white/80 leading-relaxed">
+                  On testnet, aging happens much faster (minutes instead of days, hours instead of months) for easier testing.
+                  Mainnet uses real-world timeframes to create meaningful long-term ownership experiences.
+                </p>
+              </div>
+
+              <div className="bg-white/5 border border-white/10 rounded-lg p-6">
+                <h3 className="text-xl font-semibold text-cyan-300 mb-4">What is x402 technology?</h3>
+                <p className="text-white/80 leading-relaxed">
+                  x402 is a decentralized payment protocol that enables AI agents to autonomously perform maintenance operations.
+                  Users authorize payments once, then AI agents can automatically clean and maintain rugs according to predefined schedules.
+                </p>
+              </div>
+
+              <div className="bg-white/5 border border-white/10 rounded-lg p-6">
+                <h3 className="text-xl font-semibold text-cyan-300 mb-4">How do I mint a rug?</h3>
+                <p className="text-white/80 leading-relaxed">
+                  Connect your wallet, choose up to 5 lines of custom text, and mint your rug. The cost depends on the amount of text you add.
+                  Each rug is completely unique with generative patterns, colors, and your personal message woven into the design.
+                </p>
+              </div>
+
+              <div className="bg-white/5 border border-white/10 rounded-lg p-6">
+                <h3 className="text-xl font-semibold text-cyan-300 mb-4">What are the maintenance costs?</h3>
+                <p className="text-white/80 leading-relaxed">
+                  Regular cleaning costs vary by network and timing. On testnet, services are very affordable (around 0.00001 ETH) to enable testing.
+                  Mainnet pricing will be set to encourage regular maintenance while remaining accessible.
+                </p>
+              </div>
+
+              <div className="bg-white/5 border border-white/10 rounded-lg p-6">
+                <h3 className="text-xl font-semibold text-cyan-300 mb-4">Can I trade my rug?</h3>
+                <p className="text-white/80 leading-relaxed">
+                  Yes! When you sell your rug above a threshold price, it automatically receives a full restoration (dirt and texture reset).
+                  This creates interesting trading dynamics where well-maintained rugs become more valuable.
+                </p>
+              </div>
+
+              <div className="bg-white/5 border border-white/10 rounded-lg p-6">
+                <h3 className="text-xl font-semibold text-cyan-300 mb-4">What's the maximum supply?</h3>
+                <p className="text-white/80 leading-relaxed">
+                  10,000 rugs maximum, with the ability to expand if community demand grows. This ensures scarcity while allowing for project evolution.
+                </p>
+              </div>
+
+              <div className="bg-white/5 border border-white/10 rounded-lg p-6">
+                <h3 className="text-xl font-semibold text-cyan-300 mb-4">Are the rugs fully on-chain?</h3>
+                <p className="text-white/80 leading-relaxed">
+                  Yes! Everything is stored on-chain: the art generation algorithm, color palettes, text rendering, and all aging mechanics.
+                  Each rug is a self-contained HTML NFT that renders perfectly in any wallet or marketplace.
+                </p>
               </div>
             </div>
           </div>
