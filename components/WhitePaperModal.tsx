@@ -181,7 +181,7 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
                   </ul>
                 </div>
                 <p className="text-white/70 text-sm mt-4">
-                  Higher frame levels slow texture aging, preserving your rug's appearance longer.
+                  Higher frame levels slow texture aging, preserving your rug&apos;s appearance longer.
                 </p>
                 {/* Prevent extension interference */}
                 <div style={{ display: 'none' }} data-wallet-ignore="true"></div>
@@ -241,7 +241,7 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
                 </div>
                 <div>
                   <h4 className="text-blue-300 font-medium mb-2">Neglected Rugs</h4>
-                  <p className="text-white/70 text-sm">Develop valuable "character" through natural aging</p>
+                  <p className="text-white/70 text-sm">Develop valuable &quot;character&quot; through natural aging</p>
                 </div>
                 <div>
                   <h4 className="text-purple-300 font-medium mb-2">Trading Benefits</h4>
@@ -560,7 +560,7 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
               </div>
 
               <div className="bg-white/5 border border-white/10 rounded-lg p-6">
-                <h3 className="text-xl font-semibold text-cyan-300 mb-4">What's the difference between testnet and mainnet?</h3>
+                <h3 className="text-xl font-semibold text-cyan-300 mb-4">What&apos;s the difference between testnet and mainnet?</h3>
                 <p className="text-white/80 leading-relaxed">
                   On testnet, aging happens much faster (minutes instead of days, hours instead of months) for easier testing.
                   Mainnet uses real-world timeframes to create meaningful long-term ownership experiences.
@@ -600,7 +600,7 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
               </div>
 
               <div className="bg-white/5 border border-white/10 rounded-lg p-6">
-                <h3 className="text-xl font-semibold text-cyan-300 mb-4">What's the maximum supply?</h3>
+                <h3 className="text-xl font-semibold text-cyan-300 mb-4">What&apos;s the maximum supply?</h3>
                 <p className="text-white/80 leading-relaxed">
                   10,000 rugs maximum, with the ability to expand if community demand grows. This ensures scarcity while allowing for project evolution.
                 </p>
