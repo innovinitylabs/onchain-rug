@@ -50,7 +50,7 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
                 <h3 className="text-xl font-semibold text-cyan-300 mb-4">Temporal Aesthetics</h3>
                 <p className="text-white/80 leading-relaxed">
                   Unlike static NFTs, OnchainRugs evolve visually over time through natural aging processes.
-                  Dirt accumulation and texture development create character and storytelling, turning each rug
+                  Dirt accumulation and aging development create character and storytelling, turning each rug
                   into a living digital artifact that tells the story of its care and ownership history.
                 </p>
               </div>
@@ -175,7 +175,7 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
                   <p className="text-white/80">Texture aging occurs over time from the last cleaning:</p>
                   <ul className="text-white/70 space-y-1 text-sm">
                     <li>• 0-30 days from last clean: Fresh appearance</li>
-                    <li>• 31-90 days from last clean: Subtle texture development</li>
+                    <li>• 31-90 days from last clean: Subtle aging development</li>
                     <li>• 91-180 days from last clean: Noticeable wear patterns</li>
                     <li>• 180+ days from last clean: Mature character development</li>
                   </ul>
@@ -184,9 +184,9 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
                   <div className="bg-slate-800/50 rounded p-3">
                     <h5 className="text-cyan-300 font-medium mb-2">Restoration Mechanics:</h5>
                     <ul className="text-white/70 text-sm space-y-1">
-                      <li>• <strong>Regular Cleaning:</strong> Resets dirt + delays texture aging (resets aging timer)</li>
-                      <li>• <strong>Texture Restoration:</strong> Reduces texture age by 1 level + cleans dirt</li>
-                      <li>• <strong>Master Restoration:</strong> Resets both dirt AND texture age to 0</li>
+                      <li>• <strong>Regular Cleaning:</strong> Resets dirt + delays aging (resets aging timer)</li>
+                      <li>• <strong>Aging Restoration:</strong> Reduces aging level by 1 + cleans dirt</li>
+                      <li>• <strong>Master Restoration:</strong> Resets both dirt AND aging level to 0</li>
                     </ul>
                   </div>
                   <div className="bg-slate-800/50 rounded p-3">
@@ -199,7 +199,7 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
                   </div>
                 </div>
                 <p className="text-white/70 text-sm mt-4">
-                  Higher frame levels slow texture aging progression, preserving your rug&apos;s appearance longer.
+                  Higher frame levels slow aging progression, preserving your rug&apos;s appearance longer.
                 </p>
                 {/* Prevent extension interference */}
                 <div style={{ display: 'none' }} data-wallet-ignore="true"></div>
@@ -236,15 +236,15 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
                 <div className="space-y-4">
                   <div className="bg-slate-800/30 rounded p-3">
                     <h5 className="text-cyan-300 font-medium mb-1">Regular Cleaning</h5>
-                    <p className="text-white/70 text-sm">Resets dirt level to 0 (texture aging continues from last clean)</p>
+                    <p className="text-white/70 text-sm">Resets dirt level to 0 (aging continues from last clean)</p>
                   </div>
                   <div className="bg-slate-800/30 rounded p-3">
                     <h5 className="text-cyan-300 font-medium mb-1">Texture Restoration</h5>
-                    <p className="text-white/70 text-sm">Reduces texture age by 1 level + resets dirt to 0</p>
+                    <p className="text-white/70 text-sm">Reduces aging level by 1 + resets dirt to 0</p>
                   </div>
                   <div className="bg-slate-800/30 rounded p-3">
                     <h5 className="text-cyan-300 font-medium mb-1">Master Restoration</h5>
-                    <p className="text-white/70 text-sm">Resets both dirt AND texture age to 0 (complete refresh)</p>
+                    <p className="text-white/70 text-sm">Resets both dirt AND aging level to 0 (complete refresh)</p>
                   </div>
                   <div className="bg-slate-800/30 rounded p-3">
                     <h5 className="text-cyan-300 font-medium mb-1">Laundering</h5>
@@ -589,7 +589,7 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
                     <h5 className="text-orange-300 font-medium text-sm mb-2">📋 Authorized Agent Capabilities</h5>
                     <div className="space-y-1 text-xs text-white/80">
                       <div>• <strong>Clean rugs</strong> - Remove dirt accumulation</div>
-                      <div>• <strong>Restore texture</strong> - Reduce aging levels</div>
+                      <div>• <strong>Restore aging</strong> - Reduce aging levels</div>
                       <div>• <strong>Master restore</strong> - Full dirt and aging reset</div>
                       <div>• <strong>Limited per-owner</strong> - Only works on rugs owned by the authorizing user</div>
                       <div>• <strong>Pay full cost</strong> - Agents must pay maintenance fees (unlike x402 agents)</div>
@@ -632,7 +632,7 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
                       <h5 className="text-cyan-300 font-medium text-sm mb-2">Natural Language Commands</h5>
                       <div className="space-y-2 text-xs">
                         <div className="text-green-400 font-mono">&quot;Clean my rug #123&quot;</div>
-                        <div className="text-green-400 font-mono">&quot;Restore texture on rug #456&quot;</div>
+                        <div className="text-green-400 font-mono">&quot;Restore aging on rug #456&quot;</div>
                         <div className="text-green-400 font-mono">&quot;Master restore rug #789&quot;</div>
                         <div className="text-white/60">→ AI handles full payment flow</div>
                       </div>
@@ -687,11 +687,11 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
                     </div>
                     <div className="bg-slate-800/30 rounded p-3">
                       <h5 className="text-green-300 font-medium text-sm">Restore</h5>
-                      <p className="text-white/60 text-xs">Reduces texture age by 1 level, costs ~0.00002 ETH</p>
+                      <p className="text-white/60 text-xs">Reduces aging level by 1, costs ~0.00002 ETH</p>
                     </div>
                     <div className="bg-slate-800/30 rounded p-3">
                       <h5 className="text-yellow-300 font-medium text-sm">Master Restore</h5>
-                      <p className="text-white/60 text-xs">Full restoration (dirt + texture), costs ~0.00005 ETH</p>
+                      <p className="text-white/60 text-xs">Full restoration (dirt + aging), costs ~0.00005 ETH</p>
                     </div>
                   </div>
                 </div>
@@ -726,7 +726,7 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
                   <p className="text-white/80">Modular smart contract system enabling:</p>
                   <ul className="text-white/70 space-y-1">
                     <li>• RugNFTFacet: ERC721 core functionality</li>
-                    <li>• RugAgingFacet: Dirt & texture mechanics</li>
+                    <li>• RugAgingFacet: Dirt & aging mechanics</li>
                     <li>• RugMaintenanceFacet: Cleaning services</li>
                     <li>• RugCommerceFacet: Pricing & withdrawals</li>
                     <li>• RugAdminFacet: Owner controls</li>
@@ -904,7 +904,7 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
               <div className="bg-white/5 border border-white/10 rounded-lg p-6">
                 <h3 className="text-xl font-semibold text-cyan-300 mb-4">What are OnchainRugs?</h3>
                 <p className="text-white/80 leading-relaxed">
-                  OnchainRugs are fully on-chain generative NFT rugs that evolve over time. Each rug develops dirt and texture naturally,
+                  OnchainRugs are fully on-chain generative NFT rugs that evolve over time. Each rug develops dirt and aging naturally,
                   requiring regular maintenance to stay pristine. They combine authentic textile art with blockchain mechanics for a unique
                   living digital artifact experience.
                 </p>
@@ -915,9 +915,9 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
                 <p className="text-white/80 leading-relaxed">
                   <strong>Dirt Accumulation:</strong> Builds up every 3-7 days from last cleaning. Regular cleaning resets dirt to 0.<br/><br/>
                   <strong>Texture Aging:</strong> Occurs over time from your last cleaning (30-180+ days). Texture age advances to the next level based on time since last maintenance.<br/><br/>
-                  <strong>Regular Cleaning Delays Aging:</strong> Each cleaning resets the aging timer, preventing texture aging from advancing to the next level until the timer restarts.<br/><br/>
-                  <strong>Restoration Options:</strong> Texture restoration reduces age by 1 level + cleans dirt. Master restoration resets both dirt and texture age completely.<br/><br/>
-                  Higher frame levels slow texture aging progression and provide dirt immunity benefits.
+                  <strong>Regular Cleaning Delays Aging:</strong> Each cleaning resets the aging timer, preventing aging from advancing to the next level until the timer restarts.<br/><br/>
+                  <strong>Restoration Options:</strong> Aging restoration reduces aging level by 1 + cleans dirt. Master restoration resets both dirt and aging level completely.<br/><br/>
+                  Higher frame levels slow aging progression and provide dirt immunity benefits.
                 </p>
               </div>
 
@@ -925,7 +925,7 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
                 <h3 className="text-xl font-semibold text-cyan-300 mb-4">What are frame levels?</h3>
                 <p className="text-white/80 leading-relaxed">
                   Frame levels (Bronze, Silver, Gold, Platinum, Diamond) are earned through maintenance points from cleaning and restoration services.
-                  Each level provides benefits: dirt immunity, slower texture aging, and eventually permanent museum status for Diamond frames.
+                  Each level provides benefits: dirt immunity, slower aging, and eventually permanent museum status for Diamond frames.
                 </p>
               </div>
 
@@ -966,7 +966,7 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
               <div className="bg-white/5 border border-white/10 rounded-lg p-6">
                 <h3 className="text-xl font-semibold text-cyan-300 mb-4">Can I trade my rug?</h3>
                 <p className="text-white/80 leading-relaxed">
-                  Yes! When you sell your rug above a threshold price, it automatically receives a full restoration (dirt and texture reset).
+                  Yes! When you sell your rug above a threshold price, it automatically receives a full restoration (dirt and aging reset).
                   This creates interesting trading dynamics where well-maintained rugs become more valuable.
                 </p>
               </div>
