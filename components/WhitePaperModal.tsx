@@ -600,7 +600,7 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
                       <h5 className="text-cyan-300 font-medium text-sm mb-2">Dashboard Authorization</h5>
                       <div className="space-y-2 text-xs">
                         <div className="text-white/60">1. Visit your dashboard</div>
-                        <div className="text-white/60">2. Go to "Authorized Agents" tab</div>
+                        <div className="text-white/60">2. Go to &quot;Authorized Agents&quot; tab</div>
                         <div className="text-white/60">3. Add agent wallet addresses</div>
                         <div className="text-green-400 font-mono">✓ Agents can now maintain your rugs</div>
                         <div className="text-yellow-400 font-mono">⚠ Agents still pay full maintenance costs</div>
