@@ -95,8 +95,8 @@ export default function Navigation() {
       </div>
 
       {/* Navigation Content */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
-        <div className="flex items-center justify-between">
+      <div className="relative z-10 w-full px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+        <div className="flex items-center justify-between max-w-screen-2xl mx-auto">
           {/* Logo */}
           <Link href="/" className="flex items-center" onClick={closeMobileMenu}>
             <svg
