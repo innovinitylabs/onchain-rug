@@ -18,6 +18,7 @@ import "../src/facets/RugCommerceFacet.sol";
 import "../src/facets/RugLaunderingFacet.sol";
 import "../src/facets/RugTransferSecurityFacet.sol";
 import "../src/facets/RugMarketplaceFacet.sol";
+import "../src/DiamondFramePool.sol";
 import "../src/libraries/LibRugStorage.sol";
 import "../src/diamond/interfaces/IDiamondCut.sol";
 
@@ -47,6 +48,7 @@ contract DeployBaseSepolia is Script {
     RugLaunderingFacet public rugLaunderingFacet;
     RugTransferSecurityFacet public rugTransferSecurityFacet;
     RugMarketplaceFacet public rugMarketplaceFacet;
+    DiamondFramePool public diamondFramePool;
 
     // Deployment addresses
     address public fileStoreAddr;
@@ -54,6 +56,7 @@ contract DeployBaseSepolia is Script {
     address public scriptyBuilderAddr;
     address public htmlGeneratorAddr;
     address public diamondAddr;
+    address public poolAddr;
 
     // Configuration
     address public deployer;
@@ -82,6 +85,8 @@ contract DeployBaseSepolia is Script {
         deployInfrastructure();
         deployDiamond();
         configureDiamond();
+        deployPool();
+        configurePool();
         uploadLibraries();
         initializeSystem();
 
@@ -93,6 +98,7 @@ contract DeployBaseSepolia is Script {
         console.log("ScriptyBuilderV2:", scriptyBuilderAddr);
         console.log("HTMLGenerator:", htmlGeneratorAddr);
         console.log("Diamond:", diamondAddr);
+        console.log("DiamondFramePool:", poolAddr);
         console.log("=========================================");
 
         vm.stopBroadcast();
@@ -148,6 +154,29 @@ contract DeployBaseSepolia is Script {
         rugTransferSecurityFacet = new RugTransferSecurityFacet();
         rugMarketplaceFacet = new RugMarketplaceFacet();
         console.log("   All Rug facets deployed (including Transfer Security and Marketplace)");
+    }
+
+    function deployPool() internal {
+        console.log("9. Deploying Diamond Frame Pool...");
+
+        // Deploy the pool contract with diamond address and minimum claimable amount
+        uint256 minimumClaimableAmount = 0.0001 ether; // 0.0001 ETH minimum claim
+        diamondFramePool = new DiamondFramePool(diamondAddr, minimumClaimableAmount);
+        poolAddr = address(diamondFramePool);
+        console.log("   DiamondFramePool deployed at:", poolAddr);
+        console.log("   Minimum claimable amount:", minimumClaimableAmount / 1e18, "ETH");
+    }
+
+    function configurePool() internal {
+        console.log("10. Configuring Diamond Frame Pool...");
+
+        // Pool ownership is set in constructor, no need to transfer
+        console.log("   Pool ownership set to diamond contract in constructor");
+
+        // Configure the pool in the diamond contract
+        RugCommerceFacet(diamondAddr).setPoolContract(poolAddr);
+        RugCommerceFacet(diamondAddr).setPoolPercentage(100); // 1% to pool (100 basis points)
+        console.log("   Pool configured in diamond contract (1% of royalties)");
     }
 
     function configureDiamond() internal {
@@ -542,7 +571,7 @@ contract DeployBaseSepolia is Script {
     }
 
     function _getRugCommerceSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](19);
+        bytes4[] memory selectors = new bytes4[](23);
         // Original selectors
         selectors[0] = RugCommerceFacet.withdraw.selector;
         selectors[1] = RugCommerceFacet.withdrawTo.selector;
@@ -564,6 +593,11 @@ contract DeployBaseSepolia is Script {
         selectors[16] = RugCommerceFacet.isTokenPricingImmutable.selector;
         selectors[17] = RugCommerceFacet.getApprovedPaymentCoin.selector;
         selectors[18] = RugCommerceFacet.getSaleHistory.selector;
+        // Diamond Frame Pool selectors
+        selectors[19] = RugCommerceFacet.setPoolContract.selector;
+        selectors[20] = RugCommerceFacet.setPoolPercentage.selector;
+        selectors[21] = RugCommerceFacet.getPoolConfig.selector;
+        selectors[22] = RugCommerceFacet.emergencyWithdrawFromPool.selector;
         // Note: supportsInterface(bytes4) is already registered by DiamondLoupeFacet
         return selectors;
     }

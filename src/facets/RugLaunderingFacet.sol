@@ -226,8 +226,10 @@ contract RugLaunderingFacet {
         uint256 newScore = LibRugStorage.calculateMaintenanceScore(aging);
         uint8 newFrameLevel = LibRugStorage.getFrameLevelFromScore(newScore);
         if (newFrameLevel != aging.frameLevel) {
+            uint8 oldFrameLevel = aging.frameLevel;
             aging.frameLevel = newFrameLevel;
             aging.frameAchievedTime = block.timestamp;
+            LibRugStorage.updateDiamondFrameCount(tokenId, oldFrameLevel, newFrameLevel);
         }
 
         (, string memory reason) = _checkLaunderingConditions(tokenId, salePrice);

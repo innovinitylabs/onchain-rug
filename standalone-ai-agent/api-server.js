@@ -1171,7 +1171,7 @@ Keep the personalityNote enthusiastic and in character as ${config.agent.name}!`
       // Analyze condition
       let condition = 'excellent';
       let priority = 'low';
-      let recommendations = [];
+      const recommendations = [];
 
       // Dirt analysis - primary maintenance indicator
       if (dirtLevel >= 3) {
@@ -1304,7 +1304,7 @@ Keep the personalityNote enthusiastic and in character as ${config.agent.name}!`
     const totalMaintenances = analyses.reduce((sum, a) => sum + a.totalMaintenances, 0);
 
     let summary = `You have ${totalRugs} rug${totalRugs > 1 ? 's' : ''}. `;
-    let recommendations = [];
+    const recommendations = [];
 
     if (highPriority > 0) {
       summary += `${highPriority} need${highPriority > 1 ? '' : 's'} immediate attention. `;

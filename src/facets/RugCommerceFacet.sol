@@ -7,11 +7,28 @@ import {LibTransferSecurity} from "../libraries/LibTransferSecurity.sol";
 import {IERC2981} from "@openzeppelin/contracts/interfaces/IERC2981.sol";
 
 /**
+ * @notice Interface for DiamondFramePool contract
+ */
+interface IDiamondFramePool {
+    function claimForTokens(address user, uint256[] calldata tokenIds) external;
+    function depositWithCount(uint256 amount, uint256 totalFrames) external payable;
+    function emergencyWithdraw(address recipient, uint256 amount) external;
+    function getClaimableAmountForToken(uint256 tokenId) external view returns (uint256);
+    function getPoolBalance() external view returns (uint256);
+    function getTotalDiamondFrameNFTs() external view returns (uint256);
+}
+
+/**
  * @title RugCommerceFacet
  * @notice Commerce facet for OnchainRugs withdrawals, royalties, and Payment Processor integration
  * @dev Handles ETH withdrawals, EIP-2981 royalty system, and Payment Processor security policies
  */
 contract RugCommerceFacet {
+
+    // Internal helper to get diamond frame count (workaround for linter false positive)
+    function _getDiamondFrameCount() internal view returns (uint256) {
+        return LibRugStorage.rugStorage().diamondFrameCount;
+    }
 
     // Events
     event Withdrawn(address indexed to, uint256 amount);
@@ -20,6 +37,9 @@ contract RugCommerceFacet {
     event PricingBoundsSet(address indexed tokenAddress, uint256 floorPrice, uint256 ceilingPrice);
     event RoyaltyDistributed(address indexed recipient, uint256 amount);
     event RoyaltyDistributionFailed(address indexed recipient, uint256 amount);
+    event PoolContractSet(address indexed poolContract);
+    event PoolPercentageSet(uint256 poolPercentage);
+    event PoolRoyaltySent(address indexed poolContract, uint256 amount);
 
     // Royalty storage (separate from main storage for EIP-2981 compliance)
     struct RoyaltyConfig {
@@ -28,6 +48,9 @@ contract RugCommerceFacet {
         uint256[] recipientSplits; // Basis points for each recipient
         // Pull pattern fallback: pending royalties for failed distributions
         mapping(address => uint256) pendingRoyalties;
+        // Diamond frame pool configuration
+        address poolContract; // Address of DiamondFramePool contract
+        uint256 poolPercentage; // Pool percentage in basis points (e.g., 100 = 1%)
     }
 
     bytes32 constant ROYALTY_STORAGE_POSITION = keccak256("rug.royalty.storage");
@@ -99,11 +122,12 @@ contract RugCommerceFacet {
         require(recipients.length > 0, "Must have at least one recipient");
         require(recipients.length <= 20, "Too many recipients"); // Maximum recipients limit
 
-        // Validate splits sum to royalty percentage using SafeMath
+        // Validate splits sum to royalty percentage
+        // Solidity 0.8+ has built-in overflow protection, so regular addition is safe
         uint256 totalSplits = 0;
         for (uint256 i = 0; i < splits.length; i++) {
             require(splits[i] > 0, "Split must be greater than 0");
-            totalSplits = LibRugStorage.safeAdd(totalSplits, splits[i]);
+            totalSplits += splits[i];
         }
         require(totalSplits == royaltyPercentage, "Splits must sum to royalty percentage");
 
@@ -139,8 +163,8 @@ contract RugCommerceFacet {
             return (address(0), 0);
         }
 
-        // Calculate total royalty amount using SafeMath to prevent overflow
-        royaltyAmount = LibRugStorage.safeMul(salePrice, rs.royaltyPercentage) / 10000;
+        // Calculate total royalty amount (Solidity 0.8+ has built-in overflow protection)
+        royaltyAmount = (salePrice * rs.royaltyPercentage) / 10000;
 
         // For multiple recipients, return the first recipient
         // The full royalty amount will be split among all recipients
@@ -172,15 +196,44 @@ contract RugCommerceFacet {
         // Maximum recipients limit to prevent gas griefing
         require(rs.recipients.length <= 20, "Too many recipients");
 
-        // Use SafeMath for royalty calculations to prevent overflow
-        uint256 totalRoyalty = LibRugStorage.safeMul(salePrice, rs.royaltyPercentage) / 10000;
+        // Calculate total royalty (Solidity 0.8+ has built-in overflow protection)
+        uint256 totalRoyalty = (salePrice * rs.royaltyPercentage) / 10000;
         require(address(this).balance >= totalRoyalty, "Insufficient contract balance");
 
-        // Distribute to each recipient according to their split
+        // Calculate pool amount if pool is configured
+        uint256 poolAmount = 0;
+        uint256 remainingRoyalty = totalRoyalty;
+        
+        if (rs.poolContract != address(0) && rs.poolPercentage > 0) {
+            // Calculate pool amount: (salePrice * poolPercentage) / 10000
+            poolAmount = (salePrice * rs.poolPercentage) / 10000;
+            
+            // Ensure pool amount doesn't exceed total royalty
+            if (poolAmount > totalRoyalty) {
+                poolAmount = totalRoyalty;
+            }
+            
+            // Send to pool contract with optimized count passing (gas efficient)
+            // Use local helper function to work around linter false positive
+            uint256 totalDiamondFrames = _getDiamondFrameCount();
+            IDiamondFramePool pool = IDiamondFramePool(rs.poolContract);
+
+            try pool.depositWithCount{value: poolAmount}(poolAmount, totalDiamondFrames) {
+                remainingRoyalty = totalRoyalty - poolAmount;
+                emit PoolRoyaltySent(rs.poolContract, poolAmount);
+            } catch {
+                // If pool deposit fails, continue with full royalty to artist
+                poolAmount = 0;
+                emit RoyaltyDistributionFailed(rs.poolContract, poolAmount);
+            }
+        }
+
+        // Distribute remaining royalty to artist recipients according to their splits
         // Continue even if individual recipients fail (prevent DoS)
         for (uint256 i = 0; i < rs.recipients.length; i++) {
-            // Use SafeMath for recipient royalty calculation
-            uint256 recipientRoyalty = LibRugStorage.safeMul(totalRoyalty, rs.recipientSplits[i]) / rs.royaltyPercentage;
+            // Split remaining royalty proportionally based on original splits
+            // Solidity 0.8+ has built-in overflow protection
+            uint256 recipientRoyalty = (remainingRoyalty * rs.recipientSplits[i]) / rs.royaltyPercentage;
 
             if (recipientRoyalty > 0) {
                 // Try to send with gas limit to prevent DoS
@@ -189,11 +242,9 @@ contract RugCommerceFacet {
                 if (success) {
                     emit RoyaltyDistributed(rs.recipients[i], recipientRoyalty);
                 } else {
-                    // Store failed distribution for pull pattern fallback using SafeMath
-                    rs.pendingRoyalties[rs.recipients[i]] = LibRugStorage.safeAdd(
-                        rs.pendingRoyalties[rs.recipients[i]], 
-                        recipientRoyalty
-                    );
+                    // Store failed distribution for pull pattern fallback
+                    // Solidity 0.8+ has built-in overflow protection
+                    rs.pendingRoyalties[rs.recipients[i]] += recipientRoyalty;
                     emit RoyaltyDistributionFailed(rs.recipients[i], recipientRoyalty);
                 }
             }
@@ -263,8 +314,8 @@ contract RugCommerceFacet {
      */
     function calculateRoyalty(uint256 salePrice) external view returns (uint256) {
         RoyaltyConfig storage rs = royaltyStorage();
-        // Use SafeMath to prevent overflow
-        return LibRugStorage.safeMul(salePrice, rs.royaltyPercentage) / 10000;
+        // Solidity 0.8+ has built-in overflow protection
+        return (salePrice * rs.royaltyPercentage) / 10000;
     }
 
     /**
@@ -287,6 +338,114 @@ contract RugCommerceFacet {
     function areRoyaltiesConfigured() external view returns (bool) {
         RoyaltyConfig storage rs = royaltyStorage();
         return rs.recipients.length > 0 && rs.royaltyPercentage > 0;
+    }
+
+    /**
+     * @notice Set pool contract address (owner only)
+     * @param poolContract Address of the DiamondFramePool contract
+     */
+    function setPoolContract(address poolContract) external {
+        LibDiamond.enforceIsContractOwner();
+        require(poolContract != address(0), "Invalid pool contract address");
+        
+        RoyaltyConfig storage rs = royaltyStorage();
+        rs.poolContract = poolContract;
+        
+        emit PoolContractSet(poolContract);
+    }
+
+    /**
+     * @notice Set pool percentage (owner only)
+     * @param poolPercentage Pool percentage in basis points (e.g., 100 = 1%, max 10000 = 100%)
+     */
+    function setPoolPercentage(uint256 poolPercentage) external {
+        LibDiamond.enforceIsContractOwner();
+        require(poolPercentage <= 10000, "Pool percentage too high");
+        
+        RoyaltyConfig storage rs = royaltyStorage();
+        require(rs.royaltyPercentage == 0 || poolPercentage <= rs.royaltyPercentage, "Pool percentage exceeds royalty percentage");
+        
+        rs.poolPercentage = poolPercentage;
+        
+        emit PoolPercentageSet(poolPercentage);
+    }
+
+    /**
+     * @notice Get pool configuration
+     * @return poolContract Address of pool contract
+     * @return poolPercentage Pool percentage in basis points
+     */
+    function getPoolConfig() external view returns (address poolContract, uint256 poolPercentage) {
+        RoyaltyConfig storage rs = royaltyStorage();
+        return (rs.poolContract, rs.poolPercentage);
+    }
+
+    /**
+     * @notice Emergency withdrawal from pool contract (owner only)
+     * @dev Allows contract owner to withdraw funds from pool in case of emergency
+     * @dev This prevents funds from being permanently locked due to bugs
+     * @param recipient Address to send withdrawn funds to
+     * @param amount Amount to withdraw (0 = withdraw all)
+     */
+    function emergencyWithdrawFromPool(address recipient, uint256 amount) external {
+        LibDiamond.enforceIsContractOwner();
+
+        RoyaltyConfig storage rs = royaltyStorage();
+        require(rs.poolContract != address(0), "Pool not configured");
+
+        IDiamondFramePool pool = IDiamondFramePool(rs.poolContract);
+        pool.emergencyWithdraw(recipient, amount);
+    }
+
+    /**
+     * @notice Claim pool royalties for diamond frame NFTs
+     * @dev Diamond contract verifies ownership and frame status, then calls pool contract
+     * @param tokenIds Array of token IDs to claim for (must be owned by caller and have diamond frames)
+     */
+    function claimPoolRoyalties(uint256[] calldata tokenIds) external {
+        require(tokenIds.length > 0, "No token IDs provided");
+        require(tokenIds.length <= 100, "Too many tokens"); // Prevent DoS
+        
+        RoyaltyConfig storage rs = royaltyStorage();
+        require(rs.poolContract != address(0), "Pool not configured");
+        
+        // Check for duplicate token IDs
+        for (uint256 i = 0; i < tokenIds.length; i++) {
+            for (uint256 j = i + 1; j < tokenIds.length; j++) {
+                require(tokenIds[i] != tokenIds[j], "Duplicate token ID");
+            }
+        }
+        
+        // Verify caller owns all tokens and they have diamond frames (direct storage access - no external calls!)
+        uint256[] memory validTokenIds = new uint256[](tokenIds.length);
+        uint256 validCount = 0;
+        
+        for (uint256 i = 0; i < tokenIds.length; i++) {
+            uint256 tokenId = tokenIds[i];
+            
+            // Verify ownership using direct storage access (efficient!)
+            LibRugStorage.ERC721Storage storage es = LibRugStorage.erc721Storage();
+            address owner = es._owners[tokenId];
+            require(owner != address(0), "Token does not exist");
+            require(owner == msg.sender, "Not owner of token");
+            
+            // Verify diamond frame using direct storage access
+            require(LibRugStorage.hasDiamondFrame(tokenId), "Token does not have diamond frame");
+            
+            validTokenIds[validCount] = tokenId;
+            validCount++;
+        }
+        
+        require(validCount > 0, "No valid diamond frame tokens");
+        
+        // Resize array to actual valid count
+        assembly {
+            mstore(validTokenIds, validCount)
+        }
+        
+        // Call pool contract to calculate and pay (pool contract verifies caller is diamond)
+        IDiamondFramePool pool = IDiamondFramePool(rs.poolContract);
+        pool.claimForTokens(msg.sender, validTokenIds);
     }
 
     // Payment Processor Integration Functions

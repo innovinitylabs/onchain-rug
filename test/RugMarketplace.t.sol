@@ -242,17 +242,21 @@ contract RugMarketplaceTest is Test {
     // ===== SELECTOR HELPERS =====
 
     function getRugNFTSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](10);
+        bytes4[] memory selectors = new bytes4[](14);
         selectors[0] = RugNFTFacet.mintRug.selector;
-        selectors[1] = RugNFTFacet.burn.selector;
-        selectors[2] = RugNFTFacet.tokenURI.selector;
-        selectors[3] = RugNFTFacet.totalSupply.selector;
-        selectors[4] = RugNFTFacet.ownerOf.selector;
-        selectors[5] = RugNFTFacet.balanceOf.selector;
-        selectors[6] = RugNFTFacet.approve.selector;
-        selectors[7] = RugNFTFacet.getApproved.selector;
-        selectors[8] = RugNFTFacet.setApprovalForAll.selector;
-        selectors[9] = RugNFTFacet.isApprovedForAll.selector;
+        selectors[1] = RugNFTFacet.mintRugFor.selector; // Required for mintRug to work
+        selectors[2] = RugNFTFacet.burn.selector;
+        selectors[3] = RugNFTFacet.tokenURI.selector;
+        selectors[4] = RugNFTFacet.totalSupply.selector;
+        selectors[5] = RugNFTFacet.ownerOf.selector;
+        selectors[6] = RugNFTFacet.balanceOf.selector;
+        selectors[7] = RugNFTFacet.approve.selector;
+        selectors[8] = RugNFTFacet.getApproved.selector;
+        selectors[9] = RugNFTFacet.setApprovalForAll.selector;
+        selectors[10] = RugNFTFacet.isApprovedForAll.selector;
+        selectors[11] = RugNFTFacet.transferFrom.selector; // Required for marketplace sales
+        selectors[12] = bytes4(0x42842e0e); // safeTransferFrom(address,address,uint256)
+        selectors[13] = bytes4(0xb88d4fde); // safeTransferFrom(address,address,uint256,bytes)
         return selectors;
     }
 
@@ -291,15 +295,17 @@ contract RugMarketplaceTest is Test {
     }
 
     function getCommerceSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](8);
-        selectors[0] = RugMarketplaceFacet.createListing.selector;
-        selectors[1] = RugMarketplaceFacet.cancelListing.selector;
-        selectors[2] = RugMarketplaceFacet.updateListingPrice.selector;
-        selectors[3] = RugMarketplaceFacet.buyListing.selector;
-        selectors[4] = RugMarketplaceFacet.setMarketplaceFee.selector;
-        selectors[5] = RugMarketplaceFacet.withdrawFees.selector;
-        selectors[6] = RugMarketplaceFacet.getListing.selector;
-        selectors[7] = RugMarketplaceFacet.getMarketplaceStats.selector;
+        bytes4[] memory selectors = new bytes4[](10);
+        selectors[0] = RugCommerceFacet.withdraw.selector;
+        selectors[1] = RugCommerceFacet.withdrawTo.selector;
+        selectors[2] = RugCommerceFacet.configureRoyalties.selector;
+        selectors[3] = RugCommerceFacet.royaltyInfo.selector;
+        selectors[4] = RugCommerceFacet.distributeRoyalties.selector;
+        selectors[5] = RugCommerceFacet.claimPendingRoyalties.selector;
+        selectors[6] = RugCommerceFacet.getPendingRoyalties.selector;
+        selectors[7] = RugCommerceFacet.getBalance.selector;
+        selectors[8] = RugCommerceFacet.getRoyaltyConfig.selector;
+        selectors[9] = RugCommerceFacet.calculateRoyalty.selector;
         return selectors;
     }
 }

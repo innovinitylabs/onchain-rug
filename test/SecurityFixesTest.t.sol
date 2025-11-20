@@ -63,8 +63,8 @@ contract SecurityFixesTest is Test {
         maliciousContractInstance = new MaliciousContract();
         maliciousContract = address(maliciousContractInstance);
         
-        // Setup diamond with all facets
-        _setupDiamond();
+        // Setup diamond with minimal facets to avoid function collisions
+        _setupDiamondMinimal();
         
         // Configure initial settings
         _configureInitialSettings();
@@ -79,6 +79,7 @@ contract SecurityFixesTest is Test {
         // Add NFT facet
         IDiamondCut.FacetCut[] memory cuts = new IDiamondCut.FacetCut[](6);
         
+        // Add NFT facet (contains supportsInterface that conflicts with DiamondLoupeFacet)
         cuts[0] = IDiamondCut.FacetCut({
             facetAddress: address(rugNFTFacet),
             action: IDiamondCut.FacetCutAction.Add,
@@ -115,6 +116,42 @@ contract SecurityFixesTest is Test {
             functionSelectors: _getMaintenanceSelectors()
         });
         
+        IDiamondCut(address(diamond)).diamondCut(cuts, address(0), "");
+    }
+
+    function _setupDiamondMinimal() internal {
+        // Add essential facets - tests need marketplace functionality
+        IDiamondCut.FacetCut[] memory cuts = new IDiamondCut.FacetCut[](4);
+
+        // Add NFT facet
+        cuts[0] = IDiamondCut.FacetCut({
+            facetAddress: address(rugNFTFacet),
+            action: IDiamondCut.FacetCutAction.Add,
+            functionSelectors: _getRugNFTSelectors()
+        });
+
+        // Add Admin facet (needed for configuration)
+        cuts[1] = IDiamondCut.FacetCut({
+            facetAddress: address(rugAdminFacet),
+            action: IDiamondCut.FacetCutAction.Add,
+            functionSelectors: _getRugAdminSelectors()
+        });
+
+        // Add Marketplace facet (needed for security tests)
+        cuts[2] = IDiamondCut.FacetCut({
+            facetAddress: address(rugMarketplaceFacet),
+            action: IDiamondCut.FacetCutAction.Add,
+            functionSelectors: _getMarketplaceSelectors()
+        });
+
+        // Add Commerce facet
+        cuts[3] = IDiamondCut.FacetCut({
+            facetAddress: address(rugCommerceFacet),
+            action: IDiamondCut.FacetCutAction.Add,
+            functionSelectors: _getCommerceSelectors()
+        });
+
+        // Execute diamond cut with minimal setup
         IDiamondCut(address(diamond)).diamondCut(cuts, address(0), "");
     }
     
@@ -480,10 +517,12 @@ contract SecurityFixesTest is Test {
         selectors[12] = bytes4(0xb88d4fde); // safeTransferFrom(address,address,uint256,bytes)
         
         // Rug-specific functions
-        selectors[13] = RugNFTFacet.mintRugFor.selector;
-        selectors[14] = RugNFTFacet.burn.selector;
-        selectors[15] = RugNFTFacet.getRugData.selector;
-        selectors[16] = RugNFTFacet.getAgingData.selector;
+        selectors[13] = RugNFTFacet.mintRug.selector;
+        selectors[14] = RugNFTFacet.mintRugFor.selector;
+        selectors[15] = RugNFTFacet.burn.selector;
+        selectors[16] = RugNFTFacet.getRugData.selector;
+        selectors[17] = RugNFTFacet.getAgingData.selector;
+        // Note: transferFrom and approve are already included above as bytes4 selectors
         return selectors;
     }
     

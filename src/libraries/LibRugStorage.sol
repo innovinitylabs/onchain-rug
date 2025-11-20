@@ -182,6 +182,9 @@ library LibRugStorage {
         // Token supply tracking
         uint256 totalSupply;           // Current total supply
         uint256 tokenCounter;          // Next token ID to mint
+        uint256 diamondFrameCount;     // Total count of NFTs with diamond frame (frameLevel == 4)
+        mapping(uint256 => bool) diamondFrameTokens; // Token ID => has diamond frame
+        uint256[] diamondFrameTokenIds; // Array of all token IDs with diamond frame
 
         // Text uniqueness
         mapping(bytes32 => bool) usedTextHashes; // Track used text combinations
@@ -398,6 +401,74 @@ library LibRugStorage {
      */
     function hasDirtImmunity(uint8 frameLevel) internal pure returns (bool) {
         return frameLevel >= 2; // Silver and above
+    }
+
+    /**
+     * @notice Update diamond frame counter and token tracking when frame level changes
+     * @param tokenId Token ID whose frame level changed
+     * @param oldFrameLevel Previous frame level (0-4)
+     * @param newFrameLevel New frame level (0-4)
+     */
+    function updateDiamondFrameCount(uint256 tokenId, uint8 oldFrameLevel, uint8 newFrameLevel) internal {
+        RugConfig storage rs = rugStorage();
+        
+        // If old level was diamond (4) and new level is not, remove from tracking
+        if (oldFrameLevel == 4 && newFrameLevel != 4) {
+            require(rs.diamondFrameCount > 0, "Diamond frame count underflow");
+            require(rs.diamondFrameTokens[tokenId], "Token not tracked as diamond frame");
+            rs.diamondFrameCount--;
+            rs.diamondFrameTokens[tokenId] = false;
+            _removeDiamondFrameTokenId(tokenId);
+        }
+        // If new level is diamond (4) and old level was not, add to tracking
+        else if (newFrameLevel == 4 && oldFrameLevel != 4) {
+            require(!rs.diamondFrameTokens[tokenId], "Token already tracked as diamond frame");
+            rs.diamondFrameCount++;
+            rs.diamondFrameTokens[tokenId] = true;
+            rs.diamondFrameTokenIds.push(tokenId);
+        }
+    }
+
+    /**
+     * @notice Remove token ID from diamond frame array (internal helper)
+     * @param tokenId Token ID to remove
+     */
+    function _removeDiamondFrameTokenId(uint256 tokenId) private {
+        RugConfig storage rs = rugStorage();
+        uint256 length = rs.diamondFrameTokenIds.length;
+        for (uint256 i = 0; i < length; i++) {
+            if (rs.diamondFrameTokenIds[i] == tokenId) {
+                // Move last element to current position and pop
+                rs.diamondFrameTokenIds[i] = rs.diamondFrameTokenIds[length - 1];
+                rs.diamondFrameTokenIds.pop();
+                break;
+            }
+        }
+    }
+
+    /**
+     * @notice Get current count of diamond frame NFTs
+     * @return count Number of NFTs with diamond frame (frameLevel == 4)
+     */
+    function getDiamondFrameCount() internal view returns (uint256) {
+        return rugStorage().diamondFrameCount;
+    }
+
+    /**
+     * @notice Check if a token ID has diamond frame
+     * @param tokenId Token ID to check
+     * @return hasDiamondFrame True if token has diamond frame
+     */
+    function hasDiamondFrame(uint256 tokenId) internal view returns (bool) {
+        return rugStorage().diamondFrameTokens[tokenId];
+    }
+
+    /**
+     * @notice Get all token IDs with diamond frame
+     * @return tokenIds Array of token IDs with diamond frame
+     */
+    function getDiamondFrameTokenIds() internal view returns (uint256[] memory) {
+        return rugStorage().diamondFrameTokenIds;
     }
 
     /**

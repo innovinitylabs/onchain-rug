@@ -101,6 +101,31 @@ contract RugAgingFacet {
         return LibRugStorage.calculateMaintenanceScore(aging);
     }
 
+    /**
+     * @notice Get total count of NFTs with diamond frame
+     * @return count Number of NFTs with diamond frame (frameLevel == 4)
+     */
+    function getDiamondFrameCount() external view returns (uint256) {
+        return LibRugStorage.getDiamondFrameCount();
+    }
+
+    /**
+     * @notice Check if a token ID has diamond frame
+     * @param tokenId Token ID to check
+     * @return hasDiamondFrame True if token has diamond frame
+     */
+    function hasDiamondFrame(uint256 tokenId) external view returns (bool) {
+        return LibRugStorage.hasDiamondFrame(tokenId);
+    }
+
+    /**
+     * @notice Get all token IDs with diamond frame
+     * @return tokenIds Array of token IDs with diamond frame
+     */
+    function getDiamondFrameTokenIds() external view returns (uint256[] memory) {
+        return LibRugStorage.getDiamondFrameTokenIds();
+    }
+
     // ===== COMPREHENSIVE STATE QUERIES =====
 
     /**

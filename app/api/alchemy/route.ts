@@ -35,7 +35,8 @@ export async function GET(request: NextRequest) {
 
   // Log contract configuration for debugging
   const chainIdNum = parseInt(chainId)
-  console.log(`🔍 Chain ${chainIdNum} contract:`, contractAddress)
+  const primaryContract = contractAddress || contractAddresses[0] || 'unknown'
+  console.log(`🔍 Chain ${chainIdNum} contract:`, primaryContract)
 
   try {
     let url: string
@@ -130,7 +131,12 @@ export async function GET(request: NextRequest) {
     }
 
     const data = await response.json()
-    console.log(`✅ Alchemy proxy success: ${endpoint} returned ${data.nfts?.length || 'data'}`)
+    
+    // Log correct field based on endpoint
+    const itemCount = endpoint === 'getNFTsForOwner' 
+      ? (data.ownedNfts?.length || 0)
+      : (data.nfts?.length || 0)
+    console.log(`✅ Alchemy proxy success: ${endpoint} returned ${itemCount} items`)
 
     return NextResponse.json(data)
 

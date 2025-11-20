@@ -5,6 +5,7 @@ import "forge-std/Test.sol";
 import "../src/facets/RugMaintenanceFacet.sol";
 import "../src/facets/RugAdminFacet.sol";
 import "../src/libraries/LibRugStorage.sol";
+import "../src/diamond/libraries/LibDiamond.sol";
 
 contract AIMaintenanceAdminAuthTest is Test {
     RugMaintenanceFacet public maintenanceFacet;
@@ -19,8 +20,20 @@ contract AIMaintenanceAdminAuthTest is Test {
         maintenanceFacet = new RugMaintenanceFacet();
         adminFacet = new RugAdminFacet();
     }
+    
+    function _setOwner() internal {
+        // Set up diamond storage with proper owner for testing
+        LibDiamond.DiamondStorage storage ds = LibDiamond.diamondStorage();
+        ds.contractOwner = owner;
+        
+        // Also set up rug storage for testing
+        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
+        rs.serviceFee = 0;
+        rs.feeRecipient = feeRecipient;
+    }
 
     function testSetServiceFeeAndRecipient() public {
+        _setOwner();
         vm.startPrank(owner);
 
         uint256 serviceFee = uint256(0.00042 ether);
@@ -35,14 +48,16 @@ contract AIMaintenanceAdminAuthTest is Test {
     }
 
     function testAuthorizeAndRevokeAgent() public {
+        _setOwner();
         vm.startPrank(owner);
         maintenanceFacet.authorizeMaintenanceAgent(agent);
 
         LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
-        assertTrue(rs.isOwnerAgentAllowed[owner][agent]);
+        // Check that msg.sender (owner) authorized the agent
+        assertTrue(rs.isOwnerAgentAllowed[owner][agent], "Agent should be authorized");
 
         maintenanceFacet.revokeMaintenanceAgent(agent);
-        assertFalse(rs.isOwnerAgentAllowed[owner][agent]);
+        assertFalse(rs.isOwnerAgentAllowed[owner][agent], "Agent should be revoked");
 
         vm.stopPrank();
     }
