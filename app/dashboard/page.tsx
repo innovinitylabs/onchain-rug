@@ -505,7 +505,7 @@ export default function DashboardPage() {
         // But don't block if balance check fails
         console.log('Balance check status:', {
           balanceLoading,
-          balanceError: balanceError?.message,
+          balanceError,
           balance: balance?.toString(),
           balanceType: typeof balance
         })
