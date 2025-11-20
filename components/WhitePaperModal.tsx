@@ -693,7 +693,7 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
             </div>
 
             {/* Navigation */}
-            <div className="flex border-b border-white/10 overflow-x-auto">
+            <div className="flex border-b border-white/10 overflow-x-auto min-h-[60px] items-center">
               {sections.map((section) => {
                 const Icon = section.icon
                 return (
