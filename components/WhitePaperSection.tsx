@@ -2,16 +2,23 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { FileText, Sparkles } from 'lucide-react'
+import { FileText, Sparkles, HelpCircle } from 'lucide-react'
 import WhitePaperModal from './WhitePaperModal'
 
 export default function WhitePaperSection() {
   const [isWhitePaperOpen, setIsWhitePaperOpen] = useState(false)
 
+  const scrollToFAQ = () => {
+    const faqSection = document.querySelector('#faq-section')
+    if (faqSection) {
+      faqSection.scrollIntoView({ behavior: 'smooth' })
+    }
+  }
+
   return (
     <>
       {/* White Paper Section */}
-      <section className="relative py-20 bg-gradient-to-b from-slate-800 via-slate-900 to-slate-900">
+      <section id="white-paper-section" className="relative py-20 bg-gradient-to-b from-slate-800 via-slate-900 to-slate-900">
         <div className="max-w-4xl mx-auto px-6 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -38,15 +45,27 @@ export default function WhitePaperSection() {
               the future of NFTs that require care and attention.
             </p>
 
-            <motion.button
-              onClick={() => setIsWhitePaperOpen(true)}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 border border-cyan-400/30"
-            >
-              <FileText className="w-5 h-5" />
-              Read White Paper
-            </motion.button>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <motion.button
+                onClick={() => setIsWhitePaperOpen(true)}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 border border-cyan-400/30"
+              >
+                <FileText className="w-5 h-5" />
+                Read White Paper
+              </motion.button>
+
+              <motion.button
+                onClick={scrollToFAQ}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="inline-flex items-center gap-3 px-8 py-4 bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 border border-slate-600"
+              >
+                <HelpCircle className="w-5 h-5" />
+                View FAQ
+              </motion.button>
+            </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-12 pt-8 border-t border-slate-700">
               <div className="text-center">

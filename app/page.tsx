@@ -6,6 +6,7 @@ import Hero from '@/components/Hero'
 import AnimatedRugs from '@/components/AnimatedRugs'
 import Features from '@/components/Features'
 import WhitePaperSection from '@/components/WhitePaperSection'
+import FAQ from '@/components/FAQ'
 import Footer from '@/components/Footer'
 import PerformanceMonitor from '@/components/PerformanceMonitor'
 import ScrollIndicator from '@/components/ScrollIndicator'
@@ -51,6 +52,9 @@ export default function Home() {
 
         {/* White Paper Section */}
         <WhitePaperSection />
+
+        {/* FAQ Section */}
+        <FAQ />
       </main>
 
       {/* Footer */}
