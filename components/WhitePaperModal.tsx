@@ -11,7 +11,7 @@ interface WhitePaperModalProps {
 }
 
 export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProps) {
-  const [activeSection, setActiveSection] = useState<'artistic' | 'project' | 'gameplay' | 'x402' | 'tech'>('artistic')
+  const [activeSection, setActiveSection] = useState<'artistic' | 'project' | 'gameplay' | 'x402' | 'tech' | 'faq'>('artistic')
 
 
   if (!isOpen) return null
