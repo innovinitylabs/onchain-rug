@@ -578,6 +578,48 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
                 </div>
 
                 <div className="bg-slate-800/50 rounded-lg p-4">
+                  <h4 className="text-lg font-semibold text-white mb-3">Agent Authorization in Dashboard</h4>
+                  <p className="text-white/70 text-sm mb-4">
+                    Users can authorize specific AI agents in their dashboard to perform limited maintenance operations on their rugs:
+                  </p>
+
+                  <div className="bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-400/20 rounded-lg p-3 mb-4">
+                    <h5 className="text-orange-300 font-medium text-sm mb-2">📋 Authorized Agent Capabilities</h5>
+                    <div className="space-y-1 text-xs text-white/80">
+                      <div>• <strong>Clean rugs</strong> - Remove dirt accumulation</div>
+                      <div>• <strong>Restore texture</strong> - Reduce aging levels</div>
+                      <div>• <strong>Master restore</strong> - Full dirt and aging reset</div>
+                      <div>• <strong>Limited per-owner</strong> - Only works on rugs owned by the authorizing user</div>
+                      <div>• <strong>Pay full cost</strong> - Agents must pay maintenance fees (unlike x402 agents)</div>
+                      <div>• <strong>Service fees apply</strong> - Platform takes a service fee from agent payments</div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-black/30 rounded p-3">
+                      <h5 className="text-cyan-300 font-medium text-sm mb-2">Dashboard Authorization</h5>
+                      <div className="space-y-2 text-xs">
+                        <div className="text-white/60">1. Visit your dashboard</div>
+                        <div className="text-white/60">2. Go to "Authorized Agents" tab</div>
+                        <div className="text-white/60">3. Add agent wallet addresses</div>
+                        <div className="text-green-400 font-mono">✓ Agents can now maintain your rugs</div>
+                        <div className="text-yellow-400 font-mono">⚠ Agents still pay full maintenance costs</div>
+                      </div>
+                    </div>
+
+                    <div className="bg-black/30 rounded p-3">
+                      <h5 className="text-cyan-300 font-medium text-sm mb-2">Smart Contract Functions</h5>
+                      <div className="space-y-2 text-xs">
+                        <div className="text-green-400 font-mono">authorizeMaintenanceAgent(address)</div>
+                        <div className="text-green-400 font-mono">revokeMaintenanceAgent(address)</div>
+                        <div className="text-green-400 font-mono">getAuthorizedAgents()</div>
+                        <div className="text-white/60">Per-owner allowlist system</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-slate-800/50 rounded-lg p-4">
                   <h4 className="text-lg font-semibold text-white mb-3">AI Agent Integration</h4>
                   <p className="text-white/70 text-sm mb-4">
                     AI agents can automate the entire x402 payment flow. Here&apos;s how users can interact with AI agents:
