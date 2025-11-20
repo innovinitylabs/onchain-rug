@@ -38,7 +38,7 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-white/5 border border-white/10 rounded-lg p-6">
-                <h3 className="text-xl font-semibold text-cyan-300 mb-4">Generative Textile Art</h3>
+                <h3 className="text-xl font-semibold text-cyan-300 mb-4">Generative Doormat Art</h3>
                 <p className="text-white/80 leading-relaxed">
                   OnchainRugs features unique woven textile patterns inspired by traditional rug-making techniques.
                   Each rug is algorithmically generated using advanced P5.js rendering, creating infinite variations
@@ -88,7 +88,7 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
             <div className="bg-white/5 border border-white/10 rounded-lg p-6 mb-6">
               <h3 className="text-2xl font-semibold text-white mb-4">Core Philosophy</h3>
               <p className="text-white/90 text-lg leading-relaxed mb-4">
-                OnchainRugs represents the next evolution of NFTs - not just collectibles, but <strong>living digital artifacts</strong>
+                OnchainRugs represents the next evolution of NFTs - not just collectibles, but <strong>living Onchain digital artifacts </strong>
                 that require care and attention. We believe this creates deeper emotional connections between collectors
                 and their art, mirroring how we care for physical objects in the real world.
               </p>
@@ -157,11 +157,11 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
-                    <span className="text-white">3-7 days: Light dirt accumulation</span>
+                    <span className="text-white">3 days: Light dirt accumulation</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="w-3 h-3 bg-red-400 rounded-full"></div>
-                    <span className="text-white">7+ days: Heavy soiling</span>
+                    <span className="text-white">7 days: Heavy soiling</span>
                   </div>
                 </div>
                 <p className="text-white/70 text-sm mt-4">
@@ -172,16 +172,34 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
               <div className="bg-white/5 border border-white/10 rounded-lg p-6">
                 <h3 className="text-xl font-semibold text-blue-300 mb-4">Texture Aging System</h3>
                 <div className="space-y-3">
-                  <p className="text-white/80">Natural aging occurs over time:</p>
+                  <p className="text-white/80">Texture aging occurs over time from the last cleaning:</p>
                   <ul className="text-white/70 space-y-1 text-sm">
-                    <li>• 0-30 days: Fresh appearance</li>
-                    <li>• 31-90 days: Subtle texture development</li>
-                    <li>• 91-180 days: Noticeable wear patterns</li>
-                    <li>• 180+ days: Mature character development</li>
+                    <li>• 0-30 days from last clean: Fresh appearance</li>
+                    <li>• 31-90 days from last clean: Subtle texture development</li>
+                    <li>• 91-180 days from last clean: Noticeable wear patterns</li>
+                    <li>• 180+ days from last clean: Mature character development</li>
                   </ul>
                 </div>
+                <div className="mt-4 space-y-3">
+                  <div className="bg-slate-800/50 rounded p-3">
+                    <h5 className="text-cyan-300 font-medium mb-2">Restoration Mechanics:</h5>
+                    <ul className="text-white/70 text-sm space-y-1">
+                      <li>• <strong>Regular Cleaning:</strong> Resets dirt only (texture aging continues)</li>
+                      <li>• <strong>Texture Restoration:</strong> Reduces texture age by 1 level + cleans dirt</li>
+                      <li>• <strong>Master Restoration:</strong> Resets both dirt AND texture age to 0</li>
+                    </ul>
+                  </div>
+                  <div className="bg-slate-800/50 rounded p-3">
+                    <h5 className="text-green-300 font-medium mb-2">Cleaning Costs:</h5>
+                    <ul className="text-white/70 text-sm space-y-1">
+                      <li>• <strong>Free (7 days):</strong> No cost for first 7 days after minting</li>
+                      <li>• <strong>Grace Period:</strong> Extended free window after last cleaning</li>
+                      <li>• <strong>Minor Fee:</strong> Small onchain transaction cost after grace period</li>
+                    </ul>
+                  </div>
+                </div>
                 <p className="text-white/70 text-sm mt-4">
-                  Higher frame levels slow texture aging, preserving your rug&apos;s appearance longer.
+                  Higher frame levels slow texture aging progression, preserving your rug&apos;s appearance longer.
                 </p>
                 {/* Prevent extension interference */}
                 <div style={{ display: 'none' }} data-wallet-ignore="true"></div>
@@ -215,18 +233,22 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
 
               <div className="bg-white/5 border border-white/10 rounded-lg p-6">
                 <h3 className="text-xl font-semibold text-purple-300 mb-4">Maintenance Services</h3>
-                <div className="space-y-3">
-                  <div>
-                    <h5 className="text-white font-medium">Regular Cleaning</h5>
-                    <p className="text-white/70 text-sm">Resets dirt, earns 2 maintenance points</p>
+                <div className="space-y-4">
+                  <div className="bg-slate-800/30 rounded p-3">
+                    <h5 className="text-cyan-300 font-medium mb-1">Regular Cleaning</h5>
+                    <p className="text-white/70 text-sm">Resets dirt level to 0 (texture aging continues from last clean)</p>
                   </div>
-                  <div>
-                    <h5 className="text-white font-medium">Texture Restoration</h5>
-                    <p className="text-white/70 text-sm">Reduces texture level by 1, requires payment</p>
+                  <div className="bg-slate-800/30 rounded p-3">
+                    <h5 className="text-cyan-300 font-medium mb-1">Texture Restoration</h5>
+                    <p className="text-white/70 text-sm">Reduces texture age by 1 level + resets dirt to 0</p>
                   </div>
-                  <div>
-                    <h5 className="text-white font-medium">Laundering</h5>
-                    <p className="text-white/70 text-sm">Auto-cleaning on high-value sales</p>
+                  <div className="bg-slate-800/30 rounded p-3">
+                    <h5 className="text-cyan-300 font-medium mb-1">Master Restoration</h5>
+                    <p className="text-white/70 text-sm">Resets both dirt AND texture age to 0 (complete refresh)</p>
+                  </div>
+                  <div className="bg-slate-800/30 rounded p-3">
+                    <h5 className="text-cyan-300 font-medium mb-1">Laundering</h5>
+                    <p className="text-white/70 text-sm">Automatic full restoration on qualifying high-value sales</p>
                   </div>
                 </div>
               </div>
@@ -546,8 +568,10 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
               <div className="bg-white/5 border border-white/10 rounded-lg p-6">
                 <h3 className="text-xl font-semibold text-cyan-300 mb-4">How does the aging system work?</h3>
                 <p className="text-white/80 leading-relaxed">
-                  Rugs accumulate dirt every 3-7 days and develop texture over weeks to months. Dirt can be cleaned to reset it,
-                  while texture requires restoration services. Higher frame levels slow the aging process and provide immunity benefits.
+                  <strong>Dirt Accumulation:</strong> Builds up every 3-7 days from last cleaning. Regular cleaning resets dirt to 0.<br/><br/>
+                  <strong>Texture Aging:</strong> Occurs over time from your last cleaning (30-180+ days). Texture age is not reversible until restored.<br/><br/>
+                  <strong>Restoration Options:</strong> Texture restoration reduces age by 1 level + cleans dirt. Master restoration resets both dirt and texture age completely.<br/><br/>
+                  Higher frame levels slow texture aging progression and provide dirt immunity benefits.
                 </p>
               </div>
 
@@ -586,8 +610,10 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
               <div className="bg-white/5 border border-white/10 rounded-lg p-6">
                 <h3 className="text-xl font-semibold text-cyan-300 mb-4">What are the maintenance costs?</h3>
                 <p className="text-white/80 leading-relaxed">
-                  Regular cleaning costs vary by network and timing. On testnet, services are very affordable (around 0.00001 ETH) to enable testing.
-                  Mainnet pricing will be set to encourage regular maintenance while remaining accessible.
+                  <strong>Cleaning:</strong> Free onchain transaction for first 7 days after minting. After that, there&apos;s a grace period, followed by a minor transaction fee.<br/><br/>
+                  <strong>Texture Restoration:</strong> Small payment required (affordable for regular maintenance).<br/><br/>
+                  <strong>Master Restoration:</strong> Higher cost for complete rug refresh.<br/><br/>
+                  <strong>Laundering:</strong> Free automatic restoration on qualifying high-value sales.
                 </p>
               </div>
 
