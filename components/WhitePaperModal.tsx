@@ -418,60 +418,236 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
             </div>
 
             <div className="bg-white/5 border border-white/10 rounded-lg p-6">
-              <h3 className="text-xl font-semibold text-purple-300 mb-4">How Users Can Use x402</h3>
-              <div className="space-y-4">
+              <h3 className="text-xl font-semibold text-purple-300 mb-4">x402 User Manual</h3>
+              <div className="space-y-6">
                 <p className="text-white/80 leading-relaxed">
-                  Users can interact with x402 through various interfaces - from direct API calls to AI agents.
-                  Here are common ways to use x402 for rug maintenance:
+                  x402 is a decentralized payment protocol that enables AI agents to autonomously perform
+                  blockchain transactions on behalf of users. This manual covers all aspects of using x402
+                  for rug maintenance operations.
                 </p>
 
-                <div className="bg-slate-800/50 rounded p-4">
-                  <h5 className="text-cyan-300 font-medium mb-2">Direct API Usage</h5>
-                  <p className="text-white/70 text-sm mb-3">
-                    Make HTTP requests to maintenance endpoints with payment payloads:
-                  </p>
-                  <div className="bg-black/50 rounded p-3 font-mono text-xs text-green-400 overflow-x-auto">
-                    <div className="mb-2">POST /api/maintenance/action/123/clean</div>
-                    <div className="text-white/60">Headers:</div>
-                    <div>x402-payment-payload: {"{...}"}</div>
-                    <div>x402-payment-status: payment-submitted</div>
-                    <div>x402-payment-tx: 0x...</div>
-                  </div>
-                </div>
-
-                <div className="bg-slate-800/50 rounded p-4">
-                  <h5 className="text-cyan-300 font-medium mb-2">Sample 402 Request</h5>
-                  <p className="text-white/70 text-sm mb-3">
-                    When requesting rug maintenance, you'll receive a 402 response with payment requirements:
-                  </p>
-                  <div className="bg-black/50 rounded p-3 font-mono text-xs text-yellow-400 overflow-x-auto">
-                    <div>HTTP 402 Payment Required</div>
-                    <div className="mt-2 text-white/60">Response Body:</div>
-                    <div className="text-blue-400">{"{"}</div>
-                    <div className="ml-4">"x402Version": 1,</div>
-                    <div className="ml-4">"accepts": [{"{"}</div>
-                    <div className="ml-8">"scheme": "exact",</div>
-                    <div className="ml-8">"network": "shape-sepolia",</div>
-                    <div className="ml-8">"asset": "0x000...000",</div>
-                    <div className="ml-8">"payTo": "0xFacilitatorAddress",</div>
-                    <div className="ml-8">"maxAmountRequired": "1000000000000000",</div>
-                    <div className="ml-8">"description": "Rug cleaning service"</div>
-                    <div className="ml-4">{"}"}]</div>
-                    <div className="text-blue-400">{"}"}</div>
-                  </div>
-                </div>
-
-                <div className="bg-slate-800/50 rounded p-4">
-                  <h5 className="text-cyan-300 font-medium mb-2">AI Agent Commands</h5>
-                  <p className="text-white/70 text-sm mb-3">
-                    Use natural language commands with AI agents:
-                  </p>
-                  <div className="bg-black/50 rounded p-3">
-                    <div className="text-green-400 font-mono text-sm">
-                      "Clean my rug #123" → AI handles payment & execution
+                <div className="bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-400/20 rounded-lg p-4">
+                  <h4 className="text-lg font-semibold text-cyan-300 mb-3">Complete x402 Flow</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="text-center">
+                      <div className="w-8 h-8 bg-cyan-400 rounded-full flex items-center justify-center text-sm font-bold text-black mx-auto mb-2">1</div>
+                      <h5 className="text-white font-medium text-sm">Create Payment Requirement</h5>
+                      <p className="text-white/60 text-xs">Request facilitator for payment details</p>
                     </div>
-                    <div className="text-green-400 font-mono text-sm mt-2">
-                      "Restore texture on rug #456" → AI manages the process
+                    <div className="text-center">
+                      <div className="w-8 h-8 bg-cyan-400 rounded-full flex items-center justify-center text-sm font-bold text-black mx-auto mb-2">2</div>
+                      <h5 className="text-white font-medium text-sm">Verify Payment</h5>
+                      <p className="text-white/60 text-xs">Submit signed payment for validation</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="w-8 h-8 bg-cyan-400 rounded-full flex items-center justify-center text-sm font-bold text-black mx-auto mb-2">3</div>
+                      <h5 className="text-white font-medium text-sm">Settle Payment</h5>
+                      <p className="text-white/60 text-xs">Confirm on-chain settlement</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h4 className="text-lg font-semibold text-white">API Integration Guide</h4>
+
+                  {/* Step 1: Create Payment Requirement */}
+                  <div className="bg-slate-800/50 rounded-lg p-4">
+                    <h5 className="text-cyan-300 font-medium mb-3 flex items-center gap-2">
+                      <span className="w-6 h-6 bg-cyan-400 rounded-full flex items-center justify-center text-xs font-bold text-black">1</span>
+                      Create Payment Requirement
+                    </h5>
+                    <p className="text-white/70 text-sm mb-3">
+                      First, request payment details from the x402 facilitator for the desired maintenance operation.
+                    </p>
+                    <div className="bg-black/50 rounded p-3 font-mono text-xs text-white/90 overflow-x-auto">
+                      <div className="text-green-400 mb-2"># Request payment details for cleaning Rug #123</div>
+                      <pre className="whitespace-pre-wrap">
+{`curl -X POST \\
+  http://localhost:3000/api/x402/facilitator \\
+  -H 'Content-Type: application/json' \\
+  -d '{
+    "action": "create_payment_requirement",
+    "price": "0.00001",
+    "description": "Clean Rug #123",
+    "resource": "/api/maintenance/action/123/clean",
+    "network": "base-sepolia"
+  }'`}
+                      </pre>
+                    </div>
+                    <div className="mt-3 bg-black/50 rounded p-3">
+                      <div className="text-yellow-400 font-medium text-sm mb-2">Expected Response:</div>
+                      <div className="font-mono text-xs text-white/90 overflow-x-auto">
+                        <div className="text-blue-400">{"{"}</div>
+                        <div className="ml-4">&quot;x402Version&quot;: 1,</div>
+                        <div className="ml-4">&quot;paymentId&quot;: &quot;pay_abc123def456&quot;,</div>
+                        <div className="ml-4">&quot;accepts&quot;: [{"{"}</div>
+                        <div className="ml-8">&quot;scheme&quot;: &quot;exact&quot;,</div>
+                        <div className="ml-8">&quot;network&quot;: &quot;base-sepolia&quot;,</div>
+                        <div className="ml-8">&quot;asset&quot;: &quot;0x0000000000000000000000000000000000000000&quot;,</div>
+                        <div className="ml-8">&quot;payTo&quot;: &quot;0x742d35Cc6634C0532925a3b844Bc454e4438f44e&quot;,</div>
+                        <div className="ml-8">&quot;maxAmountRequired&quot;: &quot;10000000000000&quot;,</div>
+                        <div className="ml-8">&quot;description&quot;: &quot;Clean Rug #123&quot;</div>
+                        <div className="ml-4">{"}"}]</div>
+                        <div className="text-blue-400">{"}"}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Step 2: Verify Payment */}
+                  <div className="bg-slate-800/50 rounded-lg p-4">
+                    <h5 className="text-green-300 font-medium mb-3 flex items-center gap-2">
+                      <span className="w-6 h-6 bg-green-400 rounded-full flex items-center justify-center text-xs font-bold text-black">2</span>
+                      Verify Payment
+                    </h5>
+                    <p className="text-white/70 text-sm mb-3">
+                      After the user signs the payment authorization, submit it to the facilitator for verification.
+                    </p>
+                    <div className="bg-black/50 rounded p-3 font-mono text-xs text-white/90 overflow-x-auto">
+                      <div className="text-green-400 mb-2"># Submit signed payment payload for verification</div>
+                      <pre className="whitespace-pre-wrap">
+{`curl -X POST \\
+  http://localhost:3000/api/x402/facilitator \\
+  -H 'Content-Type: application/json' \\
+  -d '{
+    "action": "verify_payment",
+    "paymentPayload": {
+      "paymentId": "pay_abc123def456",
+      "signature": "0x...",
+      "userAddress": "0x...",
+      "amount": "10000000000000",
+      "deadline": 1735689600
+    }
+  }'`}
+                      </pre>
+                    </div>
+                    <div className="mt-3 bg-black/50 rounded p-3">
+                      <div className="text-yellow-400 font-medium text-sm mb-2">Expected Response:</div>
+                      <div className="font-mono text-xs text-white/90 overflow-x-auto">
+                        <div className="text-blue-400">{"{"}</div>
+                        <div className="ml-4">&quot;verified&quot;: true,</div>
+                        <div className="ml-4">&quot;paymentId&quot;: &quot;pay_abc123def456&quot;,</div>
+                        <div className="ml-4">&quot;readyForSettlement&quot;: true,</div>
+                        <div className="ml-4">&quot;message&quot;: &quot;Payment verified and ready for on-chain settlement&quot;</div>
+                        <div className="text-blue-400">{"}"}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Step 3: Settle Payment */}
+                  <div className="bg-slate-800/50 rounded-lg p-4">
+                    <h5 className="text-blue-300 font-medium mb-3 flex items-center gap-2">
+                      <span className="w-6 h-6 bg-blue-400 rounded-full flex items-center justify-center text-xs font-bold text-black">3</span>
+                      Settle Payment
+                    </h5>
+                    <p className="text-white/70 text-sm mb-3">
+                      Once the payment transaction is sent to the blockchain, notify the facilitator to settle the payment with the transaction hash.
+                    </p>
+                    <div className="bg-black/50 rounded p-3 font-mono text-xs text-white/90 overflow-x-auto">
+                      <div className="text-green-400 mb-2"># Settle payment with transaction hash</div>
+                      <pre className="whitespace-pre-wrap">
+{`curl -X POST \\
+  http://localhost:3000/api/x402/facilitator \\
+  -H 'Content-Type: application/json' \\
+  -H 'x402-payment-tx: 0x8ba1f109551b...d4c3e8f4' \\
+  -d '{
+    "action": "settle_payment",
+    "paymentPayload": {
+      "paymentId": "pay_abc123def456",
+      "signature": "0x...",
+      "userAddress": "0x...",
+      "amount": "10000000000000",
+      "deadline": 1735689600
+    }
+  }'`}
+                      </pre>
+                    </div>
+                    <div className="mt-3 bg-black/50 rounded p-3">
+                      <div className="text-yellow-400 font-medium text-sm mb-2">Expected Response:</div>
+                      <div className="font-mono text-xs text-white/90 overflow-x-auto">
+                        <div className="text-blue-400">{"{"}</div>
+                        <div className="ml-4">&quot;settled&quot;: true,</div>
+                        <div className="ml-4">&quot;paymentId&quot;: &quot;pay_abc123def456&quot;,</div>
+                        <div className="ml-4">&quot;transactionHash&quot;: &quot;0x8ba1f109551b...d4c3e8f4&quot;,</div>
+                        <div className="ml-4">&quot;blockNumber&quot;: 12345678,</div>
+                        <div className="ml-4">&quot;resourceAccessGranted&quot;: true,</div>
+                        <div className="ml-4">&quot;message&quot;: &quot;Payment settled successfully, resource access granted&quot;</div>
+                        <div className="text-blue-400">{"}"}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-slate-800/50 rounded-lg p-4">
+                  <h4 className="text-lg font-semibold text-white mb-3">AI Agent Integration</h4>
+                  <p className="text-white/70 text-sm mb-4">
+                    AI agents can automate the entire x402 payment flow. Here&apos;s how users can interact with AI agents:
+                  </p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-black/30 rounded p-3">
+                      <h5 className="text-cyan-300 font-medium text-sm mb-2">Natural Language Commands</h5>
+                      <div className="space-y-2 text-xs">
+                        <div className="text-green-400 font-mono">&quot;Clean my rug #123&quot;</div>
+                        <div className="text-green-400 font-mono">&quot;Restore texture on rug #456&quot;</div>
+                        <div className="text-green-400 font-mono">&quot;Master restore rug #789&quot;</div>
+                        <div className="text-white/60">→ AI handles full payment flow</div>
+                      </div>
+                    </div>
+
+                    <div className="bg-black/30 rounded p-3">
+                      <h5 className="text-cyan-300 font-medium text-sm mb-2">Direct API Usage</h5>
+                      <div className="space-y-2 text-xs">
+                        <div className="text-green-400 font-mono">POST /api/maintenance/action/123/clean</div>
+                        <div className="text-white/60">Headers:</div>
+                        <div className="text-white/80">x402-payment-payload: {"{...}"}</div>
+                        <div className="text-white/80">x402-payment-status: payment-submitted</div>
+                        <div className="text-white/80">x402-payment-tx: 0x...</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-slate-800/50 rounded-lg p-4">
+                  <h4 className="text-lg font-semibold text-white mb-3">Error Handling & Troubleshooting</h4>
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-3">
+                      <div className="w-5 h-5 bg-red-400 rounded-full flex items-center justify-center text-xs font-bold text-white mt-0.5">!</div>
+                      <div>
+                        <h5 className="text-red-300 font-medium text-sm">Payment Timeout</h5>
+                        <p className="text-white/60 text-xs">Payments must be settled within 24 hours. Use the deadline field to check expiration.</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center text-xs font-bold text-black mt-0.5">?</div>
+                      <div>
+                        <h5 className="text-yellow-300 font-medium text-sm">Insufficient Funds</h5>
+                        <p className="text-white/60 text-xs">Ensure wallet has enough balance + gas fees. Check network congestion.</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="w-5 h-5 bg-orange-400 rounded-full flex items-center justify-center text-xs font-bold text-white mt-0.5">⚠</div>
+                      <div>
+                        <h5 className="text-orange-300 font-medium text-sm">Network Mismatch</h5>
+                        <p className="text-white/60 text-xs">Verify you&apos;re on the correct network (base-sepolia for testnet, shape for mainnet).</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-400/20 rounded-lg p-4">
+                  <h4 className="text-lg font-semibold text-purple-300 mb-3">Available Maintenance Actions</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="bg-slate-800/30 rounded p-3">
+                      <h5 className="text-cyan-300 font-medium text-sm">Clean</h5>
+                      <p className="text-white/60 text-xs">Resets dirt accumulation, costs ~0.00001 ETH</p>
+                    </div>
+                    <div className="bg-slate-800/30 rounded p-3">
+                      <h5 className="text-green-300 font-medium text-sm">Restore</h5>
+                      <p className="text-white/60 text-xs">Reduces texture age by 1 level, costs ~0.00002 ETH</p>
+                    </div>
+                    <div className="bg-slate-800/30 rounded p-3">
+                      <h5 className="text-yellow-300 font-medium text-sm">Master Restore</h5>
+                      <p className="text-white/60 text-xs">Full restoration (dirt + texture), costs ~0.00005 ETH</p>
                     </div>
                   </div>
                 </div>
