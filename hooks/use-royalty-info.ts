@@ -124,3 +124,44 @@ export function useMarketplaceFee() {
     }
   }
 }
+
+/**
+ * Hook to get Diamond Frame Pool information
+ */
+export function useDiamondFramePoolInfo() {
+  const chainId = useChainId()
+  const contractAddress = contractAddresses[chainId]
+
+  const { data: poolConfig } = useReadContract({
+    address: contractAddress as `0x${string}`,
+    abi: [
+      {
+        name: 'getPoolConfig',
+        type: 'function',
+        stateMutability: 'view',
+        inputs: [],
+        outputs: [
+          { name: 'poolContract', type: 'address' },
+          { name: 'poolPercentage', type: 'uint256' }
+        ]
+      }
+    ],
+    functionName: 'getPoolConfig',
+    args: []
+  })
+
+  const poolContract = poolConfig?.[0] as `0x${string}`
+  const poolPercentage = poolConfig?.[1] as bigint
+  const poolPercent = poolPercentage ? Number(poolPercentage) / 100 : 1 // Default 1%
+
+  return {
+    poolContract,
+    poolPercentage,
+    poolPercent,
+    // Calculate pool fee for any price
+    calculatePoolFee: (price: bigint) => {
+      if (!poolPercentage) return (price * BigInt(100)) / BigInt(10000) // Default 1%
+      return (price * poolPercentage) / BigInt(10000)
+    }
+  }
+}

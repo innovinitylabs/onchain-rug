@@ -1,6 +1,6 @@
 'use client'
 
-import { useRoyaltyInfo, useMarketplaceFee } from '@/hooks/use-royalty-info'
+import { useRoyaltyInfo, useMarketplaceFee, useDiamondFramePoolInfo } from '@/hooks/use-royalty-info'
 import { formatEth } from '@/utils/marketplace-utils'
 
 interface RoyaltyBreakdownProps {
@@ -11,6 +11,7 @@ interface RoyaltyBreakdownProps {
 export default function RoyaltyBreakdown({ tokenId, listingPrice }: RoyaltyBreakdownProps) {
   const { royaltyAmount, royaltyPercentage, isLoading: royaltyLoading } = useRoyaltyInfo(tokenId, listingPrice)
   const { marketplaceFeePercent, calculateMarketplaceFee } = useMarketplaceFee()
+  const { poolPercent, calculatePoolFee } = useDiamondFramePoolInfo()
 
   if (royaltyLoading) {
     return (
@@ -29,7 +30,9 @@ export default function RoyaltyBreakdown({ tokenId, listingPrice }: RoyaltyBreak
 
   // Calculate fees
   const marketplaceFee = calculateMarketplaceFee(listingPrice)
-  const totalDeductions = (royaltyAmount || BigInt(0)) + marketplaceFee
+  const poolFee = calculatePoolFee(listingPrice)
+  const creatorRoyalty = (royaltyAmount || BigInt(0)) - poolFee // Creator gets 9%, pool gets 1%
+  const totalDeductions = creatorRoyalty + poolFee + marketplaceFee
   const sellerReceives = listingPrice - totalDeductions
 
   return (
@@ -47,18 +50,28 @@ export default function RoyaltyBreakdown({ tokenId, listingPrice }: RoyaltyBreak
         </div>
 
         {/* Creator Royalty */}
-        {royaltyAmount && royaltyAmount > BigInt(0) && (
+        {creatorRoyalty > BigInt(0) && (
           <div className="flex justify-between text-green-300">
-            <span>Creator Royalty ({royaltyPercentage}%):</span>
-            <span>-{formatEth(royaltyAmount)} ETH</span>
+            <span>Creator Royalty ({royaltyPercentage - poolPercent}%):</span>
+            <span>-{formatEth(creatorRoyalty)} ETH</span>
+          </div>
+        )}
+
+        {/* Diamond Frame Pool */}
+        {poolFee > BigInt(0) && (
+          <div className="flex justify-between text-yellow-300">
+            <span>Diamond Frame Pool ({poolPercent}%):</span>
+            <span>-{formatEth(poolFee)} ETH</span>
           </div>
         )}
 
         {/* Marketplace Fee */}
-        <div className="flex justify-between text-purple-300">
-          <span>Marketplace Fee ({marketplaceFeePercent}%):</span>
-          <span>-{formatEth(marketplaceFee)} ETH</span>
-        </div>
+        {marketplaceFee > BigInt(0) && (
+          <div className="flex justify-between text-purple-300">
+            <span>Marketplace Fee ({marketplaceFeePercent}%):</span>
+            <span>-{formatEth(marketplaceFee)} ETH</span>
+          </div>
+        )}
 
         {/* Separator */}
         <div className="border-t border-blue-400/30 pt-2 mt-3">
@@ -78,7 +91,7 @@ export default function RoyaltyBreakdown({ tokenId, listingPrice }: RoyaltyBreak
 
       {/* Disclaimer */}
       <div className="text-xs text-blue-200/70 mt-3 pt-2 border-t border-blue-400/20">
-        💰 Royalties support creators and ensure fair compensation for their work
+        💎 Royalties support creators (9%) and Diamond Frame NFT holders (1%) for long-term sustainability
       </div>
     </div>
   )

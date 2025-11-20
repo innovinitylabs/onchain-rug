@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAccount, useReadContract, useChains, useChainId, usePublicClient, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import { onchainRugsABI, contractAddresses, callContractMultiFallback } from '@/lib/web3'
-import { Wallet, AlertCircle, RefreshCw, Droplets, Sparkles, Crown, TrendingUp, Clock, ExternalLink, Copy, CheckCircle, Maximize2, Minimize2, Bot, Zap } from 'lucide-react'
+import { Wallet, AlertCircle, RefreshCw, Droplets, Sparkles, Crown, TrendingUp, Clock, ExternalLink, Copy, CheckCircle, Maximize2, Minimize2, Bot, Zap, Coins } from 'lucide-react'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
 import LoadingAnimation from '@/components/LoadingAnimation'
@@ -134,6 +134,9 @@ export default function DashboardPage() {
   const [revokingAgent, setRevokingAgent] = useState<string | null>(null)
   const [showRevokeConfirm, setShowRevokeConfirm] = useState<string | null>(null)
 
+  // Diamond Frame Royalty Pool State
+  const [isClaimingRoyalties, setIsClaimingRoyalties] = useState(false)
+
   // Get contract address dynamically from environment variables
   const getContractAddress = (chainId: number): string => {
     switch (chainId) {
@@ -160,11 +163,18 @@ export default function DashboardPage() {
   useEffect(() => {
     console.log('Network changed:', {
       chainId: chain?.id,
+      chainName: chain?.name,
       contractAddress,
       isConnected,
-      address
+      address,
+      expectedChain: 'Base Sepolia (84532)',
+      isBaseSepolia: chain?.id === 84532
     })
-  }, [chain?.id, contractAddress, isConnected, address])
+    
+    if (chain?.id && chain.id !== 84532) {
+      console.warn(`⚠️ Warning: Connected to ${chain.name} (${chain.id}), but contract is deployed on Base Sepolia (84532)`)
+    }
+  }, [chain?.id, chain?.name, contractAddress, isConnected, address])
 
   // Get user's rug balance
   const { data: balance, refetch: refetchBalance, isLoading: balanceLoading, isError: balanceError } = useReadContract({
@@ -196,6 +206,46 @@ export default function DashboardPage() {
     },
   })
 
+  // Get pool configuration (pool contract address and percentage)
+  const { data: poolConfig, isLoading: poolConfigLoading } = useReadContract({
+    address: contractAddress as `0x${string}`,
+    abi: [
+      {
+        inputs: [],
+        name: 'getPoolConfig',
+        outputs: [
+          { name: 'poolContract', type: 'address' },
+          { name: 'poolPercentage', type: 'uint256' },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+      },
+    ] as const,
+    functionName: 'getPoolConfig',
+    query: {
+      enabled: !!contractAddress,
+    },
+  })
+
+  // Get pool balance
+  const poolContractAddress = poolConfig?.[0] as `0x${string}` | undefined
+  const { data: poolBalance, isLoading: poolBalanceLoading } = useReadContract({
+    address: poolContractAddress,
+    abi: [
+      {
+        inputs: [],
+        name: 'getPoolBalance',
+        outputs: [{ name: '', type: 'uint256' }],
+        stateMutability: 'view',
+        type: 'function',
+      },
+    ] as const,
+    functionName: 'getPoolBalance',
+    query: {
+      enabled: !!poolContractAddress,
+    },
+  })
+
 
   // Debug logging for authorized agents
   console.log('Authorized agents data:', {
@@ -210,15 +260,78 @@ export default function DashboardPage() {
   // Helper function to fetch rug data using new utilities
   const fetchRugData = async (tokenId: number): Promise<RugData | null> => {
     try {
+      // Verify chain configuration
+      if (!chain?.id) {
+        console.error('No chain ID available')
+        return null
+      }
+      
+      if (!contractAddress) {
+        console.error(`No contract address configured for chain ${chain.id}`)
+        return null
+      }
+      
+      console.log(`Fetching rug data for token #${tokenId} on chain ${chain.id} (${chain.name}) using contract ${contractAddress}`)
+      
+      // First check if token exists by checking owner
+      let ownerOf: string
+      try {
+        ownerOf = await callContractMultiFallback(
+          contractAddress,
+          onchainRugsABI,
+          'ownerOf',
+          [BigInt(tokenId)],
+          { chainId: chain.id }
+        ) as unknown as string
+        
+        // If owner is zero address, token doesn't exist
+        if (!ownerOf || ownerOf === '0x0000000000000000000000000000000000000000') {
+          console.warn(`Token #${tokenId} does not exist (zero address owner)`)
+          return null
+        }
+      } catch (ownerError: any) {
+        // If ownerOf fails, token likely doesn't exist
+        const errorMsg = ownerError?.message || String(ownerError)
+        if (errorMsg.includes('token does not exist') || 
+            errorMsg.includes('ERC721: invalid token ID') || 
+            errorMsg.includes('storage byte array incorrectly encoded') ||
+            errorMsg.includes('execution reverted')) {
+          // Silently skip tokens that don't exist - this is expected
+          console.debug(`Skipping token #${tokenId} (does not exist)`)
+          return null
+        }
+        // Only throw unexpected errors
+        console.error(`Unexpected error fetching ownerOf for token #${tokenId}:`, ownerError)
+        throw ownerError
+      }
+
       // Get tokenURI directly from contract with Alchemy fallback
-      console.log(`Fetching tokenURI for rug #${tokenId}...`)
-      const tokenURI = await callContractMultiFallback(
-        contractAddress,
-        onchainRugsABI,
-        'tokenURI',
-        [BigInt(tokenId)],
-        { chainId: chain?.id }
-      ) as unknown as string
+      console.log(`Fetching tokenURI for rug #${tokenId} on chain ${chain.id}...`)
+      let tokenURI: string
+      try {
+        tokenURI = await callContractMultiFallback(
+          contractAddress,
+          onchainRugsABI,
+          'tokenURI',
+          [BigInt(tokenId)],
+          { chainId: chain.id }
+        ) as unknown as string
+      } catch (tokenURIError: any) {
+        // Handle storage encoding errors (token might not exist or be corrupted)
+        const errorMsg = tokenURIError?.message || String(tokenURIError)
+        if (errorMsg.includes('storage byte array incorrectly encoded') || 
+            errorMsg.includes('execution reverted') ||
+            errorMsg.includes('Token does not exist') ||
+            errorMsg.includes('ERC721: invalid token ID')) {
+          // Silently skip tokens that don't exist or have invalid storage
+          // This is expected behavior, not an error
+          console.debug(`Skipping token #${tokenId} (does not exist or has invalid storage)`)
+          return null
+        }
+        // Only throw unexpected errors
+        console.error(`Unexpected error fetching tokenURI for token #${tokenId}:`, tokenURIError)
+        throw tokenURIError
+      }
 
       console.log(`Got tokenURI for rug #${tokenId}:`, tokenURI ? 'success' : 'empty')
 
@@ -232,15 +345,7 @@ export default function DashboardPage() {
             agingLevel: parsedData.aging.agingLevel,
           })
 
-          // Get owner with Alchemy fallback
-          const ownerOf = await callContractMultiFallback(
-            contractAddress,
-            onchainRugsABI,
-            'ownerOf',
-            [BigInt(tokenId)],
-            { chainId: chain?.id }
-          ) as unknown as string
-
+          // Owner already fetched above, reuse it
           // Create rug data object
           const rugData: RugData = {
             tokenId,
@@ -269,7 +374,23 @@ export default function DashboardPage() {
         console.warn(`Empty tokenURI for rug #${tokenId}`)
         return null
       }
-    } catch (error) {
+    } catch (error: any) {
+      // Suppress analytics errors (just ad blockers)
+      const errorMsg = error?.message || String(error)
+      if (errorMsg.includes('Amplitude') || errorMsg.includes('coinbase.com') || errorMsg.includes('analytics')) {
+        // These are just ad blocker errors, ignore them
+        return null
+      }
+      
+      // Handle storage encoding errors gracefully
+      if (errorMsg.includes('storage byte array incorrectly encoded') || 
+          errorMsg.includes('execution reverted') ||
+          errorMsg.includes('token does not exist') ||
+          errorMsg.includes('ERC721: invalid token ID')) {
+        console.warn(`Token #${tokenId} has invalid storage or does not exist:`, errorMsg)
+        return null
+      }
+      
       console.error(`Failed to fetch rug data for token ${tokenId}:`, error)
       return null
     }
@@ -352,46 +473,180 @@ export default function DashboardPage() {
         console.log('Fetching rugs for address:', address)
         console.log('Using contract address:', contractAddress)
         console.log('Current chain ID:', chain?.id)
+        console.log('Environment variables check:', {
+          baseSepoliaContract: process.env.NEXT_PUBLIC_BASE_SEPOLIA_CONTRACT,
+          onchainRugsContract: process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT
+        })
 
-        // First, check if user has any balance to avoid unnecessary API calls
-        if (!balance || balance === BigInt(0)) {
-          console.log('User has no NFTs (balance is 0), skipping NFT loading')
+        // CRITICAL: Validate contract address
+        if (!contractAddress || contractAddress === '0x0000000000000000000000000000000000000000') {
+          console.error('❌ Contract address not configured for chain', chain?.id)
+          console.error('Expected Base Sepolia (84532) contract address')
           setUserRugs([])
           setLoading(false)
           return
         }
 
-        console.log(`User has ${balance} NFTs, proceeding with loading...`)
+        // CRITICAL: Validate chain
+        if (!chain?.id) {
+          console.error('❌ No chain detected - wallet may not be connected')
+          setUserRugs([])
+          setLoading(false)
+          return
+        }
+
+        if (chain.id !== 84532) {
+          console.warn(`⚠️ Wrong chain detected: ${chain.id} (${chain.name})`)
+          console.warn('⚠️ Expected Base Sepolia (84532) - results may be incorrect')
+          // Continue anyway - user might have NFTs on wrong chain
+        }
+
+        // First, check if user has any balance to avoid unnecessary API calls
+        // But don't block if balance check fails
+        console.log('Balance check status:', {
+          balanceLoading,
+          balanceError: balanceError?.message,
+          balance: balance?.toString(),
+          balanceType: typeof balance
+        })
+
+        if (balanceLoading) {
+          console.log('Balance still loading, proceeding with NFT fetch...')
+        } else if (balanceError) {
+          console.warn('Balance check failed, proceeding anyway:', balanceError)
+        } else if (!balance || balance === BigInt(0)) {
+          console.log('⚠️ Balance check shows 0 NFTs, but proceeding with Alchemy check anyway')
+          // Don't return early - Alchemy might still find NFTs even if balance check fails
+        } else {
+          console.log(`✅ Balance check shows ${balance} NFTs, proceeding with loading...`)
+        }
 
         // Get NFTs owned by user from Alchemy
-        const ownerResponse = await fetch(`${window.location.origin}/api/alchemy?endpoint=getNFTsForOwner&contractAddresses[]=${contractAddress}&owner=${address}&chainId=${chain?.id}`)
-        const ownerData = await ownerResponse.json()
+        const apiUrl = `${window.location.origin}/api/alchemy?endpoint=getNFTsForOwner&contractAddresses[]=${contractAddress}&owner=${address}&chainId=${chain.id}`
+        console.log('Calling Alchemy API:', apiUrl)
+        
+        const ownerResponse = await fetch(apiUrl)
+        
+        // CRITICAL: Check if API call succeeded
+        if (!ownerResponse.ok) {
+          const errorData = await ownerResponse.json().catch(() => ({ error: 'Unknown error' }))
+          console.error('❌ Alchemy API error:', ownerResponse.status, errorData)
+          setUserRugs([])
+          setLoading(false)
+          return
+        }
 
-        console.log('Owner data response:', ownerData)
+        const ownerData = await ownerResponse.json()
+        
+        // CRITICAL: Check if response contains error
+        if (ownerData.error) {
+          console.error('❌ Alchemy API returned error:', ownerData.error)
+          setUserRugs([])
+          setLoading(false)
+          return
+        }
+
+        console.log('Owner data response:', {
+          chainId: chain?.id,
+          contractAddress,
+          ownedNftsCount: ownerData.ownedNfts?.length || 0,
+          balance: balance?.toString(),
+          responseKeys: Object.keys(ownerData)
+        })
+
+        if (!ownerData.ownedNfts || ownerData.ownedNfts.length === 0) {
+          console.warn('⚠️ No NFTs found in Alchemy response')
+          console.log('Full Alchemy response:', JSON.stringify(ownerData, null, 2))
+          setUserRugs([])
+          setLoading(false)
+          return
+        }
 
         if (ownerData.ownedNfts && ownerData.ownedNfts.length > 0) {
-          console.log(`Found ${ownerData.ownedNfts.length} NFTs from Alchemy`)
+          console.log(`Found ${ownerData.ownedNfts.length} NFTs from Alchemy on chain ${chain?.id}`)
+          console.log('Sample NFT structure:', JSON.stringify(ownerData.ownedNfts[0], null, 2))
+
+          let successCount = 0
+          let skippedCount = 0
 
           for (const nft of ownerData.ownedNfts) {
             try {
-              const tokenId = parseInt(nft.tokenId)
-              console.log(`Processing rug #${tokenId}`)
+              console.log(`🔍 Processing NFT:`, {
+                tokenId: nft.tokenId || nft.id?.tokenId,
+                contract: nft.contract?.address,
+                title: nft.title,
+                fullNft: JSON.stringify(nft, null, 2)
+              })
+
+              // Handle different Alchemy response structures
+              const rawTokenId = nft.tokenId || nft.id?.tokenId || nft.token?.tokenId
+              if (!rawTokenId) {
+                console.error('❌ No tokenId found in NFT object:', nft)
+                skippedCount++
+                continue
+              }
+
+              // Convert hex tokenId to decimal if needed
+              let tokenId: number
+              if (typeof rawTokenId === 'string' && rawTokenId.startsWith('0x')) {
+                tokenId = parseInt(rawTokenId, 16)
+              } else {
+                tokenId = parseInt(rawTokenId)
+              }
+
+              // Verify tokenId is valid
+              if (isNaN(tokenId) || tokenId < 0) {
+                console.debug(`❌ Skipping invalid token ID: ${nft.tokenId}`)
+                skippedCount++
+                continue
+              }
+
+              console.log(`✅ Token ID ${tokenId} is valid, fetching rug data...`)
 
               // Use the new consolidated rug data fetching
+              // fetchRugData will handle non-existent tokens gracefully
               const rugData = await fetchRugData(tokenId)
               if (rugData) {
                 rugs.push(rugData)
-                console.log(`Successfully added rug #${tokenId} to list`)
+                successCount++
+                console.log(`✅ Successfully loaded NFT #${tokenId}`)
+              } else {
+                skippedCount++
+                console.log(`⚠️ Skipped NFT #${tokenId} (fetchRugData returned null)`)
               }
 
               // Add delay between requests to avoid rate limiting
               if (ownerData.ownedNfts.indexOf(nft) < ownerData.ownedNfts.length - 1) {
                 await new Promise(resolve => setTimeout(resolve, 500)) // 500ms delay
               }
-            } catch (error) {
-              console.error(`Failed to fetch rug data for token ${nft.tokenId}:`, error)
+            } catch (error: any) {
+              // Suppress analytics errors (just ad blockers)
+              const errorMsg = error?.message || String(error)
+              if (errorMsg.includes('Amplitude') || errorMsg.includes('coinbase.com') || errorMsg.includes('analytics')) {
+                // These are just ad blocker errors, ignore them
+                skippedCount++
+                continue
+              }
+              
+              // Handle storage encoding errors gracefully - token might not exist
+              // These are expected errors, not actual problems
+              if (errorMsg.includes('storage byte array incorrectly encoded') || 
+                  errorMsg.includes('execution reverted') ||
+                  errorMsg.includes('token does not exist') ||
+                  errorMsg.includes('ERC721: invalid token ID') ||
+                  errorMsg.includes('All RPC endpoints failed')) {
+                // Silently skip - this is expected for non-existent tokens
+                skippedCount++
+                continue
+              }
+              
+              // Only log unexpected errors
+              console.error(`Unexpected error fetching rug data for token ${nft.tokenId}:`, error)
+              skippedCount++
             }
           }
+
+          console.log(`NFT loading complete: ${successCount} loaded, ${skippedCount} skipped (expected for non-existent tokens)`)
         } else {
           console.log('No owned NFTs found from Alchemy - this should not happen if balance > 0')
           console.log('Balance check may be inaccurate or Alchemy API may be down')
@@ -565,6 +820,83 @@ export default function DashboardPage() {
     }
   }, [isConfirmed, revokingAgent])
 
+  // Get diamond frame NFTs owned by user
+  const getDiamondFrameNFTs = (): number[] => {
+    return userRugs
+      .filter(rug => {
+        // Check if rug has diamond frame (frameLevel === 4 or "Diamond")
+        // Try multiple sources for frame level
+        let frameLevel: string | number | undefined = undefined
+        
+        // Check parsed aging data (from dashboard's parseAgingDataFromAttributes)
+        if (rug.aging && 'currentFrameLevel' in rug.aging) {
+          frameLevel = (rug.aging as any).currentFrameLevel
+        }
+        
+        // Check metadata attributes
+        if (!frameLevel && rug.metadata?.attributes) {
+          const frameAttr = rug.metadata.attributes.find((attr: any) => attr.trait_type === 'Frame Level')
+          if (frameAttr) {
+            frameLevel = frameAttr.value
+          }
+        }
+        
+        // Check if it's a diamond frame
+        return frameLevel === 'Diamond' || frameLevel === 4 || frameLevel === '4'
+      })
+      .map(rug => rug.tokenId)
+  }
+
+  const hasDiamondFrames = getDiamondFrameNFTs().length > 0
+
+  // Handle claiming royalties from diamond frame pool
+  const handleClaimRoyalties = async () => {
+    if (!isConnected || !contractAddress) {
+      alert('Please connect your wallet first')
+      return
+    }
+
+    const diamondFrameTokenIds = getDiamondFrameNFTs()
+    if (diamondFrameTokenIds.length === 0) {
+      alert('You do not have any diamond frame NFTs')
+      return
+    }
+
+    setIsClaimingRoyalties(true)
+
+    try {
+      writeContract({
+        address: contractAddress as `0x${string}`,
+        abi: [
+          {
+            inputs: [{ name: 'tokenIds', type: 'uint256[]' }],
+            name: 'claimPoolRoyalties',
+            outputs: [],
+            stateMutability: 'nonpayable',
+            type: 'function',
+          },
+        ] as const,
+        functionName: 'claimPoolRoyalties',
+        args: [diamondFrameTokenIds.map(id => BigInt(id))],
+        account: address,
+        chain,
+      })
+    } catch (error) {
+      console.error('Claim royalties failed:', error)
+      alert(`Failed to claim royalties: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      setIsClaimingRoyalties(false)
+    }
+  }
+
+  // Handle successful royalty claim
+  useEffect(() => {
+    if (isClaimingRoyalties && isConfirmed) {
+      setIsClaimingRoyalties(false)
+      alert('Royalties successfully claimed!')
+      setRefreshTrigger(prev => prev + 1) // Refresh rug data
+    }
+  }, [isConfirmed, isClaimingRoyalties])
+
   const getDirtLevel = (lastCleaned: bigint) => {
     const now = Math.floor(Date.now() / 1000)
     const timeSinceCleaned = now - Number(lastCleaned)
@@ -732,16 +1064,90 @@ export default function DashboardPage() {
                     {contractAddress ? 'Contract Available' : 'Contract Not Available'}
                   </div>
                   <div className="text-white/60 text-sm">
-                    Chain ID: {chain?.id} | Contract: {contractAddress || 'Not configured'}
+                    Chain: {chain?.name || 'Unknown'} ({chain?.id || 'N/A'}) | Contract: {contractAddress ? `${contractAddress.slice(0, 6)}...${contractAddress.slice(-4)}` : 'Not configured'}
                   </div>
+                  {chain?.id && chain.id !== 84532 && contractAddress && (
+                    <div className="text-yellow-400 text-xs mt-1">
+                      ⚠️ Contract is on Base Sepolia (84532), but you&apos;re on {chain.name} ({chain.id})
+                    </div>
+                  )}
                 </div>
               </div>
               {!contractAddress && (
                 <div className="text-yellow-400 text-sm">
-                  Switch to Shape Sepolia or Base Sepolia
+                  Switch to Base Sepolia (84532) for this contract
                 </div>
               )}
             </div>
+          </div>
+        </motion.div>
+
+        {/* Diamond Frame Royalty Pool Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="mb-8"
+        >
+          <div className="bg-gradient-to-r from-yellow-600/20 to-amber-600/20 border border-yellow-500/30 rounded-xl p-6 backdrop-blur-sm">
+            <div className="flex items-center gap-3 mb-4">
+              <Coins className="w-6 h-6 text-yellow-400" />
+              <h2 className="text-xl font-bold text-white">Diamond Frame Royalties</h2>
+              <Crown className="w-5 h-5 text-yellow-400" />
+            </div>
+
+            <p className="text-white/70 mb-4">
+              Claim your share of royalties from the Diamond Frame Pool. Only NFTs with diamond frames are eligible.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+              <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
+                <div className="text-xs text-white/60 mb-1">Pool Balance</div>
+                <div className="text-lg font-bold text-yellow-400">
+                  {poolBalanceLoading ? (
+                    <span className="text-white/40">Loading...</span>
+                  ) : poolBalance !== undefined ? (
+                    `${formatEther(poolBalance)} ETH`
+                  ) : (
+                    <span className="text-white/40">N/A</span>
+                  )}
+                </div>
+              </div>
+              <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
+                <div className="text-xs text-white/60 mb-1">Your Diamond Frames</div>
+                <div className="text-lg font-bold text-yellow-400">
+                  {getDiamondFrameNFTs().length}
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={handleClaimRoyalties}
+              disabled={!hasDiamondFrames || isClaimingRoyalties || isPending || isConfirming || !contractAddress}
+              className={`w-full px-6 py-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 shadow-lg ${
+                hasDiamondFrames && contractAddress
+                  ? 'bg-gradient-to-r from-yellow-600 to-amber-600 hover:from-yellow-700 hover:to-amber-700 text-white transform hover:scale-105 active:scale-95'
+                  : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+              }`}
+            >
+              {isClaimingRoyalties || isPending ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  {isConfirming ? 'Confirming...' : 'Claiming...'}
+                </>
+              ) : (
+                <>
+                  <Coins className="w-4 h-4" />
+                  {hasDiamondFrames ? 'Claim Royalties' : 'No Diamond Frame NFTs'}
+                </>
+              )}
+            </button>
+
+            {!hasDiamondFrames && (
+              <p className="mt-3 text-sm text-white/50 text-center">
+                You need at least one NFT with a diamond frame to claim royalties
+              </p>
+            )}
           </div>
         </motion.div>
 

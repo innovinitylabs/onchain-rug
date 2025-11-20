@@ -441,10 +441,23 @@ export async function callContractWithAlchemyFallback(
       data: result.result
     })
   } catch (alchemyError) {
-    console.warn(`Alchemy RPC failed for ${functionName}, trying Shape fallback:`, alchemyError)
+    const network = getNetworkByChainId(chainId)
+    const networkName = network?.displayName || `Chain ${chainId}`
+    console.warn(`Alchemy RPC failed for ${functionName}, trying ${networkName} native RPC fallback:`, alchemyError)
 
-    // Fallback to native RPC
+    // Fallback to native RPC for the specific chain
     try {
+      const network = getNetworkByChainId(chainId)
+      if (!network) {
+        throw new Error(`Unsupported chain ID: ${chainId}`)
+      }
+
+      // Get the RPC URL for this chain
+      const rpcUrl = getRpcUrl(chainId)
+      if (!rpcUrl) {
+        throw new Error(`No RPC URL configured for chain ${chainId}`)
+      }
+
       const chains = { 
         [ethereumSepolia.id]: ethereumSepolia,
         [shapeSepolia.id]: shapeSepolia, 
@@ -457,9 +470,10 @@ export async function callContractWithAlchemyFallback(
         throw new Error(`Unsupported chain ID: ${chainId}`)
       }
 
+      // Use explicit RPC URL in transport
       const publicClient = createPublicClient({
         chain,
-        transport: http()
+        transport: http(rpcUrl)
       })
 
       const data = encodeFunctionData({
@@ -484,9 +498,25 @@ export async function callContractWithAlchemyFallback(
         functionName,
         data: result.data
       })
-    } catch (shapeError) {
-      console.error(`Both Alchemy RPC and Shape RPC failed for ${functionName}:`, { alchemyError, shapeError })
-      throw new Error(`All RPC endpoints failed: ${alchemyError instanceof Error ? alchemyError.message : String(alchemyError)} | ${shapeError instanceof Error ? shapeError.message : String(shapeError)}`)
+    } catch (nativeRpcError) {
+      const network = getNetworkByChainId(chainId)
+      const networkName = network?.displayName || `Chain ${chainId}`
+      
+      // Check if this is an expected error (storage encoding for non-existent tokens)
+      const alchemyErrorMsg = alchemyError instanceof Error ? alchemyError.message : String(alchemyError)
+      const nativeErrorMsg = nativeRpcError instanceof Error ? nativeRpcError.message : String(nativeRpcError)
+      const isStorageEncodingError = alchemyErrorMsg.includes('storage byte array incorrectly encoded') || 
+                                     nativeErrorMsg.includes('storage byte array incorrectly encoded')
+      
+      // Only log as error if it's not an expected storage encoding error
+      if (isStorageEncodingError) {
+        // This is expected for non-existent tokens, log as debug/warn instead
+        console.debug(`Token may not exist (storage encoding error) for ${functionName} on ${networkName}`)
+      } else {
+        console.error(`Both Alchemy RPC and ${networkName} native RPC failed for ${functionName}:`, { alchemyError, nativeRpcError })
+      }
+      
+      throw new Error(`All RPC endpoints failed for ${networkName}: Alchemy: ${alchemyErrorMsg} | Native RPC: ${nativeErrorMsg}`)
     }
   }
 }
