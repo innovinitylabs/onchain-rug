@@ -16,6 +16,7 @@ export interface NetworkConfig {
   alchemyNetwork: string
   isTestnet: boolean
   blockExplorerName: string
+  multicallAddress?: string // Optional: Override multicall address for this chain
 }
 
 // Supported networks configuration
@@ -31,6 +32,7 @@ export const NETWORKS: Record<string, NetworkConfig> = {
     alchemyNetwork: 'eth-sepolia',
     isTestnet: true,
     blockExplorerName: 'Etherscan Sepolia'
+    // multicallAddress: optional override
   },
   shapeSepolia: {
     chainId: 11011,
@@ -43,6 +45,7 @@ export const NETWORKS: Record<string, NetworkConfig> = {
     alchemyNetwork: 'shape-sepolia',
     isTestnet: true,
     blockExplorerName: 'Shape Sepolia Explorer'
+    // multicallAddress: optional override
   },
   shapeMainnet: {
     chainId: 360,
@@ -55,6 +58,7 @@ export const NETWORKS: Record<string, NetworkConfig> = {
     alchemyNetwork: 'shape-mainnet',
     isTestnet: false,
     blockExplorerName: 'Shape Explorer'
+    // multicallAddress: optional override
   },
   baseSepolia: {
     chainId: 84532,
@@ -67,6 +71,7 @@ export const NETWORKS: Record<string, NetworkConfig> = {
     alchemyNetwork: 'base-sepolia',
     isTestnet: true,
     blockExplorerName: 'Base Sepolia Explorer'
+    // multicallAddress: optional override
   },
   baseMainnet: {
     chainId: 8453,
@@ -79,6 +84,7 @@ export const NETWORKS: Record<string, NetworkConfig> = {
     alchemyNetwork: 'base-mainnet',
     isTestnet: false,
     blockExplorerName: 'Base Explorer'
+    // multicallAddress: optional override
   },
   // Example: Adding a new test network is now trivial
   testNet: {
@@ -91,6 +97,7 @@ export const NETWORKS: Record<string, NetworkConfig> = {
     alchemyNetwork: 'test-net',
     isTestnet: true,
     blockExplorerName: 'TestNet Explorer'
+    // multicallAddress: optional override
   }
 }
 
@@ -171,6 +178,25 @@ export const CONTRACT_ADDRESSES: Record<number, string | undefined> = {
 
 export function getContractAddress(chainId: number): string {
   return CONTRACT_ADDRESSES[chainId] || ''
+}
+
+/**
+ * Get multicall address for a specific chain
+ * Uses the contract address from .env (same address as the NFT contract)
+ * Falls back to default Multicall3 address if contract address not found
+ */
+export function getMulticallAddress(chainId: number): string {
+  // Use the contract address as multicall address (same contract)
+  const contractAddress = getContractAddress(chainId)
+  if (contractAddress) {
+    return contractAddress
+  }
+  // Fallback: Use env var if set
+  if (process.env.MULTICALL_ADDRESS) {
+    return process.env.MULTICALL_ADDRESS
+  }
+  // Final fallback: Default Multicall3 address (works on most modern EVM chains)
+  return '0xcA11bde05977b3631167028862bE2a173976CA11'
 }
 
 // Default chain ID (configurable via env var)
