@@ -6,7 +6,7 @@
  */
 
 import { createPublicClient, http, type Address, type PublicClient } from 'viem'
-import { getRpcUrl, getMulticallAddress } from './networks'
+import { getRpcUrl, getMulticallAddress, getNetworkByChainId } from './networks'
 import { onchainRugsABI } from './web3'
 
 // Batch size for multicall (RPC limits typically 100-200)
@@ -16,13 +16,28 @@ const BATCH_SIZE = parseInt(process.env.BATCH_SIZE || '100')
  * Create a public client for a specific chain
  */
 export function createChainClient(chainId: number): PublicClient {
-  const rpcUrl = getRpcUrl(chainId)
-  if (!rpcUrl) {
-    throw new Error(`No RPC URL configured for chain ${chainId}`)
+  const network = getNetworkByChainId(chainId)
+  if (!network) {
+    throw new Error(`Network not found for chain ${chainId}`)
   }
 
+  // Use the same pattern as other files in the project
   const client = createPublicClient({
-    transport: http(rpcUrl),
+    chain: {
+      id: network.chainId,
+      name: network.name,
+      nativeCurrency: {
+        decimals: 18,
+        name: 'Ether',
+        symbol: 'ETH',
+      },
+      rpcUrls: {
+        default: {
+          http: [network.rpcUrl],
+        },
+      },
+    },
+    transport: http(network.rpcUrl),
   })
 
   return client
