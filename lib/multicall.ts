@@ -23,7 +23,7 @@ export function createChainClient(chainId: number): PublicClient {
 
   return createPublicClient({
     transport: http(rpcUrl),
-  } as any)
+  })
 }
 
 /**
