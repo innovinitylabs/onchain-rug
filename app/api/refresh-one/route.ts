@@ -26,6 +26,8 @@ export async function POST(request: NextRequest) {
     const chainId = parseInt(request.nextUrl.searchParams.get('chainId') || '84532')
     const contractAddress = getContractAddress(chainId) as Address
 
+    console.log(`Refresh One API: Refreshing token ${tokenId} on chain ${chainId}, contract ${contractAddress}`)
+
     if (!contractAddress) {
       return NextResponse.json(
         { error: 'Contract address not found for chain' },
@@ -41,11 +43,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Refresh static metadata (tokenURI, traits)
+    console.log(`Refresh One API: Fetching static metadata`)
     const staticRefresh = await refreshTokenMetadata(chainId, contractAddress, tokenId)
+    console.log(`Refresh One API: Static refresh result:`, { hasStatic: !!staticRefresh.static, hasTokenURI: !!staticRefresh.tokenURI, error: staticRefresh.error?.message })
 
     // Refresh dynamic data (dirt level, aging level, owner)
+    console.log(`Refresh One API: Fetching dynamic data`)
     const dynamicRefresh = await batchReadDynamicData(chainId, contractAddress, [tokenId])
     const dynamicData = dynamicRefresh[0]
+    console.log(`Refresh One API: Dynamic refresh result:`, { dirtLevel: dynamicData?.dirtLevel, agingLevel: dynamicData?.agingLevel, owner: dynamicData?.owner, error: dynamicData?.error?.message })
 
     // Prepare cache entries
     const cacheEntries: Array<{ key: string; value: any; ttl: number }> = []
@@ -91,12 +97,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Write to cache
+    console.log(`Refresh One API: Writing ${cacheEntries.length} cache entries`)
     if (cacheEntries.length > 0) {
       const pipeline = redis.pipeline()
       for (const entry of cacheEntries) {
+        console.log(`Refresh One API: Caching key ${entry.key} for ${entry.ttl}s`)
         pipeline.setex(entry.key, entry.ttl, entry.value)
       }
       await pipeline.exec()
+      console.log(`Refresh One API: Cache write complete`)
     }
 
     return NextResponse.json({

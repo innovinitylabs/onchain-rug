@@ -38,9 +38,14 @@ export async function GET(request: NextRequest) {
     const collectionKey = getCollectionKey(chainId, contractAddress, page)
     const cachedCollection = await redis.get<any>(collectionKey)
 
+    console.log(`Collection API: Checking cache for key ${collectionKey}`)
+
     if (cachedCollection) {
+      console.log(`Collection API: Cache hit! Returning cached data`)
       return NextResponse.json(cachedCollection)
     }
+
+    console.log(`Collection API: Cache miss, fetching from blockchain`)
 
     // Get total supply
     const client = createChainClient(chainId)
