@@ -173,5 +173,24 @@ export function getContractAddress(chainId: number): string {
   return CONTRACT_ADDRESSES[chainId] || ''
 }
 
+/**
+ * Get multicall address for a specific chain
+ * Uses the contract address from .env (same address as the NFT contract)
+ * Falls back to default Multicall3 address if contract address not found
+ */
+export function getMulticallAddress(chainId: number): string {
+  // Use the contract address as multicall address (same contract)
+  const contractAddress = getContractAddress(chainId)
+  if (contractAddress) {
+    return contractAddress
+  }
+  // Fallback: Use env var if set
+  if (process.env.MULTICALL_ADDRESS) {
+    return process.env.MULTICALL_ADDRESS
+  }
+  // Final fallback: Default Multicall3 address (works on most modern EVM chains)
+  return '0xcA11bde05977b3631167028862bE2a173976CA11'
+}
+
 // Default chain ID (configurable via env var)
 export const DEFAULT_CHAIN_ID = parseInt(process.env.NEXT_PUBLIC_DEFAULT_CHAIN_ID || '') || DEFAULT_NETWORK.chainId

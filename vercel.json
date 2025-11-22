@@ -1,0 +1,9 @@
+{
+  "crons": [
+    {
+      "path": "/api/refresh-metadata?chainId=84532",
+      "schedule": "*/5 * * * *"
+    }
+  ]
+}
+
