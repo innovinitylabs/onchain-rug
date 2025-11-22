@@ -25,16 +25,27 @@ const TOKENS_PER_CRON = parseInt(process.env.TOKENS_PER_CRON || '200') // Tokens
 
 export async function GET(request: NextRequest) {
   try {
+    console.log('Cron API: Request received')
+
     // Verify cron secret
     const authHeader = request.headers.get('authorization')
     const cronSecret = process.env.VERCEL_CRON_SECRET
 
+    console.log('Cron API: Auth check', {
+      hasAuthHeader: !!authHeader,
+      hasCronSecret: !!cronSecret,
+      authHeaderValue: authHeader?.substring(0, 20) + '...',
+      expectedSecret: cronSecret?.substring(0, 10) + '...'
+    })
+
     if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+      console.log('Cron API: Authentication failed')
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       )
     }
+    console.log('Cron API: Authentication successful')
 
     const chainId = parseInt(request.nextUrl.searchParams.get('chainId') || '84532')
     const contractAddress = getContractAddress(chainId) as Address
@@ -81,7 +92,7 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    console.log(`Refreshing tokens ${startTokenId} to ${endTokenId} (total: ${totalSupply})`)
+    console.log(`Cron API: Refreshing tokens ${startTokenId} to ${endTokenId} (total: ${totalSupply})`)
 
     // Refresh static metadata (tokenURI, traits)
     const { batchRefreshMetadata } = await import('@/lib/refresh-utils')
@@ -90,11 +101,16 @@ export async function GET(request: NextRequest) {
       tokenIds.push(i)
     }
 
+    console.log(`Cron API: Starting batch refresh for ${tokenIds.length} tokens`)
     const staticRefreshResults = await batchRefreshMetadata(
       chainId,
       contractAddress,
       tokenIds
     )
+    console.log(`Cron API: Batch refresh completed`, {
+      successful: staticRefreshResults.filter(r => !r.error).length,
+      failed: staticRefreshResults.filter(r => r.error).length
+    })
 
     // Refresh dynamic data (dirt level, aging level, owner)
     const dynamicRefresh = await batchReadDynamicData(chainId, contractAddress, tokenIds)
@@ -162,6 +178,7 @@ export async function GET(request: NextRequest) {
 
     // Update offset for next cron run
     const newOffset = endTokenId + 1
+    console.log(`Cron API: Updating offset to ${newOffset}`)
     await setRefreshOffset(chainId, contractAddress, newOffset)
 
     const successful = staticRefreshResults.filter(r => !r.error && r.static).length
@@ -170,6 +187,16 @@ export async function GET(request: NextRequest) {
       .filter(r => r.error)
       .map(r => ({ tokenId: r.tokenId, error: r.error!.message }))
       .slice(0, 10)
+
+    console.log(`Cron API: Final results`, {
+      processed: staticRefreshResults.length,
+      successful,
+      failed,
+      staticCached: staticRefreshResults.filter(r => r.static).length,
+      dynamicCached: dynamicRefresh.filter(r => !r.error).length,
+      totalCached: cacheEntries.length,
+      newOffset
+    })
 
     return NextResponse.json({
       success: true,
