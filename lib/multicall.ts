@@ -21,10 +21,11 @@ export function createChainClient(chainId: number): PublicClient {
     throw new Error(`No RPC URL configured for chain ${chainId}`)
   }
 
-  return createPublicClient({
+  const client = createPublicClient({
     transport: http(rpcUrl),
-    account: undefined,
   })
+
+  return client
 }
 
 /**
