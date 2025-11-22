@@ -16,6 +16,7 @@ export interface NetworkConfig {
   alchemyNetwork: string
   isTestnet: boolean
   blockExplorerName: string
+  multicallAddress?: string // Optional: Override multicall address for this chain
 }
 
 // Supported networks configuration
@@ -31,6 +32,7 @@ export const NETWORKS: Record<string, NetworkConfig> = {
     alchemyNetwork: 'eth-sepolia',
     isTestnet: true,
     blockExplorerName: 'Etherscan Sepolia'
+    // multicallAddress: optional override
   },
   shapeSepolia: {
     chainId: 11011,
@@ -43,6 +45,7 @@ export const NETWORKS: Record<string, NetworkConfig> = {
     alchemyNetwork: 'shape-sepolia',
     isTestnet: true,
     blockExplorerName: 'Shape Sepolia Explorer'
+    // multicallAddress: optional override
   },
   shapeMainnet: {
     chainId: 360,
@@ -55,6 +58,7 @@ export const NETWORKS: Record<string, NetworkConfig> = {
     alchemyNetwork: 'shape-mainnet',
     isTestnet: false,
     blockExplorerName: 'Shape Explorer'
+    // multicallAddress: optional override
   },
   baseSepolia: {
     chainId: 84532,
@@ -67,6 +71,7 @@ export const NETWORKS: Record<string, NetworkConfig> = {
     alchemyNetwork: 'base-sepolia',
     isTestnet: true,
     blockExplorerName: 'Base Sepolia Explorer'
+    // multicallAddress: optional override
   },
   baseMainnet: {
     chainId: 8453,
@@ -79,6 +84,7 @@ export const NETWORKS: Record<string, NetworkConfig> = {
     alchemyNetwork: 'base-mainnet',
     isTestnet: false,
     blockExplorerName: 'Base Explorer'
+    // multicallAddress: optional override
   },
   // Example: Adding a new test network is now trivial
   testNet: {
@@ -91,6 +97,7 @@ export const NETWORKS: Record<string, NetworkConfig> = {
     alchemyNetwork: 'test-net',
     isTestnet: true,
     blockExplorerName: 'TestNet Explorer'
+    // multicallAddress: optional override
   }
 }
 
