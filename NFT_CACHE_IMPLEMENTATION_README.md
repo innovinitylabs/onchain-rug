@@ -87,9 +87,16 @@ These are already in your `.env`:
 
 ### 2. Configure Vercel Cron
 
+**⚠️ Hobby Plan Limitation:** Vercel Hobby accounts can only run cron jobs once per day maximum.
+
 1. Add `VERCEL_CRON_SECRET` to your environment variables in Vercel
-2. The cron job is configured in `vercel.json` to run every 5 minutes
+2. The cron job is configured in `vercel.json` to run once daily at 2 AM UTC
 3. Vercel will automatically set up the cron job when deployed
+
+**For more frequent updates, consider:**
+- Upgrading to Vercel Pro plan (unlimited cron jobs)
+- Manual refresh via API calls
+- Trigger refresh on-demand when users visit the site
 
 ### 3. Enable Feature Flag (Optional)
 
@@ -200,6 +207,8 @@ curl -H "Authorization: Bearer YOUR_CRON_SECRET" \
   http://localhost:3000/api/refresh-metadata?chainId=84532
 ```
 
+**Note:** On Hobby plan, cron runs once daily at 2 AM UTC. For testing, call this endpoint manually.
+
 ### Performance Test
 
 ```bash
@@ -219,7 +228,7 @@ wait
    - Deploy to staging
 
 2. **Phase 2: Testing**
-   - Run cron manually to populate cache
+   - Run cron manually to populate cache (required on Hobby plan)
    - Test API endpoints
    - Verify cache is working
 

@@ -17,8 +17,9 @@ const redis = new Redis({
 export { redis }
 
 // Cache TTL configuration (in seconds)
+// Note: On Hobby plan, cron runs once/day, so longer TTLs are needed
 export const STATIC_TTL = parseInt(process.env.STATIC_TTL_SECONDS || '86400') // 24 hours
-export const DYNAMIC_TTL = parseInt(process.env.DYNAMIC_TTL_SECONDS || '300') // 5 minutes
+export const DYNAMIC_TTL = parseInt(process.env.DYNAMIC_TTL_SECONDS || '3600') // 1 hour (increased for Hobby plan)
 export const TOKENURI_TTL = parseInt(process.env.TOKENURI_TTL_SECONDS || '3600') // 1 hour
 
 /**
