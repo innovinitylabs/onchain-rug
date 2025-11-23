@@ -94,7 +94,7 @@ export async function setCached<T>(key: string, value: T, ttl?: number): Promise
 export async function getCachedBatch<T>(keys: string[]): Promise<(T | null)[]> {
   try {
     if (keys.length === 0) return []
-    const results = await redis.mget<T>(...keys)
+    const results = await redis.mget(...keys)
     return results || []
   } catch (error) {
     console.error(`Redis mget error for ${keys.length} keys:`, error)
