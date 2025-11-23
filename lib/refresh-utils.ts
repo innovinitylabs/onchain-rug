@@ -5,7 +5,7 @@
  */
 
 import { createHash } from 'crypto'
-import { batchReadTokenURIs } from './multicall'
+// batchReadTokenURIs temporarily disabled
 import type { Address } from 'viem'
 
 // IPFS gateway configuration
