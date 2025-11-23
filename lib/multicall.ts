@@ -11,22 +11,8 @@ export function createChainClient(chainId: number): PublicClient {
   }
 
   return createPublicClient({
-    chain: {
-      id: network.chainId,
-      name: network.name,
-      nativeCurrency: {
-        decimals: 18,
-        name: 'Ether',
-        symbol: 'ETH',
-      },
-      rpcUrls: {
-        default: {
-          http: [network.rpcUrl],
-        },
-      },
-    },
     transport: http(network.rpcUrl),
-  }) as PublicClient
+  })
 }
 
 /**
