@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
 
     // Fetch real metadata from blockchain
     console.log(`Refresh One API: Fetching real blockchain data for token ${tokenId}`)
-    const staticRefresh = await refreshTokenMetadata(chainId, contractAddress, tokenId)
+    const staticRefresh = await refreshTokenMetadata(chainId, contractAddress as `0x${string}`, tokenId)
     console.log(`Refresh One API: Blockchain data result:`, {
       hasStatic: !!staticRefresh.static,
       hasTokenURI: !!staticRefresh.tokenURI,

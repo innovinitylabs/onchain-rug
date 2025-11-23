@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
     console.log(`Cron API: Calling batchRefreshRange with range ${startTokenId}-${endTokenId}`)
     const staticRefreshResults = await batchRefreshRange(
       chainId,
-      contractAddress,
+      contractAddress as `0x${string}`,
       startTokenId,
       endTokenId
     )
