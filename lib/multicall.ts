@@ -1,4 +1,4 @@
-import { createPublicClient, http, type Address, type PublicClient } from 'viem'
+import { createPublicClient, http } from 'viem'
 import { getNetworkByChainId } from './networks'
 
 /**
