@@ -1,10 +1,3 @@
-/**
- * Cron endpoint for batch refresh of metadata
- * Processes collection in bounded batches using offset stored in Redis
- * 
- * WARNING: This is example code - adapt imports and types to your real project.
- */
-
 import { NextRequest, NextResponse } from 'next/server'
 import {
   redis,
@@ -12,8 +5,6 @@ import {
   getRefreshOffset,
   setRefreshOffset,
 } from '@/lib/redis'
-import { batchRefreshRange } from '@/lib/refresh-utils'
-import { batchReadDynamicData } from '@/lib/multicall'
 import { batchRefreshRange } from '@/lib/refresh-utils'
 import { getContractAddress } from '@/lib/networks'
 import { createChainClient } from '@/lib/multicall'

@@ -16,7 +16,6 @@ import {
   DYNAMIC_TTL,
   TOKENURI_TTL,
 } from '@/lib/redis'
-import { batchReadDynamicData } from '@/lib/multicall'
 import { getContractAddress } from '@/lib/networks'
 import type { Address } from 'viem'
 

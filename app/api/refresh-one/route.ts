@@ -1,9 +1,3 @@
-/**
- * Refresh metadata for a single token (idempotent, safe)
- * 
- * WARNING: This is example code - adapt imports and types to your real project.
- */
-
 import { NextRequest, NextResponse } from 'next/server'
 import {
   redis,
@@ -11,15 +5,10 @@ import {
   getDynamicKey,
   getTokenURIKey,
   getHashKey,
-  STATIC_TTL,
-  DYNAMIC_TTL,
-  TOKENURI_TTL,
 } from '@/lib/redis'
-import { batchReadDynamicData } from '@/lib/refresh-utils'
 import { refreshTokenMetadata } from '@/lib/refresh-utils'
 import { getContractAddress } from '@/lib/networks'
 import type { Address } from 'viem'
-
 export async function POST(request: NextRequest) {
   try {
     const tokenId = parseInt(request.nextUrl.searchParams.get('tokenId') || '')
