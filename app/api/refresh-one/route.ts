@@ -5,17 +5,18 @@ import {
   getDynamicKey,
   getTokenURIKey,
   getHashKey,
+  STATIC_TTL,
+  TOKENURI_TTL,
 } from '@/lib/redis'
 import { refreshTokenMetadata } from '@/lib/refresh-utils'
 import { getContractAddress } from '@/lib/networks'
 import type { Address } from 'viem'
+
 export async function POST(request: NextRequest) {
   try {
     const tokenId = parseInt(request.nextUrl.searchParams.get('tokenId') || '')
     const chainId = parseInt(request.nextUrl.searchParams.get('chainId') || '84532')
     const contractAddress = getContractAddress(chainId) as Address
-
-    console.log(`Refresh One API: Refreshing token ${tokenId} on chain ${chainId}, contract ${contractAddress}`)
 
     if (!contractAddress) {
       return NextResponse.json(
@@ -31,22 +32,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    console.log(`Refresh One API: Refreshing token ${tokenId} on chain ${chainId}`)
+
     // Refresh static metadata (tokenURI, traits)
-    console.log(`Refresh One API: Fetching static metadata`)
     const staticRefresh = await refreshTokenMetadata(chainId, contractAddress, tokenId)
     console.log(`Refresh One API: Static refresh result:`, { hasStatic: !!staticRefresh.static, hasTokenURI: !!staticRefresh.tokenURI, error: staticRefresh.error?.message })
 
-    // Refresh dynamic data (dirt level, aging level, owner)
-    console.log(`Refresh One API: Fetching dynamic data`)
-    const dynamicRefresh = await batchReadDynamicData(chainId, contractAddress, [tokenId])
-    const dynamicData = dynamicRefresh[0]
-    console.log(`Refresh One API: Dynamic refresh result:`, { dirtLevel: dynamicData?.dirtLevel, agingLevel: dynamicData?.agingLevel, owner: dynamicData?.owner, error: dynamicData?.error?.message })
-
-    // Prepare cache entries
+    // Write to cache
     const cacheEntries: Array<{ key: string; value: any; ttl: number }> = []
 
     // Cache static data if available
-    if (staticRefresh.static && !staticRefresh.error) {
+    if (staticRefresh.static) {
       cacheEntries.push({
         key: getStaticKey(chainId, contractAddress, tokenId),
         value: staticRefresh.static,
@@ -68,24 +64,10 @@ export async function POST(request: NextRequest) {
       cacheEntries.push({
         key: getHashKey(chainId, contractAddress, tokenId),
         value: staticRefresh.hash,
-        ttl: STATIC_TTL, // Hash doesn't change, use static TTL
+        ttl: STATIC_TTL,
       })
     }
 
-    // Cache dynamic data
-    if (dynamicData && !dynamicData.error) {
-      cacheEntries.push({
-        key: getDynamicKey(chainId, contractAddress, tokenId),
-        value: {
-          dirtLevel: dynamicData.dirtLevel,
-          agingLevel: dynamicData.agingLevel,
-          owner: dynamicData.owner,
-        },
-        ttl: DYNAMIC_TTL,
-      })
-    }
-
-    // Write to cache
     console.log(`Refresh One API: Writing ${cacheEntries.length} cache entries`)
     if (cacheEntries.length > 0) {
       const pipeline = redis.pipeline()
@@ -100,22 +82,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       tokenId,
-      static: staticRefresh.static ? true : false,
-      dynamic: dynamicData && !dynamicData.error,
-      errors: {
-        static: staticRefresh.error?.message,
-        dynamic: dynamicData?.error?.message,
-      },
+      staticCached: !!staticRefresh.static,
+      tokenURICached: !!staticRefresh.tokenURI,
+      hashCached: !!staticRefresh.hash,
+      totalCached: cacheEntries.length,
     })
+
   } catch (error) {
-    console.error('Refresh one API error:', error)
+    console.error('Refresh One API error:', error)
     return NextResponse.json(
-      {
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : String(error),
-      },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }
 }
-
