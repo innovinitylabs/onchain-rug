@@ -99,16 +99,14 @@ export default function GalleryPage() {
     maxSupply: { data: maxSupply, error: maxSupplyError }
   }
 
-  // Log contract info for debugging (remove in production)
+  // Log contract info for debugging
   useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔗 Contract Address Resolution:', {
-        chainId,
-        resolvedAddress: resolvedContractAddress,
-        totalSupply,
-        maxSupply
-      })
-    }
+    console.log('🔗 Contract Address Resolution:', {
+      chainId,
+      resolvedAddress: resolvedContractAddress,
+      totalSupply,
+      maxSupply
+    })
   }, [chainId, resolvedContractAddress, totalSupply, maxSupply])
 
   // Alchemy NFT data fetching - much simpler and more reliable!
