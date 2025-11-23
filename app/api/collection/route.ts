@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
   try {
     const chainId = parseInt(request.nextUrl.searchParams.get('chainId') || '84532')
     const page = parseInt(request.nextUrl.searchParams.get('page') || '1')
-    const contractAddress = getContractAddress(chainId) as Address
+    const contractAddress = getContractAddress(chainId)
 
     if (!contractAddress) {
       return NextResponse.json(
