@@ -65,6 +65,7 @@ export async function GET(request: NextRequest) {
       address: contractAddress,
       abi: onchainRugsABI,
       functionName: 'totalSupply',
+      authorizationList: [],
     })
 
     const totalSupply = Number(totalSupplyResult)
