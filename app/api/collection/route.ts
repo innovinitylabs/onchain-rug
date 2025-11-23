@@ -125,11 +125,7 @@ export async function GET(request: NextRequest) {
       hasMore: page < totalPages,
     }
 
-    // Cache the collection page (shorter TTL since it's a view)
-    // Skip caching in development to allow testing
-    if (process.env.NODE_ENV === 'production') {
-      await redis.setex(collectionKey, 300, response) // 5 minutes
-    }
+    // Collection caching disabled for fresh data
 
     return NextResponse.json(response)
   } catch (error) {
