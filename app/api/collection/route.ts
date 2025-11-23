@@ -48,7 +48,6 @@ export async function GET(request: NextRequest) {
     // Get total supply from cache or calculate
     const totalSupply = 3 // For now, hardcode based on your test data
 
-    const totalSupply = Number(totalSupplyResult)
     const totalPages = Math.ceil(totalSupply / ITEMS_PER_PAGE)
 
     if (page > totalPages || page < 1) {
