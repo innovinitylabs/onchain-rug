@@ -32,22 +32,8 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Check if we have cached collection page
-    const collectionKey = getCollectionKey(chainId, contractAddress, page)
-    const cachedCollection = await redis.get<any>(collectionKey)
-
-    console.log(`Collection API: Checking cache for key ${collectionKey}`)
-
-    // If we have a cached collection but it has null data, don't use it
-    // This allows fresh individual NFT data to be displayed
-    if (cachedCollection && cachedCollection.nfts && cachedCollection.nfts.every((nft: any) => nft.cached === true)) {
-      console.log(`Collection API: Cache hit with all cached data! Returning cached data`)
-      return NextResponse.json(cachedCollection)
-    } else if (cachedCollection) {
-      console.log(`Collection API: Cache hit but data is stale, clearing cache and fetching fresh data`)
-      // Clear the stale cache
-      await redis.del(collectionKey)
-    }
+    // TEMPORARILY DISABLE COLLECTION CACHING to ensure fresh data
+    console.log(`Collection API: Skipping collection cache for fresh data`)
 
     console.log(`Collection API: Cache miss, fetching from blockchain`)
 
@@ -94,8 +80,8 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Calculate token IDs for this page
-    const startTokenId = (page - 1) * ITEMS_PER_PAGE
+    // Calculate token IDs for this page (skip token 0 since it doesn't exist)
+    const startTokenId = Math.max((page - 1) * ITEMS_PER_PAGE, 1) // Start from token 1
     const endTokenId = Math.min(startTokenId + ITEMS_PER_PAGE - 1, totalSupply - 1)
     const tokenIds: number[] = []
     for (let i = startTokenId; i <= endTokenId; i++) {
