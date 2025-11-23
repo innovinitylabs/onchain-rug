@@ -5,6 +5,7 @@
  */
 
 import { createHash } from 'crypto'
+import { getRpcUrl } from './networks'
 // batchReadTokenURIs temporarily disabled
 import type { Address } from 'viem'
 
@@ -35,16 +36,91 @@ export async function fetchTokenURI(
   tokenId: number
 ): Promise<{ tokenURI: string | null; error?: Error }> {
   try {
-    // Simplified tokenURI fetching to avoid build issues
-    const results = [{ tokenURI: null, error: new Error('TokenURI fetching not implemented yet') }]
-    const result = results[0]
-    
-    if (!result?.tokenURI) {
-      return { tokenURI: null, error: result.error || new Error('Failed to fetch tokenURI') }
+    console.log(`fetchTokenURI: Starting for token ${tokenId} on chain ${chainId}`)
+    // Make direct RPC call to fetch tokenURI
+    const rpcUrl = getRpcUrl(chainId)
+    console.log(`fetchTokenURI: RPC URL: ${rpcUrl}`)
+    if (!rpcUrl) {
+      return { tokenURI: null, error: new Error('RPC URL not configured') }
     }
 
+    // tokenURI(uint256) function signature: 0xc87b56dd
+    const functionSignature = '0xc87b56dd'
+    const tokenIdHex = BigInt(tokenId).toString(16).padStart(64, '0')
+    const data = functionSignature + tokenIdHex
+
+    console.log(`fetchTokenURI: Making RPC call to ${contractAddress.toLowerCase()} with data: ${data}`)
+
+    const response = await fetch(rpcUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'eth_call',
+        params: [{
+          to: contractAddress.toLowerCase(),
+          data: data
+        }, 'latest']
+      })
+    })
+
+    console.log(`fetchTokenURI: RPC response status: ${response.status}`)
+
+    if (!response.ok) {
+      return { tokenURI: null, error: new Error(`RPC call failed: ${response.status}`) }
+    }
+
+    const jsonResponse = await response.json()
+    console.log(`fetchTokenURI: RPC response:`, jsonResponse)
+
+    if (jsonResponse.error) {
+      return { tokenURI: null, error: new Error(jsonResponse.error.message) }
+    }
+
+    // Decode the result - it's a dynamic string return
+    const result = jsonResponse.result
+    if (!result || result === '0x') {
+      return { tokenURI: null, error: new Error('Empty result from contract') }
+    }
+
+    // Remove 0x prefix
+    const hexData = result.slice(2)
+
+    // ABI encoding for dynamic string:
+    // - First 32 bytes: offset to string data (usually 0x20 = 32)
+    // - Next 32 bytes: length of string
+    // - Remaining bytes: string data
+
+    // Skip the first 32 bytes (offset), then read the next 32 bytes for length
+    const lengthHex = hexData.slice(64, 128) // Length field
+    const stringLength = parseInt(lengthHex, 16)
+
+    // Skip offset (32 bytes) + length field (32 bytes) to get to string data
+    const stringData = hexData.slice(128, 128 + (stringLength * 2))
+
+    // Convert hex string to UTF-8
+    let tokenURI = ''
+    for (let i = 0; i < stringData.length; i += 2) {
+      const byte = parseInt(stringData.substr(i, 2), 16)
+      if (byte !== 0) {
+        tokenURI += String.fromCharCode(byte)
+      } else {
+        break // Stop at null terminator
+      }
+    }
+
+    // Clean up the string
+    tokenURI = tokenURI.trim()
+
+    if (!tokenURI) {
+      return { tokenURI: null, error: new Error('Empty tokenURI string') }
+    }
+
+    console.log(`fetchTokenURI: Successfully decoded tokenURI: ${tokenURI}`)
+
     // Resolve IPFS if needed
-    const resolvedURI = ipfsToGateway(result.tokenURI)
+    const resolvedURI = ipfsToGateway(tokenURI)
     return { tokenURI: resolvedURI }
   } catch (error) {
     return {
@@ -148,9 +224,9 @@ export async function refreshTokenMetadata(
   error?: Error
 }> {
   try {
-    // Fetch tokenURI metadata
+    // Fetch the tokenURI metadata from the blockchain
     const { metadata, error } = await fetchTokenURIMetadata(chainId, contractAddress, tokenId)
-    
+
     if (!metadata || error) {
       return {
         static: null,
@@ -160,20 +236,19 @@ export async function refreshTokenMetadata(
       }
     }
 
-    // Compute hash
+    // Compute hash for change detection
     const hash = computeTokenURIHash(metadata)
 
-    // Extract static traits
+    // Extract static traits (metadata that doesn't change)
     const staticTraits = extractStaticTraits(metadata)
 
-    // Get tokenURI for storage
-    const { tokenURI } = await fetchTokenURI(chainId, contractAddress, tokenId)
+    // Get the raw tokenURI for storage
+    const { tokenURI: rawTokenURI } = await fetchTokenURI(chainId, contractAddress, tokenId)
 
     return {
       static: staticTraits,
-      tokenURI: tokenURI || null,
+      tokenURI: rawTokenURI || null,
       hash,
-      error: undefined,
     }
   } catch (error) {
     return {

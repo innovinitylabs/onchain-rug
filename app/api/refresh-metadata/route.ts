@@ -6,10 +6,7 @@ import {
   setRefreshOffset,
 } from '@/lib/redis'
 import { batchRefreshRange } from '@/lib/refresh-utils'
-import { getContractAddress } from '@/lib/networks'
-import { createChainClient } from '@/lib/multicall'
-import { onchainRugsABI } from '@/lib/web3'
-import type { Address } from 'viem'
+import { getContractAddress, getRpcUrl } from '@/lib/networks'
 
 // Configuration
 const TOKENS_PER_CRON = parseInt(process.env.TOKENS_PER_CRON || '200')
@@ -28,15 +25,38 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get total supply
-    const client = createChainClient(chainId)
-    const totalSupplyResult = await client.readContract({
-      address: contractAddress,
-      abi: onchainRugsABI,
-      functionName: 'totalSupply',
-      authorizationList: [],
+    // Get total supply from blockchain
+    const rpcUrl = getRpcUrl(chainId)
+    if (!rpcUrl) {
+      return NextResponse.json(
+        { error: 'RPC URL not configured' },
+        { status: 500 }
+      )
+    }
+
+    const totalSupplyResponse = await fetch(rpcUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'eth_call',
+        params: [{
+          to: contractAddress.toLowerCase(),
+          data: '0x18160ddd' // totalSupply()
+        }, 'latest']
+      })
     })
-    const totalSupply = Number(totalSupplyResult)
+
+    if (!totalSupplyResponse.ok) {
+      return NextResponse.json(
+        { error: 'Failed to fetch total supply' },
+        { status: 500 }
+      )
+    }
+
+    const totalSupplyData = await totalSupplyResponse.json()
+    const totalSupply = totalSupplyData.result ? parseInt(totalSupplyData.result, 16) : 0
 
     // Get current offset
     const offset = await getRefreshOffset(chainId, contractAddress)

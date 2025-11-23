@@ -8,7 +8,7 @@ import {
   STATIC_TTL,
   TOKENURI_TTL,
 } from '@/lib/redis'
-import { refreshTokenMetadata } from '@/lib/refresh-utils'
+import { refreshTokenMetadata, computeTokenURIHash } from '@/lib/refresh-utils'
 import { getContractAddress } from '@/lib/networks'
 import type { Address } from 'viem'
 
@@ -33,10 +33,28 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(`Refresh One API: Refreshing token ${tokenId} on chain ${chainId}`)
+    console.log(`Refresh One API: Contract address: ${contractAddress}`)
+    console.log(`Refresh One API: Static key:`, getStaticKey(chainId, contractAddress, tokenId))
 
-    // Refresh static metadata (tokenURI, traits)
+    // Fetch real metadata from blockchain
+    console.log(`Refresh One API: Fetching real blockchain data for token ${tokenId}`)
     const staticRefresh = await refreshTokenMetadata(chainId, contractAddress, tokenId)
-    console.log(`Refresh One API: Static refresh result:`, { hasStatic: !!staticRefresh.static, hasTokenURI: !!staticRefresh.tokenURI, error: staticRefresh.error?.message })
+    console.log(`Refresh One API: Blockchain data result:`, {
+      hasStatic: !!staticRefresh.static,
+      hasTokenURI: !!staticRefresh.tokenURI,
+      hasError: !!staticRefresh.error,
+      error: staticRefresh.error?.message
+    })
+
+    if (staticRefresh.error) {
+      console.error(`Refresh One API: Blockchain fetch failed:`, staticRefresh.error)
+      return NextResponse.json(
+        { error: `Failed to fetch NFT data: ${staticRefresh.error.message}` },
+        { status: 500 }
+      )
+    }
+
+    console.log(`Refresh One API: Real data loaded:`, staticRefresh.static)
 
     // Write to cache
     const cacheEntries: Array<{ key: string; value: any; ttl: number }> = []

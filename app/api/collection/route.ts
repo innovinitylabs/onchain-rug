@@ -38,15 +38,52 @@ export async function GET(request: NextRequest) {
 
     console.log(`Collection API: Checking cache for key ${collectionKey}`)
 
-    if (cachedCollection) {
-      console.log(`Collection API: Cache hit! Returning cached data`)
+    // If we have a cached collection but it has null data, don't use it
+    // This allows fresh individual NFT data to be displayed
+    if (cachedCollection && cachedCollection.nfts && cachedCollection.nfts.every((nft: any) => nft.cached === true)) {
+      console.log(`Collection API: Cache hit with all cached data! Returning cached data`)
       return NextResponse.json(cachedCollection)
+    } else if (cachedCollection) {
+      console.log(`Collection API: Cache hit but data is stale, clearing cache and fetching fresh data`)
+      // Clear the stale cache
+      await redis.del(collectionKey)
     }
 
     console.log(`Collection API: Cache miss, fetching from blockchain`)
 
-    // Get total supply from cache or calculate
-    const totalSupply = 3 // For now, hardcode based on your test data
+    // Get total supply from blockchain
+    const rpcUrl = getRpcUrl(chainId)
+    if (!rpcUrl) {
+      return NextResponse.json(
+        { error: 'RPC URL not configured' },
+        { status: 500 }
+      )
+    }
+
+    // Fetch totalSupply from contract
+    const totalSupplyResponse = await fetch(rpcUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'eth_call',
+        params: [{
+          to: contractAddress.toLowerCase(),
+          data: '0x18160ddd' // totalSupply()
+        }, 'latest']
+      })
+    })
+
+    if (!totalSupplyResponse.ok) {
+      return NextResponse.json(
+        { error: 'Failed to fetch total supply' },
+        { status: 500 }
+      )
+    }
+
+    const totalSupplyData = await totalSupplyResponse.json()
+    const totalSupply = totalSupplyData.result ? parseInt(totalSupplyData.result, 16) : 0
 
     const totalPages = Math.ceil(totalSupply / ITEMS_PER_PAGE)
 
@@ -66,11 +103,16 @@ export async function GET(request: NextRequest) {
     }
 
     // Batch fetch from cache
+    console.log(`Collection API: Contract address: ${contractAddress}`)
+    console.log(`Collection API: Static keys:`, getStaticKeys(chainId, contractAddress, tokenIds))
+
     const [staticData, dynamicData, tokenURIData] = await Promise.all([
       getCachedBatch<any>(getStaticKeys(chainId, contractAddress, tokenIds)),
       getCachedBatch<any>(getDynamicKeys(chainId, contractAddress, tokenIds)),
       getCachedBatch<string>(getTokenURIKeys(chainId, contractAddress, tokenIds)),
     ])
+
+    console.log(`Collection API: Static data results:`, staticData)
 
     // Combine data
     const nfts = tokenIds.map((tokenId, index) => {
@@ -98,7 +140,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Cache the collection page (shorter TTL since it's a view)
-    await redis.setex(collectionKey, 300, response) // 5 minutes
+    // Skip caching in development to allow testing
+    if (process.env.NODE_ENV === 'production') {
+      await redis.setex(collectionKey, 300, response) // 5 minutes
+    }
 
     return NextResponse.json(response)
   } catch (error) {
