@@ -16,9 +16,6 @@ import {
 } from '@/lib/redis'
 import { getContractAddress } from '@/lib/networks'
 import { getRpcUrl } from '@/lib/networks'
-import { createPublicClient, http } from 'viem'
-import { onchainRugsABI } from '@/lib/web3'
-import type { Address } from 'viem'
 
 const ITEMS_PER_PAGE = 24
 
