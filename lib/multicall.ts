@@ -72,6 +72,7 @@ export async function batchReadContract(
         args: call.args,
       })),
       multicallAddress, // Chain-specific multicall address
+      authorizationList: [],
     })
 
     return results.map((result, i) => {
