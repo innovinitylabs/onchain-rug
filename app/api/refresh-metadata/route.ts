@@ -14,6 +14,7 @@ import {
 } from '@/lib/redis'
 import { batchRefreshRange } from '@/lib/refresh-utils'
 import { batchReadDynamicData } from '@/lib/multicall'
+import { batchRefreshRange } from '@/lib/refresh-utils'
 import { getContractAddress } from '@/lib/networks'
 import { createChainClient } from '@/lib/multicall'
 import { onchainRugsABI } from '@/lib/web3'
