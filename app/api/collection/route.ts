@@ -15,7 +15,8 @@ import {
   STATIC_TTL,
 } from '@/lib/redis'
 import { getContractAddress } from '@/lib/networks'
-import { createChainClient } from '@/lib/multicall'
+import { getRpcUrl } from '@/lib/networks'
+import { createPublicClient, http } from 'viem'
 import { onchainRugsABI } from '@/lib/web3'
 import type { Address } from 'viem'
 
@@ -47,13 +48,24 @@ export async function GET(request: NextRequest) {
 
     console.log(`Collection API: Cache miss, fetching from blockchain`)
 
-    // Get total supply
-    const client = createChainClient(chainId)
+    // Get total supply - temporarily using direct RPC call
+    const rpcUrl = getRpcUrl(chainId)
+    if (!rpcUrl) {
+      return NextResponse.json(
+        { error: 'RPC URL not configured' },
+        { status: 500 }
+      )
+    }
+
+    const client = createPublicClient({
+      transport: http(rpcUrl),
+    })
+
     const totalSupplyResult = await client.readContract({
       address: contractAddress,
       abi: onchainRugsABI,
       functionName: 'totalSupply',
-    } as any)
+    })
 
     const totalSupply = Number(totalSupplyResult)
     const totalPages = Math.ceil(totalSupply / ITEMS_PER_PAGE)
