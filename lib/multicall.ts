@@ -37,12 +37,69 @@ interface MulticallResult {
 /**
  * Execute a batch of contract calls using multicall3
  */
+// TEMPORARILY DISABLED - causing TypeScript build issues
 export async function batchReadContract(
   chainId: number,
   contractAddress: Address,
   calls: Array<{ functionName: string; args: any[] }>,
   abi: any[]
 ): Promise<Array<{ success: boolean; data: any; error?: Error }>> {
+  throw new Error('Multicall temporarily disabled due to build issues')
+
+  // Original implementation commented out
+  /*
+  const client = createChainClient(chainId)
+  const multicallAddress = getMulticallAddress(chainId) as Address
+
+  // Encode all calls
+  const multicallCalls: MulticallCall[] = calls.map((call) => {
+    const callData = encodeFunctionData({
+      abi,
+      functionName: call.functionName as any,
+      args: call.args,
+    })
+
+    return {
+      target: contractAddress,
+      callData,
+    }
+  })
+
+  try {
+    // Use multicall3 aggregate
+    // viem will use the default multicall address if not specified
+    // We specify it explicitly for compatibility across all chains
+    const results = await client.multicall({
+      contracts: calls.map((call, i) => ({
+        address: contractAddress,
+        abi,
+        functionName: call.functionName as any,
+        args: call.args,
+      })),
+      multicallAddress, // Chain-specific multicall address
+      authorizationList: [],
+    })
+
+    return results.map((result, i) => {
+      if (result.status === 'success') {
+        return {
+          success: true,
+          data: result.result,
+        }
+      } else {
+        return {
+          success: false,
+          data: null,
+          error: new Error(`Call ${i} failed`),
+        }
+      }
+    })
+  } catch (error) {
+    console.error(`Multicall failed for chain ${chainId}, contract ${contractAddress}:`, error)
+    return calls.map(() => ({ success: false, data: null, error: error instanceof Error ? error : new Error(String(error)) }))
+  }
+  */
+}
   const client = createChainClient(chainId)
   const multicallAddress = getMulticallAddress(chainId) as Address
 

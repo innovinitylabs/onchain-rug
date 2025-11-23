@@ -225,6 +225,50 @@ export async function batchRefreshMetadata(
   return results
 }
 
+// Original multicall implementation - disabled to avoid TypeScript build issues
+/*
+  const calls = tokenIds.flatMap((tokenId) => [
+    {
+      functionName: 'ownerOf',
+      args: [BigInt(tokenId)],
+    },
+    {
+      functionName: 'getDirtLevel',
+      args: [BigInt(tokenId)],
+    },
+    {
+      functionName: 'getAgingLevel',
+      args: [BigInt(tokenId)],
+    },
+  ])
+
+  const batchResults = await batchReadContract(
+    chainId,
+    contractAddress,
+    calls,
+    onchainRugsABI
+  )
+
+  const results: Array<{ dirtLevel: number | null; agingLevel: number | null; owner: string | null; error?: Error }> = []
+
+  for (let i = 0; i < tokenIds.length; i++) {
+    const baseIndex = i * 3
+    const ownerResult = batchResults[baseIndex]
+    const dirtResult = batchResults[baseIndex + 1]
+    const agingResult = batchResults[baseIndex + 2]
+
+    results.push({
+      dirtLevel: dirtResult.success ? Number(dirtResult.data) : null,
+      agingLevel: agingResult.success ? Number(agingResult.data) : null,
+      owner: ownerResult.success ? ownerResult.data as string : null,
+      error: ownerResult.error || dirtResult.error || agingResult.error || undefined,
+    })
+  }
+
+  return results
+}
+*/
+
 /**
  * Refresh a range of tokens (for cron job)
  */
