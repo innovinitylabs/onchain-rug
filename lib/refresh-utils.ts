@@ -38,7 +38,7 @@ export async function fetchTokenURI(
     const results = await batchReadTokenURIs(chainId, contractAddress, [tokenId])
     const result = results[0]
     
-    if (!result.tokenURI) {
+    if (!result?.tokenURI) {
       return { tokenURI: null, error: result.error || new Error('Failed to fetch tokenURI') }
     }
 
