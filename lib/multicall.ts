@@ -5,7 +5,7 @@
  * Uses viem's multicall3 aggregate pattern for batch blockchain reads.
  */
 
-import { createPublicClient, http, type Address, type PublicClient } from 'viem'
+import { createPublicClient, http, encodeFunctionData, type Address, type PublicClient } from 'viem'
 import { getRpcUrl, getMulticallAddress, getNetworkByChainId } from './networks'
 import { onchainRugsABI } from './web3'
 
@@ -48,7 +48,7 @@ export async function batchReadContract(
 
   // Encode all calls
   const multicallCalls: MulticallCall[] = calls.map((call) => {
-    const callData = client.encodeFunctionData({
+    const callData = encodeFunctionData({
       abi,
       functionName: call.functionName as any,
       args: call.args,
