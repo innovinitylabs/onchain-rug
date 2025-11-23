@@ -17,7 +17,6 @@ import {
 import { getContractAddress } from '@/lib/networks'
 import { getRpcUrl } from '@/lib/networks'
 import { createPublicClient, http } from 'viem'
-import { getCachedBatch, getCollectionKey } from '@/lib/redis'
 import { onchainRugsABI } from '@/lib/web3'
 import type { Address } from 'viem'
 
