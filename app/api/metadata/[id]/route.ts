@@ -41,7 +41,7 @@ export async function GET(
     const { id } = await params
     const tokenId = parseInt(id)
     const chainId = parseInt(request.nextUrl.searchParams.get('chainId') || '84532')
-    const contractAddress = getContractAddress(chainId) as Address
+    const contractAddress = getContractAddress(chainId)
 
     if (!contractAddress) {
       return NextResponse.json(

@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
   try {
     const tokenId = parseInt(request.nextUrl.searchParams.get('tokenId') || '')
     const chainId = parseInt(request.nextUrl.searchParams.get('chainId') || '84532')
-    const contractAddress = getContractAddress(chainId) as Address
+    const contractAddress = getContractAddress(chainId)
 
     if (!contractAddress) {
       return NextResponse.json(

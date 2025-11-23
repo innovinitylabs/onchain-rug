@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     console.log('Cron API: Request received')
 
     const chainId = parseInt(request.nextUrl.searchParams.get('chainId') || '84532')
-    const contractAddress = getContractAddress(chainId) as Address
+    const contractAddress = getContractAddress(chainId)
 
     if (!contractAddress) {
       return NextResponse.json(
