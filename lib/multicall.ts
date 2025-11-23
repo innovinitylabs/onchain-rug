@@ -22,7 +22,7 @@ export function createChainClient(chainId: number): PublicClient {
   }
 
   // Use the same pattern as other files in the project
-  const client = createPublicClient({
+  return createPublicClient({
     chain: {
       id: network.chainId,
       name: network.name,
@@ -38,9 +38,7 @@ export function createChainClient(chainId: number): PublicClient {
       },
     },
     transport: http(network.rpcUrl),
-  })
-
-  return client
+  }) as PublicClient
 }
 
 /**
