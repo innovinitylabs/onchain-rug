@@ -95,7 +95,7 @@ export async function getCachedBatch<T>(keys: string[]): Promise<(T | null)[]> {
   try {
     if (keys.length === 0) return []
     const results = await redis.mget(...keys)
-    return results || []
+    return (results || []) as (T | null)[]
   } catch (error) {
     console.error(`Redis mget error for ${keys.length} keys:`, error)
     return keys.map(() => null)
