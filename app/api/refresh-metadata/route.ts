@@ -46,6 +46,7 @@ export async function GET(request: NextRequest) {
     console.log(`Cron API: Refreshing tokens ${startTokenId} to ${endTokenId} (total: ${totalSupply})`)
 
     // Refresh static metadata
+    console.log(`Cron API: Calling batchRefreshRange with range ${startTokenId}-${endTokenId}`)
     const staticRefreshResults = await batchRefreshRange(
       chainId,
       contractAddress,
@@ -53,16 +54,20 @@ export async function GET(request: NextRequest) {
       endTokenId
     )
 
+    console.log(`Cron API: batchRefreshRange returned:`, typeof staticRefreshResults, Array.isArray(staticRefreshResults) ? staticRefreshResults.length : 'not array')
+
     // Update offset for next cron run
     const newOffset = endTokenId + 1
     console.log(`Cron API: Updating offset to ${newOffset}`)
     await setRefreshOffset(chainId, contractAddress, newOffset)
 
-    const successful = staticRefreshResults.filter(r => !r.error).length
-    const failed = staticRefreshResults.length - successful
+    // Ensure it's an array
+    const results = Array.isArray(staticRefreshResults) ? staticRefreshResults : []
+    const successful = results.filter(r => !r.error).length
+    const failed = results.length - successful
 
     console.log(`Cron API: Final results`, {
-      processed: staticRefreshResults.length,
+      processed: results.length,
       successful,
       failed,
       newOffset
@@ -70,10 +75,10 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      processed: staticRefreshResults.length,
+      processed: results.length,
       successful,
       failed,
-      staticCached: staticRefreshResults.filter(r => r.static).length,
+      staticCached: results.filter(r => r.static).length,
       offset: newOffset,
       totalSupply,
       nextRange: {
