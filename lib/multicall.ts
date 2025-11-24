@@ -1,5 +1,5 @@
 import { createPublicClient, http } from 'viem'
-import { getContractAddress } from './networks'
+import { getContractAddress, getRpcUrl } from './networks'
 
 /**
  * Create a chain client for blockchain interactions
