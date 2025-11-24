@@ -7,8 +7,11 @@
 
 import { Redis } from '@upstash/redis'
 
-// Initialize Redis client using environment variables
-const redis = Redis.fromEnv()
+// Initialize Redis client with explicit Upstash configuration
+const redis = new Redis({
+  url: process.env.KV_REST_API_URL,
+  token: process.env.KV_REST_API_TOKEN,
+})
 
 export { redis }
 
@@ -77,13 +80,15 @@ export async function getCached<T>(key: string): Promise<T | null> {
 
 export async function setCached<T>(key: string, value: T, ttl?: number): Promise<void> {
   try {
+    console.log(`🔴 Redis SET: ${key} (TTL: ${ttl || 'none'})`)
     if (ttl) {
       await redis.setex(key, ttl, value)
     } else {
       await redis.set(key, value)
     }
+    console.log(`✅ Redis SET success: ${key}`)
   } catch (error) {
-    console.error(`Redis set error for key ${key}:`, error)
+    console.error(`❌ Redis set error for key ${key}:`, error)
   }
 }
 
