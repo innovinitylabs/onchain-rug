@@ -80,9 +80,9 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Calculate token IDs for this page (skip token 0 since it doesn't exist)
+    // Calculate token IDs for this page (start from token 1 since token 0 doesn't exist)
     const startTokenId = Math.max((page - 1) * ITEMS_PER_PAGE, 1) // Start from token 1
-    const endTokenId = Math.min(startTokenId + ITEMS_PER_PAGE - 1, totalSupply - 1)
+    const endTokenId = Math.min(startTokenId + ITEMS_PER_PAGE - 1, totalSupply)
     const tokenIds: number[] = []
     for (let i = startTokenId; i <= endTokenId; i++) {
       tokenIds.push(i)
