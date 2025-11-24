@@ -194,7 +194,6 @@ contract SecurityFixesTest is Test {
             0,
             visual,
             art,
-            2,
             4
         );
         
@@ -419,7 +418,6 @@ contract SecurityFixesTest is Test {
             0,
             visual,
             art,
-            2,
             4
         );
         

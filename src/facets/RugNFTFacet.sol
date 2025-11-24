@@ -78,7 +78,6 @@ contract RugNFTFacet is ICreatorToken {
      * @param seed Random seed for generation (0 = auto-generate)
      * @param visual Visual configuration parameters
      * @param art Art generation data
-     * @param complexity Pattern complexity (deprecated, kept for compatibility)
      * @param characterCount Total characters (can be derived from filteredCharacterMap)
      *
      * @dev TEST DATA REFERENCE: See TEST_MINT_REFERENCE.md and test_mint_data.json
@@ -89,10 +88,9 @@ contract RugNFTFacet is ICreatorToken {
         uint256 seed,
         VisualConfig calldata visual,
         ArtData calldata art,
-        uint8 complexity,
         uint256 characterCount
     ) external payable {
-        this.mintRugFor{value: msg.value}(msg.sender, textRows, seed, visual, art, complexity, characterCount);
+        this.mintRugFor{value: msg.value}(msg.sender, textRows, seed, visual, art, characterCount);
     }
 
     function mintRugFor(
@@ -101,7 +99,6 @@ contract RugNFTFacet is ICreatorToken {
         uint256 seed,
         VisualConfig calldata visual,
         ArtData calldata art,
-        uint8 complexity,
         uint256 characterCount
     ) external payable {
         require(recipient != address(0), "Invalid recipient");
@@ -154,7 +151,7 @@ contract RugNFTFacet is ICreatorToken {
             warpThickness: visual.warpThickness,
             mintTime: block.timestamp,
             filteredCharacterMap: art.filteredCharacterMap,
-            complexity: complexity,
+            curator: recipient,
             characterCount: characterCount,
             stripeCount: visual.stripeCount
         });
@@ -323,7 +320,7 @@ contract RugNFTFacet is ICreatorToken {
             '"},{"trait_type":"Character Count","value":"', rug.characterCount.toString(),
             '"},{"trait_type":"Palette Name","value":"', rug.paletteName,
             '"},{"trait_type":"Stripe Count","value":"', rug.stripeCount.toString(),
-            '"},{"trait_type":"Complexity","value":"', uint256(rug.complexity).toString(),
+            '"},{"trait_type":"Curator","value":"', Strings.toHexString(uint256(uint160(rug.curator)), 20),
             '"},{"trait_type":"Warp Thickness","value":"', uint256(rug.warpThickness).toString()
         ));
 

@@ -83,7 +83,7 @@ contract TestMarketplace is Script {
         });
         
         uint256 totalSupplyBefore = RugNFTFacet(diamondAddress).totalSupply();
-        RugNFTFacet(diamondAddress).mintRug{value: 0.00003 ether}(text1, 12345, visual1, art1, 3, 15);
+        RugNFTFacet(diamondAddress).mintRug{value: 0.00003 ether}(text1, 12345, visual1, art1, 15);
         tokenId1 = RugNFTFacet(diamondAddress).totalSupply();
         
         console.log("  Minted NFT #", tokenId1, "to wallet1");
@@ -104,7 +104,7 @@ contract TestMarketplace is Script {
             filteredCharacterMap: "chars2"
         });
         
-        RugNFTFacet(diamondAddress).mintRug{value: 0.00003 ether}(text2, 67890, visual2, art2, 4, 20);
+        RugNFTFacet(diamondAddress).mintRug{value: 0.00003 ether}(text2, 67890, visual2, art2, 20);
         tokenId2 = RugNFTFacet(diamondAddress).totalSupply();
         
         console.log("  Minted NFT #", tokenId2, "to wallet1");
@@ -125,7 +125,7 @@ contract TestMarketplace is Script {
             filteredCharacterMap: "chars3"
         });
         
-        RugNFTFacet(diamondAddress).mintRug{value: 0.00003 ether}(text3, 11111, visual3, art3, 5, 25);
+        RugNFTFacet(diamondAddress).mintRug{value: 0.00003 ether}(text3, 11111, visual3, art3, 25);
         tokenId3 = RugNFTFacet(diamondAddress).totalSupply();
         
         console.log("  Minted NFT #", tokenId3, "to wallet1");

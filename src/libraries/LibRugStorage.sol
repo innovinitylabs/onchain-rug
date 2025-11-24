@@ -22,7 +22,7 @@ library LibRugStorage {
         uint8 warpThickness;            // Design parameter (1-5)
         uint256 mintTime;               // Auto-set on mint
         string filteredCharacterMap;    // Used characters only
-        uint8 complexity;               // Pattern complexity (1-5)
+        address curator;                // The address that minted/curated this NFT
         uint256 characterCount;         // Total characters
         uint256 stripeCount;            // Pattern stripes
     }

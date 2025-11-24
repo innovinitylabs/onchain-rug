@@ -18,7 +18,6 @@ interface Web3MintingProps {
   characterMap: any
   warpThickness: number
   seed: number
-  complexity: number
 }
 
 export default function Web3Minting({
@@ -27,8 +26,7 @@ export default function Web3Minting({
   currentStripeData,
   characterMap,
   warpThickness,
-  seed,
-  complexity
+  seed
 }: Web3MintingProps) {
   const [isMinting, setIsMinting] = useState(false)
   const { address, isConnected } = useAccount()
@@ -317,7 +315,6 @@ export default function Web3Minting({
                   "name": "art",
                   "type": "tuple"
                 },
-                {"internalType": "uint8", "name": "complexity", "type": "uint8"},
                 {"internalType": "uint256", "name": "characterCount", "type": "uint256"}
               ],
               "name": "mintRug",
@@ -340,7 +337,6 @@ export default function Web3Minting({
               minifiedStripeData: JSON.stringify(optimized.stripeData),
               filteredCharacterMap: JSON.stringify(optimized.characterMap)
             },
-            complexity,
             BigInt(optimized.textRows.join('').length)
           ],
           value: parseEther(mintCost.toString()),
@@ -385,7 +381,6 @@ export default function Web3Minting({
         minifiedPalette: JSON.stringify(optimized.palette),
         filteredCharacterMap: JSON.stringify(optimized.characterMap),
         warpThickness: warpThickness, // Dynamic from generator
-        complexity: complexity, // Dynamic from generator
         characterCount: optimized.textRows.join('').length,
         stripeCount: optimized.stripeData.length,
         mintCost,
@@ -425,7 +420,6 @@ export default function Web3Minting({
                   "name": "art",
                   "type": "tuple"
                 },
-                {"internalType": "uint8", "name": "complexity", "type": "uint8"},
                 {"internalType": "uint256", "name": "characterCount", "type": "uint256"}
               ],
               "name": "mintRug",
@@ -448,7 +442,6 @@ export default function Web3Minting({
               minifiedStripeData: JSON.stringify(optimized.stripeData),
               filteredCharacterMap: JSON.stringify(optimized.characterMap)
             },
-            complexity,
             BigInt(optimized.textRows.join('').length)
           ],
           value: parseEther(mintCost.toString()),
@@ -474,7 +467,6 @@ export default function Web3Minting({
                   { name: 'minifiedStripeData', type: 'string' },
                   { name: 'filteredCharacterMap', type: 'string' },
                 ] },
-                { name: 'complexity', type: 'uint8' },
                 { name: 'characterCount', type: 'uint256' },
               ],
               name: 'mintRugFor',
@@ -495,7 +487,6 @@ export default function Web3Minting({
               minifiedStripeData: JSON.stringify(optimized.stripeData),
               filteredCharacterMap: JSON.stringify(optimized.characterMap)
             },
-            complexity,
             BigInt(optimized.textRows.join('').length)
           ],
         })
@@ -515,7 +506,6 @@ export default function Web3Minting({
             minifiedStripeData: JSON.stringify(optimized.stripeData),
             filteredCharacterMap: JSON.stringify(optimized.characterMap)
           },
-          complexity,
           characterCount: BigInt(optimized.textRows.join('').length),
           valueWei,
         })

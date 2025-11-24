@@ -30,7 +30,6 @@ export default function GeneratorPage() {
   const [showTexture, setShowTexture] = useState(false)
   const [textureLevel, setTextureLevel] = useState(0) // 0 = none, 1 = 7 days, 2 = 30 days
   const [warpThickness, setWarpThickness] = useState(2) // Default warp thickness
-  const [complexity, setComplexity] = useState(2) // Default complexity
 
   // Debounce timer for live updates
   const liveUpdateTimerRef = useRef<NodeJS.Timeout | null>(null)
@@ -463,9 +462,6 @@ export default function GeneratorPage() {
     setStripeData(doormatData.stripeData) // Update React state
     setPalette(doormatData.selectedPalette) // Update palette React state
 
-    // Calculate complexity based on stripe patterns
-    const calculatedComplexity = calculateNumericComplexity(doormatData.stripeData)
-    doormatData.complexity = calculatedComplexity
 
     // Update text colors and generate text data (MISSING FROM ORIGINAL)
     if (typeof window !== 'undefined' && (window as any).p5Instance) {
@@ -1892,7 +1888,6 @@ export default function GeneratorPage() {
 
       // Update warp thickness and complexity state from generated doormat data
       setWarpThickness(doormatData.warpThickness)
-      setComplexity((doormatData as any).complexity || 2)
 
       // Update UI
       setIsLoaded(true)
@@ -1940,44 +1935,6 @@ export default function GeneratorPage() {
   }
 
   // Calculate numeric complexity for minting (1-5 scale)
-  const calculateNumericComplexity = (stripeData: any[]): number => {
-    if (!stripeData || stripeData.length === 0) return 1
-
-    let complexityScore = 0
-    let mixedCount = 0
-    let texturedCount = 0
-    let secondaryColorCount = 0
-
-    // Count different pattern types and features
-    for (const stripe of stripeData) {
-      if (stripe.weaveType === 'm') {
-        mixedCount++
-        complexityScore += 2 // Mixed weave adds significant complexity
-      } else if (stripe.weaveType === 't') {
-        texturedCount++
-        complexityScore += 1.5 // Textured adds medium complexity
-      }
-      // Solid adds no complexity
-
-      if (stripe.secondaryColor) {
-        secondaryColorCount++
-        complexityScore += 1 // Secondary colors add complexity
-      }
-    }
-
-    // Calculate ratios
-    const solidRatio = (stripeData.length - mixedCount - texturedCount) / stripeData.length
-    const secondaryRatio = secondaryColorCount / stripeData.length
-    const normalizedComplexity = complexityScore / (stripeData.length * 3) // Max possible is 3 per stripe
-
-    // Convert to 1-5 scale based on complexity patterns
-    if (solidRatio > 0.9) return 1 // Almost all solid = lowest complexity
-    if (solidRatio > 0.75 && normalizedComplexity < 0.2) return 1 // Mostly solid with minimal features
-    if (solidRatio > 0.6 && normalizedComplexity < 0.3) return 2 // Good balance of solid and features
-    if (normalizedComplexity < 0.5) return 3 // Significant complexity features
-    if (normalizedComplexity < 0.7) return 4 // High complexity
-    return 5 // Maximum complexity
-  }
 
   // Calculate stripe complexity (for display purposes)
   const calculateStripeComplexity = (stripeData: any[]) => {
@@ -2393,7 +2350,7 @@ export default function GeneratorPage() {
             console.log(`🎲 Auto-generation ${currentGeneration + 1}/${generationCount} with seed: ${randomSeed}`)
             generateDoormatCore(randomSeed, doormatData)
             setWarpThickness(doormatData.warpThickness) // Update warp thickness state
-            setComplexity((doormatData as any).complexity || 2) // Update complexity state
+ // Update complexity state
             currentGeneration++
 
             // Schedule next generation with increasing delay for visual effect
@@ -2405,7 +2362,7 @@ export default function GeneratorPage() {
             generateDoormatCore(finalSeed, doormatData)
             setCurrentSeed(finalSeed) // Update the state so minting works
             setWarpThickness(doormatData.warpThickness) // Update warp thickness state
-            setComplexity((doormatData as any).complexity || 2) // Update complexity state
+ // Update complexity state
             console.log('✅ Auto-generation cycle complete - page fully ready!')
           }
         }
@@ -3081,7 +3038,6 @@ export default function GeneratorPage() {
                     characterMap={typeof window !== 'undefined' ? (window as any).doormatData?.characterMap || {} : {}}
                     warpThickness={warpThickness}
                     seed={currentSeed}
-                    complexity={complexity}
                   />
 
                 </div>

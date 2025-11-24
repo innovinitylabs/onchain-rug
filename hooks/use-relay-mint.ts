@@ -24,7 +24,6 @@ export function useRelayMint() {
     seed: bigint
     visual: VisualConfig
     art: ArtData
-    complexity: number
     characterCount: bigint
     valueWei: bigint
   }) {
@@ -58,7 +57,6 @@ export function useRelayMint() {
               name: 'art',
               type: 'tuple',
             },
-            { name: 'complexity', type: 'uint8' },
             { name: 'characterCount', type: 'uint256' },
           ],
           name: 'mintRugFor',
@@ -79,7 +77,6 @@ export function useRelayMint() {
           minifiedStripeData: params.art.minifiedStripeData,
           filteredCharacterMap: params.art.filteredCharacterMap,
         },
-        params.complexity,
         params.characterCount,
       ],
     })

@@ -4,10 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { WagmiProvider } from 'wagmi'
 import { RainbowKitProvider, getDefaultConfig, Theme } from '@rainbow-me/rainbowkit'
 import { config as appConfig } from '@/lib/config'
-import { ethereumSepolia, shapeSepolia, shapeMainnet, baseSepolia, baseMainnet } from '@/lib/web3'
-
-// Simple wagmi config for basic functionality
-import { createConfig, http } from 'wagmi'
+import { ethereumSepolia, shapeSepolia, shapeMainnet, baseSepolia, baseMainnet, wagmiConfig } from '@/lib/web3'
 
 // Import RainbowKit styles
 import '@rainbow-me/rainbowkit/styles.css'
@@ -81,19 +78,7 @@ if (!appConfig.walletConnectProjectId) {
 
 console.log('WalletConnect Project ID:', projectId)
 
-// Create a simple wagmi config as fallback
-const simpleWagmiConfig = createConfig({
-  chains: [ethereumSepolia, shapeSepolia, shapeMainnet, baseSepolia, baseMainnet],
-  transports: {
-    [ethereumSepolia.id]: http(),
-    [shapeSepolia.id]: http(),
-    [shapeMainnet.id]: http(),
-    [baseSepolia.id]: http(),
-    [baseMainnet.id]: http(),
-  },
-})
-
-// Try to create RainbowKit config safely
+// Use the centralized wagmi config from lib/web3.ts
 let rainbowKitConfig;
 export let useRainbowKit = true;
 
@@ -105,8 +90,8 @@ try {
   ssr: true,
 })
 } catch (error) {
-  console.error('Failed to initialize RainbowKit config, falling back to simple wagmi:', error)
-  rainbowKitConfig = simpleWagmiConfig
+  console.error('Failed to initialize RainbowKit config, falling back to wagmi config:', error)
+  rainbowKitConfig = wagmiConfig
   useRainbowKit = false
 }
 
