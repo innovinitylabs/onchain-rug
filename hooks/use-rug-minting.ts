@@ -121,7 +121,6 @@ export function useRugMinting() {
                 { name: 'minifiedStripeData', type: 'string' },
                 { name: 'filteredCharacterMap', type: 'string' },
               ] },
-              { name: 'complexity', type: 'uint8' },
               { name: 'characterCount', type: 'uint256' },
             ],
             name: 'mintRugFor',
@@ -137,7 +136,6 @@ export function useRugMinting() {
           BigInt(finalSeed),
           { warpThickness: 2, stripeCount: BigInt(0) },
           { paletteName: 'Default', minifiedPalette: '{}', minifiedStripeData: '[]', filteredCharacterMap: '{}' },
-          0,
           BigInt((textLines || []).join('').length),
         ],
       })
@@ -151,7 +149,6 @@ export function useRugMinting() {
         seed: BigInt(finalSeed),
         visual: { warpThickness: 2, stripeCount: 0 },
         art: { paletteName: 'Default', minifiedPalette: '{}', minifiedStripeData: '[]', filteredCharacterMap: '{}' },
-        complexity: 0,
         characterCount: BigInt((textLines || []).join('').length),
         valueWei: BigInt(mintingPrice),
       })

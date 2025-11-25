@@ -128,7 +128,7 @@ export const onchainRugsABI = [
       { name: 'warpThickness', type: 'uint8' },
       { name: 'mintTime', type: 'uint256' },
       { name: 'filteredCharacterMap', type: 'string' },
-      { name: 'complexity', type: 'uint8' },
+      { name: 'curator', type: 'address' },
       { name: 'characterCount', type: 'uint256' },
       { name: 'stripeCount', type: 'uint256' }
     ],

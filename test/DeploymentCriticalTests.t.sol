@@ -214,7 +214,6 @@ contract DeploymentCriticalTests is Test {
             12345,
             visual,
             art,
-            4, // complexity
             10 // characterCount
         );
 
@@ -335,7 +334,6 @@ contract DeploymentCriticalTests is Test {
             54321,
             visual2,
             art2,
-            3, // complexity
             8  // characterCount
         );
         uint256 gasUsed = gasStart - gasleft();
@@ -518,7 +516,6 @@ contract DeploymentCriticalTests is Test {
                 uint256(keccak256(abi.encode(i))),
                 visual3,
                 art3,
-                3, // complexity
                 8  // characterCount
             );
         }

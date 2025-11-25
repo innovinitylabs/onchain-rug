@@ -10,6 +10,10 @@ import { getExplorerUrl } from '@/lib/networks'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
 import LoadingAnimation from '@/components/LoadingAnimation'
+import { useCachedCollection, useLazyNFTs } from '@/hooks/use-cached-nfts'
+
+// Feature flag: Enable cached NFT API (set to true to use new cached endpoints)
+const USE_CACHED_API = process.env.NEXT_PUBLIC_USE_CACHED_NFT_API === 'true'
 
 // Types for our NFT data
 interface RugTraits {
@@ -65,6 +69,17 @@ export default function GalleryPage() {
   const contractAddress = contractAddresses[chainId] // No fallback - safer to fail than use wrong contract
   const resolvedContractAddress = contractAddress || '0x0000000000000000000000000000000000000000'
 
+  // New cached API hook (when feature flag is enabled)
+  const {
+    data: cachedCollectionData,
+    error: cachedError,
+    isLoading: cachedLoading,
+    mutate: mutateCached,
+  } = useCachedCollection(chainId, currentPage)
+
+  // Lazy loading for visible NFTs
+  const visibleNFTs = useLazyNFTs(cachedCollectionData?.nfts || [])
+
   // Contract reads
   const { data: totalSupply, error: totalSupplyError, isLoading: totalSupplyLoading } = useContractRead({
     address: resolvedContractAddress as `0x${string}`,
@@ -84,16 +99,14 @@ export default function GalleryPage() {
     maxSupply: { data: maxSupply, error: maxSupplyError }
   }
 
-  // Log contract info for debugging (remove in production)
+  // Log contract info for debugging
   useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔗 Contract Address Resolution:', {
-        chainId,
-        resolvedAddress: resolvedContractAddress,
-        totalSupply,
-        maxSupply
-      })
-    }
+    console.log('🔗 Contract Address Resolution:', {
+      chainId,
+      resolvedAddress: resolvedContractAddress,
+      totalSupply,
+      maxSupply
+    })
   }, [chainId, resolvedContractAddress, totalSupply, maxSupply])
 
   // Alchemy NFT data fetching - much simpler and more reliable!
@@ -176,8 +189,63 @@ export default function GalleryPage() {
     }
   }, [resolvedContractAddress])
 
-  // Process Alchemy NFT data - much simpler!
+  // Process cached API data (when feature flag is enabled)
   useEffect(() => {
+    if (!USE_CACHED_API) return
+
+    if (cachedLoading) {
+      setLoading(true)
+      return
+    }
+
+    if (cachedError) {
+      console.error('Cached API error:', cachedError)
+      setLoading(false)
+      setInitialLoad(false)
+      return
+    }
+
+    if (cachedCollectionData?.nfts) {
+      // Transform cached data to NFTData format
+      const transformedNFTs: NFTData[] = cachedCollectionData.nfts.map((nft) => {
+        const staticData = nft.static || {}
+        const dynamicData = nft.dynamic || {}
+
+        return {
+          tokenId: nft.tokenId,
+          traits: {
+            seed: BigInt(staticData.seed || nft.tokenId),
+            paletteName: staticData['Palette Name'] || staticData.paletteName || 'Default',
+            minifiedPalette: staticData.minifiedPalette || '',
+            minifiedStripeData: staticData.minifiedStripeData || '',
+            textRows: staticData.textRows || [],
+            warpThickness: staticData['Warp Thickness'] || staticData.warpThickness || 3,
+            mintTime: BigInt(staticData.mintTime || Date.now()),
+            filteredCharacterMap: staticData.filteredCharacterMap || '',
+            complexity: staticData['Complexity'] || staticData.complexity || 2,
+            characterCount: BigInt(staticData['Character Count'] || staticData.characterCount || 1),
+            stripeCount: BigInt(staticData['Stripe Count'] || staticData.stripeCount || 0),
+            textLinesCount: staticData['Text Lines'] || staticData.textLinesCount || 0,
+          },
+          owner: (dynamicData as any)?.owner || '',
+          name: staticData.name || `OnchainRug #${nft.tokenId}`,
+          description: staticData.description || '',
+          image: staticData.image || '/logo.png',
+          animation_url: staticData.animation_url || nft.tokenURI || '',
+          rarityScore: 0, // TODO: Calculate from traits
+        }
+      })
+
+      setNfts(transformedNFTs)
+      setLoading(false)
+      setInitialLoad(false)
+    }
+  }, [USE_CACHED_API, cachedCollectionData, cachedLoading, cachedError])
+
+  // Process Alchemy NFT data - much simpler! (when feature flag is disabled)
+  useEffect(() => {
+    if (USE_CACHED_API) return // Skip if using cached API
+
     console.log('🔄 Processing useEffect triggered:', {
       hasAlchemyData: !!alchemyData,
       hasAlchemyError: !!alchemyError,

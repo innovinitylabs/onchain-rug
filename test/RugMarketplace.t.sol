@@ -124,7 +124,7 @@ contract RugMarketplaceTest is Test {
             filteredCharacterMap: "chars1"
         });
         
-        RugNFTFacet(address(diamond)).mintRug{value: 0.001 ether}(text1, 12345, visual1, art1, 3, 10);
+        RugNFTFacet(address(diamond)).mintRug{value: 0.001 ether}(text1, 12345, visual1, art1, 10);
         
         string[] memory text2 = new string[](1);
         text2[0] = "Test Rug 2";
@@ -141,7 +141,7 @@ contract RugMarketplaceTest is Test {
             filteredCharacterMap: "chars2"
         });
         
-        RugNFTFacet(address(diamond)).mintRug{value: 0.001 ether}(text2, 67890, visual2, art2, 4, 11);
+        RugNFTFacet(address(diamond)).mintRug{value: 0.001 ether}(text2, 67890, visual2, art2, 11);
         
         string[] memory text3 = new string[](1);
         text3[0] = "Test Rug 3";
@@ -158,7 +158,7 @@ contract RugMarketplaceTest is Test {
             filteredCharacterMap: "chars3"
         });
         
-        RugNFTFacet(address(diamond)).mintRug{value: 0.001 ether}(text3, 11111, visual3, art3, 5, 12);
+        RugNFTFacet(address(diamond)).mintRug{value: 0.001 ether}(text3, 11111, visual3, art3, 12);
         
         // Approve marketplace to transfer NFTs
         RugNFTFacet(address(diamond)).setApprovalForAll(address(diamond), true);
