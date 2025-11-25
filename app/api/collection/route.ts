@@ -5,17 +5,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import {
-  redis,
-  getStaticKeys,
-  getDynamicKeys,
-  getTokenURIKeys,
-  getCollectionKey,
-  getCachedBatch,
-  STATIC_TTL,
-} from '@/lib/redis'
-import { getContractAddress } from '@/lib/networks'
-import { getRpcUrl } from '@/lib/networks'
+import { TokenOperations } from '@/lib/redis-operations'
+import { getContractAddress, getRpcUrl } from '@/lib/networks'
+import { makeTokenId } from '@/lib/redis-schema'
 
 const ITEMS_PER_PAGE = 24
 
@@ -88,32 +80,51 @@ export async function GET(request: NextRequest) {
       tokenIds.push(i)
     }
 
-    // Batch fetch from cache
+    // Fetch token data using new TokenOperations system
     console.log(`Collection API: Contract address: ${contractAddress}`)
-    console.log(`Collection API: Static keys:`, getStaticKeys(chainId, contractAddress, tokenIds))
+    console.log(`Collection API: Fetching ${tokenIds.length} tokens using TokenOperations`)
 
-    const [staticData, dynamicData, tokenURIData] = await Promise.all([
-      getCachedBatch<any>(getStaticKeys(chainId, contractAddress, tokenIds)),
-      getCachedBatch<any>(getDynamicKeys(chainId, contractAddress, tokenIds)),
-      getCachedBatch<string>(getTokenURIKeys(chainId, contractAddress, tokenIds)),
-    ])
+    // Fetch all tokens in parallel
+    const tokenPromises = tokenIds.map(tokenId => {
+      const tokenIdStr = makeTokenId(chainId, contractAddress, tokenId)
+      return TokenOperations.getToken(tokenIdStr)
+    })
 
-    console.log(`Collection API: Static data results:`, staticData)
+    const tokenData = await Promise.all(tokenPromises)
 
-    // Combine data
+    // Transform token data to match expected format
     const nfts = tokenIds.map((tokenId, index) => {
-      const staticItem = staticData[index]
-      const dynamicItem = dynamicData[index]
-      const tokenURI = tokenURIData[index]
+      const token = tokenData[index]
 
-      return {
-        tokenId,
-        static: staticItem || null,
-        dynamic: dynamicItem || null,
-        tokenURI: tokenURI || null,
-        cached: !!(staticItem || dynamicItem || tokenURI),
+      if (token) {
+        // Convert our token format to the format the gallery expects
+        return {
+          tokenId,
+          static: {
+            owner: token.owner,
+            name: token.name,
+            description: token.description,
+            image: token.image,
+            animation_url: token.animation_url,
+            // Add other metadata as needed
+          },
+          dynamic: token.dynamic,
+          tokenURI: '', // Could be derived if needed
+          cached: true,
+        }
+      } else {
+        // Token not cached - return null data
+        return {
+          tokenId,
+          static: null,
+          dynamic: null,
+          tokenURI: null,
+          cached: false,
+        }
       }
     })
+
+    console.log(`Collection API: Retrieved ${nfts.filter(n => n.cached).length}/${nfts.length} cached tokens`)
 
     // Build response
     const response = {
