@@ -343,7 +343,7 @@ export class MonitoringSystem {
     cacheInefficiencies: Array<{ cacheType: string, issue: string }>
   }> {
     // Get slow operations
-    const slowOps = await redis.zrevrange('metrics:slow_operations', 0, 9, { withScores: true })
+    const slowOps = await redis.zrange('metrics:slow_operations', 0, 9, { rev: true, withScores: true })
     const slowOperations = slowOps.map(([data, score]) => {
       const op = JSON.parse(data as string)
       return {
@@ -469,7 +469,7 @@ export class MonitoringSystem {
     ])
 
     // Get recent activity (last 10 errors/operations)
-    const recentErrors = await redis.zrevrange('metrics:errors', 0, 9, { withScores: false })
+    const recentErrors = await redis.zrange('metrics:errors', 0, 9, { rev: true, withScores: false })
     const recentActivity = recentErrors.map(error => JSON.parse(error as string))
 
     return {

@@ -548,7 +548,7 @@ export class AtomicOperations {
       `audit:operations:${date}` :
       `audit:operations:${new Date().toISOString().split('T')[0]}`
 
-    const operations = await redis.zrevrange(logKey, 0, limit - 1, { withScores: false })
+    const operations = await redis.zrange(logKey, 0, limit - 1, { rev: true, withScores: false })
     return operations.map(op => JSON.parse(op as string))
   }
 }

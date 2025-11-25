@@ -37,7 +37,7 @@ export class PredictiveCaching {
     const behaviorKey = `analytics:user_behavior:${userAddress}`
 
     // Get user's recent actions
-    const actions = await redis.zrevrange(behaviorKey, 0, 49, { withScores: true }) // Last 50 actions
+    const actions = await redis.zrange(behaviorKey, 0, 49, { rev: true, withScores: true }) // Last 50 actions
     const parsedActions = actions.map(([data, score]) => ({
       ...JSON.parse(data as string),
       timestamp: parseFloat(score)
@@ -242,7 +242,7 @@ export class PredictiveCaching {
     try {
       // Get tokens with recent activity
       const trendingKey = 'analytics:trending:tokens'
-      return await redis.zrevrange(trendingKey, 0, 4)
+      return await redis.zrange(trendingKey, 0, 4, { rev: true })
     } catch (error) {
       console.warn('Failed to get trending tokens:', error)
       return []
@@ -283,7 +283,7 @@ export class PredictiveCaching {
     const trackingKey = `analytics:predictions:${userAddress}`
 
     // Get recent predictions
-    const predictions = await redis.zrevrange(trackingKey, 0, 9, { withScores: false })
+    const predictions = await redis.zrange(trackingKey, 0, 9, { rev: true, withScores: false })
     const parsedPredictions = predictions.map(p => JSON.parse(p as string))
 
     // Mark matching predictions as accurate

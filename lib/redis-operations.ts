@@ -271,7 +271,7 @@ export class TraitOperations {
    */
   static async getTraitAnalytics(contractId: string): Promise<Array<{ traitId: string, count: number }>> {
     const key = RedisKeys.traitUsage(contractId)
-    const results = await redis.zrevrange(key, 0, -1, { withScores: true })
+    const results = await redis.zrange(key, 0, -1, { rev: true, withScores: true })
 
     return results.map(([traitId, score]) => ({
       traitId,

@@ -49,7 +49,7 @@ export class RedisIndexes {
    */
   static async getTopOwnersByCount(contractId: string, limit: number = 10): Promise<string[]> {
     const key = `index:owners:by_token_count:${contractId}`
-    const results = await redis.zrevrange(key, 0, limit - 1)
+    const results = await redis.zrange(key, 0, limit - 1, { rev: true })
     return results
   }
 
@@ -58,7 +58,7 @@ export class RedisIndexes {
    */
   static async getMostActiveOwners(contractId: string, limit: number = 10): Promise<string[]> {
     const key = `index:owners:by_activity:${contractId}`
-    const results = await redis.zrevrange(key, 0, limit - 1)
+    const results = await redis.zrange(key, 0, limit - 1, { rev: true })
     return results
   }
 
@@ -122,7 +122,7 @@ export class RedisIndexes {
    */
   static async getRecentlyMaintainedTokens(contractId: string, limit: number = 20): Promise<string[]> {
     const key = `index:tokens:by_maintenance:${contractId}`
-    const results = await redis.zrevrange(key, 0, limit - 1)
+    const results = await redis.zrange(key, 0, limit - 1, { rev: true })
     return results
   }
 
@@ -146,7 +146,7 @@ export class RedisIndexes {
    */
   static async getPopularTraits(contractId: string, limit: number = 10): Promise<string[]> {
     const key = `index:traits:by_popularity:${contractId}`
-    const results = await redis.zrevrange(key, 0, limit - 1)
+    const results = await redis.zrange(key, 0, limit - 1, { rev: true })
     return results
   }
 
