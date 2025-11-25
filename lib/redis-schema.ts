@@ -62,6 +62,8 @@ export interface TokenSchema {
     maintenanceCount: number
     lastCleaning: string      // ISO date
     cleaningCount: number
+    lastRestoration?: string   // ISO date (optional)
+    restorationCount?: number  // Optional for restoration tracking
   }
   metadataHash: string        // SHA256 of metadata
   lastRefresh: string         // ISO date
