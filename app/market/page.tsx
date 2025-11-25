@@ -118,10 +118,6 @@ export default function MarketPage() {
 
               // Use owner from cached data (no need for separate contract call)
               const owner = staticData.owner || '0x0000000000000000000000000000000000000000'
-              } catch (error) {
-                console.warn(`Failed to get owner for token ${nft.tokenId}:`, error);
-                owner = '0x0000000000000000000000000000000000000000';
-              }
 
               // Calculate rarity score from cached data (placeholder - could be enhanced)
               const rarityScore = 0 // TODO: Implement rarity calculation from cached traits
