@@ -69,6 +69,7 @@ export async function POST(request: NextRequest) {
           restorationCount: undefined
         },
         metadataHash: staticRefresh.hash || '',
+        lastRefresh: new Date().toISOString(),
         createdAt: new Date().toISOString()
       }
 
