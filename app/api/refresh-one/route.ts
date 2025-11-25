@@ -26,7 +26,6 @@ export async function POST(request: NextRequest) {
 
     console.log(`Refresh One API: Refreshing token ${tokenId} on chain ${chainId}`)
     console.log(`Refresh One API: Contract address: ${contractAddress}`)
-    console.log(`Refresh One API: Static key:`, getStaticKey(chainId, contractAddress, tokenId))
 
     // Fetch real metadata from blockchain
     console.log(`Refresh One API: Fetching real blockchain data for token ${tokenId}`)
