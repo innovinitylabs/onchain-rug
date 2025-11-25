@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { TokenOperations } from '@/lib/redis-operations'
 import { getContractAddress, getRpcUrl } from '@/lib/networks'
 import { makeTokenId } from '@/lib/redis-schema'
+import { refreshTokenMetadata } from '@/lib/refresh-utils'
 
 const ITEMS_PER_PAGE = 24
 
@@ -80,14 +81,59 @@ export async function GET(request: NextRequest) {
       tokenIds.push(i)
     }
 
-    // Fetch token data using new TokenOperations system
+    // Fetch token data using new TokenOperations system with blockchain fallback
     console.log(`Collection API: Contract address: ${contractAddress}`)
-    console.log(`Collection API: Fetching ${tokenIds.length} tokens using TokenOperations`)
+    console.log(`Collection API: Fetching ${tokenIds.length} tokens with blockchain fallback`)
 
-    // Fetch all tokens in parallel
-    const tokenPromises = tokenIds.map(tokenId => {
+    // Fetch all tokens in parallel with fallback logic
+    const tokenPromises = tokenIds.map(async (tokenId) => {
       const tokenIdStr = makeTokenId(chainId, contractAddress, tokenId)
-      return TokenOperations.getToken(tokenIdStr)
+
+      // First, try to get from cache
+      let token = await TokenOperations.getToken(tokenIdStr)
+
+      // If not in cache, fetch from blockchain and cache it
+      if (!token) {
+        console.log(`Collection API: Token ${tokenId} not in cache, fetching from blockchain`)
+        try {
+          const blockchainData = await refreshTokenMetadata(chainId, contractAddress as `0x${string}`, tokenId)
+
+          if (blockchainData.static && blockchainData.tokenURI) {
+            // Cache the freshly fetched data
+            const tokenData = {
+              contractId: `${chainId}:${contractAddress}`,
+              tokenId,
+              owner: blockchainData.static.owner || '0x0000000000000000000000000000000000000000',
+              name: blockchainData.static.name || `NFT #${tokenId}`,
+              description: blockchainData.static.description || '',
+              image: blockchainData.static.image || '',
+              animation_url: blockchainData.static.animation_url || '',
+              traits: [], // Will be populated by trait extraction if needed
+              dynamic: {
+                dirtLevel: 0,
+                agingLevel: 0,
+                lastMaintenance: new Date().toISOString(),
+                maintenanceCount: 0,
+                lastCleaning: new Date().toISOString(),
+                cleaningCount: 0,
+                lastRestoration: undefined,
+                restorationCount: undefined
+              },
+              metadataHash: blockchainData.hash || '',
+              lastRefresh: new Date().toISOString(),
+              createdAt: new Date().toISOString()
+            }
+
+            await TokenOperations.storeToken(tokenData)
+            token = tokenData // Use the newly cached data
+            console.log(`Collection API: Successfully cached token ${tokenId} from blockchain`)
+          }
+        } catch (error) {
+          console.error(`Collection API: Failed to fetch token ${tokenId} from blockchain:`, error)
+        }
+      }
+
+      return token
     })
 
     const tokenData = await Promise.all(tokenPromises)
@@ -113,7 +159,7 @@ export async function GET(request: NextRequest) {
           cached: true,
         }
       } else {
-        // Token not cached - return null data
+        // Token not available (cache miss and blockchain fetch failed)
         return {
           tokenId,
           static: null,
@@ -124,7 +170,8 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    console.log(`Collection API: Retrieved ${nfts.filter(n => n.cached).length}/${nfts.length} cached tokens`)
+    const cachedCount = nfts.filter(n => n.cached).length
+    console.log(`Collection API: Retrieved ${cachedCount}/${nfts.length} tokens (${cachedCount - tokenIds.length + nfts.filter(n => !n.cached).length} were cached from blockchain)`)
 
     // Build response
     const response = {

@@ -71,7 +71,7 @@ export default function MarketPage() {
   const contractAddress = contractAddresses[chainId] // No fallback - safer to show error
   const itemsPerPage = 24
 
-  // Fetch NFT data
+  // Fetch NFT data using cached collection API (same as gallery)
   useEffect(() => {
     const fetchNFTs = async () => {
       if (!contractAddress || contractAddress === '0x0000000000000000000000000000000000000000') {
@@ -80,13 +80,14 @@ export default function MarketPage() {
 
       try {
         setLoading(true)
-        
+
+        // Use the same cached collection API as gallery
         const response = await fetch(
-          `/api/alchemy?endpoint=getNFTsForCollection&contractAddress=${contractAddress}&chainId=${chainId}`
+          `/api/collection?chainId=${chainId}&page=${currentPage}`
         )
 
         if (!response.ok) {
-          throw new Error(`API error: ${response.status}`)
+          throw new Error(`Collection API error: ${response.status}`)
         }
 
         const collectionData = await response.json()
@@ -94,59 +95,59 @@ export default function MarketPage() {
 
         for (const nft of collectionData.nfts || []) {
           try {
-            const metadataResponse = await fetch(
-              `/api/alchemy?endpoint=getNFTMetadata&contractAddress=${contractAddress}&tokenId=${nft.tokenId}&chainId=${chainId}`
-            )
+            const staticData = nft.static
+            const dynamicData = nft.dynamic
 
-            if (metadataResponse.ok) {
-              const metadata = await metadataResponse.json()
-              
-              // Parse aging data from attributes
-              const attributes = metadata.raw?.metadata?.attributes || metadata.attributes || []
-              const agingData = parseAgingDataFromAttributes(attributes)
-              
-              // Calculate rarity score
-              const rarityScore = calculateRarityScore(metadata.rugData)
-              
-              const animationUrl = metadata.animation_url ||
-                                 metadata.raw?.metadata?.animation_url ||
-                                 metadata.metadata?.animation_url
+            if (staticData) {
+              // Parse aging data from dynamic data (cached format)
+              const agingData = dynamicData ? {
+                dirtLevel: dynamicData.dirtLevel || 0,
+                agingLevel: dynamicData.agingLevel || 0,
+                lastMaintenance: dynamicData.lastMaintenance || new Date().toISOString(),
+                maintenanceCount: dynamicData.maintenanceCount || 0,
+                lastCleaning: dynamicData.lastCleaning || new Date().toISOString(),
+                cleaningCount: dynamicData.cleaningCount || 0
+              } : {
+                dirtLevel: 0,
+                agingLevel: 0,
+                lastMaintenance: new Date().toISOString(),
+                maintenanceCount: 0,
+                lastCleaning: new Date().toISOString(),
+                cleaningCount: 0
+              }
 
-              // Get owner from contract call
-              let owner: string;
-              try {
-                const response = await fetch(`/api/contract?method=ownerOf&tokenId=${nft.tokenId}&contractAddress=${contractAddress}`);
-                if (response.ok) {
-                  const ownerData = await response.json();
-                  owner = ownerData.owner;
-                } else {
-                  owner = '0x0000000000000000000000000000000000000000';
-                }
+              // Use owner from cached data (no need for separate contract call)
+              const owner = staticData.owner || '0x0000000000000000000000000000000000000000'
               } catch (error) {
                 console.warn(`Failed to get owner for token ${nft.tokenId}:`, error);
                 owner = '0x0000000000000000000000000000000000000000';
               }
 
+              // Calculate rarity score from cached data (placeholder - could be enhanced)
+              const rarityScore = 0 // TODO: Implement rarity calculation from cached traits
+
               processedNfts.push({
                 tokenId: nft.tokenId,
-                traits: metadata.rugData || {},
+                traits: {}, // TODO: Extract traits from cached data if available
                 aging: agingData,
                 owner: owner,
-                name: metadata.name,
-                description: metadata.description,
-                image: metadata.image,
-                animation_url: animationUrl,
+                name: staticData.name,
+                description: staticData.description,
+                image: staticData.image,
+                animation_url: staticData.animation_url,
                 rarityScore
               })
-              
+
               // Debug logging
               if (processedNfts.length === 1) {
                 console.log('Market page - First NFT owner:', owner)
                 console.log('Your address:', address?.toLowerCase())
               }
+            } else {
+              console.warn(`No static data available for NFT ${nft.tokenId} in cache`)
             }
           } catch (error) {
-            console.warn(`Failed to fetch metadata for NFT ${nft.tokenId}:`, error)
+            console.warn(`Failed to process cached data for NFT ${nft.tokenId}:`, error)
           }
         }
 
@@ -159,7 +160,7 @@ export default function MarketPage() {
     }
 
     fetchNFTs()
-  }, [contractAddress, chainId])
+  }, [contractAddress, chainId, currentPage])
 
   // Calculate rarity score
   const calculateRarityScore = (traits: any): number => {
