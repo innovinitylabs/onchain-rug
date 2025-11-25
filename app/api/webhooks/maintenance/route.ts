@@ -25,7 +25,8 @@ const MAINTENANCE_EVENTS = {
 interface MaintenanceEvent {
   eventName: keyof typeof MAINTENANCE_EVENTS
   tokenId: number
-  userAddress: string
+  userAddress: string  // 'to' address for mints/transfers, 'userAddress' for maintenance
+  fromAddress?: string // 'from' address for transfers (address(0) for mints)
   contractAddress: string
   chainId: number
   actionType?: string
@@ -103,7 +104,12 @@ async function processMaintenanceEvent(event: MaintenanceEvent): Promise<void> {
       break
 
     case 'TRANSFER':
-      await handleTransfer(tokenId, event)
+      // Check if this is a mint (from = address(0)) or transfer
+      if (event.fromAddress === '0x0000000000000000000000000000000000000000') {
+        await handleMint(tokenId, event)
+      } else {
+        await handleTransfer(tokenId, event)
+      }
       break
 
     default:
@@ -182,6 +188,37 @@ async function handleRestorationPerformed(tokenId: string, event: MaintenanceEve
   await TokenOperations.updateTokenDynamic(tokenId, dynamicUpdate)
 
   console.log(`🔨 Restoration performed: level ${event.level}, restoration count increased to ${dynamicUpdate.restorationCount}`)
+}
+
+async function handleMint(tokenId: string, event: MaintenanceEvent): Promise<void> {
+  console.log(`🆕 Mint detected for token ${tokenId} to ${event.userAddress}`)
+
+  try {
+    // Immediately cache the new NFT data
+    // We'll trigger a refresh for this specific token
+    const tokenIdNum = parseInt(tokenId.split(':')[2]) // Extract tokenId number
+    const refreshResponse = await fetch(
+      `${process.env.VERCEL_URL || 'http://localhost:3000'}/api/refresh-one?tokenId=${tokenIdNum}&chainId=${event.chainId}`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.VERCEL_CRON_SECRET}`
+        }
+      }
+    )
+
+    if (refreshResponse.ok) {
+      console.log(`✅ Successfully cached new NFT ${tokenId}`)
+    } else {
+      console.error(`❌ Failed to cache new NFT ${tokenId}:`, await refreshResponse.text())
+    }
+
+    // Update collection cache to include the new token
+    await CacheOperations.invalidateContractCache(`${event.chainId}:${event.contractAddress}`)
+
+  } catch (error) {
+    console.error(`❌ Error caching minted NFT ${tokenId}:`, error)
+  }
 }
 
 async function handleTransfer(tokenId: string, event: MaintenanceEvent): Promise<void> {

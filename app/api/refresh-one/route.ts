@@ -1,16 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import {
-  redis,
-  getStaticKey,
-  getDynamicKey,
-  getTokenURIKey,
-  getHashKey,
-  STATIC_TTL,
-  TOKENURI_TTL,
-} from '@/lib/redis'
-import { refreshTokenMetadata, computeTokenURIHash } from '@/lib/refresh-utils'
+import { TokenOperations } from '@/lib/redis-operations'
+import { refreshTokenMetadata } from '@/lib/refresh-utils'
 import { getContractAddress } from '@/lib/networks'
-import type { Address } from 'viem'
+import { makeTokenId } from '@/lib/redis-schema'
 
 export async function POST(request: NextRequest) {
   try {
@@ -56,54 +48,41 @@ export async function POST(request: NextRequest) {
 
     console.log(`Refresh One API: Real data loaded:`, staticRefresh.static)
 
-    // Write to cache
-    const cacheEntries: Array<{ key: string; value: any; ttl: number }> = []
-
-    // Cache static data if available
-    if (staticRefresh.static) {
-      cacheEntries.push({
-        key: getStaticKey(chainId, contractAddress, tokenId),
-        value: staticRefresh.static,
-        ttl: STATIC_TTL,
-      })
-    }
-
-    // Cache tokenURI if available
-    if (staticRefresh.tokenURI) {
-      cacheEntries.push({
-        key: getTokenURIKey(chainId, contractAddress, tokenId),
-        value: staticRefresh.tokenURI,
-        ttl: TOKENURI_TTL,
-      })
-    }
-
-    // Cache hash if available
-    if (staticRefresh.hash) {
-      cacheEntries.push({
-        key: getHashKey(chainId, contractAddress, tokenId),
-        value: staticRefresh.hash,
-        ttl: STATIC_TTL,
-      })
-    }
-
-    console.log(`Refresh One API: Writing ${cacheEntries.length} cache entries`)
-    if (cacheEntries.length > 0) {
-      const pipeline = redis.pipeline()
-      for (const entry of cacheEntries) {
-        console.log(`Refresh One API: Caching key ${entry.key} for ${entry.ttl}s`)
-        pipeline.setex(entry.key, entry.ttl, entry.value)
+    // Store using new TokenOperations system
+    if (staticRefresh.static && staticRefresh.tokenURI) {
+      const tokenData = {
+        contractId: `${chainId}:${contractAddress}`,
+        tokenId,
+        owner: staticRefresh.static.owner || '0x0000000000000000000000000000000000000000',
+        name: staticRefresh.static.name || `NFT #${tokenId}`,
+        description: staticRefresh.static.description || '',
+        image: staticRefresh.static.image || '',
+        animation_url: staticRefresh.static.animation_url || '',
+        traits: [], // Will be populated by trait extraction
+        dynamic: {
+          dirtLevel: 0,
+          agingLevel: 0,
+          lastMaintenance: new Date().toISOString(),
+          maintenanceCount: 0,
+          lastCleaning: new Date().toISOString(),
+          cleaningCount: 0,
+          lastRestoration: undefined,
+          restorationCount: undefined
+        },
+        metadataHash: staticRefresh.hash || '',
+        createdAt: new Date().toISOString()
       }
-      await pipeline.exec()
-      console.log(`Refresh One API: Cache write complete`)
+
+      await TokenOperations.storeToken(tokenData)
+      console.log(`Refresh One API: Successfully cached token using new schema`)
     }
 
     return NextResponse.json({
       success: true,
       tokenId,
-      staticCached: !!staticRefresh.static,
-      tokenURICached: !!staticRefresh.tokenURI,
-      hashCached: !!staticRefresh.hash,
-      totalCached: cacheEntries.length,
+      chainId,
+      cached: !!(staticRefresh.static && staticRefresh.tokenURI),
+      timestamp: new Date().toISOString()
     })
 
   } catch (error) {
