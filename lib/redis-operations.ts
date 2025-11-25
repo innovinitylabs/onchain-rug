@@ -477,7 +477,7 @@ export class AnalyticsOperations {
     const pipeline = redis.pipeline()
     pipeline.hincrby(key, field, 1)
     pipeline.hincrbyfloat(key, 'total_response_time', responseTime)
-    pipeline.hset(key, 'last_updated', new Date().toISOString())
+    pipeline.hset(key, { 'last_updated': new Date().toISOString() })
 
     // Recalculate average response time
     const metrics = await redis.hgetall(key)
@@ -487,7 +487,7 @@ export class AnalyticsOperations {
       const totalTime = parseFloat(metrics.total_response_time as string || '0')
       const avgTime = (hits + misses) > 0 ? totalTime / (hits + misses) : 0
 
-      pipeline.hset(key, 'avg_response_time', avgTime.toFixed(2))
+      pipeline.hset(key, { 'avg_response_time': avgTime.toFixed(2) })
     }
 
     await pipeline.exec()
