@@ -40,7 +40,7 @@ export class ContractOperations {
     const key = RedisKeys.contract(contractId)
 
     const data = await redis.hgetall(key)
-    return data && Object.keys(data).length > 0 ? data as ContractSchema : null
+    return data && Object.keys(data).length > 0 ? data as unknown as ContractSchema : null
   }
 
   /**
@@ -119,7 +119,7 @@ export class TokenOperations {
       ...data,
       traits: JSON.parse(data.traits as string),
       dynamic: JSON.parse(data.dynamic as string)
-    } as TokenSchema
+    } as unknown as TokenSchema
   }
 
   /**
@@ -239,7 +239,7 @@ export class TraitOperations {
   static async getTrait(type: string, normalizedValue: string): Promise<TraitSchema | null> {
     const key = RedisKeys.trait(type, normalizedValue)
     const data = await redis.hgetall(key)
-    return data && Object.keys(data).length > 0 ? data as TraitSchema : null
+    return data && Object.keys(data).length > 0 ? data as unknown as TraitSchema : null
   }
 
   /**
@@ -306,7 +306,7 @@ export class UserOperations {
   static async getUser(address: string): Promise<UserSchema | null> {
     const key = RedisKeys.user(address)
     const data = await redis.hgetall(key)
-    return data && Object.keys(data).length > 0 ? data as UserSchema : null
+    return data && Object.keys(data).length > 0 ? data as unknown as UserSchema : null
   }
 
   /**
