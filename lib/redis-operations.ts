@@ -532,6 +532,7 @@ export class MigrationOperations {
         traits: [], // Would need to extract from static data
         dynamic: JSON.parse(dynamicData as string),
         metadataHash: '',
+        lastRefresh: new Date().toISOString(),
         createdAt: new Date().toISOString()
       }
 
