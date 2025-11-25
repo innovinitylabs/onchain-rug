@@ -12,7 +12,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { TokenOperations, UserOperations, CacheOperations, AnalyticsOperations } from '@/lib/redis-operations'
-import { makeTokenId } from '@/lib/redis-schema'
+import { makeTokenId, redis } from '@/lib/redis-schema'
 
 // Supported maintenance event types
 const MAINTENANCE_EVENTS = {
