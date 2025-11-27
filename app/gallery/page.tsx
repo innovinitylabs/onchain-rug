@@ -11,9 +11,11 @@ import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
 import LoadingAnimation from '@/components/LoadingAnimation'
 import { useCachedCollection, useLazyNFTs } from '@/hooks/use-cached-nfts'
+import { fetchTotalSupply, fetchNFTBatchDirect, fetchDynamicTraits, type DirectNFTData } from '@/lib/direct-contract-fetcher'
 
-// Feature flag: Enable cached NFT API (set to true to use new cached endpoints)
+// Feature flags for different data fetching strategies
 const USE_CACHED_API = process.env.NEXT_PUBLIC_USE_CACHED_NFT_API === 'true'
+const USE_DIRECT_RPC = process.env.NEXT_PUBLIC_USE_DIRECT_RPC === 'true'
 
 // Types for our NFT data
 interface RugTraits {
@@ -112,6 +114,7 @@ export default function GalleryPage() {
   // Alchemy NFT data fetching - much simpler and more reliable!
   const [alchemyData, setAlchemyData] = useState<any>(null)
   const [loadingAlchemy, setLoadingAlchemy] = useState(true)
+  const [loadingDirectRPC, setLoadingDirectRPC] = useState(true)
   const [alchemyError, setAlchemyError] = useState<string | null>(null)
 
   // Fetch NFT data from Alchemy
@@ -188,6 +191,85 @@ export default function GalleryPage() {
       setInitialLoad(true)
     }
   }, [resolvedContractAddress])
+
+  // Direct RPC fetching (when feature flag is enabled)
+  useEffect(() => {
+    if (!USE_DIRECT_RPC) return
+
+    const fetchDirectRPC = async () => {
+      try {
+        console.log('🚀 Starting direct RPC fetch for gallery')
+
+        // Get total supply
+        const totalSupply = await fetchTotalSupply(chainId)
+        console.log(`📊 Total supply: ${totalSupply}`)
+
+        if (totalSupply === 0) {
+          setNfts([])
+          setLoadingDirectRPC(false)
+          setLoading(false)
+          setInitialLoad(false)
+          return
+        }
+
+        // For now, fetch first 24 tokens (pagination can be added later)
+        const tokenIds = Array.from({ length: Math.min(totalSupply, 24) }, (_, i) => i + 1)
+        console.log(`🎯 Fetching ${tokenIds.length} NFTs:`, tokenIds)
+
+        // Fetch NFT data
+        const directNFTs = await fetchNFTBatchDirect(chainId, tokenIds)
+        console.log(`✅ Got ${directNFTs.length} NFTs from direct RPC`)
+
+        // Fetch dynamic traits
+        const dynamicTraits = await fetchDynamicTraits(chainId, directNFTs.map(nft => nft.tokenId))
+        console.log(`✅ Got dynamic traits for ${Object.keys(dynamicTraits).length} NFTs`)
+
+        // Transform to NFTData format
+        const transformedNFTs: NFTData[] = directNFTs.map(directNFT => {
+          const traits = dynamicTraits[directNFT.tokenId] || { dirtLevel: 0, textureLevel: 0, frameLevel: 0 }
+
+          return {
+            tokenId: directNFT.tokenId,
+            traits: {
+              seed: directNFT.rugData?.seed || BigInt(directNFT.tokenId),
+              paletteName: directNFT.rugData?.paletteName || 'Default',
+              minifiedPalette: directNFT.rugData?.minifiedPalette || '',
+              minifiedStripeData: directNFT.rugData?.minifiedStripeData || '',
+              textRows: directNFT.rugData?.textRows || [],
+              warpThickness: directNFT.rugData?.warpThickness || 3,
+              mintTime: directNFT.rugData?.mintTime || BigInt(Date.now()),
+              filteredCharacterMap: directNFT.rugData?.filteredCharacterMap || '',
+              complexity: 2, // Placeholder
+              characterCount: BigInt(1), // Placeholder
+              stripeCount: BigInt(0), // Placeholder
+              textLinesCount: directNFT.rugData?.textRows?.length || 0,
+            },
+            owner: directNFT.owner,
+            name: `OnchainRug #${directNFT.tokenId}`,
+            description: 'Direct RPC fetched NFT',
+            image: '/logo.png',
+            animation_url: '', // Will be generated client-side
+            rarityScore: 0,
+          }
+        })
+
+        console.log(`🎨 Transformed ${transformedNFTs.length} NFTs for display`)
+        setNfts(transformedNFTs)
+
+      } catch (error) {
+        console.error('❌ Direct RPC fetch error:', error)
+        // Could fall back to Alchemy here
+      } finally {
+        setLoadingDirectRPC(false)
+        setLoading(false)
+        setInitialLoad(false)
+      }
+    }
+
+    if (resolvedContractAddress && chainId) {
+      fetchDirectRPC()
+    }
+  }, [USE_DIRECT_RPC, resolvedContractAddress, chainId])
 
   // Process cached API data (when feature flag is enabled)
   useEffect(() => {
@@ -852,7 +934,7 @@ export default function GalleryPage() {
             {/* NFT Grid/List */}
             <div className="pb-20">
         {(() => {
-          const shouldShowLoading = loading || loadingAlchemy || initialLoad
+          const shouldShowLoading = loading || loadingAlchemy || loadingDirectRPC || initialLoad
           console.log('🎯 Render decision:', {
             shouldShowLoading,
             loading,

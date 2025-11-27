@@ -455,7 +455,52 @@ export default function Navigation() {
                 </text>
               </svg>
             </Link>
-            
+
+            {/* NFT Display Demo */}
+            <Link
+              href="/nft-display-demo"
+              className="flex items-center gap-2 hover:opacity-90 transition-all duration-300"
+            >
+              <svg
+                height="28px"
+                viewBox="0 0 85 20"
+                style={{
+                  display: 'block',
+                  height: '28px',
+                  filter: 'drop-shadow(0 0 6px rgba(108, 190, 230, 0.3))',
+                }}
+              >
+                <defs>
+                  <filter id="nav-link-depth-demo" x="-100%" y="-100%" width="300%" height="300%">
+                    <feTurbulence baseFrequency="0.02" numOctaves="2" seed="47" type="fractalNoise" result="LINK_BASE_DEMO" />
+                    <feDisplacementMap in="SourceGraphic" in2="LINK_BASE_DEMO" scale="3" xChannelSelector="R" yChannelSelector="G" result="LINK_DISPLACED_DEMO" />
+                    <feGaussianBlur in="LINK_DISPLACED_DEMO" stdDeviation="0.5" result="LINK_BLUR_DEMO" />
+                  </filter>
+                  <linearGradient id="nav-link-gradient-demo" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style={{ stopColor: 'rgba(255, 255, 255, 0.9)', stopOpacity: 1 }} />
+                    <stop offset="100%" style={{ stopColor: 'rgba(255, 255, 255, 0.9)', stopOpacity: 1 }} />
+                  </linearGradient>
+                </defs>
+                <text
+                  x="0"
+                  y="16"
+                  style={{
+                    fill: 'url(#nav-link-gradient-demo)',
+                    filter: 'url(#nav-link-depth-demo)',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    fontFamily: 'system-ui, -apple-system, sans-serif',
+                    WebkitFontSmoothing: 'antialiased',
+                    MozOsxFontSmoothing: 'grayscale',
+                    textRendering: 'optimizeLegibility',
+                    fontFeatureSettings: '"kern" 1',
+                  }}
+                >
+                  NFT Demo
+                </text>
+              </svg>
+            </Link>
+
             {/* Manage Dropdown - Only visible when wallet connected */}
             {isConnected && (
               <div className="relative">
@@ -650,6 +695,19 @@ export default function Navigation() {
               >
                 <ShoppingCart className="w-6 h-6" />
                 <span className="text-lg font-medium">Market</span>
+              </Link>
+
+              <Link
+                href="/nft-display-demo"
+                onClick={closeMobileMenu}
+                className="flex items-center gap-4 px-6 py-4 text-white hover:bg-white/10 transition-colors duration-200"
+              >
+                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="2" y="3" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="2"/>
+                  <circle cx="9" cy="9" r="2" stroke="currentColor" strokeWidth="2"/>
+                  <path d="m15 9 3 3" stroke="currentColor" strokeWidth="2"/>
+                </svg>
+                <span className="text-lg font-medium">NFT Demo</span>
               </Link>
 
               {/* Manage section - Only visible when connected */}

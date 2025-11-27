@@ -1,0 +1,58 @@
+{
+  "name": "OnchainRug #1",
+  "description": "OnchainRugs by valipokkann",
+  "image": "https://onchainrugs.xyz/logo.png",
+  "animation_url": "data:text/html;base64, ...base64 encoded HTML... ",
+  "attributes": [{
+    "trait_type": "Text Lines",
+    "value": "1"
+  }, {
+    "trait_type": "Character Count",
+    "value": "7"
+  }, {
+    "trait_type": "Palette Name",
+    "value": "Cornell Red"
+  }, {
+    "trait_type": "Stripe Count",
+    "value": "22"
+  }, {
+    "trait_type": "Curator",
+    "value": "0x14fb5d894d7e62f3e69ea985273e9ee31e8fe72c"
+  }, {
+    "trait_type": "Warp Thickness",
+    "value": "1"
+  }, {
+    "trait_type": "Dirt Level",
+    "value": "2"
+  }, {
+    "trait_type": "Aging Level",
+    "value": "10"
+  }, {
+    "trait_type": "Cleaning Count",
+    "value": "1"
+  }, {
+    "trait_type": "Restoration Count",
+    "value": "0"
+  }, {
+    "trait_type": "Master Restoration Count",
+    "value": "0"
+  }, {
+    "trait_type": "Laundering Count",
+    "value": "0"
+  }, {
+    "trait_type": "Maintenance Score",
+    "value": "2"
+  }, {
+    "trait_type": "Frame",
+    "value": "None"
+  }, {
+    "trait_type": "Last Sale Price",
+    "value": "0"
+  }, {
+    "trait_type": "Mint Time",
+    "value": "1764004558"
+  }, {
+    "trait_type": "Last Cleaned",
+    "value": "1764029782"
+  }]
+}
