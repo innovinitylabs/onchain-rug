@@ -219,10 +219,10 @@ export default function NFTDetailModal({
                       </div>
                     )}
 
-                    {nftData.traits?.complexity !== undefined && (
+                    {nftData.traits?.textLinesCount !== undefined && (
                       <div className="bg-gray-50 rounded-lg p-3">
-                        <div className="text-xs text-gray-500 uppercase tracking-wide">Complexity</div>
-                        <div className="text-gray-900 font-medium">{nftData.traits.complexity}/5</div>
+                        <div className="text-xs text-gray-500 uppercase tracking-wide">Text Lines</div>
+                        <div className="text-gray-900 font-medium">{Number(nftData.traits.textLinesCount)}</div>
                       </div>
                     )}
 
@@ -268,6 +268,59 @@ export default function NFTDetailModal({
                       <div className="bg-gray-50 rounded-lg p-3">
                         <div className="text-xs text-gray-500 uppercase tracking-wide">Maintenance Score</div>
                         <div className="text-gray-900 font-medium">{Number(nftData.traits.maintenanceScore)}</div>
+                      </div>
+                    )}
+
+                    {nftData.traits?.curator && (
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <div className="text-xs text-gray-500 uppercase tracking-wide">Curator</div>
+                        <div className="font-mono text-gray-900 font-medium text-sm break-all">
+                          {nftData.traits.curator.slice(0, 6)}...{nftData.traits.curator.slice(-4)}
+                        </div>
+                      </div>
+                    )}
+
+                    {nftData.traits?.cleaningCount !== undefined && (
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <div className="text-xs text-gray-500 uppercase tracking-wide">Cleaning Count</div>
+                        <div className="text-gray-900 font-medium">{Number(nftData.traits.cleaningCount)}</div>
+                      </div>
+                    )}
+
+                    {nftData.traits?.restorationCount !== undefined && (
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <div className="text-xs text-gray-500 uppercase tracking-wide">Restoration Count</div>
+                        <div className="text-gray-900 font-medium">{Number(nftData.traits.restorationCount)}</div>
+                      </div>
+                    )}
+
+                    {nftData.traits?.masterRestorationCount !== undefined && (
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <div className="text-xs text-gray-500 uppercase tracking-wide">Master Restoration</div>
+                        <div className="text-gray-900 font-medium">{Number(nftData.traits.masterRestorationCount)}</div>
+                      </div>
+                    )}
+
+                    {nftData.traits?.launderingCount !== undefined && (
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <div className="text-xs text-gray-500 uppercase tracking-wide">Laundering Count</div>
+                        <div className="text-gray-900 font-medium">{Number(nftData.traits.launderingCount)}</div>
+                      </div>
+                    )}
+
+                    {nftData.traits?.lastSalePrice && nftData.traits.lastSalePrice !== '0' && (
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <div className="text-xs text-gray-500 uppercase tracking-wide">Last Sale Price</div>
+                        <div className="text-gray-900 font-medium">{nftData.traits.lastSalePrice} ETH</div>
+                      </div>
+                    )}
+
+                    {nftData.traits?.lastCleaned && nftData.traits.lastCleaned > BigInt(0) && (
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <div className="text-xs text-gray-500 uppercase tracking-wide">Last Cleaned</div>
+                        <div className="text-gray-900 font-medium text-sm">
+                          {new Date(Number(nftData.traits.lastCleaned) * 1000).toLocaleDateString()}
+                        </div>
                       </div>
                     )}
                     </div>

@@ -22,6 +22,12 @@ export interface RugTraits {
   frameLevel?: string
   maintenanceScore?: bigint
   curator?: string
+  cleaningCount?: number
+  restorationCount?: number
+  masterRestorationCount?: number
+  launderingCount?: number
+  lastSalePrice?: string
+  lastCleaned?: bigint
 }
 
 export interface TokenURIAttribute {
@@ -58,11 +64,37 @@ function extractDisplayTraitsFromAttributes(attributes: TokenURIAttribute[]): Pa
     const frameLevel = String(attrMap.get('Frame') || 'None')
     const maintenanceScore = BigInt(attrMap.get('Maintenance Score') || 0)
 
+    // Extract additional traits from attributes
+    const paletteName = String(attrMap.get('Palette Name') || '')
+    const characterCount = BigInt(attrMap.get('Character Count') || 0)
+    const stripeCount = BigInt(attrMap.get('Stripe Count') || 0)
+    const warpThickness = Number(attrMap.get('Warp Thickness') || 1)
+    const curator = String(attrMap.get('Curator') || '')
+    const textLinesCount = Number(attrMap.get('Text Lines') || 0)
+    const cleaningCount = Number(attrMap.get('Cleaning Count') || 0)
+    const restorationCount = Number(attrMap.get('Restoration Count') || 0)
+    const masterRestorationCount = Number(attrMap.get('Master Restoration Count') || 0)
+    const launderingCount = Number(attrMap.get('Laundering Count') || 0)
+    const lastSalePrice = String(attrMap.get('Last Sale Price') || '0')
+    const lastCleaned = BigInt(attrMap.get('Last Cleaned') || 0)
+
     return {
       dirtLevel,
       agingLevel,
       frameLevel,
-      maintenanceScore
+      maintenanceScore,
+      paletteName,
+      characterCount,
+      stripeCount,
+      warpThickness,
+      curator,
+      textLinesCount,
+      cleaningCount,
+      restorationCount,
+      masterRestorationCount,
+      launderingCount,
+      lastSalePrice,
+      lastCleaned
     }
   } catch (error) {
     console.error('Failed to extract display traits from attributes:', error)
@@ -342,6 +374,13 @@ export default function NFTDisplay({
 
   const config = sizeConfig[size]
 
+  // Reset state when nftData changes
+  useEffect(() => {
+    setPreviewImage('')
+    setIsGenerating(true)
+    setBlobUrl(null)
+  }, [nftData?.tokenId])
+
   useEffect(() => {
     const generatePreview = async () => {
       if (previewImage && !isGenerating) {
@@ -370,21 +409,22 @@ export default function NFTDisplay({
           setPreviewImage(imageData)
           setIsGenerating(false)
         } else if (nftData.animation_url) {
+          // Use the animation_url directly as iframe src
           setPreviewImage(nftData.animation_url)
           setIsGenerating(false)
         } else {
-          setPreviewImage('/placeholder-rug.png')
+          setPreviewImage('/rug-loading-mid.webp')
           setIsGenerating(false)
         }
       } catch (error) {
         console.error('Failed to generate rug preview:', error)
-        setPreviewImage(nftData.animation_url || '/placeholder-rug.png')
+        setPreviewImage(nftData.animation_url || '/rug-loading-mid.webp')
         setIsGenerating(false)
       }
     }
 
     generatePreview()
-  }, [nftData.traits, nftData.animation_url, nftData.tokenId, rugGenerator, scriptsLoaded, previewImage, isGenerating, blobUrl])
+  }, [nftData.traits, nftData.animation_url, nftData.tokenId, rugGenerator, scriptsLoaded])
 
 
   // Cleanup blob URLs on unmount
@@ -395,6 +435,15 @@ export default function NFTDisplay({
       }
     }
   }, [blobUrl])
+
+  // Cleanup blob URL when component unmounts or data changes
+  useEffect(() => {
+    return () => {
+      if (blobUrl && blobUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(blobUrl)
+      }
+    }
+  }, [])
 
   const handleFavoriteToggle = useCallback(() => {
     setIsFavorited(!isFavorited)
@@ -435,10 +484,11 @@ export default function NFTDisplay({
   const handleViewDetails = useCallback(() => {
     const nftDataWithPreview = {
       ...nftData,
+      traits: displayTraits as RugTraits, // Use the computed displayTraits which includes attributes data
       processedPreviewUrl: previewImage
     }
     setSelectedNFT(nftDataWithPreview)
-  }, [nftData, previewImage])
+  }, [nftData, displayTraits, previewImage])
 
   const formatPrice = (price?: string) => {
     if (!price) return null
@@ -484,7 +534,6 @@ export default function NFTDisplay({
             className="w-full h-full rounded-lg border-0"
             title={`OnchainRug #${nftData.tokenId}`}
             loading="lazy"
-            sandbox="allow-scripts"
           />
         ) : (
           <div

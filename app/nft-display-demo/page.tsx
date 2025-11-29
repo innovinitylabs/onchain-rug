@@ -273,7 +273,7 @@ export default function NFTDisplayDemoPage() {
 
             <div className="flex justify-center">
               <NFTDisplay
-                nftData={sampleNFTData}
+                nftData={sampleNFTs[0]}
                 size={size}
                 showControls={showControls}
                 interactive={interactive}
