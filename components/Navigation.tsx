@@ -500,7 +500,7 @@ export default function Navigation() {
                 </text>
               </svg>
             </Link>
-
+            
             {/* Manage Dropdown - Only visible when wallet connected */}
             {isConnected && (
               <div className="relative">

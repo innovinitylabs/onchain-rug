@@ -141,12 +141,12 @@ export default function NFTDetailModal({
           </div>
 
           {/* Modal Content */}
-          <div className={`flex ${isFullscreen ? 'flex-col h-[calc(100vh-120px)]' : 'flex-col lg:flex-row'}`}>
+          <div className={`flex ${isFullscreen ? 'flex-col h-[calc(100vh-120px)]' : 'flex-col lg:flex-row'} ${!isFullscreen ? 'max-h-[calc(90vh-120px)] overflow-y-auto' : ''}`}>
             {/* Large NFT Preview */}
             <div className={`flex-shrink-0 ${isFullscreen ? 'flex-1 p-6' : 'lg:w-1/2 p-6'}`}>
               <div className="relative bg-gray-50 rounded-xl overflow-hidden">
                 <iframe
-                  src={nftData.animation_url}
+                  src={nftData.processedPreviewUrl || nftData.animation_url}
                   className="w-full h-full min-h-[400px] lg:min-h-[500px]"
                   title={`Onchain Rug #${nftData.tokenId}`}
                   sandbox="allow-scripts"

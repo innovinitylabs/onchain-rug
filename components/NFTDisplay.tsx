@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Eye, RefreshCw, ExternalLink, Heart, Copy, CheckCircle, Maximize2, Minimize2 } from 'lucide-react'
 import NFTDetailModal from './NFTDetailModal'
 
-// NFT Data interfaces
 export interface RugTraits {
   seed: bigint
   paletteName: string
@@ -15,7 +14,6 @@ export interface RugTraits {
   warpThickness: number
   mintTime: bigint
   filteredCharacterMap: string
-  complexity: number
   characterCount: bigint
   stripeCount: bigint
   textLinesCount: number
@@ -23,11 +21,18 @@ export interface RugTraits {
   agingLevel: number
   frameLevel?: string
   maintenanceScore?: bigint
+  curator?: string
+}
+
+export interface TokenURIAttribute {
+  trait_type: string
+  value: string | number
 }
 
 export interface NFTData {
   tokenId: number
-  traits: RugTraits
+  traits?: RugTraits
+  attributes?: TokenURIAttribute[]
   owner: string
   name?: string
   description?: string
@@ -38,10 +43,33 @@ export interface NFTData {
   isListed?: boolean
   lastSalePrice?: string
   marketplaceData?: any
-  cachedHtmlBase64?: string // Cached HTML preview as base64
+  processedPreviewUrl?: string
 }
 
-// Component props
+function extractDisplayTraitsFromAttributes(attributes: TokenURIAttribute[]): Partial<RugTraits> {
+  try {
+    const attrMap = new Map<string, string | number>()
+    attributes.forEach(attr => {
+      attrMap.set(attr.trait_type, attr.value)
+    })
+
+    const dirtLevel = Number(attrMap.get('Dirt Level') || 0)
+    const agingLevel = Number(attrMap.get('Aging Level') || 0)
+    const frameLevel = String(attrMap.get('Frame') || 'None')
+    const maintenanceScore = BigInt(attrMap.get('Maintenance Score') || 0)
+
+    return {
+      dirtLevel,
+      agingLevel,
+      frameLevel,
+      maintenanceScore
+    }
+  } catch (error) {
+    console.error('Failed to extract display traits from attributes:', error)
+    return {}
+  }
+}
+
 export interface NFTDisplayProps {
   nftData: NFTData
   size?: 'small' | 'medium' | 'large'
@@ -53,7 +81,6 @@ export interface NFTDisplayProps {
   className?: string
 }
 
-// Rug generator types
 interface Palette {
   name: string
   colors: string[]
@@ -63,11 +90,9 @@ interface CharacterMap {
   [key: string]: string[]
 }
 
-// Rug generation utilities
 class RugGenerator {
   private canvas: HTMLCanvasElement | null = null
   private ctx: CanvasRenderingContext2D | null = null
-  // Static dimensions matching Solidity contract
   private width = 800
   private height = 1200
   private rugP5Script: string = ''
@@ -79,7 +104,6 @@ class RugGenerator {
   constructor(onLoaded?: () => void) {
     this.onScriptsLoaded = onLoaded
     this.initializeCanvas()
-    // Load scripts asynchronously
     this.loadScripts().catch(console.error)
   }
 
@@ -105,19 +129,16 @@ class RugGenerator {
     try {
       console.log('Loading rug generation scripts...')
 
-      // Load p5.js from CDN instead of local file
-      const p5Response = await fetch('https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js')
-      if (!p5Response.ok) throw new Error(`p5.js CDN fetch failed: ${p5Response.status}`)
+      const p5Response = await fetch('/data/rug-p5.js')
+      if (!p5Response.ok) throw new Error(`rug-p5.js fetch failed: ${p5Response.status}`)
       this.rugP5Script = await p5Response.text()
-      console.log('Loaded p5.js from CDN, length:', this.rugP5Script.length)
+      console.log('Loaded custom rug-p5.js, length:', this.rugP5Script.length)
 
-      // Load rug algorithm script
       const algoResponse = await fetch('/data/rug-algo.js')
       if (!algoResponse.ok) throw new Error(`rug-algo.js fetch failed: ${algoResponse.status}`)
       this.rugAlgoScript = await algoResponse.text()
       console.log('Loaded rug-algo.js script, length:', this.rugAlgoScript.length)
 
-      // Load rug frame script
       const frameResponse = await fetch('/data/rug-frame.js')
       if (!frameResponse.ok) throw new Error(`rug-frame.js fetch failed: ${frameResponse.status}`)
       this.rugFrameScript = await frameResponse.text()
@@ -133,8 +154,6 @@ class RugGenerator {
   }
 
   private generateHTMLPreview(traits: RugTraits, tokenId?: number): string {
-    // Generate HTML content based on sample_html_preview.html format
-    // Use provided tokenId or fallback to seed-based ID
     const displayTokenId = tokenId || (traits?.seed ? Number(traits.seed.toString()) : 'Preview')
     const paletteJson = traits?.minifiedPalette ? JSON.stringify(JSON.parse(traits.minifiedPalette)) : '{"name":"Arctic Ice","colors":["#F0F8FF","#E6E6FA","#B0C4DE","#87CEEB","#B0E0E6","#F0FFFF","#E0FFFF","#F5F5F5"]}'
     const stripeJson = traits?.minifiedStripeData ? JSON.stringify(JSON.parse(traits.minifiedStripeData)) : '[{"y":0,"h":70.76905641704798,"pc":"#B0E0E6","wt":"s","wv":0.2441620133817196},{"y":70.76905641704798,"h":66.97513959370553,"pc":"#E0FFFF","wt":"t","wv":0.4486666376702487},{"y":137.7441960107535,"h":52.949525993317366,"pc":"#E6E6FA","wt":"s","wv":0.3614784942939878},{"y":190.69372200407088,"h":88.51418890990317,"pc":"#F5F5F5","wt":"s","wv":0.4601602298207581},{"y":279.20791091397405,"h":70.09695865213871,"pc":"#87CEEB","wt":"s","wv":0.18919947408139706},{"y":349.30486956611276,"h":54.90225265733898,"pc":"#B0C4DE","wt":"t","wv":0.10271521052345634},{"y":404.20712222345173,"h":53.02237452939153,"pc":"#F0FFFF","sc":"#E0FFFF","wt":"s","wv":0.3749437925405801},{"y":457.22949675284326,"h":61.070579811930656,"pc":"#F0FFFF","sc":"#E6E6FA","wt":"t","wv":0.14146835459396245},{"y":518.3000765647739,"h":50.73577044531703,"pc":"#F5F5F5","wt":"s","wv":0.24790364671498538},{"y":569.035847010091,"h":71.19754501618445,"pc":"#B0C4DE","wt":"s","wv":0.10568890692666173},{"y":640.2333920262754,"h":72.2229290753603,"pc":"#E0FFFF","wt":"t","wv":0.3288901265710592},{"y":712.4563211016357,"h":73.23578814975917,"pc":"#F5F5F5","wt":"t","wv":0.2201482846401632},{"y":785.6921092513949,"h":81.7917856760323,"pc":"#E0FFFF","wt":"s","wv":0.257676356099546},{"y":867.4838949274272,"h":83.10637858696282,"pc":"#F0F8FF","wt":"s","wv":0.11601038286462427},{"y":950.59027351439,"h":67.69649278372526,"pc":"#B0E0E6","sc":"#F0FFFF","wt":"t","wv":0.15098334243521094},{"y":1018.2867662981153,"h":84.24941586330533,"pc":"#87CEEB","sc":"#B0C4DE","wt":"s","wv":0.12075226726010442},{"y":1102.5361821614206,"h":86.20883144438267,"pc":"#E0FFFF","wt":"s","wv":0.2798375692218542},{"y":1188.7450136058033,"h":11.254986394196749,"pc":"#B0C4DE","wt":"s","wv":0.3258690937422216}]'
@@ -143,7 +162,15 @@ class RugGenerator {
     const characterMapJson = traits?.filteredCharacterMap ? JSON.stringify(JSON.parse(traits.filteredCharacterMap)) : '{"B":["11110","10001","10001","11110","10001","10001","11110"],"A":["01110","10001","10001","11111","10001","10001","10001"],"C":["01111","10000","10000","10000","10000","10000","01111"],"K":["10001","10010","10100","11000","10100","10010","10001"],"E":["11111","10000","10000","11110","10000","10000","11111"],"N":["10001","11001","10101","10011","10001","10001","10001"],"D":["11110","10001","10001","10001","10001","10001","11110"],"R":["11110","10001","10001","11110","10100","10010","10001"],"U":["10001","10001","10001","10001","10001","10001","01110"],"G":["01111","10000","10000","10011","10001","10001","01111"]," ":["00000","00000","00000","00000","00000","00000","00000"]}'
     const textureLevel = traits?.agingLevel || 0
     const dirtLevel = traits?.dirtLevel || 0
-    const frameLevel = traits?.frameLevel || ''
+
+    const frameLevel = (() => {
+      const level = traits?.frameLevel || ''
+      if (level === 'Gold') return 'G'
+      if (level === 'Bronze') return 'B'
+      if (level === 'Silver') return 'S'
+      if (level === 'Diamond') return 'D'
+      return ''
+    })()
 
     const htmlContent = `<!DOCTYPE html>
 <html>
@@ -152,12 +179,13 @@ class RugGenerator {
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>OnchainRug #${displayTokenId}</title>
   <style>body{display:flex;justify-content:center;align-items:center}#defaultCanvas0{width:100%!important;height:auto!important;}</style>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  <script>
+    ${this.rugP5Script}
+  </script>
 </head>
 <body>
   <div id="rug"></div>
   <script>
-    // Dynamic rug data from traits (matching Solidity contract static values)
     let w = 800,
         h = 1200,
         f = 30,
@@ -180,11 +208,9 @@ class RugGenerator {
     cm = JSON.parse(cm);
   </script>
   <script>
-    // Rug generation algorithm
     ${this.rugAlgoScript}
   </script>
   <script>
-    // Rug frame rendering
     ${this.rugFrameScript}
   </script>
 </body>
@@ -258,23 +284,12 @@ class RugGenerator {
   }
 
 
-  // Generate rug preview
-  // Generate rug preview - handles both base64 HTML and traits data
-  generatePreview(traits: RugTraits, cachedHtmlBase64?: string, tokenId?: number): string {
+  generatePreview(traits: RugTraits, tokenId?: number): string {
     try {
-      // Case 1: Cached HTML base64 - use directly (from animation_url)
-      if (cachedHtmlBase64) {
-        return `data:text/html;base64,${cachedHtmlBase64}`
-      }
-
-      // Case 2: Traits data from Redis - generate HTML client-side
       console.log('Generating HTML preview from traits for token', tokenId)
       const htmlContent = this.generateHTMLPreview(traits, tokenId)
-
-      // Use blob URL instead of data URL for better script execution in iframes
       const blob = new Blob([htmlContent], { type: 'text/html' })
       const blobUrl = URL.createObjectURL(blob)
-
       return blobUrl
     } catch (error) {
       console.error('Failed to generate HTML preview:', error)
@@ -284,7 +299,6 @@ class RugGenerator {
 
 }
 
-// Main NFT Display Component
 export default function NFTDisplay({
   nftData,
   size = 'medium',
@@ -305,13 +319,21 @@ export default function NFTDisplay({
   const [blobUrl, setBlobUrl] = useState<string | null>(null)
   const [scriptsLoaded, setScriptsLoaded] = useState(false)
 
-  // Memoized rug generator with callback
+  const displayTraits = useMemo(() => {
+    if (nftData.traits) {
+      return nftData.traits
+    }
+    if (nftData.attributes) {
+      return extractDisplayTraitsFromAttributes(nftData.attributes)
+    }
+    return null
+  }, [nftData.traits, nftData.attributes])
+
   const rugGenerator = useMemo(() => new RugGenerator(() => {
     console.log('Scripts loaded, updating state')
     setScriptsLoaded(true)
   }), [])
 
-  // Size configurations
   const sizeConfig = {
     small: { width: 200, height: 150 },
     medium: { width: 320, height: 240 },
@@ -320,47 +342,38 @@ export default function NFTDisplay({
 
   const config = sizeConfig[size]
 
-  // Generate preview on mount/update
   useEffect(() => {
     const generatePreview = async () => {
-      // Don't regenerate if we already have a preview and data hasn't changed
       if (previewImage && !isGenerating) {
         return
       }
 
       try {
-        // Clean up previous blob URL
         if (blobUrl && blobUrl.startsWith('blob:')) {
           URL.revokeObjectURL(blobUrl)
           setBlobUrl(null)
         }
 
-        if (nftData.cachedHtmlBase64) {
-          // Use cached HTML immediately
-          setPreviewImage(`data:text/html;base64,${nftData.cachedHtmlBase64}`)
-          setIsGenerating(false)
-        } else if (nftData.traits) {
-          // Generate HTML from traits
+        if (nftData.traits) {
           if (!scriptsLoaded) {
             setIsGenerating(true)
-            return // Wait for scripts
+            return
           }
 
           setIsGenerating(true)
-          const imageData = rugGenerator.generatePreview(nftData.traits, nftData.cachedHtmlBase64, nftData.tokenId)
+          const imageData = rugGenerator.generatePreview(nftData.traits, nftData.tokenId)
 
-          console.log('Generated preview for token', nftData.tokenId)
-
-          // Track blob URLs for cleanup
           if (imageData.startsWith('blob:')) {
             setBlobUrl(imageData)
           }
 
           setPreviewImage(imageData)
           setIsGenerating(false)
+        } else if (nftData.animation_url) {
+          setPreviewImage(nftData.animation_url)
+          setIsGenerating(false)
         } else {
-          // Fallback to animation_url or placeholder
-          setPreviewImage(nftData.animation_url || '/placeholder-rug.png')
+          setPreviewImage('/placeholder-rug.png')
           setIsGenerating(false)
         }
       } catch (error) {
@@ -371,7 +384,7 @@ export default function NFTDisplay({
     }
 
     generatePreview()
-  }, [nftData.traits, nftData.animation_url, nftData.cachedHtmlBase64, nftData.tokenId, rugGenerator, scriptsLoaded, previewImage, isGenerating, blobUrl])
+  }, [nftData.traits, nftData.animation_url, nftData.tokenId, rugGenerator, scriptsLoaded, previewImage, isGenerating, blobUrl])
 
 
   // Cleanup blob URLs on unmount
@@ -383,13 +396,11 @@ export default function NFTDisplay({
     }
   }, [blobUrl])
 
-  // Handle favorite toggle
   const handleFavoriteToggle = useCallback(() => {
     setIsFavorited(!isFavorited)
     onFavoriteToggle?.(nftData.tokenId)
   }, [isFavorited, nftData.tokenId, onFavoriteToggle])
 
-  // Handle copy link
   const handleCopyLink = useCallback(async () => {
     const url = `${window.location.origin}/rug-market/${nftData.tokenId}`
     try {
@@ -402,44 +413,42 @@ export default function NFTDisplay({
     }
   }, [nftData.tokenId, onCopyLink])
 
-  // Handle refresh data
   const handleRefreshData = useCallback(() => {
     onRefreshData?.(nftData.tokenId)
 
-    // Clean up previous blob URL before refreshing
     if (blobUrl && blobUrl.startsWith('blob:')) {
       URL.revokeObjectURL(blobUrl)
       setBlobUrl(null)
     }
 
-    // Re-generate preview
-    const imageData = rugGenerator.generatePreview(nftData.traits, nftData.cachedHtmlBase64, nftData.tokenId)
-
-    // Track new blob URLs
+    if (nftData.traits) {
+      const imageData = rugGenerator.generatePreview(nftData.traits, nftData.tokenId)
     if (imageData.startsWith('blob:')) {
       setBlobUrl(imageData)
     }
-
     setPreviewImage(imageData)
-  }, [nftData.tokenId, nftData.traits, nftData.cachedHtmlBase64, rugGenerator, onRefreshData, blobUrl])
+    } else if (nftData.animation_url) {
+      setPreviewImage(nftData.animation_url)
+    }
+  }, [nftData.tokenId, nftData.traits, nftData.animation_url, rugGenerator, onRefreshData, blobUrl])
 
-  // Handle view details
   const handleViewDetails = useCallback(() => {
-    setSelectedNFT(nftData)
-  }, [nftData])
+    const nftDataWithPreview = {
+      ...nftData,
+      processedPreviewUrl: previewImage
+    }
+    setSelectedNFT(nftDataWithPreview)
+  }, [nftData, previewImage])
 
-  // Format price
   const formatPrice = (price?: string) => {
     if (!price) return null
     const num = parseFloat(price)
     return num >= 1 ? `${num.toFixed(3)} ETH` : `${(num * 1000).toFixed(1)}K WEI`
   }
 
-  // Get condition badge
   const getConditionBadge = () => {
-    const traits = nftData?.traits
-    const dirt = traits?.dirtLevel || 0
-    const aging = traits?.agingLevel || 0
+    const dirt = displayTraits?.dirtLevel || 0
+    const aging = displayTraits?.agingLevel || 0
 
     let condition = 'Excellent'
     let color = 'bg-green-100 text-green-800'
@@ -470,7 +479,6 @@ export default function NFTDisplay({
             <RefreshCw className="w-8 h-8 animate-spin text-gray-400" />
           </div>
         ) : previewImage ? (
-          // Display HTML preview - either base64 data URL or blob URL
           <iframe
             src={previewImage}
             className="w-full h-full rounded-lg border-0"
@@ -479,7 +487,6 @@ export default function NFTDisplay({
             sandbox="allow-scripts"
           />
         ) : (
-          // Show loading or fallback when no preview is available
           <div
             className="w-full h-full rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-500 bg-gradient-to-br from-gray-100 to-white"
             style={{ minHeight: '200px' }}
@@ -496,16 +503,15 @@ export default function NFTDisplay({
                   <div className="text-sm text-gray-600 mb-1">Token ID: #{nftData.tokenId}</div>
                   <div className="text-sm text-gray-600 mb-1">Scripts Loaded: {scriptsLoaded ? 'Yes' : 'No'}</div>
                   <div className="text-sm text-gray-600">Has Traits: {nftData.traits ? 'Yes' : 'No'}</div>
+                  <div className="text-sm text-gray-600">Has Animation URL: {nftData.animation_url ? 'Yes' : 'No'}</div>
                 </div>
               )}
             </div>
           </div>
         )}
 
-        {/* Subtle overlay on hover */}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-lg" />
 
-        {/* Minimal badges - only on hover for clean look */}
         <div className="absolute top-2 left-2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           {nftData.isListed && (
             <div className="bg-green-500 text-white text-xs px-2 py-1 rounded font-bold">
@@ -517,19 +523,16 @@ export default function NFTDisplay({
           </div>
         </div>
 
-        {/* Token ID - always visible but subtle */}
         <div className="absolute top-2 right-2 bg-black/50 text-white text-sm px-2 py-1 rounded opacity-75">
           #{nftData.tokenId}
         </div>
 
-        {/* Price badge - only visible on hover */}
         {nftData.listingPrice && (
           <div className="absolute bottom-2 left-2 bg-black/70 text-white text-sm px-2 py-1 rounded font-bold opacity-0 group-hover:opacity-100 transition-opacity">
             {formatPrice(nftData.listingPrice)}
           </div>
         )}
 
-        {/* Controls - only visible on hover */}
         {showControls && (
           <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
             <button
@@ -563,7 +566,6 @@ export default function NFTDisplay({
         )}
       </motion.div>
 
-      {/* Detailed Modal */}
       <NFTDetailModal
         nftData={selectedNFT}
         isOpen={!!selectedNFT}
@@ -576,7 +578,6 @@ export default function NFTDisplay({
   )
 }
 
-// Skeleton loader component
 export function NFTDisplaySkeleton({ size = 'medium', className = '' }: { size?: 'small' | 'medium' | 'large', className?: string }) {
   const sizeConfig = {
     small: { width: 200, height: 150 },
@@ -591,13 +592,11 @@ export function NFTDisplaySkeleton({ size = 'medium', className = '' }: { size?:
       className={`bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200 animate-pulse ${className}`}
       style={{ width: config.width }}
     >
-      {/* Preview skeleton */}
       <div
         className="bg-gray-200"
         style={{ height: config.height }}
       />
 
-      {/* Info skeleton */}
       <div className="p-4">
         <div className="h-4 bg-gray-200 rounded mb-2"></div>
         <div className="h-3 bg-gray-200 rounded mb-3 w-3/4"></div>
