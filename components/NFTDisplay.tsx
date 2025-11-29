@@ -33,7 +33,7 @@ export interface NFTData {
   tokenId: number
   traits?: RugTraits
   attributes?: TokenURIAttribute[]
-  owner: string
+  owner?: string
   name?: string
   description?: string
   image?: string
