@@ -50,7 +50,7 @@ export class RedisIndexes {
   static async getTopOwnersByCount(contractId: string, limit: number = 10): Promise<string[]> {
     const key = `index:owners:by_token_count:${contractId}`
     const results = await redis.zrange(key, 0, limit - 1, { rev: true })
-    return results
+    return results.map(r => String(r))
   }
 
   /**
@@ -59,7 +59,7 @@ export class RedisIndexes {
   static async getMostActiveOwners(contractId: string, limit: number = 10): Promise<string[]> {
     const key = `index:owners:by_activity:${contractId}`
     const results = await redis.zrange(key, 0, limit - 1, { rev: true })
-    return results
+    return results.map(r => String(r))
   }
 
   // =============================================================================
@@ -108,13 +108,17 @@ export class RedisIndexes {
     const agingKey = `index:tokens:by_aging_level:${contractId}`
 
     // Get tokens with highest dirt levels
-    const dirtyTokens = await redis.zrevrange(dirtKey, 0, limit - 1)
+    const dirtyTokens = await redis.zrange(dirtKey, 0, limit - 1, { rev: true })
 
     // Get tokens with highest aging levels
-    const agingTokens = await redis.zrevrange(agingKey, 0, limit - 1)
+    const agingTokens = await redis.zrange(agingKey, 0, limit - 1, { rev: true })
 
     // Combine and deduplicate
-    return [...new Set([...dirtyTokens, ...agingTokens])].slice(0, limit)
+    const allTokens = [
+      ...dirtyTokens.map(t => String(t)),
+      ...agingTokens.map(t => String(t))
+    ]
+    return [...new Set(allTokens)].slice(0, limit)
   }
 
   /**
@@ -123,7 +127,7 @@ export class RedisIndexes {
   static async getRecentlyMaintainedTokens(contractId: string, limit: number = 20): Promise<string[]> {
     const key = `index:tokens:by_maintenance:${contractId}`
     const results = await redis.zrange(key, 0, limit - 1, { rev: true })
-    return results
+    return results.map(r => String(r))
   }
 
   // =============================================================================
@@ -147,7 +151,7 @@ export class RedisIndexes {
   static async getPopularTraits(contractId: string, limit: number = 10): Promise<string[]> {
     const key = `index:traits:by_popularity:${contractId}`
     const results = await redis.zrange(key, 0, limit - 1, { rev: true })
-    return results
+    return results.map(r => String(r))
   }
 
   // =============================================================================
@@ -210,9 +214,11 @@ export class RedisIndexes {
     const cutoff = Date.now() - (hours * 60 * 60 * 1000)
 
     // Get recent cache events
-    const events = await redis.zrangebyscore(key, cutoff, Date.now(), { withScores: false })
-    const hits = events.filter(event => event.endsWith(':hit')).length
-    const total = events.length
+    // Note: Upstash Redis uses zrange with BYSCORE option instead of zrangebyscore
+    const events = await redis.zrange(key, cutoff, Date.now(), { byScore: true })
+    const eventStrings = events.map(e => String(e))
+    const hits = eventStrings.filter(event => event.endsWith(':hit')).length
+    const total = eventStrings.length
 
     return total > 0 ? hits / total : 0
   }
