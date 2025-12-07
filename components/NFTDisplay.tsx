@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState, useMemo, useRef } from 'react'
+import React, { useEffect, useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
 
 export interface RugTraits {
@@ -370,29 +370,16 @@ class RugGenerator {
 
 }
 
-// Module-level cache for previews - persists across component unmounts/remounts
-interface PreviewCacheEntry {
-  previewImage: string
-  blobUrl: string | null
-  isGenerating: boolean
-}
-
-const previewCache = new Map<number, PreviewCacheEntry>()
-
-function NFTDisplay({
+export default function NFTDisplay({
   nftData,
   size = 'medium',
   interactive = true,
   onClick,
   className = ''
 }: NFTDisplayProps) {
-  const currentTokenId = nftData?.tokenId
-  
-  // Initialize state from cache if available, otherwise use defaults
-  const cachedPreview = currentTokenId !== undefined ? previewCache.get(currentTokenId) : undefined
-  const [previewImage, setPreviewImage] = useState<string>(cachedPreview?.previewImage || '')
-  const [isGenerating, setIsGenerating] = useState<boolean>(cachedPreview?.isGenerating ?? true)
-  const [blobUrl, setBlobUrl] = useState<string | null>(cachedPreview?.blobUrl || null)
+  const [previewImage, setPreviewImage] = useState<string>('')
+  const [isGenerating, setIsGenerating] = useState(true)
+  const [blobUrl, setBlobUrl] = useState<string | null>(null)
   const [scriptsLoaded, setScriptsLoaded] = useState(false)
 
   const displayTraits = useMemo(() => {
@@ -421,40 +408,26 @@ function NFTDisplay({
   // For card usage, we want to be fully responsive and ignore fixed sizes
   const isResponsive = className?.includes('w-full') || className?.includes('h-full')
 
-  // Update cache whenever state changes
+  // Reset state when nftData changes
   useEffect(() => {
-    if (currentTokenId !== undefined) {
-      previewCache.set(currentTokenId, {
-        previewImage,
-        blobUrl,
-        isGenerating
-      })
-    }
-  }, [currentTokenId, previewImage, blobUrl, isGenerating])
+    setPreviewImage('')
+    setIsGenerating(true)
+    setBlobUrl(null)
+  }, [nftData?.tokenId, nftData?.traits, nftData?.animation_url])
 
   useEffect(() => {
     const generatePreview = async () => {
-      if (currentTokenId === undefined) {
-        return
-      }
-
-      // Check cache first - if we have a valid cached preview, use it
-      const cached = previewCache.get(currentTokenId)
-      if (cached && cached.previewImage && cached.previewImage !== '/rug-loading-mid.webp' && cached.previewImage !== '' && !cached.isGenerating) {
-        // Use cached preview
-        setPreviewImage(cached.previewImage)
-        setBlobUrl(cached.blobUrl)
-        setIsGenerating(false)
-        return
-      }
-
-      // If we already have a valid preview in state, skip regeneration
-      if (previewImage && previewImage !== '/rug-loading-mid.webp' && previewImage !== '' && !isGenerating) {
+      if (previewImage && !isGenerating) {
         return
       }
 
       try {
-        if (displayTraits && nftData.traits) {
+        if (blobUrl && blobUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(blobUrl)
+          setBlobUrl(null)
+        }
+
+        if (nftData.traits) {
           if (!scriptsLoaded) {
             // Scripts required to generate client-side previews haven't loaded yet.
             // Show a lightweight placeholder so the card/modal doesn't render blank
@@ -467,10 +440,8 @@ function NFTDisplay({
           setIsGenerating(true)
           const imageData = rugGenerator.generatePreview(nftData.traits, nftData.tokenId)
 
-          let newBlobUrl: string | null = null
           if (imageData.startsWith('blob:')) {
-            newBlobUrl = imageData
-            setBlobUrl(newBlobUrl)
+            setBlobUrl(imageData)
           }
 
           setPreviewImage(imageData)
@@ -491,9 +462,7 @@ function NFTDisplay({
     }
 
     generatePreview()
-    // Only regenerate when tokenId, data, or scripts change - not on every render
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentTokenId, displayTraits, nftData.animation_url, rugGenerator, scriptsLoaded])
+  }, [nftData.traits, nftData.animation_url, nftData.tokenId, rugGenerator, scriptsLoaded])
 
 
   // Cleanup blob URLs on unmount
@@ -538,7 +507,7 @@ function NFTDisplay({
         onClick={onClick}
       >
         {/* NFT Content */}
-        {previewImage && previewImage !== '' ? (
+        {isGenerating ? null : previewImage ? (
           previewImage.startsWith('blob:') || previewImage.startsWith('data:') ? (
             <div style={{ width: '100%', height: '100%', position: 'relative' }}>
             <iframe
@@ -574,7 +543,7 @@ function NFTDisplay({
               loading="lazy"
             />
           )
-        ) : isGenerating ? null : (
+        ) : (
           <div className="w-full h-full flex items-center justify-center bg-gray-100">
             <span className="text-gray-500">No preview available</span>
           </div>
@@ -584,19 +553,6 @@ function NFTDisplay({
     </>
   )
 }
-
-// Memoize component to prevent unnecessary re-renders when sorting (props haven't changed)
-// Return true if props are equal (should skip re-render), false if different (should re-render)
-export default React.memo(NFTDisplay, (prevProps, nextProps) => {
-  // Compare tokenId (the important prop) - if same, don't re-render
-  const tokenIdSame = prevProps.nftData?.tokenId === nextProps.nftData?.tokenId
-  const sizeSame = prevProps.size === nextProps.size
-  const classNameSame = prevProps.className === nextProps.className
-  
-  // Only re-render if tokenId, size, or className changed
-  // Note: onClick may change reference but that's okay, we only care about tokenId
-  return tokenIdSame && sizeSame && classNameSame
-})
 
 // Simple skeleton used by the demo page while previews are generating
 export function NFTDisplaySkeleton({ size = 'medium' }: { size?: 'small' | 'medium' | 'large' }) {
