@@ -43,11 +43,11 @@ function RugCard({ nft, onClick, onRefresh, onFavoriteToggle, onBuyNFT, isFavori
     const aging = nft.dynamic.agingLevel
 
     if (dirt === 0 && aging === 0) {
-      return { text: 'Perfect', color: 'bg-green-500/20 text-green-300 border-green-500/30' }
+      return { text: 'Perfect', color: 'bg-green-600/90 text-white border-green-400' }
     } else if (dirt <= 1 && aging <= 1) {
-      return { text: `D${dirt} A${aging}`, color: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30' }
+      return { text: `D${dirt} A${aging}`, color: 'bg-yellow-600/90 text-white border-yellow-400' }
     } else {
-      return { text: `D${dirt} A${aging}`, color: 'bg-red-500/20 text-red-300 border-red-500/30' }
+      return { text: `D${dirt} A${aging}`, color: 'bg-red-600/90 text-white border-red-400' }
     }
   }, [nft.dynamic.dirtLevel, nft.dynamic.agingLevel])
 
@@ -88,7 +88,7 @@ function RugCard({ nft, onClick, onRefresh, onFavoriteToggle, onBuyNFT, isFavori
 
         {/* Bottom Left - Condition */}
           <div className="absolute bottom-2 left-2 pointer-events-auto">
-          <span className={`px-2 py-1 rounded border backdrop-blur-sm text-xs font-semibold shadow-lg ${conditionBadge.color.replace(/text-green-300|text-yellow-300|text-orange-300/g, 'text-white')}`}>
+          <span className={`px-2 py-1 rounded border backdrop-blur-sm text-xs font-semibold shadow-lg ${conditionBadge.color}`}>
             {conditionBadge.text}
           </span>
         </div>
