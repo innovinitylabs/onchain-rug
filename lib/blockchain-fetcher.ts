@@ -41,6 +41,7 @@ export async function fetchNFTFromBlockchain(
       warpThickness: nftData.rugData.warpThickness,
       curator: nftData.rugData.curator,
       mintTime: nftData.rugData.mintTime,
+      filteredCharacterMap: nftData.rugData.filteredCharacterMap,
       name: `OnchainRug #${nftData.tokenId}`,
       description: 'OnchainRugs by valipokkann',
       image: '/logo.png',
