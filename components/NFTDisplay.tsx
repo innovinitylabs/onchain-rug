@@ -507,15 +507,7 @@ export default function NFTDisplay({
         onClick={onClick}
       >
         {/* NFT Content */}
-        {isGenerating ? (
-          <div className="w-full h-full flex items-center justify-center bg-gray-100">
-            <img
-              src="/rug-loading-mid.webp"
-              alt="Loading..."
-              className="w-full h-full object-contain"
-            />
-          </div>
-        ) : previewImage ? (
+        {isGenerating ? null : previewImage ? (
           previewImage.startsWith('blob:') || previewImage.startsWith('data:') ? (
             <div style={{ width: '100%', height: '100%', position: 'relative' }}>
               <iframe
