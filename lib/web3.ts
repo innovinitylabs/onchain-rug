@@ -135,6 +135,31 @@ export const onchainRugsABI = [
     stateMutability: 'view',
     type: 'function',
   },
+  {
+    inputs: [{ name: 'tokenId', type: 'uint256' }],
+    name: 'getRugData',
+    outputs: [
+      {
+        type: 'tuple',
+        components: [
+          { name: 'seed', type: 'uint256' },
+          { name: 'textRows', type: 'string[]' },
+          { name: 'paletteName', type: 'string' },
+          { name: 'minifiedPalette', type: 'string' },
+          { name: 'minifiedStripeData', type: 'string' },
+          { name: 'warpThickness', type: 'uint8' },
+          { name: 'mintTime', type: 'uint256' },
+          { name: 'filteredCharacterMap', type: 'string' },
+          { name: 'curator', type: 'address' },
+          { name: 'characterCount', type: 'uint256' },
+          { name: 'stripeCount', type: 'uint256' }
+        ],
+        name: 'rugData'
+      }
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
   // Minting function
   {
     inputs: [

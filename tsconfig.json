@@ -31,13 +31,12 @@
   "exclude": [
     "node_modules",
     "Doormat_original",
-    "lib",
-    "lib/**/*",
     "src",
     "src/**/*",
     "script",
     "script/**/*",
     "test",
-    "test/**/*"
+    "test/**/*",
+    "lib/creator-token-contracts/lib/murky/**/scripts/**/*"
   ]
 }

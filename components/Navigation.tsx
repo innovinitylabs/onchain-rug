@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-import { Home, Palette, Image, Sparkles, Menu, X, ImageIcon, User, ShoppingCart, Briefcase, ChevronDown, Settings } from 'lucide-react'
+import { Home, Palette, Image, Sparkles, Menu, X, User, ShoppingCart, Briefcase, ChevronDown, Settings } from 'lucide-react'
 import { useAccount } from 'wagmi'
 import { WalletConnect } from './wallet-connect'
 import LiquidGlass from './LiquidGlass'
@@ -368,55 +368,13 @@ export default function Navigation() {
               </svg>
             </Link>
             <Link
-              href="/gallery"
-              className="flex items-center gap-2 hover:opacity-90 transition-all duration-300"
-            >
-              <ImageIcon className="w-5 h-5" />
-              <svg
-                height="28px"
-                viewBox="0 0 70 20"
-                style={{
-                  display: 'block',
-                  height: '28px',
-                  filter: 'drop-shadow(0 0 6px rgba(108, 190, 230, 0.3))',
-                }}
-              >
-                <defs>
-                  <filter id="nav-link-depth-gallery" x="-100%" y="-100%" width="300%" height="300%">
-                    <feTurbulence baseFrequency="0.02" numOctaves="2" seed="44" type="fractalNoise" result="LINK_BASE_GALLERY" />
-                    <feDisplacementMap in="SourceGraphic" in2="LINK_BASE_GALLERY" scale="3" xChannelSelector="R" yChannelSelector="G" result="LINK_DISPLACED_GALLERY" />
-                    <feGaussianBlur in="LINK_DISPLACED_GALLERY" stdDeviation="0.5" result="LINK_BLUR_GALLERY" />
-                  </filter>
-                  <linearGradient id="nav-link-gradient-gallery" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" style={{ stopColor: 'rgba(255, 255, 255, 0.9)', stopOpacity: 1 }} />
-                    <stop offset="100%" style={{ stopColor: 'rgba(255, 255, 255, 0.9)', stopOpacity: 1 }} />
-                  </linearGradient>
-                </defs>
-                <text
-                  x="50%"
-                  y="12"
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  style={{
-                    fill: 'url(#nav-link-gradient-gallery)',
-                    filter: 'url(#nav-link-depth-gallery)',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    fontFamily: 'system-ui, -apple-system, sans-serif',
-                  }}
-                >
-              Gallery
-                </text>
-              </svg>
-            </Link>
-            <Link
-              href="/market"
+              href="/rug-market"
               className="flex items-center gap-2 hover:opacity-90 transition-all duration-300"
             >
               <ShoppingCart className="w-5 h-5" />
               <svg
                 height="28px"
-                viewBox="0 0 70 20"
+                viewBox="0 0 90 20"
                 style={{
                   display: 'block',
                   height: '28px',
@@ -424,12 +382,12 @@ export default function Navigation() {
                 }}
               >
                 <defs>
-                  <filter id="nav-link-depth-market" x="-100%" y="-100%" width="300%" height="300%">
-                    <feTurbulence baseFrequency="0.02" numOctaves="2" seed="45" type="fractalNoise" result="LINK_BASE_MARKET" />
-                    <feDisplacementMap in="SourceGraphic" in2="LINK_BASE_MARKET" scale="3" xChannelSelector="R" yChannelSelector="G" result="LINK_DISPLACED_MARKET" />
-                    <feGaussianBlur in="LINK_DISPLACED_MARKET" stdDeviation="0.5" result="LINK_BLUR_MARKET" />
+                  <filter id="nav-link-depth-rugmarket" x="-100%" y="-100%" width="300%" height="300%">
+                    <feTurbulence baseFrequency="0.02" numOctaves="2" seed="46" type="fractalNoise" result="LINK_BASE_RUGMARKET" />
+                    <feDisplacementMap in="SourceGraphic" in2="LINK_BASE_RUGMARKET" scale="3" xChannelSelector="R" yChannelSelector="G" result="LINK_DISPLACED_RUGMARKET" />
+                    <feGaussianBlur in="LINK_DISPLACED_RUGMARKET" stdDeviation="0.5" result="LINK_BLUR_RUGMARKET" />
                   </filter>
-                  <linearGradient id="nav-link-gradient-market" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <linearGradient id="nav-link-gradient-rugmarket" x1="0%" y1="0%" x2="100%" y2="100%">
                     <stop offset="0%" style={{ stopColor: 'rgba(255, 255, 255, 0.9)', stopOpacity: 1 }} />
                     <stop offset="100%" style={{ stopColor: 'rgba(255, 255, 255, 0.9)', stopOpacity: 1 }} />
                   </linearGradient>
@@ -440,8 +398,8 @@ export default function Navigation() {
                   textAnchor="middle"
                   dominantBaseline="middle"
                   style={{
-                    fill: 'url(#nav-link-gradient-market)',
-                    filter: 'url(#nav-link-depth-market)',
+                    fill: 'url(#nav-link-gradient-rugmarket)',
+                    filter: 'url(#nav-link-depth-rugmarket)',
                     fontSize: '14px',
                     fontWeight: '600',
                     fontFamily: 'system-ui, -apple-system, sans-serif',
@@ -451,7 +409,7 @@ export default function Navigation() {
                     fontFeatureSettings: '"kern" 1',
                   }}
                 >
-                  Market
+                  Rug Market
                 </text>
               </svg>
             </Link>
@@ -635,21 +593,12 @@ export default function Navigation() {
               </Link>
 
               <Link
-                href="/gallery"
-                onClick={closeMobileMenu}
-                className="flex items-center gap-4 px-6 py-4 text-white hover:bg-white/10 transition-colors duration-200"
-              >
-                <ImageIcon className="w-6 h-6" />
-                <span className="text-lg font-medium">Gallery</span>
-              </Link>
-
-              <Link
-                href="/market"
+                href="/rug-market"
                 onClick={closeMobileMenu}
                 className="flex items-center gap-4 px-6 py-4 text-white hover:bg-white/10 transition-colors duration-200"
               >
                 <ShoppingCart className="w-6 h-6" />
-                <span className="text-lg font-medium">Market</span>
+                <span className="text-lg font-medium">Rug Market</span>
               </Link>
 
               {/* Manage section - Only visible when connected */}
