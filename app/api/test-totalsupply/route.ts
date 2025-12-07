@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { fetchTotalSupply } from '../../rug-market/collection/direct-contract-fetcher'
+import { fetchTotalSupply } from '../rug-market/collection/direct-contract-fetcher'
 
 export async function GET(request: NextRequest) {
   try {
