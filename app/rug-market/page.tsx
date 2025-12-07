@@ -14,47 +14,6 @@ import { RugMarketNFT } from '../../lib/rug-market-types'
 type ListingFilter = 'all' | 'listed' | 'unlisted'
 type SortOption = 'tokenId' | 'price-low' | 'price-high' | 'rarity' | 'newest'
 
-// Test NFT data
-const testNFTs: RugMarketNFT[] = [
-  {
-    tokenId: 1,
-    permanent: {
-      tokenId: 1,
-      seed: '12345',
-      paletteName: 'Cornell Red',
-      minifiedPalette: '{"name":"Cornell Red","colors":["#B31B1B","#8B0000","#DC143C","#FF0000"]}',
-      minifiedStripeData: '[{"y":0,"h":70,"pc":"#B31B1B","wt":"s","wv":0.3}]',
-      textRows: ['TEST RUG'],
-      warpThickness: 2,
-      mintTime: Date.now().toString(),
-      filteredCharacterMap: '{"T":["11111"],"E":["11111"],"S":["01111"],"R":["11111"],"U":["10001"],"G":["01111"]," ":["00000"]}',
-      curator: '0x742d35Cc6E1a3c5B4F5E5C7A1B2C3D4E5F6A7B8C9D0E1F2A',
-      characterCount: '10',
-      stripeCount: '18',
-      name: 'OnchainRug #1',
-      description: 'Test NFT from .env contract',
-      image: '/logo.png'
-    },
-    dynamic: {
-      dirtLevel: 0,
-      agingLevel: 0,
-      frameLevel: 'good',
-      maintenanceScore: '100',
-      currentOwner: '0x742d35Cc6E1a3c5B4F5E5C7A1B2C3D4E5F6A7B8C9D0E1F2A',
-      listingPrice: '0',
-      isListed: false,
-      lastSalePrice: '0',
-      cleaningCount: 0,
-      restorationCount: 0,
-      masterRestorationCount: 0,
-      launderingCount: 0,
-      lastCleaned: '0',
-      saleHistory: [],
-      lastUpdated: Date.now().toString()
-    }
-  }
-]
-
 export default function RugMarketPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(true)
@@ -176,7 +135,7 @@ export default function RugMarketPage() {
           const bPrice2 = b.dynamic.listingPrice ? parseFloat(b.dynamic.listingPrice) : 0
           return bPrice2 - aPrice2
         case 'rarity':
-          return b.permanent.characterCount - a.permanent.characterCount
+          return Number(b.permanent.characterCount) - Number(a.permanent.characterCount)
         case 'newest':
           return Number(b.permanent.mintTime) - Number(a.permanent.mintTime)
         default:
