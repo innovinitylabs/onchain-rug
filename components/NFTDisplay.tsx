@@ -193,11 +193,38 @@ class RugGenerator {
 
   private generateHTMLPreview(traits: RugTraits, tokenId?: number): string {
     const displayTokenId = tokenId || (traits?.seed ? Number(traits.seed.toString()) : 'Preview')
-    const paletteJson = traits?.minifiedPalette ? JSON.stringify(JSON.parse(traits.minifiedPalette)) : '{"name":"Arctic Ice","colors":["#F0F8FF","#E6E6FA","#B0C4DE","#87CEEB","#B0E0E6","#F0FFFF","#E0FFFF","#F5F5F5"]}'
-    const stripeJson = traits?.minifiedStripeData ? JSON.stringify(JSON.parse(traits.minifiedStripeData)) : '[{"y":0,"h":70.76905641704798,"pc":"#B0E0E6","wt":"s","wv":0.2441620133817196},{"y":70.76905641704798,"h":66.97513959370553,"pc":"#E0FFFF","wt":"t","wv":0.4486666376702487},{"y":137.7441960107535,"h":52.949525993317366,"pc":"#E6E6FA","wt":"s","wv":0.3614784942939878},{"y":190.69372200407088,"h":88.51418890990317,"pc":"#F5F5F5","wt":"s","wv":0.4601602298207581},{"y":279.20791091397405,"h":70.09695865213871,"pc":"#87CEEB","wt":"s","wv":0.18919947408139706},{"y":349.30486956611276,"h":54.90225265733898,"pc":"#B0C4DE","wt":"t","wv":0.10271521052345634},{"y":404.20712222345173,"h":53.02237452939153,"pc":"#F0FFFF","sc":"#E0FFFF","wt":"s","wv":0.3749437925405801},{"y":457.22949675284326,"h":61.070579811930656,"pc":"#F0FFFF","sc":"#E6E6FA","wt":"t","wv":0.14146835459396245},{"y":518.3000765647739,"h":50.73577044531703,"pc":"#F5F5F5","wt":"s","wv":0.24790364671498538},{"y":569.035847010091,"h":71.19754501618445,"pc":"#B0C4DE","wt":"s","wv":0.10568890692666173},{"y":640.2333920262754,"h":72.2229290753603,"pc":"#E0FFFF","wt":"t","wv":0.3288901265710592},{"y":712.4563211016357,"h":73.23578814975917,"pc":"#F5F5F5","wt":"t","wv":0.2201482846401632},{"y":785.6921092513949,"h":81.7917856760323,"pc":"#E0FFFF","wt":"s","wv":0.257676356099546},{"y":867.4838949274272,"h":83.10637858696282,"pc":"#F0F8FF","wt":"s","wv":0.11601038286462427},{"y":950.59027351439,"h":67.69649278372526,"pc":"#B0E0E6","sc":"#F0FFFF","wt":"t","wv":0.15098334243521094},{"y":1018.2867662981153,"h":84.24941586330533,"pc":"#87CEEB","sc":"#B0C4DE","wt":"s","wv":0.12075226726010442},{"y":1102.5361821614206,"h":86.20883144438267,"pc":"#E0FFFF","wt":"s","wv":0.2798375692218542},{"y":1188.7450136058033,"h":11.254986394196749,"pc":"#B0C4DE","wt":"s","wv":0.3258690937422216}]'
-    const textRowsJson = traits?.textRows ? JSON.stringify(traits.textRows) : '["BACKEND", "RUGGED"]'
+    
+    // Helper to safely parse JSON - handles both strings and objects/arrays
+    const safeParseJson = (value: any, fallback: any): any => {
+      if (!value) return fallback
+      
+      // If it's already an object or array, return it
+      if (typeof value === 'object' && value !== null) {
+        return value
+      }
+      
+      // If it's a string, try to parse it
+      if (typeof value === 'string') {
+        try {
+          return JSON.parse(value)
+        } catch {
+          return fallback
+        }
+      }
+      
+      return fallback
+    }
+    
+    // Parse JSON strings to objects/arrays so we can embed them directly as JavaScript values
+    const defaultPalette = {name:"Arctic Ice",colors:["#F0F8FF","#E6E6FA","#B0C4DE","#87CEEB","#B0E0E6","#F0FFFF","#E0FFFF","#F5F5F5"]}
+    const defaultStripe = [{y:0,h:70.76905641704798,pc:"#B0E0E6",wt:"s",wv:0.2441620133817196}]
+    const defaultCharacterMap = {A:["01110","10001","10001","11111","10001","10001","10001"]}
+    
+    const paletteObj = safeParseJson(traits?.minifiedPalette, defaultPalette)
+    const stripeObj = safeParseJson(traits?.minifiedStripeData, defaultStripe)
+    const textRowsArray = traits?.textRows || ["BACKEND", "RUGGED"]
     const seed = traits?.seed ? Number(traits.seed.toString()) : 348430
-    const characterMapJson = traits?.filteredCharacterMap ? JSON.stringify(JSON.parse(traits.filteredCharacterMap)) : '{"B":["11110","10001","10001","11110","10001","10001","11110"],"A":["01110","10001","10001","11111","10001","10001","10001"],"C":["01111","10000","10000","10000","10000","10000","01111"],"K":["10001","10010","10100","11000","10100","10010","10001"],"E":["11111","10000","10000","11110","10000","10000","11111"],"N":["10001","11001","10101","10011","10001","10001","10001"],"D":["11110","10001","10001","10001","10001","10001","11110"],"R":["11110","10001","10001","11110","10100","10010","10001"],"U":["10001","10001","10001","10001","10001","10001","01110"],"G":["01111","10000","10000","10011","10001","10001","01111"]," ":["00000","00000","00000","00000","00000","00000","00000"]}'
+    const characterMapObj = safeParseJson(traits?.filteredCharacterMap, defaultCharacterMap)
     const textureLevel = traits?.agingLevel || 0
     const dirtLevel = traits?.dirtLevel || 0
 
@@ -209,7 +236,7 @@ class RugGenerator {
       if (level === 'Diamond') return 'D'
       return ''
     })()
-
+    
     const htmlContent = `<!DOCTYPE html>
 <html>
 <head>
@@ -231,19 +258,15 @@ class RugGenerator {
         wp = ${traits?.warpThickness || 4},
         ts = 2,
         lt, dt,
-        p = '${paletteJson}',
-        sd = '${stripeJson}',
-        tr = ${textRowsJson},
+        p = ${JSON.stringify(paletteObj)},
+        sd = ${JSON.stringify(stripeObj)},
+        tr = ${JSON.stringify(textRowsArray)},
         td = [],
         s = ${seed},
-        cm = ${characterMapJson},
+        cm = ${JSON.stringify(characterMapObj)},
         tl = ${textureLevel},
         dl = ${dirtLevel},
         fl = "${frameLevel}";
-
-    p = JSON.parse(p);
-    sd = JSON.parse(sd);
-    cm = JSON.parse(cm);
   </script>
   <script>
     ${this.rugAlgoScript}
