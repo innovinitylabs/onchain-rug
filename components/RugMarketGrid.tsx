@@ -172,9 +172,15 @@ export default function RugMarketGrid({
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden animate-pulse">
-            <div className="aspect-square bg-white/10" />
-            <div className="p-4 space-y-3">
+          <div key={i} className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden">
+            <div className="aspect-square bg-black/20 flex items-center justify-center overflow-hidden">
+              <img
+                src="/rug-loading-mid.webp"
+                alt="Loading..."
+                className="w-full h-full object-contain"
+              />
+            </div>
+            <div className="p-4 space-y-3 animate-pulse">
               <div className="h-4 bg-white/10 rounded w-3/4" />
               <div className="h-3 bg-white/10 rounded w-1/2" />
               <div className="h-8 bg-white/10 rounded" />
