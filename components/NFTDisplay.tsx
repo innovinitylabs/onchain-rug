@@ -482,7 +482,7 @@ export default function NFTDisplay({
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         whileHover={interactive ? { scale: 1.02 } : {}}
-        className={`relative rounded-lg ${onClick ? 'cursor-pointer' : ''} ${className} flex items-center justify-center`}
+        className={`relative rounded-lg ${onClick ? 'cursor-pointer pointer-events-auto' : ''} ${className} flex items-center justify-center`}
         style={isResponsive ? {
           width: '100%',
           height: '100%',
