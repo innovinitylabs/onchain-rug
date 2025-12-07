@@ -404,6 +404,9 @@ export default function NFTDisplay({
   }
 
   const config = sizeConfig[size]
+  
+  // For card usage, we want to be fully responsive and ignore fixed sizes
+  const isResponsive = className?.includes('w-full') || className?.includes('h-full')
 
   // Reset state when nftData changes
   useEffect(() => {
@@ -479,35 +482,70 @@ export default function NFTDisplay({
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         whileHover={interactive ? { scale: 1.02 } : {}}
-        className={`relative overflow-hidden rounded-lg ${onClick ? 'cursor-pointer' : ''} ${className} flex items-center justify-center`}
-        style={{ 
-          width: config.width, 
-          height: config.height, 
-          maxWidth: '100%', 
+        className={`relative rounded-lg ${onClick ? 'cursor-pointer' : ''} ${className} flex items-center justify-center`}
+        style={isResponsive ? {
+          width: '100%',
+          height: '100%',
+          maxWidth: '100%',
           maxHeight: '100%',
-          objectFit: 'contain'
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'hidden',
+          position: 'absolute',
+          inset: 0
+        } : {
+          width: config.width,
+          height: config.height,
+          maxWidth: '100%',
+          maxHeight: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'hidden'
         }}
         onClick={onClick}
       >
         {/* NFT Content */}
         {isGenerating ? (
           <div className="w-full h-full flex items-center justify-center bg-gray-100">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+            <img
+              src="/rug-loading-mid.webp"
+              alt="Loading..."
+              className="w-full h-full object-contain"
+            />
           </div>
         ) : previewImage ? (
           previewImage.startsWith('blob:') || previewImage.startsWith('data:') ? (
             <iframe
               src={previewImage}
-              className="w-full h-full border-0 flex-shrink-0"
+              className="border-0"
               title={`NFT ${nftData.tokenId}`}
               sandbox="allow-scripts"
-              style={{ objectFit: 'contain' }}
+              scrolling="no"
+              style={{ 
+                width: '100%', 
+                height: '100%', 
+                maxWidth: '100%',
+                maxHeight: '100%',
+                objectFit: 'contain',
+                display: 'block',
+                overflow: 'hidden',
+                border: 'none'
+              }}
             />
           ) : (
             <img
               src={previewImage}
               alt={nftData.name || `NFT ${nftData.tokenId}`}
-              className="w-full h-full object-contain"
+              className="object-contain"
+              style={{
+                width: '100%',
+                height: '100%',
+                maxWidth: '100%',
+                maxHeight: '100%',
+                objectFit: 'contain'
+              }}
               loading="lazy"
             />
           )

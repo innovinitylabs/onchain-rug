@@ -60,16 +60,14 @@ function RugCard({ nft, onClick, onRefresh, onFavoriteToggle, onBuyNFT, isFavori
       className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden cursor-pointer hover:bg-white/10 transition-all duration-300"
     >
       {/* NFT Display Component */}
-      <div className="relative cursor-pointer aspect-square bg-black/20 flex items-center justify-center overflow-hidden" onClick={onClick}>
-        <div className="w-full h-full flex items-center justify-center p-2">
-          <div className="w-full h-full max-w-full max-h-full flex items-center justify-center">
-            <NFTDisplay
-              nftData={nftData}
-              size="medium"
-              interactive={false}
-              className="rounded-none"
-            />
-          </div>
+      <div className="relative cursor-pointer bg-black/20" onClick={onClick} style={{ overflow: 'hidden', position: 'relative', aspectRatio: '4/3' }}>
+        <div className="absolute inset-0 w-full h-full" style={{ overflow: 'hidden' }}>
+          <NFTDisplay
+            nftData={nftData}
+            size="medium"
+            interactive={false}
+            className="rounded-none w-full h-full"
+          />
         </div>
 
         {/* Custom Overlay Info */}
@@ -172,9 +170,15 @@ export default function RugMarketGrid({
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden animate-pulse">
-            <div className="aspect-square bg-white/10" />
-            <div className="p-4 space-y-3">
+          <div key={i} className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden">
+            <div className="bg-black/20 flex items-center justify-center overflow-hidden" style={{ aspectRatio: '4/3' }}>
+              <img
+                src="/rug-loading-mid.webp"
+                alt="Loading..."
+                className="w-full h-full object-contain"
+              />
+            </div>
+            <div className="p-4 space-y-3 animate-pulse">
               <div className="h-4 bg-white/10 rounded w-3/4" />
               <div className="h-3 bg-white/10 rounded w-1/2" />
               <div className="h-8 bg-white/10 rounded" />
