@@ -50,11 +50,11 @@ export default function BridgeMintModal({
     { id: NETWORKS.shapeSepolia.chainId, name: 'Shape Sepolia', symbol: 'ETH' },
   ]
 
-  // Default to Base Sepolia if available, otherwise first available option
-  const defaultDestination = destinationOptions.includes(NETWORKS.baseSepolia.chainId) 
-    ? NETWORKS.baseSepolia.chainId 
-    : (destinationOptions[0] || NETWORKS.shapeSepolia.chainId)
-  const [destinationChainId, setDestinationChainId] = useState(defaultDestination)
+  const [destinationChainId, setDestinationChainId] = useState(
+    destinationOptions.includes(NETWORKS.baseSepolia.chainId) 
+      ? NETWORKS.baseSepolia.chainId 
+      : destinationOptions[0] || NETWORKS.shapeSepolia.chainId
+  )
   const [payChainId, setPayChainId] = useState(currentChainId)
   const [payDropdownOpen, setPayDropdownOpen] = useState(false)
   const [isMinting, setIsMinting] = useState(false)
