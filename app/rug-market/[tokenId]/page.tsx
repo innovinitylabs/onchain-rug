@@ -48,7 +48,7 @@ export default function NFTDetailPage() {
       setLoading(true)
 
       // Fetch from our Redis API
-      const response = await fetch(`/api/rug-market/nft/${tokenId}?chainId=${config.defaultChainId}`)
+      const response = await fetch(`/api/rug-market/nft/${tokenId}?chainId=${config.chainId}`)
       if (!response.ok) {
         throw new Error(`Failed to fetch NFT: ${response.status}`)
       }
