@@ -238,11 +238,11 @@ export class MonitoringSystem {
     const dateKey = new Date().toISOString().split('T')[0]
     const errorCounts = await redis.hgetall(`metrics:error_rates:${dateKey}`)
 
-    const totalErrors = Object.values(errorCounts).reduce((sum, count) =>
-      sum + parseInt(count as string), 0)
+    const totalErrors = Object.values(errorCounts).reduce((sum: number, count: unknown): number =>
+      sum + parseInt(count as string, 10), 0) as number
 
     // Estimate total operations (rough approximation)
-    const totalOperations = await this.getEstimatedOperationCount(hours)
+    const totalOperations: number = Number(await this.getEstimatedOperationCount(hours))
 
     return totalOperations > 0 ? totalErrors / totalOperations : 0
   }
