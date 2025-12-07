@@ -108,8 +108,7 @@ export async function fetchNFTBatchDirect(
       console.log(`🔍 OWNER OF RESULT for token ${tokenId}:`, {
         success: ownerResult.success,
         dataLength: ownerResult.data ? ownerResult.data.length : 0,
-        data: ownerResult.data,
-        error: ownerResult.error
+        data: ownerResult.data
       })
 
       // If ownerOf fails, token doesn't exist
@@ -130,8 +129,7 @@ export async function fetchNFTBatchDirect(
 
       console.log(`🔍 CONTRACT CALL RESULT for token ${tokenId}:`, {
         success: rugResult.success,
-        dataLength: rugResult.data ? rugResult.data.length : 0,
-        error: rugResult.error
+        dataLength: rugResult.data ? rugResult.data.length : 0
       })
 
       if (rugResult.success && rugResult.data) {
@@ -147,9 +145,6 @@ export async function fetchNFTBatchDirect(
         rugData = decodeRugData(hexData, tokenId)
       } else {
         console.log(`❌ CONTRACT CALL FAILED for token ${tokenId}`)
-        if (rugResult.error) {
-          console.log(`❌ Error:`, rugResult.error)
-        }
       }
 
       // TODO: Fetch dynamic traits - temporarily disabled while we fix function signatures
