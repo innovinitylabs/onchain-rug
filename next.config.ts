@@ -14,6 +14,7 @@ const nextConfig: NextConfig = {
 
     return config;
   },
+  // Note: Using --webpack flag in build script to avoid Turbopack compatibility issues
 };
 
 export default nextConfig;

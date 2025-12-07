@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
     "config-server": "node config-server.js"
@@ -20,7 +20,7 @@
     "@vercel/speed-insights": "^1.2.0",
     "framer-motion": "^12.23.12",
     "lucide-react": "^0.542.0",
-    "next": "15.5.2",
+    "next": "^16.0.7",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "swr": "^2.3.6",
@@ -40,7 +40,7 @@
     "@typescript-eslint/parser": "^8.42.0",
     "canvas": "^3.2.0",
     "eslint": "^9",
-    "eslint-config-next": "15.5.2",
+    "eslint-config-next": "^16.0.7",
     "ethers": "^6.15.0",
     "gif-encoder": "^0.7.2",
     "hardhat": "^3.0.4",
