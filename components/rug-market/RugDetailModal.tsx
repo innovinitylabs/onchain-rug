@@ -216,12 +216,12 @@ export default function RugDetailModal({
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Left Column - NFT Display */}
               <div className="space-y-4">
-                <div className="relative bg-black/30 rounded-xl overflow-hidden">
+                <div className="relative bg-black/30 rounded-xl overflow-hidden aspect-video flex items-center justify-center">
                   <NFTDisplay
                     nftData={nftDataForDisplay}
                     size="large"
                     interactive={false}
-                    className="rounded-xl"
+                    className="rounded-xl w-full h-full"
                   />
                   
                   {/* Overlay badges */}
