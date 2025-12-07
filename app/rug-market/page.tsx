@@ -62,7 +62,7 @@ function RugMarketPageContent() {
         }
       }
     } catch (error) {
-      console.error('Failed to fetch NFT:', error)
+      // Failed to fetch NFT - silently continue
     }
   }, [chainId])
 
@@ -94,7 +94,6 @@ function RugMarketPageContent() {
         setIsLoading(true)
         setStatsLoading(true)
         
-        console.log('[Marketplace] Fetching collection data...')
         const response = await fetch(`/api/rug-market/collection?chainId=${chainId}&limit=100&offset=0`)
 
         if (!response.ok) {
@@ -107,11 +106,6 @@ function RugMarketPageContent() {
           throw new Error(data.error)
         }
 
-        console.log('[Marketplace] Received data:', {
-          nftsCount: data.nfts?.length || 0,
-          hasStats: !!data.stats
-        })
-
         // Update all NFTs from API
         setAllNFTs(data.nfts || [])
         
@@ -123,7 +117,6 @@ function RugMarketPageContent() {
         setIsLoading(false)
         setStatsLoading(false)
       } catch (error) {
-        console.error('[Marketplace] Failed to fetch collection data:', error)
         setError(error instanceof Error ? error.message : 'Failed to load marketplace data')
         setAllNFTs([])
         setStats({
