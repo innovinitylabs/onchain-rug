@@ -491,7 +491,9 @@ export default function NFTDisplay({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          position: 'absolute',
+          inset: 0
         } : {
           width: config.width,
           height: config.height,
