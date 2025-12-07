@@ -9,9 +9,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { RugMarketRedis } from '../../../../../src/lib/rug-market-redis'
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     tokenId: string
-  }
+  }>
 }
 
 export async function GET(
@@ -19,7 +19,8 @@ export async function GET(
   { params }: RouteParams
 ) {
   try {
-    const tokenId = parseInt(params.tokenId)
+    const { tokenId: tokenIdParam } = await params
+    const tokenId = parseInt(tokenIdParam)
     if (isNaN(tokenId)) {
       return NextResponse.json(
         { error: 'Invalid token ID' },

@@ -12,9 +12,9 @@ import { config } from '@/lib/config'
 import { fetchNFTFromBlockchain } from '@/lib/blockchain-fetcher'
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     tokenId: string
-  }
+  }>
 }
 
 export async function POST(
@@ -22,7 +22,8 @@ export async function POST(
   { params }: RouteParams
 ) {
   try {
-    const tokenId = parseInt(params.tokenId)
+    const { tokenId: tokenIdParam } = await params
+    const tokenId = parseInt(tokenIdParam)
     if (isNaN(tokenId)) {
       return NextResponse.json(
         { error: 'Invalid token ID' },
@@ -32,7 +33,7 @@ export async function POST(
 
     // Get chain ID from query params or use default
     const { searchParams } = new URL(request.url)
-    const chainId = parseInt(searchParams.get('chainId') || config.defaultChainId.toString())
+    const chainId = parseInt(searchParams.get('chainId') || config.chainId.toString())
 
     const contractAddress = contractAddresses[chainId]
     if (!contractAddress) {

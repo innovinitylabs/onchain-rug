@@ -4,10 +4,11 @@ import { getContractAddress } from '@/lib/networks'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { tokenId: string } }
+  { params }: { params: Promise<{ tokenId: string }> }
 ) {
   try {
-    const tokenId = parseInt(params.tokenId)
+    const { tokenId: tokenIdParam } = await params
+    const tokenId = parseInt(tokenIdParam)
     const { buyerAddress, price, chainId = 84532 } = await request.json()
 
     if (!buyerAddress || !price) {
