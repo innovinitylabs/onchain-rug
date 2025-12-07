@@ -408,25 +408,42 @@ export default function NFTDisplay({
   // For card usage, we want to be fully responsive and ignore fixed sizes
   const isResponsive = className?.includes('w-full') || className?.includes('h-full')
 
-  // Reset state when nftData changes
-  useEffect(() => {
-    setPreviewImage('')
-    setIsGenerating(true)
-    setBlobUrl(null)
-  }, [nftData?.tokenId, nftData?.traits, nftData?.animation_url])
+  // Track the last generated tokenId to avoid unnecessary regenerations
+  const [lastGeneratedTokenId, setLastGeneratedTokenId] = useState<number | null>(null)
+  
+  // Create a stable key for traits to detect actual changes
+  const traitsKey = useMemo(() => {
+    if (!nftData?.traits) return null
+    return JSON.stringify({
+      tokenId: nftData.tokenId,
+      seed: nftData.traits.seed?.toString(),
+      paletteName: nftData.traits.paletteName,
+      minifiedPalette: nftData.traits.minifiedPalette,
+      minifiedStripeData: nftData.traits.minifiedStripeData
+    })
+  }, [nftData?.traits])
 
+  // Reset state only when tokenId actually changes
   useEffect(() => {
-    const generatePreview = async () => {
-      if (previewImage && !isGenerating) {
-        return
+    const currentTokenId = nftData?.tokenId
+    if (currentTokenId !== lastGeneratedTokenId && currentTokenId !== undefined) {
+      setPreviewImage('')
+      setIsGenerating(true)
+      if (blobUrl && blobUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(blobUrl)
+        setBlobUrl(null)
       }
+    }
+  }, [nftData?.tokenId, lastGeneratedTokenId, blobUrl])
 
+  useEffect(() => {
+    // Skip if we already have a preview for this tokenId
+    if (nftData.tokenId === lastGeneratedTokenId && previewImage) {
+      return
+    }
+
+    const generatePreview = async () => {
       try {
-        if (blobUrl && blobUrl.startsWith('blob:')) {
-          URL.revokeObjectURL(blobUrl)
-          setBlobUrl(null)
-        }
-
         if (nftData.traits) {
           if (!scriptsLoaded) {
             // Scripts required to generate client-side previews haven't loaded yet.
@@ -441,28 +458,36 @@ export default function NFTDisplay({
           const imageData = rugGenerator.generatePreview(nftData.traits, nftData.tokenId)
 
           if (imageData.startsWith('blob:')) {
+            if (blobUrl && blobUrl.startsWith('blob:')) {
+              URL.revokeObjectURL(blobUrl)
+            }
             setBlobUrl(imageData)
           }
 
           setPreviewImage(imageData)
           setIsGenerating(false)
+          setLastGeneratedTokenId(nftData.tokenId)
         } else if (nftData.animation_url) {
           // Use the animation_url directly as iframe src
           setPreviewImage(nftData.animation_url)
           setIsGenerating(false)
+          setLastGeneratedTokenId(nftData.tokenId)
         } else {
           setPreviewImage('/rug-loading-mid.webp')
           setIsGenerating(false)
+          setLastGeneratedTokenId(nftData.tokenId)
         }
       } catch (error) {
         console.error('Failed to generate rug preview:', error)
         setPreviewImage(nftData.animation_url || '/rug-loading-mid.webp')
         setIsGenerating(false)
+        setLastGeneratedTokenId(nftData.tokenId)
       }
     }
 
     generatePreview()
-  }, [nftData.traits, nftData.animation_url, nftData.tokenId, rugGenerator, scriptsLoaded])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nftData.tokenId, traitsKey, nftData.animation_url, rugGenerator, scriptsLoaded])
 
 
   // Cleanup blob URLs on unmount
