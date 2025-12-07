@@ -124,7 +124,7 @@ export async function GET(request: NextRequest) {
               authorizationList: []
             })
             
-            if (listing[3] && listing[1] > 0n) { // isActive && price > 0
+            if (listing[3] && listing[1] > BigInt(0)) { // isActive && price > 0
               if (minPrice === null || listing[1] < minPrice) {
                 minPrice = listing[1]
               }
