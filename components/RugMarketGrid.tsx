@@ -2,11 +2,13 @@
 
 import React, { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import { useChainId } from 'wagmi'
 import { motion, AnimatePresence } from 'framer-motion'
-import { RefreshCw, Eye, Heart, ExternalLink } from 'lucide-react'
+import { RefreshCw, Eye, Heart, ExternalLink, ShoppingCart } from 'lucide-react'
 import { RugMarketNFT } from '@/lib/rug-market-types'
 import NFTDisplay, { NFTDisplaySkeleton } from './NFTDisplay'
 import { rugMarketNFTToNFTData } from '@/utils/rug-market-data-adapter'
+import { getExplorerUrl, getContractAddress } from '@/lib/networks'
 
 interface RugMarketGridProps {
   nfts: RugMarketNFT[]
@@ -31,6 +33,7 @@ interface RugCardProps {
 
 function RugCard({ nft, onClick, onRefresh, onFavoriteToggle, onBuyNFT, isFavorited }: RugCardProps) {
   const router = useRouter()
+  const chainId = useChainId()
 
   // Convert RugMarketNFT to NFTData format using adapter for data consistency
   const nftData = rugMarketNFTToNFTData(nft)
@@ -57,40 +60,44 @@ function RugCard({ nft, onClick, onRefresh, onFavoriteToggle, onBuyNFT, isFavori
       className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden cursor-pointer hover:bg-white/10 transition-all duration-300"
     >
       {/* NFT Display Component */}
-      <div className="relative cursor-pointer" onClick={onClick}>
-        <NFTDisplay
-          nftData={nftData}
-          size="medium"
-          interactive={false}
-          className="rounded-none"
-        />
+      <div className="relative cursor-pointer aspect-square bg-black/20 flex items-center justify-center overflow-hidden" onClick={onClick}>
+        <div className="w-full h-full flex items-center justify-center p-2">
+          <div className="w-full h-full max-w-full max-h-full flex items-center justify-center">
+            <NFTDisplay
+              nftData={nftData}
+              size="medium"
+              interactive={false}
+              className="rounded-none"
+            />
+          </div>
+        </div>
 
         {/* Custom Overlay Info */}
         <div className="absolute inset-0 pointer-events-none">
-          {/* Top Left - Token ID */}
+        {/* Top Left - Token ID */}
           <div className="absolute top-2 left-2 bg-black/50 text-white px-2 py-1 rounded text-sm font-mono pointer-events-auto">
             #{nft.permanent.tokenId}
-          </div>
+        </div>
 
-          {/* Bottom Left - Condition */}
+        {/* Bottom Left - Condition */}
           <div className="absolute bottom-2 left-2 pointer-events-auto">
-            <span className={`px-2 py-1 rounded border text-xs font-medium ${conditionBadge.color}`}>
-              {conditionBadge.text}
-            </span>
-          </div>
+          <span className={`px-2 py-1 rounded border text-xs font-medium ${conditionBadge.color}`}>
+            {conditionBadge.text}
+          </span>
+        </div>
 
-          {/* Bottom Right - Price/Status */}
+        {/* Bottom Right - Price/Status */}
           {nft.dynamic.isListed && (
             <div className="absolute bottom-2 right-2 bg-green-500/20 text-green-300 px-2 py-1 rounded border border-green-500/30 text-xs font-medium pointer-events-auto">
               {nft.dynamic.listingPrice ? `${nft.dynamic.listingPrice} ETH` : 'LISTED'}
-            </div>
-          )}
+          </div>
+        )}
         </div>
       </div>
 
       {/* Card Info */}
       <div className="p-4">
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between mb-3">
           <h3 className="text-white font-semibold truncate">
             {nft.permanent.name}
           </h3>
@@ -99,28 +106,8 @@ function RugCard({ nft, onClick, onRefresh, onFavoriteToggle, onBuyNFT, isFavori
           </span>
         </div>
 
-        {/* Traits */}
-        <div className="grid grid-cols-2 gap-2 text-xs text-white/70 mb-3">
-          <div>
-            <span className="text-white/50">Warp:</span> {nft.permanent.warpThickness}
-          </div>
-          <div>
-            <span className="text-white/50">Text:</span> {nft.permanent.textRows?.length || 0} lines
-          </div>
-        </div>
-
         {/* Actions */}
         <div className="flex gap-2">
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              router.push(`/rug-market/${nft.permanent.tokenId}`)
-            }}
-            className="flex-1 flex items-center justify-center gap-1 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 py-2 px-3 rounded-lg border border-blue-500/30 transition-colors text-sm"
-          >
-            <Eye className="w-4 h-4" />
-            View
-          </button>
           {nft.dynamic.isListed && nft.dynamic.listingPrice && (
             <button
               onClick={(e) => {
@@ -129,13 +116,18 @@ function RugCard({ nft, onClick, onRefresh, onFavoriteToggle, onBuyNFT, isFavori
               }}
               className="flex-1 flex items-center justify-center gap-1 bg-green-500/20 hover:bg-green-500/30 text-green-300 py-2 px-3 rounded-lg border border-green-500/30 transition-colors text-sm"
             >
+              <ShoppingCart className="w-4 h-4" />
               Buy Now
             </button>
           )}
           <button
             onClick={(e) => {
               e.stopPropagation()
-              // TODO: Link to explorer
+              const explorerUrl = getExplorerUrl(chainId)
+              const contractAddress = getContractAddress(chainId)
+              if (explorerUrl && contractAddress) {
+                window.open(`${explorerUrl}/token/${contractAddress}/${nft.permanent.tokenId}`, '_blank')
+              }
             }}
             className="p-2 bg-white/10 hover:bg-white/20 text-white/70 rounded-lg border border-white/20 transition-colors"
             title="View on explorer"

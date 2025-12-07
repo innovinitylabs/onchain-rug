@@ -1,12 +1,17 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Eye, ExternalLink, Calendar, User, TrendingUp, ShoppingCart, Tag } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import { X, Eye, ExternalLink, Calendar, User, TrendingUp, ShoppingCart, Tag, AlertCircle } from 'lucide-react'
+import { useAccount, useChainId, useReadContract } from 'wagmi'
 import { RugMarketNFT } from '@/lib/rug-market-types'
 import NFTDisplay from '@/components/NFTDisplay'
 import { rugMarketNFTToNFTData } from '@/utils/rug-market-data-adapter'
+import { useCreateListing, useCancelListing, useApproveMarketplace, useApprovalStatus } from '@/hooks/use-marketplace-contract'
+import { useListingData } from '@/hooks/use-marketplace-data'
+import { useWaitForTransactionReceipt } from 'wagmi'
+import { contractAddresses, onchainRugsABI } from '@/lib/web3'
+import { getExplorerUrl } from '@/lib/networks'
 
 interface RugDetailModalProps {
   nft: RugMarketNFT
@@ -23,8 +28,110 @@ export default function RugDetailModal({
   onBuyNFT,
   onRefreshNFT
 }: RugDetailModalProps) {
-  const router = useRouter()
+  const { address, isConnected } = useAccount()
+  const chainId = useChainId()
   const { permanent, dynamic } = nft
+  
+  // Get contract address
+  const contractAddress = contractAddresses[chainId]
+  
+  // Get owner from contract
+  const { data: ownerAddress } = useReadContract({
+    address: contractAddress as `0x${string}`,
+    abi: onchainRugsABI,
+    functionName: 'ownerOf',
+    args: [BigInt(permanent.tokenId)]
+  })
+  
+  // Marketplace hooks
+  const { listing, isLoading: listingLoading } = useListingData(permanent.tokenId)
+  const { approved, isLoading: approvalLoading } = useApprovalStatus(permanent.tokenId)
+  const approveMarketplace = useApproveMarketplace(permanent.tokenId)
+  const createListing = useCreateListing()
+  const cancelListing = useCancelListing()
+  
+  // Listing state
+  const [showListingForm, setShowListingForm] = useState(false)
+  const [listingPrice, setListingPrice] = useState('')
+  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+  
+  // Check if user is owner
+  const isOwner = isConnected && address?.toLowerCase() === ownerAddress?.toLowerCase()
+  const isListingActive = listing?.isActive
+  
+  // Transaction tracking
+  const { isLoading: isApproveConfirming, isSuccess: isApproveSuccess } = useWaitForTransactionReceipt({
+    hash: approveMarketplace.hash
+  })
+  
+  const { isLoading: isListingConfirming, isSuccess: isListingSuccess } = useWaitForTransactionReceipt({
+    hash: createListing.hash
+  })
+  
+  const { isLoading: isCancelConfirming, isSuccess: isCancelSuccess } = useWaitForTransactionReceipt({
+    hash: cancelListing.hash
+  })
+  
+  // Auto-refresh after approvals/listings
+  useEffect(() => {
+    if (isApproveSuccess) {
+      setNotification({ type: 'success', message: 'Marketplace approved! You can now list your NFT.' })
+      setTimeout(() => setNotification(null), 3000)
+    }
+  }, [isApproveSuccess])
+  
+  useEffect(() => {
+    if (isListingSuccess) {
+      setNotification({ type: 'success', message: 'NFT listed successfully!' })
+      setShowListingForm(false)
+      setListingPrice('')
+      onRefreshNFT?.(permanent.tokenId)
+      setTimeout(() => setNotification(null), 3000)
+    }
+  }, [isListingSuccess, permanent.tokenId, onRefreshNFT])
+  
+  useEffect(() => {
+    if (isCancelSuccess) {
+      setNotification({ type: 'success', message: 'Listing cancelled successfully!' })
+      onRefreshNFT?.(permanent.tokenId)
+      setTimeout(() => setNotification(null), 3000)
+    }
+  }, [isCancelSuccess, permanent.tokenId, onRefreshNFT])
+
+  // Handle Escape key to close modal
+  useEffect(() => {
+    if (!isOpen) return
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose()
+      }
+    }
+
+    window.addEventListener('keydown', handleEscape)
+    return () => window.removeEventListener('keydown', handleEscape)
+  }, [isOpen, onClose])
+  
+  const handleCreateListing = () => {
+    if (!listingPrice || parseFloat(listingPrice) <= 0) {
+      setNotification({ type: 'error', message: 'Please enter a valid price' })
+      setTimeout(() => setNotification(null), 3000)
+      return
+    }
+    
+    if (!approved) {
+      setNotification({ type: 'error', message: 'Please approve the marketplace first' })
+      setTimeout(() => setNotification(null), 3000)
+      return
+    }
+    
+    createListing.createListing(permanent.tokenId, listingPrice, 0) // 0 = no expiration
+  }
+  
+  const handleCancelListing = () => {
+    if (!isListingActive) return
+    cancelListing.cancelListing(permanent.tokenId)
+  }
 
   const formatAddress = (address: string) => {
     if (!address) return 'N/A'
@@ -95,16 +202,9 @@ export default function RugDetailModal({
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => router.push(`/rug-market/${permanent.tokenId}`)}
-                className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
-                title="Open in new page"
-              >
-                <ExternalLink className="w-5 h-5" />
-              </button>
-              <button
                 onClick={onClose}
                 className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
-                title="Close"
+                title="Close (ESC)"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -237,24 +337,116 @@ export default function RugDetailModal({
                   </div>
                 )}
 
+                {/* Notification */}
+                {notification && (
+                  <div className={`p-3 rounded-lg border ${
+                    notification.type === 'success'
+                      ? 'bg-green-500/20 border-green-500/30 text-green-300'
+                      : 'bg-red-500/20 border-red-500/30 text-red-300'
+                  }`}>
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4" />
+                      <span className="text-sm">{notification.message}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Listing Actions */}
+                {isOwner && (
+                  <div className="pt-4 border-t border-white/10 space-y-3">
+                    {isListingActive ? (
+                      <>
+                        <div className="bg-green-500/20 border border-green-500/30 rounded-lg p-3">
+                          <div className="text-green-300 text-sm font-medium mb-1">Listed for Sale</div>
+                          <div className="text-green-200 font-semibold">
+                            {listing?.price ? `${(Number(listing.price) / 1e18).toFixed(4)} ETH` : dynamic.listingPrice || 'N/A'}
+                          </div>
+                        </div>
+                        <button
+                          onClick={handleCancelListing}
+                          disabled={isCancelConfirming || cancelListing.isPending}
+                          className="w-full bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-300 py-2 px-4 rounded-lg font-medium transition-colors disabled:opacity-50"
+                        >
+                          {isCancelConfirming || cancelListing.isPending ? 'Cancelling...' : 'Cancel Listing'}
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        {!approved && (
+                          <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-lg p-3 mb-3">
+                            <div className="text-yellow-300 text-sm mb-2">
+                              You need to approve the marketplace to list this NFT
+                            </div>
+                            <button
+                              onClick={() => approveMarketplace.approve()}
+                              disabled={isApproveConfirming || approveMarketplace.isPending}
+                              className="w-full bg-yellow-500/30 hover:bg-yellow-500/40 text-yellow-200 py-2 px-4 rounded-lg font-medium transition-colors disabled:opacity-50"
+                            >
+                              {isApproveConfirming || approveMarketplace.isPending ? 'Approving...' : 'Approve Marketplace'}
+                            </button>
+                          </div>
+                        )}
+                        
+                        {!showListingForm && approved && (
+                          <button
+                            onClick={() => setShowListingForm(true)}
+                            className="w-full bg-green-500 hover:bg-green-600 text-white py-3 px-6 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
+                          >
+                            <Tag className="w-5 h-5" />
+                            List for Sale
+                          </button>
+                        )}
+                        
+                        {showListingForm && approved && (
+                          <div className="space-y-3">
+                            <div>
+                              <label className="block text-white/70 text-sm mb-2">Price (ETH)</label>
+                              <input
+                                type="number"
+                                step="0.0001"
+                                min="0"
+                                value={listingPrice}
+                                onChange={(e) => setListingPrice(e.target.value)}
+                                placeholder="0.01"
+                                className="w-full px-4 py-2 bg-black/30 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-green-500"
+                              />
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={handleCreateListing}
+                                disabled={isListingConfirming || createListing.isPending || !listingPrice}
+                                className="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg font-medium transition-colors disabled:opacity-50"
+                              >
+                                {isListingConfirming || createListing.isPending ? 'Creating...' : 'Create Listing'}
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setShowListingForm(false)
+                                  setListingPrice('')
+                                }}
+                                className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+
                 {/* Actions */}
                 <div className="flex gap-3 pt-4 border-t border-white/10">
-                  {dynamic.isListed && dynamic.listingPrice && onBuyNFT && (
+                  {isListingActive && !isOwner && onBuyNFT && (
                     <button
-                      onClick={() => onBuyNFT(permanent.tokenId, dynamic.listingPrice!)}
+                      onClick={() => onBuyNFT(permanent.tokenId, listing?.price ? (Number(listing.price) / 1e18).toString() : dynamic.listingPrice || '0')}
                       className="flex-1 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white py-3 px-6 rounded-lg font-semibold transition-colors"
                     >
                       <ShoppingCart className="w-5 h-5" />
-                      Buy Now {formatPrice(dynamic.listingPrice)}
+                      Buy Now {listing?.price ? `${(Number(listing.price) / 1e18).toFixed(4)} ETH` : formatPrice(dynamic.listingPrice)}
                     </button>
                   )}
-                  <button
-                    onClick={() => router.push(`/rug-market/${permanent.tokenId}`)}
-                    className="flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white py-3 px-6 rounded-lg font-semibold transition-colors"
-                  >
-                    <Eye className="w-5 h-5" />
-                    View Full Page
-                  </button>
                 </div>
               </div>
             </div>
