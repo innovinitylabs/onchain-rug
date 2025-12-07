@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
 
     if (totalSupply === 0) {
       console.log('[Collection API] No NFTs in collection')
-      return NextResponse.json({
+  return NextResponse.json({
         nfts: [],
         pagination: {
           page: 1,
@@ -149,21 +149,21 @@ export async function GET(request: NextRequest) {
       error: 'Failed to fetch collection data',
       errorDetails: error instanceof Error ? error.message : String(error),
       nfts: [],
-      pagination: {
-        page: 1,
-        limit: 24,
+    pagination: {
+      page: 1,
+      limit: 24,
         total: 0,
-        totalPages: 1,
-        hasNext: false,
-        hasPrev: false
-      },
+      totalPages: 1,
+      hasNext: false,
+      hasPrev: false
+    },
       stats: {
         totalNFTs: 0,
         floorPrice: '0',
         volume24h: '0',
         sales24h: 0
       },
-      filters: {}
+    filters: {}
     }, { status: 500 })
   }
 }

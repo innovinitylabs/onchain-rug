@@ -246,7 +246,7 @@ class RugGenerator {
       if (level === 'Diamond') return 'D'
       return ''
     })()
-    
+
     const htmlContent = `<!DOCTYPE html>
 <html>
 <head>
@@ -479,8 +479,14 @@ export default function NFTDisplay({
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         whileHover={interactive ? { scale: 1.02 } : {}}
-        className={`relative overflow-hidden rounded-lg ${onClick ? 'cursor-pointer' : ''} ${className}`}
-        style={{ width: config.width, height: config.height }}
+        className={`relative overflow-hidden rounded-lg ${onClick ? 'cursor-pointer' : ''} ${className} flex items-center justify-center`}
+        style={{ 
+          width: config.width, 
+          height: config.height, 
+          maxWidth: '100%', 
+          maxHeight: '100%',
+          objectFit: 'contain'
+        }}
         onClick={onClick}
       >
         {/* NFT Content */}
@@ -492,15 +498,16 @@ export default function NFTDisplay({
           previewImage.startsWith('blob:') || previewImage.startsWith('data:') ? (
             <iframe
               src={previewImage}
-              className="w-full h-full border-0"
+              className="w-full h-full border-0 flex-shrink-0"
               title={`NFT ${nftData.tokenId}`}
               sandbox="allow-scripts"
+              style={{ objectFit: 'contain' }}
             />
           ) : (
             <img
               src={previewImage}
               alt={nftData.name || `NFT ${nftData.tokenId}`}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain"
               loading="lazy"
             />
           )
