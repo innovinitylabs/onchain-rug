@@ -86,7 +86,7 @@ try {
   rainbowKitConfig = getDefaultConfig({
   appName: 'Onchain Rugs',
   projectId: projectId,
-  chains: [baseMainnet, ethereumSepolia, shapeSepolia, shapeMainnet, baseSepolia],
+  chains: [baseSepolia, baseMainnet, ethereumSepolia, shapeSepolia, shapeMainnet],
   ssr: true,
 })
 } catch (error) {
