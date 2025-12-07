@@ -404,6 +404,9 @@ export default function NFTDisplay({
   }
 
   const config = sizeConfig[size]
+  
+  // For card usage, we want to be fully responsive and ignore fixed sizes
+  const isResponsive = className?.includes('w-full') || className?.includes('h-full')
 
   // Reset state when nftData changes
   useEffect(() => {
@@ -480,11 +483,22 @@ export default function NFTDisplay({
         animate={{ opacity: 1, scale: 1 }}
         whileHover={interactive ? { scale: 1.02 } : {}}
         className={`relative overflow-hidden rounded-lg ${onClick ? 'cursor-pointer' : ''} ${className} flex items-center justify-center`}
-        style={{ 
+        style={isResponsive ? {
           width: '100%',
           height: '100%',
           maxWidth: '100%',
-          maxHeight: '100%'
+          maxHeight: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        } : {
+          width: config.width,
+          height: config.height,
+          maxWidth: '100%',
+          maxHeight: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
         }}
         onClick={onClick}
       >
@@ -501,10 +515,17 @@ export default function NFTDisplay({
           previewImage.startsWith('blob:') || previewImage.startsWith('data:') ? (
             <iframe
               src={previewImage}
-              className="w-full h-full border-0"
+              className="border-0"
               title={`NFT ${nftData.tokenId}`}
               sandbox="allow-scripts"
-              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+              style={{ 
+                width: '100%', 
+                height: '100%', 
+                maxWidth: '100%',
+                maxHeight: '100%',
+                objectFit: 'contain',
+                display: 'block'
+              }}
             />
           ) : (
             <img
