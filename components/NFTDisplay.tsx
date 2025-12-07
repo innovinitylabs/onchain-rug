@@ -370,7 +370,7 @@ class RugGenerator {
 
 }
 
-export default function NFTDisplay({
+function NFTDisplay({
   nftData,
   size = 'medium',
   interactive = true,
@@ -381,7 +381,7 @@ export default function NFTDisplay({
   const [isGenerating, setIsGenerating] = useState(true)
   const [blobUrl, setBlobUrl] = useState<string | null>(null)
   const [scriptsLoaded, setScriptsLoaded] = useState(false)
-  const previousTokenIdRef = useRef<number | undefined>(undefined)
+  const generatedTokenIdRef = useRef<number | undefined>(undefined)
 
   const displayTraits = useMemo(() => {
     if (nftData.traits) {
@@ -405,32 +405,43 @@ export default function NFTDisplay({
   }
 
   const config = sizeConfig[size]
-  
+
   // For card usage, we want to be fully responsive and ignore fixed sizes
   const isResponsive = className?.includes('w-full') || className?.includes('h-full')
 
-  // Reset state ONLY when tokenId actually changes (not on every render)
+  // Reset state ONLY when tokenId actually changes (not on every render/sort)
   useEffect(() => {
     const currentTokenId = nftData?.tokenId
-    // Only reset if tokenId actually changed from the previous value
-    if (currentTokenId !== undefined && currentTokenId !== previousTokenIdRef.current) {
-      previousTokenIdRef.current = currentTokenId
+    // Only reset if tokenId actually changed from what we've already generated
+    if (currentTokenId !== undefined && currentTokenId !== generatedTokenIdRef.current) {
+      generatedTokenIdRef.current = currentTokenId
       setPreviewImage('')
       setIsGenerating(true)
       if (blobUrl && blobUrl.startsWith('blob:')) {
         URL.revokeObjectURL(blobUrl)
         setBlobUrl(null)
       }
-    } else if (currentTokenId === undefined) {
-      // Initialize ref if this is the first render
-      previousTokenIdRef.current = currentTokenId
     }
   }, [nftData?.tokenId, blobUrl])
 
   useEffect(() => {
     const generatePreview = async () => {
-      // Only skip if we have a valid preview (not loading placeholder) and we're not in generating state
-      if (previewImage && !isGenerating && previewImage !== '/rug-loading-mid.webp' && previewImage !== '') {
+      const currentTokenId = nftData?.tokenId
+      
+      // Skip if no tokenId
+      if (currentTokenId === undefined) {
+        return
+      }
+
+      // If we've already generated for this tokenId and have a valid preview, skip regeneration
+      // This prevents regeneration when sorting causes re-renders with same tokenId
+      if (generatedTokenIdRef.current === currentTokenId && previewImage && previewImage !== '/rug-loading-mid.webp' && previewImage !== '' && !isGenerating) {
+        return
+      }
+
+      // Only generate if we're supposed to generate for this tokenId
+      // The reset effect sets generatedTokenIdRef when tokenId changes, so we only generate once per tokenId
+      if (generatedTokenIdRef.current !== currentTokenId) {
         return
       }
 
@@ -475,7 +486,10 @@ export default function NFTDisplay({
     }
 
     generatePreview()
-  }, [nftData.traits, nftData.animation_url, nftData.tokenId, rugGenerator, scriptsLoaded])
+    // Remove previewImage and isGenerating from dependencies to avoid infinite loops
+    // We only want to regenerate when tokenId or data actually changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nftData.tokenId, displayTraits, nftData.animation_url, rugGenerator, scriptsLoaded])
 
 
   // Cleanup blob URLs on unmount
@@ -523,11 +537,11 @@ export default function NFTDisplay({
         {previewImage && previewImage !== '' ? (
           previewImage.startsWith('blob:') || previewImage.startsWith('data:') ? (
             <div style={{ width: '100%', height: '100%', position: 'relative' }}>
-              <iframe
-                src={previewImage}
+            <iframe
+              src={previewImage}
                 className="border-0 pointer-events-none"
-                title={`NFT ${nftData.tokenId}`}
-                sandbox="allow-scripts"
+              title={`NFT ${nftData.tokenId}`}
+              sandbox="allow-scripts"
                 scrolling="no"
                 style={{ 
                   width: '100%', 
@@ -539,7 +553,7 @@ export default function NFTDisplay({
                   overflow: 'hidden',
                   border: 'none'
                 }}
-              />
+            />
             </div>
           ) : (
             <img
