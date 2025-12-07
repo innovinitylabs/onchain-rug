@@ -108,11 +108,11 @@ function RugMarketPageContent() {
 
         // Update all NFTs from API
         setAllNFTs(data.nfts || [])
-        
+
         // Update stats
         if (data.stats) {
           setStats(data.stats)
-        }
+          }
 
         setIsLoading(false)
         setStatsLoading(false)
@@ -397,17 +397,17 @@ function RugMarketPageContent() {
           )}
 
           {/* Header */}
-          <motion.div
+        <motion.div
             initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+          animate={{ opacity: 1, y: 0 }}
             className="text-center mb-12"
-          >
+        >
             <h1 className="text-5xl font-bold text-white mb-4">
               OnchainRug <span className="text-blue-400">Marketplace</span>
             </h1>
             <p className="text-xl text-white/70 max-w-2xl mx-auto mb-4">
               Discover and trade unique OnchainRugs - each one algorithmically generated and permanently stored on the blockchain.
-            </p>
+          </p>
             <button
               onClick={() => refreshCollectionData()}
               disabled={isLoading}
@@ -491,12 +491,12 @@ function RugMarketPageContent() {
 
           {/* Results Count and Pagination */}
           <div className="flex items-center justify-between text-white/70 mb-6 flex-wrap gap-4">
-            <span>
+              <span>
               Showing {paginatedNFTs.length} of {filteredAndSortedNFTs.length} rugs
               {allNFTs.length !== filteredAndSortedNFTs.length && ` (${allNFTs.length} total)`}
-              {searchQuery && ` matching "${searchQuery}"`}
-              {listingFilter !== 'all' && ` (${listingFilter})`}
-            </span>
+                {searchQuery && ` matching "${searchQuery}"`}
+                {listingFilter !== 'all' && ` (${listingFilter})`}
+              </span>
             
             {totalPages > 1 && (
               <div className="flex items-center gap-2">
@@ -517,11 +517,11 @@ function RugMarketPageContent() {
                 >
                   →
                 </button>
-              </div>
+            </div>
             )}
           </div>
 
-          {/* NFT Grid */}
+            {/* NFT Grid */}
           {isLoading ? (
             <div className="flex items-center justify-center py-20">
               <LoadingAnimation />
@@ -534,6 +534,7 @@ function RugMarketPageContent() {
               onRefreshNFT={handleRefreshNFT}
               onFavoriteToggle={handleFavoriteToggle}
               onBuyNFT={handleBuyNFT}
+              sortKey={sortBy}
             />
           )}
         </div>

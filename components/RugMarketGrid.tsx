@@ -17,6 +17,7 @@ interface RugMarketGridProps {
   onRefreshNFT?: (tokenId: number) => void
   onFavoriteToggle?: (tokenId: number) => void
   onBuyNFT?: (tokenId: number, price: string) => void
+  sortKey?: string // Key to force remount when sort changes
 }
 
 interface RugCardProps {
@@ -161,7 +162,8 @@ export default function RugMarketGrid({
   onNFTClick,
   onRefreshNFT,
   onFavoriteToggle,
-  onBuyNFT
+  onBuyNFT,
+  sortKey
 }: RugMarketGridProps) {
   const router = useRouter()
   const [favorites, setFavorites] = useState<Set<number>>(new Set())
@@ -218,10 +220,10 @@ export default function RugMarketGrid({
 
   return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        <AnimatePresence mode="wait">
-          {nfts.map((nft, index) => (
+        <AnimatePresence>
+          {nfts.map((nft) => (
             <RugCard
-              key={`${nft.permanent.tokenId}-${index}`}
+              key={`${nft.permanent.tokenId}-${sortKey || ''}`}
               nft={nft}
               onClick={() => onNFTClick?.(nft)}
               onRefresh={() => onRefreshNFT?.(nft.permanent.tokenId)}
