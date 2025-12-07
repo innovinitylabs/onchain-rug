@@ -582,9 +582,9 @@ function RugMarketPageContent() {
 export default function RugMarketPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col">
         <Navigation />
-        <div className="flex items-center justify-center min-h-screen">
+        <div className="flex items-center justify-center flex-grow">
           <LoadingAnimation />
         </div>
         <Footer />
