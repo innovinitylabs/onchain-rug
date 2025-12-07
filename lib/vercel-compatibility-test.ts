@@ -12,7 +12,7 @@
 import { redis } from './redis-schema'
 import { MultiLevelCache } from './multi-level-cache'
 import { MonitoringSystem } from './monitoring-metrics'
-import { TraitRegistry } from './trait-registry'
+import { TraitRegistry, TraitExtractor } from './trait-registry'
 import { RedisIndexes } from './redis-indexes'
 
 export interface CompatibilityTestResult {
@@ -157,7 +157,7 @@ export class VercelCompatibilityTest {
       ]
     }
 
-    const traits = TraitRegistry.extractFromMetadata(metadata)
+    const traits = TraitExtractor.extractFromMetadata(metadata)
     if (traits.length === 0) {
       throw new Error('Trait extraction failed')
     }
