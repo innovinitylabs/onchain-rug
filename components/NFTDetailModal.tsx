@@ -46,7 +46,7 @@ export default function NFTDetailModal({
 
   // Handle copy link
   const handleCopyLink = async () => {
-    const url = `${window.location.origin}/nft-display-demo/${nftData.tokenId}`
+    const url = `${window.location.origin}/rug-market/${nftData.tokenId}`
     try {
       await navigator.clipboard.writeText(url)
       setCopySuccess(true)
