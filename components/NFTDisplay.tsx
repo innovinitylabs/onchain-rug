@@ -524,14 +524,22 @@ export default function NFTDisplay({
                 maxWidth: '100%',
                 maxHeight: '100%',
                 objectFit: 'contain',
-                display: 'block'
+                display: 'block',
+                overflow: 'hidden'
               }}
             />
           ) : (
             <img
               src={previewImage}
               alt={nftData.name || `NFT ${nftData.tokenId}`}
-              className="w-full h-full object-contain"
+              className="object-contain"
+              style={{
+                width: '100%',
+                height: '100%',
+                maxWidth: '100%',
+                maxHeight: '100%',
+                objectFit: 'contain'
+              }}
               loading="lazy"
             />
           )
