@@ -3,7 +3,7 @@
  * Bypasses caching layers and fetches directly from blockchain
  */
 
-import { getContractAddress, getRpcUrl } from './networks'
+import { getContractAddress, callContractMultiFallback, onchainRugsABI } from './web3'
 import { batchReadContract } from './multicall'
 
 // Rug data structure from contract
@@ -16,6 +16,9 @@ interface RugData {
   warpThickness: number
   mintTime: bigint
   filteredCharacterMap: string
+  curator: string
+  characterCount: bigint
+  stripeCount: bigint
 }
 
 // NFT data structure
@@ -30,44 +33,83 @@ export interface DirectNFTData {
 }
 
 /**
+ * Decode rug data from contract return value
+ */
+function decodeRugDataFromContract(contractData: any, tokenId: number): RugData | null {
+  try {
+    // The contract data should already be decoded by callContractMultiFallback
+    // We just need to map it to our RugData interface
+    if (!contractData || typeof contractData !== 'object') {
+      console.log(`⚠️ Invalid contract data for token ${tokenId}:`, contractData)
+      return null
+    }
+
+    // Map the contract return to our RugData structure
+    // Based on the ABI, getRugData returns: (uint256, string[], string, string, string, uint8, uint256, string, address, uint256, uint256)
+    const [
+      seed,
+      textRows,
+      paletteName,
+      minifiedPalette,
+      minifiedStripeData,
+      warpThickness,
+      mintTime,
+      filteredCharacterMap,
+      curator,
+      characterCount,
+      stripeCount
+    ] = contractData
+
+    return {
+      seed: BigInt(seed),
+      paletteName: String(paletteName),
+      minifiedPalette: String(minifiedPalette),
+      minifiedStripeData: String(minifiedStripeData),
+      textRows: Array.isArray(textRows) ? textRows.map(String) : [],
+      warpThickness: Number(warpThickness),
+      mintTime: BigInt(mintTime),
+      filteredCharacterMap: String(filteredCharacterMap),
+      curator: String(curator),
+      characterCount: BigInt(characterCount),
+      stripeCount: BigInt(stripeCount)
+    }
+  } catch (error) {
+    console.error(`Failed to decode rug data for token ${tokenId}:`, error)
+    return null
+  }
+}
+
+/**
  * Fetch total supply from contract
  */
 export async function fetchTotalSupply(chainId: number): Promise<number> {
   const contractAddress = getContractAddress(chainId)
-  const rpcUrl = getRpcUrl(chainId)
 
-  if (!contractAddress || !rpcUrl) {
-    throw new Error('Contract address or RPC URL not configured')
+  console.log(`[fetchTotalSupply] Chain: ${chainId}, Contract: ${contractAddress}`)
+
+  if (!contractAddress) {
+    throw new Error('Contract address not configured')
   }
 
-  const response = await fetch(rpcUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      jsonrpc: '2.0',
-      id: 1,
-      method: 'eth_call',
-      params: [{
-        to: contractAddress.toLowerCase(),
-        data: '0x18160ddd' // totalSupply()
-      }, 'latest']
-    })
-  })
+  try {
+    const result = await callContractMultiFallback(
+      contractAddress,
+      onchainRugsABI,
+      'totalSupply',
+      [],
+      { chainId }
+    ) as unknown as bigint
 
-  if (!response.ok) {
-    throw new Error(`RPC call failed: ${response.status}`)
+    console.log(`[fetchTotalSupply] Result: ${result}`)
+    return Number(result)
+  } catch (error) {
+    console.error(`[fetchTotalSupply] Error:`, error)
+    throw error
   }
-
-  const data = await response.json()
-  if (data.error) {
-    throw new Error(`RPC error: ${data.error.message}`)
-  }
-
-  return parseInt(data.result, 16)
 }
 
 /**
- * Fetch NFT data for a batch of tokens using direct contract calls
+ * Fetch NFT data for a batch of tokens using individual RPC calls (bypassing multicall)
  */
 export async function fetchNFTBatchDirect(
   chainId: number,
@@ -79,97 +121,115 @@ export async function fetchNFTBatchDirect(
     throw new Error('Contract address not configured')
   }
 
-  // Build multicall calls for each token
-  const calls = tokenIds.flatMap(tokenId => [
-    {
-      functionName: 'ownerOf',
-      args: [tokenId]
-    },
-    {
-      functionName: 'tokenURI',
-      args: [tokenId]
-    },
-    {
-      functionName: 'rugs',
-      args: [tokenId]
-    }
-  ])
+  console.log(`🔗 fetchNFTBatchDirect called for chain ${chainId}, tokens:`, tokenIds)
+  console.log(`🔗 Using contract address:`, contractAddress)
 
-  // Use the multicall utility to batch these calls
-  const results = await batchReadContract(chainId, contractAddress, calls, [
-    // ownerOf(uint256) returns address
-    {
-      inputs: [{ name: '', type: 'uint256' }],
-      name: 'ownerOf',
-      outputs: [{ name: '', type: 'address' }],
-      stateMutability: 'view',
-      type: 'function'
-    },
-    // tokenURI(uint256) returns string
-    {
-      inputs: [{ name: '', type: 'uint256' }],
-      name: 'tokenURI',
-      outputs: [{ name: '', type: 'string' }],
-      stateMutability: 'view',
-      type: 'function'
-    },
-    // rugs(uint256) returns Rug struct
-    {
-      inputs: [{ name: '', type: 'uint256' }],
-      name: 'rugs',
-      outputs: [
-        { name: 'seed', type: 'uint256' },
-        { name: 'paletteName', type: 'string' },
-        { name: 'minifiedPalette', type: 'string' },
-        { name: 'minifiedStripeData', type: 'string' },
-        { name: 'textRows', type: 'string[]' },
-        { name: 'warpThickness', type: 'uint8' },
-        { name: 'mintTime', type: 'uint256' },
-        { name: 'filteredCharacterMap', type: 'string' }
-      ],
-      stateMutability: 'view',
-      type: 'function'
-    }
-  ])
-
-  // Process results - each token has 3 calls (ownerOf, tokenURI, rugs)
   const nfts: DirectNFTData[] = []
 
-  for (let i = 0; i < tokenIds.length; i++) {
-    const tokenId = tokenIds[i]
-    const baseIndex = i * 3
+  // Process each token individually
+  for (const tokenId of tokenIds) {
+    try {
+      console.log(`🔍 Processing token ${tokenId}...`)
 
-    const ownerResult = results[baseIndex]
-    const tokenURIResult = results[baseIndex + 1]
-    const rugResult = results[baseIndex + 2]
-
-    // Only include NFTs that exist (have valid owner)
-    if (ownerResult.success && ownerResult.data) {
-      // Decode owner address (remove 0x prefix, pad to 40 chars)
-      const owner = '0x' + ownerResult.data.slice(-40)
-
-      // Decode tokenURI (it's a string, so we need to decode it properly)
-      let tokenURI = ''
-      if (tokenURIResult.success && tokenURIResult.data) {
-        // For now, just use the raw data - we'll decode it properly later
-        tokenURI = tokenURIResult.data
+      // Fetch ownerOf - this will fail for non-existent tokens
+      let owner: string
+      try {
+        owner = await callContractMultiFallback(
+          contractAddress,
+          onchainRugsABI,
+          'ownerOf',
+          [BigInt(tokenId)],
+          { chainId }
+        ) as unknown as string
+      } catch (ownerError) {
+        console.log(`⚠️ Token ${tokenId} does not exist (ownerOf failed)`)
+        continue // Skip this token
       }
 
-      // Decode rug data
+      // Fetch tokenURI
+      let tokenURI: string
+      try {
+        tokenURI = await callContractMultiFallback(
+          contractAddress,
+          onchainRugsABI,
+          'tokenURI',
+          [BigInt(tokenId)],
+          { chainId }
+        ) as unknown as string
+      } catch (tokenURIError) {
+        console.log(`⚠️ Failed to fetch tokenURI for token ${tokenId}`)
+        tokenURI = ''
+      }
+
+      // Fetch rug data
       let rugData: RugData | null = null
-      if (rugResult.success && rugResult.data) {
-        // Decode the tuple data from multicall
-        // This is simplified - in practice we'd need proper ABI decoding
-        rugData = {
-          seed: BigInt(tokenId), // Placeholder
-          paletteName: 'Default', // Placeholder
-          minifiedPalette: '',
-          minifiedStripeData: '',
-          textRows: [],
-          warpThickness: 3,
-          mintTime: BigInt(Date.now()),
-          filteredCharacterMap: ''
+      try {
+        console.log(`🔍 [RAW RPC] Fetching getRugData for token ${tokenId}...`)
+        const rawRugData = await callContractMultiFallback(
+          contractAddress,
+          onchainRugsABI,
+          'getRugData',
+          [BigInt(tokenId)],
+          { chainId }
+        )
+
+        console.log(`🔍 [RAW RPC] Raw contract data for token ${tokenId}:`, JSON.stringify(rawRugData, null, 2))
+
+        // The rawRugData should be decoded already by callContractMultiFallback
+        // But we need to parse it into our RugData structure
+        if (rawRugData) {
+          rugData = decodeRugDataFromContract(rawRugData, tokenId)
+          console.log(`🔍 [RAW RPC] Decoded rugData for token ${tokenId}:`, JSON.stringify(rugData, null, 2))
         }
+      } catch (rugError) {
+        console.log(`⚠️ Failed to fetch rug data for token ${tokenId}:`, rugError)
+      }
+
+      // Fetch dynamic traits
+      let dirtLevel: number = 0
+      let textureLevel: number = 0
+      let frameLevel: number = 0
+
+      try {
+        const rawDirtLevel = await callContractMultiFallback(
+          contractAddress,
+          onchainRugsABI,
+          'getDirtLevel',
+          [BigInt(tokenId)],
+          { chainId }
+        )
+        console.log(`🔍 [RAW RPC] getDirtLevel for token ${tokenId}:`, rawDirtLevel)
+        dirtLevel = rawDirtLevel as unknown as number
+      } catch (error) {
+        console.log(`⚠️ Failed to fetch dirt level for token ${tokenId}`)
+      }
+
+      try {
+        const rawAgingLevel = await callContractMultiFallback(
+          contractAddress,
+          onchainRugsABI,
+          'getAgingLevel',
+          [BigInt(tokenId)],
+          { chainId }
+        )
+        console.log(`🔍 [RAW RPC] getAgingLevel for token ${tokenId}:`, rawAgingLevel)
+        textureLevel = rawAgingLevel as unknown as number
+      } catch (error) {
+        console.log(`⚠️ Failed to fetch aging level for token ${tokenId}`)
+      }
+
+      try {
+        const rawFrameLevel = await callContractMultiFallback(
+          contractAddress,
+          onchainRugsABI,
+          'getFrameLevel',
+          [BigInt(tokenId)],
+          { chainId }
+        )
+        console.log(`🔍 [RAW RPC] getFrameLevel for token ${tokenId}:`, rawFrameLevel)
+        frameLevel = rawFrameLevel as unknown as number
+      } catch (error) {
+        console.log(`⚠️ Failed to fetch frame level for token ${tokenId}`)
       }
 
       nfts.push({
@@ -177,15 +237,73 @@ export async function fetchNFTBatchDirect(
         owner,
         tokenURI,
         rugData,
-        dirtLevel: null, // Will be fetched separately
-        textureLevel: null, // Will be fetched separately
-        frameLevel: null // Will be fetched separately
+        dirtLevel,
+        textureLevel,
+        frameLevel
       })
+
+      console.log(`✅ Successfully fetched data for token ${tokenId}`)
+
+    } catch (error) {
+      console.error(`Failed to fetch data for token ${tokenId}:`, error)
+      // Continue with next token
     }
   }
 
   return nfts
 }
+
+
+/**
+ * Decode a string from ABI-encoded data at the given offset
+ */
+function decodeString(hexData: string, offset: number): string {
+  // String encoding: length (32 bytes) + data
+  const lengthHex = hexData.slice(offset, offset + 64)
+  const length = parseInt(lengthHex, 16) * 2  // multiply by 2 for hex chars
+  const dataStart = offset + 64
+  const dataEnd = dataStart + length
+  const hexString = hexData.slice(dataStart, dataEnd)
+
+  // Convert hex to UTF-8 string
+  let result = ''
+  for (let i = 0; i < hexString.length; i += 2) {
+    const byte = parseInt(hexString.slice(i, i + 2), 16)
+    if (byte !== 0) {  // Skip null bytes
+      result += String.fromCharCode(byte)
+    }
+  }
+  return result
+}
+
+/**
+ * Decode a string array from ABI-encoded data at the given offset
+ */
+function decodeStringArray(hexData: string, offset: number): string[] {
+  // Array encoding: length (32 bytes) + elements
+  const lengthHex = hexData.slice(offset, offset + 64)
+  const length = parseInt(lengthHex, 16)
+
+  const result: string[] = []
+  let currentOffset = offset + 64  // Skip array length
+
+  for (let i = 0; i < length; i++) {
+    // Each string element is encoded as: offset (32 bytes) + string data
+    const stringOffsetHex = hexData.slice(currentOffset, currentOffset + 64)
+    const stringOffset = parseInt(stringOffsetHex, 16) * 2 + offset  // Relative to array start
+
+    const stringData = decodeString(hexData, stringOffset)
+    result.push(stringData)
+
+    currentOffset += 64  // Move to next element offset
+  }
+
+  return result
+}
+
+/**
+ * Get different placeholder data for each token to test if decoding works
+ */
 
 /**
  * Fetch dynamic traits (dirt, texture, frame levels) for NFTs

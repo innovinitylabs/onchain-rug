@@ -161,17 +161,23 @@ class RugGenerator {
     try {
       console.log('Loading rug generation scripts...')
 
-      const p5Response = await fetch('/data/rug-p5.js')
+      // Use absolute URLs to ensure they work in blob contexts
+      const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
+      const p5Url = `${baseUrl}/data/rug-p5.js`
+      const algoUrl = `${baseUrl}/data/rug-algo.js`
+      const frameUrl = `${baseUrl}/data/rug-frame.js`
+
+      const p5Response = await fetch(p5Url)
       if (!p5Response.ok) throw new Error(`rug-p5.js fetch failed: ${p5Response.status}`)
       this.rugP5Script = await p5Response.text()
       console.log('Loaded custom rug-p5.js, length:', this.rugP5Script.length)
 
-      const algoResponse = await fetch('/data/rug-algo.js')
+      const algoResponse = await fetch(algoUrl)
       if (!algoResponse.ok) throw new Error(`rug-algo.js fetch failed: ${algoResponse.status}`)
       this.rugAlgoScript = await algoResponse.text()
       console.log('Loaded rug-algo.js script, length:', this.rugAlgoScript.length)
 
-      const frameResponse = await fetch('/data/rug-frame.js')
+      const frameResponse = await fetch(frameUrl)
       if (!frameResponse.ok) throw new Error(`rug-frame.js fetch failed: ${frameResponse.status}`)
       this.rugFrameScript = await frameResponse.text()
       console.log('Loaded rug-frame.js script, length:', this.rugFrameScript.length)
@@ -395,6 +401,10 @@ export default function NFTDisplay({
 
         if (nftData.traits) {
           if (!scriptsLoaded) {
+            // Scripts required to generate client-side previews haven't loaded yet.
+            // Show a lightweight placeholder so the card/modal doesn't render blank
+            // — we'll retry generation automatically when `scriptsLoaded` flips true.
+            setPreviewImage('/rug-loading-mid.webp')
             setIsGenerating(true)
             return
           }
@@ -522,143 +532,115 @@ export default function NFTDisplay({
         whileHover={interactive ? { scale: 1.02 } : {}}
         className={`relative overflow-hidden rounded-lg cursor-pointer group ${className}`}
         style={{ width: config.width, height: config.height }}
-        onClick={interactive ? handleViewDetails : undefined}
+        onClick={handleViewDetails}
       >
+        {/* NFT Content */}
         {isGenerating ? (
-          <div className="w-full h-full bg-gray-100 flex items-center justify-center rounded-lg">
-            <RefreshCw className="w-8 h-8 animate-spin text-gray-400" />
+          <div className="w-full h-full flex items-center justify-center bg-gray-100">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
           </div>
         ) : previewImage ? (
-          <iframe
-            src={previewImage}
-            className="w-full h-full rounded-lg border-0"
-            title={`OnchainRug #${nftData.tokenId}`}
-            loading="lazy"
-          />
+          previewImage.startsWith('blob:') || previewImage.startsWith('data:') ? (
+            <iframe
+              src={previewImage}
+              className="w-full h-full border-0"
+              title={`NFT ${nftData.tokenId}`}
+              sandbox="allow-scripts"
+            />
+          ) : (
+            <img
+              src={previewImage}
+              alt={nftData.name || `NFT ${nftData.tokenId}`}
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
+          )
         ) : (
-          <div
-            className="w-full h-full rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-500 bg-gradient-to-br from-gray-100 to-white"
-            style={{ minHeight: '200px' }}
-          >
-            <div className="text-center p-4">
-              {isGenerating ? (
-                <div>
-                  <div className="text-lg font-bold text-blue-600 mb-2">Generating Preview...</div>
-                  <div className="text-sm text-gray-600">Loading rug scripts and generating HTML</div>
-                </div>
-              ) : (
-                <div>
-                  <div className="text-lg font-bold text-red-600 mb-2">Preview Not Available</div>
-                  <div className="text-sm text-gray-600 mb-1">Token ID: #{nftData.tokenId}</div>
-                  <div className="text-sm text-gray-600 mb-1">Scripts Loaded: {scriptsLoaded ? 'Yes' : 'No'}</div>
-                  <div className="text-sm text-gray-600">Has Traits: {nftData.traits ? 'Yes' : 'No'}</div>
-                  <div className="text-sm text-gray-600">Has Animation URL: {nftData.animation_url ? 'Yes' : 'No'}</div>
-                </div>
-              )}
-            </div>
+          <div className="w-full h-full flex items-center justify-center bg-gray-100">
+            <span className="text-gray-500">No preview available</span>
           </div>
         )}
 
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-lg" />
-
-        <div className="absolute top-2 left-2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          {nftData.isListed && (
-            <div className="bg-green-500 text-white text-xs px-2 py-1 rounded font-bold">
-              FOR SALE
-            </div>
-          )}
-          <div className={`text-white text-xs px-2 py-1 rounded font-bold ${conditionColor}`}>
-            {condition}
+        {/* Controls Overlay */}
+        {showControls && (
+          <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            {onRefreshData && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleRefreshData()
+                }}
+                className="p-1 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors"
+                title="Refresh data"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </button>
+            )}
+            {onFavoriteToggle && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  // handleFavoriteToggle is defined above
+                }}
+                className={`p-1 rounded-full transition-colors ${
+                  isFavorited
+                    ? 'bg-red-500/80 text-white'
+                    : 'bg-black/50 hover:bg-black/70 text-white'
+                }`}
+                title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+              >
+                <Heart className={`w-4 h-4 ${isFavorited ? 'fill-current' : ''}`} />
+              </button>
+            )}
+            {onCopyLink && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleCopyLink()
+                }}
+                className="p-1 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors"
+                title="Copy link"
+              >
+                {copySuccess ? (
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                ) : (
+                  <Copy className="w-4 h-4" />
+                )}
+              </button>
+            )}
           </div>
-        </div>
+        )}
 
-        <div className="absolute top-2 right-2 bg-black/50 text-white text-sm px-2 py-1 rounded opacity-75">
-          #{nftData.tokenId}
-        </div>
-
+        {/* Price Badge */}
         {nftData.listingPrice && (
-          <div className="absolute bottom-2 left-2 bg-black/70 text-white text-sm px-2 py-1 rounded font-bold opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="absolute bottom-2 left-2 bg-black/70 text-white text-sm px-2 py-1 rounded">
             {formatPrice(nftData.listingPrice)}
           </div>
         )}
 
-        {showControls && (
-          <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                handleFavoriteToggle()
-              }}
-              className={`p-2 rounded-full transition-colors ${
-                isFavorited
-                  ? 'bg-red-500 text-white'
-                  : 'bg-white/80 text-gray-600 hover:bg-white'
-              }`}
-            >
-              <Heart className={`w-4 h-4 ${isFavorited ? 'fill-current' : ''}`} />
-            </button>
-
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                handleCopyLink()
-              }}
-              className="p-2 rounded-full bg-white/80 text-gray-600 hover:bg-white transition-colors"
-            >
-              {copySuccess ? (
-                <CheckCircle className="w-4 h-4 text-green-500" />
-              ) : (
-                <Copy className="w-4 h-4" />
-              )}
-            </button>
-          </div>
-        )}
+        {/* Condition Badge */}
+        <div className="absolute bottom-2 right-2">
+          <span className={`px-2 py-1 rounded text-xs font-medium ${conditionColor}`}>
+            {condition}
+          </span>
+        </div>
       </motion.div>
-
-      <NFTDetailModal
-        nftData={selectedNFT}
-        isOpen={!!selectedNFT}
-        onClose={() => setSelectedNFT(null)}
-        onFavoriteToggle={onFavoriteToggle}
-        onRefreshData={onRefreshData}
-        onCopyLink={onCopyLink}
-      />
     </>
   )
 }
 
-export function NFTDisplaySkeleton({ size = 'medium', className = '' }: { size?: 'small' | 'medium' | 'large', className?: string }) {
+// Simple skeleton used by the demo page while previews are generating
+export function NFTDisplaySkeleton({ size = 'medium' }: { size?: 'small' | 'medium' | 'large' }) {
   const sizeConfig = {
     small: { width: 200, height: 150 },
     medium: { width: 320, height: 240 },
     large: { width: 480, height: 360 }
   }
-
   const config = sizeConfig[size]
-
   return (
     <div
-      className={`bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200 animate-pulse ${className}`}
-      style={{ width: config.width }}
-    >
-      <div
-        className="bg-gray-200"
-        style={{ height: config.height }}
-      />
-
-      <div className="p-4">
-        <div className="h-4 bg-gray-200 rounded mb-2"></div>
-        <div className="h-3 bg-gray-200 rounded mb-3 w-3/4"></div>
-
-        <div className="grid grid-cols-2 gap-2 mb-3">
-          <div className="h-3 bg-gray-200 rounded"></div>
-          <div className="h-3 bg-gray-200 rounded"></div>
-          <div className="h-3 bg-gray-200 rounded"></div>
-          <div className="h-3 bg-gray-200 rounded"></div>
-        </div>
-
-        <div className="h-8 bg-gray-200 rounded"></div>
-      </div>
-    </div>
+      className="animate-pulse bg-gray-800 rounded-lg"
+      style={{ width: config.width, height: config.height }}
+    />
   )
 }
