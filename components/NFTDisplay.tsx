@@ -481,11 +481,10 @@ export default function NFTDisplay({
         whileHover={interactive ? { scale: 1.02 } : {}}
         className={`relative overflow-hidden rounded-lg ${onClick ? 'cursor-pointer' : ''} ${className} flex items-center justify-center`}
         style={{ 
-          width: config.width, 
-          height: config.height, 
-          maxWidth: '100%', 
-          maxHeight: '100%',
-          objectFit: 'contain'
+          width: '100%',
+          height: '100%',
+          maxWidth: '100%',
+          maxHeight: '100%'
         }}
         onClick={onClick}
       >
@@ -502,10 +501,10 @@ export default function NFTDisplay({
           previewImage.startsWith('blob:') || previewImage.startsWith('data:') ? (
             <iframe
               src={previewImage}
-              className="w-full h-full border-0 flex-shrink-0"
+              className="w-full h-full border-0"
               title={`NFT ${nftData.tokenId}`}
               sandbox="allow-scripts"
-              style={{ objectFit: 'contain' }}
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
             />
           ) : (
             <img

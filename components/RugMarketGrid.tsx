@@ -61,15 +61,13 @@ function RugCard({ nft, onClick, onRefresh, onFavoriteToggle, onBuyNFT, isFavori
     >
       {/* NFT Display Component */}
       <div className="relative cursor-pointer aspect-video bg-black/20 flex items-center justify-center overflow-hidden" onClick={onClick}>
-        <div className="w-full h-full flex items-center justify-center p-2">
-          <div className="w-full h-full max-w-full max-h-full flex items-center justify-center">
-            <NFTDisplay
-              nftData={nftData}
-              size="medium"
-              interactive={false}
-              className="rounded-none"
-            />
-          </div>
+        <div className="absolute inset-0 w-full h-full flex items-center justify-center p-2">
+          <NFTDisplay
+            nftData={nftData}
+            size="medium"
+            interactive={false}
+            className="rounded-none w-full h-full"
+          />
         </div>
 
         {/* Custom Overlay Info */}
