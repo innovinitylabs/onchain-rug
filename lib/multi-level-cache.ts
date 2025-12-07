@@ -426,7 +426,7 @@ export class MultiLevelCache {
     }
 
     const overall = redisStatus === 'unavailable' ? 'degraded' :
-                   (memoryStatus === 'degraded' || redisStatus === 'degraded') ? 'degraded' : 'healthy'
+                   (memoryStatus === 'degraded') ? 'degraded' : 'healthy'
 
     return {
       memoryCache: memoryStatus,
