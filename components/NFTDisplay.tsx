@@ -564,22 +564,6 @@ export default function NFTDisplay({
     return num >= 1 ? `${num.toFixed(3)} ETH` : `${(num * 1000).toFixed(1)}K WEI`
   }
 
-  const getConditionBadge = () => {
-    const dirt = displayTraits?.dirtLevel || 0
-    const aging = displayTraits?.agingLevel || 0
-
-    let condition = 'Excellent'
-    let color = 'bg-green-100 text-green-800'
-
-    if (dirt > 0 || aging > 0) {
-      condition = `D${dirt} A${aging}`
-      color = dirt > 1 || aging > 1 ? 'bg-yellow-100 text-yellow-800' : 'bg-orange-100 text-orange-800'
-    }
-
-    return { condition, color }
-  }
-
-  const { condition, color: conditionColor } = getConditionBadge()
 
   return (
     <>
@@ -675,13 +659,6 @@ export default function NFTDisplay({
             {formatPrice(nftData.listingPrice)}
           </div>
         )}
-
-        {/* Condition Badge */}
-        <div className="absolute bottom-2 right-2">
-          <span className={`px-2 py-1 rounded text-xs font-medium ${conditionColor}`}>
-            {condition}
-          </span>
-        </div>
       </motion.div>
     </>
   )
