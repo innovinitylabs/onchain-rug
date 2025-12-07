@@ -408,18 +408,24 @@ export default function NFTDisplay({
   // For card usage, we want to be fully responsive and ignore fixed sizes
   const isResponsive = className?.includes('w-full') || className?.includes('h-full')
 
-  // Reset state when nftData changes
+  // Reset state when nftData changes - ensure we regenerate on tokenId change
   useEffect(() => {
-    setPreviewImage('')
-    setIsGenerating(true)
-    setBlobUrl(null)
+    // Only reset if tokenId actually changed
+    const currentTokenId = nftData?.tokenId
+    if (currentTokenId !== undefined) {
+      setPreviewImage('')
+      setIsGenerating(true)
+      if (blobUrl && blobUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(blobUrl)
+        setBlobUrl(null)
+      }
+    }
   }, [nftData?.tokenId])
 
   useEffect(() => {
     const generatePreview = async () => {
-      // Skip if already generated (avoid unnecessary regenerations)
-      // But allow regeneration if state was reset or data changed
-      if (previewImage && !isGenerating && previewImage !== '/rug-loading-mid.webp') {
+      // Only skip if we have a valid preview (not loading placeholder) and we're not in generating state
+      if (previewImage && !isGenerating && previewImage !== '/rug-loading-mid.webp' && previewImage !== '') {
         return
       }
 
