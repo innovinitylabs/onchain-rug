@@ -201,7 +201,7 @@ export class TraitRegistry {
    */
   static async getTokensByOwner(ownerAddress: string): Promise<string[]> {
     const ownerTraitId = normalizeTraitId('owner', ownerAddress.toLowerCase())
-    return await TraitOperations.getTokensByTrait(ownerTraitId)
+    return await TokenOperations.getTokensByTrait(ownerTraitId)
   }
 
   /**
