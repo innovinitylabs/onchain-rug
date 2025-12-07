@@ -454,7 +454,12 @@ export class AtomicOperations {
         const sampleSize = 10
         const contractTokens = await redis.srandmember('contract:sample:tokens', sampleSize)
 
-        for (const tokenId of contractTokens) {
+        // Ensure contractTokens is an array (srandmember returns string[] or string)
+        const tokenArray: string[] = Array.isArray(contractTokens) 
+          ? contractTokens.map(t => String(t))
+          : (contractTokens ? [String(contractTokens)] : [])
+
+        for (const tokenId of tokenArray) {
           const tokenIssues = await this.checkTokenConsistency(tokenId)
           issues.push(...tokenIssues)
         }
@@ -567,35 +572,23 @@ export class ConditionalOperations {
     operation: () => Promise<T>
   ): Promise<{ success: boolean, result?: T, error?: string }> {
     try {
-      // Watch the key for changes
-      await redis.watch(key)
+      // Note: Upstash Redis doesn't support WATCH/UNWATCH (requires persistent connections)
+      // We'll use a simpler version check approach
 
       // Check current version
       const currentVersion = await redis.hget(key, 'version')
       if (parseInt(currentVersion as string || '0') !== expectedVersion) {
-        await redis.unwatch()
         return {
           success: false,
           error: 'Version conflict - data was modified by another operation'
         }
       }
 
-      // Execute operation in transaction
-      const pipeline = redis.pipeline()
-      // ... operation logic would go here ...
-
+      // Execute operation
       const result = await operation()
 
-      // Update version
-      pipeline.hincrby(key, 'version', 1)
-
-      const execResult = await pipeline.exec()
-      if (!execResult) {
-        return {
-          success: false,
-          error: 'Transaction failed due to concurrent modification'
-        }
-      }
+      // Update version (without optimistic locking)
+      await redis.hincrby(key, 'version', 1)
 
       return {
         success: true,
@@ -603,7 +596,6 @@ export class ConditionalOperations {
       }
 
     } catch (error) {
-      await redis.unwatch()
       return {
         success: false,
         error: error instanceof Error ? error.message : String(error)
