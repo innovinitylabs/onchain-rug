@@ -482,7 +482,7 @@ export default function NFTDisplay({
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         whileHover={interactive ? { scale: 1.02 } : {}}
-        className={`relative overflow-hidden rounded-lg ${onClick ? 'cursor-pointer' : ''} ${className} flex items-center justify-center`}
+        className={`relative rounded-lg ${onClick ? 'cursor-pointer' : ''} ${className} flex items-center justify-center`}
         style={isResponsive ? {
           width: '100%',
           height: '100%',
@@ -490,7 +490,8 @@ export default function NFTDisplay({
           maxHeight: '100%',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center'
+          justifyContent: 'center',
+          overflow: 'hidden'
         } : {
           width: config.width,
           height: config.height,
@@ -498,7 +499,8 @@ export default function NFTDisplay({
           maxHeight: '100%',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center'
+          justifyContent: 'center',
+          overflow: 'hidden'
         }}
         onClick={onClick}
       >
@@ -518,6 +520,7 @@ export default function NFTDisplay({
               className="border-0"
               title={`NFT ${nftData.tokenId}`}
               sandbox="allow-scripts"
+              scrolling="no"
               style={{ 
                 width: '100%', 
                 height: '100%', 
@@ -525,7 +528,8 @@ export default function NFTDisplay({
                 maxHeight: '100%',
                 objectFit: 'contain',
                 display: 'block',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                border: 'none'
               }}
             />
           ) : (
