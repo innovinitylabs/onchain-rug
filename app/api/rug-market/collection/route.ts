@@ -5,8 +5,9 @@ import { fetchTotalSupply } from './direct-contract-fetcher'
 import { getContractAddress } from './networks'
 
 // BigInt serialization fix for JSON responses
-const originalBigIntToJSON = BigInt.prototype.toJSON
-BigInt.prototype.toJSON = function() {
+// Polyfill BigInt.prototype.toJSON for JSON serialization
+const originalBigIntToJSON = (BigInt.prototype as any).toJSON
+;(BigInt.prototype as any).toJSON = function() {
   return this.toString()
 }
 
