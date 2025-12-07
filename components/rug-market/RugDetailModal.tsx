@@ -216,7 +216,7 @@ export default function RugDetailModal({
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Left Column - NFT Display */}
               <div className="space-y-4">
-                <div className="relative bg-black/30 rounded-xl overflow-hidden aspect-video flex items-center justify-center">
+                <div className="relative bg-black/30 rounded-xl overflow-hidden" style={{ aspectRatio: '4/3' }}>
                   <NFTDisplay
                     nftData={nftDataForDisplay}
                     size="large"
