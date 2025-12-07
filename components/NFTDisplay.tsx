@@ -581,6 +581,15 @@ function NFTDisplay({
   )
 }
 
+// Memoize component to prevent unnecessary re-renders when sorting (props haven't changed)
+export default React.memo(NFTDisplay, (prevProps, nextProps) => {
+  // Only re-render if tokenId actually changes, not if just the object reference changes
+  return prevProps.nftData?.tokenId === nextProps.nftData?.tokenId &&
+         prevProps.size === nextProps.size &&
+         prevProps.className === nextProps.className &&
+         prevProps.onClick === nextProps.onClick
+})
+
 // Simple skeleton used by the demo page while previews are generating
 export function NFTDisplaySkeleton({ size = 'medium' }: { size?: 'small' | 'medium' | 'large' }) {
   const sizeConfig = {
