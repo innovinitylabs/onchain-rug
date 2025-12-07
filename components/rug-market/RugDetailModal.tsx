@@ -225,17 +225,14 @@ export default function RugDetailModal({
                   />
                   
                   {/* Overlay badges */}
-                  <div className="absolute top-4 left-4 flex flex-col gap-2">
-                    <span className={`px-3 py-1 rounded-lg border text-sm font-medium ${conditionBadge.color}`}>
-                      {conditionBadge.text}
-                    </span>
-                    {dynamic.isListed && (
+                  {dynamic.isListed && (
+                    <div className="absolute top-4 left-4 flex flex-col gap-2">
                       <span className="px-3 py-1 rounded-lg bg-green-500/20 text-green-300 border border-green-500/30 text-sm font-medium flex items-center gap-1">
                         <Tag className="w-4 h-4" />
                         FOR SALE
                       </span>
-                    )}
-                  </div>
+                    </div>
+                  )}
 
                   {/* Price badge */}
                   {dynamic.isListed && dynamic.listingPrice && (
