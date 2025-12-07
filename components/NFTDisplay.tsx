@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState, useMemo } from 'react'
+import React, { useEffect, useState, useMemo, useRef } from 'react'
 import { motion } from 'framer-motion'
 
 export interface RugTraits {
@@ -381,6 +381,7 @@ export default function NFTDisplay({
   const [isGenerating, setIsGenerating] = useState(true)
   const [blobUrl, setBlobUrl] = useState<string | null>(null)
   const [scriptsLoaded, setScriptsLoaded] = useState(false)
+  const previousTokenIdRef = useRef<number | undefined>(undefined)
 
   const displayTraits = useMemo(() => {
     if (nftData.traits) {
@@ -408,19 +409,23 @@ export default function NFTDisplay({
   // For card usage, we want to be fully responsive and ignore fixed sizes
   const isResponsive = className?.includes('w-full') || className?.includes('h-full')
 
-  // Reset state when nftData changes - ensure we regenerate on tokenId change
+  // Reset state ONLY when tokenId actually changes (not on every render)
   useEffect(() => {
-    // Only reset if tokenId actually changed
     const currentTokenId = nftData?.tokenId
-    if (currentTokenId !== undefined) {
+    // Only reset if tokenId actually changed from the previous value
+    if (currentTokenId !== undefined && currentTokenId !== previousTokenIdRef.current) {
+      previousTokenIdRef.current = currentTokenId
       setPreviewImage('')
       setIsGenerating(true)
       if (blobUrl && blobUrl.startsWith('blob:')) {
         URL.revokeObjectURL(blobUrl)
         setBlobUrl(null)
       }
+    } else if (currentTokenId === undefined) {
+      // Initialize ref if this is the first render
+      previousTokenIdRef.current = currentTokenId
     }
-  }, [nftData?.tokenId])
+  }, [nftData?.tokenId, blobUrl])
 
   useEffect(() => {
     const generatePreview = async () => {
