@@ -95,7 +95,8 @@ export async function GET(request: NextRequest) {
         const statsData = await publicClient.readContract({
           address: contractAddress as `0x${string}`,
           abi: marketplaceABI,
-          functionName: 'getMarketplaceStats'
+          functionName: 'getMarketplaceStats',
+          authorizationList: []
         })
 
         marketplaceStats = {
@@ -119,7 +120,8 @@ export async function GET(request: NextRequest) {
               address: contractAddress as `0x${string}`,
               abi: marketplaceABI,
               functionName: 'getListing',
-              args: [BigInt(i)]
+              args: [BigInt(i)],
+              authorizationList: []
             })
             
             if (listing[3] && listing[1] > 0n) { // isActive && price > 0

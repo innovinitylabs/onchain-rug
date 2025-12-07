@@ -289,6 +289,7 @@ export default function RugDetailModal({
                 <div>
                   <h3 className="text-lg font-semibold text-white mb-3">Traits</h3>
                   <div className="grid grid-cols-2 gap-3">
+                    {/* Permanent Traits */}
                     <div className="bg-white/5 rounded-lg p-3 border border-white/10">
                       <div className="text-xs text-white/60 uppercase tracking-wide mb-1">Palette</div>
                       <div className="text-white font-medium">{permanent.paletteName}</div>
@@ -314,28 +315,74 @@ export default function RugDetailModal({
                       <div className="text-white font-medium">{Number(permanent.stripeCount || 0)}</div>
                     </div>
 
+                    {permanent.curator && (
+                      <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                        <div className="text-xs text-white/60 uppercase tracking-wide mb-1">Curator</div>
+                        <div className="text-white font-medium font-mono text-xs">{formatAddress(permanent.curator)}</div>
+                      </div>
+                    )}
+
+                    {/* Dynamic Traits */}
+                    <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                      <div className="text-xs text-white/60 uppercase tracking-wide mb-1">Dirt Level</div>
+                      <div className="text-white font-medium">{dynamic.dirtLevel || 0}</div>
+                    </div>
+
+                    <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                      <div className="text-xs text-white/60 uppercase tracking-wide mb-1">Aging Level</div>
+                      <div className="text-white font-medium">{dynamic.agingLevel || 0}</div>
+                    </div>
+
                     {dynamic.frameLevel && dynamic.frameLevel !== 'None' && (
                       <div className="bg-white/5 rounded-lg p-3 border border-white/10">
                         <div className="text-xs text-white/60 uppercase tracking-wide mb-1">Frame</div>
                         <div className="text-white font-medium">{dynamic.frameLevel}</div>
                       </div>
                     )}
+
+                    {dynamic.maintenanceScore !== undefined && (
+                      <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                        <div className="text-xs text-white/60 uppercase tracking-wide mb-1">Maintenance Score</div>
+                        <div className="text-white font-medium">{Number(dynamic.maintenanceScore || 0)}</div>
+                      </div>
+                    )}
+
+                    {dynamic.cleaningCount !== undefined && dynamic.cleaningCount > 0 && (
+                      <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                        <div className="text-xs text-white/60 uppercase tracking-wide mb-1">Cleanings</div>
+                        <div className="text-white font-medium">{dynamic.cleaningCount}</div>
+                      </div>
+                    )}
+
+                    {dynamic.restorationCount !== undefined && dynamic.restorationCount > 0 && (
+                      <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                        <div className="text-xs text-white/60 uppercase tracking-wide mb-1">Restorations</div>
+                        <div className="text-white font-medium">{dynamic.restorationCount}</div>
+                      </div>
+                    )}
+
+                    {dynamic.masterRestorationCount !== undefined && dynamic.masterRestorationCount > 0 && (
+                      <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                        <div className="text-xs text-white/60 uppercase tracking-wide mb-1">Master Restorations</div>
+                        <div className="text-white font-medium">{dynamic.masterRestorationCount}</div>
+                      </div>
+                    )}
+
+                    {dynamic.launderingCount !== undefined && dynamic.launderingCount > 0 && (
+                      <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                        <div className="text-xs text-white/60 uppercase tracking-wide mb-1">Launderings</div>
+                        <div className="text-white font-medium">{dynamic.launderingCount}</div>
+                      </div>
+                    )}
+
+                    {dynamic.lastCleaned && Number(dynamic.lastCleaned) > 0 && (
+                      <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                        <div className="text-xs text-white/60 uppercase tracking-wide mb-1">Last Cleaned</div>
+                        <div className="text-white font-medium text-xs">{formatDate(dynamic.lastCleaned)}</div>
+                      </div>
+                    )}
                   </div>
                 </div>
-
-                {/* Text Content */}
-                {permanent.textRows && permanent.textRows.length > 0 && (
-                  <div>
-                    <h3 className="text-lg font-semibold text-white mb-2">Text</h3>
-                    <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-                      <div className="text-white font-mono text-center">
-                        {permanent.textRows.map((row, idx) => (
-                          <div key={idx}>{row}</div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
 
                 {/* Notification */}
                 {notification && (
