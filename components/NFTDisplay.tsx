@@ -432,14 +432,6 @@ function NFTDisplay({
     }
   }, [currentTokenId, previewImage, blobUrl, isGenerating])
 
-  // Clean up blob URLs when component unmounts or tokenId changes
-  useEffect(() => {
-    return () => {
-      // Don't revoke blob URLs here - they might be in cache for reuse
-      // Only revoke when cache entry is actually replaced
-    }
-  }, [currentTokenId])
-
   useEffect(() => {
     const generatePreview = async () => {
       if (currentTokenId === undefined) {
