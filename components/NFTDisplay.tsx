@@ -218,15 +218,50 @@ class RugGenerator {
     // Parse JSON strings to objects/arrays so we can embed them directly as JavaScript values
     const defaultPalette = {name:"Arctic Ice",colors:["#F0F8FF","#E6E6FA","#B0C4DE","#87CEEB","#B0E0E6","#F0FFFF","#E0FFFF","#F5F5F5"]}
     const defaultStripe = [{y:0,h:70.76905641704798,pc:"#B0E0E6",wt:"s",wv:0.2441620133817196}]
-    const defaultCharacterMap = {A:["01110","10001","10001","11111","10001","10001","10001"]}
     
     const paletteObj = safeParseJson(traits?.minifiedPalette, defaultPalette)
     const stripeObj = safeParseJson(traits?.minifiedStripeData, defaultStripe)
-    const textRowsArray = traits?.textRows || ["BACKEND", "RUGGED"]
+    
+    // Ensure textRows is always a valid non-empty array
+    const textRowsRaw = traits?.textRows
+    const textRowsArray = Array.isArray(textRowsRaw) && textRowsRaw.length > 0 
+      ? textRowsRaw.filter(row => row && typeof row === 'string' && row.trim().length > 0)
+      : ["BACKEND", "RUGGED"]
+    
+    // If after filtering we have empty array, use default
+    const finalTextRows = textRowsArray.length > 0 ? textRowsArray : ["BACKEND", "RUGGED"]
+    
     const seed = traits?.seed ? Number(traits.seed.toString()) : 348430
-    const characterMapObj = safeParseJson(traits?.filteredCharacterMap, defaultCharacterMap)
     const textureLevel = traits?.agingLevel || 0
     const dirtLevel = traits?.dirtLevel || 0
+    
+    // Use local character map (not from contract/Redis to save space)
+    // Filter to only include characters used in textRows for optimization
+    const fullCharacterMap = this.getCharacterMap()
+    const usedChars = new Set<string>()
+    finalTextRows.forEach(row => {
+      if (row && typeof row === 'string') {
+        row.toUpperCase().split('').forEach(char => {
+          usedChars.add(char)
+        })
+      }
+    })
+    
+    // Always include space character
+    usedChars.add(' ')
+    
+    // Create filtered character map with only used characters
+    const characterMapObj: Record<string, string[]> = {}
+    usedChars.forEach(char => {
+      if (fullCharacterMap[char]) {
+        characterMapObj[char] = fullCharacterMap[char]
+      }
+    })
+    
+    // Ensure we always have at least space character
+    if (Object.keys(characterMapObj).length === 0 || !characterMapObj[' ']) {
+      characterMapObj[' '] = fullCharacterMap[' '] || ["00000","00000","00000","00000","00000","00000","00000"]
+    }
 
     const frameLevel = (() => {
       const level = traits?.frameLevel || ''
@@ -260,7 +295,7 @@ class RugGenerator {
         lt, dt,
         p = ${JSON.stringify(paletteObj)},
         sd = ${JSON.stringify(stripeObj)},
-        tr = ${JSON.stringify(textRowsArray)},
+        tr = ${JSON.stringify(finalTextRows)},
         td = [],
         s = ${seed},
         cm = ${JSON.stringify(characterMapObj)},
