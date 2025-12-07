@@ -8,7 +8,8 @@
  * - Efficient trait querying and filtering
  */
 
-import { TraitOperations, TokenOperations, AnalyticsOperations, normalizeTraitId } from './redis-operations'
+import { TraitOperations, TokenOperations, AnalyticsOperations, ContractOperations } from './redis-operations'
+import { normalizeTraitId } from './redis-schema'
 import type { TraitSchema } from './redis-schema'
 
 export interface TraitDefinition {
@@ -200,7 +201,7 @@ export class TraitRegistry {
    */
   static async getTokensByOwner(ownerAddress: string): Promise<string[]> {
     const ownerTraitId = normalizeTraitId('owner', ownerAddress.toLowerCase())
-    return await TraitOperations.getTraitTokens(ownerTraitId)
+    return await TraitOperations.getTokensByTrait(ownerTraitId)
   }
 
   /**
@@ -283,7 +284,7 @@ export class TraitRegistry {
   }
 
   private static async getContractTokenCount(contractId: string): Promise<number> {
-    const tokens = await TokenOperations.getTokensByContract(contractId)
+    const tokens = await ContractOperations.getContractTokens(contractId)
     return tokens.length
   }
 }
