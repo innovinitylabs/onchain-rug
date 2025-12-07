@@ -1,9 +1,7 @@
 'use client'
 
-import React, { useRef, useEffect, useState, useMemo, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Eye, Maximize2, Minimize2 } from 'lucide-react'
-import NFTDetailModal from './NFTDetailModal'
+import React, { useEffect, useState, useMemo } from 'react'
+import { motion } from 'framer-motion'
 
 export interface RugTraits {
   seed: bigint
@@ -105,26 +103,18 @@ function extractDisplayTraitsFromAttributes(attributes: TokenURIAttribute[]): Pa
 export interface NFTDisplayProps {
   nftData: NFTData
   size?: 'small' | 'medium' | 'large'
-  showControls?: boolean
   interactive?: boolean
+  onClick?: () => void
+  className?: string
+  // Deprecated props - kept for backward compatibility but unused
+  showControls?: boolean
   onFavoriteToggle?: (tokenId: number) => void
   onRefreshData?: (tokenId: number) => void
   onCopyLink?: (tokenId: number) => void
-  className?: string
 }
 
-interface Palette {
-  name: string
-  colors: string[]
-}
-
-interface CharacterMap {
-  [key: string]: string[]
-}
 
 class RugGenerator {
-  private canvas: HTMLCanvasElement | null = null
-  private ctx: CanvasRenderingContext2D | null = null
   private width = 800
   private height = 1200
   private rugP5Script: string = ''
@@ -135,26 +125,11 @@ class RugGenerator {
 
   constructor(onLoaded?: () => void) {
     this.onScriptsLoaded = onLoaded
-    this.initializeCanvas()
     this.loadScripts().catch(console.error)
   }
 
   isScriptsLoaded(): boolean {
     return this.scriptsLoaded
-  }
-
-  private initializeCanvas() {
-    if (typeof document === 'undefined') return
-
-    this.canvas = document.createElement('canvas')
-    this.canvas.width = this.width
-    this.canvas.height = this.height
-    this.ctx = this.canvas.getContext('2d')
-
-    if (this.ctx) {
-      this.ctx.fillStyle = '#f8f9fa'
-      this.ctx.fillRect(0, 0, this.width, this.height)
-    }
   }
 
   private async loadScripts() {
@@ -398,18 +373,12 @@ class RugGenerator {
 export default function NFTDisplay({
   nftData,
   size = 'medium',
-  showControls = true,
   interactive = true,
-  onFavoriteToggle,
-  onRefreshData,
-  onCopyLink,
+  onClick,
   className = ''
 }: NFTDisplayProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
   const [previewImage, setPreviewImage] = useState<string>('')
   const [isGenerating, setIsGenerating] = useState(true)
-  const [selectedNFT, setSelectedNFT] = useState<NFTData | null>(null)
-  const [isFullscreen, setIsFullscreen] = useState(false)
   const [blobUrl, setBlobUrl] = useState<string | null>(null)
   const [scriptsLoaded, setScriptsLoaded] = useState(false)
 
@@ -502,24 +471,6 @@ export default function NFTDisplay({
     }
   }, [blobUrl])
 
-  // Cleanup blob URL when component unmounts or data changes
-  useEffect(() => {
-    return () => {
-      if (blobUrl && blobUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(blobUrl)
-      }
-    }
-  }, [])
-
-  const handleViewDetails = useCallback(() => {
-    const nftDataWithPreview = {
-      ...nftData,
-      traits: displayTraits as RugTraits, // Use the computed displayTraits which includes attributes data
-      processedPreviewUrl: previewImage
-    }
-    setSelectedNFT(nftDataWithPreview)
-  }, [nftData, displayTraits, previewImage])
-
 
   return (
     <>
@@ -528,9 +479,9 @@ export default function NFTDisplay({
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         whileHover={interactive ? { scale: 1.02 } : {}}
-        className={`relative overflow-hidden rounded-lg cursor-pointer group ${className}`}
+        className={`relative overflow-hidden rounded-lg ${onClick ? 'cursor-pointer' : ''} ${className}`}
         style={{ width: config.width, height: config.height }}
-        onClick={handleViewDetails}
+        onClick={onClick}
       >
         {/* NFT Content */}
         {isGenerating ? (

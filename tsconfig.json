@@ -31,8 +31,6 @@
   "exclude": [
     "node_modules",
     "Doormat_original",
-    "lib",
-    "lib/**/*",
     "src",
     "src/**/*",
     "script",

@@ -7,6 +7,7 @@ import Navigation from '../../components/Navigation'
 import Footer from '../../components/Footer'
 import LoadingAnimation from '../../components/LoadingAnimation'
 import RugMarketGrid from '../../components/RugMarketGrid'
+import RugDetailModal from '../../components/rug-market/RugDetailModal'
 import { ShoppingCart, Sparkles, TrendingUp } from 'lucide-react'
 import { RugMarketNFT } from '../../lib/rug-market-types'
 
@@ -61,6 +62,7 @@ export default function RugMarketPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [listingFilter, setListingFilter] = useState<ListingFilter>('all')
   const [sortBy, setSortBy] = useState<SortOption>('tokenId')
+  const [selectedNFT, setSelectedNFT] = useState<RugMarketNFT | null>(null)
   const [stats, setStats] = useState({
     totalNFTs: 0,
     floorPrice: '0',
@@ -298,7 +300,7 @@ export default function RugMarketPage() {
           <RugMarketGrid
             nfts={allNFTs}
             loading={isLoading}
-            onNFTClick={(nft) => router.push(`/rug-market/${nft.permanent.tokenId}`)}
+            onNFTClick={(nft) => setSelectedNFT(nft)}
             onRefreshNFT={handleRefreshNFT}
             onFavoriteToggle={handleFavoriteToggle}
             onBuyNFT={handleBuyNFT}
@@ -307,6 +309,17 @@ export default function RugMarketPage() {
       </main>
 
       <Footer />
+
+      {/* NFT Detail Modal */}
+      {selectedNFT && (
+        <RugDetailModal
+          nft={selectedNFT}
+          isOpen={!!selectedNFT}
+          onClose={() => setSelectedNFT(null)}
+          onBuyNFT={handleBuyNFT}
+          onRefreshNFT={handleRefreshNFT}
+        />
+      )}
     </div>
   )
 }

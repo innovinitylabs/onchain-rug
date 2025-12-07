@@ -1,0 +1,32 @@
+{
+  "name": "@limitbreak/payment-processor-contracts",
+  "version": "1.0.0",
+  "description": "This repo contains a payment processor and price-bounded payment processor smart contract.",
+  "main": "index.js",
+  "scripts": {
+    "test": "hardhat test"
+  },
+  "author": "LimitBreak",
+  "license": "MIT",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-foundry": "^1.0.0",
+    "@nomicfoundation/hardhat-network-helpers": "^1.0.4",
+    "@nomicfoundation/hardhat-toolbox": "^1.0.2",
+    "@nomiclabs/hardhat-etherscan": "^3.1.0",
+    "@nomiclabs/hardhat-truffle5": "^2.0.6",
+    "@nomiclabs/hardhat-web3": "^2.0.0",
+    "@openzeppelin/test-helpers": "^0.5.15",
+    "@rari-capital/solmate": "^6.4.0",
+    "dotenv": "^16.0.1",
+    "hardhat": "^2.12.7",
+    "hardhat-contract-sizer": "^2.6.1",
+    "hardhat-gas-reporter": "^1.0.8",
+    "solidity-coverage": "^0.7.21",
+    "web3": "^1.7.5"
+  },
+  "dependencies": {
+    "@limitbreak/creator-token-contracts": "1.0.5",
+    "@openzeppelin/contracts": "4.7.3",
+    "@openzeppelin/contracts-upgradeable": "4.7.3"
+  }
+}

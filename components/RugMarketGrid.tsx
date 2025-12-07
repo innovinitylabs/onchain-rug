@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { RefreshCw, Eye, Heart, ExternalLink } from 'lucide-react'
 import { RugMarketNFT } from '@/lib/rug-market-types'
-import NFTDisplay, { NFTDisplaySkeleton, NFTData } from './NFTDisplay'
+import NFTDisplay, { NFTDisplaySkeleton } from './NFTDisplay'
+import { rugMarketNFTToNFTData } from '@/utils/rug-market-data-adapter'
 
 interface RugMarketGridProps {
   nfts: RugMarketNFT[]
@@ -31,41 +32,8 @@ interface RugCardProps {
 function RugCard({ nft, onClick, onRefresh, onFavoriteToggle, onBuyNFT, isFavorited }: RugCardProps) {
   const router = useRouter()
 
-  // Convert RugMarketNFT to NFTData format expected by NFTDisplay
-  const nftData: NFTData = {
-    tokenId: nft.permanent.tokenId,
-    traits: {
-      seed: nft.permanent.seed,
-      paletteName: nft.permanent.paletteName,
-      minifiedPalette: nft.permanent.minifiedPalette,
-      minifiedStripeData: nft.permanent.minifiedStripeData,
-      textRows: nft.permanent.textRows,
-      warpThickness: nft.permanent.warpThickness,
-      mintTime: nft.permanent.mintTime,
-      filteredCharacterMap: nft.permanent.filteredCharacterMap,
-      characterCount: nft.permanent.characterCount,
-      stripeCount: nft.permanent.stripeCount,
-      textLinesCount: nft.permanent.textRows?.length || 0,
-      dirtLevel: nft.dynamic.dirtLevel,
-      agingLevel: nft.dynamic.agingLevel,
-      frameLevel: nft.dynamic.frameLevel,
-      maintenanceScore: nft.dynamic.maintenanceScore,
-      curator: nft.permanent.curator,
-      cleaningCount: nft.dynamic.cleaningCount,
-      restorationCount: nft.dynamic.restorationCount,
-      masterRestorationCount: nft.dynamic.masterRestorationCount,
-      launderingCount: nft.dynamic.launderingCount,
-      lastSalePrice: nft.dynamic.lastSalePrice,
-      lastCleaned: nft.dynamic.lastCleaned
-    },
-    owner: nft.dynamic.currentOwner,
-    name: nft.permanent.name,
-    description: nft.permanent.description,
-    image: nft.permanent.image,
-    listingPrice: nft.dynamic.listingPrice,
-    isListed: nft.dynamic.isListed,
-    lastSalePrice: nft.dynamic.lastSalePrice
-  }
+  // Convert RugMarketNFT to NFTData format using adapter for data consistency
+  const nftData = rugMarketNFTToNFTData(nft)
 
   const conditionBadge = useMemo(() => {
     const dirt = nft.dynamic.dirtLevel
@@ -93,7 +61,6 @@ function RugCard({ nft, onClick, onRefresh, onFavoriteToggle, onBuyNFT, isFavori
         <NFTDisplay
           nftData={nftData}
           size="medium"
-          showControls={false}
           interactive={false}
           className="rounded-none"
         />
