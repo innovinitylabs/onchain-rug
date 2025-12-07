@@ -417,7 +417,9 @@ export default function NFTDisplay({
 
   useEffect(() => {
     const generatePreview = async () => {
-      if (previewImage && !isGenerating) {
+      // Skip if already generated (avoid unnecessary regenerations)
+      // But allow regeneration if state was reset or data changed
+      if (previewImage && !isGenerating && previewImage !== '/rug-loading-mid.webp') {
         return
       }
 
@@ -427,7 +429,7 @@ export default function NFTDisplay({
           setBlobUrl(null)
         }
 
-        if (nftData.traits) {
+        if (displayTraits && nftData.traits) {
           if (!scriptsLoaded) {
             // Scripts required to generate client-side previews haven't loaded yet.
             // Show a lightweight placeholder so the card/modal doesn't render blank
