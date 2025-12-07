@@ -5,6 +5,7 @@
 
 import { getContractAddress, getRpcUrl } from './networks'
 import { callContractMultiFallback, onchainRugsABI } from '@/lib/web3'
+import { decodeAbiParameters, type AbiParameter } from 'viem'
 
 // Rug data structure from contract
 interface RugData {
