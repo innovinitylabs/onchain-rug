@@ -515,7 +515,7 @@ export default function NFTDisplay({
         onClick={onClick}
       >
         {/* NFT Content */}
-        {previewImage ? (
+        {previewImage && previewImage !== '' ? (
           previewImage.startsWith('blob:') || previewImage.startsWith('data:') ? (
             <div style={{ width: '100%', height: '100%', position: 'relative' }}>
               <iframe
@@ -551,7 +551,7 @@ export default function NFTDisplay({
               loading="lazy"
             />
           )
-        ) : (
+        ) : isGenerating ? null : (
           <div className="w-full h-full flex items-center justify-center bg-gray-100">
             <span className="text-gray-500">No preview available</span>
           </div>
