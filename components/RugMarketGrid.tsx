@@ -60,7 +60,7 @@ function RugCard({ nft, onClick, onRefresh, onFavoriteToggle, onBuyNFT, isFavori
       className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden cursor-pointer hover:bg-white/10 transition-all duration-300"
     >
       {/* NFT Display Component */}
-      <div className="relative cursor-pointer aspect-video bg-black/20" onClick={onClick} style={{ overflow: 'hidden', position: 'relative' }}>
+      <div className="relative cursor-pointer bg-black/20" onClick={onClick} style={{ overflow: 'hidden', position: 'relative', aspectRatio: '4/3' }}>
         <div className="absolute inset-0 w-full h-full" style={{ overflow: 'hidden' }}>
           <NFTDisplay
             nftData={nftData}
@@ -171,7 +171,7 @@ export default function RugMarketGrid({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {Array.from({ length: 8 }).map((_, i) => (
           <div key={i} className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden">
-            <div className="aspect-video bg-black/20 flex items-center justify-center overflow-hidden">
+            <div className="bg-black/20 flex items-center justify-center overflow-hidden" style={{ aspectRatio: '4/3' }}>
               <img
                 src="/rug-loading-mid.webp"
                 alt="Loading..."
