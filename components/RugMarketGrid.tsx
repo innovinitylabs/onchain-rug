@@ -219,9 +219,9 @@ export default function RugMarketGrid({
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         <AnimatePresence>
-          {nfts.map((nft) => (
+          {nfts.map((nft, index) => (
             <RugCard
-              key={nft.permanent.tokenId}
+              key={`${nft.permanent.tokenId}-${index}`}
               nft={nft}
               onClick={() => onNFTClick?.(nft)}
               onRefresh={() => onRefreshNFT?.(nft.permanent.tokenId)}

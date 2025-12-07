@@ -408,16 +408,24 @@ export default function NFTDisplay({
   // For card usage, we want to be fully responsive and ignore fixed sizes
   const isResponsive = className?.includes('w-full') || className?.includes('h-full')
 
-  // Reset state when nftData changes
+  // Reset state when nftData changes - ensure we regenerate on tokenId change
   useEffect(() => {
-    setPreviewImage('')
-    setIsGenerating(true)
-    setBlobUrl(null)
+    // Only reset if tokenId actually changed
+    const currentTokenId = nftData?.tokenId
+    if (currentTokenId !== undefined) {
+      setPreviewImage('')
+      setIsGenerating(true)
+      if (blobUrl && blobUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(blobUrl)
+        setBlobUrl(null)
+      }
+    }
   }, [nftData?.tokenId])
 
   useEffect(() => {
     const generatePreview = async () => {
-      if (previewImage && !isGenerating) {
+      // Only skip if we have a valid preview (not loading placeholder) and we're not in generating state
+      if (previewImage && !isGenerating && previewImage !== '/rug-loading-mid.webp' && previewImage !== '') {
         return
       }
 
@@ -427,7 +435,7 @@ export default function NFTDisplay({
           setBlobUrl(null)
         }
 
-        if (nftData.traits) {
+        if (displayTraits && nftData.traits) {
           if (!scriptsLoaded) {
             // Scripts required to generate client-side previews haven't loaded yet.
             // Show a lightweight placeholder so the card/modal doesn't render blank
@@ -507,7 +515,7 @@ export default function NFTDisplay({
         onClick={onClick}
       >
         {/* NFT Content */}
-        {isGenerating ? null : previewImage ? (
+        {previewImage && previewImage !== '' ? (
           previewImage.startsWith('blob:') || previewImage.startsWith('data:') ? (
             <div style={{ width: '100%', height: '100%', position: 'relative' }}>
               <iframe
@@ -543,7 +551,7 @@ export default function NFTDisplay({
               loading="lazy"
             />
           )
-        ) : (
+        ) : isGenerating ? null : (
           <div className="w-full h-full flex items-center justify-center bg-gray-100">
             <span className="text-gray-500">No preview available</span>
           </div>
