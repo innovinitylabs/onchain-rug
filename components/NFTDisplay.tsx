@@ -414,15 +414,16 @@ function NFTDisplay({
     const currentTokenId = nftData?.tokenId
     // Only reset if tokenId actually changed from what we've already generated
     if (currentTokenId !== undefined && currentTokenId !== generatedTokenIdRef.current) {
+      // Clean up old blob URL before resetting
+      if (blobUrl && blobUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(blobUrl)
+      }
       generatedTokenIdRef.current = currentTokenId
       setPreviewImage('')
       setIsGenerating(true)
-      if (blobUrl && blobUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(blobUrl)
-        setBlobUrl(null)
-      }
+      setBlobUrl(null)
     }
-  }, [nftData?.tokenId, blobUrl])
+  }, [nftData?.tokenId])
 
   useEffect(() => {
     const generatePreview = async () => {
@@ -433,24 +434,18 @@ function NFTDisplay({
         return
       }
 
-      // If we've already generated for this tokenId and have a valid preview, skip regeneration
-      // This prevents regeneration when sorting causes re-renders with same tokenId
-      if (generatedTokenIdRef.current === currentTokenId && previewImage && previewImage !== '/rug-loading-mid.webp' && previewImage !== '' && !isGenerating) {
-        return
-      }
-
-      // Only generate if we're supposed to generate for this tokenId
-      // The reset effect sets generatedTokenIdRef when tokenId changes, so we only generate once per tokenId
+      // Only generate if this matches the tokenId we're tracking
       if (generatedTokenIdRef.current !== currentTokenId) {
         return
       }
 
-      try {
-        if (blobUrl && blobUrl.startsWith('blob:')) {
-          URL.revokeObjectURL(blobUrl)
-          setBlobUrl(null)
-        }
+      // If we already have a valid preview for this tokenId, skip regeneration
+      // This prevents regeneration when sorting causes re-renders with same tokenId
+      if (previewImage && previewImage !== '/rug-loading-mid.webp' && previewImage !== '' && !isGenerating) {
+        return
+      }
 
+      try {
         if (displayTraits && nftData.traits) {
           if (!scriptsLoaded) {
             // Scripts required to generate client-side previews haven't loaded yet.
@@ -486,8 +481,7 @@ function NFTDisplay({
     }
 
     generatePreview()
-    // Remove previewImage and isGenerating from dependencies to avoid infinite loops
-    // We only want to regenerate when tokenId or data actually changes
+    // Only regenerate when tokenId, data, or scripts change - not on every render
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nftData.tokenId, displayTraits, nftData.animation_url, rugGenerator, scriptsLoaded])
 
@@ -582,12 +576,16 @@ function NFTDisplay({
 }
 
 // Memoize component to prevent unnecessary re-renders when sorting (props haven't changed)
+// Return true if props are equal (should skip re-render), false if different (should re-render)
 export default React.memo(NFTDisplay, (prevProps, nextProps) => {
-  // Only re-render if tokenId actually changes, not if just the object reference changes
-  return prevProps.nftData?.tokenId === nextProps.nftData?.tokenId &&
-         prevProps.size === nextProps.size &&
-         prevProps.className === nextProps.className &&
-         prevProps.onClick === nextProps.onClick
+  // Compare tokenId (the important prop) - if same, don't re-render
+  const tokenIdSame = prevProps.nftData?.tokenId === nextProps.nftData?.tokenId
+  const sizeSame = prevProps.size === nextProps.size
+  const classNameSame = prevProps.className === nextProps.className
+  
+  // Only re-render if tokenId, size, or className changed
+  // Note: onClick may change reference but that's okay, we only care about tokenId
+  return tokenIdSame && sizeSame && classNameSame
 })
 
 // Simple skeleton used by the demo page while previews are generating
