@@ -509,7 +509,7 @@ export default function NFTDisplay({
         onClick={onClick}
       >
         {/* NFT Content */}
-        {isGenerating ? null : previewImage ? (
+        {previewImage ? (
           previewImage.startsWith('blob:') || previewImage.startsWith('data:') ? (
             <div style={{ width: '100%', height: '100%', position: 'relative' }}>
               <iframe
