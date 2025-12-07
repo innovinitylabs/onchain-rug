@@ -63,7 +63,15 @@ function RugCard({ nft, onClick, onRefresh, onFavoriteToggle, onBuyNFT, isFavori
       <div 
         className="relative cursor-pointer bg-black/20" 
         onClick={onClick} 
-        style={{ overflow: 'hidden', position: 'relative', aspectRatio: '4/3' }}
+        style={{ 
+          overflow: 'hidden', 
+          position: 'relative', 
+          aspectRatio: '4/3',
+          backgroundImage: 'url(/rug-loading-mid.webp)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }}
       >
         <div 
           className="absolute inset-0 w-full h-full" 

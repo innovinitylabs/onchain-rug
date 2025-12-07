@@ -46,7 +46,7 @@ export const testNet = createChainConfig('testNet')
 
 // Wagmi configuration
 export const wagmiConfig = createConfig({
-  chains: [ethereumSepolia, shapeSepolia, shapeMainnet, baseSepolia, baseMainnet, testNet],
+  chains: [baseSepolia, baseMainnet, ethereumSepolia, shapeSepolia, shapeMainnet, testNet],
   transports: {
     [ethereumSepolia.id]: http(),
     [shapeSepolia.id]: http(),
