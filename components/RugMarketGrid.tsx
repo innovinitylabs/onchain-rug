@@ -43,11 +43,11 @@ function RugCard({ nft, onClick, onRefresh, onFavoriteToggle, onBuyNFT, isFavori
     const aging = nft.dynamic.agingLevel
 
     if (dirt === 0 && aging === 0) {
-      return { text: 'Perfect', color: 'bg-green-500/20 text-green-300 border-green-500/30' }
+      return { text: 'Perfect', color: 'bg-green-600/90 text-white border-green-400' }
     } else if (dirt <= 1 && aging <= 1) {
-      return { text: `D${dirt} A${aging}`, color: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30' }
+      return { text: `D${dirt} A${aging}`, color: 'bg-yellow-600/90 text-white border-yellow-400' }
     } else {
-      return { text: `D${dirt} A${aging}`, color: 'bg-red-500/20 text-red-300 border-red-500/30' }
+      return { text: `D${dirt} A${aging}`, color: 'bg-red-600/90 text-white border-red-400' }
     }
   }, [nft.dynamic.dirtLevel, nft.dynamic.agingLevel])
 
@@ -57,36 +57,45 @@ function RugCard({ nft, onClick, onRefresh, onFavoriteToggle, onBuyNFT, isFavori
       animate={{ opacity: 1, scale: 1 }}
       whileHover={{ scale: 1.02 }}
       onClick={onClick}
-      className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden cursor-pointer hover:bg-white/10 transition-all duration-300"
+      className="group bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden cursor-pointer hover:bg-white/10 transition-all duration-300"
     >
       {/* NFT Display Component */}
-      <div className="relative cursor-pointer bg-black/20" onClick={onClick} style={{ overflow: 'hidden', position: 'relative', aspectRatio: '4/3' }}>
-        <div className="absolute inset-0 w-full h-full" style={{ overflow: 'hidden' }}>
+      <div 
+        className="relative cursor-pointer bg-black/20" 
+        onClick={onClick} 
+        style={{ overflow: 'hidden', position: 'relative', aspectRatio: '4/3' }}
+      >
+        <div 
+          className="absolute inset-0 w-full h-full" 
+          style={{ overflow: 'hidden' }}
+          onClick={onClick}
+        >
           <NFTDisplay
             nftData={nftData}
             size="medium"
             interactive={false}
-            className="rounded-none w-full h-full"
+            className="rounded-none w-full h-full cursor-pointer"
+            onClick={onClick}
           />
         </div>
 
-        {/* Custom Overlay Info */}
-        <div className="absolute inset-0 pointer-events-none">
+        {/* Custom Overlay Info - Visible on hover */}
+        <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200">
         {/* Top Left - Token ID */}
-          <div className="absolute top-2 left-2 bg-black/50 text-white px-2 py-1 rounded text-sm font-mono pointer-events-auto">
+          <div className="absolute top-2 left-2 bg-black/80 backdrop-blur-sm text-white px-2 py-1 rounded text-sm font-mono pointer-events-auto shadow-lg">
             #{nft.permanent.tokenId}
         </div>
 
         {/* Bottom Left - Condition */}
           <div className="absolute bottom-2 left-2 pointer-events-auto">
-          <span className={`px-2 py-1 rounded border text-xs font-medium ${conditionBadge.color}`}>
+          <span className={`px-2 py-1 rounded border backdrop-blur-sm text-xs font-semibold shadow-lg ${conditionBadge.color}`}>
             {conditionBadge.text}
           </span>
         </div>
 
         {/* Bottom Right - Price/Status */}
           {nft.dynamic.isListed && (
-            <div className="absolute bottom-2 right-2 bg-green-500/20 text-green-300 px-2 py-1 rounded border border-green-500/30 text-xs font-medium pointer-events-auto">
+            <div className="absolute bottom-2 right-2 bg-green-600/90 backdrop-blur-sm text-white px-2 py-1 rounded border border-green-400 text-xs font-semibold pointer-events-auto shadow-lg">
               {nft.dynamic.listingPrice ? `${nft.dynamic.listingPrice} ETH` : 'LISTED'}
           </div>
         )}

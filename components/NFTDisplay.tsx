@@ -482,7 +482,7 @@ export default function NFTDisplay({
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         whileHover={interactive ? { scale: 1.02 } : {}}
-        className={`relative rounded-lg ${onClick ? 'cursor-pointer' : ''} ${className} flex items-center justify-center`}
+        className={`relative rounded-lg ${onClick ? 'cursor-pointer pointer-events-auto' : ''} ${className} flex items-center justify-center`}
         style={isResponsive ? {
           width: '100%',
           height: '100%',
@@ -517,23 +517,25 @@ export default function NFTDisplay({
           </div>
         ) : previewImage ? (
           previewImage.startsWith('blob:') || previewImage.startsWith('data:') ? (
-            <iframe
-              src={previewImage}
-              className="border-0"
-              title={`NFT ${nftData.tokenId}`}
-              sandbox="allow-scripts"
-              scrolling="no"
-              style={{ 
-                width: '100%', 
-                height: '100%', 
-                maxWidth: '100%',
-                maxHeight: '100%',
-                objectFit: 'contain',
-                display: 'block',
-                overflow: 'hidden',
-                border: 'none'
-              }}
-            />
+            <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+              <iframe
+                src={previewImage}
+                className="border-0 pointer-events-none"
+                title={`NFT ${nftData.tokenId}`}
+                sandbox="allow-scripts"
+                scrolling="no"
+                style={{ 
+                  width: '100%', 
+                  height: '100%', 
+                  maxWidth: '100%',
+                  maxHeight: '100%',
+                  objectFit: 'contain',
+                  display: 'block',
+                  overflow: 'hidden',
+                  border: 'none'
+                }}
+              />
+            </div>
           ) : (
             <img
               src={previewImage}
