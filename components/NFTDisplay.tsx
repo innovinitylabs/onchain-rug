@@ -2,7 +2,7 @@
 
 import React, { useRef, useEffect, useState, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Eye, RefreshCw, ExternalLink, Heart, Copy, CheckCircle, Maximize2, Minimize2 } from 'lucide-react'
+import { Eye, Maximize2, Minimize2 } from 'lucide-react'
 import NFTDetailModal from './NFTDetailModal'
 
 export interface RugTraits {
@@ -408,8 +408,6 @@ export default function NFTDisplay({
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [previewImage, setPreviewImage] = useState<string>('')
   const [isGenerating, setIsGenerating] = useState(true)
-  const [isFavorited, setIsFavorited] = useState(false)
-  const [copySuccess, setCopySuccess] = useState(false)
   const [selectedNFT, setSelectedNFT] = useState<NFTData | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [blobUrl, setBlobUrl] = useState<string | null>(null)
@@ -513,42 +511,6 @@ export default function NFTDisplay({
     }
   }, [])
 
-  const handleFavoriteToggle = useCallback(() => {
-    setIsFavorited(!isFavorited)
-    onFavoriteToggle?.(nftData.tokenId)
-  }, [isFavorited, nftData.tokenId, onFavoriteToggle])
-
-  const handleCopyLink = useCallback(async () => {
-    const url = `${window.location.origin}/rug-market/${nftData.tokenId}`
-    try {
-      await navigator.clipboard.writeText(url)
-      setCopySuccess(true)
-      setTimeout(() => setCopySuccess(false), 2000)
-      onCopyLink?.(nftData.tokenId)
-    } catch (error) {
-      console.error('Failed to copy link:', error)
-    }
-  }, [nftData.tokenId, onCopyLink])
-
-  const handleRefreshData = useCallback(() => {
-    onRefreshData?.(nftData.tokenId)
-
-    if (blobUrl && blobUrl.startsWith('blob:')) {
-      URL.revokeObjectURL(blobUrl)
-      setBlobUrl(null)
-    }
-
-    if (nftData.traits) {
-      const imageData = rugGenerator.generatePreview(nftData.traits, nftData.tokenId)
-    if (imageData.startsWith('blob:')) {
-      setBlobUrl(imageData)
-    }
-    setPreviewImage(imageData)
-    } else if (nftData.animation_url) {
-      setPreviewImage(nftData.animation_url)
-    }
-  }, [nftData.tokenId, nftData.traits, nftData.animation_url, rugGenerator, onRefreshData, blobUrl])
-
   const handleViewDetails = useCallback(() => {
     const nftDataWithPreview = {
       ...nftData,
@@ -557,12 +519,6 @@ export default function NFTDisplay({
     }
     setSelectedNFT(nftDataWithPreview)
   }, [nftData, displayTraits, previewImage])
-
-  const formatPrice = (price?: string) => {
-    if (!price) return null
-    const num = parseFloat(price)
-    return num >= 1 ? `${num.toFixed(3)} ETH` : `${(num * 1000).toFixed(1)}K WEI`
-  }
 
 
   return (
@@ -603,62 +559,6 @@ export default function NFTDisplay({
           </div>
         )}
 
-        {/* Controls Overlay */}
-        {showControls && (
-          <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            {onRefreshData && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleRefreshData()
-                }}
-                className="p-1 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors"
-                title="Refresh data"
-              >
-                <RefreshCw className="w-4 h-4" />
-              </button>
-            )}
-            {onFavoriteToggle && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  // handleFavoriteToggle is defined above
-                }}
-                className={`p-1 rounded-full transition-colors ${
-                  isFavorited
-                    ? 'bg-red-500/80 text-white'
-                    : 'bg-black/50 hover:bg-black/70 text-white'
-                }`}
-                title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
-              >
-                <Heart className={`w-4 h-4 ${isFavorited ? 'fill-current' : ''}`} />
-              </button>
-            )}
-            {onCopyLink && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleCopyLink()
-                }}
-                className="p-1 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors"
-                title="Copy link"
-              >
-                {copySuccess ? (
-                  <CheckCircle className="w-4 h-4 text-green-500" />
-                ) : (
-                  <Copy className="w-4 h-4" />
-                )}
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Price Badge */}
-        {nftData.listingPrice && (
-          <div className="absolute bottom-2 left-2 bg-black/70 text-white text-sm px-2 py-1 rounded">
-            {formatPrice(nftData.listingPrice)}
-          </div>
-        )}
       </motion.div>
     </>
   )
