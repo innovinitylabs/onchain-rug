@@ -345,10 +345,10 @@ function RugMarketPageContent() {
   }, [currentPage, totalPages])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col">
       <Navigation />
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 flex-grow">
         <div className="max-w-7xl mx-auto">
           {/* Notification Banner */}
           {notification && (
