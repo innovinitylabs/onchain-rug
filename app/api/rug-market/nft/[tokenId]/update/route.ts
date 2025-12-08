@@ -6,10 +6,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { RugMarketRedis } from '@/lib/rug-market-redis'
-import { RugDynamicData, MarketplaceActivity } from '@/lib/rug-market-types'
-import { contractAddresses } from '@/lib/web3'
-import { config } from '@/lib/config'
+import { RugMarketRedis } from '../../../collection/rug-market-redis'
+import { RugDynamicData, MarketplaceActivity } from '../../../collection/rug-market-types'
+import { getContractAddress } from '../../../collection/networks'
 
 interface UpdateRequest {
   action: 'maintenance' | 'listing' | 'delisting' | 'sale' | 'transfer'
@@ -40,9 +39,9 @@ export async function POST(
 
     // Get chain ID from query params or use default
     const { searchParams } = new URL(request.url)
-    const chainId = parseInt(searchParams.get('chainId') || config.chainId.toString())
+    const chainId = parseInt(searchParams.get('chainId') || '84532')
 
-    const contractAddress = contractAddresses[chainId]
+    const contractAddress = getContractAddress(chainId)
     if (!contractAddress) {
       return NextResponse.json(
         { error: 'Unsupported chain' },
@@ -72,8 +71,35 @@ export async function POST(
       )
     }
 
-    // Update Redis data
-    await RugMarketRedis.updateDynamicData(chainId, contractAddress, tokenId, data)
+    // Filter out calculated fields - only update stored fields
+    // Remove dirtLevel and agingLevel if they're in the data (they're calculated, not stored)
+    const { dirtLevel, agingLevel, ...storedData } = data as any
+    
+    if (dirtLevel !== undefined || agingLevel !== undefined) {
+      console.warn(`[Update API] Attempted to update calculated fields (dirtLevel=${dirtLevel}, agingLevel=${agingLevel}). These will be ignored.`)
+    }
+
+    // Ensure we're only updating stored fields
+    // Convert string BigInt values back to BigInt
+    const updateData: Partial<RugDynamicData> = {
+      ...storedData,
+      // Explicitly ensure calculated fields are not included
+    }
+    delete (updateData as any).dirtLevel
+    delete (updateData as any).agingLevel
+    
+    // Convert lastCleaned from string to BigInt if provided
+    if ((updateData as any).lastCleaned !== undefined) {
+      const lastCleanedValue = (updateData as any).lastCleaned
+      if (typeof lastCleanedValue === 'string') {
+        (updateData as any).lastCleaned = BigInt(lastCleanedValue)
+      } else if (typeof lastCleanedValue === 'number') {
+        (updateData as any).lastCleaned = BigInt(lastCleanedValue)
+      }
+    }
+
+    // Update Redis data (only stored fields)
+    await RugMarketRedis.updateDynamicData(chainId, contractAddress, tokenId, updateData)
 
     // Log activity for certain actions
     if (['maintenance', 'listing', 'delisting', 'sale'].includes(action)) {

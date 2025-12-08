@@ -6,7 +6,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { RugMarketRedis } from '../../../../../src/lib/rug-market-redis'
+import { RugMarketRedis } from '../../../collection/rug-market-redis'
+import { fetchNFTFromBlockchain } from '../../../collection/blockchain-fetcher'
+import { getContractAddress } from '../../../collection/networks'
 
 interface RouteParams {
   params: Promise<{
@@ -33,24 +35,51 @@ export async function GET(
     // Get chain ID from query params or use default
     const { searchParams } = new URL(request.url)
     const chainId = parseInt(searchParams.get('chainId') || '84532')
-    const contractAddress = '0x3d6670aC0A881Dcc742c17D687F5dfE05Af81cff'
+    const contractAddress = getContractAddress(chainId)
+    
+    if (!contractAddress) {
+      return NextResponse.json(
+        { error: 'Unsupported chain' },
+        { status: 400 }
+      )
+    }
 
     console.log(`[Individual NFT API] Chain ${chainId}, Contract ${contractAddress}`)
 
-    // Try to get data from Redis first
+    // Try to get data from Redis first (includes calculated values)
     console.log(`🔍 Checking Redis for NFT ${tokenId}`)
     const redisData = await RugMarketRedis.getNFTData(chainId, contractAddress, tokenId)
     console.log(`🔍 Redis data result: ${redisData !== null}`)
 
     if (redisData) {
-      console.log(`✅ Found NFT ${tokenId} in Redis`)
+      console.log(`✅ Found NFT ${tokenId} in Redis with calculated values`)
       return NextResponse.json({
         source: 'redis',
         data: redisData
       })
     }
 
-    console.log(`❌ NFT ${tokenId} not found in Redis`)
+    // Fallback to blockchain
+    console.log(`❌ NFT ${tokenId} not found in Redis, fetching from blockchain`)
+    try {
+      const blockchainData = await fetchNFTFromBlockchain(chainId, contractAddress, tokenId)
+      if (blockchainData) {
+        // Store in Redis (will be calculated on next read)
+        await RugMarketRedis.setNFTData(chainId, contractAddress, tokenId, blockchainData)
+        
+        // Get from Redis again to get calculated values
+        const calculatedData = await RugMarketRedis.getNFTData(chainId, contractAddress, tokenId)
+        if (calculatedData) {
+          return NextResponse.json({
+            source: 'blockchain',
+            data: calculatedData
+          })
+        }
+      }
+    } catch (error) {
+      console.error(`[Individual NFT API] Failed to fetch from blockchain:`, error)
+    }
+
     return NextResponse.json(
       { error: 'NFT not found' },
       { status: 404 }

@@ -6,13 +6,76 @@
  */
 
 import { RugMarketNFT } from '@/lib/rug-market-types'
+import type { RugMarketNFTWithCalculated } from '@/app/api/rug-market/collection/rug-market-types'
 import type { NFTData, RugTraits } from '@/components/NFTDisplay'
 
 /**
- * Convert RugMarketNFT to NFTData format for NFTDisplay component
+ * Helper to safely extract calculated dirt/aging levels from dynamic data
+ * Exported for use in components
  */
-export function rugMarketNFTToNFTData(nft: RugMarketNFT): NFTData {
+export function getCalculatedLevels(dynamic: any): { dirtLevel: number; agingLevel: number } {
+  // Check if calculated values exist (from RugMarketNFTWithCalculated)
+  let dirtLevel = 0
+  let agingLevel = 0
+
+  if ('dirtLevel' in dynamic && dynamic.dirtLevel !== undefined && dynamic.dirtLevel !== null) {
+    const dirt = dynamic.dirtLevel
+    if (typeof dirt === 'number') {
+      dirtLevel = dirt
+    } else if (typeof dirt === 'bigint') {
+      dirtLevel = Number(dirt)
+    } else if (typeof dirt === 'string') {
+      const parsed = parseInt(dirt, 10)
+      dirtLevel = isNaN(parsed) ? 0 : parsed
+    } else {
+      dirtLevel = Number(dirt) || 0
+    }
+    // Ensure dirtLevel is 0-2
+    dirtLevel = Math.min(Math.max(dirtLevel, 0), 2)
+  }
+
+  if ('agingLevel' in dynamic && dynamic.agingLevel !== undefined && dynamic.agingLevel !== null) {
+    const aging = dynamic.agingLevel
+    if (typeof aging === 'number') {
+      agingLevel = aging
+    } else if (typeof aging === 'bigint') {
+      agingLevel = Number(aging)
+    } else if (typeof aging === 'string') {
+      const parsed = parseInt(aging, 10)
+      agingLevel = isNaN(parsed) ? 0 : parsed
+    } else {
+      agingLevel = Number(aging) || 0
+    }
+    // Cap at 10 and ensure it's not a timestamp (if it's > 10, it's probably wrong)
+    if (agingLevel > 10) {
+      console.warn(`[getCalculatedLevels] Aging level ${agingLevel} is > 10, capping to 10. This might be a timestamp or baseAgingLevel.`)
+      agingLevel = 10
+    }
+    agingLevel = Math.min(Math.max(agingLevel, 0), 10)
+  } else {
+    // If agingLevel is missing, check if baseAgingLevel exists (shouldn't be displayed, but log it)
+    if ('baseAgingLevel' in dynamic && dynamic.baseAgingLevel !== undefined) {
+      console.warn(`[getCalculatedLevels] agingLevel missing but baseAgingLevel=${dynamic.baseAgingLevel} exists. This suggests calculated values weren't added.`)
+    }
+  }
+
+  return { dirtLevel, agingLevel }
+}
+
+/**
+ * Convert RugMarketNFT to NFTData format for NFTDisplay component
+ * Handles both RugMarketNFT (without calculated values) and RugMarketNFTWithCalculated (with calculated values)
+ */
+export function rugMarketNFTToNFTData(nft: RugMarketNFT | RugMarketNFTWithCalculated): NFTData {
   const { permanent, dynamic } = nft
+
+  // Extract calculated values safely
+  const { dirtLevel, agingLevel } = getCalculatedLevels(dynamic)
+  
+  // Log for debugging (remove in production)
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[Adapter] Token ${permanent.tokenId}: dirtLevel=${dirtLevel}, agingLevel=${agingLevel}, hasDirtLevel=${'dirtLevel' in dynamic}, hasAgingLevel=${'agingLevel' in dynamic}`)
+  }
 
   // Build RugTraits from permanent and dynamic data
   const traits: RugTraits = {
@@ -27,9 +90,9 @@ export function rugMarketNFTToNFTData(nft: RugMarketNFT): NFTData {
     characterCount: permanent.characterCount,
     stripeCount: permanent.stripeCount,
     textLinesCount: permanent.textRows?.length || 0,
-    dirtLevel: dynamic.dirtLevel,
-    agingLevel: dynamic.agingLevel,
-    frameLevel: dynamic.frameLevel,
+    dirtLevel,
+    agingLevel,
+    frameLevel: typeof dynamic.frameLevel === 'string' ? dynamic.frameLevel : String(dynamic.frameLevel),
     maintenanceScore: dynamic.maintenanceScore,
     curator: permanent.curator,
     cleaningCount: dynamic.cleaningCount,

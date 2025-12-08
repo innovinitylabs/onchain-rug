@@ -233,6 +233,26 @@ export const onchainRugsABI = [
   },
   {
     inputs: [{ name: 'tokenId', type: 'uint256' }],
+    name: 'getAgingData',
+    outputs: [
+      { name: 'lastCleaned', type: 'uint256' },
+      { name: 'dirtLevel', type: 'uint8' },
+      { name: 'agingLevel', type: 'uint8' },
+      { name: 'frameLevel', type: 'uint8' },
+      { name: 'frameAchievedTime', type: 'uint256' },
+      { name: 'cleaningCount', type: 'uint256' },
+      { name: 'restorationCount', type: 'uint256' },
+      { name: 'masterRestorationCount', type: 'uint256' },
+      { name: 'launderingCount', type: 'uint256' },
+      { name: 'lastLaundered', type: 'uint256' },
+      { name: 'lastSalePrice', type: 'uint256' },
+      { name: 'recentSalePrices', type: 'uint256[3]' }
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [{ name: 'tokenId', type: 'uint256' }],
     name: 'getAgingState',
     outputs: [
       { name: 'lastCleaned', type: 'uint256' },

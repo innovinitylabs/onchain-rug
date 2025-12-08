@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { RefreshCw, Eye, Heart, ExternalLink, ShoppingCart } from 'lucide-react'
 import { RugMarketNFT } from '@/lib/rug-market-types'
 import NFTDisplay, { NFTDisplaySkeleton } from './NFTDisplay'
-import { rugMarketNFTToNFTData } from '@/utils/rug-market-data-adapter'
+import { rugMarketNFTToNFTData, getCalculatedLevels } from '@/utils/rug-market-data-adapter'
 import { getExplorerUrl, getContractAddress } from '@/lib/networks'
 
 interface RugMarketGridProps {
@@ -35,13 +35,26 @@ interface RugCardProps {
 function RugCard({ nft, onClick, onRefresh, onFavoriteToggle, onBuyNFT, isFavorited }: RugCardProps) {
   const router = useRouter()
   const chainId = useChainId()
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   // Convert RugMarketNFT to NFTData format using adapter for data consistency
   const nftData = rugMarketNFTToNFTData(nft)
+  
+  const handleRefresh = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (onRefresh && !isRefreshing) {
+      setIsRefreshing(true)
+      try {
+        await onRefresh()
+      } finally {
+        setIsRefreshing(false)
+      }
+    }
+  }
 
   const conditionBadge = useMemo(() => {
-    const dirt = nft.dynamic.dirtLevel
-    const aging = nft.dynamic.agingLevel
+    // Use calculated values from helper function
+    const { dirtLevel: dirt, agingLevel: aging } = getCalculatedLevels(nft.dynamic)
 
     if (dirt === 0 && aging === 0) {
       return { text: 'Perfect', color: 'bg-green-600/90 text-white border-green-400' }
@@ -50,7 +63,7 @@ function RugCard({ nft, onClick, onRefresh, onFavoriteToggle, onBuyNFT, isFavori
     } else {
       return { text: `D${dirt} A${aging}`, color: 'bg-red-600/90 text-white border-red-400' }
     }
-  }, [nft.dynamic.dirtLevel, nft.dynamic.agingLevel])
+  }, [nftData.traits?.dirtLevel, nftData.traits?.agingLevel, nft.dynamic])
 
   return (
     <motion.div
@@ -93,7 +106,21 @@ function RugCard({ nft, onClick, onRefresh, onFavoriteToggle, onBuyNFT, isFavori
         {/* Top Left - Token ID */}
           <div className="absolute top-2 left-2 bg-black/80 backdrop-blur-sm text-white px-2 py-1 rounded text-sm font-mono pointer-events-auto shadow-lg">
             #{nft.permanent.tokenId}
-        </div>
+          </div>
+          
+          {/* Top Right - Refresh Button */}
+          {onRefresh && (
+            <div className="absolute top-2 right-2 pointer-events-auto">
+              <button
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                className="p-2 bg-black/80 backdrop-blur-sm text-white rounded hover:bg-black/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                title="Refresh NFT data"
+              >
+                <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
+          )}
 
         {/* Bottom Left - Condition */}
           <div className="absolute bottom-2 left-2 pointer-events-auto">
@@ -221,17 +248,23 @@ export default function RugMarketGrid({
   return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         <AnimatePresence>
-          {nfts.map((nft) => (
-            <RugCard
-              key={`${nft.permanent.tokenId}-${sortKey || ''}`}
-              nft={nft}
-              onClick={() => onNFTClick?.(nft)}
-              onRefresh={() => onRefreshNFT?.(nft.permanent.tokenId)}
-              onFavoriteToggle={() => handleFavoriteToggle(nft.permanent.tokenId)}
-              onBuyNFT={(tokenId, price) => handleBuyNFT(tokenId, price)}
-              isFavorited={favorites.has(nft.permanent.tokenId)}
-            />
-          ))}
+          {nfts.map((nft) => {
+            // Create a key that includes dynamic traits so React remounts when they change
+            const { dirtLevel, agingLevel } = getCalculatedLevels(nft.dynamic)
+            const frameLevel = nft.dynamic.frameLevel || 'None'
+            const dynamicKey = `${dirtLevel}-${agingLevel}-${frameLevel}`
+            return (
+              <RugCard
+                key={`${nft.permanent.tokenId}-${sortKey || ''}-${dynamicKey}`}
+                nft={nft}
+                onClick={() => onNFTClick?.(nft)}
+                onRefresh={() => onRefreshNFT?.(nft.permanent.tokenId)}
+                onFavoriteToggle={() => handleFavoriteToggle(nft.permanent.tokenId)}
+                onBuyNFT={(tokenId, price) => handleBuyNFT(tokenId, price)}
+                isFavorited={favorites.has(nft.permanent.tokenId)}
+              />
+            )
+          })}
         </AnimatePresence>
       {nfts.length === 0 && <div className="col-span-full text-center py-8 text-white">No rugs found</div>}
     </div>

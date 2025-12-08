@@ -184,18 +184,29 @@ function RugMarketPageContent() {
         method: 'POST'
       })
       
-      if (!response.ok) {
-        throw new Error('Failed to refresh NFT')
-      }
-      
       const data = await response.json()
       
-      // Update the NFT in our local state
-      setAllNFTs(prev => prev.map(nft => 
-        nft.permanent.tokenId === tokenId 
-          ? data.data 
-          : nft
-      ))
+      if (!response.ok) {
+        // Handle rate limiting
+        if (response.status === 429) {
+          const retryAfter = data.retryAfter || 5
+          throw new Error(`Please wait ${retryAfter} second(s) before refreshing again`)
+        }
+        // Handle conflict (already refreshing)
+        if (response.status === 409) {
+          throw new Error('Refresh already in progress for this NFT')
+        }
+        throw new Error(data.error || data.message || 'Failed to refresh NFT')
+      }
+      
+      // Update the NFT in our local state with fresh calculated values
+      if (data.data) {
+        setAllNFTs(prev => prev.map(nft => 
+          nft.permanent.tokenId === tokenId 
+            ? data.data 
+            : nft
+        ))
+      }
       
       setNotification({
         type: 'success',

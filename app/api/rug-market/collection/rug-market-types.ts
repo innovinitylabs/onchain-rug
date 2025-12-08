@@ -26,18 +26,17 @@ export interface RugPermanentData {
 }
 
 export interface RugDynamicData {
-  // Time-based calculations (updated by cron/events)
-  dirtLevel: number
-  agingLevel: number
-
-  // Maintenance-updated data
-  frameLevel: string
+  // Stored base values (from contract)
+  baseAgingLevel: number  // Stored base aging level from contract (0-10)
+  frameLevel: string | number  // Frame level: string ("None", "Bronze", etc.) or number (0-4)
   maintenanceScore: bigint
-  lastCleaned: bigint
+  lastCleaned: bigint  // Last cleaned timestamp (in seconds)
   cleaningCount?: number
   restorationCount?: number
   masterRestorationCount?: number
   launderingCount?: number
+
+  // Note: dirtLevel and agingLevel are NOT stored - they are calculated on read
 
   // Ownership tracking
   currentOwner: string
@@ -70,9 +69,24 @@ export interface RugDynamicData {
   lastUpdated: bigint
 }
 
+/**
+ * Stored NFT data (what's in Redis)
+ * Does not include calculated fields
+ */
 export interface RugMarketNFT {
   permanent: RugPermanentData
   dynamic: RugDynamicData
+}
+
+/**
+ * NFT data with calculated fields (for API responses)
+ * Includes computed dirtLevel and agingLevel
+ */
+export interface RugMarketNFTWithCalculated extends RugMarketNFT {
+  dynamic: RugDynamicData & {
+    dirtLevel: number  // Calculated on read
+    agingLevel: number  // Calculated on read
+  }
 }
 
 export interface CollectionStats {

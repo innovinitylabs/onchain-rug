@@ -22,6 +22,7 @@ import {
   DollarSign
 } from 'lucide-react'
 import { RugMarketNFT } from '@/lib/rug-market-types'
+import { getCalculatedLevels } from '@/utils/rug-market-data-adapter'
 import { config } from '@/lib/config'
 
 export default function NFTDetailPage() {
@@ -235,7 +236,10 @@ export default function NFTDetailPage() {
                 <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-4">
                   <div className="text-white/60 text-sm mb-1">Condition</div>
                   <div className="text-white font-medium">
-                    D{dynamic.dirtLevel} A{dynamic.agingLevel}
+                    {(() => {
+                      const { dirtLevel, agingLevel } = getCalculatedLevels(dynamic)
+                      return `D${dirtLevel} A${agingLevel}`
+                    })()}
                   </div>
                 </div>
 

@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Eye, ExternalLink, Calendar, User, TrendingUp, ShoppingCart, Tag, AlertCircle } from 'lucide-react'
+import { X, Eye, ExternalLink, Calendar, User, TrendingUp, ShoppingCart, Tag, AlertCircle, RefreshCw } from 'lucide-react'
 import { useAccount, useChainId, useReadContract } from 'wagmi'
 import { RugMarketNFT } from '@/lib/rug-market-types'
 import NFTDisplay from '@/components/NFTDisplay'
-import { rugMarketNFTToNFTData } from '@/utils/rug-market-data-adapter'
+import { rugMarketNFTToNFTData, getCalculatedLevels } from '@/utils/rug-market-data-adapter'
 import { useCreateListing, useCancelListing, useApproveMarketplace, useApprovalStatus } from '@/hooks/use-marketplace-contract'
 import { useListingData } from '@/hooks/use-marketplace-data'
 import { useWaitForTransactionReceipt } from 'wagmi'
@@ -31,6 +31,7 @@ export default function RugDetailModal({
   const { address, isConnected } = useAccount()
   const chainId = useChainId()
   const { permanent, dynamic } = nft
+  const [isRefreshing, setIsRefreshing] = useState(false)
   
   // Get contract address
   const contractAddress = contractAddresses[chainId]
@@ -81,22 +82,72 @@ export default function RugDetailModal({
   }, [isApproveSuccess])
   
   useEffect(() => {
-    if (isListingSuccess) {
+    if (isListingSuccess && createListing.hash) {
       setNotification({ type: 'success', message: 'NFT listed successfully!' })
       setShowListingForm(false)
       setListingPrice('')
-      onRefreshNFT?.(permanent.tokenId)
+      
+      // Update cache with listing data
+      const updateCache = async () => {
+        try {
+          await fetch(`/api/rug-market/nft/${permanent.tokenId}/update?chainId=${chainId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'listing',
+              data: {
+                isListed: true,
+                listingPrice: listingPrice,
+                listingSeller: address,
+                listingTxHash: createListing.hash
+              },
+              txHash: createListing.hash
+            })
+          })
+        } catch (error) {
+          console.error('Failed to update cache after listing:', error)
+        }
+      }
+      
+      updateCache().then(() => {
+        onRefreshNFT?.(permanent.tokenId)
+      })
       setTimeout(() => setNotification(null), 3000)
     }
-  }, [isListingSuccess, permanent.tokenId, onRefreshNFT])
+  }, [isListingSuccess, permanent.tokenId, onRefreshNFT, chainId, listingPrice, address, createListing.hash])
   
   useEffect(() => {
-    if (isCancelSuccess) {
+    if (isCancelSuccess && cancelListing.hash) {
       setNotification({ type: 'success', message: 'Listing cancelled successfully!' })
-      onRefreshNFT?.(permanent.tokenId)
+      
+      // Update cache with delisting data
+      const updateCache = async () => {
+        try {
+          await fetch(`/api/rug-market/nft/${permanent.tokenId}/update?chainId=${chainId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'delisting',
+              data: {
+                isListed: false,
+                listingPrice: undefined,
+                listingSeller: undefined,
+                listingTxHash: cancelListing.hash
+              },
+              txHash: cancelListing.hash
+            })
+          })
+        } catch (error) {
+          console.error('Failed to update cache after delisting:', error)
+        }
+      }
+      
+      updateCache().then(() => {
+        onRefreshNFT?.(permanent.tokenId)
+      })
       setTimeout(() => setNotification(null), 3000)
     }
-  }, [isCancelSuccess, permanent.tokenId, onRefreshNFT])
+  }, [isCancelSuccess, permanent.tokenId, onRefreshNFT, chainId, cancelListing.hash])
 
   // Handle Escape key to close modal
   useEffect(() => {
@@ -154,9 +205,12 @@ export default function RugDetailModal({
     return num >= 1 ? `${num.toFixed(3)} ETH` : `${(num * 1000).toFixed(1)}K WEI`
   }
 
+  // Convert to NFTData to get calculated values
+  const nftDataForDisplay = rugMarketNFTToNFTData(nft)
+
   const getConditionBadge = () => {
-    const dirt = dynamic.dirtLevel || 0
-    const aging = dynamic.agingLevel || 0
+    // Use calculated values from helper function
+    const { dirtLevel: dirt, agingLevel: aging } = getCalculatedLevels(dynamic)
 
     if (dirt === 0 && aging === 0) {
       return { text: 'Excellent', color: 'bg-green-500/20 text-green-300 border-green-500/30' }
@@ -170,9 +224,6 @@ export default function RugDetailModal({
   }
 
   const conditionBadge = getConditionBadge()
-
-  // Convert RugMarketNFT to NFTData for NFTDisplay
-  const nftDataForDisplay = rugMarketNFTToNFTData(nft)
 
   if (!isOpen) return null
 
@@ -201,6 +252,23 @@ export default function RugDetailModal({
               <p className="text-white/60 mt-1">Token ID: #{permanent.tokenId}</p>
             </div>
             <div className="flex items-center gap-2">
+              <button
+                onClick={async () => {
+                  if (onRefreshNFT && !isRefreshing) {
+                    setIsRefreshing(true)
+                    try {
+                      await onRefreshNFT(permanent.tokenId)
+                    } finally {
+                      setIsRefreshing(false)
+                    }
+                  }
+                }}
+                disabled={isRefreshing || !onRefreshNFT}
+                className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Refresh NFT data"
+              >
+                <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+              </button>
               <button
                 onClick={onClose}
                 className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
@@ -320,15 +388,22 @@ export default function RugDetailModal({
                     )}
 
                     {/* Dynamic Traits */}
-                    <div className="bg-white/5 rounded-lg p-3 border border-white/10">
-                      <div className="text-xs text-white/60 uppercase tracking-wide mb-1">Dirt Level</div>
-                      <div className="text-white font-medium">{dynamic.dirtLevel || 0}</div>
-                    </div>
+                    {(() => {
+                      const { dirtLevel, agingLevel } = getCalculatedLevels(dynamic)
+                      return (
+                        <>
+                          <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                            <div className="text-xs text-white/60 uppercase tracking-wide mb-1">Dirt Level</div>
+                            <div className="text-white font-medium">{dirtLevel}</div>
+                          </div>
 
-                    <div className="bg-white/5 rounded-lg p-3 border border-white/10">
-                      <div className="text-xs text-white/60 uppercase tracking-wide mb-1">Aging Level</div>
-                      <div className="text-white font-medium">{dynamic.agingLevel || 0}</div>
-                    </div>
+                          <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                            <div className="text-xs text-white/60 uppercase tracking-wide mb-1">Aging Level</div>
+                            <div className="text-white font-medium">{agingLevel}</div>
+                          </div>
+                        </>
+                      )
+                    })()}
 
                     {dynamic.frameLevel && dynamic.frameLevel !== 'None' && (
                       <div className="bg-white/5 rounded-lg p-3 border border-white/10">

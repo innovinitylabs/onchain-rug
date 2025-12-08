@@ -69,19 +69,51 @@ export function RugCleaning({ tokenId, mintTime, lastCleaned: propLastCleaned, o
   // Monitor transaction completion and refetch data (only once per transaction)
   useEffect(() => {
     if ((cleanSuccess || restoreSuccess || masterRestoreSuccess) && !hasRefreshed) {
-      console.log('Transaction confirmed, refetching data...')
-      refetch()
-      // Also refresh this specific NFT in the parent collection (only once)
-      if (onRefreshNFT) {
-        onRefreshNFT(Number(tokenId))
+      console.log('Transaction confirmed, refreshing NFT data from blockchain...')
+      
+      // Refresh NFT data from blockchain to get updated baseAgingLevel and frameLevel
+      const refreshNFTData = async () => {
+        try {
+          // Wait a bit for the transaction to be fully confirmed on-chain
+          await new Promise(resolve => setTimeout(resolve, 2000))
+          
+          // Call refresh API which fetches fresh data from blockchain including:
+          // - lastCleaned (updated)
+          // - baseAgingLevel (updated for restore/master restore)
+          // - frameLevel (may be updated if maintenance score changed)
+          const response = await fetch(`/api/rug-market/nft/${tokenId}/refresh?chainId=${chainId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+          })
+          
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}))
+            throw new Error(errorData.error || errorData.message || `Refresh failed: ${response.status}`)
+          }
+          
+          const refreshResult = await response.json()
+          console.log('✅ NFT data refreshed from blockchain after maintenance action', refreshResult)
+        } catch (error) {
+          console.error('Failed to refresh NFT data:', error)
+          // Continue anyway - refetch will try to get updated data
+        }
       }
-      setHasRefreshed(true)
+      
+      refreshNFTData().then(() => {
+        // Refetch local hook data
+        refetch()
+        // Also refresh this specific NFT in the parent collection (only once)
+        if (onRefreshNFT) {
+          onRefreshNFT(Number(tokenId))
+        }
+        setHasRefreshed(true)
+      })
     }
     if (cleanError || restoreError || masterRestoreError) {
       console.error('Transaction error:', cleanError || restoreError || masterRestoreError)
       // Error is already displayed in the UI, no need for alert here
     }
-  }, [cleanSuccess, restoreSuccess, masterRestoreSuccess, cleanError, restoreError, masterRestoreError, refetch, onRefreshNFT, tokenId, hasRefreshed])
+  }, [cleanSuccess, restoreSuccess, masterRestoreSuccess, cleanError, restoreError, masterRestoreError, refetch, onRefreshNFT, tokenId, hasRefreshed, chainId])
 
   // Reset refresh flag when starting a new transaction
   useEffect(() => {

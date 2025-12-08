@@ -60,7 +60,7 @@ export async function fetchTotalSupply(chainId: number): Promise<number> {
     })
   })
 
-  if (!response.ok) {  
+  if (!response.ok) {
     throw new Error(`RPC call failed: ${response.status}`)
   }
 
@@ -119,7 +119,7 @@ export async function fetchNFTBatchDirect(
             errorMsg.includes('ERC721: invalid token ID') || 
             errorMsg.includes('execution reverted')) {
           console.log(`⚠️ Token ${tokenId} does not exist (ownerOf failed)`)
-          continue
+        continue
         }
         throw ownerError
       }
