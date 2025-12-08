@@ -642,4 +642,52 @@ export class RugMarketRedis {
       console.error('Failed to clear NFT data batch:', error)
     }
   }
+
+  /**
+   * Get cached total supply (returns null if not cached or expired)
+   * Redis is FIRST PRIORITY - always check cache first
+   */
+  static async getTotalSupply(chainId: number, contract: string): Promise<number | null> {
+    try {
+      const key = RugMarketKeys.totalSupply(chainId, contract)
+      const cached = await redis.get<number>(key)
+      if (cached !== null && typeof cached === 'number') {
+        // Cap at max supply of 10000
+        const supply = Math.min(cached, 10000)
+        console.log(`✅ [Redis Cache] Total supply from cache: ${supply}`)
+        return supply
+      }
+      console.log(`ℹ️ [Redis Cache] No cached total supply found`)
+      return null
+    } catch (error) {
+      console.error(`❌ [Redis Cache] Failed to get cached total supply for ${chainId}:${contract}:`, error)
+      return null
+    }
+  }
+
+  /**
+   * Set total supply in cache
+   * - If max supply (10000) is reached: No TTL (permanent cache)
+   * - Otherwise: 5 minute TTL
+   * Caps at max supply of 10000
+   */
+  static async setTotalSupply(chainId: number, contract: string, totalSupply: number): Promise<void> {
+    try {
+      const key = RugMarketKeys.totalSupply(chainId, contract)
+      // Cap at max supply of 10000
+      const cappedSupply = Math.min(Math.max(0, totalSupply), 10000)
+      
+      if (cappedSupply >= 10000) {
+        // Max supply reached - cache permanently (no TTL)
+        await redis.set(key, cappedSupply)
+        console.log(`✅ [Redis Cache] Cached total supply PERMANENTLY (max reached): ${cappedSupply}`)
+      } else {
+        // Cache for 5 minutes (300 seconds)
+        await redis.setex(key, 300, cappedSupply)
+        console.log(`✅ [Redis Cache] Cached total supply (5min TTL): ${cappedSupply}`)
+      }
+    } catch (error) {
+      console.error(`❌ [Redis Cache] Failed to cache total supply for ${chainId}:${contract}:`, error)
+    }
+  }
 }
