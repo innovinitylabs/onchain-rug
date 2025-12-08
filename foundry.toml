@@ -32,7 +32,7 @@ base = "https://sepolia.base.org"  # Alias for Base Sepolia
 [etherscan]
 shape-sepolia = { key = "your-api-key", url = "https://explorer-sepolia.shape.network/api" }
 shape-mainnet = { key = "your-api-key", url = "https://shapescan.xyz/api" }
-base-sepolia = { key = "your-api-key", url = "https://api-sepolia.basescan.org/api" }
+base-sepolia = { key = "${BASESCAN_API_KEY}", url = "https://api-sepolia.basescan.org/api" }
 base-mainnet = { key = "your-api-key", url = "https://api.basescan.org/api" }
 
 # Gas settings for Shape L2
