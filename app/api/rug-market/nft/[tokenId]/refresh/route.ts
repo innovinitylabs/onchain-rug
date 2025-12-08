@@ -24,9 +24,11 @@ export async function POST(
   try {
     const { tokenId: tokenIdParam } = await params
     const tokenId = parseInt(tokenIdParam)
-    if (isNaN(tokenId)) {
+    
+    // Input validation
+    if (isNaN(tokenId) || tokenId <= 0 || tokenId > 100000) {
       return NextResponse.json(
-        { error: 'Invalid token ID' },
+        { error: 'Invalid token ID. Must be a positive integer between 1 and 100000' },
         { status: 400 }
       )
     }
@@ -34,6 +36,15 @@ export async function POST(
     // Get chain ID from query params or use default
     const { searchParams } = new URL(request.url)
     const chainId = parseInt(searchParams.get('chainId') || '84532')
+    
+    // Validate chain ID
+    const validChainIds = [84532, 8453, 11155111, 534351, 534352] // Add your valid chain IDs
+    if (isNaN(chainId) || !validChainIds.includes(chainId)) {
+      return NextResponse.json(
+        { error: 'Invalid or unsupported chain ID' },
+        { status: 400 }
+      )
+    }
 
     const contractAddress = getContractAddress(chainId)
     if (!contractAddress) {
@@ -81,14 +92,27 @@ export async function POST(
         )
       }
       
-      // Set lock (expires in 30 seconds)
-      await redis.setex(refreshLockKey, 30, '1')
+      // Set lock (expires in 90 seconds to handle slow blockchain calls)
+      await redis.setex(refreshLockKey, 90, '1')
     } catch (lockError) {
       console.error(`[Refresh API] Lock check failed:`, lockError)
       // Continue anyway
     }
 
     console.log(`🔄 Force refreshing NFT ${tokenId} from blockchain`)
+
+    // Helper to renew lock if operation takes too long
+    let lockRenewalInterval: NodeJS.Timeout | null = null
+    const renewLock = async () => {
+      try {
+        await redis.setex(refreshLockKey, 90, '1')
+      } catch (err) {
+        console.warn(`[Refresh API] Failed to renew lock:`, err)
+      }
+    }
+
+    // Set up lock renewal interval (every 60 seconds)
+    lockRenewalInterval = setInterval(renewLock, 60000)
 
     try {
       // Always fetch fresh data from blockchain
@@ -109,9 +133,15 @@ export async function POST(
       // Get fresh data back with calculated values
       const dataWithCalculated = await RugMarketRedis.getNFTData(chainId, contractAddress, tokenId)
 
-      // Update rate limit timestamp
-      await redis.setex(rateLimitKey, 5, now.toString())
+      // Update rate limit timestamp (store as number, not string)
+      await redis.setex(rateLimitKey, 5, now)
 
+      // Clear lock renewal interval
+      if (lockRenewalInterval) {
+        clearInterval(lockRenewalInterval)
+        lockRenewalInterval = null
+      }
+      
       // Release lock
       await redis.del(refreshLockKey).catch(() => {})
 
@@ -124,6 +154,12 @@ export async function POST(
         refreshedAt: new Date().toISOString()
       })
     } catch (error) {
+      // Clear lock renewal interval
+      if (lockRenewalInterval) {
+        clearInterval(lockRenewalInterval)
+        lockRenewalInterval = null
+      }
+      
       // Release lock on error
       await redis.del(refreshLockKey).catch(() => {})
       throw error

@@ -130,15 +130,36 @@ export async function fetchNFTsFromBlockchain(
   tokenIds: number[]
 ): Promise<RugMarketNFT[]> {
   try {
-    const results = await Promise.all(
+    // Use Promise.allSettled to handle partial failures gracefully
+    const results = await Promise.allSettled(
       tokenIds.map(tokenId => fetchNFTFromBlockchain(chainId, contractAddress, tokenId))
     )
 
-    const validResults = results.filter((nft): nft is RugMarketNFT => nft !== null)
+    const validResults: RugMarketNFT[] = []
+    const errors: Array<{ tokenId: number; error: string }> = []
 
-    // FAIL COMPLETELY - if we couldn't fetch any NFTs, throw an error
+    results.forEach((result, index) => {
+      const tokenId = tokenIds[index]
+      if (result.status === 'fulfilled' && result.value !== null) {
+        validResults.push(result.value)
+      } else {
+        const errorMsg = result.status === 'rejected' 
+          ? result.reason?.message || String(result.reason)
+          : 'NFT not found'
+        errors.push({ tokenId, error: errorMsg })
+        console.error(`[Blockchain Fetcher] Failed to fetch NFT ${tokenId}:`, errorMsg)
+      }
+    })
+
+    // Log partial failures but don't fail completely
+    if (errors.length > 0) {
+      console.warn(`[Blockchain Fetcher] Partial failure: ${errors.length} of ${tokenIds.length} NFTs failed to fetch`, errors)
+    }
+
+    // Return partial results if we got at least some NFTs
+    // Only fail completely if ALL NFTs failed
     if (validResults.length === 0) {
-      throw new Error(`Failed to fetch any NFTs from blockchain for tokens: ${tokenIds.join(', ')}`)
+      throw new Error(`Failed to fetch any NFTs from blockchain for tokens: ${tokenIds.join(', ')}. Errors: ${errors.map(e => `${e.tokenId}: ${e.error}`).join('; ')}`)
     }
 
     return validResults

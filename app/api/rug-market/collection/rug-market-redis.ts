@@ -251,26 +251,18 @@ export class RugMarketRedis {
         try {
           contractConfig = await ContractConfigCache.getConfig(chainId)
         } catch (configError) {
-          console.error(`[Redis] Failed to get contract config for token ${tokenId}, using defaults:`, configError)
-          // Fallback: fetch from blockchain directly
-          try {
-            const { fetchNFTFromBlockchain } = await import('./blockchain-fetcher')
-            const freshData = await fetchNFTFromBlockchain(chainId, contract, tokenId)
-            if (freshData) {
-              // Return fresh data with calculated values
-              const freshWithCalculated = await this.getNFTData(chainId, contract, tokenId)
-              if (freshWithCalculated) return freshWithCalculated
-            }
-          } catch (fallbackError) {
-            console.error(`[Redis] Fallback to blockchain also failed for token ${tokenId}:`, fallbackError)
-          }
-          // If all fails, use baseAgingLevel as agingLevel (no time-based calculation)
+          console.error(`[Redis] Failed to get contract config for token ${tokenId}:`, configError)
+          // If config fetch fails, we can't calculate time-based values
+          // Return with base values (no time-based calculation) to avoid infinite recursion
+          // Note: This is a fallback - the caller should handle this case appropriately
+          // Validate baseAgingLevel before returning
+          const safeBaseAgingLevel = Math.max(0, Math.min(10, dynamic.baseAgingLevel ?? 0))
           return {
             permanent,
             dynamic: {
               ...dynamic,
               dirtLevel: 0, // Can't calculate without config
-              agingLevel: dynamic.baseAgingLevel // Use stored base level
+              agingLevel: safeBaseAgingLevel // Use stored base level (validated)
             }
           } as RugMarketNFTWithCalculated
         }
@@ -294,14 +286,24 @@ export class RugMarketRedis {
       } catch (error) {
         console.error(`[Redis] Failed to calculate dynamic values for token ${tokenId}:`, error)
         // Fallback: return with base values (no time-based calculation)
+        // Validate baseAgingLevel before returning
+        const safeBaseAgingLevel = Math.max(0, Math.min(10, dynamic.baseAgingLevel ?? 0))
         return {
           permanent,
           dynamic: {
             ...dynamic,
             dirtLevel: 0, // Default to clean if calculation fails
-            agingLevel: dynamic.baseAgingLevel // Use stored base level
+            agingLevel: safeBaseAgingLevel // Use stored base level (validated)
           }
         } as RugMarketNFTWithCalculated
+      }
+
+      // Validate calculated values before returning
+      const validatedDirtLevel = Math.max(0, Math.min(2, dirtLevel)) // Clamp to [0, 2]
+      const validatedAgingLevel = Math.max(0, Math.min(10, agingLevel)) // Clamp to [0, 10]
+      
+      if (dirtLevel !== validatedDirtLevel || agingLevel !== validatedAgingLevel) {
+        console.warn(`[Redis] Calculated values out of range for token ${tokenId}: dirtLevel=${dirtLevel} (clamped to ${validatedDirtLevel}), agingLevel=${agingLevel} (clamped to ${validatedAgingLevel})`)
       }
 
       // Return with calculated values
@@ -309,8 +311,8 @@ export class RugMarketRedis {
         permanent,
         dynamic: {
           ...dynamic,
-          dirtLevel,
-          agingLevel
+          dirtLevel: validatedDirtLevel,
+          agingLevel: validatedAgingLevel
         }
       }
 
@@ -319,12 +321,12 @@ export class RugMarketRedis {
         console.error(`[Redis] ERROR: Calculated values missing in result for token ${tokenId}!`, {
           hasDirtLevel: 'dirtLevel' in result.dynamic,
           hasAgingLevel: 'agingLevel' in result.dynamic,
-          calculatedDirt: dirtLevel,
-          calculatedAging: agingLevel
+          calculatedDirt: validatedDirtLevel,
+          calculatedAging: validatedAgingLevel
         })
       }
 
-      console.log(`[Redis] Returning NFT data for token ${tokenId} with calculated values: D${dirtLevel} A${agingLevel}`)
+      console.log(`[Redis] Returning NFT data for token ${tokenId} with calculated values: D${validatedDirtLevel} A${validatedAgingLevel}`)
       return result
     } catch (error) {
       console.error(`Failed to get complete NFT data for ${tokenId}:`, error)
