@@ -34,10 +34,65 @@ export async function GET(request: NextRequest) {
 
     console.log(`[Collection API] Contract: ${contractAddress}`)
 
-    // Get total supply from blockchain
-    console.log(`[Collection API] Fetching total supply from blockchain...`)
-    const totalSupply = await fetchTotalSupply(chainId)
-    console.log(`[Collection API] Total supply from blockchain: ${totalSupply}`)
+    // REDIS IS FIRST PRIORITY - Always check cache first
+    let totalSupply: number
+    const cachedTotalSupply = await RugMarketRedis.getTotalSupply(chainId, contractAddress)
+    
+    if (cachedTotalSupply !== null) {
+      // ✅ CACHE HIT - Use cached value immediately (FAST PATH)
+      totalSupply = cachedTotalSupply
+      console.log(`[Collection API] ✅ Using cached total supply: ${totalSupply} (fast path)`)
+      
+      // Update in background (non-blocking, don't await)
+      fetchTotalSupply(chainId)
+        .then(freshSupply => {
+          const cappedSupply = Math.min(Math.max(0, freshSupply), 10000)
+          RugMarketRedis.setTotalSupply(chainId, contractAddress, cappedSupply)
+          console.log(`[Collection API] 🔄 Background update: total supply refreshed to ${cappedSupply}`)
+        })
+        .catch(error => {
+          console.error(`[Collection API] ⚠️ Background total supply update failed:`, error)
+          // Don't throw - we already have cached value
+        })
+    } else {
+      // ❌ CACHE MISS - We MUST fetch from blockchain (can't proceed without totalSupply)
+      // But this is still a fallback - cache is first priority when available
+      console.log(`[Collection API] ⚠️ Cache miss - fetching from blockchain (fallback)`)
+      try {
+        const freshSupply = await fetchTotalSupply(chainId)
+        const cappedSupply = Math.min(Math.max(0, freshSupply), 10000)
+        totalSupply = cappedSupply
+        console.log(`[Collection API] ✅ Fetched total supply from blockchain: ${totalSupply}`)
+        
+        // Cache it immediately for next request (fast path)
+        await RugMarketRedis.setTotalSupply(chainId, contractAddress, cappedSupply)
+        console.log(`[Collection API] ✅ Cached total supply for next request`)
+      } catch (error) {
+        console.error(`[Collection API] ❌ Failed to fetch total supply from blockchain:`, error)
+        // If blockchain fetch fails, we can't proceed - return error
+        return NextResponse.json({
+          error: 'Failed to fetch collection data',
+          errorDetails: error instanceof Error ? error.message : String(error),
+          nfts: [],
+          pagination: {
+            page: 1,
+            limit,
+            total: 0,
+            totalPages: 1,
+            hasNext: false,
+            hasPrev: false,
+            offset: 0
+          },
+          stats: {
+            totalNFTs: 0,
+            floorPrice: '0',
+            volume24h: '0',
+            sales24h: 0
+          },
+          filters: {}
+        }, { status: 500 })
+      }
+    }
 
     if (totalSupply === 0) {
       console.log('[Collection API] No NFTs in collection')

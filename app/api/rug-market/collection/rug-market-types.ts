@@ -133,6 +133,11 @@ export class RugMarketKeys {
     return `rugmarket:${this.baseKey(chainId, contract)}:collection`
   }
 
+  // Total supply cache (5 minute TTL, updated lazily)
+  static totalSupply(chainId: number, contract: string): string {
+    return `rugmarket:${this.baseKey(chainId, contract)}:totalSupply`
+  }
+
   // Activity feed (7 days TTL)
   static activityFeed(chainId: number, contract: string): string {
     return `rugmarket:${this.baseKey(chainId, contract)}:activity`

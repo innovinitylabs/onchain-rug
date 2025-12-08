@@ -414,7 +414,7 @@ function RugMarketPageContent() {
             className="text-center mb-12 pt-24"
         >
             <h1 className="text-5xl font-bold text-white mb-4">
-              OnchainRug <span className="text-blue-400">Marketplace</span>
+              Rug <span className="text-blue-400">Market</span>
             </h1>
             {/* <p className="text-xl text-white/70 max-w-2xl mx-auto mb-4">
               Discover and trade unique OnchainRugs - each one algorithmically generated and permanently stored on the blockchain.
@@ -436,7 +436,7 @@ function RugMarketPageContent() {
             transition={{ delay: 0.1 }}
             className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
           >
-            <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-6 text-center">
+            {/* <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-6 text-center">
               <div className="text-3xl font-bold text-white mb-2">{stats.totalNFTs}</div>
               <div className="text-white/70">Total Rugs</div>
             </div>
@@ -452,7 +452,7 @@ function RugMarketPageContent() {
               <ShoppingCart className="w-8 h-8 text-blue-400 mx-auto mb-2" />
               <div className="text-3xl font-bold text-white mb-2">{stats.sales24h}</div>
               <div className="text-white/70">24h Sales</div>
-          </div>
+          </div> */}
         </motion.div>
 
           {/* Filters and Search */}

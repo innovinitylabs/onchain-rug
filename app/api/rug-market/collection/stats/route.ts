@@ -5,8 +5,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { RugMarketRedis } from '@/lib/rug-market-redis'
-import { fetchTotalSupply } from '@/lib/direct-contract-fetcher'
+import { RugMarketRedis } from '../rug-market-redis'
+import { fetchTotalSupply } from '../direct-contract-fetcher'
 import { getContractAddress, getRpcUrl } from '@/lib/networks'
 import { createPublicClient, http, formatEther } from 'viem'
 import { baseSepolia, shapeSepolia, sepolia } from 'viem/chains'
@@ -61,12 +61,43 @@ export async function GET(request: NextRequest) {
     console.log('🔄 Calculating collection stats from blockchain')
 
     let totalSupply: number
-    try {
-      totalSupply = await fetchTotalSupply(chainId)
-      console.log(`Total supply: ${totalSupply}`)
-    } catch (error) {
-      console.error('Failed to fetch total supply:', error)
-      totalSupply = cachedStats?.totalSupply || 0
+    // REDIS IS FIRST PRIORITY - Always check cache first
+    const cachedTotalSupply = await RugMarketRedis.getTotalSupply(chainId, contractAddress)
+    
+    if (cachedTotalSupply !== null) {
+      // ✅ CACHE HIT - Use cached value immediately (FAST PATH)
+      totalSupply = cachedTotalSupply
+      console.log(`📊 ✅ Using cached total supply: ${totalSupply} (fast path)`)
+      
+      // Update in background (non-blocking, don't await)
+      fetchTotalSupply(chainId)
+        .then(freshSupply => {
+          const cappedSupply = Math.min(Math.max(0, freshSupply), 10000)
+          RugMarketRedis.setTotalSupply(chainId, contractAddress, cappedSupply)
+          console.log(`📊 🔄 Background update: total supply refreshed to ${cappedSupply}`)
+        })
+        .catch(error => {
+          console.error(`📊 ⚠️ Background total supply update failed:`, error)
+        })
+    } else {
+      // ❌ CACHE MISS - Fetch from blockchain (fallback)
+      // For stats, we can use cached stats as fallback, but still fetch fresh
+      console.log(`📊 ⚠️ Cache miss - fetching from blockchain (fallback)`)
+      try {
+        const freshSupply = await fetchTotalSupply(chainId)
+        const cappedSupply = Math.min(Math.max(0, freshSupply), 10000)
+        totalSupply = cappedSupply
+        console.log(`📊 ✅ Fetched total supply from blockchain: ${totalSupply}`)
+        
+        // Cache it immediately for next request
+        await RugMarketRedis.setTotalSupply(chainId, contractAddress, cappedSupply)
+        console.log(`📊 ✅ Cached total supply for next request`)
+      } catch (error) {
+        console.error(`📊 ❌ Failed to fetch total supply:`, error)
+        // Use cached stats as fallback if available
+        totalSupply = cachedStats?.totalSupply || 0
+        console.log(`📊 ⚠️ Using fallback total supply: ${totalSupply}`)
+      }
     }
 
     // Get marketplace stats from contract
