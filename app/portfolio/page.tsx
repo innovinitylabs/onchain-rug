@@ -203,7 +203,7 @@ export default function PortfolioPage() {
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
+            animate={{ opacity: 1 }}
             className="mb-8"
           >
             <div className="flex items-center gap-3 mb-2">
@@ -304,7 +304,7 @@ export default function PortfolioPage() {
               <motion.div
                 key="collection"
                 initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+                animate={{ opacity: 1 }}
                 exit={{ opacity: 0, y: -20 }}
               >
                 {nfts.length === 0 ? (
@@ -396,7 +396,7 @@ export default function PortfolioPage() {
               <motion.div
                 key="showcased"
                 initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+                animate={{ opacity: 1 }}
                 exit={{ opacity: 0, y: -20 }}
               >
                 <ShowcasedTab nfts={nfts} onSelectNFT={setSelectedNFT} />
@@ -407,7 +407,7 @@ export default function PortfolioPage() {
               <motion.div
                 key="offers-received"
                 initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+                animate={{ opacity: 1 }}
                 exit={{ opacity: 0, y: -20 }}
               >
                 <OffersReceivedTab address={address} onSelectNFT={setSelectedNFT} />
@@ -418,7 +418,7 @@ export default function PortfolioPage() {
               <motion.div
                 key="offers-made"
                 initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+                animate={{ opacity: 1 }}
                 exit={{ opacity: 0, y: -20 }}
               >
                 <OffersMadeTab address={address} />
@@ -429,7 +429,7 @@ export default function PortfolioPage() {
               <motion.div
                 key="history"
                 initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+                animate={{ opacity: 1 }}
                 exit={{ opacity: 0, y: -20 }}
               >
                 <CollectionHistoryTab address={address} />

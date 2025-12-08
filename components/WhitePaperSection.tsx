@@ -45,10 +45,10 @@ export default function WhitePaperSection() {
               className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 border border-cyan-400/30"
             >
               <FileText className="w-5 h-5" />
-              Read White Paper
+              Read Colour Paper
             </motion.button>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-12 pt-8 border-t border-slate-700">
+            {/* <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-12 pt-8 border-t border-slate-700">
               <div className="text-center">
                 <div className="text-2xl font-bold text-cyan-400 mb-1">6</div>
                 <div className="text-sm text-slate-400">Sections</div>
@@ -65,7 +65,7 @@ export default function WhitePaperSection() {
                 <div className="text-2xl font-bold text-cyan-400 mb-1">∞</div>
                 <div className="text-sm text-slate-400">Generative Art</div>
               </div>
-            </div>
+            </div> */}
           </motion.div>
         </div>
 

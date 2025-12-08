@@ -249,7 +249,7 @@ export default function NFTDetailPage() {
             {/* Details & Actions */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
+              animate={{ opacity: 1 }}
               className="space-y-6"
             >
               {/* Price & Actions */}

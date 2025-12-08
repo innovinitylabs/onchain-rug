@@ -790,7 +790,7 @@ export default function ExplorerPage() {
 
       <motion.div
         initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
+        animate={{ opacity: 1 }}
         transition={{ duration: 0.8 }}
         className="text-center mb-12 pt-24"
       >
@@ -940,7 +940,7 @@ export default function ExplorerPage() {
         {showDetails && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            animate={{ opacity: 1 }}
             exit={{ opacity: 0, y: 20 }}
             className="bg-white/60 backdrop-blur-sm rounded-2xl border border-blue-200/50 mb-8"
           >
