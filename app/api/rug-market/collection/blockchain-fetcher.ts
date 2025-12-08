@@ -6,6 +6,8 @@
 
 import { RugMarketNFT, RugPermanentData, RugDynamicData } from './rug-market-types'
 import { fetchNFTBatchDirect, fetchDynamicTraits } from './direct-contract-fetcher'
+import { callContractMultiFallback, onchainRugsABI } from '@/lib/web3'
+import { getContractAddress } from './networks'
 
 // Temporary function until we implement full blockchain fetching
 export async function fetchNFTFromBlockchain(
@@ -49,16 +51,55 @@ export async function fetchNFTFromBlockchain(
       stripeCount: nftData.rugData.stripeCount
     }
 
-    // Build dynamic data from contract data
+    // Fetch aging data from contract (includes lastCleaned, baseAgingLevel, frameLevel, etc.)
+    let agingData: any = null
+    try {
+      const agingDataResult = await callContractMultiFallback(
+        contractAddress,
+        onchainRugsABI,
+        'getAgingData',
+        [BigInt(tokenId)],
+        { chainId }
+      )
+      
+      // getAgingData returns a tuple matching the AgingData struct
+      agingData = {
+        lastCleaned: BigInt(agingDataResult[0] as bigint),
+        dirtLevel: agingDataResult[1] as number,  // Not stored, but available for migration
+        agingLevel: agingDataResult[2] as number,  // This is baseAgingLevel (stored)
+        frameLevel: agingDataResult[3] as number,
+        frameAchievedTime: BigInt(agingDataResult[4] as bigint),
+        cleaningCount: BigInt(agingDataResult[5] as bigint),
+        restorationCount: BigInt(agingDataResult[6] as bigint),
+        masterRestorationCount: BigInt(agingDataResult[7] as bigint),
+        launderingCount: BigInt(agingDataResult[8] as bigint),
+        lastLaundered: BigInt(agingDataResult[9] as bigint),
+        lastSalePrice: BigInt(agingDataResult[10] as bigint),
+        recentSalePrices: agingDataResult[11] as bigint[]
+      }
+      console.log(`✅ Fetched aging data for token ${tokenId}`)
+    } catch (error) {
+      console.error(`⚠️ Failed to fetch aging data for token ${tokenId}:`, error)
+      // Fallback: use frameLevel from nftData if available
+    }
+
+    // Convert frame level number to string
+    const frameLevelNum = agingData?.frameLevel ?? nftData.frameLevel ?? 0
+    const frameLevelString = frameLevelNum === 0 ? 'None' :
+                            frameLevelNum === 1 ? 'Bronze' :
+                            frameLevelNum === 2 ? 'Silver' :
+                            frameLevelNum === 3 ? 'Gold' : 'Diamond'
+
+    // Build dynamic data from contract data (stored values only, no calculated fields)
     const dynamic: RugDynamicData = {
-      dirtLevel: nftData.dirtLevel || 0,
-      agingLevel: nftData.textureLevel || 0,
-      frameLevel: nftData.frameLevel === 0 ? 'None' :
-                 nftData.frameLevel === 1 ? 'Bronze' :
-                 nftData.frameLevel === 2 ? 'Silver' :
-                 nftData.frameLevel === 3 ? 'Gold' : 'Diamond',
-      maintenanceScore: BigInt(0), // Will need to fetch from contract
-      lastCleaned: BigInt(Date.now()), // Will need to fetch from contract
+      baseAgingLevel: agingData?.agingLevel ?? 0,  // Stored base aging level
+      frameLevel: frameLevelString,  // Store as string for compatibility
+      maintenanceScore: agingData?.lastSalePrice ? BigInt(0) : BigInt(0), // TODO: fetch from getMaintenanceScore
+      lastCleaned: agingData?.lastCleaned ?? BigInt(Math.floor(Date.now() / 1000)),
+      cleaningCount: agingData?.cleaningCount ? Number(agingData.cleaningCount) : undefined,
+      restorationCount: agingData?.restorationCount ? Number(agingData.restorationCount) : undefined,
+      masterRestorationCount: agingData?.masterRestorationCount ? Number(agingData.masterRestorationCount) : undefined,
+      launderingCount: agingData?.launderingCount ? Number(agingData.launderingCount) : undefined,
       currentOwner: nftData.owner,
       ownershipHistory: [{
         owner: nftData.owner,
@@ -71,6 +112,7 @@ export async function fetchNFTFromBlockchain(
       lastUpdated: BigInt(Date.now())
     }
 
+    // Note: dirtLevel and agingLevel are NOT stored - they will be calculated on read
     return { permanent, dynamic }
 
   } catch (error) {

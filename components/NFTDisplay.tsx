@@ -412,6 +412,7 @@ export default function NFTDisplay({
   const [lastGeneratedTokenId, setLastGeneratedTokenId] = useState<number | null>(null)
   
   // Create a stable key for traits to detect actual changes
+  // Include dynamic traits (dirtLevel, agingLevel, frameLevel) so preview regenerates when they change
   const traitsKey = useMemo(() => {
     if (!nftData?.traits) return null
     return JSON.stringify({
@@ -419,13 +420,22 @@ export default function NFTDisplay({
       seed: nftData.traits.seed?.toString(),
       paletteName: nftData.traits.paletteName,
       minifiedPalette: nftData.traits.minifiedPalette,
-      minifiedStripeData: nftData.traits.minifiedStripeData
+      minifiedStripeData: nftData.traits.minifiedStripeData,
+      dirtLevel: nftData.traits.dirtLevel ?? 0,
+      agingLevel: nftData.traits.agingLevel ?? 0,
+      frameLevel: nftData.traits.frameLevel ?? 'None'
     })
   }, [nftData?.traits])
 
-  // Reset state only when tokenId actually changes
+  // Track the last traits key to detect changes in dynamic traits
+  const [lastTraitsKey, setLastTraitsKey] = useState<string | null>(null)
+
+  // Reset state when tokenId changes OR when traits key changes (dynamic traits updated)
   useEffect(() => {
     const currentTokenId = nftData?.tokenId
+    const currentTraitsKey = traitsKey
+    
+    // If tokenId changed, always reset
     if (currentTokenId !== lastGeneratedTokenId && currentTokenId !== undefined) {
       setPreviewImage('')
       setIsGenerating(true)
@@ -433,12 +443,23 @@ export default function NFTDisplay({
         URL.revokeObjectURL(blobUrl)
         setBlobUrl(null)
       }
+      setLastTraitsKey(null) // Reset traits key tracking
     }
-  }, [nftData?.tokenId, lastGeneratedTokenId, blobUrl])
+    // If traits key changed (dynamic traits updated), reset preview
+    else if (currentTraitsKey && currentTraitsKey !== lastTraitsKey) {
+      console.log('Traits changed, regenerating preview', { currentTraitsKey, lastTraitsKey })
+      setPreviewImage('')
+      setIsGenerating(true)
+      if (blobUrl && blobUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(blobUrl)
+        setBlobUrl(null)
+      }
+    }
+  }, [nftData?.tokenId, lastGeneratedTokenId, blobUrl, traitsKey, lastTraitsKey])
 
   useEffect(() => {
-    // Skip if we already have a preview for this tokenId
-    if (nftData.tokenId === lastGeneratedTokenId && previewImage) {
+    // Skip if we already have a preview for this exact traits key
+    if (traitsKey && traitsKey === lastTraitsKey && previewImage) {
       return
     }
 
@@ -467,21 +488,25 @@ export default function NFTDisplay({
           setPreviewImage(imageData)
           setIsGenerating(false)
           setLastGeneratedTokenId(nftData.tokenId)
+          setLastTraitsKey(traitsKey || null)
         } else if (nftData.animation_url) {
           // Use the animation_url directly as iframe src
           setPreviewImage(nftData.animation_url)
           setIsGenerating(false)
           setLastGeneratedTokenId(nftData.tokenId)
+          setLastTraitsKey(traitsKey || null)
         } else {
           setPreviewImage('/rug-loading-mid.webp')
           setIsGenerating(false)
           setLastGeneratedTokenId(nftData.tokenId)
+          setLastTraitsKey(traitsKey || null)
         }
       } catch (error) {
         console.error('Failed to generate rug preview:', error)
         setPreviewImage(nftData.animation_url || '/rug-loading-mid.webp')
         setIsGenerating(false)
         setLastGeneratedTokenId(nftData.tokenId)
+        setLastTraitsKey(traitsKey || null)
       }
     }
 

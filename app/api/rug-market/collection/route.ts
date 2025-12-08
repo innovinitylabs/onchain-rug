@@ -3,6 +3,9 @@ import { RugMarketRedis } from './rug-market-redis'
 import { fetchNFTsFromBlockchain } from './blockchain-fetcher'
 import { fetchTotalSupply } from './direct-contract-fetcher'
 import { getContractAddress } from './networks'
+import { RugMarketNFTWithCalculated } from './rug-market-types'
+import { ContractConfigCache } from './contract-config-cache'
+import { calculateDirtLevel, calculateAgingLevel, frameLevelToNumber } from './dynamic-calculator'
 
 // BigInt serialization fix for JSON responses
 // Polyfill BigInt.prototype.toJSON for JSON serialization
@@ -97,9 +100,22 @@ export async function GET(request: NextRequest) {
         }
         console.log(`[Collection API] Stored ${blockchainNFTs.length} NFTs in Redis cache`)
 
+        // Get stored NFTs back from Redis to get calculated values
+        // This ensures all NFTs have calculated dirtLevel/agingLevel
+        const storedNFTs = await RugMarketRedis.getNFTDataBatch(chainId, contractAddress, missingTokenIds)
+        const validStoredNFTs = storedNFTs.filter((nft): nft is RugMarketNFTWithCalculated => {
+          if (!nft) return false
+          // Verify calculated values exist
+          if (!('dirtLevel' in nft.dynamic) || !('agingLevel' in nft.dynamic)) {
+            console.warn(`[Collection API] NFT ${nft.permanent.tokenId} missing calculated values after storage`)
+            return false
+          }
+          return true
+        })
+
         // Combine cached and fresh NFTs in correct order
         validCachedNFTs.forEach(nft => nftMap.set(nft.permanent.tokenId, nft))
-        blockchainNFTs.forEach(nft => nftMap.set(nft.permanent.tokenId, nft))
+        validStoredNFTs.forEach(nft => nftMap.set(nft.permanent.tokenId, nft))
 
         nfts = paginatedTokenIds.map(tokenId => nftMap.get(tokenId)).filter(Boolean)
       } catch (blockchainError) {
