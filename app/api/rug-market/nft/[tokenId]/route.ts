@@ -23,9 +23,11 @@ export async function GET(
   try {
     const { tokenId: tokenIdParam } = await params
     const tokenId = parseInt(tokenIdParam)
-    if (isNaN(tokenId)) {
+    
+    // Input validation
+    if (isNaN(tokenId) || tokenId <= 0 || tokenId > 100000) {
       return NextResponse.json(
-        { error: 'Invalid token ID' },
+        { error: 'Invalid token ID. Must be a positive integer between 1 and 100000' },
         { status: 400 }
       )
     }
@@ -35,8 +37,17 @@ export async function GET(
     // Get chain ID from query params or use default
     const { searchParams } = new URL(request.url)
     const chainId = parseInt(searchParams.get('chainId') || '84532')
-    const contractAddress = getContractAddress(chainId)
     
+    // Validate chain ID
+    const validChainIds = [84532, 8453, 11155111, 534351, 534352] // Add your valid chain IDs
+    if (isNaN(chainId) || !validChainIds.includes(chainId)) {
+      return NextResponse.json(
+        { error: 'Invalid or unsupported chain ID' },
+        { status: 400 }
+      )
+    }
+    
+    const contractAddress = getContractAddress(chainId)
     if (!contractAddress) {
       return NextResponse.json(
         { error: 'Unsupported chain' },
