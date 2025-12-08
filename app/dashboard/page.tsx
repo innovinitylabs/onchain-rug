@@ -457,6 +457,51 @@ export default function DashboardPage() {
     }
   }
 
+  // Fix LiquidGlass wrapper styles to ensure full width and proper constraints
+  useEffect(() => {
+    const fixLiquidGlassWrappers = () => {
+      const wrappers = document.querySelectorAll('.liquid-glass-wrapper')
+      wrappers.forEach((wrapper) => {
+        const htmlWrapper = wrapper as HTMLElement
+        // Check if it's inside a rug grid (has a parent with motion.div and cursor-pointer)
+        const parent = htmlWrapper.closest('.cursor-pointer')
+        if (parent) {
+          htmlWrapper.style.display = 'block'
+          htmlWrapper.style.width = '100%'
+          htmlWrapper.style.maxWidth = '100%'
+          htmlWrapper.style.minWidth = '0'
+          htmlWrapper.style.boxSizing = 'border-box'
+        }
+      })
+      
+      // Also fix any parent containers that might be causing overflow
+      const gridContainer = document.querySelector('.rugs-grid-container')
+      if (gridContainer) {
+        const htmlContainer = gridContainer as HTMLElement
+        htmlContainer.style.width = '100%'
+        htmlContainer.style.maxWidth = '100%'
+        htmlContainer.style.overflow = 'hidden'
+      }
+    }
+
+    // Run immediately and after delays to catch dynamically rendered content
+    fixLiquidGlassWrappers()
+    const timeout1 = setTimeout(fixLiquidGlassWrappers, 50)
+    const timeout2 = setTimeout(fixLiquidGlassWrappers, 200)
+    const timeout3 = setTimeout(fixLiquidGlassWrappers, 500)
+    
+    // Also use MutationObserver to catch any new elements
+    const observer = new MutationObserver(fixLiquidGlassWrappers)
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true })
+
+    return () => {
+      clearTimeout(timeout1)
+      clearTimeout(timeout2)
+      clearTimeout(timeout3)
+      observer.disconnect()
+    }
+  }, [userRugs])
+
   // Fetch user's rugs
   useEffect(() => {
     const fetchUserRugs = async () => {
@@ -1001,7 +1046,10 @@ export default function DashboardPage() {
         <Navigation />
         <main className="flex-grow flex items-center justify-center">
           <div className="text-center">
-            <LoadingAnimation message="Loading your rugs..." size="lg" />
+            <LoadingAnimation message="Please wait while we load your rugs freshly from the blockchain..." size="lg" />
+            <p className="text-white/70">
+              Loading fresh onchain data directly from blockchain nodes (no cache). This process may take longer due to direct RPC endpoint queries.
+            </p>
           </div>
         </main>
         <Footer />
@@ -1014,7 +1062,7 @@ export default function DashboardPage() {
       <Navigation />
 
       <main className="flex-grow">
-        <div className="max-w-4xl mx-auto px-4 py-20 pt-28">
+        <div className="max-w-6xl mx-auto px-4 py-20 pt-28">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -1151,189 +1199,6 @@ export default function DashboardPage() {
           </div>
         </motion.div>
 
-        {/* AI Agent Authorization Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="mb-8"
-        >
-          <div className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 rounded-xl p-6 backdrop-blur-sm">
-            <div className="flex items-center gap-3 mb-4">
-              <Bot className="w-6 h-6 text-blue-400" />
-              <h2 className="text-xl font-bold text-white">AI Agent Authorization</h2>
-              <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded-full">NEW</span>
-            </div>
-
-            <p className="text-white/70 mb-4">
-              Authorize an AI agent to automatically maintain your rugs. The agent will pay service fees while keeping your rugs clean and well-maintained.
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-3">
-              <input
-                type="text"
-                placeholder="Enter AI Agent wallet address (0x...)"
-                value={agentAddress}
-                onChange={(e) => setAgentAddress(e.target.value)}
-                className="flex-1 px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <button
-                onClick={handleAuthorizeAgent}
-                disabled={isAuthorizing || isPending || isConfirming || !agentAddress}
-                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-600 disabled:to-gray-600 text-white font-medium rounded-lg transition-all duration-200 flex items-center gap-2 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"
-              >
-                {isAuthorizing || isPending ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                    {isConfirming ? 'Confirming...' : 'Authorizing...'}
-                  </>
-                ) : (
-                  <>
-                    <Zap className="w-4 h-4" />
-                    Authorize Agent
-                  </>
-                )}
-              </button>
-            </div>
-
-            <div className="mt-4 text-sm text-white/60">
-              <p>• Agent can only perform maintenance operations (cleaning, restoration)</p>
-              <p>• Agent cannot transfer, sell, or modify ownership of your rugs</p>
-              <p>• Agent pays flat service fee (0.00042 ETH) for each maintenance action</p>
-              <p>• You can revoke authorization anytime</p>
-            </div>
-
-            {/* Debug Info */}
-            <div className="mt-4 p-3 bg-slate-800/50 rounded-lg text-xs text-white/60">
-              <div>Debug: Contract: {contractAddress || 'none'} | Agents: {agentsLoading ? 'loading...' : authorizedAgents?.length || 0} | Error: {agentsError ? 'yes' : 'no'}</div>
-              <div>User Address: {address || 'not connected'} | Chain: {chain?.id}</div>
-              {agentsError && <div className="text-red-400">Error: {agentsError.message}</div>}
-            </div>
-
-            {/* Authorized Agents List */}
-            <div className="mt-6">
-              <h3 className="text-lg font-semibold text-white mb-3">Authorized Agents</h3>
-              {agentsLoading ? (
-                <div className="text-white/60 text-sm">Loading authorized agents...</div>
-              ) : authorizedAgents && authorizedAgents.length > 0 ? (
-                <div className="space-y-3">
-                  {authorizedAgents.map((agent: string, index: number) => (
-                    <div key={agent} className="bg-slate-700/50 rounded-lg p-3 border border-slate-600/50">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <Bot className="w-5 h-5 text-blue-400" />
-                          <div>
-                            <div className="text-white font-mono text-sm">
-                              {agent}
-                            </div>
-                            <div className="text-white/60 text-xs">
-                              Agent #{index + 1}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => setShowRevokeConfirm(agent)}
-                            disabled={revokingAgent === agent || isPending}
-                            className="px-3 py-1 bg-red-600/20 hover:bg-red-600/30 text-red-400 hover:text-red-300 text-sm rounded border border-red-600/30 hover:border-red-500/50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            {revokingAgent === agent ? 'Revoking...' : 'Revoke'}
-                          </button>
-                          <button
-                            onClick={() => navigator.clipboard.writeText(agent)}
-                            className="p-1 text-white/60 hover:text-white/80 transition-colors"
-                            title="Copy address"
-                          >
-                            <Copy className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-white/60 text-sm">
-                  {agentsError ? 'Error loading agents' : 'No authorized agents yet. Authorize an agent above to get started.'}
-                </div>
-              )}
-            </div>
-
-            {/* Revoke Confirmation Modal */}
-            {showRevokeConfirm && (
-              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                <div className="bg-slate-800 border border-slate-600 rounded-lg p-6 max-w-md w-full mx-4">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 bg-red-600/20 rounded-full flex items-center justify-center">
-                      <Bot className="w-5 h-5 text-red-400" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-white">Revoke Agent Authorization</h3>
-                      <p className="text-white/60 text-sm">This action cannot be undone</p>
-                    </div>
-                  </div>
-
-                  <div className="mb-6">
-                    <p className="text-white/80 mb-2">Are you sure you want to revoke authorization for this agent?</p>
-                    <div className="bg-slate-700/50 rounded p-3 font-mono text-sm text-white/80 break-all">
-                      {showRevokeConfirm}
-                    </div>
-                    <p className="text-yellow-400 text-sm mt-2">
-                      ⚠️ The agent will no longer be able to perform maintenance on any of your rugs.
-                    </p>
-                  </div>
-
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => setShowRevokeConfirm(null)}
-                      className="flex-1 px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded transition-colors"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={() => {
-                        handleRevokeAgent(showRevokeConfirm)
-                        setShowRevokeConfirm(null)
-                      }}
-                      disabled={isPending}
-                      className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isPending ? 'Revoking...' : 'Revoke Authorization'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Transaction Status */}
-            {(isPending || isConfirming || isConfirmed) && (
-              <div className="mt-4 p-3 bg-slate-700/50 rounded-lg">
-                <div className="flex items-center gap-2">
-                  {isConfirmed ? (
-                    <CheckCircle className="w-4 h-4 text-green-400" />
-                  ) : (
-                    <RefreshCw className="w-4 h-4 animate-spin text-blue-400" />
-                  )}
-                  <span className="text-white text-sm">
-                    {isConfirmed ? 'Authorization successful!' :
-                     isConfirming ? 'Confirming transaction...' :
-                     'Transaction submitted'}
-                  </span>
-                </div>
-                {hash && (
-                  <a
-                    href={`https://sepolia.shapescan.xyz/tx/${hash}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-400 hover:text-blue-300 text-xs mt-1 inline-flex items-center gap-1"
-                  >
-                    View on ShapeScan <ExternalLink className="w-3 h-3" />
-                  </a>
-                )}
-              </div>
-            )}
-          </div>
-        </motion.div>
-
         {/* Refresh Button */}
         <div className="flex justify-center mb-8 relative z-10">
           <button
@@ -1348,38 +1213,45 @@ export default function DashboardPage() {
         </div>
 
         {/* Rugs Grid */}
-        {userRugs.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-center py-20"
-          >
-            <div className="text-6xl mb-4">🧵</div>
-            <h2 className="text-2xl font-bold text-white mb-2">No Rugs Yet</h2>
-            <p className="text-white/70 mb-6">Start by creating your first OnchainRug in the generator!</p>
-            <a
-              href="/generator"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors duration-200"
+        <div className="w-full rugs-grid-container" style={{ maxWidth: '100%', overflow: 'hidden' }}>
+          {userRugs.length === 0 ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center py-20"
             >
-              Create Your First Rug
-            </a>
-          </motion.div>
-        ) : (
-          <div className="grid grid-cols-1 gap-6">
-            {userRugs.map((rug) => {
-              const dirtLevel = rug.aging.dirtLevel || 0
-              const agingLevel = rug.aging.agingLevel || 0
+              <div className="text-6xl mb-4">🧵</div>
+              <h2 className="text-2xl font-bold text-white mb-2">No Rugs Yet</h2>
+              <p className="text-white/70 mb-6">Start by creating your first OnchainRug in the generator!</p>
+              <a
+                href="/generator"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors duration-200"
+              >
+                Create Your First Rug
+              </a>
+            </motion.div>
+          ) : (
+            <div className="max-w-6xl mx-auto" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+              <div className="grid grid-cols-1 gap-6 justify-items-center">
+                {userRugs.map((rug) => {
+                  const dirtLevel = rug.aging.dirtLevel || 0
+                  const agingLevel = rug.aging.agingLevel || 0
 
-              return (
-                <motion.div
-                  key={rug.tokenId}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  whileHover={{ scale: 1.02 }}
-                  className="cursor-pointer"
-                  onClick={() => setSelectedRug(rug)}
-                >
-                  <LiquidGlass
+                  return (
+                    <motion.div
+                      key={rug.tokenId}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      whileHover={{ scale: 1.02 }}
+                      className="cursor-pointer"
+                      onClick={() => setSelectedRug(rug)}
+                      style={{
+                        width: 'fit-content',
+                        margin: '0 auto'
+                      }}
+                    >
+                      <div style={{ width: 'fit-content' }}>
+                      <LiquidGlass
                     blurAmount={0.1}
                     aberrationIntensity={2}
                     elasticity={0.1}
@@ -1503,11 +1375,14 @@ export default function DashboardPage() {
                       </div>
                     </div>
                   </LiquidGlass>
-                </motion.div>
-              )
-            })}
-          </div>
-        )}
+                      </div>
+                    </motion.div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Rug Detail Modal */}
         <AnimatePresence>
@@ -1718,6 +1593,189 @@ export default function DashboardPage() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* AI Agent Authorization Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="mb-8"
+        >
+          <div className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 rounded-xl p-6 backdrop-blur-sm">
+            <div className="flex items-center gap-3 mb-4">
+              <Bot className="w-6 h-6 text-blue-400" />
+              <h2 className="text-xl font-bold text-white">AI Agent Authorization</h2>
+              <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded-full">NEW</span>
+            </div>
+
+            <p className="text-white/70 mb-4">
+              Authorize an AI agent to automatically maintain your rugs. The agent will pay service fees while keeping your rugs clean and well-maintained.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <input
+                type="text"
+                placeholder="Enter AI Agent wallet address (0x...)"
+                value={agentAddress}
+                onChange={(e) => setAgentAddress(e.target.value)}
+                className="flex-1 px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <button
+                onClick={handleAuthorizeAgent}
+                disabled={isAuthorizing || isPending || isConfirming || !agentAddress}
+                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-600 disabled:to-gray-600 text-white font-medium rounded-lg transition-all duration-200 flex items-center gap-2 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"
+              >
+                {isAuthorizing || isPending ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    {isConfirming ? 'Confirming...' : 'Authorizing...'}
+                  </>
+                ) : (
+                  <>
+                    <Zap className="w-4 h-4" />
+                    Authorize Agent
+                  </>
+                )}
+              </button>
+            </div>
+
+            <div className="mt-4 text-sm text-white/60">
+              <p>• Agent can only perform maintenance operations (cleaning, restoration)</p>
+              <p>• Agent cannot transfer, sell, or modify ownership of your rugs</p>
+              <p>• Agent pays flat service fee (0.00042 ETH) for each maintenance action</p>
+              <p>• You can revoke authorization anytime</p>
+            </div>
+
+            {/* Debug Info */}
+            <div className="mt-4 p-3 bg-slate-800/50 rounded-lg text-xs text-white/60">
+              <div>Debug: Contract: {contractAddress || 'none'} | Agents: {agentsLoading ? 'loading...' : authorizedAgents?.length || 0} | Error: {agentsError ? 'yes' : 'no'}</div>
+              <div>User Address: {address || 'not connected'} | Chain: {chain?.id}</div>
+              {agentsError && <div className="text-red-400">Error: {agentsError.message}</div>}
+            </div>
+
+            {/* Authorized Agents List */}
+            <div className="mt-6">
+              <h3 className="text-lg font-semibold text-white mb-3">Authorized Agents</h3>
+              {agentsLoading ? (
+                <div className="text-white/60 text-sm">Loading authorized agents...</div>
+              ) : authorizedAgents && authorizedAgents.length > 0 ? (
+                <div className="space-y-3">
+                  {authorizedAgents.map((agent: string, index: number) => (
+                    <div key={agent} className="bg-slate-700/50 rounded-lg p-3 border border-slate-600/50">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Bot className="w-5 h-5 text-blue-400" />
+                          <div>
+                            <div className="text-white font-mono text-sm">
+                              {agent}
+                            </div>
+                            <div className="text-white/60 text-xs">
+                              Agent #{index + 1}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setShowRevokeConfirm(agent)}
+                            disabled={revokingAgent === agent || isPending}
+                            className="px-3 py-1 bg-red-600/20 hover:bg-red-600/30 text-red-400 hover:text-red-300 text-sm rounded border border-red-600/30 hover:border-red-500/50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {revokingAgent === agent ? 'Revoking...' : 'Revoke'}
+                          </button>
+                          <button
+                            onClick={() => navigator.clipboard.writeText(agent)}
+                            className="p-1 text-white/60 hover:text-white/80 transition-colors"
+                            title="Copy address"
+                          >
+                            <Copy className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-white/60 text-sm">
+                  {agentsError ? 'Error loading agents' : 'No authorized agents yet. Authorize an agent above to get started.'}
+                </div>
+              )}
+            </div>
+
+            {/* Revoke Confirmation Modal */}
+            {showRevokeConfirm && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                <div className="bg-slate-800 border border-slate-600 rounded-lg p-6 max-w-md w-full mx-4">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 bg-red-600/20 rounded-full flex items-center justify-center">
+                      <Bot className="w-5 h-5 text-red-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-white">Revoke Agent Authorization</h3>
+                      <p className="text-white/60 text-sm">This action cannot be undone</p>
+                    </div>
+                  </div>
+
+                  <div className="mb-6">
+                    <p className="text-white/80 mb-2">Are you sure you want to revoke authorization for this agent?</p>
+                    <div className="bg-slate-700/50 rounded p-3 font-mono text-sm text-white/80 break-all">
+                      {showRevokeConfirm}
+                    </div>
+                    <p className="text-yellow-400 text-sm mt-2">
+                      ⚠️ The agent will no longer be able to perform maintenance on any of your rugs.
+                    </p>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setShowRevokeConfirm(null)}
+                      className="flex-1 px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleRevokeAgent(showRevokeConfirm)
+                        setShowRevokeConfirm(null)
+                      }}
+                      disabled={isPending}
+                      className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isPending ? 'Revoking...' : 'Revoke Authorization'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Transaction Status */}
+            {(isPending || isConfirming || isConfirmed) && (
+              <div className="mt-4 p-3 bg-slate-700/50 rounded-lg">
+                <div className="flex items-center gap-2">
+                  {isConfirmed ? (
+                    <CheckCircle className="w-4 h-4 text-green-400" />
+                  ) : (
+                    <RefreshCw className="w-4 h-4 animate-spin text-blue-400" />
+                  )}
+                  <span className="text-white text-sm">
+                    {isConfirmed ? 'Authorization successful!' :
+                     isConfirming ? 'Confirming transaction...' :
+                     'Transaction submitted'}
+                  </span>
+                </div>
+                {hash && (
+                  <a
+                    href={`https://sepolia.shapescan.xyz/tx/${hash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-400 hover:text-blue-300 text-xs mt-1 inline-flex items-center gap-1"
+                  >
+                    View on ShapeScan <ExternalLink className="w-3 h-3" />
+                  </a>
+                )}
+              </div>
+            )}
+          </div>
+        </motion.div>
       </div>
       </main>
 
