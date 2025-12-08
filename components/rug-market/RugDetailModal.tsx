@@ -190,9 +190,39 @@ export default function RugDetailModal({
   }
 
   const formatDate = (timestamp: bigint | number | string) => {
-    const numTimestamp = typeof timestamp === 'string' ? parseInt(timestamp) : Number(timestamp)
+    // Convert to number, handling bigint properly
+    let numTimestamp: number
+    if (typeof timestamp === 'bigint') {
+      // Check if the bigint is too large for safe Number conversion
+      if (timestamp > BigInt(Number.MAX_SAFE_INTEGER)) {
+        console.warn('[formatDate] Timestamp too large for safe conversion:', timestamp)
+        return 'Invalid Date'
+      }
+      numTimestamp = Number(timestamp)
+    } else if (typeof timestamp === 'string') {
+      numTimestamp = parseInt(timestamp, 10)
+    } else {
+      numTimestamp = timestamp
+    }
+    
+    // Check for invalid values
     if (isNaN(numTimestamp) || numTimestamp === 0) return 'N/A'
-    return new Date(numTimestamp).toLocaleDateString('en-US', {
+    
+    // Check if timestamp looks like it's already in milliseconds (very large number)
+    // Unix timestamps in seconds are typically < 10^10, milliseconds are > 10^12
+    const isLikelyMilliseconds = numTimestamp > 10000000000
+    
+    // Convert: if it's already in milliseconds, use as-is; otherwise multiply by 1000
+    const milliseconds = isLikelyMilliseconds ? numTimestamp : numTimestamp * 1000
+    
+    // Additional validation: dates before 1970-01-01 or after 2100 are likely errors
+    const date = new Date(milliseconds)
+    if (date.getFullYear() < 1970 || date.getFullYear() > 2100) {
+      console.warn('[formatDate] Suspicious date:', date, 'from timestamp:', timestamp, 'milliseconds:', milliseconds)
+      return 'Invalid Date'
+    }
+    
+    return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
