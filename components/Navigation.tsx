@@ -3,14 +3,13 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-import { Home, Palette, Image, Sparkles, Menu, X, User, ShoppingCart, Briefcase, ChevronDown, Settings } from 'lucide-react'
+import { Home, Palette, Image, Sparkles, Menu, X, ShoppingCart, BrushCleaning } from 'lucide-react'
 import { useAccount } from 'wagmi'
 import { WalletConnect } from './wallet-connect'
 import LiquidGlass from './LiquidGlass'
 
 export default function Navigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [isManageDropdownOpen, setIsManageDropdownOpen] = useState(false)
   const { isConnected } = useAccount()
 
   const toggleMobileMenu = () => {
@@ -19,10 +18,6 @@ export default function Navigation() {
 
   const closeMobileMenu = () => {
     setIsMobileMenuOpen(false)
-  }
-
-  const toggleManageDropdown = () => {
-    setIsManageDropdownOpen(!isManageDropdownOpen)
   }
 
   return (
@@ -281,9 +276,9 @@ export default function Navigation() {
           <div className="hidden md:flex items-center gap-6">
             <Link
               href="/"
-              className="flex items-center gap-2 hover:opacity-90 transition-all duration-300"
+              className="flex items-center gap-1 hover:opacity-90 transition-all duration-300"
             >
-              <Home className="w-5 h-5" />
+              <Home className="w-5 h-5 text-white" />
               <svg
                 height="28px"
                 viewBox="0 0 60 20"
@@ -327,9 +322,9 @@ export default function Navigation() {
             </Link>
             <Link
               href="/generator"
-              className="flex items-center gap-2 hover:opacity-90 transition-all duration-300"
+              className="flex items-center gap-1 hover:opacity-90 transition-all duration-300"
             >
-              <Palette className="w-5 h-5" />
+              <Palette className="w-5 h-5 text-white" />
               <svg
                 height="28px"
                 viewBox="0 0 100 20"
@@ -369,9 +364,9 @@ export default function Navigation() {
             </Link>
             <Link
               href="/rug-market"
-              className="flex items-center gap-2 hover:opacity-90 transition-all duration-300"
+              className="flex items-center gap-1 hover:opacity-90 transition-all duration-300"
             >
-              <ShoppingCart className="w-5 h-5" />
+              <ShoppingCart className="w-5 h-5 text-white" />
               <svg
                 height="28px"
                 viewBox="0 0 90 20"
@@ -414,95 +409,54 @@ export default function Navigation() {
               </svg>
             </Link>
             
-            {/* Manage Dropdown - Only visible when wallet connected */}
+            {/* My Rugs Link - Only visible when wallet connected */}
             {isConnected && (
-              <div className="relative">
-                <button
-                  onClick={toggleManageDropdown}
-                  className="flex items-center gap-2 hover:opacity-90 transition-all duration-300"
+              <Link
+                href="/dashboard"
+                className="flex items-center gap-1 hover:opacity-90 transition-all duration-300"
+              >
+                <BrushCleaning className="w-5 h-5 text-white" />
+                <svg
+                  height="28px"
+                  viewBox="0 0 90 20"
+                  style={{
+                    display: 'block',
+                    height: '28px',
+                    filter: 'drop-shadow(0 0 6px rgba(108, 190, 230, 0.3))',
+                  }}
                 >
-                  <Settings className="w-5 h-5" />
-                  <svg
-                    height="28px"
-                    viewBox="0 0 85 20"
+                  <defs>
+                    <filter id="nav-link-depth-myrugs" x="-100%" y="-100%" width="300%" height="300%">
+                      <feTurbulence baseFrequency="0.02" numOctaves="2" seed="47" type="fractalNoise" result="LINK_BASE_MYRUGS" />
+                      <feDisplacementMap in="SourceGraphic" in2="LINK_BASE_MYRUGS" scale="3" xChannelSelector="R" yChannelSelector="G" result="LINK_DISPLACED_MYRUGS" />
+                      <feGaussianBlur in="LINK_DISPLACED_MYRUGS" stdDeviation="0.5" result="LINK_BLUR_MYRUGS" />
+                    </filter>
+                    <linearGradient id="nav-link-gradient-myrugs" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" style={{ stopColor: 'rgba(255, 255, 255, 0.9)', stopOpacity: 1 }} />
+                      <stop offset="100%" style={{ stopColor: 'rgba(255, 255, 255, 0.9)', stopOpacity: 1 }} />
+                    </linearGradient>
+                  </defs>
+                  <text
+                    x="50%"
+                    y="12"
+                    textAnchor="middle"
+                    dominantBaseline="middle"
                     style={{
-                      display: 'block',
-                      height: '28px',
-                      filter: 'drop-shadow(0 0 6px rgba(108, 190, 230, 0.3))',
+                      fill: 'url(#nav-link-gradient-myrugs)',
+                      filter: 'url(#nav-link-depth-myrugs)',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      fontFamily: 'system-ui, -apple-system, sans-serif',
+                      WebkitFontSmoothing: 'antialiased',
+                      MozOsxFontSmoothing: 'grayscale',
+                      textRendering: 'optimizeLegibility',
+                      fontFeatureSettings: '"kern" 1',
                     }}
                   >
-                    <defs>
-                      <filter id="nav-link-depth-manage" x="-100%" y="-100%" width="300%" height="300%">
-                        <feTurbulence baseFrequency="0.02" numOctaves="2" seed="46" type="fractalNoise" result="LINK_BASE_MANAGE" />
-                        <feDisplacementMap in="SourceGraphic" in2="LINK_BASE_MANAGE" scale="3" xChannelSelector="R" yChannelSelector="G" result="LINK_DISPLACED_MANAGE" />
-                        <feGaussianBlur in="LINK_DISPLACED_MANAGE" stdDeviation="0.5" result="LINK_BLUR_MANAGE" />
-                      </filter>
-                      <linearGradient id="nav-link-gradient-manage" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" style={{ stopColor: 'rgba(255, 255, 255, 0.9)', stopOpacity: 1 }} />
-                        <stop offset="100%" style={{ stopColor: 'rgba(255, 255, 255, 0.9)', stopOpacity: 1 }} />
-                      </linearGradient>
-                    </defs>
-                    <text
-                      x="50%"
-                      y="12"
-                      textAnchor="middle"
-                      dominantBaseline="middle"
-                      style={{
-                        fill: 'url(#nav-link-gradient-manage)',
-                        filter: 'url(#nav-link-depth-manage)',
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        fontFamily: 'system-ui, -apple-system, sans-serif',
-                        WebkitFontSmoothing: 'antialiased',
-                        MozOsxFontSmoothing: 'grayscale',
-                        textRendering: 'optimizeLegibility',
-                        fontFeatureSettings: '"kern" 1',
-                      }}
-                    >
-                      Manage
-                    </text>
-                  </svg>
-                  <ChevronDown className={`w-4 h-4 -ml-2 transition-transform ${isManageDropdownOpen ? 'rotate-180' : ''}`} />
-                </button>
-                
-                <AnimatePresence>
-                  {isManageDropdownOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="absolute top-full mt-2 right-0 min-w-[200px]"
-                      onMouseLeave={() => setIsManageDropdownOpen(false)}
-                    >
-                      <LiquidGlass
-                        blurAmount={0.15}
-                        aberrationIntensity={2}
-                        elasticity={0.08}
-                        cornerRadius={12}
-                      >
-                        <div className="py-2 backdrop-blur-md bg-white/10 border border-white/20 rounded-xl shadow-lg">
-                          <Link
-                            href="/portfolio"
-                            onClick={() => setIsManageDropdownOpen(false)}
-                            className="flex items-center gap-3 px-4 py-3 text-white hover:bg-white/20 transition-colors rounded-lg mx-2"
-                          >
-                            <Briefcase className="w-5 h-5" />
-                            <span className="font-semibold text-sm">Portfolio</span>
-                          </Link>
-                          <Link
-                            href="/dashboard"
-                            onClick={() => setIsManageDropdownOpen(false)}
-                            className="flex items-center gap-3 px-4 py-3 text-white hover:bg-white/20 transition-colors rounded-lg mx-2"
-                          >
-                            <User className="w-5 h-5" />
-                            <span className="font-semibold text-sm">Dashboard</span>
-            </Link>
-                        </div>
-                      </LiquidGlass>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+                    My Rugs
+                  </text>
+                </svg>
+              </Link>
             )}
           </div>
 
@@ -577,58 +531,40 @@ export default function Navigation() {
               <Link
                 href="/"
                 onClick={closeMobileMenu}
-                className="flex items-center gap-4 px-6 py-4 text-white hover:bg-white/10 transition-colors duration-200"
+                className="flex items-center gap-3 px-6 py-4 text-white hover:bg-white/10 transition-colors duration-200"
               >
-                <Home className="w-6 h-6" />
+                <Home className="w-6 h-6 text-white" />
                 <span className="text-lg font-medium">Home</span>
               </Link>
 
               <Link
                 href="/generator"
                 onClick={closeMobileMenu}
-                className="flex items-center gap-4 px-6 py-4 text-white hover:bg-white/10 transition-colors duration-200"
+                className="flex items-center gap-3 px-6 py-4 text-white hover:bg-white/10 transition-colors duration-200"
               >
-                <Palette className="w-6 h-6" />
+                <Palette className="w-6 h-6 text-white" />
                 <span className="text-lg font-medium">Rug Factory</span>
               </Link>
 
               <Link
                 href="/rug-market"
                 onClick={closeMobileMenu}
-                className="flex items-center gap-4 px-6 py-4 text-white hover:bg-white/10 transition-colors duration-200"
+                className="flex items-center gap-3 px-6 py-4 text-white hover:bg-white/10 transition-colors duration-200"
               >
-                <ShoppingCart className="w-6 h-6" />
+                <ShoppingCart className="w-6 h-6 text-white" />
                 <span className="text-lg font-medium">Rug Market</span>
               </Link>
 
-              {/* Manage section - Only visible when connected */}
+              {/* My Rugs Link - Only visible when connected */}
               {isConnected && (
-                <>
-                  <div className="px-6 py-2">
-                    <div className="flex items-center gap-2 text-white/50 text-sm font-semibold">
-                      <Settings className="w-4 h-4" />
-                      <span>MANAGE</span>
-                    </div>
-                  </div>
-                  
-                  <Link
-                    href="/portfolio"
-                    onClick={closeMobileMenu}
-                    className="flex items-center gap-4 px-6 py-3 pl-12 text-white/80 hover:text-white hover:bg-white/10 transition-colors duration-200"
-                  >
-                    <Briefcase className="w-5 h-5" />
-                    <span className="text-base font-medium">Portfolio</span>
-                  </Link>
-
-                  <Link
-                    href="/dashboard"
-                    onClick={closeMobileMenu}
-                    className="flex items-center gap-4 px-6 py-3 pl-12 text-white/80 hover:text-white hover:bg-white/10 transition-colors duration-200"
-                  >
-                    <User className="w-5 h-5" />
-                    <span className="text-base font-medium">Dashboard</span>
-                  </Link>
-                </>
+                <Link
+                  href="/dashboard"
+                  onClick={closeMobileMenu}
+                  className="flex items-center gap-3 px-6 py-4 text-white hover:bg-white/10 transition-colors duration-200"
+                >
+                  <BrushCleaning className="w-6 h-6 text-white" />
+                  <span className="text-lg font-medium">My Rugs</span>
+                </Link>
               )}
 
             </div>
