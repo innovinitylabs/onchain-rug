@@ -5,8 +5,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { RugMarketRedis } from './rug-market-redis'
-import { fetchTotalSupply } from './direct-contract-fetcher'
+import { RugMarketRedis } from '../rug-market-redis'
+import { fetchTotalSupply } from '../direct-contract-fetcher'
 import { getContractAddress, getRpcUrl } from '@/lib/networks'
 import { createPublicClient, http, formatEther } from 'viem'
 import { baseSepolia, shapeSepolia, sepolia } from 'viem/chains'
