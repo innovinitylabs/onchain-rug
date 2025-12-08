@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { Home, Palette, Image, Sparkles, Menu, X, ShoppingCart, BrushCleaning } from 'lucide-react'
@@ -10,7 +10,13 @@ import LiquidGlass from './LiquidGlass'
 
 export default function Navigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isMounted, setIsMounted] = useState(false)
   const { isConnected } = useAccount()
+
+  // Prevent hydration mismatch by only rendering wallet-dependent content after mount
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen)
@@ -410,7 +416,8 @@ export default function Navigation() {
             </Link>
             
             {/* My Rugs Link - Only visible when wallet connected */}
-            {isConnected && (
+            {/* Use isMounted to prevent hydration mismatch */}
+            {isMounted && isConnected && (
               <Link
                 href="/dashboard"
                 className="flex items-center gap-1 hover:opacity-90 transition-all duration-300"
@@ -556,7 +563,8 @@ export default function Navigation() {
               </Link>
 
               {/* My Rugs Link - Only visible when connected */}
-              {isConnected && (
+              {/* Use isMounted to prevent hydration mismatch */}
+              {isMounted && isConnected && (
                 <Link
                   href="/dashboard"
                   onClick={closeMobileMenu}
