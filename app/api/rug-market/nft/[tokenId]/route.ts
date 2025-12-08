@@ -6,9 +6,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { RugMarketRedis } from '../../../collection/rug-market-redis'
-import { fetchNFTFromBlockchain } from '../../../collection/blockchain-fetcher'
-import { getContractAddress } from '../../../collection/networks'
+import { RugMarketRedis } from '@/app/api/rug-market/collection/rug-market-redis'
+import { fetchNFTFromBlockchain } from '@/app/api/rug-market/collection/blockchain-fetcher'
+import { getContractAddress } from '@/app/api/rug-market/collection/networks'
 
 interface RouteParams {
   params: Promise<{

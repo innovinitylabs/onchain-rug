@@ -42,11 +42,11 @@ export function frameLevelToNumber(frameLevel: string | number): number {
  * @returns Aging multiplier (higher = slower aging)
  */
 function getAgingMultiplier(frameLevel: number): bigint {
-  if (frameLevel >= 4) return 10n  // Diamond: 90% slower (10x longer)
-  if (frameLevel >= 3) return 20n  // Gold: 80% slower (5x longer)
-  if (frameLevel >= 2) return 50n  // Silver: 50% slower (2x longer)
-  if (frameLevel >= 1) return 75n  // Bronze: 25% slower (1.3x longer)
-  return 100n                       // None: normal speed
+  if (frameLevel >= 4) return BigInt(10)  // Diamond: 90% slower (10x longer)
+  if (frameLevel >= 3) return BigInt(20)  // Gold: 80% slower (5x longer)
+  if (frameLevel >= 2) return BigInt(50)  // Silver: 50% slower (2x longer)
+  if (frameLevel >= 1) return BigInt(75)  // Bronze: 25% slower (1.3x longer)
+  return BigInt(100)                       // None: normal speed
 }
 
 /**
@@ -69,16 +69,16 @@ export function calculateDirtLevel(
   
   // Normalize lastCleaned - if it's > 1e10, it's likely in milliseconds, convert to seconds
   let normalizedLastCleaned = lastCleaned
-  if (lastCleaned > 10000000000n) {
+  if (lastCleaned > BigInt(10000000000)) {
     // Likely in milliseconds, convert to seconds
-    normalizedLastCleaned = lastCleaned / 1000n
+    normalizedLastCleaned = lastCleaned / BigInt(1000)
     console.warn(`[calculateDirtLevel] lastCleaned appears to be in milliseconds (${lastCleaned}), converting to seconds (${normalizedLastCleaned})`)
   }
   
   const timeSinceCleaned = now - normalizedLastCleaned
   
   // Protect against negative time
-  if (timeSinceCleaned < 0n) {
+  if (timeSinceCleaned < BigInt(0)) {
     console.warn(`[calculateDirtLevel] Negative timeSinceCleaned: ${timeSinceCleaned}, now=${now}, lastCleaned=${normalizedLastCleaned}. Returning 0.`)
     return 0
   }
@@ -94,12 +94,12 @@ export function calculateDirtLevel(
 
   if (frameLevelNum === 2) {
     // Silver: 2x slower
-    level1Threshold = contractConfig.dirtLevel1Days * 2n
-    level2Threshold = contractConfig.dirtLevel2Days * 2n
+    level1Threshold = contractConfig.dirtLevel1Days * BigInt(2)
+    level2Threshold = contractConfig.dirtLevel2Days * BigInt(2)
   } else if (frameLevelNum === 1) {
     // Bronze: 1.5x slower (multiply by 3/2)
-    level1Threshold = (contractConfig.dirtLevel1Days * 3n) / 2n
-    level2Threshold = (contractConfig.dirtLevel2Days * 3n) / 2n
+    level1Threshold = (contractConfig.dirtLevel1Days * BigInt(3)) / BigInt(2)
+    level2Threshold = (contractConfig.dirtLevel2Days * BigInt(3)) / BigInt(2)
   } else {
     // None (frameLevelNum === 0): normal speed
     level1Threshold = contractConfig.dirtLevel1Days
@@ -133,16 +133,16 @@ export function calculateAgingLevel(
   
   // Normalize lastCleaned - if it's > 1e10, it's likely in milliseconds, convert to seconds
   let normalizedLastCleaned = lastCleaned
-  if (lastCleaned > 10000000000n) {
+  if (lastCleaned > BigInt(10000000000)) {
     // Likely in milliseconds, convert to seconds
-    normalizedLastCleaned = lastCleaned / 1000n
+    normalizedLastCleaned = lastCleaned / BigInt(1000)
     console.warn(`[calculateAgingLevel] lastCleaned appears to be in milliseconds (${lastCleaned}), converting to seconds (${normalizedLastCleaned})`)
   }
   
   const timeSinceLevelStart = now - normalizedLastCleaned
   
   // Protect against negative time (lastCleaned in future or data corruption)
-  if (timeSinceLevelStart < 0n) {
+  if (timeSinceLevelStart < BigInt(0)) {
     console.warn(`[calculateAgingLevel] Negative timeSinceLevelStart: ${timeSinceLevelStart}, now=${now}, lastCleaned=${normalizedLastCleaned}. Using baseAgingLevel only.`)
     return Math.min(Math.max(baseAgingLevel, 0), 10)
   }
@@ -151,7 +151,7 @@ export function calculateAgingLevel(
 
   // Apply frame-based aging multiplier (higher frames age slower)
   const agingMultiplier = getAgingMultiplier(frameLevelNum)
-  const adjustedInterval = (baseInterval * 100n) / agingMultiplier
+  const adjustedInterval = (baseInterval * BigInt(100)) / agingMultiplier
 
   // Calculate how many levels we should have advanced
   const levelsAdvanced = Number(timeSinceLevelStart / adjustedInterval)
