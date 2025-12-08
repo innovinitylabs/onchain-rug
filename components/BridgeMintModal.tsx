@@ -216,7 +216,7 @@ export default function BridgeMintModal({
                   {payDropdownOpen && (
                     <motion.div
                       initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
+                      animate={{ opacity: 1 }}
                       exit={{ opacity: 0, y: -10 }}
                       className="absolute top-full left-0 right-0 mt-2 bg-slate-800 border border-slate-600 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto"
                     >

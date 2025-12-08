@@ -147,6 +147,61 @@ button, a, input, textarea, select {
   transition: all 0.2s ease !important;
 }
 
+/* Fix Framer Motion blur and opacity issues - prevent backdrop-blur from affecting text */
+/* This ensures motion.div elements isolate their children from parent backdrop-blur effects */
+div[data-projection-id],
+[class*="motion-"] {
+  isolation: isolate !important;
+  position: relative !important;
+  z-index: auto !important;
+}
+
+/* Ensure buttons inside motion.div are always clickable */
+div[data-projection-id] button,
+div[data-projection-id] a,
+[class*="motion-"] button,
+[class*="motion-"] a {
+  pointer-events: auto !important;
+  position: relative !important;
+  z-index: 1 !important;
+  isolation: isolate !important;
+}
+
+/* Prevent text blur from backdrop-blur - only target text elements */
+div[data-projection-id] h1,
+div[data-projection-id] h2,
+div[data-projection-id] h3,
+div[data-projection-id] h4,
+div[data-projection-id] h5,
+div[data-projection-id] h6,
+div[data-projection-id] p,
+div[data-projection-id] span,
+div[data-projection-id] li,
+div[data-projection-id] label,
+div[data-projection-id] td,
+div[data-projection-id] th,
+[class*="motion-"] h1,
+[class*="motion-"] h2,
+[class*="motion-"] h3,
+[class*="motion-"] h4,
+[class*="motion-"] h5,
+[class*="motion-"] h6,
+[class*="motion-"] p,
+[class*="motion-"] span,
+[class*="motion-"] li,
+[class*="motion-"] label,
+[class*="motion-"] td,
+[class*="motion-"] th {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  filter: none !important;
+  mix-blend-mode: normal !important;
+  isolation: isolate !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  text-rendering: optimizeLegibility !important;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -399,6 +454,98 @@ nav svg text {
   opacity: 1 !important;
   fill-opacity: 1 !important;
   stroke-opacity: 1 !important;
+}
+
+/* Fix navbar text blur from backdrop-blur and transform interactions */
+/* Navbar needs y: 0 transform for slide-down animation, but text must stay sharp */
+nav,
+nav * {
+  isolation: isolate !important;
+}
+
+nav *:not(svg):not([class*="backdrop-blur"]) {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+nav button,
+nav a,
+nav span,
+nav div:not([class*="backdrop-blur"]) {
+  filter: none !important;
+  mix-blend-mode: normal !important;
+  transform: translateZ(0) !important;
+  will-change: auto !important;
+}
+
+/* Ensure navbar text elements are sharp */
+nav h1,
+nav h2,
+nav h3,
+nav h4,
+nav h5,
+nav h6,
+nav p,
+nav span,
+nav button,
+nav a {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  filter: none !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  text-rendering: optimizeLegibility !important;
+}
+
+/* Fix LoadingAnimation component blur and size issues */
+.loading-animation-container {
+  isolation: isolate !important;
+  position: relative !important;
+  z-index: auto !important;
+}
+
+.loading-animation-container * {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  filter: none !important;
+  mix-blend-mode: normal !important;
+}
+
+.loading-animation-image-wrapper,
+.loading-animation-image-wrapper img {
+  isolation: isolate !important;
+  filter: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  transform: translateZ(0) !important;
+  image-rendering: auto !important;
+  -webkit-font-smoothing: antialiased !important;
+}
+
+.loading-animation-text {
+  isolation: isolate !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  filter: none !important;
+  mix-blend-mode: normal !important;
+  transform: translateZ(0) !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  text-rendering: optimizeLegibility !important;
+  opacity: 1 !important;
+}
+
+/* Ensure LoadingAnimation images are properly sized */
+.loading-animation-image-wrapper {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+}
+
+.loading-animation-container img {
+  display: block !important;
+  flex-shrink: 0 !important;
 }
 
 /* JAVASCRIPT-INJECTED OVERRIDE - This will be applied via JS */

@@ -354,7 +354,7 @@ function RugMarketPageContent() {
           {notification && (
             <motion.div
               initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
+              animate={{ opacity: 1 }}
               exit={{ opacity: 0, y: -20 }}
               className={`mb-4 p-4 rounded-lg border ${
                 notification.type === 'success'
@@ -399,29 +399,29 @@ function RugMarketPageContent() {
           {/* Header */}
         <motion.div
             initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-12"
+          animate={{ opacity: 1 }}
+            className="text-center mb-12 pt-24"
         >
             <h1 className="text-5xl font-bold text-white mb-4">
               OnchainRug <span className="text-blue-400">Marketplace</span>
             </h1>
-            <p className="text-xl text-white/70 max-w-2xl mx-auto mb-4">
+            {/* <p className="text-xl text-white/70 max-w-2xl mx-auto mb-4">
               Discover and trade unique OnchainRugs - each one algorithmically generated and permanently stored on the blockchain.
-          </p>
-            <button
+          </p> */}
+            {/* <button
               onClick={() => refreshCollectionData()}
               disabled={isLoading}
               className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 rounded-lg text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
               Refresh Data
-            </button>
+            </button> */}
           </motion.div>
 
           {/* Stats */}
             <motion.div
             initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ delay: 0.1 }}
             className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
           >
@@ -447,7 +447,7 @@ function RugMarketPageContent() {
           {/* Filters and Search */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
             className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-6 mb-8"
           >

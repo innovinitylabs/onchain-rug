@@ -11,7 +11,7 @@ export default function Hero() {
         {/* Main content - Optimized for performance */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
+          animate={{ opacity: 1 }}
           transition={{ duration: 1, delay: 0.2, type: "tween" }}
           style={{ willChange: 'transform, opacity' }}
         >
@@ -440,7 +440,7 @@ export default function Hero() {
           <motion.div
             className="flex flex-col sm:flex-row gap-4 md:gap-6 justify-center items-center"
             initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ delay: 1.2, type: "tween" }}
             style={{ willChange: 'transform, opacity' }}
           >

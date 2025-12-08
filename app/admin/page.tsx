@@ -34,7 +34,7 @@ export default function AdminPage() {
       <div className="min-h-screen flex items-center justify-center p-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
+          animate={{ opacity: 1 }}
           className="text-center"
         >
           <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
@@ -51,7 +51,7 @@ export default function AdminPage() {
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
+          animate={{ opacity: 1 }}
           className="text-center mb-8"
         >
           <div className="flex items-center justify-center gap-3 mb-4">
@@ -232,7 +232,7 @@ function AdminSection({
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
+      animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
       <LiquidGlass

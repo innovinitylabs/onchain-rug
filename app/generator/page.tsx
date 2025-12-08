@@ -2387,7 +2387,7 @@ export default function GeneratorPage() {
           {/* Canvas Display - Full Width at Top */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.1 }}
             className="w-full mb-0"
           >
@@ -2474,7 +2474,7 @@ export default function GeneratorPage() {
           {/* Terminal Interface - Fixed at Bottom */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.2 }}
             className="w-full pb-8"
           >

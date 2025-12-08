@@ -981,7 +981,7 @@ export default function DashboardPage() {
           <div className="container mx-auto px-4 py-20">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
+              animate={{ opacity: 1 }}
               className="text-center max-w-md mx-auto"
             >
               <Wallet className="w-16 h-16 text-blue-400 mx-auto mb-4" />
@@ -1018,7 +1018,7 @@ export default function DashboardPage() {
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
+          animate={{ opacity: 1 }}
           className="text-center mb-8"
         >
           <div className="flex items-center justify-center gap-3 mb-4">
@@ -1051,7 +1051,7 @@ export default function DashboardPage() {
         {/* Network Status Indicator */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
+          animate={{ opacity: 1 }}
           transition={{ delay: 0.1 }}
           className="mb-6"
         >
@@ -1085,7 +1085,7 @@ export default function DashboardPage() {
         {/* Diamond Frame Royalty Pool Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
+          animate={{ opacity: 1 }}
           transition={{ delay: 0.15 }}
           className="mb-8"
         >
@@ -1154,7 +1154,7 @@ export default function DashboardPage() {
         {/* AI Agent Authorization Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
+          animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
           className="mb-8"
         >
