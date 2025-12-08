@@ -12,6 +12,7 @@ import { useListingData } from '@/hooks/use-marketplace-data'
 import { useWaitForTransactionReceipt } from 'wagmi'
 import { contractAddresses, onchainRugsABI } from '@/lib/web3'
 import { getExplorerUrl } from '@/lib/networks'
+import { formatEth } from '@/utils/marketplace-utils'
 
 interface RugDetailModalProps {
   nft: RugMarketNFT
@@ -230,9 +231,35 @@ export default function RugDetailModal({
   }
 
   const formatPrice = (price?: string) => {
-    if (!price) return null
-    const num = parseFloat(price)
-    return num >= 1 ? `${num.toFixed(3)} ETH` : `${(num * 1000).toFixed(1)}K WEI`
+    if (!price || price === '0' || price === '') return null
+    try {
+      // Price is stored as string in wei format, convert to ETH
+      const priceWei = BigInt(price)
+      if (priceWei === BigInt(0)) return null
+      
+      const eth = Number(priceWei) / 1e18
+      
+      // For very small amounts, show more precision to avoid truncation to 0
+      if (eth < 0.000001) {
+        // Show up to 8 decimals for extremely small amounts
+        const formatted = eth.toFixed(8).replace(/\.?0+$/, '')
+        return formatted === '0' ? null : `${formatted} ETH`
+      }
+      
+      // Format with appropriate decimals
+      if (eth < 0.001) {
+        return `${eth.toFixed(6).replace(/\.?0+$/, '')} ETH`
+      } else if (eth < 0.01) {
+        return `${eth.toFixed(5).replace(/\.?0+$/, '')} ETH`
+      } else if (eth < 1) {
+        return `${eth.toFixed(4).replace(/\.?0+$/, '')} ETH`
+      } else {
+        return `${eth.toFixed(2)} ETH`
+      }
+    } catch (error) {
+      console.error('Failed to format price:', error, 'Raw price:', price)
+      return null
+    }
   }
 
   // Convert to NFTData to get calculated values
@@ -380,6 +407,148 @@ export default function RugDetailModal({
                   )}
                 </div>
 
+                {/* Notification */}
+                {notification && (
+                  <div className={`p-3 rounded-lg border ${
+                    notification.type === 'success'
+                      ? 'bg-green-500/20 border-green-500/30 text-green-300'
+                      : 'bg-red-500/20 border-red-500/30 text-red-300'
+                  }`}>
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4" />
+                      <span className="text-sm">{notification.message}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Listing Actions */}
+                {isOwner && (
+                  <div className="pt-4 border-t border-white/10 space-y-3">
+                    {isListingActive ? (
+                      <>
+                        <div className="bg-green-500/20 border border-green-500/30 rounded-lg p-3">
+                          <div className="text-green-300 text-sm font-medium mb-1">Listed for Sale</div>
+                          <div className="text-green-200 font-semibold">
+                            {(() => {
+                              // Try listing.price first (from contract, in wei as bigint)
+                              if (listing?.price !== undefined && listing.price !== null) {
+                                const priceWei = typeof listing.price === 'bigint' ? listing.price : BigInt(String(listing.price))
+                                if (priceWei > BigInt(0)) {
+                                  const formatted = formatEth(priceWei)
+                                  const ethValue = parseFloat(formatted)
+                                  // Log for debugging
+                                  console.log(`[Price Display] Contract price: ${priceWei.toString()} wei = ${formatted} ETH (parsed: ${ethValue})`)
+                                  // Don't show if formatted result is effectively 0
+                                  if (ethValue > 0) {
+                                    return `${formatted} ETH`
+                                  } else {
+                                    console.warn(`[Price Display] Price formatted to 0: ${priceWei.toString()} wei`)
+                                  }
+                                } else {
+                                  console.log(`[Price Display] Contract price is 0: ${priceWei.toString()}`)
+                                }
+                              }
+                              // Fallback to dynamic.listingPrice (stored as string in wei)
+                              if (dynamic.listingPrice && dynamic.listingPrice !== '0' && dynamic.listingPrice !== '') {
+                                try {
+                                  const priceWei = BigInt(dynamic.listingPrice)
+                                  if (priceWei > BigInt(0)) {
+                                    const formatted = formatEth(priceWei)
+                                    const ethValue = parseFloat(formatted)
+                                    // Log for debugging
+                                    console.log(`[Price Display] Dynamic price: ${priceWei.toString()} wei = ${formatted} ETH (parsed: ${ethValue})`)
+                                    // Don't show if formatted result is effectively 0
+                                    if (ethValue > 0) {
+                                      return `${formatted} ETH`
+                                    } else {
+                                      console.warn(`[Price Display] Dynamic price formatted to 0: ${priceWei.toString()} wei`)
+                                    }
+                                  } else {
+                                    console.log(`[Price Display] Dynamic price is 0: ${priceWei.toString()}`)
+                                  }
+                                } catch (error) {
+                                  console.error('[Price Display] Failed to format listing price:', error, 'Raw value:', dynamic.listingPrice)
+                                }
+                              }
+                              console.log(`[Price Display] No valid price. listing?.price:`, listing?.price, 'dynamic.listingPrice:', dynamic.listingPrice)
+                              return 'Price not set'
+                            })()}
+                          </div>
+                        </div>
+                        <button
+                          onClick={handleCancelListing}
+                          disabled={isCancelConfirming || cancelListing.isPending}
+                          className="w-full bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-300 py-2 px-4 rounded-lg font-medium transition-colors disabled:opacity-50"
+                        >
+                          {isCancelConfirming || cancelListing.isPending ? 'Cancelling...' : 'Cancel Listing'}
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        {!approved && (
+                          <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-lg p-3 mb-3">
+                            <div className="text-yellow-300 text-sm mb-2">
+                              You need to approve the marketplace to list this NFT
+                            </div>
+                            <button
+                              onClick={() => approveMarketplace.approve()}
+                              disabled={isApproveConfirming || approveMarketplace.isPending}
+                              className="w-full bg-yellow-500/30 hover:bg-yellow-500/40 text-yellow-200 py-2 px-4 rounded-lg font-medium transition-colors disabled:opacity-50"
+                            >
+                              {isApproveConfirming || approveMarketplace.isPending ? 'Approving...' : 'Approve Marketplace'}
+                            </button>
+                          </div>
+                        )}
+                        
+                        {!showListingForm && approved && (
+                          <button
+                            onClick={() => setShowListingForm(true)}
+                            className="w-full bg-green-500 hover:bg-green-600 text-white py-3 px-6 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
+                          >
+                            <Tag className="w-5 h-5" />
+                            List for Sale
+                          </button>
+                        )}
+                        
+                        {showListingForm && approved && (
+                          <div className="space-y-3">
+                            <div>
+                              <label className="block text-white/70 text-sm mb-2">Price (ETH)</label>
+                              <input
+                                type="number"
+                                step="0.0001"
+                                min="0"
+                                value={listingPrice}
+                                onChange={(e) => setListingPrice(e.target.value)}
+                                placeholder="0.01"
+                                className="w-full px-4 py-2 bg-black/30 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-green-500"
+                              />
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={handleCreateListing}
+                                disabled={isListingConfirming || createListing.isPending || !listingPrice}
+                                className="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg font-medium transition-colors disabled:opacity-50"
+                              >
+                                {isListingConfirming || createListing.isPending ? 'Creating...' : 'Create Listing'}
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setShowListingForm(false)
+                                  setListingPrice('')
+                                }}
+                                className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+
                 {/* Traits */}
                 <div>
                   <h3 className="text-lg font-semibold text-white mb-3">Traits</h3>
@@ -486,105 +655,6 @@ export default function RugDetailModal({
                   </div>
                 </div>
 
-                {/* Notification */}
-                {notification && (
-                  <div className={`p-3 rounded-lg border ${
-                    notification.type === 'success'
-                      ? 'bg-green-500/20 border-green-500/30 text-green-300'
-                      : 'bg-red-500/20 border-red-500/30 text-red-300'
-                  }`}>
-                    <div className="flex items-center gap-2">
-                      <AlertCircle className="w-4 h-4" />
-                      <span className="text-sm">{notification.message}</span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Listing Actions */}
-                {isOwner && (
-                  <div className="pt-4 border-t border-white/10 space-y-3">
-                    {isListingActive ? (
-                      <>
-                        <div className="bg-green-500/20 border border-green-500/30 rounded-lg p-3">
-                          <div className="text-green-300 text-sm font-medium mb-1">Listed for Sale</div>
-                          <div className="text-green-200 font-semibold">
-                            {listing?.price ? `${(Number(listing.price) / 1e18).toFixed(4)} ETH` : dynamic.listingPrice || 'N/A'}
-                          </div>
-                        </div>
-                        <button
-                          onClick={handleCancelListing}
-                          disabled={isCancelConfirming || cancelListing.isPending}
-                          className="w-full bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-300 py-2 px-4 rounded-lg font-medium transition-colors disabled:opacity-50"
-                        >
-                          {isCancelConfirming || cancelListing.isPending ? 'Cancelling...' : 'Cancel Listing'}
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        {!approved && (
-                          <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-lg p-3 mb-3">
-                            <div className="text-yellow-300 text-sm mb-2">
-                              You need to approve the marketplace to list this NFT
-                            </div>
-                            <button
-                              onClick={() => approveMarketplace.approve()}
-                              disabled={isApproveConfirming || approveMarketplace.isPending}
-                              className="w-full bg-yellow-500/30 hover:bg-yellow-500/40 text-yellow-200 py-2 px-4 rounded-lg font-medium transition-colors disabled:opacity-50"
-                            >
-                              {isApproveConfirming || approveMarketplace.isPending ? 'Approving...' : 'Approve Marketplace'}
-                            </button>
-                          </div>
-                        )}
-                        
-                        {!showListingForm && approved && (
-                          <button
-                            onClick={() => setShowListingForm(true)}
-                            className="w-full bg-green-500 hover:bg-green-600 text-white py-3 px-6 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
-                          >
-                            <Tag className="w-5 h-5" />
-                            List for Sale
-                          </button>
-                        )}
-                        
-                        {showListingForm && approved && (
-                          <div className="space-y-3">
-                            <div>
-                              <label className="block text-white/70 text-sm mb-2">Price (ETH)</label>
-                              <input
-                                type="number"
-                                step="0.0001"
-                                min="0"
-                                value={listingPrice}
-                                onChange={(e) => setListingPrice(e.target.value)}
-                                placeholder="0.01"
-                                className="w-full px-4 py-2 bg-black/30 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-green-500"
-                              />
-                            </div>
-                            <div className="flex gap-2">
-                              <button
-                                onClick={handleCreateListing}
-                                disabled={isListingConfirming || createListing.isPending || !listingPrice}
-                                className="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg font-medium transition-colors disabled:opacity-50"
-                              >
-                                {isListingConfirming || createListing.isPending ? 'Creating...' : 'Create Listing'}
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setShowListingForm(false)
-                                  setListingPrice('')
-                                }}
-                                className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                )}
-
                 {/* Actions */}
                 <div className="flex gap-3 pt-4 border-t border-white/10">
                   {isListingActive && !isOwner && onBuyNFT && (
@@ -593,7 +663,25 @@ export default function RugDetailModal({
                       className="flex-1 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white py-3 px-6 rounded-lg font-semibold transition-colors"
                     >
                       <ShoppingCart className="w-5 h-5" />
-                      Buy Now {listing?.price ? `${(Number(listing.price) / 1e18).toFixed(4)} ETH` : formatPrice(dynamic.listingPrice)}
+                      Buy Now {(() => {
+                        if (listing?.price) {
+                          const priceWei = typeof listing.price === 'bigint' ? listing.price : BigInt(listing.price)
+                          if (priceWei > BigInt(0)) {
+                            return `${formatEth(priceWei)} ETH`
+                          }
+                        }
+                        if (dynamic.listingPrice) {
+                          try {
+                            const priceWei = BigInt(dynamic.listingPrice)
+                            if (priceWei > BigInt(0)) {
+                              return `${formatEth(priceWei)} ETH`
+                            }
+                          } catch (error) {
+                            console.error('Failed to format price for Buy Now button:', error)
+                          }
+                        }
+                        return 'N/A'
+                      })()}
                     </button>
                   )}
                 </div>

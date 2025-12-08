@@ -9,6 +9,7 @@ import { RugMarketNFT } from '@/lib/rug-market-types'
 import NFTDisplay, { NFTDisplaySkeleton } from './NFTDisplay'
 import { rugMarketNFTToNFTData, getCalculatedLevels } from '@/utils/rug-market-data-adapter'
 import { getExplorerUrl, getContractAddress } from '@/lib/networks'
+import { formatEth } from '@/utils/marketplace-utils'
 
 interface RugMarketGridProps {
   nfts: RugMarketNFT[]
@@ -132,7 +133,16 @@ function RugCard({ nft, onClick, onRefresh, onFavoriteToggle, onBuyNFT, isFavori
         {/* Bottom Right - Price/Status */}
           {nft.dynamic.isListed && (
             <div className="absolute bottom-2 right-2 bg-green-600/90 backdrop-blur-sm text-white px-2 py-1 rounded border border-green-400 text-xs font-semibold pointer-events-auto shadow-lg">
-              {nft.dynamic.listingPrice ? `${nft.dynamic.listingPrice} ETH` : 'LISTED'}
+              {nft.dynamic.listingPrice ? (() => {
+                try {
+                  // listingPrice is stored as string in wei format, convert to ETH
+                  const priceWei = BigInt(nft.dynamic.listingPrice)
+                  return `${formatEth(priceWei)} ETH`
+                } catch (error) {
+                  console.error('Failed to format listing price:', error)
+                  return 'LISTED'
+                }
+              })() : 'LISTED'}
           </div>
         )}
         </div>
