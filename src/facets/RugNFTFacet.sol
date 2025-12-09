@@ -46,6 +46,9 @@ contract RugNFTFacet is ICreatorToken {
     event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
     event Approval(address indexed owner, address indexed approved, uint256 indexed tokenId);
     event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
+    
+    // Marketplace event (emitted when listing is auto-cancelled on transfer)
+    event ListingCancelled(uint256 indexed tokenId, address indexed seller);
 
 
     constructor() {
@@ -710,6 +713,16 @@ contract RugNFTFacet is ICreatorToken {
         } else if (from != to) {
             // Transfer: remove from 'from' enumeration
             _removeTokenFromOwnerEnumeration(from, tokenId);
+            
+            // Auto-cancel marketplace listing when NFT is transferred away from seller
+            // Only for actual transfers (not mints or burns)
+            if (to != address(0)) {
+                bool cancelled = LibRugStorage.cancelListingOnTransfer(tokenId, from);
+                if (cancelled) {
+                    // Emit event to match marketplace facet's ListingCancelled event
+                    emit ListingCancelled(tokenId, from);
+                }
+            }
         }
 
         if (to == address(0)) {

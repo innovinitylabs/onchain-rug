@@ -239,6 +239,49 @@ contract RugMarketplaceTest is Test {
         vm.stopPrank();
     }
 
+    function testCannotBuyListingWhenSellerTransferredNFT() public {
+        // Seller creates listing
+        vm.prank(seller);
+        RugMarketplaceFacet(address(diamond)).createListing(tokenId1, 1 ether, 7 days);
+        
+        // Seller transfers NFT to another address (attack scenario)
+        vm.prank(seller);
+        RugNFTFacet(address(diamond)).transferFrom(seller, address(0x999), tokenId1);
+        
+        // Verify NFT is no longer owned by seller
+        assertEq(RugNFTFacet(address(diamond)).ownerOf(tokenId1), address(0x999));
+        
+        // Verify listing was auto-cancelled on transfer
+        (, , , bool isActive) = RugMarketplaceFacet(address(diamond)).getListing(tokenId1);
+        assertFalse(isActive);
+        
+        // Buyer tries to purchase - should revert with NotListed (listing was cancelled)
+        vm.prank(buyer);
+        vm.expectRevert(RugMarketplaceFacet.NotListed.selector);
+        RugMarketplaceFacet(address(diamond)).buyListing{value: 1 ether}(tokenId1);
+    }
+    
+    function testAutoCancelListingOnTransfer() public {
+        // Seller creates listing
+        vm.prank(seller);
+        RugMarketplaceFacet(address(diamond)).createListing(tokenId1, 1 ether, 7 days);
+        
+        // Verify listing is active
+        (, , , bool isActiveBefore) = RugMarketplaceFacet(address(diamond)).getListing(tokenId1);
+        assertTrue(isActiveBefore);
+        
+        // Seller transfers NFT to buyer (normal transfer, not through marketplace)
+        vm.prank(seller);
+        RugNFTFacet(address(diamond)).transferFrom(seller, buyer, tokenId1);
+        
+        // Verify listing was auto-cancelled
+        (, , , bool isActiveAfter) = RugMarketplaceFacet(address(diamond)).getListing(tokenId1);
+        assertFalse(isActiveAfter);
+        
+        // Verify ownership transferred
+        assertEq(RugNFTFacet(address(diamond)).ownerOf(tokenId1), buyer);
+    }
+
     // ===== SELECTOR HELPERS =====
 
     function getRugNFTSelectors() internal pure returns (bytes4[] memory) {

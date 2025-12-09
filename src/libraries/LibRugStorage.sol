@@ -493,4 +493,23 @@ library LibRugStorage {
         RugConfig storage rs = rugStorage();
         return agingLevel * rs.agingAdvanceDays;
     }
+
+    /**
+     * @notice Cancel a marketplace listing when NFT ownership changes
+     * @param tokenId Token ID to cancel listing for
+     * @param previousOwner The address that previously owned the token
+     * @return cancelled Whether the listing was cancelled
+     * @dev This is called from NFT transfer hooks to auto-cancel listings
+     */
+    function cancelListingOnTransfer(uint256 tokenId, address previousOwner) internal returns (bool cancelled) {
+        MarketplaceConfig storage ms = marketplaceStorage();
+        Listing storage listing = ms.listings[tokenId];
+        
+        // Only cancel if listing is active and the previous owner was the seller
+        if (listing.isActive && listing.seller == previousOwner) {
+            listing.isActive = false;
+            return true;
+        }
+        return false;
+    }
 }

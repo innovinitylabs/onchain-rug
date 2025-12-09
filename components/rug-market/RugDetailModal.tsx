@@ -63,6 +63,9 @@ export default function RugDetailModal({
   const isOwner = isConnected && address?.toLowerCase() === ownerAddress?.toLowerCase()
   const isListingActive = listing?.isActive
   
+  // Check if user is the listing seller (prevents buying own listings)
+  const isListingSeller = isConnected && listing?.seller && address?.toLowerCase() === listing.seller.toLowerCase()
+  
   // Transaction tracking
   const { isLoading: isApproveConfirming, isSuccess: isApproveSuccess } = useWaitForTransactionReceipt({
     hash: approveMarketplace.hash
@@ -83,6 +86,24 @@ export default function RugDetailModal({
       setTimeout(() => setNotification(null), 3000)
     }
   }, [isApproveSuccess])
+
+  // Handle approval errors
+  useEffect(() => {
+    if (approveMarketplace.error) {
+      const errorMessage = approveMarketplace.error.message || 'Failed to approve marketplace'
+      setNotification({ type: 'error', message: errorMessage })
+      setTimeout(() => setNotification(null), 5000)
+    }
+  }, [approveMarketplace.error])
+
+  // Handle create listing errors
+  useEffect(() => {
+    if (createListing.error) {
+      const errorMessage = createListing.error.message || 'Failed to create listing'
+      setNotification({ type: 'error', message: errorMessage })
+      setTimeout(() => setNotification(null), 5000)
+    }
+  }, [createListing.error])
   
   useEffect(() => {
     if (isListingSuccess && createListing.hash) {
@@ -151,6 +172,15 @@ export default function RugDetailModal({
       setTimeout(() => setNotification(null), 3000)
     }
   }, [isCancelSuccess, permanent.tokenId, onRefreshNFT, chainId, cancelListing.hash])
+
+  // Handle cancel listing errors
+  useEffect(() => {
+    if (cancelListing.error) {
+      const errorMessage = cancelListing.error.message || 'Failed to cancel listing'
+      setNotification({ type: 'error', message: errorMessage })
+      setTimeout(() => setNotification(null), 5000)
+    }
+  }, [cancelListing.error])
 
   // Handle Escape key to close modal
   useEffect(() => {
@@ -659,7 +689,7 @@ export default function RugDetailModal({
 
                 {/* Actions */}
                 <div className="flex gap-3 pt-4 border-t border-white/10">
-                  {isListingActive && !isOwner && onBuyNFT && (
+                  {isListingActive && !isOwner && !isListingSeller && onBuyNFT && (
                     <button
                       onClick={() => onBuyNFT(permanent.tokenId, listing?.price ? (Number(listing.price) / 1e18).toString() : dynamic.listingPrice || '0')}
                       className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 text-white py-3 px-6 rounded-lg font-semibold shadow-lg hover:shadow-green-500/50 transition-all duration-200 transform hover:scale-105 active:scale-95"
@@ -685,6 +715,12 @@ export default function RugDetailModal({
                         return 'N/A'
                       })()}
                     </button>
+                  )}
+                  {isListingActive && isListingSeller && (
+                    <div className="flex-1 text-center text-white/60 py-3 px-6 rounded-lg bg-yellow-500/20 border border-yellow-500/30">
+                      <AlertCircle className="w-5 h-5 mx-auto mb-1" />
+                      <div className="text-sm">You cannot buy your own listing</div>
+                    </div>
                   )}
                   {!isListingActive && !isOwner && onMakeOffer && (
                     <button
