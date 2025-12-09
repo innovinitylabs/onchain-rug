@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Eye, ExternalLink, Calendar, User, TrendingUp, ShoppingCart, Tag, AlertCircle, RefreshCw, HandCoins } from 'lucide-react'
+import { X, Eye, ExternalLink, Calendar, User, TrendingUp, ShoppingCart, Tag, AlertCircle, RefreshCw, HandCoins, Handshake } from 'lucide-react'
 import { useAccount, useChainId, useReadContract } from 'wagmi'
 import { RugMarketNFT } from '@/lib/rug-market-types'
 import NFTDisplay from '@/components/NFTDisplay'
@@ -13,6 +13,7 @@ import { useWaitForTransactionReceipt } from 'wagmi'
 import { contractAddresses, onchainRugsABI } from '@/lib/web3'
 import { getExplorerUrl } from '@/lib/networks'
 import { formatEth } from '@/utils/marketplace-utils'
+import { useRoyaltyInfo, useMarketplaceFee, useDiamondFramePoolInfo } from '@/hooks/use-royalty-info'
 
 interface RugDetailModalProps {
   nft: RugMarketNFT
@@ -640,6 +641,15 @@ export default function RugDetailModal({
                                 className="w-full px-4 py-2 bg-black/30 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-green-500"
                               />
                             </div>
+                            
+                            {/* Listing Breakdown */}
+                            {listingPrice && parseFloat(listingPrice) > 0 && (
+                              <ListingBreakdown
+                                tokenId={permanent.tokenId}
+                                listingPrice={listingPrice}
+                              />
+                            )}
+                            
                             <div className="flex gap-2">
                               <button
                                 onClick={handleCreateListing}
@@ -1016,6 +1026,92 @@ function OfferChecker({
   return null
 }
 
+// Listing Breakdown Component - Shows what seller will receive
+function ListingBreakdown({ tokenId, listingPrice }: { tokenId: number; listingPrice: string }) {
+  const { royaltyAmount, royaltyPercentage, isLoading: royaltyLoading } = useRoyaltyInfo(tokenId, BigInt(parseFloat(listingPrice) * 1e18))
+  const { marketplaceFeePercent, calculateMarketplaceFee } = useMarketplaceFee()
+  const { poolPercent, calculatePoolFee } = useDiamondFramePoolInfo()
+
+  if (royaltyLoading) {
+    return (
+      <div className="bg-blue-500/20 border border-blue-400/40 rounded-lg p-4">
+        <div className="animate-pulse">
+          <div className="h-4 bg-blue-400/30 rounded w-1/3 mb-3"></div>
+          <div className="space-y-2">
+            <div className="h-3 bg-blue-400/20 rounded w-full"></div>
+            <div className="h-3 bg-blue-400/20 rounded w-3/4"></div>
+            <div className="h-3 bg-blue-400/20 rounded w-1/2"></div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const priceWei = BigInt(Math.floor(parseFloat(listingPrice) * 1e18))
+  
+  // Calculate fees
+  const marketplaceFee = calculateMarketplaceFee(priceWei)
+  const poolFee = calculatePoolFee(priceWei)
+  const creatorRoyalty = (royaltyAmount || BigInt(0)) - poolFee // Creator gets 9%, pool gets 1%
+  const totalDeductions = creatorRoyalty + poolFee + marketplaceFee
+  const sellerReceives = priceWei - totalDeductions
+
+  return (
+    <div className="bg-blue-500/20 border border-blue-400/40 rounded-lg p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+        <h4 className="text-blue-200 font-medium text-sm">You Will Receive</h4>
+      </div>
+
+      <div className="space-y-2 text-sm">
+        {/* Listing Price */}
+        <div className="flex justify-between text-white/90">
+          <span>Listing Price:</span>
+          <span className="font-medium">{listingPrice} ETH</span>
+        </div>
+
+        {/* Creator Royalty */}
+        {creatorRoyalty > BigInt(0) && (
+          <div className="flex justify-between text-green-300">
+            <span>Creator Royalty ({royaltyPercentage - poolPercent}%):</span>
+            <span>-{formatEth(creatorRoyalty)} ETH</span>
+          </div>
+        )}
+
+        {/* Diamond Frame Pool */}
+        {poolFee > BigInt(0) && (
+          <div className="flex justify-between text-yellow-300">
+            <span>Diamond Frame Pool ({poolPercent}%):</span>
+            <span>-{formatEth(poolFee)} ETH</span>
+          </div>
+        )}
+
+        {/* Marketplace Fee */}
+        {marketplaceFee > BigInt(0) && (
+          <div className="flex justify-between text-purple-300">
+            <span>Marketplace Fee ({marketplaceFeePercent}%):</span>
+            <span>-{formatEth(marketplaceFee)} ETH</span>
+          </div>
+        )}
+
+        {/* Separator */}
+        <div className="border-t border-blue-400/30 pt-2 mt-3">
+          {/* Seller Receives */}
+          <div className="flex justify-between text-green-300 font-medium">
+            <span>You Will Receive:</span>
+            <span>{formatEth(sellerReceives)} ETH</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Disclaimer */}
+      <div className="text-xs text-blue-200/70 mt-3 pt-2 border-t border-blue-400/20">
+        💎 Royalties support creators (9%) and Diamond Frame NFT holders (1%) for long-term sustainability
+      </div>
+    </div>
+  )
+}
+
 // Offer Item Component
 function OfferItem({ 
   offerId, 
@@ -1068,8 +1164,9 @@ function OfferItem({
         {isOwner && !isExpired && (
           <button
             onClick={() => onAccept(offerId)}
-            className="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors"
+            className="flex-1 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors"
           >
+            <Handshake className="w-4 h-4" />
             Accept
           </button>
         )}

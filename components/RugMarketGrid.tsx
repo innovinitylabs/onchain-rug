@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useChainId, useAccount } from 'wagmi'
 import { motion, AnimatePresence } from 'framer-motion'
-import { RefreshCw, Eye, Heart, ExternalLink, ShoppingCart, HandCoins, Tag, X } from 'lucide-react'
+import { RefreshCw, Eye, Heart, ExternalLink, ShoppingCart, HandCoins, Tag, X, Handshake } from 'lucide-react'
 import { useTokenOffers, useOfferData } from '@/hooks/use-marketplace-contract'
 import { RugMarketNFT } from '@/lib/rug-market-types'
 import NFTDisplay, { NFTDisplaySkeleton } from './NFTDisplay'
@@ -160,6 +160,10 @@ function RugCard({ nft, onClick, onRefresh, onFavoriteToggle, onBuyNFT, onMakeOf
               })() : 'LISTED'}
           </div>
         )}
+        {/* Bottom Right - Highest Offer (if not listed) */}
+          {!nft.dynamic.isListed && offerIds && offerIds.length > 0 && (
+            <HighestOfferDisplay offerIds={offerIds} />
+          )}
         </div>
       </div>
 
@@ -192,16 +196,30 @@ function RugCard({ nft, onClick, onRefresh, onFavoriteToggle, onBuyNFT, onMakeOf
             </button>
           )}
           {isOwner && !nft.dynamic.isListed && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                onClick?.()
-              }}
-              className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-semibold py-2.5 px-4 rounded-lg shadow-lg hover:shadow-amber-500/50 transition-all duration-200 transform hover:scale-105 active:scale-95 text-sm"
-            >
-              <Tag className="w-4 h-4" />
-              List for Sale
-            </button>
+            <div className="flex-1 flex flex-col gap-2">
+              {offerIds && offerIds.length > 0 ? (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onClick?.()
+                  }}
+                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 text-white font-semibold py-2.5 px-4 rounded-lg shadow-lg hover:shadow-green-500/50 transition-all duration-200 transform hover:scale-105 active:scale-95 text-sm"
+                >
+                  <Handshake className="w-4 h-4" />
+                  Accept Offer ({offerIds.length})
+                </button>
+              ) : null}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onClick?.()
+                }}
+                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-semibold py-2.5 px-4 rounded-lg shadow-lg hover:shadow-amber-500/50 transition-all duration-200 transform hover:scale-105 active:scale-95 text-sm"
+              >
+                <Tag className="w-4 h-4" />
+                List for Sale
+              </button>
+            </div>
           )}
           {isOwner && nft.dynamic.isListed && (
             <button
@@ -451,5 +469,58 @@ function OfferIdChecker({
   }, [offer, isLoading, address, offerId, onFound, onNotFound])
 
   // Return null - this component doesn't render anything visible
+  return null
+}
+
+// Component to display the highest offer price in the overlay
+function HighestOfferDisplay({ offerIds }: { offerIds: bigint[] }) {
+  const [highestOffer, setHighestOffer] = useState<{ price: string; count: number } | null>(null)
+
+  // Render individual offer checkers to find the highest
+  return (
+    <>
+      {offerIds.map((offerIdBigInt) => (
+        <OfferPriceChecker
+          key={Number(offerIdBigInt)}
+          offerId={Number(offerIdBigInt)}
+          onPriceFound={(price) => {
+            setHighestOffer(prev => {
+              if (!prev || BigInt(price) > BigInt(prev.price)) {
+                return { price, count: offerIds.length }
+              }
+              return prev
+            })
+          }}
+        />
+      ))}
+      {highestOffer && highestOffer.price !== '0' && (
+        <div className="absolute bottom-2 right-2 bg-blue-600/90 backdrop-blur-sm text-white px-2 py-1 rounded border border-blue-400 text-xs font-semibold pointer-events-auto shadow-lg">
+          {formatEth(BigInt(highestOffer.price))} ETH
+          {highestOffer.count > 1 && ` (${highestOffer.count})`}
+        </div>
+      )}
+    </>
+  )
+}
+
+// Component to check offer price
+function OfferPriceChecker({
+  offerId,
+  onPriceFound
+}: {
+  offerId: number
+  onPriceFound: (price: string) => void
+}) {
+  const { offer, isLoading } = useOfferData(offerId)
+
+  useEffect(() => {
+    if (!isLoading && offer && offer.isActive) {
+      const isExpired = offer.expiresAt > 0 && Date.now() / 1000 > offer.expiresAt
+      if (!isExpired) {
+        onPriceFound(offer.price)
+      }
+    }
+  }, [offer, isLoading, onPriceFound])
+
   return null
 }

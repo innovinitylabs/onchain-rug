@@ -1,0 +1,6 @@
+**/test/**
+**/lib/**/test/**
+**/lib/**/lib/**/test/**
+src/lib/**/test/**
+lib/**/test/**
+
