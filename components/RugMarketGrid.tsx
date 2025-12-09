@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useChainId, useAccount } from 'wagmi'
 import { motion, AnimatePresence } from 'framer-motion'
-import { RefreshCw, Eye, Heart, ExternalLink, ShoppingCart, HandCoins, Tag, X } from 'lucide-react'
+import { RefreshCw, Eye, Heart, ExternalLink, ShoppingCart, HandCoins, Tag, X, Handshake } from 'lucide-react'
 import { useTokenOffers, useOfferData } from '@/hooks/use-marketplace-contract'
 import { RugMarketNFT } from '@/lib/rug-market-types'
 import NFTDisplay, { NFTDisplaySkeleton } from './NFTDisplay'
@@ -205,7 +205,7 @@ function RugCard({ nft, onClick, onRefresh, onFavoriteToggle, onBuyNFT, onMakeOf
                   }}
                   className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 text-white font-semibold py-2.5 px-4 rounded-lg shadow-lg hover:shadow-green-500/50 transition-all duration-200 transform hover:scale-105 active:scale-95 text-sm"
                 >
-                  <HandCoins className="w-4 h-4" />
+                  <Handshake className="w-4 h-4" />
                   Accept Offer ({offerIds.length})
                 </button>
               ) : null}
