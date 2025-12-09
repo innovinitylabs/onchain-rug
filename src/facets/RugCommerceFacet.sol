@@ -40,6 +40,7 @@ contract RugCommerceFacet {
     event PoolContractSet(address indexed poolContract);
     event PoolPercentageSet(uint256 poolPercentage);
     event PoolRoyaltySent(address indexed poolContract, uint256 amount);
+    event MinterRoyaltyDistributed(address indexed minter, uint256 amount);
 
     // Royalty storage (separate from main storage for EIP-2981 compliance)
     struct RoyaltyConfig {
@@ -179,6 +180,7 @@ contract RugCommerceFacet {
      * @param tokenId Token ID that was sold
      * @param salePrice Sale price in wei
      * @param saleContract Address of the marketplace contract
+     * @dev Distribution: 1% to minter/curator, 8% to configured recipients, 1% to pool
      */
     function distributeRoyalties(uint256 tokenId, uint256 salePrice, address saleContract) external {
         // Access control: only marketplace facet or owner
@@ -200,40 +202,70 @@ contract RugCommerceFacet {
         uint256 totalRoyalty = (salePrice * rs.royaltyPercentage) / 10000;
         require(address(this).balance >= totalRoyalty, "Insufficient contract balance");
 
-        // Calculate pool amount if pool is configured
+        // Get minter/curator address from NFT (stored in RugData.curator)
+        LibRugStorage.RugConfig storage rugConfig = LibRugStorage.rugStorage();
+        address minter = rugConfig.rugs[tokenId].curator;
+        require(minter != address(0), "Minter address not found");
+
+        // Calculate minter royalty: 1% (100 basis points)
+        uint256 minterRoyalty = (salePrice * 100) / 10000;
+        
+        // Distribute to minter first
+        if (minterRoyalty > 0) {
+            (bool minterSuccess,) = minter.call{value: minterRoyalty, gas: 5000}("");
+            if (minterSuccess) {
+                emit MinterRoyaltyDistributed(minter, minterRoyalty);
+            } else {
+                // Store failed distribution for pull pattern fallback
+                rs.pendingRoyalties[minter] += minterRoyalty;
+                emit RoyaltyDistributionFailed(minter, minterRoyalty);
+            }
+        }
+
+        // Calculate remaining royalty after minter (for user and pool)
+        uint256 remainingRoyalty = totalRoyalty - minterRoyalty;
+
+        // Calculate pool amount if pool is configured (1% = 100 basis points)
         uint256 poolAmount = 0;
-        uint256 remainingRoyalty = totalRoyalty;
         
         if (rs.poolContract != address(0) && rs.poolPercentage > 0) {
-            // Calculate pool amount: (salePrice * poolPercentage) / 10000
-            poolAmount = (salePrice * rs.poolPercentage) / 10000;
+            // Pool gets 1% (100 basis points)
+            poolAmount = (salePrice * 100) / 10000;
             
-            // Ensure pool amount doesn't exceed total royalty
-            if (poolAmount > totalRoyalty) {
-                poolAmount = totalRoyalty;
+            // Ensure pool amount doesn't exceed remaining royalty
+            if (poolAmount > remainingRoyalty) {
+                poolAmount = remainingRoyalty;
             }
             
             // Send to pool contract with optimized count passing (gas efficient)
-            // Use local helper function to work around linter false positive
             uint256 totalDiamondFrames = _getDiamondFrameCount();
             IDiamondFramePool pool = IDiamondFramePool(rs.poolContract);
 
             try pool.depositWithCount{value: poolAmount}(poolAmount, totalDiamondFrames) {
-                remainingRoyalty = totalRoyalty - poolAmount;
+                remainingRoyalty = remainingRoyalty - poolAmount;
                 emit PoolRoyaltySent(rs.poolContract, poolAmount);
             } catch {
-                // If pool deposit fails, continue with full royalty to artist
+                // If pool deposit fails, continue with remaining royalty to user
                 poolAmount = 0;
                 emit RoyaltyDistributionFailed(rs.poolContract, poolAmount);
             }
         }
 
-        // Distribute remaining royalty to artist recipients according to their splits
+        // Distribute remaining royalty (8%) to configured recipients (user)
+        // Calculate total user splits for proportional distribution
+        uint256 totalUserSplits = 0;
+        for (uint256 i = 0; i < rs.recipientSplits.length; i++) {
+            totalUserSplits += rs.recipientSplits[i];
+        }
+        
+        // Distribute remaining royalty proportionally to recipients
         // Continue even if individual recipients fail (prevent DoS)
         for (uint256 i = 0; i < rs.recipients.length; i++) {
-            // Split remaining royalty proportionally based on original splits
+            // Split remaining royalty proportionally based on recipient splits
             // Solidity 0.8+ has built-in overflow protection
-            uint256 recipientRoyalty = (remainingRoyalty * rs.recipientSplits[i]) / rs.royaltyPercentage;
+            uint256 recipientRoyalty = totalUserSplits > 0 
+                ? (remainingRoyalty * rs.recipientSplits[i]) / totalUserSplits
+                : 0;
 
             if (recipientRoyalty > 0) {
                 // Try to send with gas limit to prevent DoS
