@@ -40,6 +40,7 @@ contract RugMarketplaceFacet is ReentrancyGuard {
     error TransferFailed();
     error NotApprovedForTransfer();
     error CannotBuyOwnListing();
+    error SellerNoLongerOwner();
 
     // ===== MODIFIERS =====
     
@@ -147,13 +148,20 @@ contract RugMarketplaceFacet is ReentrancyGuard {
         address seller = listing.seller;
         uint256 price = listing.price;
 
-        // Deactivate listing
-        listing.isActive = false;
+        // CRITICAL: Verify seller still owns the NFT BEFORE processing payment
+        // This prevents the attack where seller lists NFT then transfers it away
+        address currentOwner = IERC721(address(this)).ownerOf(tokenId);
+        if (currentOwner != seller) revert SellerNoLongerOwner();
 
         // Re-check approval before transfer (prevent race condition)
         address approved = IERC721(address(this)).getApproved(tokenId);
         bool approvedForAll = IERC721(address(this)).isApprovedForAll(seller, address(this));
-        require(approved == address(this) || approvedForAll, "Approval revoked");
+        if (approved != address(this) && !approvedForAll) {
+            revert NotApprovedForTransfer();
+        }
+
+        // Deactivate listing AFTER ownership verification
+        listing.isActive = false;
 
         // Transfer NFT from seller to buyer FIRST to prevent reentrancy
         IERC721(address(this)).transferFrom(seller, msg.sender, tokenId);
