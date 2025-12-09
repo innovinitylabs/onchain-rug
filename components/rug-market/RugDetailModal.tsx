@@ -1,8 +1,8 @@
 'use client'
 
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Eye, ExternalLink, Calendar, User, TrendingUp, ShoppingCart, Tag, AlertCircle, RefreshCw, HandCoins, Handshake } from 'lucide-react'
+import { X, Eye, ExternalLink, Calendar, User, TrendingUp, ShoppingCart, Tag, AlertCircle, RefreshCw, HandCoins, Handshake, Maximize2, Minimize2 } from 'lucide-react'
 import { useAccount, useChainId, useReadContract } from 'wagmi'
 import { RugMarketNFT } from '@/lib/rug-market-types'
 import NFTDisplay from '@/components/NFTDisplay'
@@ -36,6 +36,13 @@ export default function RugDetailModal({
   const chainId = useChainId()
   const { permanent, dynamic } = nft
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const fullscreenRef = useRef<HTMLDivElement>(null)
+  const [zoom, setZoom] = useState(1)
+  const [pan, setPan] = useState({ x: 0, y: 0 })
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  const zoomContainerRef = useRef<HTMLDivElement>(null)
   
   // Get contract address
   const contractAddress = contractAddresses[chainId]
@@ -248,19 +255,118 @@ export default function RugDetailModal({
     }
   }, [isCancelOfferSuccess, cancelOffer.hash, refetchOffers])
 
-  // Handle Escape key to close modal
+  // Handle fullscreen API
+  useEffect(() => {
+    if (!fullscreenRef.current) return
+
+    const handleFullscreenChange = () => {
+      const isCurrentlyFullscreen = !!document.fullscreenElement
+      setIsFullscreen(isCurrentlyFullscreen)
+    }
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange)
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange)
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange)
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange)
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange)
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange)
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange)
+    }
+  }, [])
+
+  const enterFullscreen = async () => {
+    if (!fullscreenRef.current) return
+
+    try {
+      if (fullscreenRef.current.requestFullscreen) {
+        await fullscreenRef.current.requestFullscreen()
+      } else if ((fullscreenRef.current as any).webkitRequestFullscreen) {
+        await (fullscreenRef.current as any).webkitRequestFullscreen()
+      } else if ((fullscreenRef.current as any).mozRequestFullScreen) {
+        await (fullscreenRef.current as any).mozRequestFullScreen()
+      } else if ((fullscreenRef.current as any).msRequestFullscreen) {
+        await (fullscreenRef.current as any).msRequestFullscreen()
+      }
+    } catch (error) {
+      console.error('Error entering fullscreen:', error)
+    }
+  }
+
+  const exitFullscreen = async () => {
+    try {
+      if (document.exitFullscreen) {
+        await document.exitFullscreen()
+      } else if ((document as any).webkitExitFullscreen) {
+        await (document as any).webkitExitFullscreen()
+      } else if ((document as any).mozCancelFullScreen) {
+        await (document as any).mozCancelFullScreen()
+      } else if ((document as any).msExitFullscreen) {
+        await (document as any).msExitFullscreen()
+      }
+      // Reset zoom and pan when exiting
+      setZoom(1)
+      setPan({ x: 0, y: 0 })
+    } catch (error) {
+      console.error('Error exiting fullscreen:', error)
+    }
+  }
+
+  // Handle zoom with mouse wheel
+  const handleWheel = (e: React.WheelEvent) => {
+    if (!isFullscreen) return
+    e.preventDefault()
+    const delta = e.deltaY > 0 ? -0.1 : 0.1
+    const newZoom = Math.max(0.5, Math.min(5, zoom + delta))
+    setZoom(newZoom)
+  }
+
+  // Handle mouse down for panning
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!isFullscreen || zoom <= 1) return
+    setIsDragging(true)
+    setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y })
+  }
+
+  // Handle mouse move for panning
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || zoom <= 1) return
+    setPan({
+      x: e.clientX - dragStart.x,
+      y: e.clientY - dragStart.y
+    })
+  }
+
+  // Handle mouse up
+  const handleMouseUp = () => {
+    setIsDragging(false)
+  }
+
+  // Reset zoom and pan
+  const resetZoom = () => {
+    setZoom(1)
+    setPan({ x: 0, y: 0 })
+  }
+
+  // Handle Escape key to close modal or exit fullscreen
   useEffect(() => {
     if (!isOpen) return
 
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose()
+        if (isFullscreen) {
+          exitFullscreen()
+        } else {
+          onClose()
+        }
       }
     }
 
     window.addEventListener('keydown', handleEscape)
     return () => window.removeEventListener('keydown', handleEscape)
-  }, [isOpen, onClose])
+  }, [isOpen, onClose, isFullscreen])
   
   const handleCreateListing = () => {
     if (!listingPrice || parseFloat(listingPrice) <= 0) {
@@ -402,14 +508,141 @@ export default function RugDetailModal({
   if (!isOpen) return null
 
   return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
-        onClick={onClose}
+    <>
+      {/* Fullscreen View - Hidden until browser fullscreen is active */}
+      <div
+        ref={fullscreenRef}
+        onWheel={handleWheel}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        style={{ 
+          display: isFullscreen ? 'flex' : 'none',
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          maxWidth: '100vw',
+          maxHeight: '100vh',
+          backgroundColor: '#000',
+          overflow: 'auto',
+          zIndex: 9999,
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxSizing: 'border-box',
+          cursor: zoom > 1 ? (isDragging ? 'grabbing' : 'grab') : 'zoom-in'
+        }}
       >
+        <button
+          onClick={exitFullscreen}
+          style={{
+            position: 'absolute',
+            top: '1rem',
+            right: '1rem',
+            padding: '0.75rem',
+            borderRadius: '0.5rem',
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            color: 'white',
+            border: 'none',
+            cursor: 'pointer',
+            zIndex: 10000
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.9)'}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.7)'}
+          title="Exit fullscreen (ESC)"
+        >
+          <Minimize2 className="w-6 h-6" />
+        </button>
+        {zoom > 1 && (
+          <button
+            onClick={resetZoom}
+            style={{
+              position: 'absolute',
+              top: '1rem',
+              right: '4rem',
+              padding: '0.75rem',
+              borderRadius: '0.5rem',
+              backgroundColor: 'rgba(0, 0, 0, 0.7)',
+              color: 'white',
+              border: 'none',
+              cursor: 'pointer',
+              zIndex: 10000,
+              fontSize: '0.875rem'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.9)'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.7)'}
+            title="Reset zoom"
+          >
+            Reset ({Math.round(zoom * 100)}%)
+          </button>
+        )}
+        <div 
+          ref={zoomContainerRef}
+          style={{
+            width: '100vw',
+            height: '100vh',
+            maxWidth: '100vw',
+            maxHeight: '100vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxSizing: 'border-box',
+            overflow: 'auto',
+            padding: '2rem',
+            position: 'relative'
+          }}
+        >
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxSizing: 'border-box',
+              position: 'relative',
+              transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)`,
+              transformOrigin: 'center center',
+              transition: isDragging ? 'none' : 'transform 0.1s ease-out',
+              width: '480px',
+              height: '360px',
+              minWidth: '480px',
+              minHeight: '360px',
+              flexShrink: 0
+            }}
+          >
+            <div
+              style={{
+                width: '480px',
+                height: '360px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxSizing: 'border-box',
+                overflow: 'visible',
+                position: 'relative'
+              }}
+            >
+              <NFTDisplay
+                nftData={nftDataForDisplay}
+                size="large"
+                interactive={false}
+                className=""
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Modal */}
+      <AnimatePresence>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+          onClick={onClose}
+        >
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -466,22 +699,17 @@ export default function RugDetailModal({
                     className="rounded-xl w-full h-full"
                   />
                   
-                  {/* Overlay badges */}
-                  {dynamic.isListed && (
-                  <div className="absolute top-4 left-4 flex flex-col gap-2">
-                      <span className="px-3 py-1 rounded-lg bg-green-500/20 text-green-300 border border-green-500/30 text-sm font-medium flex items-center gap-1">
-                        <Tag className="w-4 h-4" />
-                        FOR SALE
-                      </span>
-                    </div>
-                    )}
-
-                  {/* Price badge */}
-                  {dynamic.isListed && dynamic.listingPrice && (
-                    <div className="absolute bottom-4 left-4 bg-black/70 text-white text-lg px-4 py-2 rounded-lg font-bold">
-                      {formatPrice(dynamic.listingPrice)}
-                    </div>
-                  )}
+                  {/* Fullscreen button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      enterFullscreen()
+                    }}
+                    className="absolute top-4 right-4 p-2 rounded-lg bg-black/70 hover:bg-black/90 text-white transition-colors backdrop-blur-sm"
+                    title="View fullscreen"
+                  >
+                    <Maximize2 className="w-5 h-5" />
+                  </button>
                 </div>
               </div>
 
@@ -902,7 +1130,8 @@ export default function RugDetailModal({
           </div>
         </motion.div>
       </motion.div>
-    </AnimatePresence>
+      </AnimatePresence>
+    </>
   )
 }
 
