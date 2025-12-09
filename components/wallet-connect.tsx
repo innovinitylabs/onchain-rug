@@ -13,8 +13,14 @@ export function WalletConnect() {
 
   // Check if we're using RainbowKit by trying to access it
   const [useRainbowKit, setUseRainbowKit] = useState(true)
+  
+  // Prevent hydration mismatch by only showing balance after mount
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    // Mark as mounted to prevent hydration mismatch
+    setMounted(true)
+    
     // Check if RainbowKit is properly configured by looking for the providers flag
     // If the providers component disabled RainbowKit, we'll fall back to basic connection
     const checkRainbowKit = async () => {
@@ -93,7 +99,7 @@ export function WalletConnect() {
 
   return (
     <div className="flex items-center gap-4">
-      {isConnected && (
+      {mounted && isConnected && (
         <div className="flex flex-col items-end gap-0 text-xs text-white/80 bg-white/10 backdrop-blur-md px-3 py-2 rounded-lg border border-white/10">
           <span className="leading-tight" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, \'Helvetica Neue\', Arial, sans-serif', fontWeight: '500', fontVariant: 'normal', fontFeatureSettings: 'normal' }}>
             {balance ? `${parseFloat(formatEther(balance.value)).toFixed(4)} ETH` : '0 ETH'}
