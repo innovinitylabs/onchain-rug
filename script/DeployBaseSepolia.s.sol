@@ -75,6 +75,106 @@ contract DeployBaseSepolia is Script {
         console.log("Deployer balance:", deployer.balance / 1e18, "ETH");
     }
 
+    // ===== CONFIGURABLE SETTINGS (via environment variables) =====
+    // These can be overridden by setting environment variables before deployment
+    
+    function getRoyaltyPercentage() internal view returns (uint256) {
+        // Default: 10% (1000 basis points)
+        // Can be set via ROYALTY_PERCENTAGE env var (in basis points)
+        // NOTE: This is the TOTAL royalty that includes curator + creator + pool
+        // - Curator: 1% (100 basis points, hardcoded)
+        // - Pool: Configurable via POOL_PERCENTAGE (default 1%)
+        // - Creator: Remaining (ROYALTY_PERCENTAGE - 100 - POOL_PERCENTAGE)
+        try vm.envUint("ROYALTY_PERCENTAGE") returns (uint256 percentage) {
+            require(percentage <= 10000, "Royalty percentage too high");
+            require(percentage >= 200, "Royalty percentage too low (must be at least 2% for curator + pool)");
+            return percentage;
+        } catch {
+            return 1000; // 10% default (1% curator + 8% creator + 1% pool)
+        }
+    }
+
+    function getCuratorRoyaltyBPS() internal pure returns (uint256) {
+        // Curator royalty is hardcoded to 1% (100 basis points)
+        // This goes to the address that minted the NFT (stored in RugData.curator)
+        // NOT configurable - fixed at 1%
+        return 100; // 1%
+    }
+
+    function getMarketplaceFeeBPS() internal view returns (uint256) {
+        // Default: 0% (0 basis points)
+        // Can be set via MARKETPLACE_FEE_BPS env var (in basis points)
+        try vm.envUint("MARKETPLACE_FEE_BPS") returns (uint256 fee) {
+            require(fee <= 10000, "Marketplace fee too high");
+            return fee;
+        } catch {
+            return 0; // 0% default
+        }
+    }
+
+    function getPoolPercentage() internal view returns (uint256) {
+        // Default: 1% (100 basis points)
+        // Can be set via POOL_PERCENTAGE env var (in basis points)
+        // This is the percentage of royalties that go to the Diamond Frame Pool
+        // NOTE: This is part of the total ROYALTY_PERCENTAGE
+        try vm.envUint("POOL_PERCENTAGE") returns (uint256 percentage) {
+            require(percentage <= 10000, "Pool percentage too high");
+            return percentage;
+        } catch {
+            return 100; // 1% default
+        }
+    }
+
+    function getMinimumClaimableAmount() internal view returns (uint256) {
+        // Default: 0.0001 ETH
+        // Can be set via MINIMUM_CLAIMABLE_AMOUNT env var (in wei)
+        try vm.envUint("MINIMUM_CLAIMABLE_AMOUNT") returns (uint256 amount) {
+            return amount;
+        } catch {
+            return 0.0001 ether; // 0.0001 ETH default
+        }
+    }
+
+    function getBasePrice() internal view returns (uint256) {
+        // Default: 0.00003 ETH
+        // Can be set via BASE_PRICE env var (in wei)
+        try vm.envUint("BASE_PRICE") returns (uint256 price) {
+            return price;
+        } catch {
+            return 30000000000000; // 0.00003 ETH default
+        }
+    }
+
+    function getCollectionCap() internal view returns (uint256) {
+        // Default: 10000
+        // Can be set via COLLECTION_CAP env var
+        try vm.envUint("COLLECTION_CAP") returns (uint256 cap) {
+            return cap;
+        } catch {
+            return 10000; // 10000 default
+        }
+    }
+
+    function getWalletLimit() internal view returns (uint256) {
+        // Default: 10
+        // Can be set via WALLET_LIMIT env var
+        try vm.envUint("WALLET_LIMIT") returns (uint256 limit) {
+            return limit;
+        } catch {
+            return 10; // 10 default
+        }
+    }
+
+    function getServiceFee() internal view returns (uint256) {
+        // Default: 0.00042 ETH
+        // Can be set via SERVICE_FEE env var (in wei)
+        try vm.envUint("SERVICE_FEE") returns (uint256 fee) {
+            return fee;
+        } catch {
+            return 0.00042 ether; // 0.00042 ETH default
+        }
+    }
+
     function run() public {
         vm.startBroadcast(deployerPrivateKey);
 
@@ -160,7 +260,7 @@ contract DeployBaseSepolia is Script {
         console.log("9. Deploying Diamond Frame Pool...");
 
         // Deploy the pool contract with diamond address and minimum claimable amount
-        uint256 minimumClaimableAmount = 0.0001 ether; // 0.0001 ETH minimum claim
+        uint256 minimumClaimableAmount = getMinimumClaimableAmount();
         diamondFramePool = new DiamondFramePool(diamondAddr, minimumClaimableAmount);
         poolAddr = address(diamondFramePool);
         console.log("   DiamondFramePool deployed at:", poolAddr);
@@ -174,9 +274,11 @@ contract DeployBaseSepolia is Script {
         console.log("   Pool ownership set to diamond contract in constructor");
 
         // Configure the pool in the diamond contract
+        uint256 poolPercentage = getPoolPercentage();
         RugCommerceFacet(diamondAddr).setPoolContract(poolAddr);
-        RugCommerceFacet(diamondAddr).setPoolPercentage(100); // 1% to pool (100 basis points)
-        console.log("   Pool configured in diamond contract (1% of royalties)");
+        RugCommerceFacet(diamondAddr).setPoolPercentage(poolPercentage);
+        console.log("   Pool configured in diamond contract");
+        console.log("   Pool percentage:", poolPercentage, "basis points (", poolPercentage / 100, "%)");
     }
 
     function configureDiamond() internal {
@@ -354,9 +456,10 @@ contract DeployBaseSepolia is Script {
         console.log("   - Texture: 3min/level progression (normally 30dto60dto90dto120d...)");
         console.log("   - Free cleaning: 30min after mint, 11min after last clean");
 
-        // Set pricing (0.00003 ETH base price, others 0)
+        // Set pricing (configurable via BASE_PRICE env var)
+        uint256 basePrice = getBasePrice();
         uint256[6] memory prices = [
-            uint256(30000000000000), // basePrice: 0.00003 ETH in wei
+            basePrice,              // basePrice: configurable
             uint256(0),             // linePrice1
             uint256(0),             // linePrice2
             uint256(0),             // linePrice3
@@ -365,9 +468,11 @@ contract DeployBaseSepolia is Script {
         ];
         RugAdminFacet(diamondAddr).updateMintPricing(prices);
 
-        // Set collection parameters
-        RugAdminFacet(diamondAddr).updateCollectionCap(10000);
-        RugAdminFacet(diamondAddr).updateWalletLimit(7);
+        // Set collection parameters (configurable via env vars)
+        uint256 collectionCap = getCollectionCap();
+        uint256 walletLimit = getWalletLimit();
+        RugAdminFacet(diamondAddr).updateCollectionCap(collectionCap);
+        RugAdminFacet(diamondAddr).updateWalletLimit(walletLimit);
 
         // Set aging thresholds for fresh mechanics system (test values in minutes)
         // [dirtLevel1Minutes, dirtLevel2Minutes, agingAdvanceMinutes, freeCleanMinutes, freeCleanWindowMinutes]
@@ -399,9 +504,9 @@ contract DeployBaseSepolia is Script {
         RugAdminFacet(diamondAddr).updateFrameThresholds(frameThresholds);
 
         console.log("   System initialized with:");
-        console.log("   - Base price: 0.00003 ETH");
-        console.log("   - Collection cap: 10,000");
-        console.log("   - Wallet limit: 7");
+        console.log("   - Base price:", basePrice / 1e18, "ETH");
+        console.log("   - Collection cap:", collectionCap);
+        console.log("   - Wallet limit:", walletLimit, "NFTs per wallet");
         console.log("   - Aging thresholds (TEST VALUES): 1min/2min dirt, 3min aging progression");
         console.log("   - Free cleaning: 5min after mint, 2min after cleaning");
         console.log("   - Service costs: 0.00001 ETH each");
@@ -412,36 +517,55 @@ contract DeployBaseSepolia is Script {
         console.log("   - Fresh mechanics: 3 dirt levels, 11 aging levels, 5 frames");
         console.log("   - Scripty contracts configured");
 
-        // Configure royalties (10% to deployer)
+        // Configure royalties (configurable via ROYALTY_PERCENTAGE env var)
+        // NOTE: ROYALTY_PERCENTAGE is the TOTAL royalty that includes:
+        // - Curator (Minter): 1% (hardcoded, not configurable)
+        // - Pool: Configurable via POOL_PERCENTAGE (default 1%)
+        // - Creator: Remaining amount (ROYALTY_PERCENTAGE - Curator - Pool)
         console.log("   Configuring royalties...");
+        uint256 royaltyPercentage = getRoyaltyPercentage();
+        uint256 poolPercentage = getPoolPercentage();
+        uint256 curatorRoyaltyBPS = 100; // Hardcoded to 1% (100 basis points) - not configurable
+        uint256 creatorRoyaltyBPS = royaltyPercentage - curatorRoyaltyBPS - poolPercentage;
+        
         address[] memory recipients = new address[](1);
         recipients[0] = deployer; // Deployer's address
 
         uint256[] memory recipientSplits = new uint256[](1);
-        recipientSplits[0] = 1000; // 10% = 1000 basis points
+        recipientSplits[0] = creatorRoyaltyBPS; // Creator gets remaining after curator and pool
 
         RugCommerceFacet(diamondAddr).configureRoyalties(
-            1000, // 10% royalty (1000 basis points)
+            royaltyPercentage, // Total royalty percentage (in basis points)
             recipients,
             recipientSplits
         );
-        console.log("   - Royalties: 10% to deployer address");
+        console.log("   - Total Royalties:", royaltyPercentage, "basis points (", royaltyPercentage / 100, "%)");
+        console.log("   - Breakdown:");
+        console.log("     * Creator:", creatorRoyaltyBPS, "basis points (", creatorRoyaltyBPS / 100, "%) to deployer");
+        console.log("     * Curator (Minter):", curatorRoyaltyBPS, "basis points (", curatorRoyaltyBPS / 100, "%) - hardcoded, goes to minter");
+        console.log("     * Pool:", poolPercentage, "basis points (", poolPercentage / 100, "%)");
 
         // Enable laundering by default
         console.log("   Enabling automatic laundering...");
         RugAdminFacet(diamondAddr).setLaunderingEnabled(true);
         console.log("   - Automatic laundering: ENABLED");
 
-        // Configure x402 AI maintenance fees
+        // Configure marketplace fee (configurable via MARKETPLACE_FEE_BPS env var)
+        console.log("   Configuring marketplace fee...");
+        uint256 marketplaceFeeBPS = getMarketplaceFeeBPS();
+        RugMarketplaceFacet(diamondAddr).setMarketplaceFee(marketplaceFeeBPS);
+        console.log("   - Marketplace fee:", marketplaceFeeBPS, "basis points (", marketplaceFeeBPS / 100, "%)");
+
+        // Configure x402 AI maintenance fees (configurable via SERVICE_FEE env var)
         console.log("   Configuring x402 AI maintenance fees...");
         RugAdminFacet(diamondAddr).setFeeRecipient(deployer);
-        uint256 serviceFee = uint256(0.00042 ether); // Flat service fee: 0.00042 ETH
+        uint256 serviceFee = getServiceFee();
         RugAdminFacet(diamondAddr).setServiceFee(serviceFee);
         // Set AI service fee for X402 monetization (set to 0 for now - can be enabled later)
         uint256 aiServiceFee = 0 ether; // AI service fee for maintenance operations (disabled)
         RugAdminFacet(diamondAddr).updateAIServiceFee(aiServiceFee);
         console.log("   - Fee recipient: deployer address");
-        console.log("   - Flat service fee: 0.00042 ETH for all actions");
+        console.log("   - Flat service fee:", serviceFee / 1e18, "ETH for all actions");
         console.log("   - AI service fee: 0 ETH (disabled)");
     }
 
