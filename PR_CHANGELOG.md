@@ -1,121 +1,146 @@
-# Dynamic Cache Architecture for NFT Data
+# Marketplace Security Fixes & Make Offer Feature
 
-## Overview
-This PR implements a new architecture for handling dynamic NFT traits (`dirtLevel` and `agingLevel`) that are calculated on-the-fly based on time and frame level, rather than being stored statically in Redis. This ensures data is always accurate and reflects real-time state changes.
+## 🎯 Overview
+This PR adds comprehensive security improvements to the marketplace and introduces a new "Make Offer" feature, allowing users to make offers on NFTs instead of only buying listed items.
 
-## Key Changes
+## 🔒 Security Fixes
 
-### 🏗️ Architecture Improvements
+### Prevent Self-Purchases
+- **Smart Contract**: Added `CannotBuyOwnListing` error check in `buyListing` function
+- **Frontend**: Hide "Buy Now" button and display warning message when user tries to buy their own listing
+- **Gas Optimization**: Check fails early, saving gas for users
 
-#### Dynamic Calculation System
-- **New Files:**
-  - `app/api/rug-market/collection/dynamic-calculator.ts` - Calculates `dirtLevel` and `agingLevel` on read, matching contract logic exactly
-  - `app/api/rug-market/collection/contract-config-cache.ts` - Caches contract-wide configuration (24-hour TTL)
+### Stale Listing Protection
+- **Smart Contract**: Added ownership verification before processing purchase (`SellerNoLongerOwner` error)
+- **Auto-Cancellation**: Listings are automatically cancelled when NFT ownership changes
+- **Implementation**: 
+  - Added `cancelListingOnTransfer` function in `LibRugStorage`
+  - Integrated with `_beforeTokenTransfer` hook in `RugNFTFacet`
+  - Emits `ListingCancelled` event when auto-cancelled
 
-#### Data Structure Changes
-- **Removed from stored data:** `dirtLevel` and `agingLevel` (now calculated on read)
-- **Added to stored data:** `baseAgingLevel` (stored base value from contract)
-- **New interface:** `RugMarketNFTWithCalculated` - Represents NFTs with calculated values attached
+### Gas Efficiency
+- Ownership checks happen **before** any state changes
+- Buyers save gas when attempting to purchase stale listings
+- Early failure prevents unnecessary contract operations
 
-### 🔄 Cache & API Updates
+## ✨ New Features
 
-#### Redis Layer (`rug-market-redis.ts`)
-- `getNFTData()` and `getNFTDataBatch()` now calculate `dirtLevel` and `agingLevel` on read
-- Added timestamp normalization (handles milliseconds → seconds conversion)
-- Added migration logic for old cache entries
-- Contract config caching with 24-hour TTL
+### Make Offer Functionality
+- **Smart Contract Functions**:
+  - `makeOffer(uint256 tokenId, uint256 price, uint256 duration)` - Create an offer
+  - `acceptOffer(uint256 offerId)` - Accept an offer (auto-cancels listing)
+  - `cancelOffer(uint256 offerId)` - Cancel an offer
+  - `getOffer(uint256 offerId)` - Get offer details
+  - `getActiveTokenOffers(uint256 tokenId)` - Get all active offers for a token
 
-#### Blockchain Fetcher (`blockchain-fetcher.ts`)
-- Updated to fetch `getAgingData` from contract (includes `baseAgingLevel`, `frameLevel`, `lastCleaned`)
-- Removed direct fetching of calculated fields (`dirtLevel`, `agingLevel`)
+- **Frontend Hooks**:
+  - `useMakeOffer()` - Create offers
+  - `useAcceptOffer()` - Accept offers
+  - `useCancelOffer()` - Cancel offers
+  - `useOfferData()` - Fetch offer details
+  - `useTokenOffers()` - Fetch active offers for a token
 
-#### API Routes
-- **Collection API (`/api/rug-market/collection`):** Returns NFTs with calculated values
-- **Refresh API (`/api/rug-market/nft/[tokenId]/refresh`):**
-  - Added rate limiting (5-second cooldown per NFT)
-  - Added deduplication (prevents concurrent refreshes)
-  - Fetches fresh data from blockchain and updates cache
-- **Update API (`/api/rug-market/nft/[tokenId]/update`):**
-  - Only allows updates to stored fields (prevents updating calculated fields)
-  - Handles BigInt serialization properly
+### UI/UX Improvements
 
-### 🎨 Frontend Improvements
+#### Grid Card Enhancements
+- **Ownership-Based Actions**:
+  - Owned + Not Listed + Has Offers → Shows "Accept Offer" and "List for Sale" buttons
+  - Owned + Listed → Shows "Cancel Listing" button (opens modal)
+  - Not Owned + Not Listed + Has User's Offer → Shows "Cancel Offer" button
+  - Not Owned + Not Listed + No User's Offer → Shows "Make Offer" button
 
-#### Preview Generation (`NFTDisplay.tsx`)
-- Preview now regenerates when dynamic traits change (`dirtLevel`, `agingLevel`, `frameLevel`)
-- Added `traitsKey` tracking to detect trait changes
-- Frame level properly displayed in previews
+- **Hover Overlay**:
+  - Shows highest offer price for unlisted NFTs with offers
+  - Displays offer count when multiple offers exist
+  - Blue badge similar to green "LISTED" badge
 
-#### Grid Component (`RugMarketGrid.tsx`)
-- Component key includes dynamic traits to force remount on data changes
-- Refresh button on each NFT card (visible on hover)
-- Proper display of calculated dirt/aging levels
+#### Modal Enhancements
+- **Make Offer Section**:
+  - Shows user's active offer with price and expiration
+  - "Cancel Offer" button when user has active offer
+  - "Make Offer" form when no active offer
 
-#### Maintenance Actions (`RugCleaning.tsx`)
-- After maintenance transactions, automatically refreshes NFT data from blockchain
-- Fetches fresh `baseAgingLevel` and `frameLevel` after restore/master restore
-- Updates cache with correct values before UI refresh
+- **Listing Breakdown**:
+  - Shows fee breakdown when creating listing
+  - Displays: Listing Price, Creator Royalty, Diamond Frame Pool, Marketplace Fee
+  - Shows net proceeds: "You Will Receive"
+  - Real-time calculation as user enters price
 
-#### Data Adapter (`rug-market-data-adapter.ts`)
-- New `getCalculatedLevels()` helper function for safe extraction of calculated values
-- Proper handling of missing or invalid calculated values
-- Caps `agingLevel` at 10 (max value)
+- **Offer Management**:
+  - Display all active offers for NFT owners
+  - Accept/Cancel buttons for appropriate users
+  - Handshake icon for Accept Offer buttons
 
-### 🐛 Bug Fixes
+#### Button Improvements
+- "Cancel Listing" button opens modal instead of direct transaction
+- "Cancel Offer" button opens modal to show offer details
+- "Accept Offer" button uses handshake icon (🤝) instead of coins
+- All action buttons properly stop event propagation
 
-1. **Import Path Fixes**
-   - Fixed relative import paths in API routes
-   - Changed to absolute imports with `@/` alias for better build compatibility
+## 🛠️ Technical Changes
 
-2. **BigInt Compatibility**
-   - Replaced BigInt literals (`10n`) with `BigInt()` constructor for ES2017 compatibility
-   - Fixes TypeScript compilation errors in production builds
+### Smart Contracts
+- **RugMarketplaceFacet.sol**:
+  - Added offer struct and storage mappings
+  - Implemented offer creation, acceptance, and cancellation
+  - Added events: `OfferCreated`, `OfferAccepted`, `OfferCancelled`
+  - Fixed `OfferAccepted` event (removed 4th indexed parameter)
 
-3. **Timestamp Normalization**
-   - Handles both milliseconds and seconds timestamps
-   - Prevents negative time calculations
+- **RugNFTFacet.sol**:
+  - Integrated auto-cancellation on transfer
+  - Calls `LibRugStorage.cancelListingOnTransfer` in `_beforeTokenTransfer`
 
-4. **Preview Refresh**
-   - Previews now update correctly after maintenance actions
-   - Frame levels display properly in previews
+- **LibRugStorage.sol**:
+  - Added `cancelListingOnTransfer` utility function
+  - Handles listing deactivation on ownership change
 
-### 📊 Performance Optimizations
+### Frontend Components
+- **RugMarketGrid.tsx**:
+  - Added offer checking logic with `UserOfferButton` component
+  - Implemented `OfferIdChecker` and `OfferPriceChecker` components
+  - Added `HighestOfferDisplay` for overlay price display
+  - Improved card click handling
 
-- Contract config cached for 24 hours (reduces blockchain calls)
-- Rate limiting prevents API abuse
-- Deduplication prevents redundant refreshes
-- Batch operations for multiple NFTs
+- **RugDetailModal.tsx**:
+  - Added `UserOfferDisplay` component for offer management
+  - Implemented `ListingBreakdown` component
+  - Integrated offer acceptance/cancellation UI
+  - Added offer expiration display
 
-### 🔒 Data Integrity
+### Deployment
+- Created `upgrade-manual.js` script for manual diamond upgrade
+- Bypassed Foundry compilation issues with library test files
+- Successfully upgraded diamond contracts with new offer functionality
 
-- Calculated values always match contract logic
-- Stored values (`baseAgingLevel`, `lastCleaned`, `frameLevel`) are source of truth
-- Migration path for existing cache entries
-- Validation and error handling throughout
+## 🧪 Testing
+- Added tests for security fixes:
+  - `testCannotBuyListingWhenSellerTransferredNFT()`
+  - `testAutoCancelListingOnTransfer()`
+- Added tests for offer functionality:
+  - `testMakeOffer()`
+  - `testAcceptOffer()`
+  - `testCancelOffer()`
 
-## Testing Notes
+## 📝 Files Changed
+- `src/facets/RugMarketplaceFacet.sol` - Offer functionality
+- `src/facets/RugNFTFacet.sol` - Auto-cancellation on transfer
+- `src/libraries/LibRugStorage.sol` - Listing cancellation utility
+- `components/RugMarketGrid.tsx` - Grid card improvements
+- `components/rug-market/RugDetailModal.tsx` - Modal enhancements
+- `hooks/use-marketplace-contract.ts` - Offer hooks
+- `app/rug-market/page.tsx` - Page-level offer handling
+- `test/RugMarketplace.t.sol` - Security and offer tests
 
-- ✅ Preview generation with dynamic traits
-- ✅ Frame level display in previews
-- ✅ Maintenance action refresh flow
-- ✅ Rate limiting and deduplication
-- ✅ BigInt serialization in API
-- ✅ Build compatibility (ES2017 target)
+## 🎨 UI/UX Highlights
+- ✅ Clear visual feedback for user's active offers
+- ✅ Transparent fee breakdown when listing
+- ✅ Intuitive button placement based on ownership
+- ✅ Offer price visibility in card overlays
+- ✅ Handshake icon for accepting offers
+- ✅ Modal-based actions for better user control
 
-## Migration
-
-Existing cache entries are automatically migrated when read:
-- Old entries with `dirtLevel`/`agingLevel` are detected
-- Fresh `baseAgingLevel` is fetched from blockchain
-- Cache is updated with new structure
-
-## Breaking Changes
-
-None - The API maintains backward compatibility. Calculated values are added on read, so existing code continues to work.
-
-## Files Changed
-
-- **New Files:** 2
-- **Modified Files:** 19
-- **Total Changes:** +1,198 insertions, -142 deletions
-
+## 🔄 Migration Notes
+- Existing listings continue to work normally
+- New offer functionality is backward compatible
+- Auto-cancellation only affects new transfers after upgrade
+- No breaking changes to existing marketplace functions

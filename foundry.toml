@@ -2,11 +2,12 @@
 src = "src"
 out = "out"
 libs = ["lib"]
-solc = "0.8.22"
+solc = "0.8.27"
 optimizer = true
 optimizer_runs = 10
 via_ir = true
 verbosity = 2
+exclude = ["**/test/**", "**/lib/**/test/**", "**/lib/**/lib/**/test/**"]
 remappings = [
     "@limitbreak/creator-token-contracts/=lib/creator-token-contracts/contracts/",
     "@limitbreak/payment-processor/=lib/payment-processor/contracts/",

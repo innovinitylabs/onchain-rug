@@ -29,6 +29,11 @@ contract RugMarketplaceFacet is ReentrancyGuard {
     event RoyaltyDistributionSkipped(uint256 indexed tokenId, uint256 salePrice);
     event RefundFailed(address indexed recipient, uint256 amount);
     
+    // Offer events
+    event OfferCreated(uint256 indexed offerId, uint256 indexed tokenId, address indexed offerer, uint256 price, uint256 expiresAt);
+    event OfferAccepted(uint256 indexed offerId, uint256 indexed tokenId, address indexed offerer, address owner, uint256 price);
+    event OfferCancelled(uint256 indexed offerId, uint256 indexed tokenId, address indexed offerer);
+    
     // ===== ERRORS =====
 
     error NotTokenOwner();
@@ -41,6 +46,11 @@ contract RugMarketplaceFacet is ReentrancyGuard {
     error NotApprovedForTransfer();
     error CannotBuyOwnListing();
     error SellerNoLongerOwner();
+    error OfferNotFound();
+    error OfferExpired();
+    error OfferNotActive();
+    error CannotOfferOwnToken();
+    error NotOfferOwner();
 
     // ===== MODIFIERS =====
     
@@ -192,6 +202,126 @@ contract RugMarketplaceFacet is ReentrancyGuard {
         emit ListingSold(tokenId, seller, msg.sender, price);
     }
 
+    // ===== OFFER FUNCTIONS =====
+
+    /**
+     * @notice Create an offer for an NFT
+     * @param tokenId Token ID to make an offer for
+     * @param duration Offer duration in seconds (0 = no expiration)
+     */
+    function makeOffer(uint256 tokenId, uint256 duration) external payable nonReentrant {
+        if (msg.value == 0) revert InvalidPrice();
+        
+        // Prevent overflow in fee calculations
+        require(msg.value <= type(uint256).max / 2, "Price too large");
+
+        // Cannot make offer on own token
+        address owner = IERC721(address(this)).ownerOf(tokenId);
+        if (msg.sender == owner) revert CannotOfferOwnToken();
+
+        LibRugStorage.MarketplaceConfig storage ms = LibRugStorage.marketplaceStorage();
+        
+        // Get next offer ID and increment
+        uint256 offerId = ms.nextOfferId;
+        ms.nextOfferId++;
+
+        uint256 expiresAt = duration == 0 ? 0 : block.timestamp + duration;
+
+        LibRugStorage.Offer storage offer = ms.offers[offerId];
+        offer.offerId = offerId;
+        offer.offerer = msg.sender;
+        offer.tokenId = tokenId;
+        offer.price = msg.value;
+        offer.expiresAt = expiresAt;
+        offer.isActive = true;
+
+        // Add to token's offer list
+        ms.tokenOffers[tokenId].push(offerId);
+
+        emit OfferCreated(offerId, tokenId, msg.sender, msg.value, expiresAt);
+    }
+
+    /**
+     * @notice Accept an offer for an NFT
+     * @param offerId Offer ID to accept
+     */
+    function acceptOffer(uint256 offerId) external nonReentrant {
+        LibRugStorage.MarketplaceConfig storage ms = LibRugStorage.marketplaceStorage();
+        LibRugStorage.Offer storage offer = ms.offers[offerId];
+        
+        if (!offer.isActive) revert OfferNotActive();
+        if (offer.expiresAt != 0 && block.timestamp > offer.expiresAt) revert OfferExpired();
+        
+        uint256 tokenId = offer.tokenId;
+        address owner = IERC721(address(this)).ownerOf(tokenId);
+        
+        // Only token owner can accept offers
+        if (msg.sender != owner) revert NotTokenOwner();
+        
+        // Cannot accept own offer (shouldn't happen, but check anyway)
+        if (offer.offerer == owner) revert CannotOfferOwnToken();
+
+        address offerer = offer.offerer;
+        uint256 price = offer.price;
+
+        // Deactivate offer
+        offer.isActive = false;
+
+        // Verify the marketplace is approved to transfer this NFT
+        address approved = IERC721(address(this)).getApproved(tokenId);
+        bool approvedForAll = IERC721(address(this)).isApprovedForAll(owner, address(this));
+        if (approved != address(this) && !approvedForAll) {
+            revert NotApprovedForTransfer();
+        }
+
+        // Transfer NFT from owner to offerer FIRST to prevent reentrancy
+        IERC721(address(this)).transferFrom(owner, offerer, tokenId);
+
+        // Process payment with fees and royalties AFTER transfer is complete
+        _processPayment(tokenId, owner, price);
+
+        // Record sale for laundering tracking
+        RugLaunderingFacet launderingFacet = RugLaunderingFacet(address(this));
+        launderingFacet.recordSale(tokenId, owner, offerer, price);
+
+        // Update marketplace stats
+        ms.totalSales++;
+        ms.totalVolume = LibRugStorage.safeAdd(ms.totalVolume, price);
+
+        // Cancel any active listing for this token
+        LibRugStorage.Listing storage listing = ms.listings[tokenId];
+        if (listing.isActive) {
+            listing.isActive = false;
+            emit ListingCancelled(tokenId, owner);
+        }
+
+        emit OfferAccepted(offerId, tokenId, offerer, owner, price);
+    }
+
+    /**
+     * @notice Cancel an offer
+     * @param offerId Offer ID to cancel
+     */
+    function cancelOffer(uint256 offerId) external nonReentrant {
+        LibRugStorage.MarketplaceConfig storage ms = LibRugStorage.marketplaceStorage();
+        LibRugStorage.Offer storage offer = ms.offers[offerId];
+        
+        if (!offer.isActive) revert OfferNotActive();
+        if (offer.offerer != msg.sender) revert NotOfferOwner();
+        
+        uint256 tokenId = offer.tokenId;
+        uint256 refundAmount = offer.price;
+        
+        // Deactivate offer
+        offer.isActive = false;
+        
+        // Refund the offerer
+        (bool success, ) = msg.sender.call{value: refundAmount}("");
+        if (!success) revert TransferFailed();
+        
+        emit OfferCancelled(offerId, tokenId, msg.sender);
+    }
+
     // ===== VIEW FUNCTIONS =====
 
     /**
@@ -223,6 +353,70 @@ contract RugMarketplaceFacet is ReentrancyGuard {
             ms.totalSales,
             ms.marketplaceFeePercent
         );
+    }
+
+    /**
+     * @notice Get offer details
+     * @param offerId Offer ID
+     */
+    function getOffer(uint256 offerId) external view returns (
+        uint256 offerIdOut,
+        address offerer,
+        uint256 tokenId,
+        uint256 price,
+        uint256 expiresAt,
+        bool isActive
+    ) {
+        LibRugStorage.Offer storage offer = LibRugStorage.marketplaceStorage().offers[offerId];
+        return (
+            offer.offerId,
+            offer.offerer,
+            offer.tokenId,
+            offer.price,
+            offer.expiresAt,
+            offer.isActive
+        );
+    }
+
+    /**
+     * @notice Get all offer IDs for a token
+     * @param tokenId Token ID
+     * @return offerIds Array of offer IDs
+     */
+    function getTokenOffers(uint256 tokenId) external view returns (uint256[] memory) {
+        return LibRugStorage.marketplaceStorage().tokenOffers[tokenId];
+    }
+
+    /**
+     * @notice Get active offers for a token
+     * @param tokenId Token ID
+     * @return activeOfferIds Array of active offer IDs
+     */
+    function getActiveTokenOffers(uint256 tokenId) external view returns (uint256[] memory) {
+        LibRugStorage.MarketplaceConfig storage ms = LibRugStorage.marketplaceStorage();
+        uint256[] memory allOffers = ms.tokenOffers[tokenId];
+        
+        // Count active offers first
+        uint256 activeCount = 0;
+        for (uint256 i = 0; i < allOffers.length; i++) {
+            LibRugStorage.Offer storage offer = ms.offers[allOffers[i]];
+            if (offer.isActive && (offer.expiresAt == 0 || block.timestamp <= offer.expiresAt)) {
+                activeCount++;
+            }
+        }
+        
+        // Build array of active offers
+        uint256[] memory activeOffers = new uint256[](activeCount);
+        uint256 index = 0;
+        for (uint256 i = 0; i < allOffers.length; i++) {
+            LibRugStorage.Offer storage offer = ms.offers[allOffers[i]];
+            if (offer.isActive && (offer.expiresAt == 0 || block.timestamp <= offer.expiresAt)) {
+                activeOffers[index] = allOffers[i];
+                index++;
+            }
+        }
+        
+        return activeOffers;
     }
 
     // ===== ADMIN FUNCTIONS =====
