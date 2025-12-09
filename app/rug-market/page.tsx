@@ -11,7 +11,7 @@ import RugMarketGrid from '../../components/RugMarketGrid'
 import RugDetailModal from '../../components/rug-market/RugDetailModal'
 import { ShoppingCart, Sparkles, TrendingUp, AlertCircle, RefreshCw } from 'lucide-react'
 import { RugMarketNFT } from '../../lib/rug-market-types'
-import { useBuyListing } from '../../hooks/use-marketplace-contract'
+import { useBuyListing, useCancelListing, useCancelOffer } from '../../hooks/use-marketplace-contract'
 import { useWaitForTransactionReceipt } from 'wagmi'
 import { getExplorerUrl } from '../../lib/networks'
 
@@ -44,11 +44,24 @@ function RugMarketPageContent() {
   const [statsLoading, setStatsLoading] = useState(true)
   const [refreshingTokenId, setRefreshingTokenId] = useState<number | null>(null)
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+  const [cancellingTokenId, setCancellingTokenId] = useState<number | null>(null)
   
   // Buy listing hook
   const { buyListing, hash: buyHash, isPending: isBuyPending, error: buyError } = useBuyListing()
   const { isLoading: isBuyConfirming, isSuccess: isBuySuccess } = useWaitForTransactionReceipt({
     hash: buyHash
+  })
+
+  // Cancel listing hook
+  const { cancelListing, hash: cancelHash, isPending: isCancelPending } = useCancelListing()
+  const { isLoading: isCancelConfirming, isSuccess: isCancelSuccess } = useWaitForTransactionReceipt({
+    hash: cancelHash
+  })
+
+  // Cancel offer hook
+  const { cancelOffer, hash: cancelOfferHash, isPending: isCancelOfferPending } = useCancelOffer()
+  const { isLoading: isCancelOfferConfirming, isSuccess: isCancelOfferSuccess } = useWaitForTransactionReceipt({
+    hash: cancelOfferHash
   })
 
   // Fetch single NFT by ID
@@ -291,23 +304,98 @@ function RugMarketPageContent() {
   }, [isConnected, buyListing])
 
   const handleMakeOffer = useCallback((tokenId: number) => {
+    // Open modal for the NFT to make an offer
+    const nft = allNFTs.find(n => n.permanent.tokenId === tokenId)
+    if (nft) {
+      setSelectedNFT(nft)
+      // Update URL with tokenId
+      const params = new URLSearchParams(searchParams.toString())
+      params.set('tokenId', tokenId.toString())
+      router.push(`/rug-market?${params.toString()}`, { scroll: false })
+    } else {
+      // Fetch NFT if not in current list
+      fetchNFTById(tokenId)
+    }
+  }, [allNFTs, router, searchParams, fetchNFTById])
+
+  const handleCancelListing = useCallback((tokenId: number) => {
     if (!isConnected) {
       setNotification({
         type: 'error',
-        message: 'Please connect your wallet to make an offer'
+        message: 'Please connect your wallet to cancel listing'
       })
       setTimeout(() => setNotification(null), 3000)
       return
     }
     
-    // TODO: Implement offer functionality when smart contract is ready
-    setNotification({
-      type: 'success',
-      message: 'Make Offer feature coming soon! Smart contract integration in progress.'
-    })
-    setTimeout(() => setNotification(null), 3000)
-    console.log('Make offer clicked for token:', tokenId)
-  }, [isConnected])
+    try {
+      setCancellingTokenId(tokenId)
+      cancelListing(tokenId)
+      setNotification({
+        type: 'success',
+        message: 'Transaction submitted. Please confirm in your wallet.'
+      })
+    } catch (error) {
+      console.error('Failed to cancel listing:', error)
+      setCancellingTokenId(null)
+      setNotification({
+        type: 'error',
+        message: error instanceof Error ? error.message : 'Failed to cancel listing'
+      })
+    }
+  }, [isConnected, cancelListing])
+
+  // Handle cancel listing success
+  useEffect(() => {
+    if (isCancelSuccess && cancelHash && cancellingTokenId !== null) {
+      setNotification({
+        type: 'success',
+        message: 'Listing cancelled successfully!'
+      })
+      // Refresh the NFT data
+      handleRefreshNFT(cancellingTokenId)
+      setCancellingTokenId(null)
+      setTimeout(() => setNotification(null), 3000)
+    }
+  }, [isCancelSuccess, cancelHash, cancellingTokenId, handleRefreshNFT])
+
+  const handleCancelOffer = useCallback((offerId: number) => {
+    if (!isConnected) {
+      setNotification({
+        type: 'error',
+        message: 'Please connect your wallet to cancel offer'
+      })
+      setTimeout(() => setNotification(null), 3000)
+      return
+    }
+    
+    try {
+      cancelOffer(offerId)
+      setNotification({
+        type: 'success',
+        message: 'Transaction submitted. Please confirm in your wallet.'
+      })
+    } catch (error) {
+      console.error('Failed to cancel offer:', error)
+      setNotification({
+        type: 'error',
+        message: error instanceof Error ? error.message : 'Failed to cancel offer'
+      })
+    }
+  }, [isConnected, cancelOffer])
+
+  // Handle cancel offer success
+  useEffect(() => {
+    if (isCancelOfferSuccess && cancelOfferHash) {
+      setNotification({
+        type: 'success',
+        message: 'Offer cancelled successfully!'
+      })
+      // Refresh collection data to update UI
+      refreshCollectionData()
+      setTimeout(() => setNotification(null), 3000)
+    }
+  }, [isCancelOfferSuccess, cancelOfferHash, refreshCollectionData])
 
   // Filter and sort NFTs based on current filters
   const filteredAndSortedNFTs = useMemo(() => {
@@ -565,6 +653,8 @@ function RugMarketPageContent() {
               onFavoriteToggle={handleFavoriteToggle}
               onBuyNFT={handleBuyNFT}
               onMakeOffer={handleMakeOffer}
+              onCancelListing={handleCancelListing}
+              onCancelOffer={handleCancelOffer}
               sortKey={sortBy}
             />
           )}
