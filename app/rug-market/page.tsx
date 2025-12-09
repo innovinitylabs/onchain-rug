@@ -290,6 +290,25 @@ function RugMarketPageContent() {
     }
   }, [isConnected, buyListing])
 
+  const handleMakeOffer = useCallback((tokenId: number) => {
+    if (!isConnected) {
+      setNotification({
+        type: 'error',
+        message: 'Please connect your wallet to make an offer'
+      })
+      setTimeout(() => setNotification(null), 3000)
+      return
+    }
+    
+    // TODO: Implement offer functionality when smart contract is ready
+    setNotification({
+      type: 'success',
+      message: 'Make Offer feature coming soon! Smart contract integration in progress.'
+    })
+    setTimeout(() => setNotification(null), 3000)
+    console.log('Make offer clicked for token:', tokenId)
+  }, [isConnected])
+
   // Filter and sort NFTs based on current filters
   const filteredAndSortedNFTs = useMemo(() => {
     let filtered = [...allNFTs]
@@ -359,7 +378,7 @@ function RugMarketPageContent() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col">
       <Navigation />
 
-      <main className="container mx-auto px-4 py-8 flex-grow">
+      <main className="container mx-auto px-4 py-8 pt-28 flex-grow">
         <div className="max-w-7xl mx-auto">
           {/* Notification Banner */}
           {notification && (
@@ -411,7 +430,7 @@ function RugMarketPageContent() {
         <motion.div
             initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1 }}
-            className="text-center mb-12 pt-24"
+            className="text-center mb-12"
         >
             <h1 className="text-5xl font-bold text-white mb-4">
               Rug <span className="text-blue-400">Market</span>
@@ -545,6 +564,7 @@ function RugMarketPageContent() {
               onRefreshNFT={handleRefreshNFT}
               onFavoriteToggle={handleFavoriteToggle}
               onBuyNFT={handleBuyNFT}
+              onMakeOffer={handleMakeOffer}
               sortKey={sortBy}
             />
           )}
@@ -560,6 +580,7 @@ function RugMarketPageContent() {
           isOpen={!!selectedNFT}
           onClose={handleModalClose}
           onBuyNFT={handleBuyNFT}
+          onMakeOffer={handleMakeOffer}
           onRefreshNFT={handleRefreshNFT}
         />
       )}

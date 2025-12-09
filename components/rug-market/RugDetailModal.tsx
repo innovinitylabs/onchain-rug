@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Eye, ExternalLink, Calendar, User, TrendingUp, ShoppingCart, Tag, AlertCircle, RefreshCw } from 'lucide-react'
+import { X, Eye, ExternalLink, Calendar, User, TrendingUp, ShoppingCart, Tag, AlertCircle, RefreshCw, HandCoins } from 'lucide-react'
 import { useAccount, useChainId, useReadContract } from 'wagmi'
 import { RugMarketNFT } from '@/lib/rug-market-types'
 import NFTDisplay from '@/components/NFTDisplay'
@@ -19,6 +19,7 @@ interface RugDetailModalProps {
   isOpen: boolean
   onClose: () => void
   onBuyNFT?: (tokenId: number, price: string) => void
+  onMakeOffer?: (tokenId: number) => void
   onRefreshNFT?: (tokenId: number) => void
 }
 
@@ -27,6 +28,7 @@ export default function RugDetailModal({
   isOpen,
   onClose,
   onBuyNFT,
+  onMakeOffer,
   onRefreshNFT
 }: RugDetailModalProps) {
   const { address, isConnected } = useAccount()
@@ -660,7 +662,7 @@ export default function RugDetailModal({
                   {isListingActive && !isOwner && onBuyNFT && (
                     <button
                       onClick={() => onBuyNFT(permanent.tokenId, listing?.price ? (Number(listing.price) / 1e18).toString() : dynamic.listingPrice || '0')}
-                      className="flex-1 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white py-3 px-6 rounded-lg font-semibold transition-colors"
+                      className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 text-white py-3 px-6 rounded-lg font-semibold shadow-lg hover:shadow-green-500/50 transition-all duration-200 transform hover:scale-105 active:scale-95"
                     >
                       <ShoppingCart className="w-5 h-5" />
                       Buy Now {(() => {
@@ -682,6 +684,15 @@ export default function RugDetailModal({
                         }
                         return 'N/A'
                       })()}
+                    </button>
+                  )}
+                  {!isListingActive && !isOwner && onMakeOffer && (
+                    <button
+                      onClick={() => onMakeOffer(permanent.tokenId)}
+                      className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-400 hover:to-purple-400 text-white py-3 px-6 rounded-lg font-semibold shadow-lg hover:shadow-blue-500/50 transition-all duration-200 transform hover:scale-105 active:scale-95"
+                    >
+                      <HandCoins className="w-5 h-5" />
+                      Make Offer
                     </button>
                   )}
                 </div>

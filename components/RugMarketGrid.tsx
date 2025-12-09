@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useChainId } from 'wagmi'
 import { motion, AnimatePresence } from 'framer-motion'
-import { RefreshCw, Eye, Heart, ExternalLink, ShoppingCart } from 'lucide-react'
+import { RefreshCw, Eye, Heart, ExternalLink, ShoppingCart, HandCoins } from 'lucide-react'
 import { RugMarketNFT } from '@/lib/rug-market-types'
 import NFTDisplay, { NFTDisplaySkeleton } from './NFTDisplay'
 import { rugMarketNFTToNFTData, getCalculatedLevels } from '@/utils/rug-market-data-adapter'
@@ -18,6 +18,7 @@ interface RugMarketGridProps {
   onRefreshNFT?: (tokenId: number) => void
   onFavoriteToggle?: (tokenId: number) => void
   onBuyNFT?: (tokenId: number, price: string) => void
+  onMakeOffer?: (tokenId: number) => void
   sortKey?: string // Key to force remount when sort changes
 }
 
@@ -27,13 +28,14 @@ interface RugCardProps {
   onRefresh?: () => void
   onFavoriteToggle?: () => void
   onBuyNFT?: (tokenId: number, price: string) => void
+  onMakeOffer?: (tokenId: number) => void
   isFavorited?: boolean
 }
 
 
 
 
-function RugCard({ nft, onClick, onRefresh, onFavoriteToggle, onBuyNFT, isFavorited }: RugCardProps) {
+function RugCard({ nft, onClick, onRefresh, onFavoriteToggle, onBuyNFT, onMakeOffer, isFavorited }: RugCardProps) {
   const router = useRouter()
   const chainId = useChainId()
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -167,10 +169,22 @@ function RugCard({ nft, onClick, onRefresh, onFavoriteToggle, onBuyNFT, isFavori
                 e.stopPropagation()
                 onBuyNFT?.(nft.permanent.tokenId, nft.dynamic.listingPrice)
               }}
-              className="flex-1 flex items-center justify-center gap-1 bg-green-500/20 hover:bg-green-500/30 text-green-300 py-2 px-3 rounded-lg border border-green-500/30 transition-colors text-sm"
+              className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 text-white font-semibold py-2.5 px-4 rounded-lg shadow-lg hover:shadow-green-500/50 transition-all duration-200 transform hover:scale-105 active:scale-95 text-sm"
             >
               <ShoppingCart className="w-4 h-4" />
               Buy Now
+            </button>
+          )}
+          {onMakeOffer && !nft.dynamic.isListed && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onMakeOffer(nft.permanent.tokenId)
+              }}
+              className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-400 hover:to-purple-400 text-white font-semibold py-2.5 px-4 rounded-lg shadow-lg hover:shadow-blue-500/50 transition-all duration-200 transform hover:scale-105 active:scale-95 text-sm"
+            >
+              <HandCoins className="w-4 h-4" />
+              Make Offer
             </button>
           )}
           <button
@@ -179,7 +193,7 @@ function RugCard({ nft, onClick, onRefresh, onFavoriteToggle, onBuyNFT, isFavori
               const explorerUrl = getExplorerUrl(chainId)
               const contractAddress = getContractAddress(chainId)
               if (explorerUrl && contractAddress) {
-                window.open(`${explorerUrl}/token/${contractAddress}/${nft.permanent.tokenId}`, '_blank')
+                window.open(`${explorerUrl}/token/${contractAddress}/instance/${nft.permanent.tokenId}`, '_blank')
               }
             }}
             className="p-2 bg-white/10 hover:bg-white/20 text-white/70 rounded-lg border border-white/20 transition-colors"
@@ -200,6 +214,7 @@ export default function RugMarketGrid({
   onRefreshNFT,
   onFavoriteToggle,
   onBuyNFT,
+  onMakeOffer,
   sortKey
 }: RugMarketGridProps) {
   const router = useRouter()
@@ -220,6 +235,10 @@ export default function RugMarketGrid({
 
   const handleBuyNFT = (tokenId: number, price: string) => {
     onBuyNFT?.(tokenId, price)
+  }
+
+  const handleMakeOffer = (tokenId: number) => {
+    onMakeOffer?.(tokenId)
   }
 
   if (loading) {
@@ -271,6 +290,7 @@ export default function RugMarketGrid({
                 onRefresh={() => onRefreshNFT?.(nft.permanent.tokenId)}
                 onFavoriteToggle={() => handleFavoriteToggle(nft.permanent.tokenId)}
                 onBuyNFT={(tokenId, price) => handleBuyNFT(tokenId, price)}
+                onMakeOffer={(tokenId) => handleMakeOffer(tokenId)}
                 isFavorited={favorites.has(nft.permanent.tokenId)}
               />
             )
