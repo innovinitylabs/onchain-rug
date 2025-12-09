@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { callContractMultiFallback, onchainRugsABI } from '@/lib/web3'
 import { getContractAddress, getRpcUrl } from '@/lib/networks'
 
+// Helper function to safely stringify objects with BigInt values
+function safeStringify(obj: any, space?: number): string {
+  return JSON.stringify(obj, (key, value) =>
+    typeof value === 'bigint' ? value.toString() : value
+  , space)
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
@@ -151,7 +158,7 @@ export async function GET(request: NextRequest) {
       results.getDirtLevel = {
         raw: getDirtLevel,
         type: typeof getDirtLevel,
-        stringified: JSON.stringify(getDirtLevel)
+        stringified: safeStringify(getDirtLevel)
       }
     } catch (error: any) {
       results.getDirtLevel = {
@@ -171,7 +178,7 @@ export async function GET(request: NextRequest) {
       results.getAgingLevel = {
         raw: getAgingLevel,
         type: typeof getAgingLevel,
-        stringified: JSON.stringify(getAgingLevel)
+        stringified: safeStringify(getAgingLevel)
       }
     } catch (error: any) {
       results.getAgingLevel = {
@@ -191,7 +198,7 @@ export async function GET(request: NextRequest) {
       results.getFrameLevel = {
         raw: getFrameLevel,
         type: typeof getFrameLevel,
-        stringified: JSON.stringify(getFrameLevel)
+        stringified: safeStringify(getFrameLevel)
       }
     } catch (error: any) {
       results.getFrameLevel = {

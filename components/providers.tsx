@@ -1,5 +1,8 @@
 'use client'
 
+// Import BigInt polyfill FIRST - before any React code
+import '@/lib/bigint-polyfill'
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { WagmiProvider } from 'wagmi'
 import { RainbowKitProvider, getDefaultConfig, Theme } from '@rainbow-me/rainbowkit'

@@ -127,19 +127,7 @@ contract RugNFTFacet is ICreatorToken {
         uint256 price = LibRugStorage.calculateMintPrice(textRows.length);
         require(msg.value >= price, "Insufficient payment");
 
-        // Generate seed if not provided
-        if (seed == 0) {
-            // Auto-generate seed with multiple entropy sources to prevent prediction
-            // Includes: block data, transaction data, recipient, and token counter
-            seed = uint256(keccak256(abi.encodePacked(
-                block.timestamp,
-                block.prevrandao,
-                block.number,        // Additional entropy from block number
-                tx.origin,          // Transaction origin for additional unpredictability
-                recipient,          // msg.sender (already present)
-                rs.tokenCounter     // Token counter for uniqueness
-            )));
-        }
+        // Seed must be provided by frontend (no auto-generation)
 
         // Get next token ID
         uint256 tokenId = LibRugStorage.nextTokenId();

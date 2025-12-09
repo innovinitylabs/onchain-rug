@@ -16,3 +16,9 @@
 [submodule "lib/payment-processor"]
 	path = lib/payment-processor
 	url = https://github.com/limitbreakinc/payment-processor
+[submodule "lib/ERC721A"]
+	path = lib/ERC721A
+	url = https://github.com/chiru-labs/ERC721A
+[submodule "lib/create3"]
+	path = lib/create3
+	url = https://github.com/0xsequence/create3

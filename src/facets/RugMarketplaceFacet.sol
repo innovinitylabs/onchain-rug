@@ -189,9 +189,10 @@ contract RugMarketplaceFacet is ReentrancyGuard {
         ms.totalVolume = LibRugStorage.safeAdd(ms.totalVolume, price);
         
         // Refund excess payment - don't revert if refund fails
+        // Use gas limit to prevent gas griefing attacks
         if (msg.value > price) {
             uint256 refundAmount = msg.value - price;
-            (bool success, ) = msg.sender.call{value: refundAmount}("");
+            (bool success, ) = msg.sender.call{value: refundAmount, gas: 5000}("");
             if (!success) {
                 // Don't revert - just emit event
                 // Refund stays in contract, can be claimed later
@@ -315,9 +316,14 @@ contract RugMarketplaceFacet is ReentrancyGuard {
         // Deactivate offer
         offer.isActive = false;
         
-        // Refund the offerer
-        (bool success, ) = msg.sender.call{value: refundAmount}("");
-        if (!success) revert TransferFailed();
+        // Refund the offerer - don't revert if refund fails (prevents DoS attacks)
+        // Use gas limit to prevent gas griefing attacks
+        (bool success, ) = msg.sender.call{value: refundAmount, gas: 5000}("");
+        if (!success) {
+            // Don't revert - just emit event
+            // Refund stays in contract, can be claimed later
+            emit RefundFailed(msg.sender, refundAmount);
+        }
         
         emit OfferCancelled(offerId, tokenId, msg.sender);
     }
@@ -426,8 +432,8 @@ contract RugMarketplaceFacet is ReentrancyGuard {
      * @param newFeeBPS New fee in basis points (e.g., 250 = 2.5%)
      */
     function setMarketplaceFee(uint256 newFeeBPS) external {
-        // Only diamond owner can update fees (add proper access control)
-        require(msg.sender == LibDiamond.contractOwner(), "Not authorized");
+        LibDiamond.enforceIsContractOwner();
+        require(newFeeBPS <= 10000, "Fee too high"); // Max 100%
 
         LibRugStorage.MarketplaceConfig storage ms = LibRugStorage.marketplaceStorage();
         uint256 oldFee = ms.marketplaceFeePercent;
@@ -454,7 +460,8 @@ contract RugMarketplaceFacet is ReentrancyGuard {
         ms.totalFeesCollected = 0;
 
         // External call AFTER state update
-        (bool success, ) = to.call{value: amount}("");
+        // Use gas limit to prevent gas griefing attacks (23000 is standard for ETH transfers)
+        (bool success, ) = to.call{value: amount, gas: 23000}("");
         if (!success) revert TransferFailed();
 
         emit FeesWithdrawn(to, amount);
@@ -497,7 +504,8 @@ contract RugMarketplaceFacet is ReentrancyGuard {
         ms.totalFeesCollected = LibRugStorage.safeAdd(ms.totalFeesCollected, marketplaceFee);
 
         // Send proceeds to seller
-        (bool success, ) = seller.call{value: sellerProceeds}("");
+        // Use gas limit to prevent gas griefing attacks (23000 is standard for ETH transfers)
+        (bool success, ) = seller.call{value: sellerProceeds, gas: 23000}("");
         if (!success) revert TransferFailed();
     }
 

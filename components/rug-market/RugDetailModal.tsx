@@ -1052,8 +1052,15 @@ function ListingBreakdown({ tokenId, listingPrice }: { tokenId: number; listingP
   // Calculate fees
   const marketplaceFee = calculateMarketplaceFee(priceWei)
   const poolFee = calculatePoolFee(priceWei)
-  const creatorRoyalty = (royaltyAmount || BigInt(0)) - poolFee // Creator gets 9%, pool gets 1%
-  const totalDeductions = creatorRoyalty + poolFee + marketplaceFee
+  
+  // Calculate curator royalty: 1% (100 basis points)
+  const curatorRoyalty = (priceWei * BigInt(100)) / BigInt(10000)
+  
+  // Calculate creator royalty: 8% (royaltyAmount includes curator 1% + creator 8% + pool 1% = 10%)
+  // So creator = total royalty - curator - pool = royaltyAmount - curatorRoyalty - poolFee
+  const creatorRoyalty = (royaltyAmount || BigInt(0)) - curatorRoyalty - poolFee
+  
+  const totalDeductions = creatorRoyalty + curatorRoyalty + poolFee + marketplaceFee
   const sellerReceives = priceWei - totalDeductions
 
   return (
@@ -1073,8 +1080,16 @@ function ListingBreakdown({ tokenId, listingPrice }: { tokenId: number; listingP
         {/* Creator Royalty */}
         {creatorRoyalty > BigInt(0) && (
           <div className="flex justify-between text-green-300">
-            <span>Creator Royalty ({royaltyPercentage - poolPercent}%):</span>
+            <span>Creator Royalty (8%):</span>
             <span>-{formatEth(creatorRoyalty)} ETH</span>
+          </div>
+        )}
+
+        {/* Curator (Minter) Royalty */}
+        {curatorRoyalty > BigInt(0) && (
+          <div className="flex justify-between text-cyan-300">
+            <span>Curator Royalty (1%):</span>
+            <span>-{formatEth(curatorRoyalty)} ETH</span>
           </div>
         )}
 
@@ -1086,13 +1101,11 @@ function ListingBreakdown({ tokenId, listingPrice }: { tokenId: number; listingP
           </div>
         )}
 
-        {/* Marketplace Fee */}
-        {marketplaceFee > BigInt(0) && (
-          <div className="flex justify-between text-purple-300">
-            <span>Marketplace Fee ({marketplaceFeePercent}%):</span>
-            <span>-{formatEth(marketplaceFee)} ETH</span>
-          </div>
-        )}
+        {/* Marketplace Fee - Always show, even if 0% */}
+        <div className="flex justify-between text-purple-300">
+          <span>Marketplace Fee ({marketplaceFeePercent}%):</span>
+          <span>-{formatEth(marketplaceFee)} ETH</span>
+        </div>
 
         {/* Separator */}
         <div className="border-t border-blue-400/30 pt-2 mt-3">
@@ -1106,7 +1119,7 @@ function ListingBreakdown({ tokenId, listingPrice }: { tokenId: number; listingP
 
       {/* Disclaimer */}
       <div className="text-xs text-blue-200/70 mt-3 pt-2 border-t border-blue-400/20">
-        💎 Royalties support creators (9%) and Diamond Frame NFT holders (1%) for long-term sustainability
+        💎 Royalties support creators (8%), curators (1%), and Diamond Frame NFT holders (1%) for long-term sustainability
       </div>
     </div>
   )
