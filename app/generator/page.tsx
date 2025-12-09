@@ -2378,8 +2378,8 @@ export default function GeneratorPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100 flex flex-col">
       <Navigation />
-      <main className="flex-grow">
-        <div className="max-w-[1800px] mx-auto px-4 pt-24">
+      <main className="flex-grow pt-28">
+        <div className="max-w-[1800px] mx-auto px-4">
       {/* Header */}
 
         {/* Old-School Terminal Layout - Art on Top, Terminal on Bottom */}

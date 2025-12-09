@@ -992,6 +992,72 @@ export default function DashboardPage() {
     return `${dateStr} ${timeStr} (${relativeTime})`
   }
 
+  // Format attribute value based on trait type
+  const formatAttributeValue = (traitType: string, value: any): string => {
+    if (value === null || value === undefined || value === '') {
+      return 'N/A'
+    }
+
+    // Format addresses (Curator, etc.)
+    if (typeof value === 'string' && value.startsWith('0x') && value.length === 42) {
+      return `${value.slice(0, 6)}...${value.slice(-4)}`
+    }
+
+    // Format prices (Last Sale Price, etc.)
+    if (traitType.toLowerCase().includes('price') || traitType.toLowerCase().includes('sale price')) {
+      try {
+        const priceWei = BigInt(value)
+        const eth = Number(priceWei) / 1e18
+        if (eth === 0) {
+          return '0 ETH'
+        } else if (eth < 0.000001) {
+          return `${eth.toFixed(8).replace(/\.?0+$/, '')} ETH`
+        } else if (eth < 0.001) {
+          return `${eth.toFixed(6).replace(/\.?0+$/, '')} ETH`
+        } else if (eth < 0.01) {
+          return `${eth.toFixed(5).replace(/\.?0+$/, '')} ETH`
+        } else if (eth < 1) {
+          return `${eth.toFixed(4).replace(/\.?0+$/, '')} ETH`
+        } else {
+          return `${eth.toFixed(2)} ETH`
+        }
+      } catch (e) {
+        return value?.toString() || 'N/A'
+      }
+    }
+
+    // Format timestamps (Mint Time, Last Cleaned, etc.)
+    if (traitType.toLowerCase().includes('time') || traitType.toLowerCase().includes('cleaned')) {
+      try {
+        const timestamp = typeof value === 'string' ? parseInt(value, 10) : Number(value)
+        if (isNaN(timestamp) || timestamp === 0) {
+          return 'N/A'
+        }
+        // Check if timestamp is in seconds (blockchain) or milliseconds (JS)
+        const date = timestamp > 946684800000 
+          ? new Date(timestamp) 
+          : new Date(timestamp * 1000)
+        return date.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      } catch (e) {
+        return value?.toString() || 'N/A'
+      }
+    }
+
+    // Format booleans
+    if (typeof value === 'boolean') {
+      return value ? 'Yes' : 'No'
+    }
+
+    // Default: return as string
+    return value?.toString() || 'N/A'
+  }
+
   // If no contract address for this network, show error state
   if (!contractAddress || contractAddress === '0x0000000000000000000000000000000000000000') {
     return (
@@ -1541,11 +1607,12 @@ export default function DashboardPage() {
                           {selectedRug.metadata?.attributes?.map((attr: any, index: number) => (
                             <div key={index} className="bg-slate-600/30 rounded-lg p-3">
                               <div className="text-xs text-white/60 mb-1">{attr.trait_type}</div>
-                              <div className="text-sm text-white">
-                                {typeof attr.value === 'boolean'
-                                  ? attr.value ? 'Yes' : 'No'
-                                  : attr.value?.toString() || 'N/A'
-                                }
+                              <div className={`text-sm text-white ${
+                                typeof attr.value === 'string' && attr.value.startsWith('0x') && attr.value.length === 42
+                                  ? 'break-all font-mono'
+                                  : ''
+                              }`}>
+                                {formatAttributeValue(attr.trait_type, attr.value)}
                               </div>
                             </div>
                           )) || (
