@@ -116,6 +116,52 @@ const marketplaceABI = [
       { name: 'recipients', type: 'address[]' },
       { name: 'splits', type: 'uint256[]' }
     ]
+  },
+  // Offer functions
+  {
+    name: 'makeOffer',
+    type: 'function',
+    stateMutability: 'payable',
+    inputs: [
+      { name: 'tokenId', type: 'uint256' },
+      { name: 'duration', type: 'uint256' }
+    ],
+    outputs: []
+  },
+  {
+    name: 'acceptOffer',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: 'offerId', type: 'uint256' }],
+    outputs: []
+  },
+  {
+    name: 'cancelOffer',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: 'offerId', type: 'uint256' }],
+    outputs: []
+  },
+  {
+    name: 'getOffer',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [{ name: 'offerId', type: 'uint256' }],
+    outputs: [
+      { name: 'offerId', type: 'uint256' },
+      { name: 'offerer', type: 'address' },
+      { name: 'tokenId', type: 'uint256' },
+      { name: 'price', type: 'uint256' },
+      { name: 'expiresAt', type: 'uint256' },
+      { name: 'isActive', type: 'bool' }
+    ]
+  },
+  {
+    name: 'getActiveTokenOffers',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [{ name: 'tokenId', type: 'uint256' }],
+    outputs: [{ name: '', type: 'uint256[]' }]
   }
 ] as const
 
@@ -323,4 +369,159 @@ export function useUpdateListingPrice() {
     isConfirmed,
     error
   }
+}
+
+/**
+ * Hook for making an offer on an NFT
+ */
+export function useMakeOffer() {
+  const { address } = useAccount()
+  const chainId = useChainId()
+  const contractAddress = contractAddresses[chainId]
+  const wagmiConfig = useConfig()
+
+  const { writeContract, data: hash, isPending, error } = useWriteContract()
+
+  const makeOffer = (tokenId: number, price: string, duration: number = 0) => {
+    // @ts-ignore - wagmi v2 type checking issue
+    writeContract({
+      address: contractAddress as `0x${string}`,
+      abi: marketplaceABI,
+      functionName: 'makeOffer',
+      args: [BigInt(tokenId), BigInt(duration)],
+      value: parseEther(price)
+    }, wagmiConfig)
+  }
+
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+    hash
+  })
+
+  return {
+    makeOffer,
+    hash,
+    isPending,
+    isConfirming,
+    isConfirmed,
+    error
+  }
+}
+
+/**
+ * Hook for accepting an offer
+ */
+export function useAcceptOffer() {
+  const { address } = useAccount()
+  const chainId = useChainId()
+  const contractAddress = contractAddresses[chainId]
+  const wagmiConfig = useConfig()
+
+  const { writeContract, data: hash, isPending, error } = useWriteContract()
+
+  const acceptOffer = (offerId: number) => {
+    // @ts-ignore - wagmi v2 type checking issue
+    writeContract({
+      address: contractAddress as `0x${string}`,
+      abi: marketplaceABI,
+      functionName: 'acceptOffer',
+      args: [BigInt(offerId)]
+    }, wagmiConfig)
+  }
+
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+    hash
+  })
+
+  return {
+    acceptOffer,
+    hash,
+    isPending,
+    isConfirming,
+    isConfirmed,
+    error
+  }
+}
+
+/**
+ * Hook for cancelling an offer
+ */
+export function useCancelOffer() {
+  const { address } = useAccount()
+  const chainId = useChainId()
+  const contractAddress = contractAddresses[chainId]
+  const wagmiConfig = useConfig()
+
+  const { writeContract, data: hash, isPending, error } = useWriteContract()
+
+  const cancelOffer = (offerId: number) => {
+    // @ts-ignore - wagmi v2 type checking issue
+    writeContract({
+      address: contractAddress as `0x${string}`,
+      abi: marketplaceABI,
+      functionName: 'cancelOffer',
+      args: [BigInt(offerId)]
+    }, wagmiConfig)
+  }
+
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+    hash
+  })
+
+  return {
+    cancelOffer,
+    hash,
+    isPending,
+    isConfirming,
+    isConfirmed,
+    error
+  }
+}
+
+/**
+ * Hook for reading offer data
+ */
+export function useOfferData(offerId: number | null) {
+  const chainId = useChainId()
+  const contractAddress = contractAddresses[chainId]
+
+  const { data, isLoading, error, refetch } = useReadContract({
+    address: contractAddress as `0x${string}`,
+    abi: marketplaceABI,
+    functionName: 'getOffer',
+    args: offerId !== null ? [BigInt(offerId)] : undefined,
+    query: {
+      enabled: offerId !== null
+    }
+  })
+
+  const offer = data ? {
+    offerId: Number(data[0]),
+    offerer: data[1] as string,
+    tokenId: Number(data[2]),
+    price: data[3].toString(),
+    expiresAt: Number(data[4]),
+    isActive: data[5]
+  } : null
+
+  return { offer, isLoading, error, refetch }
+}
+
+/**
+ * Hook for reading active offers for a token
+ */
+export function useTokenOffers(tokenId: number | null) {
+  const chainId = useChainId()
+  const contractAddress = contractAddresses[chainId]
+
+  const { data: offerIds, isLoading, error, refetch } = useReadContract({
+    address: contractAddress as `0x${string}`,
+    abi: marketplaceABI,
+    functionName: 'getActiveTokenOffers',
+    args: tokenId !== null ? [BigInt(tokenId)] : undefined,
+    query: {
+      enabled: tokenId !== null
+    }
+  })
+
+  return { offerIds: offerIds as bigint[] | undefined, isLoading, error, refetch }
 }

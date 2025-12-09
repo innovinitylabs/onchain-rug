@@ -1,13 +1,13 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Eye, ExternalLink, Calendar, User, TrendingUp, ShoppingCart, Tag, AlertCircle, RefreshCw, HandCoins } from 'lucide-react'
 import { useAccount, useChainId, useReadContract } from 'wagmi'
 import { RugMarketNFT } from '@/lib/rug-market-types'
 import NFTDisplay from '@/components/NFTDisplay'
 import { rugMarketNFTToNFTData, getCalculatedLevels } from '@/utils/rug-market-data-adapter'
-import { useCreateListing, useCancelListing, useApproveMarketplace, useApprovalStatus } from '@/hooks/use-marketplace-contract'
+import { useCreateListing, useCancelListing, useApproveMarketplace, useApprovalStatus, useMakeOffer, useAcceptOffer, useCancelOffer, useTokenOffers, useOfferData } from '@/hooks/use-marketplace-contract'
 import { useListingData } from '@/hooks/use-marketplace-data'
 import { useWaitForTransactionReceipt } from 'wagmi'
 import { contractAddresses, onchainRugsABI } from '@/lib/web3'
@@ -53,10 +53,17 @@ export default function RugDetailModal({
   const approveMarketplace = useApproveMarketplace(permanent.tokenId)
   const createListing = useCreateListing()
   const cancelListing = useCancelListing()
+  const makeOffer = useMakeOffer()
+  const acceptOffer = useAcceptOffer()
+  const cancelOffer = useCancelOffer()
+  const { offerIds, isLoading: offersLoading, refetch: refetchOffers } = useTokenOffers(permanent.tokenId)
   
   // Listing state
   const [showListingForm, setShowListingForm] = useState(false)
   const [listingPrice, setListingPrice] = useState('')
+  const [showOfferForm, setShowOfferForm] = useState(false)
+  const [offerPrice, setOfferPrice] = useState('')
+  const [offerDuration, setOfferDuration] = useState('7') // Default 7 days
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   
   // Check if user is owner
@@ -65,6 +72,13 @@ export default function RugDetailModal({
   
   // Check if user is the listing seller (prevents buying own listings)
   const isListingSeller = isConnected && listing?.seller && address?.toLowerCase() === listing.seller.toLowerCase()
+  
+  // Find user's active offer
+  const userOfferId = useMemo(() => {
+    if (!address || !offerIds || offerIds.length === 0) return null
+    // We'll check offers in a component that can fetch them individually
+    return undefined // Will be determined by checking each offer
+  }, [address, offerIds])
   
   // Transaction tracking
   const { isLoading: isApproveConfirming, isSuccess: isApproveSuccess } = useWaitForTransactionReceipt({
@@ -77,6 +91,18 @@ export default function RugDetailModal({
   
   const { isLoading: isCancelConfirming, isSuccess: isCancelSuccess } = useWaitForTransactionReceipt({
     hash: cancelListing.hash
+  })
+
+  const { isLoading: isMakeOfferConfirming, isSuccess: isMakeOfferSuccess } = useWaitForTransactionReceipt({
+    hash: makeOffer.hash
+  })
+
+  const { isLoading: isAcceptOfferConfirming, isSuccess: isAcceptOfferSuccess } = useWaitForTransactionReceipt({
+    hash: acceptOffer.hash
+  })
+
+  const { isLoading: isCancelOfferConfirming, isSuccess: isCancelOfferSuccess } = useWaitForTransactionReceipt({
+    hash: cancelOffer.hash
   })
   
   // Auto-refresh after approvals/listings
@@ -182,6 +208,45 @@ export default function RugDetailModal({
     }
   }, [cancelListing.error])
 
+  // Handle make offer success
+  useEffect(() => {
+    if (isMakeOfferSuccess && makeOffer.hash) {
+      setNotification({ type: 'success', message: 'Offer created successfully!' })
+      setShowOfferForm(false)
+      setOfferPrice('')
+      refetchOffers()
+      setTimeout(() => setNotification(null), 3000)
+    }
+  }, [isMakeOfferSuccess, makeOffer.hash, refetchOffers])
+
+  // Handle make offer errors
+  useEffect(() => {
+    if (makeOffer.error) {
+      const errorMessage = makeOffer.error.message || 'Failed to create offer'
+      setNotification({ type: 'error', message: errorMessage })
+      setTimeout(() => setNotification(null), 5000)
+    }
+  }, [makeOffer.error])
+
+  // Handle accept offer success
+  useEffect(() => {
+    if (isAcceptOfferSuccess && acceptOffer.hash) {
+      setNotification({ type: 'success', message: 'Offer accepted! NFT transferred.' })
+      onRefreshNFT?.(permanent.tokenId)
+      refetchOffers()
+      setTimeout(() => setNotification(null), 3000)
+    }
+  }, [isAcceptOfferSuccess, acceptOffer.hash, permanent.tokenId, onRefreshNFT, refetchOffers])
+
+  // Handle cancel offer success
+  useEffect(() => {
+    if (isCancelOfferSuccess && cancelOffer.hash) {
+      setNotification({ type: 'success', message: 'Offer cancelled successfully!' })
+      refetchOffers()
+      setTimeout(() => setNotification(null), 3000)
+    }
+  }, [isCancelOfferSuccess, cancelOffer.hash, refetchOffers])
+
   // Handle Escape key to close modal
   useEffect(() => {
     if (!isOpen) return
@@ -215,6 +280,25 @@ export default function RugDetailModal({
   const handleCancelListing = () => {
     if (!isListingActive) return
     cancelListing.cancelListing(permanent.tokenId)
+  }
+
+  const handleMakeOffer = () => {
+    if (!offerPrice || parseFloat(offerPrice) <= 0) {
+      setNotification({ type: 'error', message: 'Please enter a valid offer price' })
+      setTimeout(() => setNotification(null), 3000)
+      return
+    }
+    
+    const duration = parseFloat(offerDuration) * 24 * 60 * 60 // Convert days to seconds
+    makeOffer.makeOffer(permanent.tokenId, offerPrice, duration)
+  }
+
+  const handleAcceptOffer = (offerId: number) => {
+    acceptOffer.acceptOffer(offerId)
+  }
+
+  const handleCancelOffer = (offerId: number) => {
+    cancelOffer.cancelOffer(offerId)
   }
 
   const formatAddress = (address: string) => {
@@ -581,6 +665,122 @@ export default function RugDetailModal({
                   </div>
                 )}
 
+                {/* Actions - Make Offer and Buy */}
+                <div className="space-y-4 pt-4 border-t border-white/10">
+                  {isListingActive && !isOwner && !isListingSeller && onBuyNFT && (
+                    <button
+                      onClick={() => onBuyNFT(permanent.tokenId, listing?.price ? (Number(listing.price) / 1e18).toString() : dynamic.listingPrice || '0')}
+                      className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 text-white py-3 px-6 rounded-lg font-semibold shadow-lg hover:shadow-green-500/50 transition-all duration-200 transform hover:scale-105 active:scale-95"
+                    >
+                      <ShoppingCart className="w-5 h-5" />
+                      Buy Now {(() => {
+                        if (listing?.price) {
+                          const priceWei = typeof listing.price === 'bigint' ? listing.price : BigInt(listing.price)
+                          if (priceWei > BigInt(0)) {
+                            return `${formatEth(priceWei)} ETH`
+                          }
+                        }
+                        if (dynamic.listingPrice) {
+                          try {
+                            const priceWei = BigInt(dynamic.listingPrice)
+                            if (priceWei > BigInt(0)) {
+                              return `${formatEth(priceWei)} ETH`
+                            }
+                          } catch (error) {
+                            console.error('Failed to format price for Buy Now button:', error)
+                          }
+                        }
+                        return 'N/A'
+                      })()}
+                    </button>
+                  )}
+                  {isListingActive && isListingSeller && (
+                    <div className="w-full text-center text-white/60 py-3 px-6 rounded-lg bg-yellow-500/20 border border-yellow-500/30">
+                      <AlertCircle className="w-5 h-5 mx-auto mb-1" />
+                      <div className="text-sm">You cannot buy your own listing</div>
+                    </div>
+                  )}
+
+                  {/* Make Offer / My Offer Section */}
+                  {!isOwner && (
+                    <UserOfferDisplay
+                      tokenId={permanent.tokenId}
+                      offerIds={offerIds}
+                      address={address}
+                      onCancel={handleCancelOffer}
+                      isCancelling={isCancelOfferConfirming || cancelOffer.isPending}
+                    >
+                      {!showOfferForm ? (
+                        <button
+                          onClick={() => setShowOfferForm(true)}
+                          className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-400 hover:to-purple-400 text-white py-3 px-6 rounded-lg font-semibold shadow-lg hover:shadow-blue-500/50 transition-all duration-200 transform hover:scale-105 active:scale-95"
+                        >
+                          <HandCoins className="w-5 h-5" />
+                          Make Offer
+                        </button>
+                      ) : (
+                        <div className="space-y-3 bg-white/5 rounded-lg p-4 border border-white/10">
+                          <div>
+                            <label className="block text-white/70 text-sm mb-2">Offer Price (ETH)</label>
+                            <input
+                              type="number"
+                              step="0.0001"
+                              min="0"
+                              value={offerPrice}
+                              onChange={(e) => setOfferPrice(e.target.value)}
+                              placeholder="0.01"
+                              className="w-full px-4 py-2 bg-black/30 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-white/70 text-sm mb-2">Duration (days, 0 = no expiration)</label>
+                            <input
+                              type="number"
+                              step="1"
+                              min="0"
+                              value={offerDuration}
+                              onChange={(e) => setOfferDuration(e.target.value)}
+                              placeholder="7"
+                              className="w-full px-4 py-2 bg-black/30 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={handleMakeOffer}
+                              disabled={isMakeOfferConfirming || makeOffer.isPending || !offerPrice}
+                              className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg font-medium transition-colors disabled:opacity-50"
+                            >
+                              {isMakeOfferConfirming || makeOffer.isPending ? 'Creating...' : 'Create Offer'}
+                            </button>
+                            <button
+                              onClick={() => {
+                                setShowOfferForm(false)
+                                setOfferPrice('')
+                              }}
+                              className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </UserOfferDisplay>
+                  )}
+
+                  {/* Active Offers Section */}
+                  {isOwner && offerIds && offerIds.length > 0 && (
+                    <div className="space-y-2">
+                      <h3 className="text-lg font-semibold text-white">Active Offers</h3>
+                      <div className="space-y-2 max-h-60 overflow-y-auto">
+                        {offerIds.map((offerIdBigInt) => {
+                          const offerId = Number(offerIdBigInt)
+                          return <OfferItem key={offerId} offerId={offerId} tokenId={permanent.tokenId} onAccept={handleAcceptOffer} onCancel={handleCancelOffer} isOwner={isOwner} address={address} />
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 {/* Traits */}
                 <div>
                   <h3 className="text-lg font-semibold text-white mb-3">Traits</h3>
@@ -687,57 +887,202 @@ export default function RugDetailModal({
                   </div>
                 </div>
 
-                {/* Actions */}
-                <div className="flex gap-3 pt-4 border-t border-white/10">
-                  {isListingActive && !isOwner && !isListingSeller && onBuyNFT && (
-                    <button
-                      onClick={() => onBuyNFT(permanent.tokenId, listing?.price ? (Number(listing.price) / 1e18).toString() : dynamic.listingPrice || '0')}
-                      className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 text-white py-3 px-6 rounded-lg font-semibold shadow-lg hover:shadow-green-500/50 transition-all duration-200 transform hover:scale-105 active:scale-95"
-                    >
-                      <ShoppingCart className="w-5 h-5" />
-                      Buy Now {(() => {
-                        if (listing?.price) {
-                          const priceWei = typeof listing.price === 'bigint' ? listing.price : BigInt(listing.price)
-                          if (priceWei > BigInt(0)) {
-                            return `${formatEth(priceWei)} ETH`
-                          }
-                        }
-                        if (dynamic.listingPrice) {
-                          try {
-                            const priceWei = BigInt(dynamic.listingPrice)
-                            if (priceWei > BigInt(0)) {
-                              return `${formatEth(priceWei)} ETH`
-                            }
-                          } catch (error) {
-                            console.error('Failed to format price for Buy Now button:', error)
-                          }
-                        }
-                        return 'N/A'
-                      })()}
-                    </button>
-                  )}
-                  {isListingActive && isListingSeller && (
-                    <div className="flex-1 text-center text-white/60 py-3 px-6 rounded-lg bg-yellow-500/20 border border-yellow-500/30">
-                      <AlertCircle className="w-5 h-5 mx-auto mb-1" />
-                      <div className="text-sm">You cannot buy your own listing</div>
-                    </div>
-                  )}
-                  {!isListingActive && !isOwner && onMakeOffer && (
-                    <button
-                      onClick={() => onMakeOffer(permanent.tokenId)}
-                      className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-400 hover:to-purple-400 text-white py-3 px-6 rounded-lg font-semibold shadow-lg hover:shadow-blue-500/50 transition-all duration-200 transform hover:scale-105 active:scale-95"
-                    >
-                      <HandCoins className="w-5 h-5" />
-                      Make Offer
-                    </button>
-                  )}
-                </div>
               </div>
             </div>
           </div>
         </motion.div>
       </motion.div>
     </AnimatePresence>
+  )
+}
+
+// User Offer Display Component - Shows user's active offer or make offer button
+function UserOfferDisplay({
+  tokenId,
+  offerIds,
+  address,
+  onCancel,
+  isCancelling,
+  children
+}: {
+  tokenId: number
+  offerIds: bigint[] | undefined
+  address?: string
+  onCancel: (offerId: number) => void
+  isCancelling: boolean
+  children: React.ReactNode
+}) {
+  const [hasUserOffer, setHasUserOffer] = useState(false)
+
+  // Render a checker component for each offer
+  if (offerIds && offerIds.length > 0 && address) {
+    return (
+      <>
+        {offerIds.map((offerIdBigInt) => (
+          <OfferChecker
+            key={Number(offerIdBigInt)}
+            offerId={Number(offerIdBigInt)}
+            address={address}
+            onCancel={onCancel}
+            isCancelling={isCancelling}
+            onFound={() => setHasUserOffer(true)}
+            onNotFound={() => setHasUserOffer(false)}
+          />
+        ))}
+        {!hasUserOffer && children}
+      </>
+    )
+  }
+
+  // No offers, show make offer button
+  return <>{children}</>
+}
+
+// Component to check if a specific offer belongs to the user
+function OfferChecker({
+  offerId,
+  address,
+  onCancel,
+  isCancelling,
+  onFound,
+  onNotFound
+}: {
+  offerId: number
+  address: string
+  onCancel: (offerId: number) => void
+  isCancelling: boolean
+  onFound: () => void
+  onNotFound: () => void
+}) {
+  const { offer, isLoading } = useOfferData(offerId)
+
+  useEffect(() => {
+    if (isLoading || !offer || !offer.isActive) {
+      onNotFound()
+      return
+    }
+
+    const isMyOffer = address.toLowerCase() === offer.offerer.toLowerCase()
+    const isExpired = offer.expiresAt > 0 && Date.now() / 1000 > offer.expiresAt
+
+    if (isMyOffer && !isExpired) {
+      onFound()
+    } else {
+      onNotFound()
+    }
+  }, [offer, isLoading, address, onFound, onNotFound])
+
+  if (isLoading) {
+    return null // Don't show anything while loading
+  }
+
+  if (!offer || !offer.isActive) {
+    return null // Not an active offer
+  }
+
+  const isMyOffer = address.toLowerCase() === offer.offerer.toLowerCase()
+  const isExpired = offer.expiresAt > 0 && Date.now() / 1000 > offer.expiresAt
+
+  if (isMyOffer && !isExpired) {
+    // This is the user's active offer
+    return (
+      <div className="space-y-3">
+        <div className="bg-blue-500/20 border border-blue-500/30 rounded-lg p-4">
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <div className="text-blue-300 text-sm font-medium mb-1">Your Active Offer</div>
+              <div className="text-white text-xl font-bold">{formatEth(BigInt(offer.price))} ETH</div>
+            </div>
+          </div>
+          {offer.expiresAt > 0 && (
+            <div className="text-blue-200 text-xs mb-3">
+              Expires: {new Date(offer.expiresAt * 1000).toLocaleString()}
+            </div>
+          )}
+          <button
+            onClick={() => onCancel(offerId)}
+            disabled={isCancelling}
+            className="w-full flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 disabled:bg-red-500/50 text-white py-2.5 px-4 rounded-lg font-semibold transition-colors disabled:opacity-50"
+          >
+            <X className="w-4 h-4" />
+            {isCancelling ? 'Cancelling...' : 'Cancel Offer'}
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // Not user's offer, return null (other checkers will handle their offers)
+  return null
+}
+
+// Offer Item Component
+function OfferItem({ 
+  offerId, 
+  tokenId, 
+  onAccept, 
+  onCancel, 
+  isOwner, 
+  address 
+}: { 
+  offerId: number
+  tokenId: number
+  onAccept: (offerId: number) => void
+  onCancel: (offerId: number) => void
+  isOwner: boolean
+  address?: string
+}) {
+  const { offer, isLoading } = useOfferData(offerId)
+
+  const formatAddress = (addr: string) => {
+    if (!addr) return 'N/A'
+    return `${addr.slice(0, 6)}...${addr.slice(-4)}`
+  }
+
+  if (isLoading || !offer) {
+    return <div className="bg-white/5 rounded-lg p-3 border border-white/10">Loading offer...</div>
+  }
+
+  if (!offer.isActive) return null
+
+  const isExpired = offer.expiresAt > 0 && Date.now() / 1000 > offer.expiresAt
+  const isMyOffer = address?.toLowerCase() === offer.offerer.toLowerCase()
+
+  return (
+    <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+      <div className="flex items-center justify-between mb-2">
+        <div>
+          <div className="text-white font-medium">{formatEth(BigInt(offer.price))} ETH</div>
+          <div className="text-white/60 text-xs font-mono">{formatAddress(offer.offerer)}</div>
+        </div>
+        {isExpired && (
+          <span className="text-xs text-red-400">Expired</span>
+        )}
+      </div>
+      {offer.expiresAt > 0 && (
+        <div className="text-white/60 text-xs mb-2">
+          Expires: {new Date(offer.expiresAt * 1000).toLocaleDateString()}
+        </div>
+      )}
+      <div className="flex gap-2">
+        {isOwner && !isExpired && (
+          <button
+            onClick={() => onAccept(offerId)}
+            className="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors"
+          >
+            Accept
+          </button>
+        )}
+        {isMyOffer && !isExpired && (
+          <button
+            onClick={() => onCancel(offerId)}
+            className="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors"
+          >
+            Cancel Offer
+          </button>
+        )}
+      </div>
+    </div>
   )
 }
 

@@ -1,10 +1,11 @@
 'use client'
 
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { useChainId } from 'wagmi'
+import { useChainId, useAccount } from 'wagmi'
 import { motion, AnimatePresence } from 'framer-motion'
-import { RefreshCw, Eye, Heart, ExternalLink, ShoppingCart, HandCoins } from 'lucide-react'
+import { RefreshCw, Eye, Heart, ExternalLink, ShoppingCart, HandCoins, Tag, X } from 'lucide-react'
+import { useTokenOffers, useOfferData } from '@/hooks/use-marketplace-contract'
 import { RugMarketNFT } from '@/lib/rug-market-types'
 import NFTDisplay, { NFTDisplaySkeleton } from './NFTDisplay'
 import { rugMarketNFTToNFTData, getCalculatedLevels } from '@/utils/rug-market-data-adapter'
@@ -19,6 +20,8 @@ interface RugMarketGridProps {
   onFavoriteToggle?: (tokenId: number) => void
   onBuyNFT?: (tokenId: number, price: string) => void
   onMakeOffer?: (tokenId: number) => void
+  onCancelListing?: (tokenId: number) => void
+  onCancelOffer?: (offerId: number) => void
   sortKey?: string // Key to force remount when sort changes
 }
 
@@ -29,16 +32,26 @@ interface RugCardProps {
   onFavoriteToggle?: () => void
   onBuyNFT?: (tokenId: number, price: string) => void
   onMakeOffer?: (tokenId: number) => void
+  onCancelListing?: (tokenId: number) => void
+  onCancelOffer?: (offerId: number) => void
   isFavorited?: boolean
 }
 
 
 
 
-function RugCard({ nft, onClick, onRefresh, onFavoriteToggle, onBuyNFT, onMakeOffer, isFavorited }: RugCardProps) {
+function RugCard({ nft, onClick, onRefresh, onFavoriteToggle, onBuyNFT, onMakeOffer, onCancelListing, onCancelOffer, isFavorited }: RugCardProps) {
   const router = useRouter()
   const chainId = useChainId()
+  const { address } = useAccount()
   const [isRefreshing, setIsRefreshing] = useState(false)
+  
+  // Check if user owns this NFT
+  const isOwner = address && nft.dynamic.currentOwner && 
+    address.toLowerCase() === nft.dynamic.currentOwner.toLowerCase()
+  
+  // Check for user's active offer
+  const { offerIds } = useTokenOffers(nft.permanent.tokenId)
 
   // Convert RugMarketNFT to NFTData format using adapter for data consistency
   const nftData = rugMarketNFTToNFTData(nft)
@@ -152,7 +165,10 @@ function RugCard({ nft, onClick, onRefresh, onFavoriteToggle, onBuyNFT, onMakeOf
 
       {/* Card Info */}
       <div className="p-4">
-        <div className="flex items-center justify-between mb-3">
+        <div 
+          className="flex items-center justify-between mb-3 cursor-pointer"
+          onClick={onClick}
+        >
           <h3 className="text-white font-semibold truncate">
             {nft.permanent.name}
           </h3>
@@ -162,8 +178,8 @@ function RugCard({ nft, onClick, onRefresh, onFavoriteToggle, onBuyNFT, onMakeOf
         </div>
 
         {/* Actions */}
-        <div className="flex gap-2">
-          {nft.dynamic.isListed && nft.dynamic.listingPrice && (
+        <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+          {nft.dynamic.isListed && nft.dynamic.listingPrice && !isOwner && (
             <button
               onClick={(e) => {
                 e.stopPropagation()
@@ -175,17 +191,38 @@ function RugCard({ nft, onClick, onRefresh, onFavoriteToggle, onBuyNFT, onMakeOf
               Buy Now
             </button>
           )}
-          {onMakeOffer && !nft.dynamic.isListed && (
+          {isOwner && !nft.dynamic.isListed && (
             <button
               onClick={(e) => {
                 e.stopPropagation()
-                onMakeOffer(nft.permanent.tokenId)
+                onClick?.()
               }}
-              className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-400 hover:to-purple-400 text-white font-semibold py-2.5 px-4 rounded-lg shadow-lg hover:shadow-blue-500/50 transition-all duration-200 transform hover:scale-105 active:scale-95 text-sm"
+              className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-semibold py-2.5 px-4 rounded-lg shadow-lg hover:shadow-amber-500/50 transition-all duration-200 transform hover:scale-105 active:scale-95 text-sm"
             >
-              <HandCoins className="w-4 h-4" />
-              Make Offer
+              <Tag className="w-4 h-4" />
+              List for Sale
             </button>
+          )}
+          {isOwner && nft.dynamic.isListed && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onClick?.()
+              }}
+              className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-400 hover:to-rose-400 text-white font-semibold py-2.5 px-4 rounded-lg shadow-lg hover:shadow-red-500/50 transition-all duration-200 transform hover:scale-105 active:scale-95 text-sm"
+            >
+              <X className="w-4 h-4" />
+              Cancel Listing
+            </button>
+          )}
+          {!isOwner && !nft.dynamic.isListed && (
+            <UserOfferButton
+              tokenId={nft.permanent.tokenId}
+              offerIds={offerIds}
+              address={address}
+              onMakeOffer={onMakeOffer}
+              onCancelOffer={onCancelOffer}
+            />
           )}
           <button
             onClick={(e) => {
@@ -215,6 +252,8 @@ export default function RugMarketGrid({
   onFavoriteToggle,
   onBuyNFT,
   onMakeOffer,
+  onCancelListing,
+  onCancelOffer,
   sortKey
 }: RugMarketGridProps) {
   const router = useRouter()
@@ -291,6 +330,8 @@ export default function RugMarketGrid({
                 onFavoriteToggle={() => handleFavoriteToggle(nft.permanent.tokenId)}
                 onBuyNFT={(tokenId, price) => handleBuyNFT(tokenId, price)}
                 onMakeOffer={(tokenId) => handleMakeOffer(tokenId)}
+                onCancelListing={(tokenId) => onCancelListing?.(tokenId)}
+                onCancelOffer={(offerId) => onCancelOffer?.(offerId)}
                 isFavorited={favorites.has(nft.permanent.tokenId)}
               />
             )
@@ -299,4 +340,116 @@ export default function RugMarketGrid({
       {nfts.length === 0 && <div className="col-span-full text-center py-8 text-white">No rugs found</div>}
     </div>
   )
+}
+
+// Component to show Make Offer or Cancel Offer button based on user's active offer
+function UserOfferButton({
+  tokenId,
+  offerIds,
+  address,
+  onMakeOffer,
+  onCancelOffer
+}: {
+  tokenId: number
+  offerIds: bigint[] | undefined
+  address?: string
+  onMakeOffer?: (tokenId: number) => void
+  onCancelOffer?: (offerId: number) => void
+}) {
+  const [userOfferId, setUserOfferId] = useState<number | null>(null)
+
+  // Render offer checkers and button
+  if (offerIds && offerIds.length > 0 && address) {
+    // Render checkers in a way that doesn't interfere with clicks
+    return (
+      <>
+        {/* Hidden checkers - use a portal-like approach */}
+        <div style={{ position: 'fixed', left: '-9999px', top: '-9999px', pointerEvents: 'none' }}>
+          {offerIds.map((offerIdBigInt) => (
+            <OfferIdChecker
+              key={Number(offerIdBigInt)}
+              offerId={Number(offerIdBigInt)}
+              address={address}
+              onFound={(id) => setUserOfferId(id)}
+              onNotFound={() => {}}
+            />
+          ))}
+        </div>
+        {userOfferId !== null ? (
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              // Open modal to show offer details and cancel option
+              onMakeOffer?.(tokenId)
+            }}
+            className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-400 hover:to-rose-400 text-white font-semibold py-2.5 px-4 rounded-lg shadow-lg hover:shadow-red-500/50 transition-all duration-200 transform hover:scale-105 active:scale-95 text-sm"
+          >
+            <X className="w-4 h-4" />
+            Cancel Offer
+          </button>
+        ) : onMakeOffer ? (
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              onMakeOffer(tokenId)
+            }}
+            className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-400 hover:to-purple-400 text-white font-semibold py-2.5 px-4 rounded-lg shadow-lg hover:shadow-blue-500/50 transition-all duration-200 transform hover:scale-105 active:scale-95 text-sm"
+          >
+            <HandCoins className="w-4 h-4" />
+            Make Offer
+          </button>
+        ) : null}
+      </>
+    )
+  }
+
+  // No offers, show make offer button
+  return onMakeOffer ? (
+    <button
+      onClick={(e) => {
+        e.stopPropagation()
+        onMakeOffer(tokenId)
+      }}
+      className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-400 hover:to-purple-400 text-white font-semibold py-2.5 px-4 rounded-lg shadow-lg hover:shadow-blue-500/50 transition-all duration-200 transform hover:scale-105 active:scale-95 text-sm"
+    >
+      <HandCoins className="w-4 h-4" />
+      Make Offer
+    </button>
+  ) : null
+}
+
+// Component to check if a specific offer belongs to the user
+function OfferIdChecker({
+  offerId,
+  address,
+  onFound,
+  onNotFound
+}: {
+  offerId: number
+  address: string
+  onFound: (offerId: number) => void
+  onNotFound: () => void
+}) {
+  const { offer, isLoading } = useOfferData(offerId)
+
+  useEffect(() => {
+    if (isLoading) return
+
+    if (!offer || !offer.isActive) {
+      onNotFound()
+      return
+    }
+
+    const isMyOffer = address.toLowerCase() === offer.offerer.toLowerCase()
+    const isExpired = offer.expiresAt > 0 && Date.now() / 1000 > offer.expiresAt
+
+    if (isMyOffer && !isExpired) {
+      onFound(offerId)
+    } else {
+      onNotFound()
+    }
+  }, [offer, isLoading, address, offerId, onFound, onNotFound])
+
+  // Return null - this component doesn't render anything visible
+  return null
 }
