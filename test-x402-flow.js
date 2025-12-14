@@ -53,7 +53,7 @@ class X402FlowTester {
     try {
       const response = await fetch(`${this.apiBase}/api/maintenance/quote/${this.tokenId}/${action}`, {
         headers: {
-          'x-agent-address': '0x742d35Cc6634C0532925a3b844Bc454e4438f44e' // Dummy agent address for testing
+          'x-agent-address': process.env.TEST_AGENT_ADDRESS || '0x742d35Cc6634C0532925a3b844Bc454e4438f44e' // Test agent address (set TEST_AGENT_ADDRESS env var)
         }
       });
 

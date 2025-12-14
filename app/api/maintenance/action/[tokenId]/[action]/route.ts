@@ -127,7 +127,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ to
             scheme: 'exact',
             network: 'base-sepolia',
             asset: '0x0000000000000000000000000000000000000000',
-            payTo: '0x15c5a551b8aA39a3A4E73643a681E71F76093b62',
+            payTo: process.env.X402_PAY_TO_ADDRESS || '0x0000000000000000000000000000000000000000',
             maxAmountRequired: '430000000000000',
             resource: `/api/maintenance/action/${tokenId}/${action}`,
             description: `${action.charAt(0).toUpperCase() + action.slice(1)} rug #${tokenId}`,
