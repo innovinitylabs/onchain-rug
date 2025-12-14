@@ -135,7 +135,7 @@ async function createPaymentRequirement(params: {
   }
 
   return NextResponse.json({
-    x402Version: 1,
+    x402Version: 2,
     accepts: [paymentRequirement]
   })
 }
@@ -146,8 +146,8 @@ async function verifyPayment(params: { paymentPayload: string }): Promise<NextRe
   try {
     const payload: PaymentPayload = JSON.parse(paymentPayload)
 
-    // Validate X402 version
-    if (payload.x402Version !== 1) {
+    // Validate X402 version (support both V1 and V2 during migration)
+    if (payload.x402Version !== 1 && payload.x402Version !== 2) {
       return NextResponse.json({
         isValid: false,
         invalidReason: 'Unsupported X402 version'
@@ -379,7 +379,7 @@ async function settlePayment(params: { paymentPayload: string }, request: NextRe
 
 async function getSupported(): Promise<NextResponse> {
   return NextResponse.json({
-    x402Version: 1,
+    x402Version: 2,
     kind: [
       {
         scheme: SUPPORTED_SCHEMES,

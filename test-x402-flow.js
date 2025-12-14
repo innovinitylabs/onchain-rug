@@ -48,37 +48,66 @@ class X402FlowTester {
   }
 
   async testQuoteEndpoint(action = 'clean') {
-    console.log(`\n🧪 Testing /api/maintenance/quote endpoint (${action})...\n`);
+    console.log(`\n🧪 Testing /api/maintenance/quote endpoint (${action}) - V2 format...\n`);
 
     try {
-      const response = await fetch(`${this.apiBase}/api/maintenance/quote/${this.tokenId}/${action}`);
-      const data = await response.json();
+      const response = await fetch(`${this.apiBase}/api/maintenance/quote/${this.tokenId}/${action}`, {
+        headers: {
+          'x-agent-address': '0x742d35Cc6634C0532925a3b844Bc454e4438f44e' // Dummy agent address for testing
+        }
+      });
 
       console.log(`Status: ${response.status} (${response.status === 402 ? 'Expected - Payment Required' : 'Unexpected'})`);
 
-      if (response.status === 402 && data.x402?.accepts?.[0]) {
-        const paymentReq = data.x402.accepts[0];
-        const extra = paymentReq.extra;
+      // V2: Payment requirement comes in PAYMENT-REQUIRED header
+      const paymentRequiredHeader = response.headers.get('PAYMENT-REQUIRED');
+      const x402ExtraHeader = response.headers.get('X402-Extra');
 
-        console.log('✅ x402 Payment Requirement:');
-        console.log(`   Version: ${data.x402.x402Version}`);
-        console.log(`   Scheme: ${paymentReq.scheme}`);
-        console.log(`   Network: ${paymentReq.network}`);
-        console.log(`   Asset: ${paymentReq.asset} (ETH)`);
-        console.log(`   Pay To: ${paymentReq.payTo}`);
-        console.log(`   Total Amount: ${paymentReq.maxAmountRequired} wei`);
-        console.log(`   Service Fee: ${extra.serviceFeeWei} wei`);
-        console.log(`   Maintenance Cost: ${extra.maintenanceWei} wei`);
-        console.log(`   Function: ${extra.function}`);
-        console.log(`   Resource: ${paymentReq.resource}`);
-        console.log(`   Description: ${paymentReq.description}`);
+      if (response.status === 402 && paymentRequiredHeader) {
+        const paymentData = JSON.parse(paymentRequiredHeader);
 
-        return paymentReq;
-      } else {
-        console.log('❌ Unexpected response format:');
-        console.log(JSON.stringify(data, null, 2));
-        return null;
+        console.log('✅ V2 Payment Requirement Header:');
+        console.log(`   Version: ${paymentData.x402Version}`);
+
+        if (paymentData.accepts?.[0]) {
+          const paymentReq = paymentData.accepts[0];
+          const extraData = paymentReq.extra || {};
+
+          console.log(`   Scheme: ${paymentReq.scheme}`);
+          console.log(`   Network: ${paymentReq.network}`);
+          console.log(`   Asset: ${paymentReq.asset} (ETH)`);
+          console.log(`   Pay To: ${paymentReq.payTo}`);
+          console.log(`   Total Amount: ${paymentReq.maxAmountRequired} wei`);
+          console.log(`   Service Fee: ${extraData.serviceFee} wei`);
+          console.log(`   Maintenance Cost: ${extraData.maintenanceCost} wei`);
+          console.log(`   Function: ${extraData.functionName}`);
+          console.log(`   Resource: ${paymentReq.resource}`);
+          console.log(`   Description: ${paymentReq.description}`);
+
+          return { ...paymentReq, extra: extraData };
+        }
       }
+
+      // Fallback: try old V1 format for backward compatibility
+      try {
+        const data = await response.json();
+        if (data.x402?.accepts?.[0]) {
+          console.log('📋 Using V1 fallback format:');
+          const paymentReq = data.x402.accepts[0];
+          console.log(`   Version: ${data.x402.x402Version}`);
+          console.log(`   Scheme: ${paymentReq.scheme}`);
+          console.log(`   Network: ${paymentReq.network}`);
+          console.log(`   Asset: ${paymentReq.asset} (ETH)`);
+          console.log(`   Pay To: ${paymentReq.payTo}`);
+          console.log(`   Total Amount: ${paymentReq.maxAmountRequired} wei`);
+          return paymentReq;
+        }
+      } catch (e) {
+        console.log('❌ No valid payment data in response');
+      }
+
+      console.log('❌ Unexpected response format');
+      return null;
     } catch (error) {
       console.error('❌ Quote endpoint test failed:', error.message);
       return null;
@@ -128,12 +157,14 @@ class X402FlowTester {
   simulateTransaction(paymentReq) {
     const extra = paymentReq.extra;
     const totalWei = BigInt(paymentReq.maxAmountRequired);
-    const serviceFeeWei = BigInt(extra.serviceFeeWei);
-    const maintenanceWei = BigInt(extra.maintenanceWei);
+
+    // Convert ETH values to wei
+    const serviceFeeWei = extra.serviceFee ? BigInt(Math.floor(parseFloat(extra.serviceFee) * 1e18)) : BigInt(0);
+    const maintenanceWei = extra.maintenanceCost ? BigInt(Math.floor(parseFloat(extra.maintenanceCost) * 1e18)) : BigInt(0);
 
     console.log('📤 Simulated Transaction:');
     console.log(`   Contract: ${this.contractAddress}`);
-    console.log(`   Function: ${extra.function}`);
+    console.log(`   Function: ${extra.functionName}`);
     console.log(`   Token ID: ${this.tokenId}`);
     console.log(`   Total Value: ${totalWei.toString()} wei`);
     console.log(`   ├── Service Fee: ${serviceFeeWei.toString()} wei (goes to platform)`);

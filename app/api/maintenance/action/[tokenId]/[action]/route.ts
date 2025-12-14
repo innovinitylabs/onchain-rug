@@ -112,17 +112,17 @@ export async function POST(request: NextRequest, context: { params: Promise<{ to
     console.log(`✅ Agent validation passed: ${agentAddress} (${rateLimitCheck.remaining} requests remaining)`)
 
     // Check for X402 payment headers
-    const paymentPayloadStr = request.headers.get('x402-payment-payload')
-    const paymentStatus = request.headers.get('x402-payment-status')
+    const paymentSignature = request.headers.get('PAYMENT-SIGNATURE')
+    const paymentPayloadStr = request.headers.get('PAYMENT-REQUIRED') || request.headers.get('x402-payment-payload') // Support both V2 and V1 during migration
 
-    console.log(`💳 Payment headers - payload: ${!!paymentPayloadStr}, status: ${paymentStatus}`)
+    console.log(`💳 Payment headers - signature: ${!!paymentSignature}, payload: ${!!paymentPayloadStr}`)
 
     // If no payment headers, return payment requirements (quote mode)
-    if (!paymentPayloadStr || paymentStatus !== 'payment-submitted') {
+    if (!paymentPayloadStr || !paymentSignature) {
       console.log(`💰 Request for payment requirements (quote mode)`)
       return NextResponse.json({
         x402: {
-          x402Version: 1,
+          x402Version: 2, // Updated to V2
           accepts: [{
             scheme: 'exact',
             network: 'base-sepolia',
@@ -150,12 +150,12 @@ export async function POST(request: NextRequest, context: { params: Promise<{ to
     console.log(`🔍 Processing payment for ${action} on rug #${tokenId}`)
 
     // Verify payment transaction on-chain before generating token
-    const paymentTxHash = request.headers.get('x402-payment-tx')
+    const paymentTxHash = request.headers.get('PAYMENT-RESPONSE') || request.headers.get('x402-payment-tx') // Support both V2 and V1 during migration
     if (!paymentTxHash) {
       console.log(`❌ No payment transaction hash provided`)
       return NextResponse.json({
         error: 'Payment transaction hash required',
-        details: 'x402-payment-tx header required for payment verification'
+        details: 'PAYMENT-RESPONSE or x402-payment-tx header required for payment verification'
       }, { status: 400 })
     }
 

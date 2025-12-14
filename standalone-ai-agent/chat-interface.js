@@ -523,17 +523,36 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
           console.log(chalk.gray(`   Details: ${result.details}`));
         }
         throw new Error(`Operation failed: ${result.error}`);
-      } else if (!isFreeOperation && response.status === 402 && result.x402) {
-        // Handle X402 payment automatically for maintenance operations
+      } else if (!isFreeOperation && response.status === 402) {
+        // Handle X402 V2 payment (headers) or V1 fallback (response body)
         console.log(chalk.yellow(`💰 X402 payment required for ${name} execution`));
 
-        // Validate X402 response structure
-        if (!result.x402.accepts || !result.x402.accepts[0]) {
-          console.log(chalk.red(`❌ Invalid X402 response structure:`, result.x402));
-          throw new Error('Invalid X402 payment requirement format');
+        let paymentReq;
+
+        // V2: Check PAYMENT-REQUIRED header first
+        const paymentRequiredHeader = response.headers.get('PAYMENT-REQUIRED');
+        if (paymentRequiredHeader) {
+          try {
+            const paymentData = JSON.parse(paymentRequiredHeader);
+            if (paymentData.accepts?.[0]) {
+              paymentReq = paymentData.accepts[0];
+              console.log(chalk.blue(`📋 Using V2 payment requirement from header`));
+            }
+          } catch (e) {
+            console.log(chalk.yellow(`⚠️ Failed to parse V2 payment header, trying V1 fallback`));
+          }
         }
 
-        const paymentReq = result.x402.accepts[0];
+        // V1 fallback: Check response body
+        if (!paymentReq && result.x402?.accepts?.[0]) {
+          paymentReq = result.x402.accepts[0];
+          console.log(chalk.blue(`📋 Using V1 payment requirement from response body`));
+        }
+
+        if (!paymentReq) {
+          console.log(chalk.red(`❌ No valid X402 payment requirement found`));
+          throw new Error('Invalid X402 payment requirement format');
+        }
         if (!paymentReq.maxAmountRequired || !paymentReq.payTo) {
           console.log(chalk.red(`❌ Missing required X402 fields:`, paymentReq));
           throw new Error('X402 payment requirement missing required fields');
@@ -588,13 +607,12 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
 
         console.log(chalk.blue(`🔏 Submitting X402 authorization request...`));
 
-        // Submit with payment headers including transaction hash
+        // Submit with V2 payment headers including transaction hash
         console.log(chalk.gray(`   Submitting to: ${url}`));
         const paymentHeaders = {
           'Content-Type': 'application/json',
-          'x402-payment-payload': JSON.stringify(paymentPayload),
-          'x402-payment-status': 'payment-submitted',
-          'x402-payment-tx': paymentTx // Include the payment transaction hash
+          'PAYMENT-SIGNATURE': JSON.stringify(paymentPayload), // V2: Use PAYMENT-SIGNATURE header
+          'PAYMENT-RESPONSE': paymentTx // V2: Use PAYMENT-RESPONSE header for tx hash
         };
 
         if (config.wallet.address) {
@@ -774,9 +792,9 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
   async createX402PaymentPayload(paymentReq) {
     const { keccak256, encodeAbiParameters } = await import('viem');
 
-    // Create X402 payment payload
+    // Create X402 V2 payment payload
     const paymentPayload = {
-      x402Version: 1,
+      x402Version: 2,
       payment: {
         scheme: paymentReq.scheme,
         network: paymentReq.network,
