@@ -467,16 +467,16 @@ function RugMarketPageContent() {
     <>
       <Head>
         <title>Rug Market - Buy & Sell Living Onchain Rug NFTs | OnchainRugs</title>
-        <meta name="description" content="Browse, buy, and sell fully onchain living generative NFT rugs. Each rug is completely onchain - generative, dynamic, and living. They age, evolve, and require maintenance. Trade on Shape L2 blockchain." />
+        <meta name="description" content="Browse, buy, and sell living onchain generative NFT rugs that require your care. Each rug is a living NFT - completely onchain, generative, and dynamic. They age, evolve, and require maintenance. Trade on Shape L2 blockchain." />
         <meta name="keywords" content="NFT marketplace, buy NFT, sell NFT, rug NFT marketplace, generative NFT trading, Shape L2 marketplace, living NFT marketplace, blockchain art marketplace, NFT collection trading" />
-        <meta property="og:title" content="Rug Market - Buy & Sell Fully Onchain Living Generative NFT Rugs" />
-        <meta property="og:description" content="Browse, buy, and sell fully onchain living generative NFT rugs. Each rug is completely onchain - generative, dynamic, and living. They age, evolve, and require maintenance." />
+        <meta property="og:title" content="Rug Market - Buy & Sell Living Onchain Generative NFT Rugs" />
+        <meta property="og:description" content="Browse, buy, and sell living onchain generative NFT rugs that require your care. Each rug is a living NFT - completely onchain, generative, and dynamic. They age, evolve, and require maintenance." />
         <meta property="og:url" content="https://onchainrugs.xyz/rug-market" />
         <meta property="og:type" content="website" />
         <meta property="og:image" content="https://onchainrugs.xyz/market-og.png" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Rug Market - Buy & Sell Fully Onchain Living Generative NFT Rugs" />
-        <meta name="twitter:description" content="Browse, buy, and sell fully onchain living generative NFT rugs. Each rug is completely onchain - generative, dynamic, and living." />
+        <meta name="twitter:title" content="Rug Market - Buy & Sell Living Onchain Generative NFT Rugs" />
+        <meta name="twitter:description" content="Browse, buy, and sell living onchain generative NFT rugs that require your care. Each rug is a living NFT." />
         <meta name="twitter:image" content="https://onchainrugs.xyz/market-og.png" />
         <link rel="canonical" href="https://onchainrugs.xyz/rug-market" />
       </Head>

@@ -18,8 +18,8 @@ import Head from 'next/head'
 
 // SEO metadata for the generator page
 const metadata: Metadata = {
-  title: "Rug Factory - Create Fully Onchain Living Generative NFT Rugs | OnchainRugs",
-  description: "Create fully onchain living generative NFT rugs. Each rug is completely onchain - generative, dynamic, and living. Custom text, 102 palettes, authentic physics. Mint directly on Shape L2 blockchain.",
+  title: "Rug Factory - Create Living Onchain Generative NFT Rugs | OnchainRugs",
+  description: "Create living onchain generative NFT rugs that require your care. Each rug is a living NFT - completely onchain, generative, and dynamic. Custom text, 102 palettes, authentic physics. Mint directly on Shape L2 blockchain.",
   keywords: [
     "NFT generator", "create NFT", "generative art", "custom NFT", "rug NFT",
     "textile NFT", "woven art NFT", "blockchain art generator", "Shape L2 NFT",
@@ -27,7 +27,7 @@ const metadata: Metadata = {
   ],
   openGraph: {
     title: "Rug Factory - Create Fully Onchain Living Generative NFT Rugs",
-    description: "Design and mint fully onchain living generative NFT rugs. Each rug is completely onchain - generative, dynamic, and living. Custom text, 102 palettes, authentic physics.",
+    description: "Design and mint living onchain generative NFT rugs that require your care. Each rug is a living NFT - completely onchain, generative, and dynamic. Custom text, 102 palettes, authentic physics.",
     url: 'https://onchainrugs.xyz/generator',
     type: 'website',
     images: [
@@ -42,7 +42,7 @@ const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: "Rug Factory - Create Fully Onchain Living Generative NFT Rugs",
-    description: "Design and mint fully onchain living generative NFT rugs. Each rug is completely onchain - generative, dynamic, and living.",
+    description: "Design and mint living onchain generative NFT rugs that require your care. Each rug is a living NFT.",
     images: ['/generator-og.png'],
   },
 }

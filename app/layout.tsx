@@ -56,12 +56,12 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Onchain Rugs - Fully Onchain Living Generative NFT Art | Shape L2 Blockchain",
-  description: "Experience fully onchain living generative NFT art. Each OnchainRug is completely onchain - generative, dynamic, and living. They age with dirt accumulation, require maintenance, and evolve over time. 102 color palettes, custom text, authentic physics. Max supply: 10,000 unique onchain artworks.",
+  description: "Experience fully onchain living generative NFT art. Each OnchainRug is a living NFT - completely onchain, generative, and dynamic. They age with dirt accumulation, require your care and maintenance, and evolve over time. 102 color palettes, custom text, authentic physics. Max supply: 10,000 unique living onchain artworks.",
   keywords: [
-    "fully onchain NFT", "onchain generative art", "living onchain NFT", "dynamic onchain art", "onchain NFT collection",
+    "living NFT", "living onchain NFT", "fully onchain NFT", "onchain generative art", "living generative NFT",
     "Shape L2 NFT", "onchain textile art", "onchain woven art", "onchain digital rugs", "onchain aging NFT",
-    "onchain living art", "blockchain generative art", "onchain NFT marketplace", "fully onchain collectibles",
-    "onchain crypto art", "onchain blockchain art", "onchain NFT", "living generative NFT", "dynamic NFT"
+    "living NFT art", "blockchain generative art", "onchain NFT marketplace", "fully onchain collectibles",
+    "onchain crypto art", "onchain blockchain art", "onchain NFT", "living digital art", "dynamic NFT"
   ],
   authors: [{ name: "OnchainRugs Team" }],
   creator: "valipokkann",
@@ -77,7 +77,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "Onchain Rugs - Fully Onchain Living Generative NFT Art",
-    description: "Experience fully onchain living generative NFT art. Each OnchainRug is completely onchain - generative, dynamic, and living. They age with dirt accumulation, require maintenance, and evolve over time. 102 color palettes, custom text, authentic physics.",
+    description: "Experience fully onchain living generative NFT art. Each OnchainRug is a living NFT - completely onchain, generative, and dynamic. They age with dirt accumulation, require your care and maintenance, and evolve over time. 102 color palettes, custom text, authentic physics.",
     url: 'https://onchainrugs.xyz',
     siteName: 'OnchainRugs',
     images: [
@@ -95,7 +95,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: "Onchain Rugs - Fully Onchain Living Generative NFT Art",
-    description: "Experience fully onchain living generative NFT art. Each OnchainRug is completely onchain - generative, dynamic, and living. They age, require maintenance, and evolve over time.",
+    description: "Experience fully onchain living generative NFT art. Each OnchainRug is a living NFT that ages, requires your care, and evolves over time.",
     images: ['/OnchainRugs.png'],
     creator: '@valipokkann',
     site: '@valipokkann',

@@ -91,17 +91,17 @@ const seoDescription = `View Onchain Rug #${permanent.tokenId} - ${permanent.pal
 
 ### Keyword Strategy
 **Primary Keywords:**
-- "fully onchain NFT", "onchain generative art", "living onchain NFT", "onchain NFT collection"
+- "living NFT", "living onchain NFT", "living generative NFT"
 
 **Secondary Keywords:**
-- Onchain Rugs, Living NFT, Generative NFT, Dynamic NFT, Shape L2, Blockchain Art
+- "fully onchain NFT", "onchain generative art", "onchain NFT collection", "Shape L2 NFT"
 
 **Long-tail Keywords:**
-- "fully onchain living generative NFT art"
-- "completely onchain NFT collection"
-- "onchain generative dynamic living NFT"
-- "buy sell fully onchain NFT rugs"
-- "create custom onchain NFT textile art"
+- "living NFT that requires care"
+- "living onchain generative NFT art"
+- "NFT that ages and needs maintenance"
+- "living digital art collection"
+- "care for your living NFT"
 
 ---
 
@@ -190,13 +190,14 @@ const seoDescription = `View Onchain Rug #${permanent.tokenId} - ${permanent.pal
 
 ## 🎨 Content Strategy
 
-### Core Positioning: "Fully Onchain - Generative - Dynamic - Living"
+### Core Positioning: "Living Onchain Generative NFTs"
 
-Every piece of content must emphasize these four core pillars:
+Every piece of content must emphasize that OnchainRugs are **living NFTs** that require care and attention:
+
+- **Living NFTs**: Require care and maintenance like physical objects
 - **Fully Onchain**: Everything stored and executed on blockchain
 - **Generative**: Algorithmically created, unique art
-- **Dynamic**: Changes and evolves over time
-- **Living**: Requires care and maintenance like physical objects
+- **Dynamic**: Changes and evolves over time through aging and maintenance
 
 ### SEO-Friendly Content Elements
 1. **Descriptive Headlines**: Clear, keyword-rich H1 tags emphasizing onchain nature
