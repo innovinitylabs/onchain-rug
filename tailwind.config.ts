@@ -1,13 +1,6 @@
 import type { Config } from 'tailwindcss'
 
 const config: Config = {
-  // Disable lightningcss to avoid Vercel build issues
-  corePlugins: {
-    preflight: false,
-  },
-  experimental: {
-    optimizeUniversalDefaults: true,
-  },
   content: [
     './pages/**/*.{js,ts,jsx,tsx,mdx}',
     './components/**/*.{js,ts,jsx,tsx,mdx}',
