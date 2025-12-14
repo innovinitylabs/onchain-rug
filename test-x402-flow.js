@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
 /**
- * Test x402 Flow - No Wallet Required
+ * Test Direct Payment Flow - No Wallet Required
  *
- * This script demonstrates the complete x402 flow without executing transactions.
- * Perfect for testing API integration and understanding the protocol.
+ * This script demonstrates the complete direct payment flow without executing transactions.
+ * Perfect for testing API integration and understanding the new payment system.
  *
  * Run with: node test-x402-flow.js
  */
@@ -48,6 +48,7 @@ class X402FlowTester {
   }
 
   async testQuoteEndpoint(action = 'clean') {
+    console.log(`\n🧪 Testing /api/maintenance/quote endpoint for ${action}...`);
     console.log(`\n🧪 Testing /api/maintenance/quote endpoint (${action}) - V2 format...\n`);
 
     try {
@@ -115,7 +116,7 @@ class X402FlowTester {
   }
 
   async testCompleteFlow() {
-    console.log('🚀 Testing Complete x402 Flow\n');
+    console.log('🚀 Testing Complete Direct Payment Flow\n');
     console.log('═'.repeat(60));
 
     // Step 1: Check status
@@ -145,13 +146,55 @@ class X402FlowTester {
     const quote = await this.testQuoteEndpoint(action);
     if (!quote) return;
 
-    // Step 4: Simulate transaction
-    console.log('\nStep 4: Simulate Transaction Execution');
+    // Step 4: Test action execution with direct payment
+    console.log('\nStep 4: Test Direct Payment Execution');
+    await this.testActionEndpoint(action, quote.maxAmountRequired);
+
+    // Step 5: Simulate transaction details
+    console.log('\nStep 5: Transaction Details');
     this.simulateTransaction(quote);
 
     console.log('\n═'.repeat(60));
-    console.log('🎉 x402 Flow Test Completed Successfully!');
+    console.log('🎉 Direct Payment Flow Test Completed Successfully!');
     console.log('Your APIs are working correctly.');
+  }
+
+  async testActionEndpoint(action, paymentAmount) {
+    console.log(`\n🧪 Testing /api/maintenance/action endpoint for ${action} with direct payment...`);
+
+    try {
+      const response = await fetch(`${this.apiBase}/api/maintenance/action/${this.tokenId}/${action}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-agent-address': process.env.TEST_AGENT_ADDRESS || '0x742d35Cc6634C0532925a3b844Bc454e4438f44e'
+        },
+        body: JSON.stringify({
+          action: action,
+          paymentAmount: paymentAmount
+        })
+      });
+
+      console.log(`Status: ${response.status}`);
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ Action executed successfully:');
+        console.log(`   Tx Hash: ${result.txHash}`);
+        console.log(`   Gas Used: ${result.gasUsed}`);
+        console.log(`   Message: ${result.message}`);
+        return result;
+      } else {
+        const error = await response.json();
+        console.log('❌ Action failed:');
+        console.log(`   Error: ${error.error}`);
+        console.log(`   Details: ${error.details}`);
+        return null;
+      }
+    } catch (error) {
+      console.error('❌ Action endpoint test failed:', error.message);
+      return null;
+    }
   }
 
   simulateTransaction(paymentReq) {
@@ -170,18 +213,19 @@ class X402FlowTester {
     console.log(`   ├── Service Fee: ${serviceFeeWei.toString()} wei (goes to platform)`);
     console.log(`   └── Maintenance: ${maintenanceWei.toString()} wei (goes to contract)`);
 
-    console.log('\n🔧 What would happen in real execution:');
-    console.log('   1. AI agent creates transaction with total value');
-    console.log('   2. Contract receives maintenance + service fee');
-    console.log('   3. Contract executes maintenance logic');
-    console.log('   4. Service fee transferred to fee recipient');
-    console.log('   5. Rug condition improves');
-    console.log('   6. AI agent earns service fee revenue');
+    console.log('\n🔧 What happens in real execution:');
+    console.log('   1. AI agent gets quote (PAYMENT-REQUIRED header)');
+    console.log('   2. AI agent calls action API with paymentAmount in body');
+    console.log('   3. API calls contract directly with payment');
+    console.log('   4. Contract verifies agent authorization + payment amount');
+    console.log('   5. Contract executes maintenance and distributes fees');
+    console.log('   6. Transaction completes - no facilitator needed');
 
     console.log('\n💰 Revenue Distribution:');
-    console.log(`   Platform earns: ${serviceFeeWei.toString()} wei`);
-    console.log(`   Contract treasury: ${maintenanceWei.toString()} wei`);
+    console.log(`   Platform earns: ${serviceFeeWei.toString()} wei (service fee)`);
+    console.log(`   Contract treasury: ${maintenanceWei.toString()} wei (maintenance)`);
     console.log(`   AI agent gas cost: ~50,000 gas`);
+    console.log(`   Process: Direct payment → On-chain verification → No intermediaries`);
   }
 
   async testAllActions() {
