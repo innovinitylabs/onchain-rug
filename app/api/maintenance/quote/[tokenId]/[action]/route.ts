@@ -175,7 +175,7 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ to
     const totalWei = maintenanceWei + serviceFeeWei
     const price = (Number(totalWei) / 1e18).toString() // Convert to ETH
 
-    // Use X402 facilitator to generate proper payment requirement
+    // Use X402 to generate payment requirement (V2-compatible)
     const paymentRequired = await createPaymentRequiredResponse({
       price: price,
       description: `Rug ${action} service (agent single-tx)`,
@@ -186,29 +186,52 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ to
       serviceFee: formatEther(serviceFeeWei)
     })
 
-    // Add extra metadata for agent UX
-    if (paymentRequired.x402?.accepts?.[0]) {
-      paymentRequired.x402.accepts[0].extra = {
-        ...paymentRequired.x402.accepts[0].extra,
-        functionName: functionName,
-              maintenanceWei: maintenanceWei.toString(),
-              serviceFeeWei: serviceFeeWei.toString(),
-        totalWei: totalWei.toString()
-      }
-    }
-
     console.log(`💰 X402 quote generated for ${action} on rug #${tokenId}: ${price} ETH`)
-    
+
     // Get current rate limit status for headers (without incrementing counter)
     const currentRateLimit = getRateLimitStatus(agentAddress)
-    
-    return NextResponse.json(paymentRequired, { 
+
+    // V2-compatible: Return payment requirement in PAYMENT-REQUIRED header
+    const headers = new Headers({
+      'X-RateLimit-Limit': '10',
+      'X-RateLimit-Remaining': currentRateLimit.remaining.toString(),
+      'X-RateLimit-Reset': currentRateLimit.resetAt.toString()
+    })
+
+    // Add payment requirement to header (V2 format)
+    if (paymentRequired.paymentRequired) {
+      headers.set('PAYMENT-REQUIRED', JSON.stringify({
+        x402Version: 2,
+        accepts: [paymentRequired.paymentRequired]
+      }))
+    } else {
+      // Fallback: empty response for backward compatibility
+      headers.set('PAYMENT-REQUIRED', JSON.stringify({
+        x402Version: 2,
+        accepts: [{
+          scheme: 'exact',
+          network: DEFAULT_CHAIN_ID === 84532 ? 'base-sepolia' : 'shape-sepolia',
+          asset: '0x0000000000000000000000000000000000000000',
+          payTo: contract,
+          maxAmountRequired: totalWei.toString(),
+          resource: `/api/maintenance/action/${tokenId}/${functionName}`,
+          description: `Rug ${action} service (agent single-tx)`,
+          mimeType: 'application/json',
+          maxTimeoutSeconds: 900,
+          extra: {
+            functionName: functionName,
+            tokenId: tokenId,
+            maintenanceWei: maintenanceWei.toString(),
+            serviceFeeWei: serviceFeeWei.toString(),
+            totalWei: totalWei.toString()
+          }
+        }]
+      }))
+    }
+
+    return new NextResponse(null, {
       status: 402,
-      headers: {
-        'X-RateLimit-Limit': '10',
-        'X-RateLimit-Remaining': currentRateLimit.remaining.toString(),
-        'X-RateLimit-Reset': currentRateLimit.resetAt.toString()
-      }
+      headers
     })
   } catch (err) {
     console.error('quote route error:', err)
