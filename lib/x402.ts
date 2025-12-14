@@ -28,7 +28,7 @@ export function getX402Config(): X402Config {
   return config
 }
 
-// Create V2 payment requirements using official @x402 SDK
+// Create V2 payment requirements using V2-compatible format
 export async function createPaymentRequiredResponse(options: {
   price: string
   description: string
@@ -44,35 +44,30 @@ export async function createPaymentRequiredResponse(options: {
   console.log(`🔧 X402 V2 createPaymentRequiredResponse: ${options.price} ETH for ${options.description}`)
 
   try {
-    // Use official V2 EVM paywall
-    const paywall = evmPaywall({
-      chains: [{
-        id: config.network as any,
-        rpcUrls: { default: { http: [config.rpcUrl || ''] } }
-      }],
-      assets: [{
-        chainId: config.network as any,
-        address: config.assetAddress as any,
-        symbol: config.assetName
-      }]
-    })
+    // Use official V2 paywall for HTML generation (client-side)
+    const paywall = require('@x402/paywall').createPaywall()
+      .withNetwork(require('@x402/paywall').evmPaywall)
+      .build()
 
-    // Create payment requirement using V2 paywall
-    const paymentRequirement = await paywall.createPaymentRequirement({
-      chainId: config.network as any,
-      asset: config.assetAddress as any,
-      amount: parseEther(options.price),
+    // For server-side, create V2-compatible payment requirement manually
+    // The @x402 packages are primarily client-side, so we maintain server-side logic
+    const paymentRequirement = {
+      scheme: 'exact',
+      network: config.network,
+      asset: config.assetAddress,
       payTo: options.contractAddress || config.payToAddress,
-      description: options.description,
+      maxAmountRequired: (parseFloat(options.price || '0') * 1e18).toString(),
       resource: `/api/maintenance/action/${options.tokenId}/${options.functionName}`,
-      timeoutSeconds: 900,
+      description: options.description,
+      mimeType: 'application/json',
+      maxTimeoutSeconds: 900,
       extra: {
         functionName: options.functionName,
         tokenId: options.tokenId,
         maintenanceCost: options.maintenanceCost,
         serviceFee: options.serviceFee
       }
-    })
+    }
 
     return {
       x402Version: 2,
@@ -82,7 +77,7 @@ export async function createPaymentRequiredResponse(options: {
   } catch (error) {
     console.error('❌ Failed to create V2 payment requirement:', error)
 
-    // Fallback to manual V2-compatible format
+    // Fallback to basic V2-compatible format
     console.log('🔄 Using V2-compatible fallback format')
     return {
       x402Version: 2,
@@ -102,7 +97,7 @@ export async function createPaymentRequiredResponse(options: {
           maintenanceCost: options.maintenanceCost,
           serviceFee: options.serviceFee,
           fallback: true,
-          migrationNote: 'Official V2 SDK fallback'
+          migrationNote: 'V2 SDK integration in progress'
         }
       }
     }
@@ -118,42 +113,9 @@ export async function verifyAndSettlePayment(paymentPayload: string): Promise<{
   const config = getX402Config()
 
   try {
-    // Use official V2 paywall for payment verification
-    const paywall = evmPaywall({
-      chains: [{
-        id: config.network as any,
-        rpcUrls: { default: { http: [config.rpcUrl || ''] } }
-      }],
-      assets: [{
-        chainId: config.network as any,
-        address: config.assetAddress as any,
-        symbol: config.assetName
-      }]
-    })
-
-    // Verify payment using V2 paywall
-    const verification = await paywall.verifyPayment(paymentPayload)
-
-    if (!verification.isValid) {
-      return {
-        isValid: false,
-        invalidReason: verification.error || 'Payment verification failed'
-      }
-    }
-
-    // For our simplified flow, payment verification is complete
-    // Transaction verification happens separately in the action route
-    return {
-      isValid: true,
-      settlementSuccess: true, // Direct contract payments don't need separate settlement
-      errorReason: undefined
-    }
-
-  } catch (error) {
-    console.error('❌ V2 Payment verification error:', error)
-
-    // Fallback to manual verification for compatibility
-    console.log('🔄 Falling back to manual V2-compatible verification')
+    // For V2 compatibility, we use manual verification
+    // The @x402 packages are primarily client-side, server-side verification is custom
+    console.log('🔄 Using V2-compatible manual payment verification')
     try {
       const payload: any = JSON.parse(paymentPayload)
 
