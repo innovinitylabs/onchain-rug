@@ -15,6 +15,7 @@ import LiquidGlass from '@/components/LiquidGlass'
 import { config } from '@/lib/config'
 import { formatEther } from 'viem'
 import { parseTokenURIData } from '@/utils/parsing-utils'
+import Head from 'next/head'
 
 // Types for our NFT data
 interface RugTraits {
@@ -1124,8 +1125,24 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col">
-      <Navigation />
+    <>
+      <Head>
+        <title>My Rugs - Manage Your Living Onchain Rug Collection | OnchainRugs</title>
+        <meta name="description" content="Manage your Onchain Rug NFT collection. Clean, restore, and maintain your living rugs that age over time. Track dirt levels, texture development, and frame progression on Shape L2 blockchain." />
+        <meta name="keywords" content="NFT dashboard, manage NFTs, rug maintenance, NFT cleaning, NFT restoration, living NFT care, Shape L2 NFT wallet, blockchain NFT portfolio, NFT aging system" />
+        <meta property="og:title" content="My Rugs - Manage Your Living Onchain Rug Collection" />
+        <meta property="og:description" content="Manage your Onchain Rug NFT collection. Clean, restore, and maintain your living rugs that age over time. Track dirt levels and frame progression." />
+        <meta property="og:url" content="https://onchainrugs.xyz/dashboard" />
+        <meta property="og:type" content="website" />
+        <meta property="og:image" content="https://onchainrugs.xyz/dashboard-og.jpg" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="My Rugs - Manage Your Living Onchain Rug Collection" />
+        <meta name="twitter:description" content="Manage your Onchain Rug NFT collection. Clean, restore, and maintain your living rugs that age over time." />
+        <meta name="twitter:image" content="https://onchainrugs.xyz/dashboard-og.jpg" />
+        <link rel="canonical" href="https://onchainrugs.xyz/dashboard" />
+      </Head>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col">
+        <Navigation />
 
       <main className="flex-grow">
         <div className="max-w-6xl mx-auto px-4 py-20 pt-28">
@@ -1848,5 +1865,6 @@ export default function DashboardPage() {
 
       <Footer />
     </div>
+    </>
   )
 }

@@ -24,6 +24,7 @@ import {
 import { RugMarketNFT } from '@/lib/rug-market-types'
 import { getCalculatedLevels } from '@/utils/rug-market-data-adapter'
 import { config } from '@/lib/config'
+import Head from 'next/head'
 
 export default function NFTDetailPage() {
   const params = useParams()
@@ -173,9 +174,100 @@ export default function NFTDetailPage() {
 
   const { permanent, dynamic } = nft
 
+  // Generate dynamic SEO metadata
+  const seoTitle = `${permanent.name} - Onchain Rug #${permanent.tokenId} | Living NFT Art`
+  const seoDescription = `View Onchain Rug #${permanent.tokenId} - ${permanent.paletteName} palette with ${permanent.textRows?.length || 0} text lines. Dirt Level: ${getCalculatedLevels(dynamic).dirtLevel}, Frame: ${dynamic.frameLevel}. Living generative art on Shape L2 blockchain.`
+  const seoImage = permanent.image || 'https://onchainrugs.xyz/rug-preview.jpg'
+  const seoUrl = `https://onchainrugs.xyz/rug-market/${permanent.tokenId}`
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      <Navigation />
+    <>
+      <Head>
+        <title>{seoTitle}</title>
+        <meta name="description" content={seoDescription} />
+        <meta property="og:title" content={seoTitle} />
+        <meta property="og:description" content={seoDescription} />
+        <meta property="og:url" content={seoUrl} />
+        <meta property="og:type" content="website" />
+        <meta property="og:image" content={seoImage} />
+        <meta property="og:image:width" content="800" />
+        <meta property="og:image:height" content="800" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={seoTitle} />
+        <meta name="twitter:description" content={seoDescription} />
+        <meta name="twitter:image" content={seoImage} />
+        <link rel="canonical" href={seoUrl} />
+
+        {/* NFT-specific structured data */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "VisualArtwork",
+              "name": permanent.name,
+              "description": permanent.description,
+              "creator": {
+                "@type": "Person",
+                "name": "valipokkann"
+              },
+              "dateCreated": new Date(Number(permanent.mintTime) * 1000).toISOString().split('T')[0],
+              "artMedium": "Digital (HTML5 Canvas, P5.js)",
+              "artform": "Generative Textile Art",
+              "material": "On-chain generated, Shape L2 blockchain",
+              "width": "800px",
+              "height": "1200px",
+              "image": seoImage,
+              "url": seoUrl,
+              "sameAs": seoUrl,
+              "additionalProperty": [
+                {
+                  "@type": "PropertyValue",
+                  "name": "Token ID",
+                  "value": permanent.tokenId.toString()
+                },
+                {
+                  "@type": "PropertyValue",
+                  "name": "Blockchain",
+                  "value": "Shape L2"
+                },
+                {
+                  "@type": "PropertyValue",
+                  "name": "Contract Standard",
+                  "value": "ERC-721"
+                },
+                {
+                  "@type": "PropertyValue",
+                  "name": "Palette",
+                  "value": permanent.paletteName
+                },
+                {
+                  "@type": "PropertyValue",
+                  "name": "Text Lines",
+                  "value": permanent.textRows?.length.toString() || "0"
+                },
+                {
+                  "@type": "PropertyValue",
+                  "name": "Current Frame",
+                  "value": dynamic.frameLevel
+                }
+              ],
+              "offers": dynamic.isListed ? {
+                "@type": "Offer",
+                "price": dynamic.listingPrice,
+                "priceCurrency": "ETH",
+                "availability": "https://schema.org/InStock",
+                "seller": {
+                  "@type": "Person",
+                  "name": "OnchainRugs Collector"
+                }
+              } : undefined
+            })
+          }}
+        />
+      </Head>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+        <Navigation />
 
       <main className="pb-20 pt-28">
         {/* Header */}
@@ -421,5 +513,6 @@ export default function NFTDetailPage() {
 
       <Footer />
     </div>
+    </>
   )
 }

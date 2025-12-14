@@ -34,8 +34,14 @@ export default function Home() {
       <main className="flex-grow">
         <PerformanceMonitor />
         <ScrollIndicator />
+
         {/* Hero Section with 3D Flying Rugs - Performance Optimized */}
-        <section className="relative h-screen overflow-hidden" style={{ willChange: 'auto' }}>
+        <section
+          className="relative h-screen overflow-hidden"
+          style={{ willChange: 'auto' }}
+          aria-label="Hero section with animated flying rugs"
+          role="banner"
+        >
           {showAnimatedRugs && (
             <Suspense fallback={<div className="h-screen bg-gradient-to-br from-sky-200 via-blue-300 to-indigo-400" />}>
               <AnimatedRugs key={animationKey} />
@@ -47,14 +53,20 @@ export default function Home() {
         </section>
 
         {/* Features Section */}
-        <Features />
+        <section aria-label="Key features of OnchainRugs">
+          <Features />
+        </section>
 
         {/* White Paper Section */}
-        <WhitePaperSection />
+        <section aria-label="White paper and documentation">
+          <WhitePaperSection />
+        </section>
       </main>
 
       {/* Footer */}
-      <Footer />
+      <footer role="contentinfo">
+        <Footer />
+      </footer>
     </div>
   )
 }
