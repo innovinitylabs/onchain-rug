@@ -1,0 +1,49 @@
+{
+  "name": "Onchain Rugs - Living Generative NFT Art",
+  "short_name": "OnchainRugs",
+  "description": "Create and collect living NFT rugs that age over time. Each OnchainRug evolves with dirt accumulation and texture development, requiring care and maintenance.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#3b82f6",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en-US",
+  "categories": ["entertainment", "lifestyle", "productivity"],
+  "icons": [
+    {
+      "src": "/valipokkann.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.ico",
+      "sizes": "32x32 16x16",
+      "type": "image/x-icon"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Create Rug",
+      "short_name": "Create",
+      "description": "Create a new Onchain Rug",
+      "url": "/generator",
+      "icons": [{ "src": "/valipokkann.svg", "sizes": "96x96" }]
+    },
+    {
+      "name": "Rug Market",
+      "short_name": "Market",
+      "description": "Browse and trade rugs",
+      "url": "/rug-market",
+      "icons": [{ "src": "/valipokkann.svg", "sizes": "96x96" }]
+    },
+    {
+      "name": "My Rugs",
+      "short_name": "My Rugs",
+      "description": "Manage your rug collection",
+      "url": "/dashboard",
+      "icons": [{ "src": "/valipokkann.svg", "sizes": "96x96" }]
+    }
+  ]
+}

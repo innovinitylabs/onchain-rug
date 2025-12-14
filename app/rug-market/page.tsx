@@ -14,6 +14,7 @@ import { RugMarketNFT } from '../../lib/rug-market-types'
 import { useBuyListing, useCancelListing, useCancelOffer } from '../../hooks/use-marketplace-contract'
 import { useWaitForTransactionReceipt } from 'wagmi'
 import { getExplorerUrl } from '../../lib/networks'
+import Head from 'next/head'
 
 type ListingFilter = 'all' | 'listed' | 'unlisted'
 type SortOption = 'tokenId' | 'price-low' | 'price-high' | 'rarity' | 'newest'
@@ -463,8 +464,24 @@ function RugMarketPageContent() {
   }, [currentPage, totalPages])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col">
-      <Navigation />
+    <>
+      <Head>
+        <title>Rug Market - Buy & Sell Living Onchain Rug NFTs | OnchainRugs</title>
+        <meta name="description" content="Browse, buy, and sell living Onchain Rug NFTs. Each rug ages over time with dirt accumulation and texture development. Search by palette, text, rarity, and price. Trade on Shape L2 blockchain." />
+        <meta name="keywords" content="NFT marketplace, buy NFT, sell NFT, rug NFT marketplace, generative NFT trading, Shape L2 marketplace, living NFT marketplace, blockchain art marketplace, NFT collection trading" />
+        <meta property="og:title" content="Rug Market - Buy & Sell Living Onchain Rug NFTs" />
+        <meta property="og:description" content="Browse, buy, and sell living Onchain Rug NFTs that age over time. Search by palette, text, rarity, and price on Shape L2 blockchain." />
+        <meta property="og:url" content="https://onchainrugs.xyz/rug-market" />
+        <meta property="og:type" content="website" />
+        <meta property="og:image" content="https://onchainrugs.xyz/market-og.jpg" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Rug Market - Buy & Sell Living Onchain Rug NFTs" />
+        <meta name="twitter:description" content="Browse, buy, and sell living Onchain Rug NFTs that age over time. Search by palette, text, rarity, and price." />
+        <meta name="twitter:image" content="https://onchainrugs.xyz/market-og.jpg" />
+        <link rel="canonical" href="https://onchainrugs.xyz/rug-market" />
+      </Head>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col">
+        <Navigation />
 
       <main className="container mx-auto px-4 py-8 pt-28 flex-grow">
         <div className="max-w-7xl mx-auto">
@@ -699,6 +716,7 @@ function RugMarketPageContent() {
         </div>
       )}
     </div>
+    </>
   )
 }
 

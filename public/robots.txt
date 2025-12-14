@@ -1,0 +1,27 @@
+# OnchainRugs Robots.txt
+# Allow all web crawlers to access the site
+
+User-agent: *
+Allow: /
+
+# Allow Google and Bing to crawl everything
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+# Block access to admin and API routes for security
+Disallow: /admin
+Disallow: /api/
+Disallow: /_next/
+Disallow: /node_modules/
+
+# Allow access to sitemap
+Allow: /sitemap.xml
+
+# Crawl delay to be respectful
+Crawl-delay: 1
+
+# Sitemap location
+Sitemap: https://onchainrugs.xyz/sitemap.xml

@@ -13,6 +13,39 @@ import { config } from '@/lib/config'
 import { useChainId } from 'wagmi'
 import { contractAddresses } from '@/lib/web3'
 import { getChainDisplayName } from '@/lib/networks'
+import { Metadata } from 'next'
+import Head from 'next/head'
+
+// SEO metadata for the generator page
+const metadata: Metadata = {
+  title: "Rug Factory - Create Your Onchain Rug NFT | OnchainRugs",
+  description: "Create unique, living Onchain Rug NFTs with custom text, 102 color palettes, and authentic cloth physics. Each rug ages over time and requires maintenance. Mint directly on Shape L2 blockchain.",
+  keywords: [
+    "NFT generator", "create NFT", "generative art", "custom NFT", "rug NFT",
+    "textile NFT", "woven art NFT", "blockchain art generator", "Shape L2 NFT",
+    "living NFT", "aging NFT", "NFT minting", "custom text NFT"
+  ],
+  openGraph: {
+    title: "Rug Factory - Create Your Living Onchain Rug NFT",
+    description: "Design and mint unique generative rug NFTs that age over time. Custom text, 102 palettes, authentic physics. Shape L2 blockchain.",
+    url: 'https://onchainrugs.xyz/generator',
+    type: 'website',
+    images: [
+      {
+        url: '/generator-og.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'Rug Factory - Create Onchain Rug NFTs',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: "Rug Factory - Create Your Living Onchain Rug NFT",
+    description: "Design and mint unique generative rug NFTs that age over time. Custom text, 102 palettes, authentic physics.",
+    images: ['/generator-og.jpg'],
+  },
+}
 
 export default function GeneratorPage() {
   const chainId = useChainId()
@@ -2376,8 +2409,24 @@ export default function GeneratorPage() {
   }, [isLoaded]) // Only run when isLoaded changes to true
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100 flex flex-col">
-      <Navigation />
+    <>
+      <Head>
+        <title>Rug Factory - Create Your Onchain Rug NFT | OnchainRugs</title>
+        <meta name="description" content="Create unique, living Onchain Rug NFTs with custom text, 102 color palettes, and authentic cloth physics. Each rug ages over time and requires maintenance. Mint directly on Shape L2 blockchain." />
+        <meta name="keywords" content="NFT generator, create NFT, generative art, custom NFT, rug NFT, textile NFT, woven art NFT, blockchain art generator, Shape L2 NFT, living NFT, aging NFT, NFT minting, custom text NFT" />
+        <meta property="og:title" content="Rug Factory - Create Your Living Onchain Rug NFT" />
+        <meta property="og:description" content="Design and mint unique generative rug NFTs that age over time. Custom text, 102 palettes, authentic physics. Shape L2 blockchain." />
+        <meta property="og:url" content="https://onchainrugs.xyz/generator" />
+        <meta property="og:type" content="website" />
+        <meta property="og:image" content="https://onchainrugs.xyz/generator-og.jpg" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Rug Factory - Create Your Living Onchain Rug NFT" />
+        <meta name="twitter:description" content="Design and mint unique generative rug NFTs that age over time. Custom text, 102 palettes, authentic physics." />
+        <meta name="twitter:image" content="https://onchainrugs.xyz/generator-og.jpg" />
+        <link rel="canonical" href="https://onchainrugs.xyz/generator" />
+      </Head>
+      <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100 flex flex-col">
+        <Navigation />
       <main className="flex-grow pt-28">
         <div className="max-w-[1800px] mx-auto px-4">
       {/* Header */}
@@ -3063,6 +3112,7 @@ export default function GeneratorPage() {
       {/* Footer */}
       <Footer />
     </div>
+    </>
   )
 }
 
