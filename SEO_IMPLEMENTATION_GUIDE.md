@@ -10,6 +10,7 @@ This document outlines the comprehensive SEO implementation for OnchainRugs, opt
 - **AI Agent Compatibility**: Structured data for AI crawlers and assistants
 - **Social Sharing**: Rich previews on Twitter, Discord, and other platforms
 - **NFT Marketplaces**: Proper metadata for OpenSea, Rarible, and other platforms
+- **Onchain Positioning**: Emphasize fully onchain, generative, dynamic, living nature
 
 ---
 
@@ -90,13 +91,17 @@ const seoDescription = `View Onchain Rug #${permanent.tokenId} - ${permanent.pal
 
 ### Keyword Strategy
 **Primary Keywords:**
-- Onchain Rugs, Living NFT, Generative NFT, Shape L2, Blockchain Art
+- "fully onchain NFT", "onchain generative art", "living onchain NFT", "onchain NFT collection"
+
+**Secondary Keywords:**
+- Onchain Rugs, Living NFT, Generative NFT, Dynamic NFT, Shape L2, Blockchain Art
 
 **Long-tail Keywords:**
-- "living generative NFT art that ages"
-- "buy sell NFT rugs Shape L2"
-- "create custom NFT textile art"
-- "NFT aging mechanics blockchain"
+- "fully onchain living generative NFT art"
+- "completely onchain NFT collection"
+- "onchain generative dynamic living NFT"
+- "buy sell fully onchain NFT rugs"
+- "create custom onchain NFT textile art"
 
 ---
 
@@ -185,11 +190,19 @@ const seoDescription = `View Onchain Rug #${permanent.tokenId} - ${permanent.pal
 
 ## 🎨 Content Strategy
 
+### Core Positioning: "Fully Onchain - Generative - Dynamic - Living"
+
+Every piece of content must emphasize these four core pillars:
+- **Fully Onchain**: Everything stored and executed on blockchain
+- **Generative**: Algorithmically created, unique art
+- **Dynamic**: Changes and evolves over time
+- **Living**: Requires care and maintenance like physical objects
+
 ### SEO-Friendly Content Elements
-1. **Descriptive Headlines**: Clear, keyword-rich H1 tags
-2. **Alt Text**: Descriptive image alternatives
+1. **Descriptive Headlines**: Clear, keyword-rich H1 tags emphasizing onchain nature
+2. **Alt Text**: Descriptive image alternatives highlighting onchain features
 3. **Internal Links**: Cross-link between related pages
-4. **User Intent**: Content that answers "why OnchainRugs are unique"
+4. **User Intent**: Content that answers "why fully onchain NFTs matter"
 
 ### Content Hierarchy
 ```

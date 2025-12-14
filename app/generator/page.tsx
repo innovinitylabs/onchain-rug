@@ -18,16 +18,16 @@ import Head from 'next/head'
 
 // SEO metadata for the generator page
 const metadata: Metadata = {
-  title: "Rug Factory - Create Your Onchain Rug NFT | OnchainRugs",
-  description: "Create unique, living Onchain Rug NFTs with custom text, 102 color palettes, and authentic cloth physics. Each rug ages over time and requires maintenance. Mint directly on Shape L2 blockchain.",
+  title: "Rug Factory - Create Fully Onchain Living Generative NFT Rugs | OnchainRugs",
+  description: "Create fully onchain living generative NFT rugs. Each rug is completely onchain - generative, dynamic, and living. Custom text, 102 palettes, authentic physics. Mint directly on Shape L2 blockchain.",
   keywords: [
     "NFT generator", "create NFT", "generative art", "custom NFT", "rug NFT",
     "textile NFT", "woven art NFT", "blockchain art generator", "Shape L2 NFT",
     "living NFT", "aging NFT", "NFT minting", "custom text NFT"
   ],
   openGraph: {
-    title: "Rug Factory - Create Your Living Onchain Rug NFT",
-    description: "Design and mint unique generative rug NFTs that age over time. Custom text, 102 palettes, authentic physics. Shape L2 blockchain.",
+    title: "Rug Factory - Create Fully Onchain Living Generative NFT Rugs",
+    description: "Design and mint fully onchain living generative NFT rugs. Each rug is completely onchain - generative, dynamic, and living. Custom text, 102 palettes, authentic physics.",
     url: 'https://onchainrugs.xyz/generator',
     type: 'website',
     images: [
@@ -41,8 +41,8 @@ const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: "Rug Factory - Create Your Living Onchain Rug NFT",
-    description: "Design and mint unique generative rug NFTs that age over time. Custom text, 102 palettes, authentic physics.",
+    title: "Rug Factory - Create Fully Onchain Living Generative NFT Rugs",
+    description: "Design and mint fully onchain living generative NFT rugs. Each rug is completely onchain - generative, dynamic, and living.",
     images: ['/generator-og.png'],
   },
 }

@@ -1128,16 +1128,16 @@ export default function DashboardPage() {
     <>
       <Head>
         <title>My Rugs - Manage Your Living Onchain Rug Collection | OnchainRugs</title>
-        <meta name="description" content="Manage your Onchain Rug NFT collection. Clean, restore, and maintain your living rugs that age over time. Track dirt levels, texture development, and frame progression on Shape L2 blockchain." />
+        <meta name="description" content="Manage your fully onchain living generative NFT rug collection. Clean, restore, and maintain rugs that are completely onchain - generative, dynamic, and living. Track dirt levels and frame progression." />
         <meta name="keywords" content="NFT dashboard, manage NFTs, rug maintenance, NFT cleaning, NFT restoration, living NFT care, Shape L2 NFT wallet, blockchain NFT portfolio, NFT aging system" />
-        <meta property="og:title" content="My Rugs - Manage Your Living Onchain Rug Collection" />
-        <meta property="og:description" content="Manage your Onchain Rug NFT collection. Clean, restore, and maintain your living rugs that age over time. Track dirt levels and frame progression." />
+        <meta property="og:title" content="My Rugs - Manage Your Fully Onchain Living Generative NFT Collection" />
+        <meta property="og:description" content="Manage your fully onchain living generative NFT rug collection. Clean, restore, and maintain rugs that are completely onchain - generative, dynamic, and living." />
         <meta property="og:url" content="https://onchainrugs.xyz/dashboard" />
         <meta property="og:type" content="website" />
         <meta property="og:image" content="https://onchainrugs.xyz/OnchainRugs.png" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="My Rugs - Manage Your Living Onchain Rug Collection" />
-        <meta name="twitter:description" content="Manage your Onchain Rug NFT collection. Clean, restore, and maintain your living rugs that age over time." />
+        <meta name="twitter:title" content="My Rugs - Manage Your Fully Onchain Living Generative NFT Collection" />
+        <meta name="twitter:description" content="Manage your fully onchain living generative NFT rug collection. Clean, restore, and maintain rugs that are completely onchain - generative, dynamic, and living." />
         <meta name="twitter:image" content="https://onchainrugs.xyz/OnchainRugs.png" />
         <link rel="canonical" href="https://onchainrugs.xyz/dashboard" />
       </Head>
