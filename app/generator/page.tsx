@@ -32,7 +32,7 @@ const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: '/generator-og.jpg',
+        url: '/generator-og.png',
         width: 1200,
         height: 630,
         alt: 'Rug Factory - Create Onchain Rug NFTs',
@@ -43,7 +43,7 @@ const metadata: Metadata = {
     card: 'summary_large_image',
     title: "Rug Factory - Create Your Living Onchain Rug NFT",
     description: "Design and mint unique generative rug NFTs that age over time. Custom text, 102 palettes, authentic physics.",
-    images: ['/generator-og.jpg'],
+    images: ['/generator-og.png'],
   },
 }
 

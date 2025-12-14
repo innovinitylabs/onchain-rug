@@ -1134,11 +1134,11 @@ export default function DashboardPage() {
         <meta property="og:description" content="Manage your Onchain Rug NFT collection. Clean, restore, and maintain your living rugs that age over time. Track dirt levels and frame progression." />
         <meta property="og:url" content="https://onchainrugs.xyz/dashboard" />
         <meta property="og:type" content="website" />
-        <meta property="og:image" content="https://onchainrugs.xyz/dashboard-og.jpg" />
+        <meta property="og:image" content="https://onchainrugs.xyz/OnchainRugs.png" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="My Rugs - Manage Your Living Onchain Rug Collection" />
         <meta name="twitter:description" content="Manage your Onchain Rug NFT collection. Clean, restore, and maintain your living rugs that age over time." />
-        <meta name="twitter:image" content="https://onchainrugs.xyz/dashboard-og.jpg" />
+        <meta name="twitter:image" content="https://onchainrugs.xyz/OnchainRugs.png" />
         <link rel="canonical" href="https://onchainrugs.xyz/dashboard" />
       </Head>
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col">

@@ -82,11 +82,11 @@ export const metadata: Metadata = {
     siteName: 'OnchainRugs',
     images: [
       {
-        url: '/og-image.jpg', // We'll need to create this
+        url: '/OnchainRugs.png',
         width: 1200,
         height: 630,
         alt: 'Onchain Rugs - Living Generative NFT Art',
-        type: 'image/jpeg',
+        type: 'image/png',
       },
     ],
     locale: 'en_US',
@@ -96,7 +96,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: "Onchain Rugs - Living Generative NFT Art That Ages",
     description: "Create and collect living NFT rugs that age over time. Each OnchainRug evolves with dirt accumulation and texture development, requiring care and maintenance.",
-    images: ['/og-image.jpg'],
+    images: ['/OnchainRugs.png'],
     creator: '@valipokkann',
     site: '@valipokkann',
   },
