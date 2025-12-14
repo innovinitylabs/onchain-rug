@@ -473,11 +473,11 @@ function RugMarketPageContent() {
         <meta property="og:description" content="Browse, buy, and sell living Onchain Rug NFTs that age over time. Search by palette, text, rarity, and price on Shape L2 blockchain." />
         <meta property="og:url" content="https://onchainrugs.xyz/rug-market" />
         <meta property="og:type" content="website" />
-        <meta property="og:image" content="https://onchainrugs.xyz/market-og.jpg" />
+        <meta property="og:image" content="https://onchainrugs.xyz/market-og.png" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Rug Market - Buy & Sell Living Onchain Rug NFTs" />
         <meta name="twitter:description" content="Browse, buy, and sell living Onchain Rug NFTs that age over time. Search by palette, text, rarity, and price." />
-        <meta name="twitter:image" content="https://onchainrugs.xyz/market-og.jpg" />
+        <meta name="twitter:image" content="https://onchainrugs.xyz/market-og.png" />
         <link rel="canonical" href="https://onchainrugs.xyz/rug-market" />
       </Head>
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col">
