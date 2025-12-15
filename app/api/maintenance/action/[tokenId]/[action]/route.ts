@@ -183,7 +183,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ to
 
       // Execute the maintenance action with payment
       const txHash = await walletClient.writeContract({
-        address: contractAddress as `0x${string}`,
+        address: contract as `0x${string}`,
         abi: maintenanceAbi,
         functionName,
         args: [BigInt(tokenId)],
