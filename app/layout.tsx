@@ -123,6 +123,9 @@ export const metadata: Metadata = {
   },
   manifest: '/manifest.json',
   category: 'NFT Art',
+  other: {
+    'base:app_id': '693f5725d19763ca26ddc2ea',
+  },
 };
 
 export default function RootLayout({

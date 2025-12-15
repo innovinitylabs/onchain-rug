@@ -4,6 +4,8 @@ pragma solidity ^0.8.27;
 import "forge-std/Script.sol";
 import "../src/diamond/interfaces/IDiamondCut.sol";
 import "../src/facets/RugMaintenanceFacet.sol";
+import "../src/facets/RugMarketplaceFacet.sol";
+import "../src/facets/RugNFTFacet.sol";
 
 contract UpgradeMaintenanceFacet is Script {
     function run() external {
