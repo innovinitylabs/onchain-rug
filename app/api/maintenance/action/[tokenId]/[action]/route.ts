@@ -67,7 +67,12 @@ export async function POST(request: NextRequest, context: { params: Promise<{ to
     // Parse request parameters
     const params = await context.params
     const { tokenId, action } = params
-    console.log(`📋 Params: tokenId=${tokenId}, action=${action}`)
+    const chainId = DEFAULT_CHAIN_ID
+    const contract = getContractAddress(chainId)
+    if (!contract) {
+      return NextResponse.json({ error: 'Contract not configured for this network' }, { status: 500 })
+    }
+    console.log(`📋 Params: tokenId=${tokenId}, action=${action}, contract=${contract}`)
 
     // Check for agent address (required for all requests)
     const agentAddress = request.headers.get('x-agent-address')
