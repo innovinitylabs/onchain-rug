@@ -204,4 +204,12 @@ export async function POST(request: NextRequest, context: { params: Promise<{ to
         details: error.message || 'Unknown contract error'
       }, { status: 500 })
     }
+
+  } catch (err) {
+    console.error('maintenance action error:', err)
+    return NextResponse.json({
+      error: 'Failed to execute maintenance action',
+      details: err instanceof Error ? err.message : 'Unknown error'
+    }, { status: 500 })
+  }
 }
