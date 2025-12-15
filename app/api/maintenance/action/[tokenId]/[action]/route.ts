@@ -147,7 +147,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ to
       'master': 'masterRestoreRugAgent'
     }
 
-    const functionName = functionNameMap[action]
+    const functionName = functionNameMap[action] as 'cleanRugAgent' | 'restoreRugAgent' | 'masterRestoreRugAgent'
     if (!functionName) {
       console.log(`❌ Invalid action: ${action}`)
       return NextResponse.json({
