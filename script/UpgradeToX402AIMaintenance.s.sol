@@ -10,9 +10,8 @@ import "../src/diamond/interfaces/IDiamondLoupe.sol";
 
 // Import the facets to upgrade
 import "../src/facets/RugMaintenanceFacet.sol";
-import "../src/facets/RugAdminFacet.sol";
 
-contract UpgradeToX402AIMaintenance is Script {
+contract UpgradeToDirectPaymentMaintenance is Script {
     // Configuration
     address public deployer;
     uint256 public deployerPrivateKey;
