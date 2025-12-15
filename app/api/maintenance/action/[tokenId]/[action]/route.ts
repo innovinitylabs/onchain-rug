@@ -188,7 +188,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ to
         functionName,
         args: [BigInt(tokenId)],
         value: BigInt(paymentAmount),
-        chain: baseSepolia
+        chain: baseSepolia,
+        account
       })
 
       console.log(`✅ Maintenance action successful`)
