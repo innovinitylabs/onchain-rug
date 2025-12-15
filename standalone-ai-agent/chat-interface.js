@@ -332,18 +332,18 @@ Available Tools (ALL FREE within paid session):
 - restore_rug: Restore a rug (get quote first, then confirm)
 - master_restore_rug: Master restore a rug (get quote first, then confirm)
 
-X402 PAYMENT MODEL - PER-OPERATION:
+DIRECT PAYMENT MODEL - PER-OPERATION:
 - Information queries (rug ownership, status) are FREE
-- Maintenance operations (cleaning, restoration) require X402 payment
-- Pay per maintenance action using X402 facilitator
-- Agent handles X402 payments and blockchain execution
+- Maintenance operations (cleaning, restoration) require direct payment
+- Pay per maintenance action directly to smart contract
+- Agent handles payments and blockchain execution automatically
 
 WORKFLOW:
 1. User asks questions → Free info queries work immediately
 2. User requests maintenance on "my rugs" → First call get_rugs() to discover what they own
-3. User requests specific maintenance → Call with confirmed=false to get quote
-4. User confirms → Agent automatically handles X402 payment and executes
-5. No manual payments - all X402 transactions are automatic
+3. User requests specific maintenance → Agent gets quote and handles payment automatically
+4. Agent executes maintenance with direct contract payment
+5. No facilitator required - direct blockchain transactions
 
 PARAMETER HANDLING:
 - Parse rug numbers from user input: "rug 1" or "rug #1" or "token 1" = tokenId: 1
@@ -436,19 +436,19 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
           url = `${config.api.baseUrl}/rug/${args.tokenId}/status`;
           break;
         case 'clean_rug':
-          // Use full X402 flow - agent will handle payment automatically
+          // Get quote first, then execute with direct payment
           url = `${this.apiBaseUrl}/api/maintenance/action/${args.tokenId}/clean`;
           method = 'POST';
           body = JSON.stringify({ action: 'clean' });
           break;
         case 'restore_rug':
-          // Use full X402 flow - agent will handle payment automatically
+          // Get quote first, then execute with direct payment
           url = `${this.apiBaseUrl}/api/maintenance/action/${args.tokenId}/restore`;
           method = 'POST';
           body = JSON.stringify({ action: 'restore' });
           break;
         case 'master_restore_rug':
-          // Use full X402 flow - agent will handle payment automatically
+          // Get quote first, then execute with direct payment
           url = `${this.apiBaseUrl}/api/maintenance/action/${args.tokenId}/master`;
           method = 'POST';
           body = JSON.stringify({ action: 'master' });
@@ -524,111 +524,55 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
         }
         throw new Error(`Operation failed: ${result.error}`);
       } else if (!isFreeOperation && response.status === 402) {
-        // Handle X402 V2 payment (headers) or V1 fallback (response body)
-        console.log(chalk.yellow(`💰 X402 payment required for ${name} execution`));
+        // Handle direct payment requirement (V2 simplified)
+        console.log(chalk.yellow(`💰 Direct payment required for ${name} execution`));
 
-        let paymentReq;
+        let paymentAmount;
 
-        // V2: Check PAYMENT-REQUIRED header first
+        // Get payment amount from PAYMENT-REQUIRED header
         const paymentRequiredHeader = response.headers.get('PAYMENT-REQUIRED');
         if (paymentRequiredHeader) {
           try {
             const paymentData = JSON.parse(paymentRequiredHeader);
-            if (paymentData.accepts?.[0]) {
-              paymentReq = paymentData.accepts[0];
-              console.log(chalk.blue(`📋 Using V2 payment requirement from header`));
+            if (paymentData.accepts?.[0]?.maxAmountRequired) {
+              paymentAmount = paymentData.accepts[0].maxAmountRequired;
+              console.log(chalk.blue(`📋 Payment amount required: ${parseFloat(paymentAmount) / 1e18} ETH`));
             }
           } catch (e) {
-            console.log(chalk.yellow(`⚠️ Failed to parse V2 payment header, trying V1 fallback`));
+            console.log(chalk.yellow(`⚠️ Failed to parse payment header`));
           }
         }
 
-        // V1 fallback: Check response body
-        if (!paymentReq && result.x402?.accepts?.[0]) {
-          paymentReq = result.x402.accepts[0];
-          console.log(chalk.blue(`📋 Using V1 payment requirement from response body`));
+        if (!paymentAmount) {
+          console.log(chalk.red(`❌ No valid payment amount found`));
+          throw new Error('Invalid payment requirement format');
         }
 
-        if (!paymentReq) {
-          console.log(chalk.red(`❌ No valid X402 payment requirement found`));
-          throw new Error('Invalid X402 payment requirement format');
-        }
-        if (!paymentReq.maxAmountRequired || !paymentReq.payTo) {
-          console.log(chalk.red(`❌ Missing required X402 fields:`, paymentReq));
-          throw new Error('X402 payment requirement missing required fields');
-        }
+        // Retry the same request but with paymentAmount in body
+        console.log(chalk.blue(`🔄 Retrying with direct payment...`));
 
-        // First, send the actual ETH payment to the facilitator
-        const paymentAmount = paymentReq.maxAmountRequired;
-        const facilitatorAddress = paymentReq.payTo;
-
-        console.log(chalk.blue(`💸 Sending ${parseFloat(paymentAmount) / 1e18} ETH to facilitator: ${facilitatorAddress}`));
-
-        let paymentTx;
-
-        try {
-          // Import viem functions
-          const { createWalletClient, http, parseEther } = await import('viem');
-          const { privateKeyToAccount } = await import('viem/accounts');
-          const { baseSepolia } = await import('viem/chains');
-
-          // Create agent wallet
-          const agentAccount = privateKeyToAccount(config.wallet.privateKey);
-          const agentWallet = createWalletClient({
-            account: agentAccount,
-            chain: baseSepolia,
-            transport: http(process.env.RPC_URL || 'https://sepolia.base.org')
-          });
-
-          // Send ETH to facilitator
-          paymentTx = await agentWallet.sendTransaction({
-            to: facilitatorAddress,
-            value: BigInt(paymentAmount)
-          });
-
-          console.log(chalk.green(`✅ Payment sent: ${paymentTx}`));
-
-          // Wait for confirmation
-          const publicClient = await import('viem').then(m => m.createPublicClient({
-            chain: baseSepolia,
-            transport: http(process.env.RPC_URL || 'https://sepolia.base.org')
-          }));
-
-          const receipt = await publicClient.waitForTransactionReceipt({ hash: paymentTx });
-          console.log(chalk.green(`✅ Payment confirmed in block ${receipt.blockNumber}`));
-
-        } catch (paymentError) {
-          console.log(chalk.red(`❌ Payment failed: ${paymentError.message}`));
-          throw new Error(`Failed to send payment: ${paymentError.message}`);
-        }
-
-        // Now create signed payment payload and submit
-        const paymentPayload = await this.createX402PaymentPayload(result.x402.accepts[0]);
-
-        console.log(chalk.blue(`🔏 Submitting X402 authorization request...`));
-
-        // Submit with V2 payment headers including transaction hash
-        console.log(chalk.gray(`   Submitting to: ${url}`));
         const paymentHeaders = {
           'Content-Type': 'application/json',
-          'PAYMENT-SIGNATURE': JSON.stringify(paymentPayload), // V2: Use PAYMENT-SIGNATURE header
-          'PAYMENT-RESPONSE': paymentTx // V2: Use PAYMENT-RESPONSE header for tx hash
+          'x-agent-address': config.wallet.address
         };
 
-        if (config.wallet.address) {
-          paymentHeaders['x-agent-address'] = config.wallet.address;
-        }
+        const paymentBody = JSON.stringify({
+          action: name.replace('_rug', ''), // clean_rug -> clean
+          paymentAmount: paymentAmount
+        });
 
         response = await fetch(url, {
           method,
           headers: paymentHeaders,
-          body
+          body: paymentBody
         });
 
-        console.log(chalk.gray(`   Authorization response status: ${response.status}`));
-        result = await response.json();
-        console.log(chalk.gray(`   Authorization result: ${JSON.stringify(result)}`));
-        console.log(chalk.gray(`   Result type check: ${typeof result}, has error: ${!!result?.error}`));
+        // Re-parse the response
+        if (response.headers.get('content-type')?.includes('application/json')) {
+          result = await response.json();
+          console.log(chalk.gray(`   Payment response:`, JSON.stringify(result)));
+        }
+
       }
 
       console.log(chalk.gray(`   Final check - response.ok: ${response.ok}, result exists: ${!!result}, has auth token: ${!!result?.authorizationToken}`));
@@ -1218,3 +1162,4 @@ async function main() {
 }
 
 main().catch(console.error);
+

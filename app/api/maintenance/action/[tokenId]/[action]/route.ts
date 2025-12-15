@@ -67,7 +67,12 @@ export async function POST(request: NextRequest, context: { params: Promise<{ to
     // Parse request parameters
     const params = await context.params
     const { tokenId, action } = params
-    console.log(`📋 Params: tokenId=${tokenId}, action=${action}`)
+    const chainId = DEFAULT_CHAIN_ID
+    const contract = getContractAddress(chainId)
+    if (!contract) {
+      return NextResponse.json({ error: 'Contract not configured for this network' }, { status: 500 })
+    }
+    console.log(`📋 Params: tokenId=${tokenId}, action=${action}, contract=${contract}`)
 
     // Check for agent address (required for all requests)
     const agentAddress = request.headers.get('x-agent-address')
@@ -111,204 +116,128 @@ export async function POST(request: NextRequest, context: { params: Promise<{ to
 
     console.log(`✅ Agent validation passed: ${agentAddress} (${rateLimitCheck.remaining} requests remaining)`)
 
-    // Check for X402 payment headers
-    const paymentSignature = request.headers.get('PAYMENT-SIGNATURE')
-    const paymentPayloadStr = request.headers.get('PAYMENT-REQUIRED') || request.headers.get('x402-payment-payload') // Support both V2 and V1 during migration
-
-    console.log(`💳 Payment headers - signature: ${!!paymentSignature}, payload: ${!!paymentPayloadStr}`)
-
-    // If no payment headers, return payment requirements (quote mode)
-    if (!paymentPayloadStr || !paymentSignature) {
-      console.log(`💰 Request for payment requirements (quote mode)`)
-      return NextResponse.json({
-        x402: {
-          x402Version: 2, // Updated to V2
-          accepts: [{
-            scheme: 'exact',
-            network: 'base-sepolia',
-            asset: '0x0000000000000000000000000000000000000000',
-            payTo: process.env.X402_PAY_TO_ADDRESS || '0x0000000000000000000000000000000000000000',
-            maxAmountRequired: '430000000000000',
-            resource: `/api/maintenance/action/${tokenId}/${action}`,
-            description: `${action.charAt(0).toUpperCase() + action.slice(1)} rug #${tokenId}`,
-            mimeType: 'application/json',
-            maxTimeoutSeconds: 900,
-            extra: {
-              tokenId: tokenId,
-              action: action,
-              maintenanceCost: '0.00001',
-              serviceFee: '0.00042',
-              totalWei: '430000000000000'
-            }
-          }]
-        }
-      }, { status: 402 })
-    }
-
-    // Payment headers detected - process payment
-    console.log(`🔍 ===== PAYMENT HEADERS DETECTED =====`)
-    console.log(`🔍 Processing payment for ${action} on rug #${tokenId}`)
-
-    // Verify payment transaction on-chain before generating token
-    const paymentTxHash = request.headers.get('PAYMENT-RESPONSE') || request.headers.get('x402-payment-tx') // Support both V2 and V1 during migration
-    if (!paymentTxHash) {
-      console.log(`❌ No payment transaction hash provided`)
-      return NextResponse.json({
-        error: 'Payment transaction hash required',
-        details: 'PAYMENT-RESPONSE or x402-payment-tx header required for payment verification'
-      }, { status: 400 })
-    }
-
-    // Parse payment payload for verification
-    let paymentPayload: any
+    // Parse payment amount from request body
+    let paymentAmount: string
     try {
-      if (!paymentPayloadStr) {
+      const body = await request.json()
+      paymentAmount = body.paymentAmount
+      if (!paymentAmount) {
         return NextResponse.json({
-          error: 'Payment payload required',
-          details: 'x402-payment-payload header required'
+          error: 'Payment amount required',
+          details: 'paymentAmount field required in request body'
         }, { status: 400 })
       }
-      paymentPayload = JSON.parse(paymentPayloadStr)
     } catch (e) {
       return NextResponse.json({
-        error: 'Invalid payment payload',
-        details: 'Failed to parse payment payload'
+        error: 'Invalid request body',
+        details: 'Failed to parse JSON request body'
       }, { status: 400 })
     }
 
-    // Verify payment transaction on-chain (reuse facilitator logic)
-    console.log(`🔍 Verifying payment transaction on blockchain: ${paymentTxHash}`)
-    
-    const rpcUrl = process.env.RPC_URL || 'https://sepolia.base.org'
-    const publicClient = createPublicClient({
-      chain: baseSepolia,
-      transport: http(rpcUrl)
-    })
+    console.log(`💰 Direct payment amount: ${paymentAmount} wei`)
+
+    // Execute the maintenance action directly
+    console.log(`🔧 ===== EXECUTING MAINTENANCE ACTION =====`)
+    console.log(`🔧 Executing ${action} on rug #${tokenId} via authorized agent ${agentAddress}`)
+
+    // Map action to function name
+    const functionNameMap = {
+      'clean': 'cleanRugAgent',
+      'restore': 'restoreRugAgent',
+      'master': 'masterRestoreRugAgent'
+    }
+
+    const functionName = functionNameMap[action] as 'cleanRugAgent' | 'restoreRugAgent' | 'masterRestoreRugAgent'
+    if (!functionName) {
+      console.log(`❌ Invalid action: ${action}`)
+      return NextResponse.json({
+        error: 'Invalid action',
+        details: `Action '${action}' not supported`
+      }, { status: 400 })
+    }
+
+    console.log(`🔧 Calling contract function: ${functionName}(${tokenId}) with ${paymentAmount} wei`)
 
     try {
-      // Retry logic with exponential backoff to handle race conditions
-      // Transaction might not be confirmed yet when API is called
-      let receipt = null
-      const maxRetries = 3
-      for (let i = 0; i < maxRetries; i++) {
-        receipt = await publicClient.getTransactionReceipt({
-          hash: paymentTxHash as `0x${string}`
-        })
-        if (receipt) break
-        
-        // Wait before retry (exponential backoff: 1s, 2s, 3s)
-        if (i < maxRetries - 1) {
-          await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)))
-        }
-      }
-
-      if (!receipt) {
-        console.log('❌ Payment transaction not found on blockchain after retries')
+      // Check for required environment variables
+      const agentPrivateKey = process.env.AGENT_PRIVATE_KEY
+      if (!agentPrivateKey) {
         return NextResponse.json({
-          error: 'Payment transaction not found',
-          details: 'Transaction not found on blockchain after multiple attempts. Please wait a few seconds and try again.'
-        }, { status: 400 })
+          error: 'Server configuration error',
+          details: 'Agent private key not configured'
+        }, { status: 500 })
       }
 
-      if (receipt.status !== 'success') {
-        console.log('❌ Payment transaction failed')
-        return NextResponse.json({
-          error: 'Payment transaction failed',
-          details: 'Transaction status indicates failure'
-        }, { status: 400 })
-      }
+      // Use viem to call contract directly with payment
+      const { createWalletClient, http } = await import('viem')
+      const { privateKeyToAccount } = await import('viem/accounts')
+      const { baseSepolia } = await import('viem/chains')
 
-      // Verify transaction details match payment payload
-      const tx = await publicClient.getTransaction({
-        hash: paymentTxHash as `0x${string}`
+      // Create wallet client for the transaction
+      const account = privateKeyToAccount(agentPrivateKey as `0x${string}`)
+      const walletClient = createWalletClient({
+        account,
+        chain: baseSepolia,
+        transport: http(process.env.RPC_URL || 'https://sepolia.base.org')
       })
 
-      if (!tx) {
-        console.log('❌ Could not retrieve transaction details')
-        return NextResponse.json({
-          error: 'Could not verify transaction details',
-          details: 'Failed to retrieve transaction'
-        }, { status: 400 })
-      }
+      // Execute the maintenance action with payment
+      const txHash = await walletClient.writeContract({
+        address: contract as `0x${string}`,
+        abi: maintenanceAbi,
+        functionName,
+        args: [BigInt(tokenId)],
+        value: BigInt(paymentAmount),
+        chain: baseSepolia,
+        account
+      })
 
-      // Verify transaction matches payment request
-      const expectedFrom = paymentPayload.payment?.from?.toLowerCase()
-      const expectedTo = paymentPayload.payment?.to?.toLowerCase()
-      const expectedAmount = BigInt(paymentPayload.payment?.amount || '0')
+      console.log(`✅ Maintenance action successful`)
+      console.log(`📋 Transaction hash: ${txHash}`)
 
-      const actualFrom = tx.from.toLowerCase()
-      const actualTo = tx.to?.toLowerCase()
-      const actualAmount = tx.value
+      // Wait for confirmation
+      const publicClient = await import('viem').then(m => m.createPublicClient({
+        chain: baseSepolia,
+        transport: http(process.env.RPC_URL || 'https://sepolia.base.org')
+      }))
 
-      if (expectedFrom && actualFrom !== expectedFrom) {
-        console.log(`❌ Transaction from address mismatch: expected ${expectedFrom}, got ${actualFrom}`)
-        return NextResponse.json({
-          error: 'Transaction sender mismatch',
-          details: 'Transaction sender does not match payment payload'
-        }, { status: 400 })
-      }
+      const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash })
+      console.log(`📊 Gas used: ${receipt.gasUsed}`)
 
-      if (expectedTo && actualTo !== expectedTo) {
-        console.log(`❌ Transaction to address mismatch: expected ${expectedTo}, got ${actualTo}`)
-        return NextResponse.json({
-          error: 'Transaction recipient mismatch',
-          details: 'Transaction recipient does not match payment payload'
-        }, { status: 400 })
-      }
-
-      if (expectedAmount > 0 && actualAmount !== expectedAmount) {
-        console.log(`❌ Transaction amount mismatch: expected ${expectedAmount}, got ${actualAmount}`)
-        return NextResponse.json({
-          error: 'Transaction amount mismatch',
-          details: 'Transaction amount does not match payment payload'
-        }, { status: 400 })
-      }
-
-      console.log('✅ Payment transaction verified on blockchain')
-    } catch (verificationError: any) {
-      console.log(`❌ Payment verification error: ${verificationError.message}`)
-      console.log('🚫 SECURITY: NOT issuing token due to verification failure')
       return NextResponse.json({
-        error: 'Payment verification failed',
-        details: verificationError.message || 'Failed to verify payment transaction'
-      }, { status: 400 })
-    }
+        success: true,
+        txHash,
+        gasUsed: receipt.gasUsed.toString(),
+        message: `Rug ${action} completed successfully`,
+        payment: {
+          amount: paymentAmount,
+          agent: agentAddress
+        }
+      })
 
-    // Payment verified - generate authorization token
-    console.log(`🔑 Generating cryptographic authorization token...`)
+    } catch (error) {
+      console.error('❌ Contract execution error:', error)
 
-    // Use cryptographically secure random bytes instead of Math.random()
-    const randomNonce = randomBytes(16).toString('hex')
-    const expires = Math.floor(Date.now() / 1000) + (2 * 60) // 2 minutes (reduced from 5)
-    const uniqueId = `x402_${randomNonce}_${Date.now()}`
-
-    console.log(`🔑 Token generation - agent: ${agentAddress}, tokenId: ${tokenId}, action: ${action}, expires: ${expires}, nonce: ${uniqueId}`)
-
-    // Use same cryptographic algorithm as smart contract: keccak256(abi.encodePacked(agent, tokenId, action, expires, nonce))
-    const tokenData = encodePacked(
-      ['address', 'uint256', 'string', 'uint256', 'string'],
-      [agentAddress as `0x${string}`, BigInt(tokenId), action, BigInt(expires), uniqueId]
-    )
-    const authorizationToken = keccak256(tokenData)
-
-    console.log(`✅ Authorization token generated: ${authorizationToken}`)
-
-    // Get current rate limit status for headers (without incrementing counter)
-    const currentRateLimit = getRateLimitStatus(agentAddress)
-
-    return NextResponse.json({
-      authorizationToken: authorizationToken,
-      action,
-      tokenId,
-      nonce: uniqueId,
-      expires
-    }, {
-      headers: {
-        'X-RateLimit-Limit': '10',
-        'X-RateLimit-Remaining': currentRateLimit.remaining.toString(),
-        'X-RateLimit-Reset': currentRateLimit.resetAt.toString()
+      // Check for specific contract errors
+      if (error.message?.includes('Not authorized')) {
+        return NextResponse.json({
+          error: 'Agent not authorized',
+          details: `Agent ${agentAddress} is not authorized for this NFT owner`
+        }, { status: 403 })
       }
-    })
+
+      if (error.message?.includes('Insufficient payment')) {
+        return NextResponse.json({
+          error: 'Insufficient payment',
+          details: 'Payment amount does not cover maintenance + service fees'
+        }, { status: 400 })
+      }
+
+      return NextResponse.json({
+        error: 'Contract execution failed',
+        details: error.message || 'Unknown contract error'
+      }, { status: 500 })
+    }
 
   } catch (err) {
     console.error('maintenance action error:', err)
