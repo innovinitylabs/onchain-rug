@@ -154,26 +154,53 @@ export async function POST(request: NextRequest, context: { params: Promise<{ to
     console.log(`🔧 Calling contract function: ${functionName}(${tokenId}) with ${paymentAmount} wei`)
 
     try {
-      // Call contract directly with payment - agent authorization verified at contract level
-      const result = await callContractMultiFallback({
-        contractAddress,
+      // Check for required environment variables
+      const agentPrivateKey = process.env.AGENT_PRIVATE_KEY
+      if (!agentPrivateKey) {
+        return NextResponse.json({
+          error: 'Server configuration error',
+          details: 'Agent private key not configured'
+        }, { status: 500 })
+      }
+
+      // Use viem to call contract directly with payment
+      const { createWalletClient, http } = await import('viem')
+      const { privateKeyToAccount } = await import('viem/accounts')
+      const { baseSepolia } = await import('viem/chains')
+
+      // Create wallet client for the transaction
+      const account = privateKeyToAccount(agentPrivateKey as `0x${string}`)
+      const walletClient = createWalletClient({
+        account,
+        chain: baseSepolia,
+        transport: http(process.env.RPC_URL || 'https://sepolia.base.org')
+      })
+
+      // Execute the maintenance action with payment
+      const txHash = await walletClient.writeContract({
+        address: contractAddress as `0x${string}`,
         abi: maintenanceAbi,
         functionName,
         args: [BigInt(tokenId)],
-        options: {
-          gasLimit: 500000n,
-          value: BigInt(paymentAmount) // Send payment directly to contract
-        }
+        value: BigInt(paymentAmount)
       })
 
       console.log(`✅ Maintenance action successful`)
-      console.log(`📋 Transaction hash: ${result.txHash}`)
-      console.log(`📊 Gas used: ${result.gasUsed}`)
+      console.log(`📋 Transaction hash: ${txHash}`)
+
+      // Wait for confirmation
+      const publicClient = await import('viem').then(m => m.createPublicClient({
+        chain: baseSepolia,
+        transport: http(process.env.RPC_URL || 'https://sepolia.base.org')
+      }))
+
+      const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash })
+      console.log(`📊 Gas used: ${receipt.gasUsed}`)
 
       return NextResponse.json({
         success: true,
-        txHash: result.txHash,
-        gasUsed: result.gasUsed,
+        txHash,
+        gasUsed: receipt.gasUsed.toString(),
         message: `Rug ${action} completed successfully`,
         payment: {
           amount: paymentAmount,
