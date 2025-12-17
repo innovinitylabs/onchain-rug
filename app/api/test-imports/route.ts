@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getContractAddress, getRpcUrl } from '../../../src/lib/networks'
+import { getContractAddress, getRpcUrl } from '../../../lib/networks'
 
 export async function GET(request: NextRequest) {
   try {

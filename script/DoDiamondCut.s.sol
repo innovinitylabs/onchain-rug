@@ -2,41 +2,33 @@
 pragma solidity ^0.8.22;
 
 import "forge-std/Script.sol";
-
-// Import the diamond pattern
 import "../src/diamond/interfaces/IDiamondCut.sol";
-
-// Import the facets to upgrade
 import "../src/facets/RugMaintenanceFacet.sol";
 
-contract UpgradeToDirectPaymentMaintenance is Script {
+contract DoDiamondCut is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("TESTNET_PRIVATE_KEY");
         address diamondAddr = vm.envAddress("NEXT_PUBLIC_BASE_SEPOLIA_CONTRACT");
 
         vm.startBroadcast(deployerPrivateKey);
 
-        // Deploy new facet instance
-        RugMaintenanceFacet newFacet = new RugMaintenanceFacet();
+        // New maintenance facet address (deployed above)
+        address newFacet = 0xeBfD53cD9781E1F2D0cB7EFd7cBE6Dc7878836C8;
 
-        // Get diamond cut interface
-        IDiamondCut diamondCut = IDiamondCut(diamondAddr);
-
-        // ===== REPLACE RugMaintenanceFacet =====
-        bytes4[] memory selectors = _getMaintenanceSelectors();
-        IDiamondCut.FacetCut[] memory cut = new IDiamondCut.FacetCut[](1);
-        cut[0] = IDiamondCut.FacetCut({
-            facetAddress: address(newFacet),
+        // Replace maintenance facet with direct payment functions
+        IDiamondCut.FacetCut[] memory cuts = new IDiamondCut.FacetCut[](1);
+        cuts[0] = IDiamondCut.FacetCut({
+            facetAddress: newFacet,
             action: IDiamondCut.FacetCutAction.Replace,
-            functionSelectors: selectors
+            functionSelectors: getMaintenanceSelectors()
         });
 
-        diamondCut.diamondCut(cut, address(0), "");
+        IDiamondCut(diamondAddr).diamondCut(cuts, address(0), "");
 
         vm.stopBroadcast();
     }
 
-    function _getMaintenanceSelectors() internal pure returns (bytes4[] memory) {
+    function getMaintenanceSelectors() internal pure returns (bytes4[] memory) {
         bytes4[] memory selectors = new bytes4[](24);
 
         // Agent authorization (kept)

@@ -18,13 +18,14 @@ import "../src/facets/RugCommerceFacet.sol";
 import "../src/facets/RugLaunderingFacet.sol";
 import "../src/facets/RugTransferSecurityFacet.sol";
 import "../src/facets/RugMarketplaceFacet.sol";
+import "../src/DiamondFramePool.sol";
 import "../src/libraries/LibRugStorage.sol";
 import "../src/diamond/interfaces/IDiamondCut.sol";
 
 /**
  * @title Ethereum Sepolia Testnet Deployment Script
- * @dev Fresh deployment to Ethereum Sepolia testnet
- * @notice Deploys all contracts from scratch without any dependencies
+ * @dev Fresh deployment to Ethereum Sepolia testnet with all latest features
+ * @notice Deploys all contracts from scratch including DiamondFramePool
  */
 contract DeployEthereumSepolia is Script {
     // Contracts to deploy
@@ -47,6 +48,7 @@ contract DeployEthereumSepolia is Script {
     RugLaunderingFacet public rugLaunderingFacet;
     RugTransferSecurityFacet public rugTransferSecurityFacet;
     RugMarketplaceFacet public rugMarketplaceFacet;
+    DiamondFramePool public diamondFramePool;
 
     // Deployment addresses
     address public fileStoreAddr;
@@ -54,6 +56,7 @@ contract DeployEthereumSepolia is Script {
     address public scriptyBuilderAddr;
     address public htmlGeneratorAddr;
     address public diamondAddr;
+    address public poolAddr;
 
     // Configuration
     address public deployer;
@@ -82,6 +85,8 @@ contract DeployEthereumSepolia is Script {
         deployInfrastructure();
         deployDiamond();
         configureDiamond();
+        deployPool();
+        configurePool();
         uploadLibraries();
         initializeSystem();
 
@@ -93,6 +98,7 @@ contract DeployEthereumSepolia is Script {
         console.log("ScriptyBuilderV2:", scriptyBuilderAddr);
         console.log("HTMLGenerator:", htmlGeneratorAddr);
         console.log("Diamond:", diamondAddr);
+        console.log("DiamondFramePool:", poolAddr);
         console.log("=========================================");
 
         vm.stopBroadcast();
@@ -146,6 +152,32 @@ contract DeployEthereumSepolia is Script {
         rugTransferSecurityFacet = new RugTransferSecurityFacet();
         rugMarketplaceFacet = new RugMarketplaceFacet();
         console.log("   All Rug facets deployed (including Transfer Security and Marketplace)");
+    }
+
+    function deployPool() internal {
+        console.log("9. Deploying Diamond Frame Pool...");
+
+        // Deploy the pool contract with diamond address and minimum claimable amount
+        uint256 minimumClaimableAmount = 0.0001 ether; // 0.0001 ETH default
+        diamondFramePool = new DiamondFramePool(diamondAddr, minimumClaimableAmount);
+        poolAddr = address(diamondFramePool);
+        console.log("   DiamondFramePool deployed at:", poolAddr);
+        console.log("   Minimum claimable amount:", minimumClaimableAmount / 1e18, "ETH");
+    }
+
+    function configurePool() internal {
+        console.log("10. Configuring Diamond Frame Pool...");
+
+        // Pool ownership is set in constructor, no need to transfer
+        console.log("   Pool ownership set to diamond contract in constructor");
+
+        // Configure the pool in the diamond contract
+        uint256 poolPercentage = 100; // 1% default (100 basis points)
+        RugCommerceFacet(diamondAddr).setPoolContract(poolAddr);
+        RugCommerceFacet(diamondAddr).setPoolPercentage(poolPercentage);
+        console.log("   Pool configured in diamond contract");
+        console.log("   Pool percentage:", poolPercentage, "basis points");
+        console.log("   Pool percentage:", poolPercentage / 100, "%");
     }
 
     function configureDiamond() internal {
@@ -378,13 +410,21 @@ contract DeployEthereumSepolia is Script {
         RugAdminFacet(diamondAddr).setLaunderingEnabled(true);
         console.log("   - Automatic laundering: ENABLED");
 
+        // Configure marketplace fee
+        console.log("   Configuring marketplace fee...");
+        RugMarketplaceFacet(diamondAddr).setMarketplaceFee(0); // 0% default
+        console.log("   - Marketplace fee: 0%");
+
         // Configure x402 AI maintenance fees
         console.log("   Configuring x402 AI maintenance fees...");
         RugAdminFacet(diamondAddr).setFeeRecipient(deployer);
         uint256 serviceFee = uint256(0.00042 ether); // Flat service fee: 0.00042 ETH
         RugAdminFacet(diamondAddr).setServiceFee(serviceFee);
+        uint256 aiServiceFee = 0 ether; // AI service fee for maintenance operations (disabled)
+        RugAdminFacet(diamondAddr).updateAIServiceFee(aiServiceFee);
         console.log("   - Fee recipient: deployer address");
         console.log("   - Flat service fee: 0.00042 ETH for all actions");
+        console.log("   - AI service fee: 0 ETH (disabled)");
     }
 
     // Selector generation functions
@@ -400,7 +440,7 @@ contract DeployEthereumSepolia is Script {
 
     function _getRugNFTSelectors() internal pure returns (bytes4[] memory) {
         bytes4[] memory selectors = new bytes4[](32);
-        // ERC721 Standard Functions
+        // ERC721 Standard Functions (hardcoded selectors from forge inspect)
         selectors[0] = bytes4(0x70a08231); // balanceOf(address)
         selectors[1] = bytes4(0x6352211e); // ownerOf(uint256)
         selectors[2] = bytes4(0x42842e0e); // safeTransferFrom(address,address,uint256)
@@ -417,7 +457,7 @@ contract DeployEthereumSepolia is Script {
 
         // Rug-specific functions
         selectors[13] = RugNFTFacet.mintRug.selector;
-        selectors[14] = RugNFTFacet.mintRugFor.selector; // NEW: Cross-chain mint for Relay
+        selectors[14] = RugNFTFacet.mintRugFor.selector; // Cross-chain mint for Relay
         selectors[15] = RugNFTFacet.burn.selector;
         selectors[16] = RugNFTFacet.getRugData.selector;
         selectors[17] = RugNFTFacet.getAgingData.selector;
@@ -444,7 +484,7 @@ contract DeployEthereumSepolia is Script {
     }
 
     function _getRugAdminSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](20);
+        bytes4[] memory selectors = new bytes4[](23);
         selectors[0] = RugAdminFacet.updateMintPricing.selector;
         selectors[1] = RugAdminFacet.updateCollectionCap.selector;
         selectors[2] = RugAdminFacet.updateWalletLimit.selector;
@@ -461,10 +501,12 @@ contract DeployEthereumSepolia is Script {
         selectors[13] = RugAdminFacet.getServicePricing.selector;
         selectors[14] = RugAdminFacet.updateServicePricing.selector;
         selectors[15] = RugAdminFacet.updateFrameThresholds.selector;
-        selectors[16] = RugAdminFacet.isConfigured.selector;
-        selectors[17] = RugAdminFacet.setServiceFee.selector;
-        selectors[18] = RugAdminFacet.setFeeRecipient.selector;
-        selectors[19] = RugAdminFacet.getAgentServiceFee.selector;
+        selectors[16] = RugAdminFacet.updateAIServiceFee.selector;
+        selectors[17] = RugAdminFacet.isConfigured.selector;
+        selectors[18] = RugAdminFacet.setServiceFee.selector;
+        selectors[19] = RugAdminFacet.setFeeRecipient.selector;
+        selectors[20] = RugAdminFacet.getAgentServiceFee.selector;
+        selectors[21] = RugAdminFacet.setERC721Metadata.selector;
         return selectors;
     }
 
@@ -484,7 +526,7 @@ contract DeployEthereumSepolia is Script {
     }
 
     function _getRugMaintenanceSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](18);
+        bytes4[] memory selectors = new bytes4[](19);
         selectors[0] = RugMaintenanceFacet.cleanRug.selector;
         selectors[1] = RugMaintenanceFacet.restoreRug.selector;
         selectors[2] = RugMaintenanceFacet.masterRestoreRug.selector;
@@ -504,12 +546,14 @@ contract DeployEthereumSepolia is Script {
         selectors[15] = RugMaintenanceFacet.masterRestoreRugAgent.selector;
         // Agent management functions
         selectors[16] = RugMaintenanceFacet.getAuthorizedAgents.selector;
-        selectors[17] = RugMaintenanceFacet.isAgentAuthorized.selector;
+        selectors[17] = RugMaintenanceFacet.getAuthorizedAgentsFor.selector;
+        selectors[18] = RugMaintenanceFacet.isAgentAuthorized.selector;
         return selectors;
     }
 
     function _getRugCommerceSelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](19);
+        bytes4[] memory selectors = new bytes4[](23);
+        // Original selectors
         selectors[0] = RugCommerceFacet.withdraw.selector;
         selectors[1] = RugCommerceFacet.withdrawTo.selector;
         selectors[2] = RugCommerceFacet.configureRoyalties.selector;
@@ -520,6 +564,7 @@ contract DeployEthereumSepolia is Script {
         selectors[7] = RugCommerceFacet.calculateRoyalty.selector;
         selectors[8] = RugCommerceFacet.getRoyaltyRecipients.selector;
         selectors[9] = RugCommerceFacet.areRoyaltiesConfigured.selector;
+        // Payment Processor integration selectors
         selectors[10] = RugCommerceFacet.setCollectionPricingBounds.selector;
         selectors[11] = RugCommerceFacet.setTokenPricingBounds.selector;
         selectors[12] = RugCommerceFacet.setApprovedPaymentCoin.selector;
@@ -529,6 +574,11 @@ contract DeployEthereumSepolia is Script {
         selectors[16] = RugCommerceFacet.isTokenPricingImmutable.selector;
         selectors[17] = RugCommerceFacet.getApprovedPaymentCoin.selector;
         selectors[18] = RugCommerceFacet.getSaleHistory.selector;
+        // Diamond Frame Pool selectors
+        selectors[19] = RugCommerceFacet.setPoolContract.selector;
+        selectors[20] = RugCommerceFacet.setPoolPercentage.selector;
+        selectors[21] = RugCommerceFacet.getPoolConfig.selector;
+        selectors[22] = RugCommerceFacet.emergencyWithdrawFromPool.selector;
         return selectors;
     }
 
@@ -561,15 +611,17 @@ contract DeployEthereumSepolia is Script {
 
     function _getRugMarketplaceSelectors() internal pure returns (bytes4[] memory) {
         bytes4[] memory selectors = new bytes4[](8);
+        // Listing functions
         selectors[0] = RugMarketplaceFacet.createListing.selector;
         selectors[1] = RugMarketplaceFacet.cancelListing.selector;
         selectors[2] = RugMarketplaceFacet.updateListingPrice.selector;
         selectors[3] = RugMarketplaceFacet.buyListing.selector;
+        // Admin functions
         selectors[4] = RugMarketplaceFacet.setMarketplaceFee.selector;
         selectors[5] = RugMarketplaceFacet.withdrawFees.selector;
+        // View functions
         selectors[6] = RugMarketplaceFacet.getListing.selector;
         selectors[7] = RugMarketplaceFacet.getMarketplaceStats.selector;
         return selectors;
     }
 }
-

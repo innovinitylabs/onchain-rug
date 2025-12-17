@@ -1,4 +1,10 @@
 {
+  "lib/ERC721A": {
+    "rev": "338e327ae4abb18b3f1a37e364894625a6ea2778"
+  },
+  "lib/create3": {
+    "rev": "acc4703a21ec1d71dc2a99db088c4b1f467530fd"
+  },
   "lib/creator-token-contracts": {
     "tag": {
       "name": "1.1.2",
