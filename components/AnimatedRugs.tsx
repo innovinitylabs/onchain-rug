@@ -1303,14 +1303,12 @@ function FloatingParticles() {
       <pointsMaterial
         map={circleSprite} // Use circular sprite texture
         size={0.12} // Larger for better visibility
-        color="#ffffff" // Pure white for emission
-        emissive="#4fc3f7" // Bright cyan emissive color
-        emissiveIntensity={0.8} // Strong emission
+        color="#4fc3f7" // Bright cyan color
         transparent
         opacity={0.8} // More visible
         sizeAttenuation={true}
         alphaTest={0.01}
-        depthWrite={false} // Prevent depth issues with emissive materials
+        depthWrite={false}
       />
     </points>
   )
@@ -1429,9 +1427,7 @@ function Scene({ onLoaded }: { onLoaded?: () => void }) {
           <pointsMaterial
             map={circleSprite} // Use circular sprite texture
             size={0.15}
-            color="#ffffff"
-            emissive="#ffd700" // Golden emissive
-            emissiveIntensity={1.5}
+            color="#ffd700" // Golden color
             transparent
             opacity={1.0}
             sizeAttenuation={true}
@@ -1456,9 +1452,7 @@ function Scene({ onLoaded }: { onLoaded?: () => void }) {
           <pointsMaterial
             map={circleSprite} // Use circular sprite texture
             size={0.1}
-            color="#ffffff" // Pure white base
-            emissive="#87ceeb" // Sky blue emissive
-            emissiveIntensity={1.2} // Very strong emission for magical effect
+            color="#87ceeb" // Sky blue color
             transparent
             opacity={0.9} // More visible
             sizeAttenuation={true}
