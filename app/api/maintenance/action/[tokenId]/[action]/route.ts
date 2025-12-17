@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { callContractMultiFallback } from '@/lib/web3'
-import { getContractAddress, DEFAULT_CHAIN_ID, getNetworkByChainId } from '@/lib/networks'
+import { getContractAddress, DEFAULT_CHAIN_ID, getNetworkByChainId, getRpcUrl } from '@/lib/networks'
 import { createPaymentRequiredResponse, verifyAndSettlePayment } from '@/lib/x402'
 import { formatEther, keccak256, encodePacked, createPublicClient, http, parseEther } from 'viem'
-import { baseSepolia } from 'viem/chains'
 import { randomBytes } from 'crypto'
 import { checkRateLimit, getRateLimitStatus } from '@/utils/rate-limiter'
 
@@ -67,14 +66,21 @@ export async function POST(request: NextRequest, context: { params: Promise<{ to
     // Parse request parameters
     const params = await context.params
     const { tokenId, action } = params
-    const chainId = DEFAULT_CHAIN_ID
+    
+    // Get chain ID from query params or use default
+    const { searchParams } = new URL(request.url)
+    const chainId = parseInt(searchParams.get('chainId') || DEFAULT_CHAIN_ID.toString())
+    
+    // Get Diamond contract address dynamically (all calls go through Diamond proxy)
+    const contract = getContractAddress(chainId)
+    if (!contract) {
+      return NextResponse.json({
+        error: 'Unsupported chain',
+        details: `No contract address configured for chain ${chainId}`
+      }, { status: 400 })
+    }
 
-    // Use the new maintenance facet directly for agent functions
-    // This bypasses diamond routing until the diamond cut is completed
-    const MAINTENANCE_FACET_ADDRESS = '0xeBfD53cD9781E1F2D0cB7EFd7cBE6Dc7878836C8'
-    const contract = MAINTENANCE_FACET_ADDRESS
-
-    console.log(`📋 Params: tokenId=${tokenId}, action=${action}, contract=${contract} (direct facet call)`)
+    console.log(`📋 Params: tokenId=${tokenId}, action=${action}, chainId=${chainId}, contract=${contract} (Diamond proxy)`)
 
     // Check for agent address (required for all requests)
     const agentAddress = request.headers.get('x-agent-address')
@@ -170,27 +176,68 @@ export async function POST(request: NextRequest, context: { params: Promise<{ to
         }, { status: 500 })
       }
 
-      // Use viem to call contract directly with payment
+      // Get network configuration dynamically
+      const network = getNetworkByChainId(chainId)
+      if (!network) {
+        return NextResponse.json({
+          error: 'Unsupported chain',
+          details: `Chain ${chainId} is not supported`
+        }, { status: 400 })
+      }
+
+      // Get RPC URL dynamically
+      const rpcUrl = getRpcUrl(chainId)
+      if (!rpcUrl) {
+        return NextResponse.json({
+          error: 'RPC URL not configured',
+          details: `No RPC URL configured for chain ${chainId}`
+        }, { status: 500 })
+      }
+
+      // Use viem to call contract through Diamond proxy
       const { createWalletClient, http } = await import('viem')
       const { privateKeyToAccount } = await import('viem/accounts')
-      const { baseSepolia } = await import('viem/chains')
+      const { defineChain } = await import('viem')
+
+      // Define chain dynamically from network config
+      const chain = defineChain({
+        id: network.chainId,
+        name: network.displayName,
+        nativeCurrency: {
+          decimals: 18,
+          name: 'Ether',
+          symbol: 'ETH',
+        },
+        rpcUrls: {
+          default: {
+            http: [rpcUrl],
+          },
+        },
+        blockExplorers: {
+          default: {
+            name: network.blockExplorerName,
+            url: network.explorerUrl,
+          },
+        },
+        testnet: network.isTestnet,
+      })
 
       // Create wallet client for the transaction
       const account = privateKeyToAccount(agentPrivateKey as `0x${string}`)
       const walletClient = createWalletClient({
         account,
-        chain: baseSepolia,
-        transport: http(process.env.RPC_URL || 'https://sepolia.base.org')
+        chain,
+        transport: http(rpcUrl)
       })
 
-      // Execute the maintenance action with payment
+      // Execute the maintenance action with payment through Diamond proxy
       const txHash = await walletClient.writeContract({
         address: contract as `0x${string}`,
         abi: maintenanceAbi,
         functionName,
         args: [BigInt(tokenId)],
         value: BigInt(paymentAmount),
-        chain: baseSepolia,
+        chain,
         account
       })
 
@@ -199,8 +246,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ to
 
       // Wait for confirmation
       const publicClient = await import('viem').then(m => m.createPublicClient({
-        chain: baseSepolia,
-        transport: http(process.env.RPC_URL || 'https://sepolia.base.org')
+        chain,
+        transport: http(rpcUrl)
       }))
 
       const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash })
