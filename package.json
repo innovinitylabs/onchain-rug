@@ -35,12 +35,12 @@
     "swr": "^2.3.6",
     "three": "^0.179.1",
     "viem": "^2.37.5",
-    "wagmi": "^2.16.9"
+    "wagmi": "^2.19.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@types/jest": "^30.0.0",
-    "@types/node": "^20",
+    "@types/node": "^25.0.3",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@typescript-eslint/eslint-plugin": "^8.42.0",
