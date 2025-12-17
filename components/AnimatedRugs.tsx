@@ -42,6 +42,31 @@ import { Suspense, useRef, useMemo, useEffect, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
+// Helper function to create circular sprite texture for particles
+const createCircleSprite = (size = 64): THREE.Texture => {
+  const canvas = document.createElement('canvas')
+  canvas.width = size
+  canvas.height = size
+  const context = canvas.getContext('2d')!
+
+  // Create radial gradient for smooth circular sprite
+  const gradient = context.createRadialGradient(
+    size / 2, size / 2, 0,
+    size / 2, size / 2, size / 2
+  )
+  gradient.addColorStop(0, 'rgba(255, 255, 255, 1.0)') // Bright center
+  gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.8)')
+  gradient.addColorStop(1, 'rgba(255, 255, 255, 0)') // Transparent edges
+
+  // Fill with gradient
+  context.fillStyle = gradient
+  context.fillRect(0, 0, size, size)
+
+  const texture = new THREE.CanvasTexture(canvas)
+  texture.needsUpdate = true
+  return texture
+}
+
 // Import P5.js functions from your generator
 // Global declarations removed - now using ES modules
 
@@ -1254,6 +1279,9 @@ function FloatingParticles() {
     return temp
   }, [])
 
+  // Create circular sprite texture once
+  const circleSprite = useMemo(() => createCircleSprite(128), [])
+
   useFrame((state) => {
     if (particlesRef.current) {
       particlesRef.current.rotation.y = state.clock.getElapsedTime() * 0.05 // Slower, more gentle rotation
@@ -1273,6 +1301,7 @@ function FloatingParticles() {
         />
       </bufferGeometry>
       <pointsMaterial
+        map={circleSprite} // Use circular sprite texture
         size={0.12} // Larger for better visibility
         color="#ffffff" // Pure white for emission
         emissive="#4fc3f7" // Bright cyan emissive color
@@ -1292,6 +1321,9 @@ function Scene({ onLoaded }: { onLoaded?: () => void }) {
   const lightRef = useRef<THREE.DirectionalLight>(null)
   const [dependenciesLoaded, setDependenciesLoaded] = useState(false)
   const [rugsOpacity, setRugsOpacity] = useState(0)
+
+  // Create circular sprite textures for particles
+  const circleSprite = useMemo(() => createCircleSprite(128), [])
 
   useEffect(() => {
     // Reset global state when component mounts
@@ -1399,6 +1431,7 @@ function Scene({ onLoaded }: { onLoaded?: () => void }) {
             />
           </bufferGeometry>
           <pointsMaterial
+            map={circleSprite} // Use circular sprite texture
             size={0.15}
             color="#ffffff"
             emissive="#ffd700" // Golden emissive
@@ -1425,6 +1458,7 @@ function Scene({ onLoaded }: { onLoaded?: () => void }) {
             />
           </bufferGeometry>
           <pointsMaterial
+            map={circleSprite} // Use circular sprite texture
             size={0.1}
             color="#ffffff" // Pure white base
             emissive="#87ceeb" // Sky blue emissive
