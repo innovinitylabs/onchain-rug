@@ -12,9 +12,34 @@ export async function POST(request: NextRequest, context: { params: Promise<{ to
     const params = await context.params
     const { tokenId, action } = params
     
+    // 🛡️ Input validation: Validate tokenId
+    const tokenIdNum = parseInt(tokenId, 10)
+    if (isNaN(tokenIdNum) || tokenIdNum < 0 || tokenIdNum > 1000000) {
+      return NextResponse.json({
+        error: 'Invalid tokenId',
+        details: 'TokenId must be a valid number between 0 and 1000000'
+      }, { status: 400 })
+    }
+    
+    // 🛡️ Input validation: Validate action
+    if (!['clean', 'restore', 'master'].includes(action)) {
+      return NextResponse.json({
+        error: 'Invalid action',
+        details: 'Action must be one of: clean, restore, master'
+      }, { status: 400 })
+    }
+    
     // Get chain ID from query params or use default
     const { searchParams } = new URL(request.url)
     const chainId = parseInt(searchParams.get('chainId') || DEFAULT_CHAIN_ID.toString())
+    
+    // 🛡️ Input validation: Validate chainId
+    if (isNaN(chainId) || chainId <= 0) {
+      return NextResponse.json({
+        error: 'Invalid chainId',
+        details: 'ChainId must be a valid positive number'
+      }, { status: 400 })
+    }
     
     // Get Diamond contract address dynamically (all calls go through Diamond proxy)
     const contract = getContractAddress(chainId)
@@ -25,7 +50,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ to
       }, { status: 400 })
     }
 
-    console.log(`📋 Params: tokenId=${tokenId}, action=${action}, chainId=${chainId}, contract=${contract} (Diamond proxy)`)
+    console.log(`📋 Params: tokenId=${tokenIdNum}, action=${action}, chainId=${chainId}, contract=${contract} (Diamond proxy)`)
 
     // Check for agent address (required for all requests)
     const agentAddress = request.headers.get('x-agent-address')
@@ -80,10 +105,32 @@ export async function POST(request: NextRequest, context: { params: Promise<{ to
           details: 'paymentAmount field required in request body'
         }, { status: 400 })
       }
+      
+      // 🛡️ Input validation: Validate payment amount
+      const paymentAmountBigInt = BigInt(paymentAmount)
+      const maxPayment = BigInt('1000000000000000000') // Max 1 ETH
+      if (paymentAmountBigInt < BigInt('0') || paymentAmountBigInt > maxPayment) {
+        return NextResponse.json({
+          error: 'Invalid payment amount',
+          details: 'Payment amount must be between 0 and 1 ETH (1000000000000000000 wei)'
+        }, { status: 400 })
+      }
     } catch (e) {
+      if (e instanceof SyntaxError) {
+        return NextResponse.json({
+          error: 'Invalid request body',
+          details: 'Failed to parse JSON request body'
+        }, { status: 400 })
+      }
+      if (e instanceof RangeError || e instanceof TypeError) {
+        return NextResponse.json({
+          error: 'Invalid payment amount format',
+          details: 'Payment amount must be a valid number string'
+        }, { status: 400 })
+      }
       return NextResponse.json({
         error: 'Invalid request body',
-        details: 'Failed to parse JSON request body'
+        details: 'Failed to parse request'
       }, { status: 400 })
     }
 
@@ -119,11 +166,11 @@ export async function POST(request: NextRequest, context: { params: Promise<{ to
       details: 'With x402 v2, agents execute transactions directly using their own wallet. This endpoint does not execute transactions on behalf of agents.',
       instructions: {
         message: 'Use your local agent API server to execute the transaction',
-        agentApiEndpoint: `/rug/${tokenId}/execute-direct`,
+        agentApiEndpoint: `/rug/${tokenIdNum}/execute-direct`,
         contractCall: {
           address: contract,
           function: functionName,
-          args: [tokenId],
+          args: [tokenIdNum],
           value: paymentAmount
         },
         note: 'The payment amount has been validated. Execute the transaction with this amount as the value.'

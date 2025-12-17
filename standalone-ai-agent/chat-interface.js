@@ -424,29 +424,33 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
 
       switch (name) {
         case 'get_rugs':
-          url = `${config.api.baseUrl}/owner/rugs`;
+          // Use deployed site - shared utility for all agents
+          url = `${this.apiBaseUrl}/api/owner/rugs?owner=${config.owner.address}`;
           break;
         case 'get_stats':
-          url = `${config.api.baseUrl}/agent/stats`;
+          // Use deployed site - shared utility for all agents
+          url = `${this.apiBaseUrl}/api/agent/stats?address=${config.wallet.address}`;
           break;
         case 'analyze_rugs':
-          url = `${config.api.baseUrl}/rugs/analyze?owner=${config.owner.address}`;
+          // Use deployed site - shared utility for all agents
+          url = `${this.apiBaseUrl}/api/rugs/analyze?owner=${config.owner.address}`;
           break;
         case 'check_rug':
-          url = `${config.api.baseUrl}/rug/${args.tokenId}/status`;
+          // Use deployed site for maintenance status
+          url = `${this.apiBaseUrl}/api/maintenance/status/${args.tokenId}`;
           break;
         case 'clean_rug':
-          // Get quote first, then execute with direct payment
+          // X402 payment flow - use deployed site
           url = `${this.apiBaseUrl}/api/maintenance/quote/${args.tokenId}/clean`;
           method = 'GET';
           break;
         case 'restore_rug':
-          // Get quote first, then execute with direct payment
+          // X402 payment flow - use deployed site
           url = `${this.apiBaseUrl}/api/maintenance/quote/${args.tokenId}/restore`;
           method = 'GET';
           break;
         case 'master_restore_rug':
-          // Get quote first, then execute with direct payment
+          // X402 payment flow - use deployed site
           url = `${this.apiBaseUrl}/api/maintenance/quote/${args.tokenId}/master`;
           method = 'GET';
           break;
@@ -584,7 +588,7 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
           const stats = result.data;
           return {
             ...result,
-            message: `Agent Stats: ${stats.agentName} has ${stats.walletBalanceEth} ETH in wallet, performed ${stats.maintenanceCount} maintenance operations. Service fees collected by facilitator, agent pays gas fees (~${stats.estimatedGasFeesPaidEth} ETH estimated).`,
+            message: `Agent Stats: Wallet ${stats.walletAddress} has ${stats.walletBalanceEth} ETH balance. Current gas price: ${stats.currentGasPriceGwei} gwei. Service fee: ${stats.serviceFeeInfo}. Network: ${stats.network}.`,
             formatted: true
           };
         }
@@ -714,7 +718,7 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
           const stats = result.data;
           return {
             ...result,
-            message: `Agent Stats: ${stats.agentName} has ${stats.walletBalanceEth} ETH in wallet, performed ${stats.maintenanceCount} maintenance operations. Service fees collected by facilitator, agent pays gas fees (~${stats.estimatedGasFeesPaidEth} ETH estimated).`,
+            message: `Agent Stats: Wallet ${stats.walletAddress} has ${stats.walletBalanceEth} ETH balance. Current gas price: ${stats.currentGasPriceGwei} gwei. Service fee: ${stats.serviceFeeInfo}. Network: ${stats.network}.`,
             formatted: true
           };
         }
