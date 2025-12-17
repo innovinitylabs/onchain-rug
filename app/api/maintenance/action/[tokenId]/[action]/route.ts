@@ -3,7 +3,6 @@ import { callContractMultiFallback } from '@/lib/web3'
 import { getContractAddress, DEFAULT_CHAIN_ID, getNetworkByChainId, getRpcUrl } from '@/lib/networks'
 import { createPaymentRequiredResponse, verifyAndSettlePayment } from '@/lib/x402'
 import { formatEther, keccak256, encodePacked, createPublicClient, http, parseEther } from 'viem'
-import { baseSepolia } from 'viem/chains'
 import { randomBytes } from 'crypto'
 import { checkRateLimit, getRateLimitStatus } from '@/utils/rate-limiter'
 
