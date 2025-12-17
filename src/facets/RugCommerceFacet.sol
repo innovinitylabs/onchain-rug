@@ -156,12 +156,11 @@ contract RugCommerceFacet {
 
     /**
      * @notice Get royalty info for a token sale (EIP-2981)
-     * @param tokenId Token ID
      * @param salePrice Sale price in wei
      * @return receiver Royalty recipient address
      * @return royaltyAmount Royalty amount in wei
      */
-    function royaltyInfo(uint256 tokenId, uint256 salePrice)
+    function royaltyInfo(uint256, uint256 salePrice)
         external
         view
         returns (address receiver, uint256 royaltyAmount)
@@ -188,10 +187,9 @@ contract RugCommerceFacet {
      * @notice Distribute royalties to all recipients (called after sale)
      * @param tokenId Token ID that was sold
      * @param salePrice Sale price in wei
-     * @param saleContract Address of the marketplace contract
      * @dev Distribution: 1% to minter/curator, 8% to configured recipients, 1% to pool
      */
-    function distributeRoyalties(uint256 tokenId, uint256 salePrice, address saleContract) external {
+    function distributeRoyalties(uint256 tokenId, uint256 salePrice, address) external {
         // Access control: only marketplace facet or owner
         require(
             msg.sender == address(this) || 
@@ -221,7 +219,7 @@ contract RugCommerceFacet {
         
         // Distribute to minter first
         if (minterRoyalty > 0) {
-            (bool minterSuccess,) = minter.call{value: minterRoyalty, gas: 5000}("");
+            (bool minterSuccess,) = minter.call{value: minterRoyalty}("");
             if (minterSuccess) {
                 emit MinterRoyaltyDistributed(minter, minterRoyalty);
             } else {
@@ -278,7 +276,7 @@ contract RugCommerceFacet {
 
             if (recipientRoyalty > 0) {
                 // Try to send with gas limit to prevent DoS
-                (bool success,) = rs.recipients[i].call{value: recipientRoyalty, gas: 5000}("");
+                (bool success,) = rs.recipients[i].call{value: recipientRoyalty}("");
                 
                 if (success) {
                     emit RoyaltyDistributed(rs.recipients[i], recipientRoyalty);

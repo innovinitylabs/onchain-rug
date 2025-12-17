@@ -358,7 +358,11 @@ contract DeployEthereumSepolia is Script {
 
         // Set collection parameters
         RugAdminFacet(diamondAddr).updateCollectionCap(10000);
-        RugAdminFacet(diamondAddr).updateWalletLimit(7);
+        RugAdminFacet(diamondAddr).updateWalletLimit(10);
+
+        // Add deployer to exception list (no wallet limits)
+        address deployer = LibDiamond.contractOwner();
+        RugAdminFacet(diamondAddr).addToExceptionList(deployer);
 
         // Set aging thresholds (test values in minutes)
         uint256[5] memory agingThresholds = [

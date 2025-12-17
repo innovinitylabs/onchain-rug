@@ -18,7 +18,6 @@ contract RugMaintenanceFacet {
     event PaymentProcessed(uint256 indexed tokenId, address indexed agent, address indexed owner, uint256 totalCost, uint256 serviceFee, uint256 maintenanceCost);
     event AgentAuthorized(address indexed owner, address indexed agent);
     event AgentRevoked(address indexed owner, address indexed agent);
-    event AuthorizationTokenUsed(bytes32 indexed tokenHash, address indexed agent, uint256 tokenId, string action);
 
     // ========= Agent Authorization (Per-Owner Global Allowlist) =========
 
@@ -124,68 +123,6 @@ contract RugMaintenanceFacet {
         emit RugMasterRestored(tokenId, owner, prevDirt, prevAging, cost);
     }
 
-    // ========= Authorization Token Verification =========
-
-    /**
-     * @notice Verify and consume an X402 authorization token
-     * @param tokenHash Hash of the authorization token
-     * @param agent Agent address
-     * @param tokenId Token ID
-     * @param action Action being performed
-     * @param expires Expiration timestamp
-     * @param nonce Unique nonce used in token generation
-     * @return isValid Whether the token is valid and consumed
-     */
-    function _verifyAuthorizationToken(
-        bytes32 tokenHash,
-        address agent,
-        uint256 tokenId,
-        string memory action,
-        uint256 expires,
-        string calldata nonce
-    ) internal returns (bool) {
-        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
-
-        // Check if token already used (prevent replay attacks)
-        require(!rs.usedAuthorizationTokens[tokenHash], "Token already used");
-        
-        // Check if nonce already used (prevent nonce reuse)
-        bytes32 nonceHash = keccak256(abi.encodePacked(nonce));
-        require(!rs.usedNonces[nonceHash], "Nonce already used");
-
-        // Check expiration (reduced to 2 minutes - checked in API, but verify here too)
-        require(block.timestamp <= expires, "Token expired");
-        
-        // Check expiration window more carefully to avoid edge cases
-        uint256 timeUntilExpiry = expires > block.timestamp ? expires - block.timestamp : 0;
-        require(timeUntilExpiry <= 120, "Token expiration too far in future"); // Max 2 minutes
-
-        // Verify agent is authorized for this token's owner
-        address owner = IERC721(address(this)).ownerOf(tokenId);
-        require(rs.isOwnerAgentAllowed[owner][agent], "Agent not authorized for this token");
-
-        // CRYPTOGRAPHIC VERIFICATION: Recreate hash and verify it matches
-        bytes32 expectedHash = keccak256(abi.encodePacked(agent, tokenId, action, expires, nonce));
-        require(tokenHash == expectedHash, "Invalid token hash - cryptographic verification failed");
-
-        // CEI pattern: Mark token and nonce as used BEFORE any external calls
-        rs.usedAuthorizationTokens[tokenHash] = true;
-        rs.usedNonces[nonceHash] = true;
-
-        emit AuthorizationTokenUsed(tokenHash, agent, tokenId, action);
-
-        return true;
-    }
-
-    /**
-     * @notice Check if an authorization token is valid (without consuming it)
-     * @param tokenHash Hash of the authorization token
-     * @return isValid Whether the token exists and is unused
-     */
-    function isAuthorizationTokenValid(bytes32 tokenHash) external view returns (bool) {
-        LibRugStorage.RugConfig storage rs = LibRugStorage.rugStorage();
-        return !rs.usedAuthorizationTokens[tokenHash];
-    }
 
     // ========= Agent Entry Points (X402 Authorized - Require Token) =========
 
@@ -299,6 +236,9 @@ contract RugMaintenanceFacet {
         // Return 0 if cleaning is not beneficial
         uint8 dirtLevel = _getDirtLevel(tokenId);
         bool isFreeCleaning = _isCleaningFree(tokenId);
+        // Diamond frame owners get all maintenance actions for free
+        bool isDiamondFrame = LibRugStorage.hasDiamondFrame(tokenId);
+        isFreeCleaning = isFreeCleaning || isDiamondFrame;
         bool needsCleaning = dirtLevel > 0 || isFreeCleaning;
 
         if (!needsCleaning) return 0;
@@ -318,7 +258,10 @@ contract RugMaintenanceFacet {
         require(IERC721(address(this)).ownerOf(tokenId) != address(0), "Token does not exist");
 
         uint8 currentAging = _getAgingLevel(tokenId);
-        return currentAging > 0 ? rs.restorationCost : 0;
+        if (currentAging == 0) return 0;
+
+        // Diamond frame owners get all maintenance actions for free
+        return LibRugStorage.hasDiamondFrame(tokenId) ? 0 : rs.restorationCost;
     }
 
     /**
@@ -334,7 +277,10 @@ contract RugMaintenanceFacet {
 
         uint8 currentDirt = _getDirtLevel(tokenId);
         uint8 currentAging = _getAgingLevel(tokenId);
-        return (currentDirt > 0 || currentAging > 0) ? rs.masterRestorationCost : 0;
+        if (currentDirt == 0 && currentAging == 0) return 0;
+
+        // Diamond frame owners get all maintenance actions for free
+        return LibRugStorage.hasDiamondFrame(tokenId) ? 0 : rs.masterRestorationCost;
     }
 
     /**
@@ -416,6 +362,9 @@ contract RugMaintenanceFacet {
 
         uint8 currentDirt = _getDirtLevel(tokenId);
         bool isFree = _isCleaningFree(tokenId);
+        // Diamond frame owners get all maintenance actions for free
+        bool isDiamondFrame = LibRugStorage.hasDiamondFrame(tokenId);
+        isFree = isFree || isDiamondFrame;
         bool needsCleaning = currentDirt > 0 || isFree;
         require(needsCleaning, "Rug doesn't need cleaning right now");
 
@@ -457,7 +406,10 @@ contract RugMaintenanceFacet {
             aging.frameAchievedTime = block.timestamp;
             LibRugStorage.updateDiamondFrameCount(tokenId, oldFrameLevel, newFrameLevel);
         }
-        return (prev, aging.agingLevel, rs.restorationCost);
+
+        // Diamond frame owners get all maintenance actions for free
+        uint256 maintenanceCost = LibRugStorage.hasDiamondFrame(tokenId) ? 0 : rs.restorationCost;
+        return (prev, aging.agingLevel, maintenanceCost);
     }
 
     function _performMasterRestore(uint256 tokenId) internal returns (uint8 previousDirt, uint8 previousAging, uint256 cost) {
@@ -482,7 +434,10 @@ contract RugMaintenanceFacet {
             aging.frameAchievedTime = block.timestamp;
             LibRugStorage.updateDiamondFrameCount(tokenId, oldFrameLevel, newFrameLevel);
         }
-        return (prevDirt, prevAging, rs.masterRestorationCost);
+
+        // Diamond frame owners get all maintenance actions for free
+        uint256 maintenanceCost = LibRugStorage.hasDiamondFrame(tokenId) ? 0 : rs.masterRestorationCost;
+        return (prevDirt, prevAging, maintenanceCost);
     }
 
     function _getDirtLevel(uint256 tokenId) internal view returns (uint8) {

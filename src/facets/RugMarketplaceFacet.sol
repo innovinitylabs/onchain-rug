@@ -201,7 +201,7 @@ contract RugMarketplaceFacet is ReentrancyGuard {
         // Use gas limit to prevent gas griefing attacks
         if (msg.value > price) {
             uint256 refundAmount = msg.value - price;
-            (bool success, ) = msg.sender.call{value: refundAmount, gas: 5000}("");
+            (bool success, ) = msg.sender.call{value: refundAmount}("");
             if (!success) {
                 // Don't revert - just emit event
                 // Refund stays in contract, can be claimed later

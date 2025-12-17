@@ -72,6 +72,36 @@ contract DeployShapeSepolia is Script {
         console.log("Deployer balance:", deployer.balance / 1e18, "ETH");
     }
 
+    function getCollectionCap() internal view returns (uint256) {
+        // Default: 10000
+        // Can be set via COLLECTION_CAP env var
+        try vm.envUint("COLLECTION_CAP") returns (uint256 cap) {
+            return cap;
+        } catch {
+            return 10000; // 10000 default
+        }
+    }
+
+    function getWalletLimit() internal view returns (uint256) {
+        // Default: 10
+        // Can be set via WALLET_LIMIT env var
+        try vm.envUint("WALLET_LIMIT") returns (uint256 limit) {
+            return limit;
+        } catch {
+            return 10; // 10 default
+        }
+    }
+
+    function getServiceFee() internal view returns (uint256) {
+        // Default: 0.00042 ETH
+        // Can be set via SERVICE_FEE env var (in wei)
+        try vm.envUint("SERVICE_FEE") returns (uint256 fee) {
+            return fee;
+        } catch {
+            return 0.00042 ether; // 0.00042 ETH default
+        }
+    }
+
     function run() public {
         vm.startBroadcast(deployerPrivateKey);
 
@@ -336,9 +366,15 @@ contract DeployShapeSepolia is Script {
         ];
         RugAdminFacet(diamondAddr).updateMintPricing(prices);
 
-        // Set collection parameters
-        RugAdminFacet(diamondAddr).updateCollectionCap(10000);
-        RugAdminFacet(diamondAddr).updateWalletLimit(7);
+        // Set collection parameters (configurable via env vars)
+        uint256 collectionCap = getCollectionCap();
+        uint256 walletLimit = getWalletLimit();
+        RugAdminFacet(diamondAddr).updateCollectionCap(collectionCap);
+        RugAdminFacet(diamondAddr).updateWalletLimit(walletLimit);
+
+        // Add deployer to exception list (no wallet limits)
+        address ownerAddr = LibDiamond.contractOwner();
+        RugAdminFacet(diamondAddr).addToExceptionList(ownerAddr);
 
         // Set aging thresholds for fresh mechanics system (test values in minutes)
         // [dirtLevel1Minutes, dirtLevel2Minutes, agingAdvanceMinutes, freeCleanMinutes, freeCleanWindowMinutes]
@@ -406,7 +442,7 @@ contract DeployShapeSepolia is Script {
         // Configure x402 AI maintenance fees
         console.log("   Configuring x402 AI maintenance fees...");
         RugAdminFacet(diamondAddr).setFeeRecipient(deployer);
-        uint256 serviceFee = uint256(0.00042 ether); // Flat service fee: 0.00042 ETH
+        uint256 serviceFee = getServiceFee(); // Flat service fee (configurable)
         RugAdminFacet(diamondAddr).setServiceFee(serviceFee);
         console.log("   - Fee recipient: deployer address");
         console.log("   - Flat service fee: 0.00042 ETH for all actions");
