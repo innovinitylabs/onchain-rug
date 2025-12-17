@@ -42,6 +42,31 @@ import { Suspense, useRef, useMemo, useEffect, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
+// Helper function to create circular sprite texture for particles
+const createCircleSprite = (size = 64): THREE.Texture => {
+  const canvas = document.createElement('canvas')
+  canvas.width = size
+  canvas.height = size
+  const context = canvas.getContext('2d')!
+
+  // Create radial gradient for smooth circular sprite
+  const gradient = context.createRadialGradient(
+    size / 2, size / 2, 0,
+    size / 2, size / 2, size / 2
+  )
+  gradient.addColorStop(0, 'rgba(255, 255, 255, 1.0)') // Bright center
+  gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.8)')
+  gradient.addColorStop(1, 'rgba(255, 255, 255, 0)') // Transparent edges
+
+  // Fill with gradient
+  context.fillStyle = gradient
+  context.fillRect(0, 0, size, size)
+
+  const texture = new THREE.CanvasTexture(canvas)
+  texture.needsUpdate = true
+  return texture
+}
+
 // Import P5.js functions from your generator
 // Global declarations removed - now using ES modules
 
@@ -1196,8 +1221,8 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
   return (
     <group ref={groupRef} position={position} scale={[scale, scale, scale]}>
       <Float speed={0.3} rotationIntensity={0.08} floatIntensity={0.15}>
-        <mesh ref={rugRef} rotation={[-Math.PI / 2, 0, 0]} castShadow receiveShadow>
-          <planeGeometry args={[5, 7, 48, 48]} />
+        <mesh ref={rugRef} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[5, 7, 16, 16]} />
           <meshStandardMaterial 
             map={textureRef.current} 
             side={THREE.DoubleSide}
@@ -1238,13 +1263,13 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
   )
 }
 
-// Studio Ghibli-style floating particles (circular, bluish-white)
+// Studio Ghibli-style floating particles (circular, bluish-white) - EMITTER MATERIAL
 function FloatingParticles() {
   const particlesRef = useRef<THREE.Points>(null)
 
   const particles = useMemo(() => {
     const temp = []
-    for (let i = 0; i < 150; i++) { // Increased count for more magical feel
+    for (let i = 0; i < 142; i++) { // Increased count for more magical feel
       temp.push([
         (Math.random() - 0.5) * 60, // Wider spread
         (Math.random() - 0.5) * 40, // Taller spread
@@ -1253,6 +1278,9 @@ function FloatingParticles() {
     }
     return temp
   }, [])
+
+  // Create circular sprite texture once
+  const circleSprite = useMemo(() => createCircleSprite(128), [])
 
   useFrame((state) => {
     if (particlesRef.current) {
@@ -1273,12 +1301,14 @@ function FloatingParticles() {
         />
       </bufferGeometry>
       <pointsMaterial
-        size={0.08} // Slightly smaller for delicacy
-        color="#e6f3ff" // Studio Ghibli bluish-white
+        map={circleSprite} // Use circular sprite texture
+        size={0.12} // Larger for better visibility
+        color="#4fc3f7" // Bright cyan color
         transparent
-        opacity={0.4} // More subtle
-        sizeAttenuation={true} // Makes distant particles smaller
-        alphaTest={0.01} // Helps with circular appearance
+        opacity={0.8} // More visible
+        sizeAttenuation={true}
+        alphaTest={0.01}
+        depthWrite={false}
       />
     </points>
   )
@@ -1289,6 +1319,9 @@ function Scene({ onLoaded }: { onLoaded?: () => void }) {
   const lightRef = useRef<THREE.DirectionalLight>(null)
   const [dependenciesLoaded, setDependenciesLoaded] = useState(false)
   const [rugsOpacity, setRugsOpacity] = useState(0)
+
+  // Create circular sprite textures for particles
+  const circleSprite = useMemo(() => createCircleSprite(128), [])
 
   useEffect(() => {
     // Reset global state when component mounts
@@ -1325,24 +1358,43 @@ function Scene({ onLoaded }: { onLoaded?: () => void }) {
     <>
       {/* Enhanced Lighting Setup */}
       <ambientLight intensity={0.6} color="#ffeaa7" />
-      <directionalLight 
+      <directionalLight
         ref={lightRef}
-        position={[10, 10, 5]} 
-        intensity={1.2} 
+        position={[10, 10, 5]}
+        intensity={1.2}
         color="#ffb347"
-        castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
       />
       <pointLight position={[-10, -10, -5]} color="#f59e0b" intensity={0.8} />
       <pointLight position={[15, 5, 10]} color="#ff6b35" intensity={0.4} />
-      <spotLight 
-        position={[0, 20, 0]} 
-        angle={0.3} 
-        penumbra={1} 
+      <spotLight
+        position={[0, 20, 0]}
+        angle={0.3}
+        penumbra={1}
         intensity={0.5}
         color="#ffd700"
-        castShadow
+      />
+
+      {/* Dynamic Emissive Point Lights for Particle Illumination */}
+      <pointLight
+        position={[0, 5, 10]}
+        color="#4fc3f7"
+        intensity={0.6}
+        distance={30}
+        decay={2}
+      />
+      <pointLight
+        position={[-5, 0, 5]}
+        color="#87ceeb"
+        intensity={0.4}
+        distance={25}
+        decay={2}
+      />
+      <pointLight
+        position={[5, -5, -5]}
+        color="#ffd700"
+        intensity={0.5}
+        distance={20}
+        decay={2}
       />
       
       {/* Environment - TRANSPARENT */}
@@ -1359,26 +1411,53 @@ function Scene({ onLoaded }: { onLoaded?: () => void }) {
       
       {/* Enhanced Floating Particles */}
       <FloatingParticles />
-      
-      {/* Studio Ghibli Magical Dust Effect */}
+
+      {/* Additional Emissive Sprite Effects */}
+      <Float speed={0.8} rotationIntensity={0.2} floatIntensity={0.4}>
+        <points>
+          <bufferGeometry>
+            <bufferAttribute
+              attach="attributes-position"
+              count={80}
+              array={new Float32Array(Array.from({ length: 240 }, () => (Math.random() - 0.5) * 50))}
+              itemSize={3}
+              args={[new Float32Array(Array.from({ length: 240 }, () => (Math.random() - 0.5) * 50)), 3]}
+            />
+          </bufferGeometry>
+          <pointsMaterial
+            map={circleSprite} // Use circular sprite texture
+            size={0.15}
+            color="#ffd700" // Golden color
+            transparent
+            opacity={1.0}
+            sizeAttenuation={true}
+            alphaTest={0.01}
+            depthWrite={false}
+          />
+        </points>
+      </Float>
+
+      {/* Studio Ghibli Magical Dust Effect - EMITTER MATERIAL */}
       <Float speed={1.5} rotationIntensity={0.3} floatIntensity={0.8}>
         <points>
           <bufferGeometry>
             <bufferAttribute
               attach="attributes-position"
-              count={120}
-              array={new Float32Array(Array.from({ length: 360 }, () => (Math.random() - 0.5) * 80))}
+              count={150}
+              array={new Float32Array(Array.from({ length: 450 }, () => (Math.random() - 0.5) * 80))}
               itemSize={3}
-              args={[new Float32Array(Array.from({ length: 360 }, () => (Math.random() - 0.5) * 80)), 3]}
+              args={[new Float32Array(Array.from({ length: 450 }, () => (Math.random() - 0.5) * 80)), 3]}
             />
           </bufferGeometry>
           <pointsMaterial
-            size={0.06}
-            color="#f0f8ff" // Soft bluish-white for magical dust
+            map={circleSprite} // Use circular sprite texture
+            size={0.1}
+            color="#87ceeb" // Sky blue color
             transparent
-            opacity={0.3}
+            opacity={0.9} // More visible
             sizeAttenuation={true}
             alphaTest={0.01}
+            depthWrite={false}
           />
         </points>
       </Float>
