@@ -871,65 +871,6 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
     return pixels
   }
   
-  // --- P5.js-style Perlin noise implementation for overlays ---
-  // Adapted from https://github.com/processing/p5.js/blob/main/src/math/noise.js
-  function makePerlin(seed: number) {
-    // Perlin noise permutation table
-    const p = new Uint8Array(512)
-    const permutation = new Uint8Array(256)
-    // Deterministic shuffle
-    const rand = new AniSeededRandom(seed)
-    for (let i = 0; i < 256; i++) permutation[i] = i
-    for (let i = 255; i > 0; i--) {
-      const j = Math.floor(rand.next() * (i + 1))
-      const temp = permutation[i]; permutation[i] = permutation[j]; permutation[j] = temp
-    }
-    for (let i = 0; i < 512; i++) p[i] = permutation[i & 255]
-    function fade(t: number) { return t * t * t * (t * (t * 6 - 15) + 10) }
-    function lerp(a: number, b: number, t: number) { return a + t * (b - a) }
-    function grad(hash: number, x: number, y: number) {
-      // 2D gradients
-      const h = hash & 3
-      const u = h < 2 ? x : y
-      const v = h < 2 ? y : x
-      return ((h & 1) === 0 ? u : -u) + ((h & 2) === 0 ? v : -v)
-    }
-    // 2D Perlin noise
-    return function perlin2(x: number, y: number) {
-      const X = Math.floor(x) & 255
-      const Y = Math.floor(y) & 255
-      x -= Math.floor(x)
-      y -= Math.floor(y)
-      const u = fade(x)
-      const v = fade(y)
-      const aa = p[p[X] + Y]
-      const ab = p[p[X] + Y + 1]
-      const ba = p[p[X + 1] + Y]
-      const bb = p[p[X + 1] + Y + 1]
-      return lerp(
-        lerp(grad(aa, x, y), grad(ba, x - 1, y), u),
-        lerp(grad(ab, x, y - 1), grad(bb, x - 1, y - 1), u),
-        v
-      ) * 0.5 + 0.5
-    }
-  }
-
-  // P5.js-style lerpColor for text
-  function lerpColorHex(hexA: string, hexB: string, amt: number) {
-    // Accepts hex strings, amt in [0,1]
-    function hexToRgbObj(hex: string) {
-      const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
-      return m
-        ? { r: parseInt(m[1], 16), g: parseInt(m[2], 16), b: parseInt(m[3], 16) }
-        : { r: 0, g: 0, b: 0 }
-    }
-    const a = hexToRgbObj(hexA)
-    const b = hexToRgbObj(hexB)
-    const r = Math.round(a.r + (b.r - a.r) * amt)
-    const g = Math.round(a.g + (b.g - a.g) * amt)
-    const b_ = Math.round(a.b + (b.b - a.b) * amt)
-    return `rgb(${r},${g},${b_})`
-  }
 
   // Create rug texture using your P5.js generator logic, with P5.js-accurate overlays
   const createRugTexture = (currentTime: number = 0) => {
@@ -1036,53 +977,6 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
       ctx.fillRect(finalX, finalY, pixel.width, pixel.height);
     });
 
-    // --- P5.js-accurate texture overlays using Perlin noise and multiply blend ---
-    // Simple on/off switch: no texture for 1 minute, then full texture appears
-    const textureDelay = 120000 // 60 seconds (1 minute) delay
-    const textureOpacity = currentTime >= textureDelay ? 1 : 0
-    
-    if (textureOpacity > 0) {
-      // Perlin noise seeded by rug seed
-      const perlin = makePerlin(seed)
-      // Save state
-      ctx.save()
-      // Texture overlay with multiply blend, CLIPPED to doormat area only
-      ctx.save()
-      ctx.beginPath()
-      ctx.rect(offsetX, offsetY, 800, doormatHeight)
-      ctx.clip()
-      ctx.globalCompositeOperation = 'multiply'
-      for (let x = offsetX; x < offsetX + 800; x += 2) {
-        for (let y = offsetY; y < offsetY + doormatHeight; y += 2) {
-          // P5.js: noise(x*0.02, y*0.02), map to [0,50] alpha
-          const noiseVal = perlin(x * 0.02, y * 0.02)
-          const baseAlpha = Math.round(noiseVal * 50)
-          // Apply animated opacity to the base alpha
-          const animatedAlpha = (baseAlpha * textureOpacity) / 255
-          // Use black with animated alpha (as in P5.js)
-          ctx.fillStyle = `rgba(0,0,0,${animatedAlpha})`
-          ctx.fillRect(x, y, 2, 2)
-        }
-      }
-      // Relief overlay (P5.js logic), CLIPPED to doormat area only
-      for (let x = offsetX; x < offsetX + 800; x += 6) {
-        for (let y = offsetY; y < offsetY + doormatHeight; y += 6) {
-          const reliefNoise = perlin(x * 0.03, y * 0.03)
-          if (reliefNoise > 0.6) {
-            // Apply animated opacity to relief highlights
-            ctx.fillStyle = `rgba(255,255,255,${0.098 * textureOpacity})` // 25/255 ≈ 0.098
-            ctx.fillRect(x, y, 6, 6)
-          } else if (reliefNoise < 0.4) {
-            // Apply animated opacity to relief shadows
-            ctx.fillStyle = `rgba(0,0,0,${0.078 * textureOpacity})` // 20/255 ≈ 0.078
-            ctx.fillRect(x, y, 6, 6)
-          }
-        }
-      }
-      // Restore blend mode and clipping
-      ctx.globalCompositeOperation = 'source-over'
-      ctx.restore()
-      }
       
       // Fringe and selvages already drawn above before doormat texture
     
@@ -1208,7 +1102,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
   })
 
   // Don't render until dependencies are loaded
-  const rugTexture = createRugTexture(0) // Generate texture immediately
+  const rugTexture = createRugTexture(10) // Generate texture immediately
   if (!dependenciesLoaded || !rugTexture) {
     return null
   }
@@ -1418,7 +1312,7 @@ function Scene({ onLoaded }: { onLoaded?: () => void }) {
           <bufferGeometry>
             <bufferAttribute
               attach="attributes-position"
-              count={80}
+              count={69}
               array={new Float32Array(Array.from({ length: 240 }, () => (Math.random() - 0.5) * 50))}
               itemSize={3}
               args={[new Float32Array(Array.from({ length: 240 }, () => (Math.random() - 0.5) * 50)), 3]}
@@ -1443,7 +1337,7 @@ function Scene({ onLoaded }: { onLoaded?: () => void }) {
           <bufferGeometry>
             <bufferAttribute
               attach="attributes-position"
-              count={150}
+              count={111}
               array={new Float32Array(Array.from({ length: 450 }, () => (Math.random() - 0.5) * 80))}
               itemSize={3}
               args={[new Float32Array(Array.from({ length: 450 }, () => (Math.random() - 0.5) * 80)), 3]}
