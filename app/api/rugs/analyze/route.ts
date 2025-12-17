@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
       'totalSupply',
       [],
       { chainId }
-    ) as bigint
+    ) as unknown as bigint
 
     const ownedRugs: number[] = []
     for (let tokenId = 0; tokenId <= Number(totalSupply); tokenId++) {

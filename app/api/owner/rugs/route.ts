@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
       'totalSupply',
       [],
       { chainId }
-    ) as bigint
+    ) as unknown as bigint
 
     console.log(`   Scanning ${totalSupply} total tokens...`)
 
