@@ -1,11 +1,9 @@
 import { parseEther } from 'viem'
-import { evmPaywall } from '@x402/paywall'
-import { x402HTTPClient } from '@x402/fetch'
 
-// Official X402 V2 Implementation using Coinbase's modular SDK
+// X402 V2 Direct Payment Implementation
+// No facilitator - agents execute transactions directly with their own wallets
 
 interface X402Config {
-  facilitatorUrl: string
   payToAddress: string
   network: string
   assetAddress: string
@@ -15,7 +13,6 @@ interface X402Config {
 
 export function getX402Config(): X402Config {
   const config = {
-    facilitatorUrl: process.env.X402_FACILITATOR_URL || `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/x402/facilitator`,
     payToAddress: process.env.X402_PAY_TO_ADDRESS || '',
     network: process.env.X402_NETWORK || 'base-sepolia',
     assetAddress: '0x0000000000000000000000000000000000000000', // ETH
@@ -23,7 +20,7 @@ export function getX402Config(): X402Config {
     rpcUrl: process.env.RPC_URL
   }
 
-  console.log(`🔧 X402 Config: payTo=${!!config.payToAddress}, network=${config.network}`)
+  console.log(`🔧 X402 V2 Config: payTo=${!!config.payToAddress}, network=${config.network}`)
 
   return config
 }
@@ -104,77 +101,4 @@ export async function createPaymentRequiredResponse(options: {
   }
 }
 
-export async function verifyAndSettlePayment(paymentPayload: string): Promise<{
-  isValid: boolean
-  invalidReason?: string
-  settlementSuccess?: boolean
-  errorReason?: string
-}> {
-  const config = getX402Config()
-
-  // For V2 compatibility, we use manual verification
-  // The @x402 packages are primarily client-side, server-side verification is custom
-  console.log('🔄 Using V2-compatible manual payment verification')
-
-  try {
-    const payload: any = JSON.parse(paymentPayload)
-
-    // Support both V1 and V2 versions
-    const version = payload.x402Version || 1
-    if (version !== 1 && version !== 2) {
-      return { isValid: false, invalidReason: 'Unsupported X402 version' }
-    }
-
-    // Validate basic structure
-    if (!payload.payment || !payload.signature) {
-      return { isValid: false, invalidReason: 'Invalid payment payload structure' }
-    }
-
-    const payment = payload.payment
-
-    // Validate required fields
-    if (!payment.scheme || !payment.network || !payment.asset || !payment.amount || !payment.from || !payment.to || !payment.nonce || !payment.deadline) {
-      return { isValid: false, invalidReason: 'Missing required payment fields' }
-    }
-
-    // Validate scheme and network
-    if (!['exact'].includes(payment.scheme)) {
-      return { isValid: false, invalidReason: `Unsupported payment scheme: ${payment.scheme}` }
-    }
-
-    if (!['shape-sepolia', 'base-sepolia'].includes(payment.network)) {
-      return { isValid: false, invalidReason: `Unsupported network: ${payment.network}` }
-    }
-
-    // Validate asset (must be ETH)
-    if (payment.asset !== '0x0000000000000000000000000000000000000000') {
-      return { isValid: false, invalidReason: `Unsupported asset: ${payment.asset}` }
-    }
-
-    // Validate deadline (not expired)
-    if (payment.deadline < Date.now() / 1000) {
-      return { isValid: false, invalidReason: 'Payment deadline expired' }
-    }
-
-    // Validate amount is reasonable
-    const amountWei = BigInt(payment.amount)
-    const maxReasonableAmount = parseEther('1') // 1 ETH max
-    if (amountWei > maxReasonableAmount) {
-      return { isValid: false, invalidReason: 'Payment amount too large' }
-    }
-
-    return {
-      isValid: true,
-      settlementSuccess: true,
-      errorReason: undefined
-    }
-
-  } catch (error) {
-    console.error('Payment verification error:', error)
-    return {
-      isValid: false,
-      invalidReason: `Payment processing error: ${error instanceof Error ? error.message : 'Unknown error'}`
-    }
-  }
-}
 

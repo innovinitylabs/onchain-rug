@@ -149,7 +149,7 @@ library LibRugStorage {
 
     struct RugConfig {
         uint256 collectionCap;          // Current max supply (editable 0-10000)
-        uint256 walletLimit;            // NFTs per wallet (default: 7)
+        uint256 walletLimit;            // NFTs per wallet (default: 10)
         uint256 reserveAmount;          // Team reserve allocation
         bool isLaunched;               // Launch state
         bool launderingEnabled;        // Global laundering toggle
@@ -214,11 +214,6 @@ library LibRugStorage {
         // Per-owner authorized agents list: owner => agents[]
         mapping(address => address[]) ownerAuthorizedAgents;
 
-        // ===== X402 Authorization Tokens =====
-        // tokenHash => used (prevent replay attacks)
-        mapping(bytes32 => bool) usedAuthorizationTokens;
-        // nonce => used (prevent nonce reuse)
-        mapping(bytes32 => bool) usedNonces;
 
         // ===== Trusted Marketplace Whitelist =====
         // External marketplaces (like OpenSea) that can record sales

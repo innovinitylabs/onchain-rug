@@ -474,6 +474,10 @@ contract DeployBaseSepolia is Script {
         RugAdminFacet(diamondAddr).updateCollectionCap(collectionCap);
         RugAdminFacet(diamondAddr).updateWalletLimit(walletLimit);
 
+        // Add deployer to exception list (no wallet limits)
+        address deployer = LibDiamond.contractOwner();
+        RugAdminFacet(diamondAddr).addToExceptionList(deployer);
+
         // Set aging thresholds for fresh mechanics system (test values in minutes)
         // [dirtLevel1Minutes, dirtLevel2Minutes, agingAdvanceMinutes, freeCleanMinutes, freeCleanWindowMinutes]
         uint256[5] memory agingThresholds = [

@@ -47,6 +47,24 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ to
     const tokenId = params.tokenId
     const action = params.action
     const chainId = DEFAULT_CHAIN_ID
+    
+    // 🛡️ Input validation: Validate tokenId
+    const tokenIdNum = parseInt(tokenId, 10)
+    if (isNaN(tokenIdNum) || tokenIdNum < 0 || tokenIdNum > 1000000) {
+      return NextResponse.json({
+        error: 'Invalid tokenId',
+        details: 'TokenId must be a valid number between 0 and 1000000'
+      }, { status: 400 })
+    }
+    
+    // 🛡️ Input validation: Validate action
+    if (!['clean', 'restore', 'master'].includes(action)) {
+      return NextResponse.json({
+        error: 'Invalid action',
+        details: 'Action must be one of: clean, restore, master'
+      }, { status: 400 })
+    }
+    
     const contract = getContractAddress(chainId)
     if (!contract) {
       return NextResponse.json({ error: 'Contract not configured for this network' }, { status: 500 })
@@ -114,7 +132,7 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ to
         contract,
         maintenanceAbi as any,
         'getMaintenanceOptions',
-        [BigInt(tokenId)],
+        [BigInt(tokenIdNum)],
         { chainId }
       ) as [boolean, boolean, boolean, bigint, bigint, bigint]
 
@@ -214,13 +232,13 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ to
           asset: '0x0000000000000000000000000000000000000000',
           payTo: contract,
           maxAmountRequired: totalWei.toString(),
-          resource: `/api/maintenance/action/${tokenId}/${functionName}`,
+          resource: `/api/maintenance/action/${tokenIdNum}/${functionName}`,
           description: `Rug ${action} service (agent single-tx)`,
           mimeType: 'application/json',
           maxTimeoutSeconds: 900,
           extra: {
             functionName: functionName,
-            tokenId: tokenId,
+            tokenId: tokenIdNum.toString(),
             maintenanceWei: maintenanceWei.toString(),
             serviceFeeWei: serviceFeeWei.toString(),
             totalWei: totalWei.toString()

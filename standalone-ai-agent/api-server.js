@@ -123,7 +123,7 @@ if (!config.owner.address) {
 }
 
 let agentWallet = null;
-if (config.wallet.privateKey) {
+if (config.wallet.privateKey && config.wallet.privateKey !== '0x_your_64_character_private_key_here') {
   const account = privateKeyToAccount(config.wallet.privateKey);
   agentWallet = createWalletClient({
     chain: baseSepolia,
@@ -800,6 +800,102 @@ class RugBotAPIServer {
 
       } catch (error) {
         console.log(chalk.red(`❌ API: Execution failed:`, error.message));
+        res.status(500).json({ success: false, error: error.message });
+      }
+    });
+
+    // X402 v2 Direct Payment Execution (no facilitator)
+    // Agent executes transaction directly with payment amount as value
+    this.app.post('/rug/:tokenId/execute-direct', async (req, res) => {
+      console.log(chalk.blue(`🔧 API: Direct execution endpoint called for rug ${req.params.tokenId}`));
+      console.log(chalk.gray(`   Request body:`, JSON.stringify(req.body, null, 2)));
+
+      try {
+        const tokenId = parseInt(req.params.tokenId);
+        const { action, paymentAmount } = req.body;
+
+        if (!action || !paymentAmount) {
+          return res.status(400).json({ 
+            success: false, 
+            error: 'Missing required fields',
+            details: 'action and paymentAmount are required'
+          });
+        }
+
+        if (!['clean', 'restore', 'master'].includes(action)) {
+          return res.status(400).json({ 
+            success: false, 
+            error: 'Invalid action',
+            details: 'Action must be: clean, restore, or master'
+          });
+        }
+
+        if (!agentWallet) {
+          return res.status(500).json({ 
+            success: false, 
+            error: 'Agent wallet not configured',
+            details: 'Set AGENT_PRIVATE_KEY in .env'
+          });
+        }
+
+        // Map action to function name
+        const functionNameMap = {
+          'clean': 'cleanRugAgent',
+          'restore': 'restoreRugAgent',
+          'master': 'masterRestoreRugAgent'
+        };
+
+        const functionName = functionNameMap[action];
+        const paymentWei = BigInt(paymentAmount);
+
+        console.log(chalk.blue(`🔧 Executing ${action} on rug #${tokenId} with direct payment`));
+        console.log(chalk.gray(`   Payment amount: ${formatEther(paymentWei)} ETH`));
+        console.log(chalk.gray(`   Function: ${functionName}`));
+
+        // For x402 v2 direct payment, use simplified ABI that only requires tokenId
+        // The contract accepts payment as value
+        const simpleMaintenanceAbi = [
+          {
+            inputs: [{ name: 'tokenId', type: 'uint256' }],
+            name: functionName,
+            outputs: [],
+            stateMutability: 'payable',
+            type: 'function'
+          }
+        ];
+
+        // Execute transaction with payment amount as value (x402 v2 direct payment)
+        const hash = await agentWallet.writeContract({
+          address: config.blockchain.contractAddress,
+          abi: simpleMaintenanceAbi,
+          functionName: functionName,
+          args: [BigInt(tokenId)],
+          value: paymentWei // Direct payment to contract
+        });
+
+        console.log(chalk.gray('⏳ Waiting for confirmation...'));
+        const receipt = await publicClient.waitForTransactionReceipt({ hash });
+
+        // Update agent statistics
+        this.maintenanceCount++;
+
+        console.log(chalk.green(`✅ API: ${action} completed! Tx: ${hash}`));
+        console.log(chalk.gray(`   Maintenance count updated: ${this.maintenanceCount}`));
+
+        res.json({
+          success: true,
+          action: action,
+          tokenId: tokenId,
+          transactionHash: hash,
+          blockNumber: receipt.blockNumber.toString(),
+          gasUsed: receipt.gasUsed.toString(),
+          paymentAmount: paymentAmount,
+          paymentAmountEth: formatEther(paymentWei),
+          message: `Maintenance completed successfully via X402 v2 direct payment`
+        });
+
+      } catch (error) {
+        console.log(chalk.red(`❌ API: Direct execution failed:`, error.message));
         res.status(500).json({ success: false, error: error.message });
       }
     });
