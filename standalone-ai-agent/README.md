@@ -1,6 +1,6 @@
 # 🤖 OnchainRug Standalone AI Agent
 
-A **production-ready, local AI assistant** for digital rug maintenance on the blockchain. Features intelligent NFT analysis, real-time blockchain data, and seamless chat interface. Runs completely locally with no external dependencies.
+A **production-ready, local AI assistant** for digital rug maintenance on the blockchain. Features intelligent NFT analysis, real-time blockchain data, and **direct smart contract payments**. Runs completely locally with no external dependencies.
 
 ## ✨ Key Features
 
@@ -13,7 +13,7 @@ A **production-ready, local AI assistant** for digital rug maintenance on the bl
 - 🛡️ **Clean UX** - No debug logs, professional chat experience
 - 💰 **Transparent Costs** - Clear service fee breakdown
 
-## 🚀 Quick Start (3 Steps)
+## 🚀 Quick Start (4 Steps)
 
 ### 1. **Install Dependencies**
 ```bash
@@ -29,13 +29,58 @@ cp config.example.env .env
 # Edit .env with your settings (see Configuration section below)
 ```
 
-### 3. **Launch the Agent**
+### 3. **Start Your Local API Server**
+```bash
+# In a separate terminal, start your Next.js development server
+npm run dev  # from the main project directory
+```
+The standalone agent needs your local API server running to function properly.
+
+### 4. **Launch the Agent**
 ```bash
 # Single command - starts everything automatically!
 npm run chat
 ```
 
 **That's it!** 🤖✨ The agent handles everything else automatically.
+
+---
+
+## 🧪 **Testing Direct Payment System**
+
+The standalone agent now uses **direct smart contract payments** instead of X402 facilitators:
+
+```bash
+# Test the direct payment system
+npm run test:direct-payment
+```
+
+This will:
+- ✅ Test rug status queries (free)
+- ✅ Test maintenance quotes (free)
+- ✅ Show payment requirements for actions
+- ⚠️ Skip actual transactions (to avoid gas costs)
+
+---
+
+## 💰 **Payment System Changes**
+
+### **Before (X402 V1):**
+```
+Agent → Facilitator → Smart Contract
+       (keys)     (payment)
+```
+
+### **Now (Direct Payment):**
+```
+Agent → Smart Contract (direct payment)
+```
+
+### **Benefits:**
+- 🚀 **Faster**: No facilitator round-trips
+- 🔒 **Safer**: No external key management
+- 💰 **Cheaper**: Direct gas-only costs
+- ✅ **Reliable**: On-chain verification
 
 ---
 

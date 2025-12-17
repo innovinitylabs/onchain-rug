@@ -158,6 +158,18 @@ export default function DashboardPage() {
     }
   }
 
+  // Get Diamond Frame Pool address dynamically from environment variables
+  const getPoolAddress = (chainId: number): string | undefined => {
+    switch (chainId) {
+      case 11155111: // Ethereum Sepolia
+        return process.env.NEXT_PUBLIC_ETH_SEPOLIA_DIAMOND_FRAME_POOL
+      case 84532: // Base Sepolia
+        return process.env.NEXT_PUBLIC_BASE_SEPOLIA_DIAMOND_FRAME_POOL
+      default:
+        return undefined
+    }
+  }
+
   const contractAddress = chain ? getContractAddress(chain.id) : ''
 
   // Debug logging for network changes
@@ -229,7 +241,10 @@ export default function DashboardPage() {
   })
 
   // Get pool balance
-  const poolContractAddress = poolConfig?.[0] as `0x${string}` | undefined
+  // Use pool address from contract config, fallback to env var if available
+  const poolContractAddressFromConfig = poolConfig?.[0] as `0x${string}` | undefined
+  const poolContractAddressFromEnv = chain ? getPoolAddress(chain.id) : undefined
+  const poolContractAddress = (poolContractAddressFromConfig || poolContractAddressFromEnv) as `0x${string}` | undefined
   const { data: poolBalance, isLoading: poolBalanceLoading } = useReadContract({
     address: poolContractAddress,
     abi: [

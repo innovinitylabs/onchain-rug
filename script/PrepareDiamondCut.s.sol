@@ -2,66 +2,62 @@
 pragma solidity ^0.8.22;
 
 import "forge-std/Script.sol";
-
-// Import the diamond pattern
 import "../src/diamond/interfaces/IDiamondCut.sol";
-
-// Import the facets to upgrade
 import "../src/facets/RugMaintenanceFacet.sol";
 
-contract UpgradeToDirectPaymentMaintenance is Script {
-    function run() external {
-        uint256 deployerPrivateKey = vm.envUint("TESTNET_PRIVATE_KEY");
-        address diamondAddr = vm.envAddress("NEXT_PUBLIC_BASE_SEPOLIA_CONTRACT");
+contract PrepareDiamondCut is Script {
+    function run() external view {
+        // New maintenance facet address
+        address newFacet = 0xeBfD53cD9781E1F2D0cB7EFd7cBE6Dc7878836C8;
 
-        vm.startBroadcast(deployerPrivateKey);
-
-        // Deploy new facet instance
-        RugMaintenanceFacet newFacet = new RugMaintenanceFacet();
-
-        // Get diamond cut interface
-        IDiamondCut diamondCut = IDiamondCut(diamondAddr);
-
-        // ===== REPLACE RugMaintenanceFacet =====
-        bytes4[] memory selectors = _getMaintenanceSelectors();
-        IDiamondCut.FacetCut[] memory cut = new IDiamondCut.FacetCut[](1);
-        cut[0] = IDiamondCut.FacetCut({
-            facetAddress: address(newFacet),
+        // Prepare the facet cut
+        IDiamondCut.FacetCut[] memory cuts = new IDiamondCut.FacetCut[](1);
+        cuts[0] = IDiamondCut.FacetCut({
+            facetAddress: newFacet,
             action: IDiamondCut.FacetCutAction.Replace,
-            functionSelectors: selectors
+            functionSelectors: getMaintenanceSelectors()
         });
 
-        diamondCut.diamondCut(cut, address(0), "");
+        // Encode the function call
+        bytes memory data = abi.encodeWithSelector(
+            IDiamondCut.diamondCut.selector,
+            cuts,
+            address(0),
+            ""
+        );
 
-        vm.stopBroadcast();
+        console.log("Diamond Cut Data:");
+        console.logBytes(data);
+        console.log("");
+        console.log("Send this data to contract:", vm.envAddress("NEXT_PUBLIC_BASE_SEPOLIA_CONTRACT"));
     }
 
-    function _getMaintenanceSelectors() internal pure returns (bytes4[] memory) {
+    function getMaintenanceSelectors() internal pure returns (bytes4[] memory) {
         bytes4[] memory selectors = new bytes4[](24);
 
-        // Agent authorization (kept)
+        // Agent authorization
         selectors[0] = RugMaintenanceFacet.authorizeMaintenanceAgent.selector;
         selectors[1] = RugMaintenanceFacet.revokeMaintenanceAgent.selector;
         selectors[2] = RugMaintenanceFacet.getAuthorizedAgents.selector;
         selectors[3] = RugMaintenanceFacet.getAuthorizedAgentsFor.selector;
         selectors[4] = RugMaintenanceFacet.isAgentAuthorized.selector;
 
-        // Direct payment agent functions (NEW - payable)
+        // Direct payment agent functions
         selectors[5] = RugMaintenanceFacet.cleanRugAgent.selector;
         selectors[6] = RugMaintenanceFacet.restoreRugAgent.selector;
         selectors[7] = RugMaintenanceFacet.masterRestoreRugAgent.selector;
 
-        // User direct payment functions (kept)
+        // User direct payment functions
         selectors[8] = RugMaintenanceFacet.cleanRug.selector;
         selectors[9] = RugMaintenanceFacet.restoreRug.selector;
         selectors[10] = RugMaintenanceFacet.masterRestoreRug.selector;
 
-        // Legacy authorized functions (kept for compatibility)
+        // Legacy authorized functions
         selectors[11] = RugMaintenanceFacet.cleanRugAuthorized.selector;
         selectors[12] = RugMaintenanceFacet.restoreRugAuthorized.selector;
         selectors[13] = RugMaintenanceFacet.masterRestoreRugAuthorized.selector;
 
-        // Status and options (kept)
+        // Status and options
         selectors[14] = RugMaintenanceFacet.getMaintenanceOptions.selector;
         selectors[15] = RugMaintenanceFacet.getCleaningCost.selector;
         selectors[16] = RugMaintenanceFacet.getRestorationCost.selector;
@@ -70,10 +66,10 @@ contract UpgradeToDirectPaymentMaintenance is Script {
         selectors[19] = RugMaintenanceFacet.canRestoreRug.selector;
         selectors[20] = RugMaintenanceFacet.needsMasterRestoration.selector;
 
-        // Maintenance history (kept)
+        // Maintenance history
         selectors[21] = RugMaintenanceFacet.getMaintenanceHistory.selector;
 
-        // Authorization token functions (kept for compatibility)
+        // Authorization token functions
         selectors[22] = RugMaintenanceFacet._verifyAuthorizationToken.selector;
         selectors[23] = RugMaintenanceFacet.isAuthorizationTokenValid.selector;
 

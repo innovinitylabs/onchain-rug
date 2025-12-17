@@ -68,11 +68,13 @@ export async function POST(request: NextRequest, context: { params: Promise<{ to
     const params = await context.params
     const { tokenId, action } = params
     const chainId = DEFAULT_CHAIN_ID
-    const contract = getContractAddress(chainId)
-    if (!contract) {
-      return NextResponse.json({ error: 'Contract not configured for this network' }, { status: 500 })
-    }
-    console.log(`📋 Params: tokenId=${tokenId}, action=${action}, contract=${contract}`)
+
+    // Use the new maintenance facet directly for agent functions
+    // This bypasses diamond routing until the diamond cut is completed
+    const MAINTENANCE_FACET_ADDRESS = '0xeBfD53cD9781E1F2D0cB7EFd7cBE6Dc7878836C8'
+    const contract = MAINTENANCE_FACET_ADDRESS
+
+    console.log(`📋 Params: tokenId=${tokenId}, action=${action}, contract=${contract} (direct facet call)`)
 
     // Check for agent address (required for all requests)
     const agentAddress = request.headers.get('x-agent-address')

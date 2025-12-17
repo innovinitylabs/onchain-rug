@@ -332,18 +332,18 @@ Available Tools (ALL FREE within paid session):
 - restore_rug: Restore a rug (get quote first, then confirm)
 - master_restore_rug: Master restore a rug (get quote first, then confirm)
 
-DIRECT PAYMENT MODEL - PER-OPERATION:
+DIRECT CONTRACT PAYMENT MODEL - PER-OPERATION:
 - Information queries (rug ownership, status) are FREE
 - Maintenance operations (cleaning, restoration) require direct payment
-- Pay per maintenance action directly to smart contract
-- Agent handles payments and blockchain execution automatically
+- Agent pays directly to smart contract (no facilitator required)
+- On-chain payment verification and automatic fee distribution
 
 WORKFLOW:
 1. User asks questions → Free info queries work immediately
 2. User requests maintenance on "my rugs" → First call get_rugs() to discover what they own
-3. User requests specific maintenance → Agent gets quote and handles payment automatically
-4. Agent executes maintenance with direct contract payment
-5. No facilitator required - direct blockchain transactions
+3. User requests specific maintenance → Agent gets quote and handles direct contract payment
+4. Agent executes maintenance with on-chain payment verification
+5. No facilitator required - direct smart contract payments
 
 PARAMETER HANDLING:
 - Parse rug numbers from user input: "rug 1" or "rug #1" or "token 1" = tokenId: 1
@@ -362,9 +362,9 @@ TOOL USAGE GUIDELINES:
 - For general questions about capabilities: Respond directly without tools
 - For balance questions: Respond directly without tools
 
-MAINTENANCE WITH PAYMENT:
+MAINTENANCE WITH DIRECT PAYMENT:
 User: "clean rug 1"
-AI: Parse "rug 1" as tokenId=1 → Calls clean_rug(tokenId=1) → Automatically handles X402 payment → Executes maintenance → "Rug cleaned!"
+AI: Parse "rug 1" as tokenId=1 → Gets quote → Pays directly to contract → Executes maintenance → "Rug cleaned!"
 
 User: "clean my rugs"
 AI: First calls get_rugs() → Discovers user's rugs → "You own rugs #1, #2, #3. Which one would you like to clean?"
@@ -437,21 +437,18 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
           break;
         case 'clean_rug':
           // Get quote first, then execute with direct payment
-          url = `${this.apiBaseUrl}/api/maintenance/action/${args.tokenId}/clean`;
-          method = 'POST';
-          body = JSON.stringify({ action: 'clean' });
+          url = `${this.apiBaseUrl}/api/maintenance/quote/${args.tokenId}/clean`;
+          method = 'GET';
           break;
         case 'restore_rug':
           // Get quote first, then execute with direct payment
-          url = `${this.apiBaseUrl}/api/maintenance/action/${args.tokenId}/restore`;
-          method = 'POST';
-          body = JSON.stringify({ action: 'restore' });
+          url = `${this.apiBaseUrl}/api/maintenance/quote/${args.tokenId}/restore`;
+          method = 'GET';
           break;
         case 'master_restore_rug':
           // Get quote first, then execute with direct payment
-          url = `${this.apiBaseUrl}/api/maintenance/action/${args.tokenId}/master`;
-          method = 'POST';
-          body = JSON.stringify({ action: 'master' });
+          url = `${this.apiBaseUrl}/api/maintenance/quote/${args.tokenId}/master`;
+          method = 'GET';
           break;
         default:
           console.log(chalk.red(`❌ Unknown tool: ${name}`));
@@ -517,26 +514,26 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
 
       // Handle different response types
       if (response.status >= 400 && result?.error) {
-        // Error response from facilitator or API
-        console.log(chalk.red(`❌ API/Facilitator error: ${result.error}`));
+        // Error response from API
+        console.log(chalk.red(`❌ API error: ${result.error}`));
         if (result.details) {
           console.log(chalk.gray(`   Details: ${result.details}`));
         }
         throw new Error(`Operation failed: ${result.error}`);
       } else if (!isFreeOperation && response.status === 402) {
-        // Handle direct payment requirement (V2 simplified)
+        // Handle direct payment requirement (new V2 format)
         console.log(chalk.yellow(`💰 Direct payment required for ${name} execution`));
 
         let paymentAmount;
 
-        // Get payment amount from PAYMENT-REQUIRED header
+        // Get payment amount from PAYMENT-REQUIRED header (V2 format)
         const paymentRequiredHeader = response.headers.get('PAYMENT-REQUIRED');
         if (paymentRequiredHeader) {
           try {
             const paymentData = JSON.parse(paymentRequiredHeader);
-            if (paymentData.accepts?.[0]?.maxAmountRequired) {
-              paymentAmount = paymentData.accepts[0].maxAmountRequired;
-              console.log(chalk.blue(`📋 Payment amount required: ${parseFloat(paymentAmount) / 1e18} ETH`));
+            if (paymentData.extra?.totalWei) {
+              paymentAmount = paymentData.extra.totalWei;
+              console.log(chalk.blue(`📋 Payment amount required: ${parseFloat(paymentAmount) / 1e18} ETH (includes service fee)`));
             }
           } catch (e) {
             console.log(chalk.yellow(`⚠️ Failed to parse payment header`));
@@ -548,21 +545,21 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
           throw new Error('Invalid payment requirement format');
         }
 
-        // Retry the same request but with paymentAmount in body
-        console.log(chalk.blue(`🔄 Retrying with direct payment...`));
+        // Now call the action endpoint directly with payment
+        console.log(chalk.blue(`🔄 Executing direct payment transaction...`));
 
+        const actionUrl = url.replace('/quote/', '/action/');
         const paymentHeaders = {
           'Content-Type': 'application/json',
           'x-agent-address': config.wallet.address
         };
 
         const paymentBody = JSON.stringify({
-          action: name.replace('_rug', ''), // clean_rug -> clean
           paymentAmount: paymentAmount
         });
 
-        response = await fetch(url, {
-          method,
+        response = await fetch(actionUrl, {
+          method: 'POST',
           headers: paymentHeaders,
           body: paymentBody
         });
@@ -940,7 +937,7 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
 • **Personalized care suggestions** for each rug
 • Context-aware conversations and error recovery
 
-🌐 **Network:** Shape Sepolia testnet
+🌐 **Network:** Base Sepolia testnet
 
 **Try asking: "how are my rugs doing?" for intelligent analysis!**
 
