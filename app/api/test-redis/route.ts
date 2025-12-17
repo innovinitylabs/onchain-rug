@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { RugMarketRedis } from '../../lib/rug-market-redis'
+import { RugMarketRedis } from '../../../lib/rug-market-redis'
 
 export async function GET(request: NextRequest) {
   try {
