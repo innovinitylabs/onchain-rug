@@ -12,20 +12,11 @@ import ScrollIndicator from '@/components/ScrollIndicator'
 
 export default function Home() {
   const [animationKey, setAnimationKey] = useState(0)
-  const [showAnimatedRugs, setShowAnimatedRugs] = useState(false)
+  const [showAnimatedRugs, setShowAnimatedRugs] = useState(true)
 
   // Force re-mount of AnimatedRugs when component mounts (navigation back)
   useEffect(() => {
     setAnimationKey(prev => prev + 1)
-  }, [])
-
-  // Delay AnimatedRugs to start after Hero content is animated
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowAnimatedRugs(true)
-    }, 420) // Start after Hero text animations (1.2s) but before SVG animations (2.5s)
-
-    return () => clearTimeout(timer)
   }, [])
 
   return (
