@@ -171,7 +171,7 @@ export const CONTRACT_ADDRESSES: Record<number, string | undefined> = {
   [NETWORKS.ethereumSepolia.chainId]: process.env.NEXT_PUBLIC_ETHEREUM_SEPOLIA_CONTRACT || process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT,
   [NETWORKS.shapeSepolia.chainId]: process.env.NEXT_PUBLIC_SHAPE_SEPOLIA_CONTRACT || process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT,
   [NETWORKS.shapeMainnet.chainId]: process.env.NEXT_PUBLIC_SHAPE_MAINNET_CONTRACT || process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT,
-  [NETWORKS.baseSepolia.chainId]: '0x3d6670aC0A881Dcc742c17D687F5dfE05Af81cff', // From .env file
+  [NETWORKS.baseSepolia.chainId]: process.env.NEXT_PUBLIC_BASE_SEPOLIA_CONTRACT || process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT,
   [NETWORKS.baseMainnet.chainId]: process.env.NEXT_PUBLIC_BASE_MAINNET_CONTRACT || process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT,
   [NETWORKS.testNet.chainId]: process.env.NEXT_PUBLIC_TEST_NET_CONTRACT || process.env.NEXT_PUBLIC_ONCHAIN_RUGS_CONTRACT,
 }

@@ -27,7 +27,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ tok
     const tokenId = params.tokenId
     const chainId = DEFAULT_CHAIN_ID
     // For testing, use hardcoded Base Sepolia contract
-    const contract = chainId === 84532 ? '0xa43532205Fc90b286Da98389a9883347Cc4064a8' : getContractAddress(chainId)
+    const contract = getContractAddress(chainId)
     if (!contract) {
       return NextResponse.json({ error: 'Contract not configured for this network' }, { status: 500 })
     }

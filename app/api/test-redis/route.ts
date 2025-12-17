@@ -5,7 +5,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const chainId = parseInt(searchParams.get('chainId') || '84532')
-    const contract = '0x3d6670aC0A881Dcc742c17D687F5dfE05Af81cff'
+    const contract = getContractAddress(chainId)
 
     console.log(`[Test Redis] Testing Redis for chain ${chainId}, contract ${contract}`)
 
