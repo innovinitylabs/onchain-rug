@@ -1238,13 +1238,13 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
   )
 }
 
-// Studio Ghibli-style floating particles (circular, bluish-white)
+// Studio Ghibli-style floating particles (circular, bluish-white) - EMITTER MATERIAL
 function FloatingParticles() {
   const particlesRef = useRef<THREE.Points>(null)
 
   const particles = useMemo(() => {
     const temp = []
-    for (let i = 0; i < 150; i++) { // Increased count for more magical feel
+    for (let i = 0; i < 200; i++) { // Increased count for more magical feel
       temp.push([
         (Math.random() - 0.5) * 60, // Wider spread
         (Math.random() - 0.5) * 40, // Taller spread
@@ -1273,12 +1273,15 @@ function FloatingParticles() {
         />
       </bufferGeometry>
       <pointsMaterial
-        size={0.08} // Slightly smaller for delicacy
-        color="#e6f3ff" // Studio Ghibli bluish-white
+        size={0.12} // Larger for better visibility
+        color="#ffffff" // Pure white for emission
+        emissive="#4fc3f7" // Bright cyan emissive color
+        emissiveIntensity={0.8} // Strong emission
         transparent
-        opacity={0.4} // More subtle
-        sizeAttenuation={true} // Makes distant particles smaller
-        alphaTest={0.01} // Helps with circular appearance
+        opacity={0.8} // More visible
+        sizeAttenuation={true}
+        alphaTest={0.01}
+        depthWrite={false} // Prevent depth issues with emissive materials
       />
     </points>
   )
@@ -1336,13 +1339,36 @@ function Scene({ onLoaded }: { onLoaded?: () => void }) {
       />
       <pointLight position={[-10, -10, -5]} color="#f59e0b" intensity={0.8} />
       <pointLight position={[15, 5, 10]} color="#ff6b35" intensity={0.4} />
-      <spotLight 
-        position={[0, 20, 0]} 
-        angle={0.3} 
-        penumbra={1} 
+      <spotLight
+        position={[0, 20, 0]}
+        angle={0.3}
+        penumbra={1}
         intensity={0.5}
         color="#ffd700"
         castShadow
+      />
+
+      {/* Dynamic Emissive Point Lights for Particle Illumination */}
+      <pointLight
+        position={[0, 5, 10]}
+        color="#4fc3f7"
+        intensity={0.6}
+        distance={30}
+        decay={2}
+      />
+      <pointLight
+        position={[-5, 0, 5]}
+        color="#87ceeb"
+        intensity={0.4}
+        distance={25}
+        decay={2}
+      />
+      <pointLight
+        position={[5, -5, -5]}
+        color="#ffd700"
+        intensity={0.5}
+        distance={20}
+        decay={2}
       />
       
       {/* Environment - TRANSPARENT */}
@@ -1359,26 +1385,55 @@ function Scene({ onLoaded }: { onLoaded?: () => void }) {
       
       {/* Enhanced Floating Particles */}
       <FloatingParticles />
-      
-      {/* Studio Ghibli Magical Dust Effect */}
+
+      {/* Additional Emissive Sprite Effects */}
+      <Float speed={0.8} rotationIntensity={0.2} floatIntensity={0.4}>
+        <points>
+          <bufferGeometry>
+            <bufferAttribute
+              attach="attributes-position"
+              count={80}
+              array={new Float32Array(Array.from({ length: 240 }, () => (Math.random() - 0.5) * 50))}
+              itemSize={3}
+              args={[new Float32Array(Array.from({ length: 240 }, () => (Math.random() - 0.5) * 50)), 3]}
+            />
+          </bufferGeometry>
+          <pointsMaterial
+            size={0.15}
+            color="#ffffff"
+            emissive="#ffd700" // Golden emissive
+            emissiveIntensity={1.5}
+            transparent
+            opacity={1.0}
+            sizeAttenuation={true}
+            alphaTest={0.01}
+            depthWrite={false}
+          />
+        </points>
+      </Float>
+
+      {/* Studio Ghibli Magical Dust Effect - EMITTER MATERIAL */}
       <Float speed={1.5} rotationIntensity={0.3} floatIntensity={0.8}>
         <points>
           <bufferGeometry>
             <bufferAttribute
               attach="attributes-position"
-              count={120}
-              array={new Float32Array(Array.from({ length: 360 }, () => (Math.random() - 0.5) * 80))}
+              count={150}
+              array={new Float32Array(Array.from({ length: 450 }, () => (Math.random() - 0.5) * 80))}
               itemSize={3}
-              args={[new Float32Array(Array.from({ length: 360 }, () => (Math.random() - 0.5) * 80)), 3]}
+              args={[new Float32Array(Array.from({ length: 450 }, () => (Math.random() - 0.5) * 80)), 3]}
             />
           </bufferGeometry>
           <pointsMaterial
-            size={0.06}
-            color="#f0f8ff" // Soft bluish-white for magical dust
+            size={0.1}
+            color="#ffffff" // Pure white base
+            emissive="#87ceeb" // Sky blue emissive
+            emissiveIntensity={1.2} // Very strong emission for magical effect
             transparent
-            opacity={0.3}
+            opacity={0.9} // More visible
             sizeAttenuation={true}
             alphaTest={0.01}
+            depthWrite={false}
           />
         </points>
       </Float>
