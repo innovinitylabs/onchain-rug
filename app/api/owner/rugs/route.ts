@@ -93,7 +93,7 @@ export async function GET(request: NextRequest) {
           'ownerOf',
           [BigInt(tokenId)],
           { chainId }
-        ) as string
+        ) as unknown as string
 
         if (owner.toLowerCase() === ownerAddress.toLowerCase()) {
           ownedRugs.push(tokenId)
