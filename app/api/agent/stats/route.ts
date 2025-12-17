@@ -152,7 +152,8 @@ export async function GET(request: NextRequest) {
       const [serviceFee] = await publicClient.readContract({
         address: contract as `0x${string}`,
         abi: serviceFeeAbi,
-        functionName: 'getAgentServiceFee'
+        functionName: 'getAgentServiceFee',
+        authorizationList: []
       }) as [bigint, string]
 
       serviceFeeInfo = `${formatEther(serviceFee)} ETH flat for all maintenance actions`
