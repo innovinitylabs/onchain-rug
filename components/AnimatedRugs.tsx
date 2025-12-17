@@ -1221,8 +1221,8 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
   return (
     <group ref={groupRef} position={position} scale={[scale, scale, scale]}>
       <Float speed={0.3} rotationIntensity={0.08} floatIntensity={0.15}>
-        <mesh ref={rugRef} rotation={[-Math.PI / 2, 0, 0]} castShadow receiveShadow>
-          <planeGeometry args={[5, 7, 48, 48]} />
+        <mesh ref={rugRef} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[5, 7, 16, 16]} />
           <meshStandardMaterial 
             map={textureRef.current} 
             side={THREE.DoubleSide}
@@ -1269,7 +1269,7 @@ function FloatingParticles() {
 
   const particles = useMemo(() => {
     const temp = []
-    for (let i = 0; i < 200; i++) { // Increased count for more magical feel
+    for (let i = 0; i < 142; i++) { // Increased count for more magical feel
       temp.push([
         (Math.random() - 0.5) * 60, // Wider spread
         (Math.random() - 0.5) * 40, // Taller spread
@@ -1360,14 +1360,11 @@ function Scene({ onLoaded }: { onLoaded?: () => void }) {
     <>
       {/* Enhanced Lighting Setup */}
       <ambientLight intensity={0.6} color="#ffeaa7" />
-      <directionalLight 
+      <directionalLight
         ref={lightRef}
-        position={[10, 10, 5]} 
-        intensity={1.2} 
+        position={[10, 10, 5]}
+        intensity={1.2}
         color="#ffb347"
-        castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
       />
       <pointLight position={[-10, -10, -5]} color="#f59e0b" intensity={0.8} />
       <pointLight position={[15, 5, 10]} color="#ff6b35" intensity={0.4} />
@@ -1377,7 +1374,6 @@ function Scene({ onLoaded }: { onLoaded?: () => void }) {
         penumbra={1}
         intensity={0.5}
         color="#ffd700"
-        castShadow
       />
 
       {/* Dynamic Emissive Point Lights for Particle Illumination */}
