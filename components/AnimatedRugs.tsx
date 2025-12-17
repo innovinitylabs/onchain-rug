@@ -1038,7 +1038,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
 
     // --- P5.js-accurate texture overlays using Perlin noise and multiply blend ---
     // Simple on/off switch: no texture for 1 minute, then full texture appears
-    const textureDelay = 120000 // 60 seconds (1 minute) delay
+    const textureDelay = 1200 // 60 seconds (1 minute) delay
     const textureOpacity = currentTime >= textureDelay ? 1 : 0
     
     if (textureOpacity > 0) {
@@ -1046,7 +1046,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
       const perlin = makePerlin(seed)
       // Save state
       ctx.save()
-      // Texture overlay with multiply blend, CLIPPED to doormat area only
+      // Texture overlay with mufltiply blend, CLIPPED to doormat area only
       ctx.save()
       ctx.beginPath()
       ctx.rect(offsetX, offsetY, 800, doormatHeight)
@@ -1208,7 +1208,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
   })
 
   // Don't render until dependencies are loaded
-  const rugTexture = createRugTexture(0) // Generate texture immediately
+  const rugTexture = createRugTexture(1200) // Generate texture with overlays enabled
   if (!dependenciesLoaded || !rugTexture) {
     return null
   }
@@ -1418,7 +1418,7 @@ function Scene({ onLoaded }: { onLoaded?: () => void }) {
           <bufferGeometry>
             <bufferAttribute
               attach="attributes-position"
-              count={80}
+              count={69}
               array={new Float32Array(Array.from({ length: 240 }, () => (Math.random() - 0.5) * 50))}
               itemSize={3}
               args={[new Float32Array(Array.from({ length: 240 }, () => (Math.random() - 0.5) * 50)), 3]}
@@ -1443,7 +1443,7 @@ function Scene({ onLoaded }: { onLoaded?: () => void }) {
           <bufferGeometry>
             <bufferAttribute
               attach="attributes-position"
-              count={150}
+              count={111}
               array={new Float32Array(Array.from({ length: 450 }, () => (Math.random() - 0.5) * 80))}
               itemSize={3}
               args={[new Float32Array(Array.from({ length: 450 }, () => (Math.random() - 0.5) * 80)), 3]}
