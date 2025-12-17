@@ -1,61 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { callContractMultiFallback } from '@/lib/web3'
-import { getContractAddress, DEFAULT_CHAIN_ID, getNetworkByChainId, getRpcUrl } from '@/lib/networks'
-import { createPaymentRequiredResponse, verifyAndSettlePayment } from '@/lib/x402'
-import { formatEther, keccak256, encodePacked, createPublicClient, http, parseEther } from 'viem'
-import { randomBytes } from 'crypto'
-import { checkRateLimit, getRateLimitStatus } from '@/utils/rate-limiter'
-
-const maintenanceAbi = [
-  {
-    inputs: [{ name: 'tokenId', type: 'uint256' }],
-    name: 'getMaintenanceOptions',
-    outputs: [
-      { name: 'canClean', type: 'bool' },
-      { name: 'canRestore', type: 'bool' },
-      { name: 'needsMaster', type: 'bool' },
-      { name: 'cleaningCost', type: 'uint256' },
-      { name: 'restorationCost', type: 'uint256' },
-      { name: 'masterCost', type: 'uint256' }
-    ],
-    stateMutability: 'view',
-    type: 'function'
-  },
-  {
-    inputs: [{ name: 'tokenId', type: 'uint256' }],
-    name: 'cleanRugAgent',
-    outputs: [],
-    stateMutability: 'payable',
-    type: 'function'
-  },
-  {
-    inputs: [{ name: 'tokenId', type: 'uint256' }],
-    name: 'restoreRugAgent',
-    outputs: [],
-    stateMutability: 'payable',
-    type: 'function'
-  },
-  {
-    inputs: [{ name: 'tokenId', type: 'uint256' }],
-    name: 'masterRestoreRugAgent',
-    outputs: [],
-    stateMutability: 'payable',
-    type: 'function'
-  }
-] as const
-
-const adminFeesAbi = [
-  {
-    inputs: [],
-    name: 'getAgentServiceFee',
-    outputs: [
-      { name: 'serviceFee', type: 'uint256' },
-      { name: 'feeRecipient', type: 'address' }
-    ],
-    stateMutability: 'view',
-    type: 'function'
-  }
-] as const
+import { getContractAddress, DEFAULT_CHAIN_ID } from '@/lib/networks'
+import { checkRateLimit } from '@/utils/rate-limiter'
 
 type Action = 'clean' | 'restore' | 'master'
 
@@ -166,127 +111,24 @@ export async function POST(request: NextRequest, context: { params: Promise<{ to
 
     console.log(`🔧 Calling contract function: ${functionName}(${tokenId}) with ${paymentAmount} wei`)
 
-    try {
-      // Check for required environment variables
-      const agentPrivateKey = process.env.AGENT_PRIVATE_KEY
-      if (!agentPrivateKey) {
-        return NextResponse.json({
-          error: 'Server configuration error',
-          details: 'Agent private key not configured'
-        }, { status: 500 })
-      }
-
-      // Get network configuration dynamically
-      const network = getNetworkByChainId(chainId)
-      if (!network) {
-        return NextResponse.json({
-          error: 'Unsupported chain',
-          details: `Chain ${chainId} is not supported`
-        }, { status: 400 })
-      }
-
-      // Get RPC URL dynamically
-      const rpcUrl = getRpcUrl(chainId)
-      if (!rpcUrl) {
-        return NextResponse.json({
-          error: 'RPC URL not configured',
-          details: `No RPC URL configured for chain ${chainId}`
-        }, { status: 500 })
-      }
-
-      // Use viem to call contract through Diamond proxy
-      const { createWalletClient, http } = await import('viem')
-      const { privateKeyToAccount } = await import('viem/accounts')
-      const { defineChain } = await import('viem')
-
-      // Define chain dynamically from network config
-      const chain = defineChain({
-        id: network.chainId,
-        name: network.displayName,
-        nativeCurrency: {
-          decimals: 18,
-          name: 'Ether',
-          symbol: 'ETH',
+    // X402 v2: No facilitator - agents execute transactions directly
+    // This endpoint is for informational purposes only - agents should use their own API servers
+    console.log(`ℹ️ X402 v2: Agents must execute transactions directly via their own API servers`)
+    return NextResponse.json({
+      error: 'Direct execution required',
+      details: 'With x402 v2, agents execute transactions directly using their own wallet. This endpoint does not execute transactions on behalf of agents.',
+      instructions: {
+        message: 'Use your local agent API server to execute the transaction',
+        agentApiEndpoint: `/rug/${tokenId}/execute-direct`,
+        contractCall: {
+          address: contract,
+          function: functionName,
+          args: [tokenId],
+          value: paymentAmount
         },
-        rpcUrls: {
-          default: {
-            http: [rpcUrl],
-          },
-        },
-        blockExplorers: {
-          default: {
-            name: network.blockExplorerName,
-            url: network.explorerUrl,
-          },
-        },
-        testnet: network.isTestnet,
-      })
-
-      // Create wallet client for the transaction
-      const account = privateKeyToAccount(agentPrivateKey as `0x${string}`)
-      const walletClient = createWalletClient({
-        account,
-        chain,
-        transport: http(rpcUrl)
-      })
-
-      // Execute the maintenance action with payment through Diamond proxy
-      const txHash = await walletClient.writeContract({
-        address: contract as `0x${string}`,
-        abi: maintenanceAbi,
-        functionName,
-        args: [BigInt(tokenId)],
-        value: BigInt(paymentAmount),
-        chain,
-        account
-      })
-
-      console.log(`✅ Maintenance action successful`)
-      console.log(`📋 Transaction hash: ${txHash}`)
-
-      // Wait for confirmation
-      const publicClient = await import('viem').then(m => m.createPublicClient({
-        chain,
-        transport: http(rpcUrl)
-      }))
-
-      const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash })
-      console.log(`📊 Gas used: ${receipt.gasUsed}`)
-
-      return NextResponse.json({
-        success: true,
-        txHash,
-        gasUsed: receipt.gasUsed.toString(),
-        message: `Rug ${action} completed successfully`,
-        payment: {
-          amount: paymentAmount,
-          agent: agentAddress
-        }
-      })
-
-    } catch (error) {
-      console.error('❌ Contract execution error:', error)
-
-      // Check for specific contract errors
-      if (error.message?.includes('Not authorized')) {
-        return NextResponse.json({
-          error: 'Agent not authorized',
-          details: `Agent ${agentAddress} is not authorized for this NFT owner`
-        }, { status: 403 })
+        note: 'The payment amount has been validated. Execute the transaction with this amount as the value.'
       }
-
-      if (error.message?.includes('Insufficient payment')) {
-        return NextResponse.json({
-          error: 'Insufficient payment',
-          details: 'Payment amount does not cover maintenance + service fees'
-        }, { status: 400 })
-      }
-
-      return NextResponse.json({
-        error: 'Contract execution failed',
-        details: error.message || 'Unknown contract error'
-      }, { status: 500 })
-    }
+    }, { status: 503 }) // Service Unavailable - agent should use their own API server
 
   } catch (err) {
     console.error('maintenance action error:', err)

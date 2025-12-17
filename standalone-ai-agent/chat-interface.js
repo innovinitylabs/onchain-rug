@@ -480,6 +480,100 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
       const contentType = response.headers.get('content-type');
       let result = null; // Initialize result to prevent undefined errors
 
+      // Special handling for 402 Payment Required responses (x402 quotes)
+      if (response.status === 402 && !isFreeOperation) {
+        console.log(chalk.yellow(`💰 Direct payment required for ${name} execution`));
+        const paymentRequiredHeader = response.headers.get('payment-required') || response.headers.get('PAYMENT-REQUIRED');
+        if (paymentRequiredHeader) {
+          try {
+            const paymentData = JSON.parse(paymentRequiredHeader);
+            console.log(chalk.gray(`   Payment requirement parsed from header:`, JSON.stringify(paymentData).substring(0, 200)));
+
+            // Extract payment amount - check multiple possible locations
+            let paymentAmount;
+            if (paymentData.accepts && paymentData.accepts[0]) {
+              // Try maxAmountRequired first (primary location)
+              if (paymentData.accepts[0].maxAmountRequired) {
+                paymentAmount = paymentData.accepts[0].maxAmountRequired;
+              }
+              // Fallback to extra.totalWei if maxAmountRequired not found
+              else if (paymentData.accepts[0].extra?.totalWei) {
+                paymentAmount = paymentData.accepts[0].extra.totalWei;
+              }
+            }
+            // Fallback: check root level extra (shouldn't happen but handle it)
+            if (!paymentAmount && paymentData.extra?.totalWei) {
+              paymentAmount = paymentData.extra.totalWei;
+            }
+
+            if (!paymentAmount) {
+              console.log(chalk.red(`❌ No valid payment amount found in header structure`));
+              console.log(chalk.gray(`   Header data:`, JSON.stringify(paymentData, null, 2)));
+              throw new Error('Invalid payment requirement format');
+            }
+            
+            console.log(chalk.blue(`📋 Payment amount required: ${parseFloat(paymentAmount) / 1e18} ETH (includes service fee)`));
+
+            // Extract action and tokenId from URL for x402 v2 direct execution
+            // URL format: /api/maintenance/quote/{tokenId}/{action}
+            const urlParts = url.split('/');
+            const action = urlParts[urlParts.length - 1]; // clean/restore/master
+            const tokenId = urlParts[urlParts.length - 2]; // tokenId
+
+            // Execute transaction directly via agent API server (x402 v2 - no facilitator)
+            console.log(chalk.blue(`🔄 Executing direct payment transaction via agent API...`));
+            const agentApiUrl = `${this.agentApiUrl}/rug/${tokenId}/execute-direct`;
+            const paymentHeaders = {
+              'Content-Type': 'application/json'
+            };
+
+            const paymentBody = JSON.stringify({
+              action: action,
+              paymentAmount: paymentAmount
+            });
+
+            const paymentResponse = await fetch(agentApiUrl, {
+              method: 'POST',
+              headers: paymentHeaders,
+              body: paymentBody
+            });
+
+            // Parse payment response
+            if (paymentResponse.headers.get('content-type')?.includes('application/json')) {
+              result = await paymentResponse.json();
+              console.log(chalk.gray(`   Payment response:`, JSON.stringify(result)));
+            }
+
+            // Handle payment result
+            if (paymentResponse.ok && result && result.success) {
+              console.log(chalk.green(`✅ ${name} completed successfully with payment!`));
+              const paymentAmountEth = parseFloat(paymentAmount) / 1e18;
+              console.log(chalk.green(`💰 Paid ${paymentAmountEth} ETH via X402 v2 direct payment!`));
+
+              const actionName = name.replace('_rug', '').replace('_', ' ');
+              return {
+                ...result,
+                x402Payment: paymentAmount,
+                message: `${actionName.charAt(0).toUpperCase() + actionName.slice(1)} completed successfully! Paid ${paymentAmountEth} ETH via X402 v2. Transaction: ${result.transactionHash}`,
+                formatted: true
+              };
+            } else {
+              console.log(chalk.red(`❌ Payment execution failed: ${result?.error || 'Unknown error'}`));
+              if (result?.details) {
+                console.log(chalk.gray(`   Details: ${result.details}`));
+              }
+              throw new Error(`Payment execution failed: ${result?.error || 'Unknown error'}`);
+            }
+
+          } catch (parseError) {
+            console.log(chalk.red(`   Failed to parse payment-required header: ${parseError.message}`));
+            throw new Error(`Invalid payment requirement format in header`);
+          }
+        } else {
+          throw new Error(`402 Payment Required but no payment-required header found`);
+        }
+      }
+
       if (contentType && contentType.includes('application/json')) {
         result = await response.json();
         console.log(chalk.gray(`   API response status: ${response.status}, result:`, JSON.stringify(result)));
@@ -527,38 +621,67 @@ Stay in character as knowledgeable Agent Rug! Be accurate and helpful!`;
         let paymentAmount;
 
         // Get payment amount from PAYMENT-REQUIRED header (V2 format)
-        const paymentRequiredHeader = response.headers.get('PAYMENT-REQUIRED');
+        const paymentRequiredHeader = response.headers.get('PAYMENT-REQUIRED') || response.headers.get('payment-required');
         if (paymentRequiredHeader) {
           try {
             const paymentData = JSON.parse(paymentRequiredHeader);
-            if (paymentData.extra?.totalWei) {
+            console.log(chalk.gray(`   Payment requirement parsed from header:`, JSON.stringify(paymentData).substring(0, 200)));
+
+            // Extract payment amount - check multiple possible locations
+            if (paymentData.accepts && paymentData.accepts[0]) {
+              // Try maxAmountRequired first (primary location)
+              if (paymentData.accepts[0].maxAmountRequired) {
+                paymentAmount = paymentData.accepts[0].maxAmountRequired;
+              }
+              // Fallback to extra.totalWei if maxAmountRequired not found
+              else if (paymentData.accepts[0].extra?.totalWei) {
+                paymentAmount = paymentData.accepts[0].extra.totalWei;
+              }
+            }
+            // Fallback: check root level extra (shouldn't happen but handle it)
+            if (!paymentAmount && paymentData.extra?.totalWei) {
               paymentAmount = paymentData.extra.totalWei;
+            }
+
+            if (paymentAmount) {
               console.log(chalk.blue(`📋 Payment amount required: ${parseFloat(paymentAmount) / 1e18} ETH (includes service fee)`));
             }
           } catch (e) {
-            console.log(chalk.yellow(`⚠️ Failed to parse payment header`));
+            console.log(chalk.yellow(`⚠️ Failed to parse payment header: ${e.message}`));
           }
         }
 
         if (!paymentAmount) {
-          console.log(chalk.red(`❌ No valid payment amount found`));
+          console.log(chalk.red(`❌ No valid payment amount found in header structure`));
+          if (paymentRequiredHeader) {
+            try {
+              const paymentData = JSON.parse(paymentRequiredHeader);
+              console.log(chalk.gray(`   Header data:`, JSON.stringify(paymentData, null, 2)));
+            } catch (e) {
+              console.log(chalk.gray(`   Raw header:`, paymentRequiredHeader.substring(0, 200)));
+            }
+          }
           throw new Error('Invalid payment requirement format');
         }
 
-        // Now call the action endpoint directly with payment
-        console.log(chalk.blue(`🔄 Executing direct payment transaction...`));
+        // Extract action and tokenId from URL for x402 v2 direct execution
+        const urlParts = url.split('/');
+        const action = urlParts[urlParts.length - 1]; // clean/restore/master
+        const tokenId = urlParts[urlParts.length - 2]; // tokenId
 
-        const actionUrl = url.replace('/quote/', '/action/');
+        // Execute transaction directly via agent API server (x402 v2 - no facilitator)
+        console.log(chalk.blue(`🔄 Executing direct payment transaction via agent API...`));
+        const agentApiUrl = `${this.agentApiUrl}/rug/${tokenId}/execute-direct`;
         const paymentHeaders = {
-          'Content-Type': 'application/json',
-          'x-agent-address': config.wallet.address
+          'Content-Type': 'application/json'
         };
 
         const paymentBody = JSON.stringify({
+          action: action,
           paymentAmount: paymentAmount
         });
 
-        response = await fetch(actionUrl, {
+        response = await fetch(agentApiUrl, {
           method: 'POST',
           headers: paymentHeaders,
           body: paymentBody

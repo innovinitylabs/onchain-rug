@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { callContractMultiFallback, onchainRugsABI } from '@/lib/web3'
 import { getContractAddress, DEFAULT_CHAIN_ID, getNetworkByChainId } from '@/lib/networks'
-import { createPaymentRequiredResponse, verifyAndSettlePayment } from '@/lib/x402'
+import { createPaymentRequiredResponse } from '@/lib/x402'
 
 // Minimal ABI fragment for getMaintenanceOptions if not included
 const maintenanceAbi = [
