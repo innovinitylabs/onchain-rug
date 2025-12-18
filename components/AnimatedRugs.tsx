@@ -1173,7 +1173,7 @@ function FloatingParticles() {
 
   const particles = useMemo(() => {
     const temp = []
-    for (let i = 0; i < 142; i++) { // Increased count for more magical feel
+    for (let i = 0; i < 80; i++) { // Optimized count for performance
       temp.push([
         (Math.random() - 0.5) * 60, // Wider spread
         (Math.random() - 0.5) * 40, // Taller spread
@@ -1322,8 +1322,8 @@ function Scene({ onLoaded }: { onLoaded?: () => void }) {
           <bufferGeometry>
             <bufferAttribute
               attach="attributes-position"
-              count={69}
-              array={new Float32Array(Array.from({ length: 240 }, () => (Math.random() - 0.5) * 50))}
+              count={40}
+              array={new Float32Array(Array.from({ length: 120 }, () => (Math.random() - 0.5) * 50))}
               itemSize={3}
               args={[new Float32Array(Array.from({ length: 240 }, () => (Math.random() - 0.5) * 50)), 3]}
             />
@@ -1347,8 +1347,8 @@ function Scene({ onLoaded }: { onLoaded?: () => void }) {
           <bufferGeometry>
             <bufferAttribute
               attach="attributes-position"
-              count={111}
-              array={new Float32Array(Array.from({ length: 450 }, () => (Math.random() - 0.5) * 80))}
+              count={30}
+              array={new Float32Array(Array.from({ length: 90 }, () => (Math.random() - 0.5) * 80))}
               itemSize={3}
               args={[new Float32Array(Array.from({ length: 450 }, () => (Math.random() - 0.5) * 80)), 3]}
             />
