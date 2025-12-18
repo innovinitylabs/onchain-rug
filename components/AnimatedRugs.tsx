@@ -1002,12 +1002,27 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
       }
     }
 
-    // Use the canvas directly - rotation handled by Three.js mesh rotation
-    canvasRef.current = canvas
+    // --- 180-degree rotation for THREE.js scene orientation ---
+    // Create a new canvas with rotated content
+    const rotatedCanvas = document.createElement('canvas')
+    const rotatedCtx = rotatedCanvas.getContext('2d', { willReadFrequently: true })!
+    rotatedCanvas.width = canvas.width
+    rotatedCanvas.height = canvas.height
+
+    // Rotate and copy the content (180-degree flip)
+    rotatedCtx.save()
+    rotatedCtx.translate(rotatedCanvas.width / 2, rotatedCanvas.height / 2)
+    rotatedCtx.rotate(Math.PI)
+    rotatedCtx.translate(-rotatedCanvas.width / 2, -rotatedCanvas.height / 2)
+    rotatedCtx.drawImage(canvas, 0, 0)
+    rotatedCtx.restore()
+
+    // Use the rotated canvas for the texture
+    canvasRef.current = rotatedCanvas
     if (textureRef.current) {
       textureRef.current.dispose()
     }
-    const texture = new CanvasTexture(canvas)
+    const texture = new CanvasTexture(rotatedCanvas)
     texture.wrapS = texture.wrapT = RepeatWrapping
     textureRef.current = texture
     return texture
@@ -1125,7 +1140,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
   return (
     <group ref={groupRef} position={position} scale={[scale, scale, scale]}>
       <Float speed={0.3} rotationIntensity={0.08} floatIntensity={0.15}>
-        <mesh ref={rugRef} rotation={[-Math.PI / 2, Math.PI, 0]}>
+        <mesh ref={rugRef} rotation={[-Math.PI / 2, 0, 0]}>
           <planeGeometry args={[5, 7, 16, 16]} />
           <meshStandardMaterial 
             map={textureRef.current} 
