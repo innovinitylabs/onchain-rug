@@ -37,13 +37,23 @@ class AniSeededRandom {
 }
 
 import { Canvas } from '@react-three/fiber'
-import { OrbitControls, Float, Text3D, Environment } from '@react-three/drei'
+import { OrbitControls, Float, Environment } from '@react-three/drei'
 import { Suspense, useRef, useMemo, useEffect, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
-import * as THREE from 'three'
+import { 
+  Texture, 
+  CanvasTexture, 
+  Mesh, 
+  Group, 
+  PlaneGeometry, 
+  Points, 
+  DirectionalLight,
+  RepeatWrapping, 
+  DoubleSide 
+} from 'three'
 
 // Helper function to create circular sprite texture for particles
-const createCircleSprite = (size = 64): THREE.Texture => {
+const createCircleSprite = (size = 64): Texture => {
   const canvas = document.createElement('canvas')
   canvas.width = size
   canvas.height = size
@@ -62,7 +72,7 @@ const createCircleSprite = (size = 64): THREE.Texture => {
   context.fillStyle = gradient
   context.fillRect(0, 0, size, size)
 
-  const texture = new THREE.CanvasTexture(canvas)
+    const texture = new CanvasTexture(canvas)
   texture.needsUpdate = true
   return texture
 }
@@ -112,11 +122,11 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
   isFirstRug?: boolean,
   rugsOpacity?: number
 }) {
-  const rugRef = useRef<THREE.Mesh>(null)
-  const groupRef = useRef<THREE.Group>(null)
+  const rugRef = useRef<Mesh>(null)
+  const groupRef = useRef<Group>(null)
   const initialPositions = useRef<Float32Array | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
-  const textureRef = useRef<THREE.CanvasTexture | null>(null)
+  const textureRef = useRef<CanvasTexture | null>(null)
   const startTimeRef = useRef<number | null>(null)
   
   // Your curated word list for the flying rugs
@@ -1011,8 +1021,8 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
     if (textureRef.current) {
       textureRef.current.dispose()
     }
-    const texture = new THREE.CanvasTexture(rotatedCanvas)
-    texture.wrapS = texture.wrapT = THREE.RepeatWrapping
+    const texture = new CanvasTexture(rotatedCanvas)
+    texture.wrapS = texture.wrapT = RepeatWrapping
     textureRef.current = texture
     return texture
   }
@@ -1036,7 +1046,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
   useFrame((state) => {
     if (rugRef.current && groupRef.current) {
       const time = state.clock.getElapsedTime()
-      const geometry = rugRef.current.geometry as THREE.PlaneGeometry
+      const geometry = rugRef.current.geometry as PlaneGeometry
       const positions = geometry.attributes.position
       
       // Store initial positions on first run
@@ -1119,7 +1129,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
           <planeGeometry args={[5, 7, 16, 16]} />
           <meshStandardMaterial 
             map={textureRef.current} 
-            side={THREE.DoubleSide}
+            side={DoubleSide}
             transparent
             opacity={0.95 * rugsOpacity}
             roughness={0.8}
@@ -1138,7 +1148,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
             color="#ffffff" 
             transparent 
             opacity={0.05}
-            side={THREE.DoubleSide}
+            side={DoubleSide}
           />
         </mesh>
         
@@ -1149,7 +1159,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
             color="#ffffff" 
             transparent 
             opacity={0.03}
-            side={THREE.DoubleSide}
+            side={DoubleSide}
           />
         </mesh>
       </Float>
@@ -1159,7 +1169,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
 
 // Studio Ghibli-style floating particles (circular, bluish-white) - EMITTER MATERIAL
 function FloatingParticles() {
-  const particlesRef = useRef<THREE.Points>(null)
+  const particlesRef = useRef<Points>(null)
 
   const particles = useMemo(() => {
     const temp = []
@@ -1210,7 +1220,7 @@ function FloatingParticles() {
 
 // Enhanced Magical Scene
 function Scene({ onLoaded }: { onLoaded?: () => void }) {
-  const lightRef = useRef<THREE.DirectionalLight>(null)
+  const lightRef = useRef<DirectionalLight>(null)
   const [dependenciesLoaded, setDependenciesLoaded] = useState(false)
   const [rugsOpacity, setRugsOpacity] = useState(0)
 
