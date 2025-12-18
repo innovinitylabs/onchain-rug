@@ -990,17 +990,6 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
 
       
       // Fringe and selvages already drawn above before doormat texture
-    
-    // Subtle extra fabric noise (optional, can keep or remove)
-    for (let x = 0; x < canvas.width; x += 8) {
-      for (let y = 0; y < canvas.height; y += 8) {
-        const noise = Math.random() * 0.1 - 0.05
-        if (Math.abs(noise) > 0.02) {
-          ctx.fillStyle = `rgba(255, 255, 255, ${Math.abs(noise) * 0.3})`
-          ctx.fillRect(x, y, 1, 1)
-        }
-      }
-    }
 
     // --- 180-degree rotation for THREE.js scene orientation ---
     // Create a new canvas with rotated content
