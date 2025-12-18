@@ -128,6 +128,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const textureRef = useRef<CanvasTexture | null>(null)
   const startTimeRef = useRef<number | null>(null)
+  const [textureReady, setTextureReady] = useState(false)
   
   // Your curated word list for the flying rugs
   // NOTE: First rug (isFirstRug=true) always shows WELCOME (hardcoded), other rugs randomly select from this array
@@ -989,26 +990,15 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
 
       
       // Fringe and selvages already drawn above before doormat texture
-    
-    // Subtle extra fabric noise (optional, can keep or remove)
-    for (let x = 0; x < canvas.width; x += 8) {
-      for (let y = 0; y < canvas.height; y += 8) {
-        const noise = Math.random() * 0.1 - 0.05
-        if (Math.abs(noise) > 0.02) {
-          ctx.fillStyle = `rgba(255, 255, 255, ${Math.abs(noise) * 0.3})`
-          ctx.fillRect(x, y, 1, 1)
-        }
-      }
-    }
 
     // --- 180-degree rotation for THREE.js scene orientation ---
-    // Create a new canvas with rotated content instead of drawing on top
+    // Create a new canvas with rotated content
     const rotatedCanvas = document.createElement('canvas')
     const rotatedCtx = rotatedCanvas.getContext('2d', { willReadFrequently: true })!
     rotatedCanvas.width = canvas.width
     rotatedCanvas.height = canvas.height
 
-    // Rotate and copy the content
+    // Rotate and copy the content (180-degree flip)
     rotatedCtx.save()
     rotatedCtx.translate(rotatedCanvas.width / 2, rotatedCanvas.height / 2)
     rotatedCtx.rotate(Math.PI)
@@ -1111,15 +1101,29 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
     }
   })
 
-  // Don't render until dependencies are loaded
-  const rugTexture = createRugTexture(10) // Generate texture immediately
-  if (!dependenciesLoaded || !rugTexture) {
+  // Generate texture asynchronously to avoid blocking main thread
+  useEffect(() => {
+    if (!dependenciesLoaded) return
+
+    // Defer texture generation to next frame to avoid blocking
+    const generateTexture = () => {
+      requestAnimationFrame(() => {
+        const rugTexture = createRugTexture(10)
+        if (rugTexture) {
+          textureRef.current = rugTexture
+          setTextureReady(true)
+        }
+      })
+    }
+
+    // Small delay to let initial render complete
+    const timer = setTimeout(generateTexture, 0)
+    return () => clearTimeout(timer)
+  }, [dependenciesLoaded])
+
+  // Don't render until dependencies are loaded and texture is ready
+  if (!dependenciesLoaded || !textureReady || !textureRef.current) {
     return null
-  }
-  
-  // Store texture reference for updates
-  if (!textureRef.current) {
-    textureRef.current = rugTexture
   }
 
   return (
