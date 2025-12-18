@@ -21,6 +21,7 @@ library LibRugStorage {
     bytes32 constant RUG_STORAGE_POSITION = keccak256("rug.storage.position");
     bytes32 constant ERC721_STORAGE_POSITION = keccak256("erc721.storage.position");
     bytes32 constant MARKETPLACE_STORAGE_POSITION = keccak256("rug.marketplace.storage.position");
+    bytes32 constant REFERRAL_STORAGE_POSITION = keccak256("rug.referral.storage.position");
 
     struct RugData {
         uint256 seed;                    // Generation seed
@@ -238,6 +239,40 @@ library LibRugStorage {
         bytes32 position = ERC721_STORAGE_POSITION;
         assembly {
             es.slot := position
+        }
+    }
+
+    // ===== REFERRAL STRUCTS =====
+
+    struct ReferralStats {
+        uint256 totalReferrals;      // Total number of successful referrals
+        uint256 totalEarned;         // Total ETH earned from referrals
+        uint256 lastReferralTime;    // Timestamp of last referral
+    }
+
+    struct ReferralConfig {
+        // Code mappings
+        mapping(string => address) codeToReferrer;    // Referral code => referrer wallet
+        mapping(address => string) referrerToCode;    // Referrer wallet => referral code
+        mapping(string => bool) codeExists;           // Track if code is registered
+        
+        // Referral statistics
+        mapping(address => ReferralStats) referralStats;  // Referrer => stats
+        
+        // Configuration
+        bool referralSystemEnabled;                   // Global toggle for referral system
+        uint256 mintReferralPercent;                  // Percentage of mint fee to referrer (basis points, e.g., 500 = 5%, default: 5%)
+        uint256 marketplaceReferralPercent;           // Percentage of marketplace fee to referrer (basis points, e.g., 500 = 5%, default: 5%)
+        
+        // Code validation
+        uint256 minCodeLength;                        // Minimum referral code length (default: 3)
+        uint256 maxCodeLength;                        // Maximum referral code length (default: 20)
+    }
+
+    function referralStorage() internal pure returns (ReferralConfig storage rs) {
+        bytes32 position = REFERRAL_STORAGE_POSITION;
+        assembly {
+            rs.slot := position
         }
     }
 
