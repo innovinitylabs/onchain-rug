@@ -116,7 +116,6 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: '/valipokkann.svg', type: 'image/svg+xml' },
-      { url: '/favicon.ico', sizes: 'any' },
     ],
     shortcut: '/valipokkann.svg',
     apple: '/valipokkann.svg',
