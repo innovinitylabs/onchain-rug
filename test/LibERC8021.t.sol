@@ -11,7 +11,7 @@ import {LibERC8021} from "../src/libraries/LibERC8021.sol";
 contract LibERC8021Test is Test {
     
     // ERC-8021 marker constant
-    bytes32 constant ERC8021_MARKER = 0x80218021802180218021802180218021;
+    bytes32 constant ERC8021_MARKER = hex"80218021802180218021802180218021";
     
     /**
      * @notice Helper to create ERC-8021 suffix
