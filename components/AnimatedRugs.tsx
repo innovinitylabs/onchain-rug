@@ -37,13 +37,23 @@ class AniSeededRandom {
 }
 
 import { Canvas } from '@react-three/fiber'
-import { OrbitControls, Float, Text3D, Environment } from '@react-three/drei'
+import { OrbitControls, Float, Environment } from '@react-three/drei'
 import { Suspense, useRef, useMemo, useEffect, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
-import * as THREE from 'three'
+import { 
+  Texture, 
+  CanvasTexture, 
+  Mesh, 
+  Group, 
+  PlaneGeometry, 
+  Points, 
+  DirectionalLight,
+  RepeatWrapping, 
+  DoubleSide 
+} from 'three'
 
 // Helper function to create circular sprite texture for particles
-const createCircleSprite = (size = 64): THREE.Texture => {
+const createCircleSprite = (size = 64): Texture => {
   const canvas = document.createElement('canvas')
   canvas.width = size
   canvas.height = size
@@ -62,7 +72,7 @@ const createCircleSprite = (size = 64): THREE.Texture => {
   context.fillStyle = gradient
   context.fillRect(0, 0, size, size)
 
-  const texture = new THREE.CanvasTexture(canvas)
+    const texture = new CanvasTexture(canvas)
   texture.needsUpdate = true
   return texture
 }
@@ -112,11 +122,11 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
   isFirstRug?: boolean,
   rugsOpacity?: number
 }) {
-  const rugRef = useRef<THREE.Mesh>(null)
-  const groupRef = useRef<THREE.Group>(null)
+  const rugRef = useRef<Mesh>(null)
+  const groupRef = useRef<Group>(null)
   const initialPositions = useRef<Float32Array | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
-  const textureRef = useRef<THREE.CanvasTexture | null>(null)
+  const textureRef = useRef<CanvasTexture | null>(null)
   const startTimeRef = useRef<number | null>(null)
   
   // Your curated word list for the flying rugs
@@ -1011,8 +1021,8 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
     if (textureRef.current) {
       textureRef.current.dispose()
     }
-    const texture = new THREE.CanvasTexture(rotatedCanvas)
-    texture.wrapS = texture.wrapT = THREE.RepeatWrapping
+    const texture = new CanvasTexture(rotatedCanvas)
+    texture.wrapS = texture.wrapT = RepeatWrapping
     textureRef.current = texture
     return texture
   }
@@ -1036,7 +1046,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
   useFrame((state) => {
     if (rugRef.current && groupRef.current) {
       const time = state.clock.getElapsedTime()
-      const geometry = rugRef.current.geometry as THREE.PlaneGeometry
+      const geometry = rugRef.current.geometry as PlaneGeometry
       const positions = geometry.attributes.position
       
       // Store initial positions on first run
@@ -1119,7 +1129,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
           <planeGeometry args={[5, 7, 16, 16]} />
           <meshStandardMaterial 
             map={textureRef.current} 
-            side={THREE.DoubleSide}
+            side={DoubleSide}
             transparent
             opacity={0.95 * rugsOpacity}
             roughness={0.8}
@@ -1138,7 +1148,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
             color="#ffffff" 
             transparent 
             opacity={0.05}
-            side={THREE.DoubleSide}
+            side={DoubleSide}
           />
         </mesh>
         
@@ -1149,7 +1159,7 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
             color="#ffffff" 
             transparent 
             opacity={0.03}
-            side={THREE.DoubleSide}
+            side={DoubleSide}
           />
         </mesh>
       </Float>
@@ -1159,11 +1169,11 @@ function FlyingRug({ position, scale = 1, seed = 0, dependenciesLoaded, isFirstR
 
 // Studio Ghibli-style floating particles (circular, bluish-white) - EMITTER MATERIAL
 function FloatingParticles() {
-  const particlesRef = useRef<THREE.Points>(null)
+  const particlesRef = useRef<Points>(null)
 
   const particles = useMemo(() => {
     const temp = []
-    for (let i = 0; i < 142; i++) { // Increased count for more magical feel
+    for (let i = 0; i < 80; i++) { // Optimized count for performance
       temp.push([
         (Math.random() - 0.5) * 60, // Wider spread
         (Math.random() - 0.5) * 40, // Taller spread
@@ -1210,7 +1220,6 @@ function FloatingParticles() {
 
 // Enhanced Magical Scene
 function Scene({ onLoaded }: { onLoaded?: () => void }) {
-  const lightRef = useRef<THREE.DirectionalLight>(null)
   const [dependenciesLoaded, setDependenciesLoaded] = useState(false)
   const [rugsOpacity, setRugsOpacity] = useState(0)
 
@@ -1237,58 +1246,15 @@ function Scene({ onLoaded }: { onLoaded?: () => void }) {
     return () => clearTimeout(timer)
   }, [onLoaded])
   
-  useFrame((state) => {
-    const time = state.clock.getElapsedTime()
-    
-    // Animate lighting for magical effect
-    if (lightRef.current) {
-      lightRef.current.intensity = 1 + Math.sin(time * 0.5) * 0.2
-      lightRef.current.position.x = Math.sin(time * 0.3) * 5
-      lightRef.current.position.z = Math.cos(time * 0.3) * 5
-    }
-  })
 
   return (
     <>
-      {/* Enhanced Lighting Setup */}
+      {/* Essential Lighting Only */}
       <ambientLight intensity={0.6} color="#ffeaa7" />
       <directionalLight
-        ref={lightRef}
         position={[10, 10, 5]}
         intensity={1.2}
         color="#ffb347"
-      />
-      <pointLight position={[-10, -10, -5]} color="#f59e0b" intensity={0.8} />
-      <pointLight position={[15, 5, 10]} color="#ff6b35" intensity={0.4} />
-      <spotLight
-        position={[0, 20, 0]}
-        angle={0.3}
-        penumbra={1}
-        intensity={0.5}
-        color="#ffd700"
-      />
-
-      {/* Dynamic Emissive Point Lights for Particle Illumination */}
-      <pointLight
-        position={[0, 5, 10]}
-        color="#4fc3f7"
-        intensity={0.6}
-        distance={30}
-        decay={2}
-      />
-      <pointLight
-        position={[-5, 0, 5]}
-        color="#87ceeb"
-        intensity={0.4}
-        distance={25}
-        decay={2}
-      />
-      <pointLight
-        position={[5, -5, -5]}
-        color="#ffd700"
-        intensity={0.5}
-        distance={20}
-        decay={2}
       />
       
       {/* Environment - TRANSPARENT */}
@@ -1312,8 +1278,8 @@ function Scene({ onLoaded }: { onLoaded?: () => void }) {
           <bufferGeometry>
             <bufferAttribute
               attach="attributes-position"
-              count={69}
-              array={new Float32Array(Array.from({ length: 240 }, () => (Math.random() - 0.5) * 50))}
+              count={40}
+              array={new Float32Array(Array.from({ length: 120 }, () => (Math.random() - 0.5) * 50))}
               itemSize={3}
               args={[new Float32Array(Array.from({ length: 240 }, () => (Math.random() - 0.5) * 50)), 3]}
             />
@@ -1337,8 +1303,8 @@ function Scene({ onLoaded }: { onLoaded?: () => void }) {
           <bufferGeometry>
             <bufferAttribute
               attach="attributes-position"
-              count={111}
-              array={new Float32Array(Array.from({ length: 450 }, () => (Math.random() - 0.5) * 80))}
+              count={30}
+              array={new Float32Array(Array.from({ length: 90 }, () => (Math.random() - 0.5) * 80))}
               itemSize={3}
               args={[new Float32Array(Array.from({ length: 450 }, () => (Math.random() - 0.5) * 80)), 3]}
             />
