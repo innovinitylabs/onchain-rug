@@ -1220,7 +1220,6 @@ function FloatingParticles() {
 
 // Enhanced Magical Scene
 function Scene({ onLoaded }: { onLoaded?: () => void }) {
-  const lightRef = useRef<DirectionalLight>(null)
   const [dependenciesLoaded, setDependenciesLoaded] = useState(false)
   const [rugsOpacity, setRugsOpacity] = useState(0)
 
@@ -1247,58 +1246,15 @@ function Scene({ onLoaded }: { onLoaded?: () => void }) {
     return () => clearTimeout(timer)
   }, [onLoaded])
   
-  useFrame((state) => {
-    const time = state.clock.getElapsedTime()
-    
-    // Animate lighting for magical effect
-    if (lightRef.current) {
-      lightRef.current.intensity = 1 + Math.sin(time * 0.5) * 0.2
-      lightRef.current.position.x = Math.sin(time * 0.3) * 5
-      lightRef.current.position.z = Math.cos(time * 0.3) * 5
-    }
-  })
 
   return (
     <>
-      {/* Enhanced Lighting Setup */}
+      {/* Essential Lighting Only */}
       <ambientLight intensity={0.6} color="#ffeaa7" />
       <directionalLight
-        ref={lightRef}
         position={[10, 10, 5]}
         intensity={1.2}
         color="#ffb347"
-      />
-      <pointLight position={[-10, -10, -5]} color="#f59e0b" intensity={0.8} />
-      <pointLight position={[15, 5, 10]} color="#ff6b35" intensity={0.4} />
-      <spotLight
-        position={[0, 20, 0]}
-        angle={0.3}
-        penumbra={1}
-        intensity={0.5}
-        color="#ffd700"
-      />
-
-      {/* Dynamic Emissive Point Lights for Particle Illumination */}
-      <pointLight
-        position={[0, 5, 10]}
-        color="#4fc3f7"
-        intensity={0.6}
-        distance={30}
-        decay={2}
-      />
-      <pointLight
-        position={[-5, 0, 5]}
-        color="#87ceeb"
-        intensity={0.4}
-        distance={25}
-        decay={2}
-      />
-      <pointLight
-        position={[5, -5, -5]}
-        color="#ffd700"
-        intensity={0.5}
-        distance={20}
-        decay={2}
       />
       
       {/* Environment - TRANSPARENT */}
