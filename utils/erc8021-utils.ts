@@ -5,7 +5,7 @@
  * Supports multiple attribution codes: builder codes, aggregator codes, referral codes
  */
 
-import { toUtf8Bytes, concat, bytesToHex } from 'viem'
+import { concat, bytesToHex } from 'viem'
 
 /**
  * ERC-8021 Marker (16 bytes)
@@ -37,8 +37,9 @@ export function buildERC8021Suffix(codes: string[]): `0x${string}` {
   // Join codes with comma delimiter
   const codesString = codes.join(',')
   
-  // Convert to bytes
-  const codesBytes = toUtf8Bytes(codesString)
+  // Convert to bytes using TextEncoder (browser/Node.js compatible)
+  const encoder = new TextEncoder()
+  const codesBytes = encoder.encode(codesString)
   
   // Validate codes length (1 byte max = 255 bytes)
   if (codesBytes.length > 255) {

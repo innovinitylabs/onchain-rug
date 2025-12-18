@@ -1,4 +1,4 @@
-import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt, useChainId, usePublicClient } from 'wagmi'
+import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt, useChainId, usePublicClient, useSendTransaction } from 'wagmi'
 import { useState, useEffect, useMemo } from 'react'
 import { ethers } from 'ethers'
 import { config, agingConfig } from '@/lib/config'
@@ -7,6 +7,8 @@ import { SUPPORTED_CHAIN_IDS, getChainName } from '@/lib/networks'
 import { useTokenURI } from './use-token-uri'
 import { getDirtDescription, getAgingDescription } from '@/utils/parsing-utils'
 import { estimateContractGasWithRetry, getRecommendedGasOptions, formatGasEstimate } from '@/utils/gas-estimation'
+import { encodeFunctionData } from 'viem'
+import { appendERC8021Suffix, getAllAttributionCodes } from '@/utils/erc8021-utils'
 
 // Hook for getting maintenance options from contract
 export function useMaintenanceOptions(tokenId?: bigint) {
@@ -108,7 +110,7 @@ export function useRugAging(tokenId?: bigint) {
 export function useRestoreRug() {
   const { address } = useAccount()
   const chainId = useChainId()
-  const { writeContract, data: hash, isPending, error } = useWriteContract()
+  const { sendTransaction, data: hash, isPending, error } = useSendTransaction()
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
   })
@@ -119,7 +121,7 @@ export function useRestoreRug() {
     console.log('🔍 DEBUG: Wallet connection check for restore')
     console.log('Address:', address)
     console.log('Chain ID:', chainId)
-    console.log('writeContract available:', !!writeContract)
+    console.log('sendTransaction available:', !!sendTransaction)
 
     if (!address) {
       console.error('❌ No wallet connected')
@@ -133,8 +135,8 @@ export function useRestoreRug() {
       throw new Error(`Please switch to a supported network: ${SUPPORTED_CHAIN_IDS.map(id => `${getChainName(id)} (${id})`).join(', ')}`)
     }
 
-    if (!writeContract) {
-      console.error('❌ writeContract function not available')
+    if (!sendTransaction) {
+      console.error('❌ sendTransaction function not available')
       return
     }
 
@@ -213,39 +215,36 @@ export function useRestoreRug() {
         chain: txParams.chain?.id
       })
 
-      // Trigger the transaction using writeContract
-      console.log('Sending transaction with writeContract...')
-      console.log('Final gas limit:', txParams.gasLimit, 'type:', typeof txParams.gasLimit)
-
-      const writeContractParams = {
-        address: contractAddress as `0x${string}`,
-        abi: onchainRugsABI as any, // Cast to any to bypass strict typing
+      // Encode the function call
+      const encodedData = encodeFunctionData({
+        abi: onchainRugsABI as any,
         functionName: 'restoreRug',
         args: [tokenId],
-        value: BigInt(restorationCost),
-        gas: txParams.gasLimit,
-        chain,
-        account: address as `0x${string}`,
-      }
-
-      console.log('writeContract parameters:', {
-        address: writeContractParams.address,
-        functionName: writeContractParams.functionName,
-        args: writeContractParams.args,
-        value: writeContractParams.value?.toString(),
-        gas: writeContractParams.gas?.toString(),
-        gasType: typeof writeContractParams.gas,
-        chainId: writeContractParams.chain?.id,
-        account: writeContractParams.account
       })
 
+      // Get attribution codes (builder + referral + aggregator)
+      const codes = getAllAttributionCodes()
+
+      // Append ERC-8021 suffix to calldata
+      const callDataWithAttribution = appendERC8021Suffix(encodedData, codes)
+
+      // Trigger the transaction using sendTransaction with ERC-8021 attribution
+      console.log('Sending transaction with sendTransaction (ERC-8021 attribution)...')
+      console.log('Final gas limit:', txParams.gasLimit, 'type:', typeof txParams.gasLimit)
+
       try {
-        const result = await writeContract(writeContractParams)
-        console.log('writeContract result:', result)
-        return { success: true, result }
-      } catch (writeError) {
-        console.error('writeContract failed:', writeError)
-        throw writeError
+        sendTransaction({
+          to: contractAddress as `0x${string}`,
+          data: callDataWithAttribution,
+          value: BigInt(restorationCost),
+          gas: txParams.gasLimit,
+          chain,
+          account: address as `0x${string}`,
+        })
+        return { success: true }
+      } catch (sendError) {
+        console.error('sendTransaction failed:', sendError)
+        throw sendError
       }
     } catch (err) {
       console.error('Failed to restore rug:', err)
@@ -267,7 +266,7 @@ export function useRestoreRug() {
 export function useMasterRestoreRug() {
   const { address } = useAccount()
   const chainId = useChainId()
-  const { writeContract, data: hash, isPending, error } = useWriteContract()
+  const { sendTransaction, data: hash, isPending, error } = useSendTransaction()
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
   })
@@ -278,7 +277,7 @@ export function useMasterRestoreRug() {
     console.log('🔍 DEBUG: Wallet connection check for master restore')
     console.log('Address:', address)
     console.log('Chain ID:', chainId)
-    console.log('writeContract available:', !!writeContract)
+    console.log('sendTransaction available:', !!sendTransaction)
 
     if (!address) {
       console.error('❌ No wallet connected')
@@ -292,8 +291,8 @@ export function useMasterRestoreRug() {
       throw new Error(`Please switch to a supported network: ${SUPPORTED_CHAIN_IDS.map(id => `${getChainName(id)} (${id})`).join(', ')}`)
     }
 
-    if (!writeContract) {
-      console.error('❌ writeContract function not available')
+    if (!sendTransaction) {
+      console.error('❌ sendTransaction function not available')
       return
     }
 
@@ -372,39 +371,36 @@ export function useMasterRestoreRug() {
         chain: txParams.chain?.id
       })
 
-      // Trigger the transaction using writeContract
-      console.log('Sending transaction with writeContract...')
-      console.log('Final gas limit:', txParams.gasLimit, 'type:', typeof txParams.gasLimit)
-
-      const writeContractParams = {
-        address: contractAddress as `0x${string}`,
-        abi: onchainRugsABI as any, // Cast to any to bypass strict typing
+      // Encode the function call
+      const encodedData = encodeFunctionData({
+        abi: onchainRugsABI as any,
         functionName: 'masterRestoreRug',
         args: [tokenId],
-        value: BigInt(masterRestorationCost),
-        gas: txParams.gasLimit,
-        chain,
-        account: address as `0x${string}`,
-      }
-
-      console.log('writeContract parameters:', {
-        address: writeContractParams.address,
-        functionName: writeContractParams.functionName,
-        args: writeContractParams.args,
-        value: writeContractParams.value?.toString(),
-        gas: writeContractParams.gas?.toString(),
-        gasType: typeof writeContractParams.gas,
-        chainId: writeContractParams.chain?.id,
-        account: writeContractParams.account
       })
 
+      // Get attribution codes (builder + referral + aggregator)
+      const codes = getAllAttributionCodes()
+
+      // Append ERC-8021 suffix to calldata
+      const callDataWithAttribution = appendERC8021Suffix(encodedData, codes)
+
+      // Trigger the transaction using sendTransaction with ERC-8021 attribution
+      console.log('Sending transaction with sendTransaction (ERC-8021 attribution)...')
+      console.log('Final gas limit:', txParams.gasLimit, 'type:', typeof txParams.gasLimit)
+
       try {
-        const result = await writeContract(writeContractParams)
-        console.log('writeContract result:', result)
-        return { success: true, result }
-      } catch (writeError) {
-        console.error('writeContract failed:', writeError)
-        throw writeError
+        sendTransaction({
+          to: contractAddress as `0x${string}`,
+          data: callDataWithAttribution,
+          value: BigInt(masterRestorationCost),
+          gas: txParams.gasLimit,
+          chain,
+          account: address as `0x${string}`,
+        })
+        return { success: true }
+      } catch (sendError) {
+        console.error('sendTransaction failed:', sendError)
+        throw sendError
       }
     } catch (err) {
       console.error('Failed to master restore rug:', err)
@@ -426,7 +422,7 @@ export function useMasterRestoreRug() {
 export function useCleanRug() {
   const { address } = useAccount()
   const chainId = useChainId()
-  const { writeContract, data: hash, isPending, error } = useWriteContract()
+  const { sendTransaction, data: hash, isPending, error } = useSendTransaction()
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
   })
@@ -437,7 +433,7 @@ export function useCleanRug() {
     console.log('🔍 DEBUG: Wallet connection check')
     console.log('Address:', address)
     console.log('Chain ID:', chainId)
-    console.log('writeContract available:', !!writeContract)
+    console.log('sendTransaction available:', !!sendTransaction)
 
     if (!address) {
       console.error('❌ No wallet connected')
@@ -451,8 +447,8 @@ export function useCleanRug() {
       throw new Error(`Please switch to a supported network: ${SUPPORTED_CHAIN_IDS.map(id => `${getChainName(id)} (${id})`).join(', ')}`)
     }
 
-    if (!writeContract) {
-      console.error('❌ writeContract function not available')
+    if (!sendTransaction) {
+      console.error('❌ sendTransaction function not available')
       return
     }
 
@@ -544,9 +540,21 @@ export function useCleanRug() {
       const NON_ZERO_BYTE_GAS = BigInt(16)
       const ZERO_BYTE_GAS = BigInt(4)
 
-      // Encode the data to calculate intrinsic gas
-      const contract = new ethers.Contract(contractAddress, onchainRugsABI)
-      const callData = contract.interface.encodeFunctionData('cleanRug', [tokenId])
+      // Encode the function call
+      const encodedData = encodeFunctionData({
+        abi: onchainRugsABI as any,
+        functionName: 'cleanRug',
+        args: [tokenId],
+      })
+
+      // Get attribution codes (builder + referral + aggregator)
+      const codes = getAllAttributionCodes()
+
+      // Append ERC-8021 suffix to calldata
+      const callDataWithAttribution = appendERC8021Suffix(encodedData, codes)
+
+      // Convert to ethers format for gas calculation (remove 0x and convert to hex string)
+      const callData = callDataWithAttribution
 
       // Count zero and non-zero bytes in the data
       let zeroBytes = BigInt(0)
@@ -584,39 +592,23 @@ export function useCleanRug() {
         finalGasLimit: finalGasLimit.toString()
       })
 
-      // Trigger the transaction using writeContract (now that ABI includes cleanRug)
-      console.log('Sending transaction with writeContract...')
+      // Trigger the transaction using sendTransaction with ERC-8021 attribution
+      console.log('Sending transaction with sendTransaction (ERC-8021 attribution)...')
       console.log('Final gas limit:', finalGasLimit, 'type:', typeof finalGasLimit)
 
-      const writeContractParams = {
-        address: contractAddress as `0x${string}`,
-        abi: onchainRugsABI as any, // Cast to any to bypass strict typing
-        functionName: 'cleanRug',
-        args: [tokenId],
-        value: BigInt(cleaningCost),
-        gas: finalGasLimit, // Pass as bigint directly to wagmi
-        chain,
-        account: address as `0x${string}`,
-      }
-
-      console.log('writeContract parameters:', {
-        address: writeContractParams.address,
-        functionName: writeContractParams.functionName,
-        args: writeContractParams.args,
-        value: writeContractParams.value?.toString(),
-        gas: writeContractParams.gas?.toString(),
-        gasType: typeof writeContractParams.gas,
-        chainId: writeContractParams.chain?.id,
-        account: writeContractParams.account
-      })
-
       try {
-        const result = await writeContract(writeContractParams)
-        console.log('writeContract result:', result)
-        return { success: true, result }
-      } catch (writeError) {
-        console.error('writeContract failed:', writeError)
-        throw writeError
+        sendTransaction({
+          to: contractAddress as `0x${string}`,
+          data: callDataWithAttribution,
+          value: BigInt(cleaningCost),
+          gas: finalGasLimit,
+          chain,
+          account: address as `0x${string}`,
+        })
+        return { success: true }
+      } catch (sendError) {
+        console.error('sendTransaction failed:', sendError)
+        throw sendError
       }
     } catch (err) {
       console.error('Failed to clean rug:', err)

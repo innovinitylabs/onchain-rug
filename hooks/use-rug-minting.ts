@@ -1,10 +1,11 @@
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, useChainId } from 'wagmi'
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, useChainId, useSendTransaction } from 'wagmi'
 import { useState } from 'react'
 import { config, mintingConfig } from '@/lib/config'
 import { shapeSepolia, shapeMainnet, contractAddresses } from '@/lib/web3'
 import { DESTINATION_SHAPE_ID } from '@/config/chains'
 import { encodeFunctionData } from 'viem'
 import { useRelayMint } from './use-relay-mint'
+import { appendERC8021Suffix, getAllAttributionCodes } from '@/utils/erc8021-utils'
 
 // Hook for minting rugs with deterministic seed generation
 export function useRugMinting() {
@@ -12,8 +13,9 @@ export function useRugMinting() {
   const chainId = useChainId()
   const contractAddress = contractAddresses[chainId]
   const { writeContract, data: hash, isPending, error } = useWriteContract()
+  const { sendTransaction, data: sendHash, isPending: isSendPending, error: sendError } = useSendTransaction()
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
-    hash,
+    hash: hash || sendHash,
   })
   const { mintCrossChain } = useRelayMint()
 
@@ -75,11 +77,12 @@ export function useRugMinting() {
     const finalSvgArt = svgArt || await generateRugSVG(finalSeed, textLines || [])
 
     try {
-      // If already on destination chain (Shape), use direct path (legacy function kept for compatibility)
+      // If already on destination chain (Shape), use direct path with ERC-8021 attribution
       if (chainId === DESTINATION_SHAPE_ID) {
         const chain = chainId === 360 ? shapeMainnet : shapeSepolia
-        await writeContract({
-          address: contractAddress as `0x${string}`,
+        
+        // Encode the function call
+        const encodedData = encodeFunctionData({
           abi: [
             {
               inputs: [
@@ -95,6 +98,18 @@ export function useRugMinting() {
           ] as const,
           functionName: 'mintWithText',
           args: [textLines || [], BigInt(finalSeed), finalSvgArt],
+        })
+
+        // Get attribution codes (builder + referral + aggregator)
+        const codes = getAllAttributionCodes()
+
+        // Append ERC-8021 suffix to calldata
+        const dataWithAttribution = appendERC8021Suffix(encodedData, codes)
+
+        // Use sendTransaction for direct path with attribution
+        sendTransaction({
+          to: contractAddress as `0x${string}`,
+          data: dataWithAttribution,
           value: BigInt(mintingPrice),
           chain,
           account: address,
