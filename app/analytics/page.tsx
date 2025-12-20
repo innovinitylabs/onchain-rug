@@ -32,7 +32,7 @@ interface AnalyticsData {
   timestamp: string
 }
 
-export function Dashboard() {
+function Dashboard() {
   const [data, setData] = useState<AnalyticsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -199,4 +199,8 @@ export function Dashboard() {
       </div>
     </div>
   )
+}
+
+export default function AnalyticsPage() {
+  return <Dashboard />
 }
