@@ -2,6 +2,7 @@
 pragma solidity ^0.8.22;
 
 import {LibRugStorage} from "../libraries/LibRugStorage.sol";
+import {LibERC8021} from "../libraries/LibERC8021.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {RugNFTFacet} from "./RugNFTFacet.sol";
 
@@ -18,6 +19,14 @@ contract RugMaintenanceFacet {
     event PaymentProcessed(uint256 indexed tokenId, address indexed agent, address indexed owner, uint256 totalCost, uint256 serviceFee, uint256 maintenanceCost);
     event AgentAuthorized(address indexed owner, address indexed agent);
     event AgentRevoked(address indexed owner, address indexed agent);
+    
+    // ERC-8021 Attribution events
+    event MaintenanceAttributed(
+        uint256 indexed tokenId,
+        address indexed agent,
+        string action,
+        string[] codes
+    );
 
     // ========= Agent Authorization (Per-Owner Global Allowlist) =========
 
@@ -155,6 +164,13 @@ contract RugMaintenanceFacet {
         }
 
         emit PaymentProcessed(tokenId, msg.sender, owner, totalCost, rs.serviceFee, maintenanceCost);
+        
+        // Parse ERC-8021 attribution (read-only, for analytics)
+        LibERC8021.AttributionData memory attribution = LibERC8021.parseAttribution(msg.data);
+        if (attribution.hasAttribution && attribution.codes.length > 0) {
+            emit MaintenanceAttributed(tokenId, msg.sender, "clean", attribution.codes);
+        }
+        
         emit RugCleaned(tokenId, owner, totalCost, wasFree);
     }
 
@@ -187,6 +203,13 @@ contract RugMaintenanceFacet {
         }
 
         emit PaymentProcessed(tokenId, msg.sender, owner, totalCost, rs.serviceFee, maintenanceCost);
+        
+        // Parse ERC-8021 attribution (read-only, for analytics)
+        LibERC8021.AttributionData memory attribution = LibERC8021.parseAttribution(msg.data);
+        if (attribution.hasAttribution && attribution.codes.length > 0) {
+            emit MaintenanceAttributed(tokenId, msg.sender, "restore", attribution.codes);
+        }
+        
         emit RugRestored(tokenId, owner, previousAging, newAging, totalCost);
     }
 
@@ -219,6 +242,13 @@ contract RugMaintenanceFacet {
         }
 
         emit PaymentProcessed(tokenId, msg.sender, owner, totalCost, rs.serviceFee, maintenanceCost);
+        
+        // Parse ERC-8021 attribution (read-only, for analytics)
+        LibERC8021.AttributionData memory attribution = LibERC8021.parseAttribution(msg.data);
+        if (attribution.hasAttribution && attribution.codes.length > 0) {
+            emit MaintenanceAttributed(tokenId, msg.sender, "masterRestore", attribution.codes);
+        }
+        
         emit RugMasterRestored(tokenId, owner, prevDirt, prevAging, totalCost);
     }
 

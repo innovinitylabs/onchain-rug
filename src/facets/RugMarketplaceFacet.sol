@@ -12,10 +12,12 @@ pragma solidity ^0.8.22;
 
 import {LibRugStorage} from "../libraries/LibRugStorage.sol";
 import {LibDiamond} from "../diamond/libraries/LibDiamond.sol";
+import {LibERC8021} from "../libraries/LibERC8021.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {ReentrancyGuard} from "solady/utils/ReentrancyGuard.sol";
 import {RugLaunderingFacet} from "./RugLaunderingFacet.sol";
 import {RugCommerceFacet} from "./RugCommerceFacet.sol";
+import {RugReferralRegistryFacet} from "./RugReferralRegistryFacet.sol";
 
 /**
  * @title RugMarketplaceFacet
@@ -42,6 +44,14 @@ contract RugMarketplaceFacet is ReentrancyGuard {
     event OfferCreated(uint256 indexed offerId, uint256 indexed tokenId, address indexed offerer, uint256 price, uint256 expiresAt);
     event OfferAccepted(uint256 indexed offerId, uint256 indexed tokenId, address indexed offerer, address owner, uint256 price);
     event OfferCancelled(uint256 indexed offerId, uint256 indexed tokenId, address indexed offerer);
+    
+    // ERC-8021 Attribution events
+    event TransactionAttributed(
+        uint256 indexed tokenId,
+        address indexed buyer,
+        uint256 price,
+        string[] codes
+    );
     
     // ===== ERRORS =====
 
@@ -197,6 +207,34 @@ contract RugMarketplaceFacet is ReentrancyGuard {
         ms.totalSales++;
         ms.totalVolume = LibRugStorage.safeAdd(ms.totalVolume, price);
         
+        // Parse ERC-8021 attribution (read-only, for analytics)
+        LibERC8021.AttributionData memory attribution = LibERC8021.parseAttribution(msg.data);
+        
+        // Emit attribution event if attribution codes found
+        if (attribution.hasAttribution && attribution.codes.length > 0) {
+            emit TransactionAttributed(tokenId, msg.sender, price, attribution.codes);
+            
+            // Process referral rewards if referral code found
+            RugReferralRegistryFacet referralFacet = RugReferralRegistryFacet(address(this));
+            address referrer = referralFacet.extractReferrerFromCodes(attribution.codes, msg.sender);
+            
+            if (referrer != address(0)) {
+                // Calculate marketplace fee for referral reward calculation
+                uint256 marketplaceFee = LibRugStorage.safeMul(price, ms.marketplaceFeePercent) / 10000;
+                
+                // Calculate referral reward (percentage of marketplace fee)
+                uint256 referralReward = referralFacet.calculateMarketplaceReferralReward(marketplaceFee);
+                
+                if (referralReward > 0 && address(this).balance >= referralReward) {
+                    (bool success, ) = payable(referrer).call{value: referralReward}("");
+                    if (success) {
+                        // Record referral
+                        referralFacet.recordReferral(referrer, msg.sender, tokenId, "buy", referralReward);
+                    }
+                }
+            }
+        }
+        
         // Refund excess payment - don't revert if refund fails
         // Use gas limit to prevent gas griefing attacks
         if (msg.value > price) {
@@ -303,6 +341,15 @@ contract RugMarketplaceFacet is ReentrancyGuard {
         if (listing.isActive) {
             listing.isActive = false;
             emit ListingCancelled(tokenId, owner);
+        }
+
+        // Parse ERC-8021 attribution (read-only, for analytics)
+        // Note: For offer acceptance, attribution is from the offerer (buyer)
+        LibERC8021.AttributionData memory attribution = LibERC8021.parseAttribution(msg.data);
+        
+        // Emit attribution event if attribution codes found
+        if (attribution.hasAttribution && attribution.codes.length > 0) {
+            emit TransactionAttributed(tokenId, offerer, price, attribution.codes);
         }
 
         emit OfferAccepted(offerId, tokenId, offerer, owner, price);

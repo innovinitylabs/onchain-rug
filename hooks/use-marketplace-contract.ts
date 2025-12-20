@@ -1,7 +1,8 @@
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useChainId, useReadContract, useConfig } from 'wagmi'
-import { parseEther } from 'viem'
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useChainId, useReadContract, useConfig, useSendTransaction } from 'wagmi'
+import { parseEther, encodeFunctionData } from 'viem'
 import { config } from '@/lib/config'
 import { contractAddresses, shapeSepolia, shapeMainnet, onchainRugsABI } from '@/lib/web3'
+import { appendERC8021Suffix, getAllAttributionCodes } from '@/utils/erc8021-utils'
 
 // Marketplace ABI - only the functions we need (simplified)
 const marketplaceABI = [
@@ -266,7 +267,7 @@ export function useCreateListing() {
 }
 
 /**
- * Hook for buying a listing
+ * Hook for buying a listing (with ERC-8021 attribution)
  */
 export function useBuyListing() {
   const { address } = useAccount()
@@ -274,17 +275,30 @@ export function useBuyListing() {
   const contractAddress = contractAddresses[chainId]
   const wagmiConfig = useConfig()
 
-  const { writeContract, data: hash, isPending, error } = useWriteContract()
+  const { sendTransaction, data: hash, isPending, error } = useSendTransaction()
 
   const buyListing = (tokenId: number, price: string) => {
-    // @ts-ignore - wagmi v2 type checking issue
-    writeContract({
-      address: contractAddress as `0x${string}`,
+    if (!address || !contractAddress) return
+
+    // Encode the function call
+    const encodedData = encodeFunctionData({
       abi: marketplaceABI,
       functionName: 'buyListing',
       args: [BigInt(tokenId)],
-      value: parseEther(price)
-    }, wagmiConfig)
+    })
+
+    // Get attribution codes (builder + referral + aggregator)
+    const codes = getAllAttributionCodes()
+
+    // Append ERC-8021 suffix to calldata
+    const dataWithAttribution = appendERC8021Suffix(encodedData, codes)
+
+    // Send transaction with attribution
+    sendTransaction({
+      to: contractAddress as `0x${string}`,
+      data: dataWithAttribution,
+      value: parseEther(price),
+    })
   }
 
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
@@ -408,7 +422,7 @@ export function useMakeOffer() {
 }
 
 /**
- * Hook for accepting an offer
+ * Hook for accepting an offer (with ERC-8021 attribution)
  */
 export function useAcceptOffer() {
   const { address } = useAccount()
@@ -416,16 +430,29 @@ export function useAcceptOffer() {
   const contractAddress = contractAddresses[chainId]
   const wagmiConfig = useConfig()
 
-  const { writeContract, data: hash, isPending, error } = useWriteContract()
+  const { sendTransaction, data: hash, isPending, error } = useSendTransaction()
 
   const acceptOffer = (offerId: number) => {
-    // @ts-ignore - wagmi v2 type checking issue
-    writeContract({
-      address: contractAddress as `0x${string}`,
+    if (!address || !contractAddress) return
+
+    // Encode the function call
+    const encodedData = encodeFunctionData({
       abi: marketplaceABI,
       functionName: 'acceptOffer',
-      args: [BigInt(offerId)]
-    }, wagmiConfig)
+      args: [BigInt(offerId)],
+    })
+
+    // Get attribution codes (builder + referral + aggregator)
+    const codes = getAllAttributionCodes()
+
+    // Append ERC-8021 suffix to calldata
+    const dataWithAttribution = appendERC8021Suffix(encodedData, codes)
+
+    // Send transaction with attribution
+    sendTransaction({
+      to: contractAddress as `0x${string}`,
+      data: dataWithAttribution,
+    })
   }
 
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({

@@ -2,6 +2,7 @@ import { encodeFunctionData } from 'viem'
 import { getRelayQuote } from '@/utils/relay-api'
 import { useAccount, useSendTransaction, useWaitForTransactionReceipt, useSwitchChain } from 'wagmi'
 import { useState } from 'react'
+import { appendERC8021Suffix, getAllAttributionCodes } from '@/utils/erc8021-utils'
 
 type VisualConfig = { warpThickness: number; stripeCount: number }
 type ArtData = { paletteName: string; minifiedPalette: string; minifiedStripeData: string; filteredCharacterMap: string }
@@ -32,7 +33,8 @@ export function useRelayMint() {
     const { originChainId, destinationChainId, contractAddress } = params
     if (!contractAddress) throw new Error('Destination contract address not configured')
 
-    const data = encodeFunctionData({
+    // Encode the function call
+    const encodedData = encodeFunctionData({
       abi: [
         {
           inputs: [
@@ -80,6 +82,12 @@ export function useRelayMint() {
         params.characterCount,
       ],
     })
+
+    // Get attribution codes (builder + referral + aggregator)
+    const codes = getAllAttributionCodes()
+
+    // Append ERC-8021 suffix to calldata
+    const data = appendERC8021Suffix(encodedData, codes)
 
     const quote = await getRelayQuote({
       user: recipient,

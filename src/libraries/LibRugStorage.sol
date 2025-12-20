@@ -21,6 +21,10 @@ library LibRugStorage {
     bytes32 constant RUG_STORAGE_POSITION = keccak256("rug.storage.position");
     bytes32 constant ERC721_STORAGE_POSITION = keccak256("erc721.storage.position");
     bytes32 constant MARKETPLACE_STORAGE_POSITION = keccak256("rug.marketplace.storage.position");
+    bytes32 constant REFERRAL_STORAGE_POSITION = keccak256("rug.referral.storage.position");
+    bytes32 constant AGENT_REGISTRY_STORAGE_POSITION = keccak256("rug.agent.registry.storage.position");
+    bytes32 constant AGENT_REPUTATION_STORAGE_POSITION = keccak256("rug.agent.reputation.storage.position");
+    bytes32 constant AGENT_VALIDATION_STORAGE_POSITION = keccak256("rug.agent.validation.storage.position");
 
     struct RugData {
         uint256 seed;                    // Generation seed
@@ -238,6 +242,176 @@ library LibRugStorage {
         bytes32 position = ERC721_STORAGE_POSITION;
         assembly {
             es.slot := position
+        }
+    }
+
+    // ===== REFERRAL STRUCTS =====
+
+    struct ReferralStats {
+        uint256 totalReferrals;      // Total number of successful referrals
+        uint256 totalEarned;         // Total ETH earned from referrals
+        uint256 lastReferralTime;    // Timestamp of last referral
+    }
+
+    struct ReferralConfig {
+        // Code mappings
+        mapping(string => address) codeToReferrer;    // Referral code => referrer wallet
+        mapping(address => string) referrerToCode;    // Referrer wallet => referral code
+        mapping(string => bool) codeExists;           // Track if code is registered
+        
+        // Referral statistics
+        mapping(address => ReferralStats) referralStats;  // Referrer => stats
+        
+        // Configuration
+        bool referralSystemEnabled;                   // Global toggle for referral system
+        uint256 mintReferralPercent;                  // Percentage of mint fee to referrer (basis points, e.g., 500 = 5%, default: 5%)
+        uint256 marketplaceReferralPercent;           // Percentage of marketplace fee to referrer (basis points, e.g., 500 = 5%, default: 5%)
+        
+        // Code validation
+        uint256 minCodeLength;                        // Minimum referral code length (default: 3)
+        uint256 maxCodeLength;                        // Maximum referral code length (default: 20)
+    }
+
+    function referralStorage() internal pure returns (ReferralConfig storage rs) {
+        bytes32 position = REFERRAL_STORAGE_POSITION;
+        assembly {
+            rs.slot := position
+        }
+    }
+
+    // ===== ERC-8004 AGENT REGISTRY STRUCTS =====
+
+    /**
+     * @notice Stored Agent Card structure (internal storage format)
+     * @dev This mirrors the AgentCard struct but is optimized for storage
+     */
+    struct StoredAgentCard {
+        string agentId;
+        string name;
+        string description;
+        address evmAddress;
+        string[] capabilities;
+        string metadataURI;
+        uint256 registeredAt;
+        uint256 updatedAt;
+        bool active;
+    }
+
+    /**
+     * @notice Agent Registry configuration
+     * @dev Stores all agent identity information following ERC-8004 standard
+     */
+    struct AgentRegistry {
+        // Agent address => Agent Card
+        mapping(address => StoredAgentCard) agents;
+        
+        // All registered agents
+        address[] allAgents;
+        
+        // Capability => Agent addresses (for discovery)
+        mapping(string => address[]) agentsByCapability;
+    }
+
+    function agentRegistry() internal pure returns (AgentRegistry storage ar) {
+        bytes32 position = AGENT_REGISTRY_STORAGE_POSITION;
+        assembly {
+            ar.slot := position
+        }
+    }
+
+    // ===== ERC-8004 AGENT REPUTATION STRUCTS =====
+
+    /**
+     * @notice Stored feedback structure (internal storage format)
+     * @dev This mirrors the Feedback struct but is optimized for storage
+     */
+    struct StoredFeedback {
+        address client;
+        uint256 taskId;
+        uint8 accuracy;
+        uint8 timeliness;
+        uint8 reliability;
+        string comment;
+        uint256 timestamp;
+    }
+
+    /**
+     * @notice Stored reputation summary (internal storage format)
+     * @dev Stores aggregated reputation data for efficient lookup
+     */
+    struct StoredReputation {
+        uint256 totalTasks;         // Total tasks completed (can be >= feedback count)
+        uint256 totalFeedback;      // Number of feedback submissions
+        uint256 totalAccuracy;      // Sum of accuracy ratings (in basis points)
+        uint256 totalTimeliness;    // Sum of timeliness ratings (in basis points)
+        uint256 totalReliability;   // Sum of reliability ratings (in basis points)
+        uint256 reputationScore;    // Calculated reputation score (0-100)
+        uint256 lastUpdated;        // Last update timestamp
+    }
+
+    /**
+     * @notice Agent Reputation Registry configuration
+     * @dev Stores all agent reputation information following ERC-8004 standard
+     */
+    struct AgentReputationRegistry {
+        // Agent address => Reputation summary
+        mapping(address => StoredReputation) reputations;
+        
+        // Agent address => Feedback history
+        mapping(address => StoredFeedback[]) feedbackHistory;
+        
+        // Feedback key (agent + taskId + client) => exists
+        mapping(bytes32 => bool) feedbackExists;
+    }
+
+    function agentReputationStorage() internal pure returns (AgentReputationRegistry storage arr) {
+        bytes32 position = AGENT_REPUTATION_STORAGE_POSITION;
+        assembly {
+            arr.slot := position
+        }
+    }
+
+    // ===== ERC-8004 AGENT VALIDATION STRUCTS =====
+
+    /**
+     * @notice Stored validation proof structure (internal storage format)
+     * @dev This mirrors the ValidationProof struct but is optimized for storage
+     */
+    struct StoredValidationProof {
+        uint8 method;           // ValidationMethod enum as uint8
+        bytes proof;            // Validation proof data (method-specific)
+        address validator;      // Address that validated the proof
+        uint256 taskId;         // Task identifier
+        address agent;          // Agent that performed the task
+        uint256 validatedAt;    // Timestamp when proof was submitted
+        bool verified;          // Whether proof has been verified
+    }
+
+    /**
+     * @notice Agent Validation Registry configuration
+     * @dev Stores all validation proofs following ERC-8004 standard
+     */
+    struct AgentValidationRegistry {
+        // Proof key (agent + taskId hash) => Validation proof
+        mapping(bytes32 => StoredValidationProof) validationProofs;
+        
+        // Proof key => exists (for efficient lookup)
+        mapping(bytes32 => bool) proofExists;
+        
+        // Agent => Proof keys (for listing agent's proofs)
+        mapping(address => bytes32[]) agentProofs;
+        mapping(address => uint256) agentProofCount;
+        mapping(address => uint256) verifiedProofCount;
+        
+        // Validator => Proof keys (for listing validator's proofs)
+        mapping(address => bytes32[]) validatorProofs;
+        mapping(address => uint256) validatorProofCount;
+    }
+
+    function agentValidationStorage() internal pure returns (AgentValidationRegistry storage avr) {
+        bytes32 position = AGENT_VALIDATION_STORAGE_POSITION;
+        assembly {
+            avr.slot := position
         }
     }
 
