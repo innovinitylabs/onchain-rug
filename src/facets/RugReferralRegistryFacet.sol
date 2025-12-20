@@ -45,6 +45,12 @@ contract RugReferralRegistryFacet {
      * @param code Referral code (e.g., "alice123" will be stored as "ref-alice123")
      * @dev Code must be unique, 3-20 characters, and start with "ref-"
      */
+    constructor() {
+        // Initialize referral toggles
+        mintingReferralsEnabled = true;      // Minting referrals enabled by default
+        marketplaceReferralsEnabled = false; // Marketplace referrals disabled (royalties already exist)
+    }
+
     function registerReferralCode(string memory code) external {
         LibRugStorage.ReferralConfig storage rs = LibRugStorage.referralStorage();
         

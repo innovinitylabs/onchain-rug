@@ -46,10 +46,32 @@ function Dashboard() {
 
   const fetchAnalyticsData = async () => {
     try {
-      const response = await fetch('/api/analytics/overview')
-      if (!response.ok) throw new Error('Failed to fetch analytics')
-      const analyticsData = await response.json()
-      setData(analyticsData)
+      // For now, show mock data since analytics API isn't deployed
+      const mockData = {
+        attribution: {
+          totalEvents: 7, // NFTs minted
+          attributedEvents: 0, // Will be populated when API is live
+          attributionRate: 0,
+          mintEvents: 7,
+          marketplaceEvents: 0,
+          maintenanceEvents: 0
+        },
+        referrals: {
+          totalReferrers: 0,
+          totalRewards: 0,
+          totalDistributed: "0",
+          avgReward: "0"
+        },
+        agents: {
+          totalAgents: 0,
+          totalFeedback: 0,
+          avgRating: 0,
+          totalTasks: 0
+        },
+        timestamp: new Date().toISOString()
+      }
+
+      setData(mockData)
       setError(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error')
@@ -202,5 +224,29 @@ function Dashboard() {
 }
 
 export default function AnalyticsPage() {
-  return <Dashboard />
+  return (
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            OnchainRugs Analytics Dashboard
+          </h1>
+          <p className="text-gray-600 mb-4">
+            ERC-8021 Attribution & ERC-8004 Agent Analytics
+          </p>
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="flex">
+              <div className="ml-3">
+                <p className="text-sm text-yellow-800">
+                  <strong>Note:</strong> Analytics API is not yet deployed. Showing sample data from Base Sepolia testnet.
+                  7 NFTs have been minted so far. Live analytics will be available once the backend API is deployed.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <Dashboard />
+      </div>
+    </div>
+  )
 }
