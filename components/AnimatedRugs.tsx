@@ -1360,13 +1360,14 @@ export default function AnimatedRugs() {
 
   return (
     <div className="absolute inset-0 w-full h-full">
-      <Canvas
-        camera={{ position: [0, 5, 15], fov: 60 }}
-        style={{ 
-          background: 'transparent',
-          opacity: isVisible ? 1 : 0,
-          transition: 'opacity 1.5s ease-in-out'
-        }}
+      {typeof window !== 'undefined' && (
+        <Canvas
+          camera={{ position: [0, 5, 15], fov: 60 }}
+          style={{
+            background: 'transparent',
+            opacity: isVisible ? 1 : 0,
+            transition: 'opacity 1.5s ease-in-out'
+          }}
       >
         <Suspense fallback={null}>
           <Scene onLoaded={() => {
@@ -1374,7 +1375,8 @@ export default function AnimatedRugs() {
             setIsVisible(true)
           }} />
         </Suspense>
-      </Canvas>
+        </Canvas>
+      )}
     </div>
   )
 }
