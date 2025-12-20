@@ -6,13 +6,15 @@ import {LibDiamond} from "../diamond/libraries/LibDiamond.sol";
 
 /**
  * @title RugAgentReputationFacet
- * @notice ERC-8004 compliant agent reputation registry for OnchainRugs
- * @dev Allows clients to submit feedback about agents and tracks reputation scores
- * 
- * This facet implements the Reputation Registry component of ERC-8004:
- * - Clients submit structured feedback after task completion
- * - Reputation scores calculated from feedback
- * - Supports multiple rating dimensions (accuracy, timeliness, reliability)
+ * @notice Agent Performance Leaderboard
+ * @dev Community-driven agent evaluation system for educational purposes
+ *
+ * AGENT LEADERBOARD FEATURES:
+ * - Performance metrics for different agent implementations
+ * - Community feedback and ratings
+ * - Educational insights into agent effectiveness
+ * - Drives improvement and innovation
+ * - NO financial incentives or commercial rankings
  */
 contract RugAgentReputationFacet {
     using LibRugStorage for LibRugStorage.RugConfig;

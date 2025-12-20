@@ -6,13 +6,15 @@ import {LibDiamond} from "../diamond/libraries/LibDiamond.sol";
 
 /**
  * @title RugAgentRegistryFacet
- * @notice ERC-8004 compliant agent identity registry for OnchainRugs
- * @dev Allows AI agents to register their identity with capabilities and metadata
- * 
- * This facet implements the Identity Registry component of ERC-8004:
- * - Agents can register their "Agent Card" with metadata
- * - Supports capability-based agent discovery
- * - Integrates with existing authorization system
+ * @notice Agent Leaderboard Registry for x402 Adoption
+ * @dev Showcase different agent implementations to drive x402 and agent adoption
+ *
+ * This creates an AGENT LEADERBOARD - not a marketplace:
+ * - Agents ranked by performance and reputation
+ * - Educational showcase for agent capabilities
+ * - Drives x402 protocol adoption
+ * - Community learning and improvement
+ * - NO commercial transactions or endorsements
  */
 contract RugAgentRegistryFacet {
     using LibRugStorage for LibRugStorage.RugConfig;
