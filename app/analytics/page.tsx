@@ -3,10 +3,10 @@
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs'
-import { OverviewTab } from './tabs/OverviewTab'
-import { ReferralsTab } from './tabs/ReferralsTab'
-import { AgentsTab } from './tabs/AgentsTab'
-import { AttributionTab } from './tabs/AttributionTab'
+import { OverviewTab } from './components/tabs/OverviewTab'
+import { ReferralsTab } from './components/tabs/ReferralsTab'
+import { AgentsTab } from './components/tabs/AgentsTab'
+import { AttributionTab } from './components/tabs/AttributionTab'
 
 interface AnalyticsData {
   attribution: {
