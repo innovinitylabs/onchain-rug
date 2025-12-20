@@ -42,7 +42,7 @@ contract RugReferralRegistryFacet {
 
     /**
      * @notice Register a referral code for the caller
-     * @param code Referral code (e.g., "alice123" will be stored as "ref-alice123")
+     * @param _code Referral code (e.g., "alice123" will be stored as "ref-alice123")
      * @dev Code must be unique, 3-20 characters, and start with "ref-"
      */
 
@@ -56,15 +56,15 @@ contract RugReferralRegistryFacet {
         }
 
         // Validate code format
-        bytes memory codeBytes = bytes(code);
+        bytes memory codeBytes = bytes(_code);
         uint256 codeLength = codeBytes.length;
-        
+
         // Check if code starts with "ref-"
         if (codeLength < 7) revert CodeTooShort(); // "ref-" + at least 3 chars = 7 minimum
-        if (!_startsWith(code, REFERRAL_PREFIX)) revert InvalidCodeFormat();
-        
+        if (!_startsWith(_code, REFERRAL_PREFIX)) revert InvalidCodeFormat();
+
         // Extract actual code part (after "ref-")
-        string memory actualCode = code;
+        string memory actualCode = _code;
         
         // Validate length (actual code part should be 3-20 chars)
         uint256 actualCodeLength = codeLength - 4; // Subtract "ref-" length
@@ -76,14 +76,14 @@ contract RugReferralRegistryFacet {
         if (bytes(existingCode).length > 0) revert ReferrerAlreadyRegistered();
         
         // Check if code is already taken
-        if (rs.codeExists[code]) revert CodeAlreadyTaken();
-        
+        if (rs.codeExists[_code]) revert CodeAlreadyTaken();
+
         // Register code
-        rs.codeToReferrer[code] = msg.sender;
-        rs.referrerToCode[msg.sender] = code;
-        rs.codeExists[code] = true;
-        
-        emit ReferralCodeRegistered(msg.sender, code);
+        rs.codeToReferrer[_code] = msg.sender;
+        rs.referrerToCode[msg.sender] = _code;
+        rs.codeExists[_code] = true;
+
+        emit ReferralCodeRegistered(msg.sender, _code);
     }
 
     /**
