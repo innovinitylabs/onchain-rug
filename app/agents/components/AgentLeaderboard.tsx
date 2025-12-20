@@ -6,7 +6,7 @@ import { LeaderboardTable } from './LeaderboardTable'
 import { EducationalInsights } from './EducationalInsights'
 import { X402Showcase } from './X402Showcase'
 
-interface Agent {
+export interface Agent {
   id: string
   name: string
   creator: string

@@ -12,6 +12,18 @@ const nextConfig: NextConfig = {
       })
     );
 
+    // Handle React Native modules in web environment
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      '@react-native-async-storage/async-storage': false,
+    };
+
+    // Provide empty mocks for React Native modules
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@react-native-async-storage/async-storage': false,
+    };
+
     return config;
   },
   // Note: Using --webpack flag in build script to avoid Turbopack compatibility issues
