@@ -30,39 +30,39 @@ export function AgentCard({ agent }: AgentCardProps) {
   }
 
   return (
-    <div className={`bg-white rounded-lg shadow-sm border-2 ${
-      agent.isOfficial ? 'border-blue-200 bg-blue-50/30' : 'border-gray-200'
-    } overflow-hidden hover:shadow-md transition-shadow`}>
+    <div className={`bg-slate-800/50 rounded-lg border ${
+      agent.isOfficial ? 'border-blue-400/30 bg-blue-900/10' : 'border-slate-700/50'
+    } overflow-hidden hover:bg-slate-800/70 transition-all backdrop-blur-sm`}>
       {/* Header */}
       <div className="p-6 pb-4">
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
-              <h3 className="text-lg font-semibold text-gray-900 truncate">
+              <h3 className="text-lg font-semibold text-white truncate">
                 {agent.name}
               </h3>
               {agent.isOfficial && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-500/20 text-blue-300 border border-blue-400/30">
                   Official
                 </span>
               )}
             </div>
-            <p className="text-sm text-gray-600">by {agent.creator}</p>
+            <p className="text-sm text-slate-400">by {agent.creator}</p>
           </div>
         </div>
 
-        <p className="text-sm text-gray-700 mb-4 line-clamp-2">
+        <p className="text-sm text-slate-300 mb-4 line-clamp-2">
           {agent.description}
         </p>
 
         {/* Capabilities */}
         <div className="mb-4">
-          <h4 className="text-sm font-medium text-gray-900 mb-2">Capabilities</h4>
+          <h4 className="text-sm font-medium text-white mb-2">Capabilities</h4>
           <div className="flex flex-wrap gap-1">
             {agent.capabilities.map((capability) => (
               <span
                 key={capability}
-                className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800"
+                className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-700/50 text-slate-300 border border-slate-600/30"
               >
                 {capability.replace('_', ' ')}
               </span>
@@ -88,32 +88,32 @@ export function AgentCard({ agent }: AgentCardProps) {
           </div>
         </div>
 
-        <div className="space-y-2 text-sm text-gray-600">
+        <div className="space-y-2 text-sm text-slate-400">
           <div className="flex justify-between">
             <span>Total Operations:</span>
-            <span className="font-medium">{agent.performance.totalOperations.toLocaleString()}</span>
+            <span className="font-medium text-white">{agent.performance.totalOperations.toLocaleString()}</span>
           </div>
           <div className="flex justify-between">
             <span>Average Cost:</span>
-            <span className="font-medium">{agent.performance.averageCost}</span>
+            <span className="font-medium text-white">{agent.performance.averageCost}</span>
           </div>
           <div className="flex justify-between">
             <span>Average Time:</span>
-            <span className="font-medium">{agent.performance.averageTime}</span>
+            <span className="font-medium text-white">{agent.performance.averageTime}</span>
           </div>
           <div className="flex justify-between">
             <span>Last Active:</span>
-            <span className="font-medium">{formatDate(agent.performance.lastActive)}</span>
+            <span className="font-medium text-white">{formatDate(agent.performance.lastActive)}</span>
           </div>
         </div>
       </div>
 
       {/* Footer */}
-      <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
-        <div className="flex items-center justify-between text-xs text-gray-500">
+      <div className="px-6 py-4 bg-slate-900/50 border-t border-slate-700/50">
+        <div className="flex items-center justify-between text-xs text-slate-500">
           <span>Registered {formatDate(agent.registeredAt)}</span>
           <div className="flex gap-2">
-            <button className="text-blue-600 hover:text-blue-800 font-medium">
+            <button className="text-blue-400 hover:text-blue-300 font-medium">
               View Details
             </button>
             {agent.metadataURI && (
@@ -121,7 +121,7 @@ export function AgentCard({ agent }: AgentCardProps) {
                 href={agent.metadataURI}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-600 hover:text-blue-800 font-medium"
+                className="text-blue-400 hover:text-blue-300 font-medium"
               >
                 Metadata ↗
               </a>

@@ -29,37 +29,37 @@ export function LeaderboardTable({ agents }: LeaderboardTableProps) {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+    <div className="bg-slate-800/50 rounded-lg border border-slate-700/50 overflow-hidden backdrop-blur-sm">
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+        <table className="min-w-full divide-y divide-slate-700/50">
+          <thead className="bg-slate-900/50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                 Agent
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                 Rating
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                 Success Rate
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                 Operations
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                 Avg Cost
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                 Last Active
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                 Status
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-slate-800/30 divide-y divide-slate-700/30">
             {agents.map((agent, index) => (
-              <tr key={agent.id} className="hover:bg-gray-50">
+              <tr key={agent.id} className="hover:bg-slate-800/50">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
                     <div className="flex-shrink-0">
@@ -68,15 +68,15 @@ export function LeaderboardTable({ agents }: LeaderboardTableProps) {
                       </div>
                     </div>
                     <div className="ml-4">
-                      <div className="text-sm font-medium text-gray-900 flex items-center gap-2">
+                      <div className="text-sm font-medium text-white flex items-center gap-2">
                         {agent.name}
                         {agent.isOfficial && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-500/20 text-blue-300 border border-blue-400/30">
                             Official
                           </span>
                         )}
                       </div>
-                      <div className="text-sm text-gray-500">{agent.creator}</div>
+                      <div className="text-sm text-slate-400">{agent.creator}</div>
                     </div>
                   </div>
                 </td>
@@ -90,13 +90,13 @@ export function LeaderboardTable({ agents }: LeaderboardTableProps) {
                     {agent.performance.successRate.toFixed(1)}%
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
                   {agent.performance.totalOperations.toLocaleString()}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
                   {agent.performance.averageCost}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
                   {formatDate(agent.performance.lastActive)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -104,7 +104,7 @@ export function LeaderboardTable({ agents }: LeaderboardTableProps) {
                     <div className={`w-2 h-2 rounded-full ${
                       agent.isOfficial ? 'bg-blue-500' : 'bg-green-500'
                     }`}></div>
-                    <span className="text-sm text-gray-900">
+                    <span className="text-sm text-white">
                       {agent.isOfficial ? 'Official' : 'Community'}
                     </span>
                   </div>
@@ -117,11 +117,11 @@ export function LeaderboardTable({ agents }: LeaderboardTableProps) {
 
       {agents.length === 0 && (
         <div className="text-center py-12">
-          <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="mx-auto h-12 w-12 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M3 13l3-8h12l3 8M3 13v4a2 2 0 002 2h14a2 2 0 002-2v-4" />
           </svg>
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No agents registered yet</h3>
-          <p className="mt-1 text-sm text-gray-500">
+          <h3 className="mt-2 text-sm font-medium text-white">No agents registered yet</h3>
+          <p className="mt-1 text-sm text-slate-400">
             Community agents will appear here once registered.
           </p>
         </div>

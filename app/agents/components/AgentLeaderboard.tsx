@@ -90,10 +90,10 @@ export function AgentLeaderboard() {
   return (
     <div className="space-y-8">
       {/* View Controls */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-lg shadow-sm border">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-800/50 p-6 rounded-lg border border-slate-700/50 backdrop-blur-sm">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-1">Agent Rankings</h2>
-          <p className="text-gray-600">Performance-based leaderboard for educational insights</p>
+          <h2 className="text-xl font-semibold text-white mb-1">Agent Rankings</h2>
+          <p className="text-slate-400">Performance-based leaderboard for educational insights</p>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3">
@@ -101,7 +101,7 @@ export function AgentLeaderboard() {
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as any)}
-            className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-2 border border-slate-600 rounded-md text-sm bg-slate-900/50 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="rating">Sort by Rating</option>
             <option value="operations">Sort by Operations</option>
@@ -109,14 +109,14 @@ export function AgentLeaderboard() {
           </select>
 
           {/* View Mode Toggle */}
-          <div className="flex rounded-md border border-gray-300">
+          <div className="flex rounded-md border border-slate-600">
             <button
               onClick={() => setViewMode('cards')}
               className={`px-3 py-2 text-sm font-medium ${
                 viewMode === 'cards'
                   ? 'bg-blue-500 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
-              } ${viewMode === 'cards' ? 'rounded-l-md' : ''} border-r border-gray-300`}
+                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+              } ${viewMode === 'cards' ? 'rounded-l-md' : ''} border-r border-slate-600`}
             >
               Cards
             </button>
@@ -125,7 +125,7 @@ export function AgentLeaderboard() {
               className={`px-3 py-2 text-sm font-medium ${
                 viewMode === 'table'
                   ? 'bg-blue-500 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
+                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
               } ${viewMode === 'table' ? 'rounded-r-md' : ''}`}
             >
               Table
@@ -157,7 +157,7 @@ export function AgentLeaderboard() {
       </div>
 
       {/* Community Call-to-Action */}
-      <div className="bg-gradient-to-r from-purple-500 to-blue-600 rounded-lg p-8 text-white">
+      <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg p-8 text-white">
         <div className="text-center">
           <h3 className="text-2xl font-bold mb-4">🚀 Build Your Own Agent</h3>
           <p className="text-lg mb-6 opacity-90">
