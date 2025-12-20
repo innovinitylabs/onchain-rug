@@ -107,7 +107,7 @@ export function ReferralsTab() {
           <CardContent>
             <div className="text-2xl font-bold text-purple-600">
               {data.overview.avgReward} ETH
-            </CardTitle>
+            </div>
           </CardContent>
         </Card>
 
