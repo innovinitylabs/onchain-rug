@@ -6,13 +6,15 @@ import {LibDiamond} from "../diamond/libraries/LibDiamond.sol";
 
 /**
  * @title RugAgentValidationFacet
- * @notice ERC-8004 compliant agent validation registry for OnchainRugs
- * @dev Allows storage and verification of validation proofs for agent work
- * 
- * This facet implements the Validation Registry component of ERC-8004:
- * - Stores validation proofs for completed tasks
- * - Supports multiple validation methods (crypto proof, economic, etc.)
- * - Provides proof verification framework
+ * @notice Agent Validation Showcase
+ * @dev Demonstrates cryptographic validation capabilities for educational purposes
+ *
+ * SHOWCASE FEATURES:
+ * - Proof-of-work validation examples
+ * - Educational demonstrations of agent verification
+ * - Community learning about validation methods
+ * - Technical showcase for x402 integration
+ * - NO commercial validation services
  */
 contract RugAgentValidationFacet {
     using LibRugStorage for LibRugStorage.RugConfig;

@@ -146,6 +146,7 @@ export default function RootLayout({
 
         {/* BigInt serialization polyfill */}
         <script
+          suppressHydrationWarning
           dangerouslySetInnerHTML={{
             __html: `
               // BigInt serialization polyfill - must run before React loads
@@ -173,87 +174,92 @@ export default function RootLayout({
           }}
         />
 
-        {/* JSON-LD Structured Data for Organization */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "Organization",
-              "name": "OnchainRugs",
-              "url": "https://onchainrugs.xyz",
-              "logo": "https://onchainrugs.xyz/valipokkann.svg",
-              "description": "Living generative NFT art collection featuring woven textile patterns that age over time on the Shape L2 blockchain.",
-              "founder": {
-                "@type": "Person",
-                "name": "valipokkann",
-                "url": "https://twitter.com/valipokkann"
-              },
-              "sameAs": [
-                "https://twitter.com/valipokkann",
-                "https://github.com/innovinitylabs/onchain-rugs"
-              ],
-              "knowsAbout": [
-                "NFT Art",
-                "Generative Art",
-                "Blockchain Technology",
-                "Shape L2 Network",
-                "Ethereum NFTs",
-                "Digital Collectibles"
-              ]
-            })
-          }}
-        />
-
-        {/* JSON-LD Structured Data for NFT Collection */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "CreativeWorkSeries",
-              "name": "Onchain Rugs",
-              "description": "A collection of living generative NFT artworks featuring woven textile patterns that evolve and age over time, requiring care and maintenance from their owners.",
-              "url": "https://onchainrugs.xyz",
-              "genre": ["Digital Art", "Generative Art", "NFT", "Blockchain Art"],
-              "creator": {
-                "@type": "Person",
-                "name": "valipokkann"
-              },
-              "dateCreated": "2024",
-              "artMedium": "Digital (HTML5 Canvas, P5.js)",
-              "artform": "Generative Textile Art",
-              "material": "On-chain generated, Shape L2 blockchain",
-              "numberOfItems": "10000",
-              "additionalProperty": [
-                {
-                  "@type": "PropertyValue",
-                  "name": "Blockchain",
-                  "value": "Shape L2"
-                },
-                {
-                  "@type": "PropertyValue",
-                  "name": "Standard",
-                  "value": "ERC-721"
-                },
-                {
-                  "@type": "PropertyValue",
-                  "name": "Unique Features",
-                  "value": "Aging mechanics, maintenance system, generative art"
-                }
-              ],
-              "offers": {
-                "@type": "Offer",
-                "priceCurrency": "ETH",
-                "availability": "https://schema.org/InStock",
-                "seller": {
+        {/* Client-side only JSON-LD scripts to prevent hydration mismatches */}
+        {typeof window !== 'undefined' && (
+          <>
+            {/* JSON-LD Structured Data for Organization */}
+            <script
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{
+                __html: JSON.stringify({
+                  "@context": "https://schema.org",
                   "@type": "Organization",
-                  "name": "OnchainRugs"
-                }
-              }
-            })
-          }}
-        />
+                  "name": "OnchainRugs",
+                  "url": "https://onchainrugs.xyz",
+                  "logo": "https://onchainrugs.xyz/valipokkann.svg",
+                  "description": "Living generative NFT art collection featuring woven textile patterns that age over time on the Shape L2 blockchain.",
+                  "founder": {
+                    "@type": "Person",
+                    "name": "valipokkann",
+                    "url": "https://twitter.com/valipokkann"
+                  },
+                  "sameAs": [
+                    "https://twitter.com/valipokkann",
+                    "https://github.com/innovinitylabs/onchain-rugs"
+                  ],
+                  "knowsAbout": [
+                    "NFT Art",
+                    "Generative Art",
+                    "Blockchain Technology",
+                    "Shape L2 Network",
+                    "Ethereum NFTs",
+                    "Digital Collectibles"
+                  ]
+                })
+              }}
+            />
+
+            {/* JSON-LD Structured Data for NFT Collection */}
+            <script
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{
+                __html: JSON.stringify({
+                  "@context": "https://schema.org",
+                  "@type": "CreativeWorkSeries",
+                  "name": "Onchain Rugs",
+                  "description": "A collection of living generative NFT artworks featuring woven textile patterns that evolve and age over time, requiring care and maintenance from their owners.",
+                  "url": "https://onchainrugs.xyz",
+                  "genre": ["Digital Art", "Generative Art", "NFT", "Blockchain Art"],
+                  "creator": {
+                    "@type": "Person",
+                    "name": "valipokkann"
+                  },
+                  "dateCreated": "2024",
+                  "artMedium": "Digital (HTML5 Canvas, P5.js)",
+                  "artform": "Generative Textile Art",
+                  "material": "On-chain generated, Shape L2 blockchain",
+                  "numberOfItems": "10000",
+                  "additionalProperty": [
+                    {
+                      "@type": "PropertyValue",
+                      "name": "Blockchain",
+                      "value": "Shape L2"
+                    },
+                    {
+                      "@type": "PropertyValue",
+                      "name": "Standard",
+                      "value": "ERC-721"
+                    },
+                    {
+                      "@type": "PropertyValue",
+                      "name": "Unique Features",
+                      "value": "Aging mechanics, maintenance system, generative art"
+                    }
+                  ],
+                  "offers": {
+                    "@type": "Offer",
+                    "priceCurrency": "ETH",
+                    "availability": "https://schema.org/InStock",
+                    "seller": {
+                      "@type": "Organization",
+                      "name": "OnchainRugs"
+                    }
+                  }
+                })
+              }}
+            />
+          </>
+        )}
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
