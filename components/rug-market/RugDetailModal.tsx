@@ -664,37 +664,9 @@ export default function RugDetailModal({
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={async () => {
-                  // Try to capture the rendered NFT as an image
-                  let capturedImage: string | null = null
-                  
-                  // First, try to capture from the rendered canvas in the modal
-                  if (nftDisplayRef.current) {
-                    const canvas = nftDisplayRef.current.querySelector('canvas') as HTMLCanvasElement
-                    if (canvas) {
-                      try {
-                        capturedImage = canvas.toDataURL('image/png')
-                      } catch (error) {
-                        console.warn('Failed to capture canvas:', error)
-                      }
-                    }
-                  }
-                  
-                  // Fallback: fetch animation_url from API
-                  if (!capturedImage) {
-                    try {
-                      const response = await fetch(`/api/rug-image/${permanent.tokenId}?chainId=${chainId}`)
-                      if (response.ok) {
-                        const data = await response.json()
-                        // Use animation_url which contains the rendered HTML NFT
-                        capturedImage = data.animationUrl || data.shareImageUrl || null
-                      }
-                    } catch (error) {
-                      console.error('Failed to fetch share image:', error)
-                    }
-                  }
-                  
-                  setShareImageUrl(capturedImage || undefined)
+                onClick={() => {
+                  // Don't set imageUrl - the share page URL will have Open Graph meta tags
+                  // Social platforms will fetch the page and extract the image from OG tags
                   setShowShareModal(true)
                 }}
                 className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
@@ -1181,7 +1153,6 @@ export default function RugDetailModal({
         onClose={() => setShowShareModal(false)}
         action="view"
         tokenId={permanent.tokenId}
-        imageUrl={shareImageUrl}
       />
     </>
   )

@@ -132,38 +132,10 @@ function RugCard({ nft, onClick, onRefresh, onFavoriteToggle, onBuyNFT, onMakeOf
           {/* Top Right - Action Buttons */}
           <div className="absolute top-2 right-2 flex gap-2 pointer-events-auto">
             <button
-              onClick={async (e) => {
+              onClick={(e) => {
                 e.stopPropagation()
-                // Try to capture the rendered NFT as an image
-                let capturedImage: string | null = null
-                
-                // First, try to capture from the rendered canvas
-                if (nftDisplayRef.current) {
-                  const canvas = nftDisplayRef.current.querySelector('canvas') as HTMLCanvasElement
-                  if (canvas) {
-                    try {
-                      capturedImage = canvas.toDataURL('image/png')
-                    } catch (error) {
-                      console.warn('Failed to capture canvas:', error)
-                    }
-                  }
-                }
-                
-                // Fallback: fetch animation_url from API
-                if (!capturedImage) {
-                  try {
-                    const response = await fetch(`/api/rug-image/${nft.permanent.tokenId}?chainId=${chainId}`)
-                    if (response.ok) {
-                      const data = await response.json()
-                      // Use animation_url which contains the rendered HTML NFT
-                      capturedImage = data.animationUrl || data.shareImageUrl || null
-                    }
-                  } catch (error) {
-                    console.error('Failed to fetch share image:', error)
-                  }
-                }
-                
-                setShareImageUrl(capturedImage || undefined)
+                // Don't set imageUrl - the share page URL will have Open Graph meta tags
+                // Social platforms will fetch the page and extract the image from OG tags
                 setShowShareModal(true)
               }}
               className="p-2 bg-black/80 backdrop-blur-sm text-white rounded hover:bg-black/90 transition-colors shadow-lg"
@@ -310,7 +282,6 @@ function RugCard({ nft, onClick, onRefresh, onFavoriteToggle, onBuyNFT, onMakeOf
         onClose={() => setShowShareModal(false)}
         action="view"
         tokenId={nft.permanent.tokenId}
-        imageUrl={shareImageUrl}
       />
     </motion.div>
   )

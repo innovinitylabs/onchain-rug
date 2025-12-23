@@ -170,16 +170,12 @@ export function SocialShareModal({
   const shareUrl = generateShareUrl(tokenId, txHash, chainId)
 
   const handleShare = (platform: SharePlatform) => {
-    // For platforms that support images, include imageUrl in the share
-    let finalText = shareText
-    if (imageUrl && (platform.id === 'twitter' || platform.id === 'base')) {
-      // Twitter/X and Base can show images via Open Graph, but we can mention it in text
-      finalText = `${shareText}\n\n${imageUrl}`
-    }
-    
+    // Use shareUrl which points to the rug page with Open Graph meta tags
+    // Social platforms will automatically fetch the image from OG tags
+    // Don't include imageUrl in the text as it makes URLs too long
     const url = platform.getShareUrl({
-      text: finalText,
-      url: shareUrl,
+      text: shareText,
+      url: shareUrl, // This URL will have OG meta tags with the image
       action,
       tokenId,
       txHash
