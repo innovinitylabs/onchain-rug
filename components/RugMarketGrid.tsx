@@ -48,6 +48,7 @@ function RugCard({ nft, onClick, onRefresh, onFavoriteToggle, onBuyNFT, onMakeOf
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
   const [shareImageUrl, setShareImageUrl] = useState<string | undefined>()
+  const nftDisplayRef = useRef<HTMLDivElement>(null)
   
   // Check if user owns this NFT
   const isOwner = address && nft.dynamic.currentOwner && 
