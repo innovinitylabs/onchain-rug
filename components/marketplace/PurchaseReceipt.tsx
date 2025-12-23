@@ -131,6 +131,7 @@ export default function PurchaseReceipt({
           </button>
         </div>
       </div>
+    </div>
 
       {/* Social Share Modal */}
       <SocialShareModal
