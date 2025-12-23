@@ -1,7 +1,9 @@
 'use client'
 
-import { CheckCircle, ArrowRight, Heart } from 'lucide-react'
+import { useState } from 'react'
+import { CheckCircle, ArrowRight, Heart, Share2 } from 'lucide-react'
 import { formatEth } from '@/utils/marketplace-utils'
+import { SocialShareModal } from '@/components/SocialShareModal'
 
 interface PurchaseReceiptProps {
   tokenId: number
@@ -22,7 +24,10 @@ export default function PurchaseReceipt({
   txHash,
   onClose
 }: PurchaseReceiptProps) {
+  const [showShareModal, setShowShareModal] = useState(false)
+
   return (
+    <>
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-gradient-to-br from-blue-900/90 to-purple-900/90 backdrop-blur-xl rounded-2xl border border-white/20 max-w-md w-full">
         {/* Header */}
@@ -109,8 +114,15 @@ export default function PurchaseReceipt({
           </div>
         </div>
 
-        {/* Close Button */}
-        <div className="p-6 border-t border-white/10">
+        {/* Action Buttons */}
+        <div className="p-6 border-t border-white/10 space-y-3">
+          <button
+            onClick={() => setShowShareModal(true)}
+            className="w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
+          >
+            <Share2 className="w-5 h-5" />
+            Share Your Purchase
+          </button>
           <button
             onClick={onClose}
             className="w-full px-4 py-3 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
@@ -119,6 +131,18 @@ export default function PurchaseReceipt({
           </button>
         </div>
       </div>
-    </div>
+
+      {/* Social Share Modal */}
+      <SocialShareModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        action="purchase"
+        tokenId={tokenId}
+        txHash={txHash}
+        additionalData={{
+          price: formatEth(price)
+        }}
+      />
+    </>
   )
 }

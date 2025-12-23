@@ -10,6 +10,8 @@ import { getChainDisplayName, NETWORKS } from '@/lib/networks'
 import { DESTINATION_SHAPE_ID, getDestinationContractAddress, getWagmiChainById } from '@/config/chains'
 import { useRelayMint } from '@/hooks/use-relay-mint'
 import BridgeMintModal from './BridgeMintModal'
+import { SocialShareModal } from './SocialShareModal'
+import { useReadContract } from 'wagmi'
 
 interface Web3MintingProps {
   textRows: string[]
@@ -45,6 +47,35 @@ export default function Web3Minting({
 
   // Modal state
   const [showModal, setShowModal] = useState(false)
+  const [showShareModal, setShowShareModal] = useState(false)
+  const [mintedTokenId, setMintedTokenId] = useState<number | undefined>()
+
+  // Get total supply to determine token ID after mint
+  const { data: totalSupply } = useReadContract({
+    address: contractAddresses[chainId] as `0x${string}`,
+    abi: [
+      {
+        inputs: [],
+        name: 'totalSupply',
+        outputs: [{ name: '', type: 'uint256' }],
+        stateMutability: 'view',
+        type: 'function',
+      },
+    ] as const,
+    functionName: 'totalSupply',
+    query: {
+      enabled: isSuccess || isRelaySuccess,
+    },
+  })
+
+  // Show share modal when mint succeeds
+  useEffect(() => {
+    if ((isSuccess || isRelaySuccess) && totalSupply) {
+      // Token ID is totalSupply (since tokens are minted sequentially starting from 1)
+      setMintedTokenId(Number(totalSupply))
+      setShowShareModal(true)
+    }
+  }, [isSuccess, isRelaySuccess, totalSupply])
 
   // Calculate minting cost - NO TEXT IS FREE TO MINT
   const calculateCost = () => {
@@ -608,6 +639,15 @@ export default function Web3Minting({
         onMint={handleModalMint}
         mintCostETH={mintCost}
         textRows={textRows}
+      />
+
+      {/* Social Share Modal */}
+      <SocialShareModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        action="mint"
+        tokenId={mintedTokenId}
+        txHash={hash || relayTxHash || undefined}
       />
     </div>
   )

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Eye, ExternalLink, Calendar, User, TrendingUp, ShoppingCart, Tag, AlertCircle, RefreshCw, HandCoins, Handshake, Maximize2, Minimize2 } from 'lucide-react'
+import { X, Eye, ExternalLink, Calendar, User, TrendingUp, ShoppingCart, Tag, AlertCircle, RefreshCw, HandCoins, Handshake, Maximize2, Minimize2, Share2 } from 'lucide-react'
 import { useAccount, useChainId, useReadContract } from 'wagmi'
 import { RugMarketNFT } from '@/lib/rug-market-types'
 import NFTDisplay from '@/components/NFTDisplay'
@@ -14,6 +14,7 @@ import { contractAddresses, onchainRugsABI } from '@/lib/web3'
 import { getExplorerUrl } from '@/lib/networks'
 import { formatEth } from '@/utils/marketplace-utils'
 import { useRoyaltyInfo, useMarketplaceFee, useDiamondFramePoolInfo } from '@/hooks/use-royalty-info'
+import { SocialShareModal } from '@/components/SocialShareModal'
 
 interface RugDetailModalProps {
   nft: RugMarketNFT
@@ -43,6 +44,9 @@ export default function RugDetailModal({
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const zoomContainerRef = useRef<HTMLDivElement>(null)
+  const [showShareModal, setShowShareModal] = useState(false)
+  const [shareImageUrl, setShareImageUrl] = useState<string | undefined>()
+  const nftDisplayRef = useRef<HTMLDivElement>(null)
   
   // Get contract address
   const contractAddress = contractAddresses[chainId]
@@ -661,6 +665,45 @@ export default function RugDetailModal({
             <div className="flex items-center gap-2">
               <button
                 onClick={async () => {
+                  // Try to capture the rendered NFT as an image
+                  let capturedImage: string | null = null
+                  
+                  // First, try to capture from the rendered canvas in the modal
+                  if (nftDisplayRef.current) {
+                    const canvas = nftDisplayRef.current.querySelector('canvas') as HTMLCanvasElement
+                    if (canvas) {
+                      try {
+                        capturedImage = canvas.toDataURL('image/png')
+                      } catch (error) {
+                        console.warn('Failed to capture canvas:', error)
+                      }
+                    }
+                  }
+                  
+                  // Fallback: fetch animation_url from API
+                  if (!capturedImage) {
+                    try {
+                      const response = await fetch(`/api/rug-image/${permanent.tokenId}?chainId=${chainId}`)
+                      if (response.ok) {
+                        const data = await response.json()
+                        // Use animation_url which contains the rendered HTML NFT
+                        capturedImage = data.animationUrl || data.shareImageUrl || null
+                      }
+                    } catch (error) {
+                      console.error('Failed to fetch share image:', error)
+                    }
+                  }
+                  
+                  setShareImageUrl(capturedImage || undefined)
+                  setShowShareModal(true)
+                }}
+                className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
+                title="Share this rug"
+              >
+                <Share2 className="w-5 h-5" />
+              </button>
+              <button
+                onClick={async () => {
                   if (onRefreshNFT && !isRefreshing) {
                     setIsRefreshing(true)
                     try {
@@ -691,7 +734,7 @@ export default function RugDetailModal({
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Left Column - NFT Display */}
               <div className="space-y-4">
-                <div className="relative bg-black/30 rounded-xl overflow-hidden" style={{ aspectRatio: '4/3' }}>
+                <div ref={nftDisplayRef} className="relative bg-black/30 rounded-xl overflow-hidden" style={{ aspectRatio: '4/3' }}>
                   <NFTDisplay
                     nftData={nftDataForDisplay}
                     size="large"
@@ -1131,6 +1174,15 @@ export default function RugDetailModal({
         </motion.div>
       </motion.div>
       </AnimatePresence>
+
+      {/* Social Share Modal */}
+      <SocialShareModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        action="view"
+        tokenId={permanent.tokenId}
+        imageUrl={shareImageUrl}
+      />
     </>
   )
 }
