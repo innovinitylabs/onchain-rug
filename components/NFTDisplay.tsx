@@ -135,7 +135,7 @@ class RugGenerator {
 
   private async loadScripts() {
     try {
-      console.log('Loading rug generation scripts...')
+      console.log('[RugGenerator] Loading rug generation scripts...')
 
       // Use absolute URLs to ensure they work in blob contexts
       const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
@@ -143,27 +143,54 @@ class RugGenerator {
       const algoUrl = `${baseUrl}/data/rug-algo.js`
       const frameUrl = `${baseUrl}/data/rug-frame.js`
 
-      const p5Response = await fetch(p5Url)
-      if (!p5Response.ok) throw new Error(`rug-p5.js fetch failed: ${p5Response.status}`)
+      console.log('[RugGenerator] Fetching scripts from:', { p5Url, algoUrl, frameUrl })
+
+      const [p5Response, algoResponse, frameResponse] = await Promise.all([
+        fetch(p5Url),
+        fetch(algoUrl),
+        fetch(frameUrl)
+      ])
+
+      if (!p5Response.ok) {
+        throw new Error(`rug-p5.js fetch failed: ${p5Response.status} ${p5Response.statusText}`)
+      }
+      if (!algoResponse.ok) {
+        throw new Error(`rug-algo.js fetch failed: ${algoResponse.status} ${algoResponse.statusText}`)
+      }
+      if (!frameResponse.ok) {
+        throw new Error(`rug-frame.js fetch failed: ${frameResponse.status} ${frameResponse.statusText}`)
+      }
+
       this.rugP5Script = await p5Response.text()
-      console.log('Loaded custom rug-p5.js, length:', this.rugP5Script.length)
-
-      const algoResponse = await fetch(algoUrl)
-      if (!algoResponse.ok) throw new Error(`rug-algo.js fetch failed: ${algoResponse.status}`)
       this.rugAlgoScript = await algoResponse.text()
-      console.log('Loaded rug-algo.js script, length:', this.rugAlgoScript.length)
-
-      const frameResponse = await fetch(frameUrl)
-      if (!frameResponse.ok) throw new Error(`rug-frame.js fetch failed: ${frameResponse.status}`)
       this.rugFrameScript = await frameResponse.text()
-      console.log('Loaded rug-frame.js script, length:', this.rugFrameScript.length)
 
-      console.log('All scripts loaded successfully!')
+      // Validate scripts are not empty
+      if (!this.rugP5Script || this.rugP5Script.length === 0) {
+        throw new Error('rug-p5.js is empty')
+      }
+      if (!this.rugAlgoScript || this.rugAlgoScript.length === 0) {
+        throw new Error('rug-algo.js is empty')
+      }
+      if (!this.rugFrameScript || this.rugFrameScript.length === 0) {
+        throw new Error('rug-frame.js is empty')
+      }
+
+      console.log('[RugGenerator] Loaded scripts successfully:', {
+        p5: this.rugP5Script.length,
+        algo: this.rugAlgoScript.length,
+        frame: this.rugFrameScript.length
+      })
+
       this.scriptsLoaded = true
       this.onScriptsLoaded?.()
     } catch (error) {
-      console.error('Failed to load rug generation scripts:', error)
+      console.error('[RugGenerator] Failed to load rug generation scripts:', error)
+      if (error instanceof Error) {
+        console.error('[RugGenerator] Error stack:', error.stack)
+      }
       this.scriptsLoaded = false
+      // Don't call onScriptsLoaded callback on error - let component handle retry
     }
   }
 
@@ -389,13 +416,38 @@ class RugGenerator {
 
   generatePreview(traits: RugTraits, tokenId?: number, renderMode?: 'og' | 'interactive'): string {
     try {
-      console.log('Generating HTML preview from traits for token', tokenId)
+      if (!this.scriptsLoaded) {
+        console.warn('Scripts not loaded yet, cannot generate preview')
+        return ''
+      }
+      
+      // Validate scripts are loaded
+      if (!this.rugP5Script || !this.rugAlgoScript || !this.rugFrameScript) {
+        console.error('Scripts are not loaded:', {
+          p5: !!this.rugP5Script,
+          algo: !!this.rugAlgoScript,
+          frame: !!this.rugFrameScript
+        })
+        return ''
+      }
+      
+      console.log('Generating HTML preview from traits for token', tokenId, 'renderMode:', renderMode)
       const htmlContent = this.generateHTMLPreview(traits, tokenId, renderMode)
+      
+      if (!htmlContent || htmlContent.length === 0) {
+        console.error('Generated HTML content is empty')
+        return ''
+      }
+      
       const blob = new Blob([htmlContent], { type: 'text/html' })
       const blobUrl = URL.createObjectURL(blob)
+      console.log('Generated blob URL:', blobUrl.substring(0, 50) + '...')
       return blobUrl
     } catch (error) {
       console.error('Failed to generate HTML preview:', error)
+      if (error instanceof Error) {
+        console.error('Error stack:', error.stack)
+      }
       return ''
     }
   }
@@ -426,7 +478,7 @@ export default function NFTDisplay({
   }, [nftData.traits, nftData.attributes])
 
   const rugGenerator = useMemo(() => new RugGenerator(() => {
-    console.log('Scripts loaded, updating state')
+    console.log('[NFTDisplay] Scripts loaded callback fired, updating state')
     setScriptsLoaded(true)
   }), [])
 
@@ -470,6 +522,10 @@ export default function NFTDisplay({
     
     // If tokenId changed, always reset
     if (currentTokenId !== lastGeneratedTokenId && currentTokenId !== undefined) {
+      console.log('[NFTDisplay] TokenId changed, resetting preview', { 
+        old: lastGeneratedTokenId, 
+        new: currentTokenId 
+      })
       setPreviewImage('')
       setIsGenerating(true)
       if (blobUrl && blobUrl.startsWith('blob:')) {
@@ -480,7 +536,10 @@ export default function NFTDisplay({
     }
     // If traits key changed (dynamic traits updated), reset preview
     else if (currentTraitsKey && currentTraitsKey !== lastTraitsKey) {
-      console.log('Traits changed, regenerating preview', { currentTraitsKey, lastTraitsKey })
+      console.log('[NFTDisplay] Traits changed, regenerating preview', { 
+        currentTraitsKey, 
+        lastTraitsKey 
+      })
       setPreviewImage('')
       setIsGenerating(true)
       if (blobUrl && blobUrl.startsWith('blob:')) {
@@ -492,7 +551,7 @@ export default function NFTDisplay({
 
   useEffect(() => {
     // Skip if we already have a preview for this exact traits key
-    if (traitsKey && traitsKey === lastTraitsKey && previewImage) {
+    if (traitsKey && traitsKey === lastTraitsKey && previewImage && previewImage.length > 0) {
       return
     }
 
@@ -503,19 +562,31 @@ export default function NFTDisplay({
             // Scripts required to generate client-side previews haven't loaded yet.
             // Show a lightweight placeholder so the card/modal doesn't render blank
             // — we'll retry generation automatically when `scriptsLoaded` flips true.
+            console.log('[NFTDisplay] Scripts not loaded yet, showing placeholder')
             setPreviewImage('/rug-loading-mid.webp')
             setIsGenerating(true)
             return
           }
 
+          console.log('[NFTDisplay] Generating preview for tokenId:', nftData.tokenId, 'renderMode:', renderMode)
           setIsGenerating(true)
+          
           const imageData = rugGenerator.generatePreview(nftData.traits, nftData.tokenId, renderMode)
 
+          if (!imageData || imageData.length === 0) {
+            console.error('[NFTDisplay] generatePreview returned empty string')
+            setPreviewImage('/rug-loading-mid.webp')
+            setIsGenerating(false)
+            return
+          }
+
           if (imageData.startsWith('blob:')) {
+            // Revoke old blob URL if it exists
             if (blobUrl && blobUrl.startsWith('blob:')) {
               URL.revokeObjectURL(blobUrl)
             }
             setBlobUrl(imageData)
+            console.log('[NFTDisplay] Preview generated successfully, blob URL:', imageData.substring(0, 50) + '...')
           }
 
           setPreviewImage(imageData)
@@ -524,18 +595,23 @@ export default function NFTDisplay({
           setLastTraitsKey(traitsKey || null)
         } else if (nftData.animation_url) {
           // Use the animation_url directly as iframe src
+          console.log('[NFTDisplay] Using animation_url:', nftData.animation_url)
           setPreviewImage(nftData.animation_url)
           setIsGenerating(false)
           setLastGeneratedTokenId(nftData.tokenId)
           setLastTraitsKey(traitsKey || null)
         } else {
+          console.log('[NFTDisplay] No traits or animation_url, showing placeholder')
           setPreviewImage('/rug-loading-mid.webp')
           setIsGenerating(false)
           setLastGeneratedTokenId(nftData.tokenId)
           setLastTraitsKey(traitsKey || null)
         }
       } catch (error) {
-        console.error('Failed to generate rug preview:', error)
+        console.error('[NFTDisplay] Failed to generate rug preview:', error)
+        if (error instanceof Error) {
+          console.error('[NFTDisplay] Error stack:', error.stack)
+        }
         setPreviewImage(nftData.animation_url || '/rug-loading-mid.webp')
         setIsGenerating(false)
         setLastGeneratedTokenId(nftData.tokenId)
@@ -548,11 +624,19 @@ export default function NFTDisplay({
   }, [nftData.tokenId, traitsKey, nftData.animation_url, rugGenerator, scriptsLoaded, renderMode])
 
 
-  // Cleanup blob URLs on unmount
+  // Cleanup blob URLs on unmount or when preview changes
   useEffect(() => {
     return () => {
       if (blobUrl && blobUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(blobUrl)
+        // Don't revoke immediately - give iframe time to load
+        // The iframe will keep the blob URL alive as long as it's loaded
+        setTimeout(() => {
+          try {
+            URL.revokeObjectURL(blobUrl)
+          } catch (e) {
+            // Ignore errors if URL was already revoked
+          }
+        }, 1000)
       }
     }
   }, [blobUrl])
@@ -590,15 +674,25 @@ export default function NFTDisplay({
         onClick={onClick}
       >
         {/* NFT Content */}
-        {isGenerating ? null : previewImage ? (
+        {isGenerating ? (
+          <div className="w-full h-full flex items-center justify-center bg-black/20">
+            <div className="text-white/50 text-sm">Generating preview...</div>
+          </div>
+        ) : previewImage && previewImage.length > 0 ? (
           previewImage.startsWith('blob:') || previewImage.startsWith('data:') ? (
-            <div style={{ width: '100%', height: '100%', position: 'relative' }}>
-            <iframe
-              src={previewImage}
+            <div style={{ width: '100%', height: '100%', position: 'relative', minHeight: '200px' }}>
+              <iframe
+                src={previewImage}
                 className="border-0 pointer-events-none"
-              title={`NFT ${nftData.tokenId}`}
-              sandbox="allow-scripts"
+                title={`NFT ${nftData.tokenId}`}
+                sandbox="allow-scripts"
                 scrolling="no"
+                onLoad={() => {
+                  console.log('[NFTDisplay] Iframe loaded for tokenId:', nftData.tokenId)
+                }}
+                onError={(e) => {
+                  console.error('[NFTDisplay] Iframe load error for tokenId:', nftData.tokenId, e)
+                }}
                 style={{ 
                   width: '100%', 
                   height: '100%', 
@@ -607,9 +701,10 @@ export default function NFTDisplay({
                   objectFit: 'contain',
                   display: 'block',
                   overflow: 'hidden',
-                  border: 'none'
+                  border: 'none',
+                  minHeight: '200px'
                 }}
-            />
+              />
             </div>
           ) : (
             <img
@@ -624,11 +719,14 @@ export default function NFTDisplay({
                 objectFit: 'contain'
               }}
               loading="lazy"
+              onError={(e) => {
+                console.error('[NFTDisplay] Image load error for tokenId:', nftData.tokenId, e)
+              }}
             />
           )
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gray-100">
-            <span className="text-gray-500">No preview available</span>
+          <div className="w-full h-full flex items-center justify-center bg-black/20">
+            <span className="text-white/50 text-sm">No preview available</span>
           </div>
         )}
 
