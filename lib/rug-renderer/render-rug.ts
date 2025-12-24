@@ -272,8 +272,11 @@ export async function renderRug(params: RugRenderParams): Promise<RugRenderResul
   // Create VM context with browser-compatible APIs
   const { createContext, runInContext, Script } = require('vm')
   
+  // Create a mutable reference to canvas/ctx so scripts can update _p5
+  const canvasRef = { canvas, ctx }
+  
   const sandbox: any = {
-    // Global _p5 object (used by p5 script)
+    // Global _p5 object (used by p5 script) - scripts will update this
     _p5: {
       ctx: ctx,
       canvas: canvas,
@@ -288,35 +291,94 @@ export async function renderRug(params: RugRenderParams): Promise<RugRenderResul
       pixelDensity: 1
     },
     // Canvas API - provide node-canvas compatible interface
+    // This is assigned to window.createCanvas by rug-p5.js
     createCanvas: (width: number, height: number) => {
-      // Update _p5 global state
-      sandbox._p5.canvas = canvas
-      sandbox._p5.ctx = ctx
+      // rug-p5.js will call document.createElement("canvas") internally
+      // We intercept that to return our canvas
+      const canvasEl = canvasRef.canvas
+      const ctxEl = canvasRef.ctx
+      
+      // Update canvas dimensions if needed
+      const pixelDensity = sandbox._p5.pixelDensity || 1
+      canvasEl.width = Math.floor(width * pixelDensity)
+      canvasEl.height = Math.floor(height * pixelDensity)
+      
+      // Update _p5 global state (rug-p5.js will do this, but we ensure it's correct)
+      sandbox._p5.canvas = canvasEl
+      sandbox._p5.ctx = ctxEl
       sandbox._p5.width = width
       sandbox._p5.height = height
+      
       return {
-        getContext: () => ctx,
-        width: canvas.width,
-        height: canvas.height,
-        parent: (selector: string) => {},
-        elt: canvas
+        getContext: (type: string) => {
+          if (type === '2d') return ctxEl
+          return ctxEl
+        },
+        width: canvasEl.width,
+        height: canvasEl.height,
+        parent: (selector: string) => {
+          // rug-algo.js calls .parent("rug")
+          // Return object with appendChild for compatibility
+          return {
+            appendChild: () => {}
+          }
+        },
+        elt: canvasEl
       }
     },
     document: {
       createElement: (tag: string) => {
         if (tag === 'canvas') {
-          return canvas
+          // Return our pre-created canvas directly
+          // node-canvas already has getContext, width, height properties
+          const canvasEl = canvasRef.canvas
+          
+          // Add style property for compatibility (rug-p5.js sets canvas.style.width/height)
+          if (!canvasEl.style) {
+            canvasEl.style = {
+              width: '',
+              height: ''
+            }
+          }
+          
+          // Add id property (rug-p5.js sets canvas.id = "defaultCanvas0")
+          if (!canvasEl.id) {
+            canvasEl.id = ''
+          }
+          
+          return canvasEl
         }
         return {}
       },
       getElementById: (id: string) => {
         if (id === 'rug') {
-          return { appendChild: () => {} }
+          return {
+            appendChild: (el: any) => {
+              // Canvas is already created, just ensure _p5 is updated
+              if (el && el.getContext) {
+                canvasRef.canvas = el
+                canvasRef.ctx = el.getContext('2d')
+              }
+            }
+          }
         }
         return null
       },
-      body: { appendChild: () => {} },
-      querySelector: () => null
+      body: {
+        appendChild: (el: any) => {
+          // Canvas is already created, just ensure _p5 is updated
+          if (el && el.getContext) {
+            canvasRef.canvas = el
+            canvasRef.ctx = el.getContext('2d')
+          }
+        }
+      },
+      querySelector: (selector: string) => {
+        if (selector === '#defaultCanvas0') {
+          return null // Return null so rug-p5.js creates new canvas
+        }
+        return null
+      }
     },
     window: {
       width: 0, // Will be set by Object.defineProperty
@@ -374,34 +436,53 @@ export async function renderRug(params: RugRenderParams): Promise<RugRenderResul
   try {
     // 1. Execute p5 script (sets up canvas APIs)
     const p5Script = new Script(p5ScriptContent, { filename: 'rug-p5.js' })
-    ;(runInContext as any)(p5Script, vmContext, { timeout: 2000 })
+    ;(runInContext as any)(p5Script, vmContext, { timeout: 5000 })
     
     // 2. Execute algo script (defines setup() and draw())
     const algoScript = new Script(algoScriptContent, { filename: 'rug-algo.js' })
-    ;(runInContext as any)(algoScript, vmContext, { timeout: 2000 })
+    ;(runInContext as any)(algoScript, vmContext, { timeout: 5000 })
     
     // 3. Execute frame script (if frameLevel is not 'None')
     if (frameLevelNormalized && frameLevelNormalized !== 'None' && frameLevelNormalized !== '') {
       const frameScript = new Script(frameScriptContent, { filename: 'rug-frame.js' })
-      ;(runInContext as any)(frameScript, vmContext, { timeout: 1000 })
+      ;(runInContext as any)(frameScript, vmContext, { timeout: 2000 })
     }
     
-    // 4. Trigger setup() and draw() (same as browser load event)
-    if (typeof sandbox.window.setup === 'function') {
-      sandbox.window.setup()
-    }
-    if (typeof sandbox.window.draw === 'function') {
-      sandbox.window.draw()
+    // 4. Manually trigger the load event handler (rug-p5.js sets this up)
+    // The load event should call setup() and draw()
+    if (sandbox.window.addEventListener) {
+      // Trigger load event synchronously
+      try {
+        // Call setup and draw directly (load event handler does this)
+        if (typeof sandbox.window.setup === 'function') {
+          sandbox.window.setup()
+        }
+        if (typeof sandbox.window.draw === 'function') {
+          sandbox.window.draw()
+        }
+      } catch (setupError) {
+        console.error('Error in setup/draw:', setupError)
+        throw setupError
+      }
     }
     
-    // Return the rendered canvas
+    // Return the rendered canvas (use canvasRef which scripts updated)
+    const finalCanvas = sandbox._p5.canvas || canvasRef.canvas || canvas
+    const finalCtx = sandbox._p5.ctx || canvasRef.ctx || ctx
+    
+    // Verify canvas has content (not just blank)
+    if (!finalCanvas || !finalCtx) {
+      throw new Error('Canvas or context is null after rendering')
+    }
+    
     return {
-      canvas: sandbox._p5.canvas || canvas,
-      ctx: sandbox._p5.ctx || ctx
+      canvas: finalCanvas,
+      ctx: finalCtx
     }
     
   } catch (error) {
     console.error('Error rendering rug:', error)
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack')
     throw error
   }
 }
