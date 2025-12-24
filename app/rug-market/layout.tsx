@@ -1,38 +1,15 @@
-import { Metadata } from 'next'
-
 /**
- * Server-side metadata generation for rug market page
+ * Layout for rug market page
  * 
- * Note: Dynamic metadata for individual rugs is handled client-side
- * via Head component in page.tsx because Next.js App Router doesn't
- * support dynamic searchParams in generateMetadata for client components.
+ * NOTE: Metadata is now generated server-side in metadata.ts via generateMetadata.
+ * This ensures Twitter/X crawlers see the correct OG tags because:
+ * - generateMetadata runs on the server before HTML is sent
+ * - OG tags are included in initial HTML response
+ * - Crawlers don't execute JavaScript, so client-side tags are invisible
  * 
- * This layout provides default metadata for the rug market page.
+ * The layout no longer defines static metadata - all metadata is dynamic
+ * based on searchParams (tokenId, chainId) and handled in metadata.ts
  */
-export const metadata: Metadata = {
-  title: 'Rug Market | Onchain Rugs',
-  description: 'Browse and trade living generative NFT rugs that age over time and require your care.',
-  openGraph: {
-    title: 'Rug Market - Buy & Sell Living Onchain Generative NFT Rugs',
-    description: 'Browse, buy, and sell living onchain generative NFT rugs that require your care.',
-    url: 'https://www.onchainrugs.xyz/rug-market',
-    type: 'website',
-    images: [
-      {
-        url: 'https://www.onchainrugs.xyz/market-og.png',
-        width: 1200,
-        height: 630,
-        alt: 'Rug Market - Onchain Rugs',
-      },
-    ],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Rug Market - Buy & Sell Living Onchain Generative NFT Rugs',
-    description: 'Browse, buy, and sell living onchain generative NFT rugs.',
-    images: ['https://www.onchainrugs.xyz/market-og.png'],
-  },
-}
 
 export default function RugMarketLayout({
   children,
