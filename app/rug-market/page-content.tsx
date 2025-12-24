@@ -707,7 +707,7 @@ export default function RugMarketPageContent() {
               </div>
               {buyHash && (
                 <a
-                  href={`${getExplorerUrl(chainId)}/tx/${buyHash}`}
+                  href={getExplorerUrl(chainId) + '/tx/' + buyHash}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm underline opacity-80 hover:opacity-100"
@@ -718,6 +718,7 @@ export default function RugMarketPageContent() {
             </div>
           </div>
         </div>
+      )}
       </div>
     </>
   )
