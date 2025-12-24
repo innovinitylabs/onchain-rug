@@ -545,7 +545,7 @@ export default function NFTDisplay({
 
     generatePreview()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nftData.tokenId, traitsKey, nftData.animation_url, rugGenerator, scriptsLoaded])
+  }, [nftData.tokenId, traitsKey, nftData.animation_url, rugGenerator, scriptsLoaded, renderMode])
 
 
   // Cleanup blob URLs on unmount
