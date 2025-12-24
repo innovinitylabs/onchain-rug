@@ -22,7 +22,7 @@ interface SocialShareModalProps {
   action: ShareAction
   tokenId?: number
   txHash?: string
-  imageUrl?: string // URL to the NFT image for sharing
+  // imageUrl removed - OG meta tags handle image previews automatically
   additionalData?: {
     price?: string
     actionName?: string
@@ -158,7 +158,6 @@ export function SocialShareModal({
   action,
   tokenId,
   txHash,
-  imageUrl,
   additionalData
 }: SocialShareModalProps) {
   const { address } = useAccount()
@@ -204,12 +203,8 @@ export function SocialShareModal({
           url: shareUrl
         }
         
-        // Include image if available and platform supports it
-        if (imageUrl && navigator.canShare && navigator.canShare({ ...shareData, files: [] })) {
-          // For native share with image, we'd need to fetch and convert to File
-          // For now, just share the URL which will use Open Graph
-        }
-        
+        // Share URL only - social platforms will fetch OG meta tags automatically
+        // No need to attach image files - OG tags handle preview images
         await navigator.share(shareData)
       } catch (err) {
         // User cancelled or error

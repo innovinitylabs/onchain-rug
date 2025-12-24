@@ -157,15 +157,36 @@ export async function GET(
     const algoScriptContent = readFileSync(join(process.cwd(), 'public/data/rug-algo.js'), 'utf-8')
 
     // Create VM context with browser-compatible APIs
+    // The scripts use global _p5 object and window methods
     const sandbox: any = {
+      // Global _p5 object (used by p5 script)
+      _p5: {
+        ctx: null,
+        canvas: null,
+        width: 0,
+        height: 0,
+        fillStyle: null,
+        strokeStyle: '#000',
+        doFill: true,
+        doStroke: true,
+        blend: 'source-over',
+        stack: [],
+        pixelDensity: 1
+      },
       // Canvas API - provide node-canvas compatible interface
       createCanvas: (w: number, h: number) => {
         const c = createCanvas(w, h)
+        const ctx = c.getContext('2d')
+        // Update _p5 global state
+        sandbox._p5.canvas = c
+        sandbox._p5.ctx = ctx
+        sandbox._p5.width = w
+        sandbox._p5.height = h
         return {
-          getContext: () => c.getContext('2d'),
+          getContext: () => ctx,
           width: c.width,
           height: c.height,
-          parent: () => {},
+          parent: (selector: string) => {},
           elt: c
         }
       },
@@ -181,14 +202,27 @@ export async function GET(
         querySelector: () => null
       },
       window: {
-        width: rugCanvas.width,
-        height: rugCanvas.height,
+        width: 0, // Will be set by Object.defineProperty
+        height: 0, // Will be set by Object.defineProperty
         prngSeed: seed,
         cm: characterMap,
         rW: rugWidth + 220,
         rH: rugHeight + 220,
         noLoopCalled: false,
-        addEventListener: () => {}
+        setup: null, // Will be set by algo script
+        draw: null, // Will be set by algo script
+        addEventListener: (event: string, callback: () => void) => {
+          // Trigger load event immediately after scripts load
+          if (event === 'load') {
+            setTimeout(() => {
+              try {
+                callback()
+              } catch (e) {
+                console.error('Load event callback error:', e)
+              }
+            }, 0)
+          }
+        }
       },
       // Rug parameters (OG mode: no dirt, no aging, no frames)
       w: rugWidth,
@@ -220,25 +254,34 @@ export async function GET(
 
     // Execute scripts with timeout
     try {
-      const p5Script = new Script(p5ScriptContent)
-      const algoScript = new Script(algoScriptContent)
+      // Create Script objects for execution
+      const p5Script = new Script(p5ScriptContent, { filename: 'rug-p5.js' })
+      const algoScript = new Script(algoScriptContent, { filename: 'rug-algo.js' })
 
-      // Execute p5 script first
-      runInContext(p5Script, vmContext, { timeout: 2000 })
+      // Execute p5 script first (sets up canvas APIs and window methods)
+      // Note: runInContext accepts Script object, but TypeScript types may be incorrect
+      // Using type assertion to work around this
+      ;(runInContext as any)(p5Script, vmContext, { timeout: 2000 })
       
-      // Execute algo script
-      runInContext(algoScript, vmContext, { timeout: 2000 })
+      // Execute algo script (defines setup() and draw() functions)
+      ;(runInContext as any)(algoScript, vmContext, { timeout: 2000 })
 
-      // Trigger draw if setup was called
-      if (sandbox.window.setup && typeof sandbox.window.setup === 'function') {
+      // Manually trigger setup and draw (scripts expect load event)
+      // The p5 script's addEventListener('load') should have been called,
+      // but we'll also call directly to ensure execution
+      if (typeof sandbox.window.setup === 'function') {
         sandbox.window.setup()
       }
-      if (sandbox.window.draw && typeof sandbox.window.draw === 'function') {
+      if (typeof sandbox.window.draw === 'function') {
         sandbox.window.draw()
       }
+      
+      // Use the canvas that was created by the scripts
+      const renderedCanvas = sandbox._p5.canvas || rugCanvas
 
       // Draw rug onto OG canvas
-      ctx.drawImage(rugCanvas, offsetX, offsetY, scaledWidth, scaledHeight)
+      // Use the canvas rendered by the scripts, or fallback to rugCanvas
+      ctx.drawImage(renderedCanvas, offsetX, offsetY, scaledWidth, scaledHeight)
 
       // Add token ID text overlay
       ctx.fillStyle = '#000000'
@@ -260,8 +303,8 @@ export async function GET(
       console.warn(`OG image generation took ${elapsed}ms (exceeded 3s limit)`)
     }
 
-    // Return PNG
-    return new NextResponse(buffer, {
+    // Return PNG - NextResponse accepts Buffer directly
+    return new NextResponse(buffer as any, {
       headers: {
         'Content-Type': 'image/png',
         'Cache-Control': 'public, max-age=86400', // 24 hours
@@ -292,7 +335,7 @@ function generateFallbackImage(tokenId: number): NextResponse {
   ctx.fillText(`#${tokenId}`, OG_WIDTH / 2, OG_HEIGHT / 2 + 40)
 
   const buffer = canvas.toBuffer('image/png')
-  return new NextResponse(buffer, {
+  return new NextResponse(buffer as any, {
     headers: {
       'Content-Type': 'image/png',
       'Cache-Control': 'public, max-age=3600'
