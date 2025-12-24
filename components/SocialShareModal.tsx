@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { X, Twitter, Share2, MessageCircle, Zap, Sparkles } from 'lucide-react'
 import { useAccount, useChainId } from 'wagmi'
 import { getExplorerUrl } from '@/lib/networks'
@@ -235,8 +236,11 @@ export function SocialShareModal({
     view: 'Share Rug'
   }[action]
 
-  return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+  // Use portal to render modal at document body level, ensuring it appears above all content
+  if (typeof window === 'undefined') return null
+
+  return createPortal(
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
       <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl border border-white/10 shadow-2xl max-w-md w-full">
         {/* Header */}
         <div className="p-6 border-b border-white/10">
@@ -309,7 +313,8 @@ export function SocialShareModal({
           </p>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
