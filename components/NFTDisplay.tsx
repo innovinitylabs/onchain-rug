@@ -407,7 +407,8 @@ export default function NFTDisplay({
   size = 'medium',
   interactive = true,
   onClick,
-  className = ''
+  className = '',
+  renderMode = 'interactive'
 }: NFTDisplayProps) {
   const [previewImage, setPreviewImage] = useState<string>('')
   const [isGenerating, setIsGenerating] = useState(true)
