@@ -108,37 +108,37 @@ function generateShareText(
   tokenId?: number,
   additionalData?: { price?: string; actionName?: string }
 ): string {
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://www.onchainrugs.xyz'
+  // Don't include URL in text - it's passed separately to avoid duplication
   const tokenText = tokenId ? ` #${tokenId}` : ''
-  const rugUrl = tokenId ? `${baseUrl}/rug-market?tokenId=${tokenId}` : baseUrl
   
   switch (action) {
     case 'mint':
-      return `🎨 Just minted my OnchainRug${tokenText}! Check it out: ${rugUrl}`
+      return `🎨 Just minted my OnchainRug${tokenText}! Check it out:`
     
     case 'purchase':
       const priceText = additionalData?.price ? ` for ${additionalData.price} ETH` : ''
-      return `🛒 Just purchased OnchainRug${tokenText}${priceText}! ${rugUrl}`
+      return `🛒 Just purchased OnchainRug${tokenText}${priceText}!`
     
     case 'clean':
-      return `✨ Just cleaned my OnchainRug${tokenText}! Keeping it fresh on-chain. ${rugUrl}`
+      return `✨ Just cleaned my OnchainRug${tokenText}! Keeping it fresh on-chain.`
     
     case 'restore':
-      return `🔧 Just restored my OnchainRug${tokenText}! Bringing it back to life. ${rugUrl}`
+      return `🔧 Just restored my OnchainRug${tokenText}! Bringing it back to life.`
     
     case 'masterRestore':
-      return `🌟 Master restored my OnchainRug${tokenText}! Like new again! ${rugUrl}`
+      return `🌟 Master restored my OnchainRug${tokenText}! Like new again!`
     
     case 'view':
-      return `🧵 Check out this OnchainRug${tokenText}! ${rugUrl}`
+      return `🧵 Check out this OnchainRug${tokenText}!`
     
     default:
-      return `Just interacted with OnchainRug${tokenText}! ${rugUrl}`
+      return `Just interacted with OnchainRug${tokenText}!`
   }
 }
 
 function generateShareUrl(tokenId?: number, txHash?: string, chainId?: number): string {
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://www.onchainrugs.xyz'
+  // Always use production URL, never localhost
+  const baseUrl = 'https://www.onchainrugs.xyz'
   
   if (tokenId) {
     return `${baseUrl}/rug-market?tokenId=${tokenId}`
@@ -146,7 +146,7 @@ function generateShareUrl(tokenId?: number, txHash?: string, chainId?: number): 
   
   if (txHash && chainId) {
     const explorerUrl = getExplorerTxUrl(chainId, txHash)
-    return explorerUrl || `${baseUrl}`
+    return explorerUrl || baseUrl
   }
   
   return baseUrl

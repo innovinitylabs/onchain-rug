@@ -20,13 +20,37 @@
  * 6. Returns PNG buffer (never stored)
  */
 
+/**
+ * Dynamic Open Graph Image Generation for Rug NFTs
+ * 
+ * This endpoint generates OG images on-demand using the EXACT SAME
+ * rug-rendering pipeline used by Rug Market previews.
+ * 
+ * CRITICAL: Uses shared renderRug() function from lib/rug-renderer/render-rug.ts
+ * This ensures OG images match Rug Market previews exactly.
+ * 
+ * CRITICAL CONSTRAINTS:
+ * - NO image storage (images generated per request)
+ * - NO base64 in URLs
+ * - NO client-side rendering
+ * - Images generated in < 3 seconds
+ * - Twitter/X crawler compatible
+ * 
+ * HOW IT WORKS:
+ * 1. Fetches NFT metadata from Redis (already exists)
+ * 2. Calls shared renderRug() with renderMode='og'
+ * 3. renderRug() executes EXACT same pipeline as Rug Market:
+ *    - rug-p5.js (custom p5 implementation)
+ *    - rug-algo.js (drawing logic)
+ *    - rug-frame.js (disabled in OG mode)
+ * 4. Returns PNG buffer (never stored)
+ */
+
 import { NextRequest, NextResponse } from 'next/server'
 import { createCanvas } from 'canvas'
-import { createContext, runInContext, Script } from 'vm'
-import { readFileSync } from 'fs'
-import { join } from 'path'
 import { RugMarketRedis } from '@/app/api/rug-market/collection/rug-market-redis'
 import { getContractAddress } from '@/app/api/rug-market/collection/networks'
+import { renderRug } from '@/lib/rug-renderer/render-rug'
 
 // OG Image dimensions (Twitter/X standard)
 const OG_WIDTH = 1200
@@ -110,9 +134,11 @@ export async function GET(
       return generateFallbackImage(tokenId)
     }
 
-    // Extract rendering parameters
+    // Extract rendering parameters (same structure as Rug Market)
     const permanent = nftData.permanent
     const seed = permanent.seed || tokenId
+    
+    // Parse palette and stripeData (handles both strings and objects)
     const palette = typeof permanent.minifiedPalette === 'string'
       ? JSON.parse(permanent.minifiedPalette)
       : permanent.minifiedPalette
@@ -121,24 +147,37 @@ export async function GET(
       : permanent.minifiedStripeData
     const textRows = permanent.textRows || []
     const warpThickness = permanent.warpThickness || 4
-    const characterMap = permanent.filteredCharacterMap || {}
+    
+    // Parse character map (handles both string and object)
+    const characterMap = typeof permanent.filteredCharacterMap === 'string'
+      ? JSON.parse(permanent.filteredCharacterMap)
+      : (permanent.filteredCharacterMap || {})
 
-    // In OG mode: disable dirt, aging, frames for clean preview
-    const textureLevel = 0 // Disabled for OG
-    const dirtLevel = 0 // Disabled for OG
-    const frameLevel = 'None' // Disabled for OG
+    // Use shared renderRug() function with renderMode='og'
+    // This executes the EXACT same pipeline as Rug Market previews
+    // Note: renderMode='og' will force tl=0, dl=0, fl='None' regardless of input values
+    const renderResult = await renderRug({
+      seed: Number(seed.toString()),
+      palette,
+      stripeData,
+      textRows,
+      characterMap,
+      warpThickness,
+      renderMode: 'og' // OG mode: tl=0, dl=0, fl='None' (applied inside renderRug)
+    })
 
-    // Create canvas for OG image
-    const canvas = createCanvas(OG_WIDTH, OG_HEIGHT)
-    const ctx = canvas.getContext('2d')
+    // Create canvas for OG image (1200x630)
+    const ogCanvas = createCanvas(OG_WIDTH, OG_HEIGHT)
+    const ogCtx = ogCanvas.getContext('2d')
 
     // Fill with neutral background
-    ctx.fillStyle = '#DEDEDE' // Neutral gray background
-    ctx.fillRect(0, 0, OG_WIDTH, OG_HEIGHT)
+    ogCtx.fillStyle = '#DEDEDE'
+    ogCtx.fillRect(0, 0, OG_WIDTH, OG_HEIGHT)
 
-    // Calculate rug dimensions and position for OG layout
-    const rugWidth = 800
-    const rugHeight = 1200
+    // Calculate scaling and positioning
+    const rugCanvas = renderResult.canvas
+    const rugWidth = rugCanvas.width
+    const rugHeight = rugCanvas.height
     const scale = Math.min(
       (OG_WIDTH * 0.7) / rugWidth,
       (OG_HEIGHT * 0.9) / rugHeight
@@ -148,154 +187,19 @@ export async function GET(
     const offsetX = (OG_WIDTH - scaledWidth) / 2
     const offsetY = (OG_HEIGHT - scaledHeight) / 2
 
-    // Create a temporary larger canvas for rug rendering
-    const rugCanvas = createCanvas(rugWidth + 220, rugHeight + 220) // Add padding for fringe
-    const rugCtx = rugCanvas.getContext('2d')
+    // Draw rendered rug onto OG canvas
+    ogCtx.drawImage(rugCanvas, offsetX, offsetY, scaledWidth, scaledHeight)
 
-    // Load scripts
-    const p5ScriptContent = readFileSync(join(process.cwd(), 'public/data/rug-p5.js'), 'utf-8')
-    const algoScriptContent = readFileSync(join(process.cwd(), 'public/data/rug-algo.js'), 'utf-8')
-
-    // Create VM context with browser-compatible APIs
-    // The scripts use global _p5 object and window methods
-    const sandbox: any = {
-      // Global _p5 object (used by p5 script)
-      _p5: {
-        ctx: null,
-        canvas: null,
-        width: 0,
-        height: 0,
-        fillStyle: null,
-        strokeStyle: '#000',
-        doFill: true,
-        doStroke: true,
-        blend: 'source-over',
-        stack: [],
-        pixelDensity: 1
-      },
-      // Canvas API - provide node-canvas compatible interface
-      createCanvas: (w: number, h: number) => {
-        const c = createCanvas(w, h)
-        const ctx = c.getContext('2d')
-        // Update _p5 global state
-        sandbox._p5.canvas = c
-        sandbox._p5.ctx = ctx
-        sandbox._p5.width = w
-        sandbox._p5.height = h
-        return {
-          getContext: () => ctx,
-          width: c.width,
-          height: c.height,
-          parent: (selector: string) => {},
-          elt: c
-        }
-      },
-      document: {
-        createElement: (tag: string) => {
-          if (tag === 'canvas') {
-            return rugCanvas
-          }
-          return {}
-        },
-        getElementById: () => null,
-        body: { appendChild: () => {} },
-        querySelector: () => null
-      },
-      window: {
-        width: 0, // Will be set by Object.defineProperty
-        height: 0, // Will be set by Object.defineProperty
-        prngSeed: seed,
-        cm: characterMap,
-        rW: rugWidth + 220,
-        rH: rugHeight + 220,
-        noLoopCalled: false,
-        setup: null, // Will be set by algo script
-        draw: null, // Will be set by algo script
-        addEventListener: (event: string, callback: () => void) => {
-          // Trigger load event immediately after scripts load
-          if (event === 'load') {
-            setTimeout(() => {
-              try {
-                callback()
-              } catch (e) {
-                console.error('Load event callback error:', e)
-              }
-            }, 0)
-          }
-        }
-      },
-      // Rug parameters (OG mode: no dirt, no aging, no frames)
-      w: rugWidth,
-      h: rugHeight,
-      f: 30,
-      wt: 8,
-      wp: warpThickness,
-      ts: 2,
-      p: palette,
-      sd: stripeData,
-      tr: textRows,
-      td: [], // Text data (will be populated by script)
-      s: seed,
-      tl: textureLevel, // 0 in OG mode
-      dl: dirtLevel, // 0 in OG mode
-      fl: frameLevel, // 'None' in OG mode
-      lt: null, // Will be set by script
-      dt: null, // Will be set by script
-      // Math functions
-      Math,
-      console: { log: () => {}, error: () => {} },
-      // RequestAnimationFrame stub
-      requestAnimationFrame: () => {},
-      // Object.defineProperty for width/height getters
-      Object
-    }
-
-    const vmContext = createContext(sandbox)
-
-    // Execute scripts with timeout
-    try {
-      // Create Script objects for execution
-      const p5Script = new Script(p5ScriptContent, { filename: 'rug-p5.js' })
-      const algoScript = new Script(algoScriptContent, { filename: 'rug-algo.js' })
-
-      // Execute p5 script first (sets up canvas APIs and window methods)
-      // Note: runInContext accepts Script object, but TypeScript types may be incorrect
-      // Using type assertion to work around this
-      ;(runInContext as any)(p5Script, vmContext, { timeout: 2000 })
-      
-      // Execute algo script (defines setup() and draw() functions)
-      ;(runInContext as any)(algoScript, vmContext, { timeout: 2000 })
-
-      // Manually trigger setup and draw (scripts expect load event)
-      // The p5 script's addEventListener('load') should have been called,
-      // but we'll also call directly to ensure execution
-      if (typeof sandbox.window.setup === 'function') {
-        sandbox.window.setup()
-      }
-      if (typeof sandbox.window.draw === 'function') {
-        sandbox.window.draw()
-      }
-      
-      // Use the canvas that was created by the scripts
-      const renderedCanvas = sandbox._p5.canvas || rugCanvas
-
-      // Draw rug onto OG canvas
-      // Use the canvas rendered by the scripts, or fallback to rugCanvas
-      ctx.drawImage(renderedCanvas, offsetX, offsetY, scaledWidth, scaledHeight)
-
-      // Add token ID text overlay
-      ctx.fillStyle = '#000000'
-      ctx.font = 'bold 48px Arial'
-      ctx.textAlign = 'center'
-      ctx.fillText(`OnchainRug #${tokenId}`, OG_WIDTH / 2, OG_HEIGHT - 40)
-
-    } catch (error) {
-      console.error('Error rendering rug:', error)
-      return generateFallbackImage(tokenId)
-    }
+    // Add token ID text overlay
+    ogCtx.fillStyle = '#000000'
+    ogCtx.font = 'bold 48px Arial'
+    ogCtx.textAlign = 'center'
+    ogCtx.fillText(`OnchainRug #${tokenId}`, OG_WIDTH / 2, OG_HEIGHT - 40)
 
     // Convert to PNG buffer
-    const buffer = canvas.toBuffer('image/png')
+    const buffer = ogCanvas.toBuffer('image/png')
+
+    // Buffer already created above
 
     // Check timeout
     const elapsed = Date.now() - startTime
