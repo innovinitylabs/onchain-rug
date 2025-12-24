@@ -117,8 +117,9 @@ function RugCard({ nft, onClick, onRefresh, onFavoriteToggle, onBuyNFT, onMakeOf
           nftData={nftData}
           size="medium"
           interactive={false}
-            className="rounded-none w-full h-full cursor-pointer"
-            onClick={onClick}
+          className="rounded-none w-full h-full cursor-pointer"
+          onClick={onClick}
+          renderMode="interactive"
         />
         </div>
 
