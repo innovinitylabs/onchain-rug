@@ -465,6 +465,26 @@ function RugMarketPageContent() {
 
   return (
     <>
+      {/* Dynamic OG meta tags for individual rugs - rendered client-side */}
+      {tokenIdFromUrl && (
+        <Head>
+          <title>{`OnchainRug #${tokenIdFromUrl} | Onchain Rugs`}</title>
+          <meta name="description" content={`View OnchainRug #${tokenIdFromUrl} - A living generative NFT that ages over time and requires your care.`} />
+          <meta property="og:title" content={`OnchainRug #${tokenIdFromUrl}`} />
+          <meta property="og:description" content={`View OnchainRug #${tokenIdFromUrl} - A living generative NFT that ages over time and requires your care.`} />
+          <meta property="og:url" content={`https://www.onchainrugs.xyz/rug-market?tokenId=${tokenIdFromUrl}${chainId !== 84532 ? `&chainId=${chainId}` : ''}`} />
+          <meta property="og:type" content="website" />
+          <meta property="og:image" content={`https://www.onchainrugs.xyz/api/og/rug?tokenId=${tokenIdFromUrl}${chainId !== 84532 ? `&chainId=${chainId}` : ''}`} />
+          <meta property="og:image:width" content="1200" />
+          <meta property="og:image:height" content="630" />
+          <meta property="og:image:alt" content={`OnchainRug #${tokenIdFromUrl}`} />
+          <meta name="twitter:card" content="summary_large_image" />
+          <meta name="twitter:title" content={`OnchainRug #${tokenIdFromUrl}`} />
+          <meta name="twitter:description" content={`View OnchainRug #${tokenIdFromUrl} - A living generative NFT`} />
+          <meta name="twitter:image" content={`https://www.onchainrugs.xyz/api/og/rug?tokenId=${tokenIdFromUrl}${chainId !== 84532 ? `&chainId=${chainId}` : ''}`} />
+          <link rel="canonical" href={`https://www.onchainrugs.xyz/rug-market?tokenId=${tokenIdFromUrl}${chainId !== 84532 ? `&chainId=${chainId}` : ''}`} />
+        </Head>
+      )}
       <Head>
         <title>Rug Market - Buy & Sell Living Onchain Rug NFTs | OnchainRugs</title>
         <meta name="description" content="Browse, buy, and sell living onchain generative NFT rugs that require your care. Each rug is a living NFT - completely onchain, generative, and dynamic. They age, evolve, and require maintenance. Trade on Shape L2 blockchain." />

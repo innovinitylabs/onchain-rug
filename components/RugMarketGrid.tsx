@@ -1,16 +1,17 @@
 'use client'
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react'
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useChainId, useAccount } from 'wagmi'
 import { motion, AnimatePresence } from 'framer-motion'
-import { RefreshCw, Eye, Heart, ExternalLink, ShoppingCart, HandCoins, Tag, X, Handshake } from 'lucide-react'
+import { RefreshCw, Eye, Heart, ExternalLink, ShoppingCart, HandCoins, Tag, X, Handshake, Share2 } from 'lucide-react'
 import { useTokenOffers, useOfferData } from '@/hooks/use-marketplace-contract'
 import { RugMarketNFT } from '@/lib/rug-market-types'
 import NFTDisplay, { NFTDisplaySkeleton } from './NFTDisplay'
 import { rugMarketNFTToNFTData, getCalculatedLevels } from '@/utils/rug-market-data-adapter'
 import { getExplorerUrl, getContractAddress } from '@/lib/networks'
 import { formatEth } from '@/utils/marketplace-utils'
+import { SocialShareModal } from '@/components/SocialShareModal'
 
 interface RugMarketGridProps {
   nfts: RugMarketNFT[]
@@ -45,6 +46,9 @@ function RugCard({ nft, onClick, onRefresh, onFavoriteToggle, onBuyNFT, onMakeOf
   const chainId = useChainId()
   const { address } = useAccount()
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [showShareModal, setShowShareModal] = useState(false)
+  const [shareImageUrl, setShareImageUrl] = useState<string | undefined>()
+  const nftDisplayRef = useRef<HTMLDivElement>(null)
   
   // Check if user owns this NFT
   const isOwner = address && nft.dynamic.currentOwner && 
@@ -104,6 +108,7 @@ function RugCard({ nft, onClick, onRefresh, onFavoriteToggle, onBuyNFT, onMakeOf
         }}
       >
         <div 
+          ref={nftDisplayRef}
           className="absolute inset-0 w-full h-full" 
           style={{ overflow: 'hidden' }}
           onClick={onClick}
@@ -124,9 +129,21 @@ function RugCard({ nft, onClick, onRefresh, onFavoriteToggle, onBuyNFT, onMakeOf
             #{nft.permanent.tokenId}
           </div>
           
-          {/* Top Right - Refresh Button */}
-          {onRefresh && (
-            <div className="absolute top-2 right-2 pointer-events-auto">
+          {/* Top Right - Action Buttons */}
+          <div className="absolute top-2 right-2 flex gap-2 pointer-events-auto">
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                // Don't set imageUrl - the share page URL will have Open Graph meta tags
+                // Social platforms will fetch the page and extract the image from OG tags
+                setShowShareModal(true)
+              }}
+              className="p-2 bg-black/80 backdrop-blur-sm text-white rounded hover:bg-black/90 transition-colors shadow-lg"
+              title="Share this rug"
+            >
+              <Share2 className="w-4 h-4" />
+            </button>
+            {onRefresh && (
               <button
                 onClick={handleRefresh}
                 disabled={isRefreshing}
@@ -135,8 +152,8 @@ function RugCard({ nft, onClick, onRefresh, onFavoriteToggle, onBuyNFT, onMakeOf
               >
                 <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
               </button>
-            </div>
-          )}
+            )}
+          </div>
 
         {/* Bottom Left - Condition */}
           <div className="absolute bottom-2 left-2 pointer-events-auto">
@@ -258,6 +275,14 @@ function RugCard({ nft, onClick, onRefresh, onFavoriteToggle, onBuyNFT, onMakeOf
           </button>
         </div>
       </div>
+
+      {/* Social Share Modal */}
+      <SocialShareModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        action="view"
+        tokenId={nft.permanent.tokenId}
+      />
     </motion.div>
   )
 }

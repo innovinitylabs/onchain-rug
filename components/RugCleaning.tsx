@@ -10,6 +10,7 @@ import { Droplets, AlertCircle, CheckCircle, Clock, Sparkles, Crown } from 'luci
 import { config, agingConfig } from '@/lib/config'
 import { formatEther } from 'viem'
 import { SUPPORTED_CHAIN_IDS, getChainName } from '@/lib/networks'
+import { SocialShareModal, ShareAction } from './SocialShareModal'
 
 interface RugCleaningProps {
   tokenId: bigint
@@ -44,7 +45,8 @@ export function RugCleaning({ tokenId, mintTime, lastCleaned: propLastCleaned, o
     isPending: cleanPending,
     isConfirming: cleanConfirming,
     isSuccess: cleanSuccess,
-    error: cleanError
+    error: cleanError,
+    hash: cleanHash
   } = useCleanRug()
 
   const {
@@ -52,7 +54,8 @@ export function RugCleaning({ tokenId, mintTime, lastCleaned: propLastCleaned, o
     isPending: restorePending,
     isConfirming: restoreConfirming,
     isSuccess: restoreSuccess,
-    error: restoreError
+    error: restoreError,
+    hash: restoreHash
   } = useRestoreRug()
 
   const {
@@ -60,16 +63,32 @@ export function RugCleaning({ tokenId, mintTime, lastCleaned: propLastCleaned, o
     isPending: masterRestorePending,
     isConfirming: masterRestoreConfirming,
     isSuccess: masterRestoreSuccess,
-    error: masterRestoreError
+    error: masterRestoreError,
+    hash: masterRestoreHash
   } = useMasterRestoreRug()
 
   // State to track refresh to prevent multiple calls
   const [hasRefreshed, setHasRefreshed] = useState(false)
+  const [showShareModal, setShowShareModal] = useState(false)
+  const [shareAction, setShareAction] = useState<ShareAction>('clean')
+  const [shareTxHash, setShareTxHash] = useState<string | undefined>()
 
   // Monitor transaction completion and refetch data (only once per transaction)
   useEffect(() => {
     if ((cleanSuccess || restoreSuccess || masterRestoreSuccess) && !hasRefreshed) {
       console.log('Transaction confirmed, refreshing NFT data from blockchain...')
+      
+      // Determine which action succeeded and set share modal state
+      if (cleanSuccess && cleanHash) {
+        setShareAction('clean')
+        setShareTxHash(cleanHash)
+      } else if (restoreSuccess && restoreHash) {
+        setShareAction('restore')
+        setShareTxHash(restoreHash)
+      } else if (masterRestoreSuccess && masterRestoreHash) {
+        setShareAction('masterRestore')
+        setShareTxHash(masterRestoreHash)
+      }
       
       // Refresh NFT data from blockchain to get updated baseAgingLevel and frameLevel
       const refreshNFTData = async () => {
@@ -107,13 +126,15 @@ export function RugCleaning({ tokenId, mintTime, lastCleaned: propLastCleaned, o
           onRefreshNFT(Number(tokenId))
         }
         setHasRefreshed(true)
+        // Show share modal after refresh completes
+        setShowShareModal(true)
       })
     }
     if (cleanError || restoreError || masterRestoreError) {
       console.error('Transaction error:', cleanError || restoreError || masterRestoreError)
       // Error is already displayed in the UI, no need for alert here
     }
-  }, [cleanSuccess, restoreSuccess, masterRestoreSuccess, cleanError, restoreError, masterRestoreError, refetch, onRefreshNFT, tokenId, hasRefreshed, chainId])
+  }, [cleanSuccess, restoreSuccess, masterRestoreSuccess, cleanError, restoreError, masterRestoreError, refetch, onRefreshNFT, tokenId, hasRefreshed, chainId, cleanHash, restoreHash, masterRestoreHash])
 
   // Reset refresh flag when starting a new transaction
   useEffect(() => {
@@ -679,6 +700,15 @@ export function RugCleaning({ tokenId, mintTime, lastCleaned: propLastCleaned, o
           </div>
         </div>
       )}
+
+      {/* Social Share Modal */}
+      <SocialShareModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        action={shareAction}
+        tokenId={Number(tokenId)}
+        txHash={shareTxHash}
+      />
 
       {/* Info */}
       <div className="bg-blue-900/50 border border-blue-500/30 rounded p-3">
