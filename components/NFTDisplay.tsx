@@ -106,6 +106,7 @@ export interface NFTDisplayProps {
   interactive?: boolean
   onClick?: () => void
   className?: string
+  renderMode?: 'og' | 'interactive' // OG mode: disables dirt, aging, frames, animations
   // Deprecated props - kept for backward compatibility but unused
   showControls?: boolean
   onFavoriteToggle?: (tokenId: number) => void
@@ -166,8 +167,9 @@ class RugGenerator {
     }
   }
 
-  private generateHTMLPreview(traits: RugTraits, tokenId?: number): string {
+  private generateHTMLPreview(traits: RugTraits, tokenId?: number, renderMode?: 'og' | 'interactive'): string {
     const displayTokenId = tokenId || (traits?.seed ? Number(traits.seed.toString()) : 'Preview')
+    const isOGMode = renderMode === 'og'
     
     // Helper to safely parse JSON - handles both strings and objects/arrays
     const safeParseJson = (value: any, fallback: any): any => {
@@ -207,8 +209,9 @@ class RugGenerator {
     const finalTextRows = textRowsArray.length > 0 ? textRowsArray : ["BACKEND", "RUGGED"]
     
     const seed = traits?.seed ? Number(traits.seed.toString()) : 348430
-    const textureLevel = traits?.agingLevel || 0
-    const dirtLevel = traits?.dirtLevel || 0
+    // In OG mode: disable dirt, aging, and frames
+    const textureLevel = isOGMode ? 0 : (traits?.agingLevel || 0)
+    const dirtLevel = isOGMode ? 0 : (traits?.dirtLevel || 0)
     
     // Use local character map (not from contract/Redis to save space)
     // Filter to only include characters used in textRows for optimization
@@ -238,7 +241,8 @@ class RugGenerator {
       characterMapObj[' '] = fullCharacterMap[' '] || ["00000","00000","00000","00000","00000","00000","00000"]
     }
 
-    const frameLevel = (() => {
+    // In OG mode: disable frames
+    const frameLevel = isOGMode ? '' : (() => {
       const level = traits?.frameLevel || ''
       if (level === 'Gold') return 'G'
       if (level === 'Bronze') return 'B'
@@ -246,6 +250,34 @@ class RugGenerator {
       if (level === 'Diamond') return 'D'
       return ''
     })()
+
+    // OG mode: inject code to set __OG_READY__ flag after draw completes
+    const ogReadyScript = isOGMode ? `
+  <script>
+    // Override draw function to set ready flag after first complete render
+    (function() {
+      const originalDraw = window.draw;
+      if (typeof originalDraw === 'function') {
+        let drawCalled = false;
+        window.draw = function() {
+          originalDraw.apply(this, arguments);
+          if (!drawCalled && window.noLoopCalled) {
+            drawCalled = true;
+            // Set ready flag after draw completes and noLoop was called
+            window.__OG_READY__ = true;
+          }
+        };
+      }
+      // Also check on load event completion
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          if (typeof window.draw === 'function' && window.noLoopCalled) {
+            window.__OG_READY__ = true;
+          }
+        }, 100);
+      });
+    })();
+  </script>` : ''
 
     const htmlContent = `<!DOCTYPE html>
 <html>
@@ -283,7 +315,7 @@ class RugGenerator {
   </script>
   <script>
     ${this.rugFrameScript}
-  </script>
+  </script>${ogReadyScript}
 </body>
 </html>`
 
@@ -355,10 +387,10 @@ class RugGenerator {
   }
 
 
-  generatePreview(traits: RugTraits, tokenId?: number): string {
+  generatePreview(traits: RugTraits, tokenId?: number, renderMode?: 'og' | 'interactive'): string {
     try {
       console.log('Generating HTML preview from traits for token', tokenId)
-      const htmlContent = this.generateHTMLPreview(traits, tokenId)
+      const htmlContent = this.generateHTMLPreview(traits, tokenId, renderMode)
       const blob = new Blob([htmlContent], { type: 'text/html' })
       const blobUrl = URL.createObjectURL(blob)
       return blobUrl
@@ -375,7 +407,8 @@ export default function NFTDisplay({
   size = 'medium',
   interactive = true,
   onClick,
-  className = ''
+  className = '',
+  renderMode = 'interactive'
 }: NFTDisplayProps) {
   const [previewImage, setPreviewImage] = useState<string>('')
   const [isGenerating, setIsGenerating] = useState(true)
@@ -476,7 +509,7 @@ export default function NFTDisplay({
           }
 
           setIsGenerating(true)
-          const imageData = rugGenerator.generatePreview(nftData.traits, nftData.tokenId)
+          const imageData = rugGenerator.generatePreview(nftData.traits, nftData.tokenId, renderMode)
 
           if (imageData.startsWith('blob:')) {
             if (blobUrl && blobUrl.startsWith('blob:')) {
@@ -512,7 +545,7 @@ export default function NFTDisplay({
 
     generatePreview()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nftData.tokenId, traitsKey, nftData.animation_url, rugGenerator, scriptsLoaded])
+  }, [nftData.tokenId, traitsKey, nftData.animation_url, rugGenerator, scriptsLoaded, renderMode])
 
 
   // Cleanup blob URLs on unmount

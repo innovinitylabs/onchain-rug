@@ -21,8 +21,10 @@ import Footer from '../../components/Footer'
 import LoadingAnimation from '../../components/LoadingAnimation'
 import RugMarketGrid from '../../components/RugMarketGrid'
 import RugDetailModal from '../../components/rug-market/RugDetailModal'
+import NFTDisplay from '../../components/NFTDisplay'
 import { ShoppingCart, Sparkles, TrendingUp, AlertCircle, RefreshCw } from 'lucide-react'
 import { RugMarketNFT } from '../../lib/rug-market-types'
+import { rugMarketNFTToNFTData } from '../../utils/rug-market-data-adapter'
 import { useBuyListing, useCancelListing, useCancelOffer } from '../../hooks/use-marketplace-contract'
 import { useWaitForTransactionReceipt } from 'wagmi'
 import { getExplorerUrl } from '../../lib/networks'
@@ -45,8 +47,10 @@ export default function RugMarketPageContent() {
   const itemsPerPage = 24
   const [error, setError] = useState<string | null>(null)
   
-  // Get tokenId from URL query param
+  // Get tokenId and renderMode from URL query params
   const tokenIdFromUrl = searchParams.get('tokenId')
+  const renderModeFromUrl = searchParams.get('renderMode') as 'og' | 'interactive' | null
+  const isOGMode = renderModeFromUrl === 'og'
   const [stats, setStats] = useState({
     totalNFTs: 0,
     floorPrice: '0',
@@ -91,7 +95,7 @@ export default function RugMarketPageContent() {
     }
   }, [chainId])
 
-  // Open modal from URL tokenId
+  // Open modal from URL tokenId (or select NFT for OG mode)
   useEffect(() => {
     if (tokenIdFromUrl) {
       const tokenId = parseInt(tokenIdFromUrl)
@@ -102,14 +106,19 @@ export default function RugMarketPageContent() {
         } else if (!nft && allNFTs.length > 0) {
           // Fetch NFT if not in current list
           fetchNFTById(tokenId)
+        } else if (!nft && allNFTs.length === 0 && !isLoading) {
+          // In OG mode, fetch immediately even if list is empty
+          if (isOGMode) {
+            fetchNFTById(tokenId)
+          }
         }
       }
-    } else if (!tokenIdFromUrl && selectedNFT) {
-      // Close modal if tokenId removed from URL
+    } else if (!tokenIdFromUrl && selectedNFT && !isOGMode) {
+      // Close modal if tokenId removed from URL (but not in OG mode)
       setSelectedNFT(null)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tokenIdFromUrl, allNFTs.length, fetchNFTById, selectedNFT])
+  }, [tokenIdFromUrl, allNFTs.length, fetchNFTById, selectedNFT, isOGMode, isLoading])
 
   // Fetch NFT data and stats on mount and when chain changes
   useEffect(() => {
@@ -660,24 +669,41 @@ export default function RugMarketPageContent() {
             )}
           </div>
 
-            {/* NFT Grid */}
-          {isLoading ? (
-            <div className="flex items-center justify-center py-20">
-              <LoadingAnimation />
+            {/* NFT Grid - Hidden in OG mode */}
+          {!isOGMode && (
+            isLoading ? (
+              <div className="flex items-center justify-center py-20">
+                <LoadingAnimation />
+              </div>
+            ) : (
+              <RugMarketGrid
+                nfts={paginatedNFTs}
+                loading={isLoading}
+                onNFTClick={handleNFTClick}
+                onRefreshNFT={handleRefreshNFT}
+                onFavoriteToggle={handleFavoriteToggle}
+                onBuyNFT={handleBuyNFT}
+                onMakeOffer={handleMakeOffer}
+                onCancelListing={handleCancelListing}
+                onCancelOffer={handleCancelOffer}
+                sortKey={sortBy}
+              />
+            )
+          )}
+          
+          {/* OG Mode: Show only the selected NFT preview */}
+          {isOGMode && tokenIdFromUrl && selectedNFT && (
+            <div className="flex items-center justify-center min-h-screen">
+              <div className="w-full max-w-4xl">
+                <NFTDisplay
+                  nftData={rugMarketNFTToNFTData(selectedNFT)}
+                  size="large"
+                  interactive={false}
+                  renderMode="og"
+                  className="w-full"
+                />
+              </div>
             </div>
-          ) : (
-            <RugMarketGrid
-              nfts={paginatedNFTs}
-              loading={isLoading}
-              onNFTClick={handleNFTClick}
-              onRefreshNFT={handleRefreshNFT}
-              onFavoriteToggle={handleFavoriteToggle}
-              onBuyNFT={handleBuyNFT}
-              onMakeOffer={handleMakeOffer}
-              onCancelListing={handleCancelListing}
-              onCancelOffer={handleCancelOffer}
-              sortKey={sortBy}
-            />
           )}
         </div>
       </main>

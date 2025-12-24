@@ -1,8 +1,8 @@
 /**
  * Dynamic Open Graph Image Generation for Rug NFTs
  * 
- * This endpoint generates OG images on-demand using the same JavaScript
- * rug-rendering logic used in the marketplace, but executed server-side.
+ * This endpoint generates OG images on-demand using Puppeteer to render
+ * the EXACT SAME rug-rendering pipeline used in the marketplace.
  * 
  * CRITICAL CONSTRAINTS:
  * - NO image storage (images generated per request)
@@ -12,45 +12,16 @@
  * - Twitter/X crawler compatible
  * 
  * HOW IT WORKS:
- * 1. Fetches NFT metadata from Redis (already exists)
- * 2. Creates Node.js VM context with node-canvas
- * 3. Provides browser-compatible APIs (document, window, etc.)
- * 4. Executes same rug rendering scripts as client
- * 5. In OG mode: disables dirt (dl=0), aging (tl=0), frames (fl='None')
+ * 1. Launches Puppeteer (headless Chromium)
+ * 2. Navigates to rug-market page with renderMode=og
+ * 3. Waits for window.__OG_READY__ flag
+ * 4. Screenshots the canvas container
+ * 5. Resizes/crops to 1200x630
  * 6. Returns PNG buffer (never stored)
  */
 
-/**
- * Dynamic Open Graph Image Generation for Rug NFTs
- * 
- * This endpoint generates OG images on-demand using the EXACT SAME
- * rug-rendering pipeline used by Rug Market previews.
- * 
- * CRITICAL: Uses shared renderRug() function from lib/rug-renderer/render-rug.ts
- * This ensures OG images match Rug Market previews exactly.
- * 
- * CRITICAL CONSTRAINTS:
- * - NO image storage (images generated per request)
- * - NO base64 in URLs
- * - NO client-side rendering
- * - Images generated in < 3 seconds
- * - Twitter/X crawler compatible
- * 
- * HOW IT WORKS:
- * 1. Fetches NFT metadata from Redis (already exists)
- * 2. Calls shared renderRug() with renderMode='og'
- * 3. renderRug() executes EXACT same pipeline as Rug Market:
- *    - rug-p5.js (custom p5 implementation)
- *    - rug-algo.js (drawing logic)
- *    - rug-frame.js (disabled in OG mode)
- * 4. Returns PNG buffer (never stored)
- */
-
 import { NextRequest, NextResponse } from 'next/server'
-import { createCanvas } from 'canvas'
-import { RugMarketRedis } from '@/app/api/rug-market/collection/rug-market-redis'
-import { getContractAddress } from '@/app/api/rug-market/collection/networks'
-import { renderRug } from '@/lib/rug-renderer/render-rug'
+import puppeteer from 'puppeteer'
 
 // OG Image dimensions (Twitter/X standard)
 const OG_WIDTH = 1200
@@ -85,149 +56,69 @@ function checkRateLimit(request: NextRequest): boolean {
   return true
 }
 
-export async function GET(
-  request: NextRequest
-) {
-  const startTime = Date.now()
-  
-  try {
-    // Rate limiting
-    if (!checkRateLimit(request)) {
-      return NextResponse.json(
-        { error: 'Rate limit exceeded' },
-        { status: 429 }
-      )
-    }
-
-    // Get query params
-    const { searchParams } = new URL(request.url)
-    const tokenIdParam = searchParams.get('tokenId')
-    const chainId = parseInt(searchParams.get('chainId') || '84532')
-
-    if (!tokenIdParam) {
-      return NextResponse.json(
-        { error: 'tokenId is required' },
-        { status: 400 }
-      )
-    }
-
-    const tokenId = parseInt(tokenIdParam)
-    if (isNaN(tokenId) || tokenId <= 0 || tokenId > 100000) {
-      return NextResponse.json(
-        { error: 'Invalid token ID' },
-        { status: 400 }
-      )
-    }
-
-    // Fetch NFT metadata from Redis
-    const contractAddress = getContractAddress(chainId)
-    if (!contractAddress) {
-      return NextResponse.json(
-        { error: 'Unsupported chain' },
-        { status: 400 }
-      )
-    }
-
-    const nftData = await RugMarketRedis.getNFTData(chainId, contractAddress, tokenId)
-    if (!nftData) {
-      // Fallback to generic OG image
-      return generateFallbackImage(tokenId)
-    }
-
-    // Extract rendering parameters (same structure as Rug Market)
-    const permanent = nftData.permanent
-    const seed = permanent.seed || tokenId
-    
-    // Parse palette and stripeData (handles both strings and objects)
-    const palette = typeof permanent.minifiedPalette === 'string'
-      ? JSON.parse(permanent.minifiedPalette)
-      : permanent.minifiedPalette
-    const stripeData = typeof permanent.minifiedStripeData === 'string'
-      ? JSON.parse(permanent.minifiedStripeData)
-      : permanent.minifiedStripeData
-    const textRows = permanent.textRows || []
-    const warpThickness = permanent.warpThickness || 4
-    
-    // Parse character map (handles both string and object)
-    const characterMap = typeof permanent.filteredCharacterMap === 'string'
-      ? JSON.parse(permanent.filteredCharacterMap)
-      : (permanent.filteredCharacterMap || {})
-
-    // Use shared renderRug() function with renderMode='og'
-    // This executes the EXACT same pipeline as Rug Market previews
-    // Note: renderMode='og' will force tl=0, dl=0, fl='None' regardless of input values
-    const renderResult = await renderRug({
-      seed: Number(seed.toString()),
-      palette,
-      stripeData,
-      textRows,
-      characterMap,
-      warpThickness,
-      renderMode: 'og' // OG mode: tl=0, dl=0, fl='None' (applied inside renderRug)
-    })
-
-    // Create canvas for OG image (1200x630)
-    const ogCanvas = createCanvas(OG_WIDTH, OG_HEIGHT)
-    const ogCtx = ogCanvas.getContext('2d')
-
-    // Fill with neutral background
-    ogCtx.fillStyle = '#DEDEDE'
-    ogCtx.fillRect(0, 0, OG_WIDTH, OG_HEIGHT)
-
-    // Calculate scaling and positioning
-    const rugCanvas = renderResult.canvas
-    const rugWidth = rugCanvas.width
-    const rugHeight = rugCanvas.height
-    const scale = Math.min(
-      (OG_WIDTH * 0.7) / rugWidth,
-      (OG_HEIGHT * 0.9) / rugHeight
-    )
-    const scaledWidth = rugWidth * scale
-    const scaledHeight = rugHeight * scale
-    const offsetX = (OG_WIDTH - scaledWidth) / 2
-    const offsetY = (OG_HEIGHT - scaledHeight) / 2
-
-    // Draw rendered rug onto OG canvas
-    ogCtx.drawImage(rugCanvas, offsetX, offsetY, scaledWidth, scaledHeight)
-
-    // Add token ID text overlay
-    ogCtx.fillStyle = '#000000'
-    ogCtx.font = 'bold 48px Arial'
-    ogCtx.textAlign = 'center'
-    ogCtx.fillText(`OnchainRug #${tokenId}`, OG_WIDTH / 2, OG_HEIGHT - 40)
-
-    // Convert to PNG buffer
-    const buffer = ogCanvas.toBuffer('image/png')
-
-    // Buffer already created above
-
-    // Check timeout
-    const elapsed = Date.now() - startTime
-    if (elapsed > 3000) {
-      console.warn(`OG image generation took ${elapsed}ms (exceeded 3s limit)`)
-    }
-
-    // Return PNG - NextResponse accepts Buffer directly
-    return new NextResponse(buffer as any, {
-      headers: {
-        'Content-Type': 'image/png',
-        'Cache-Control': 'public, max-age=86400', // 24 hours
-        'X-Generation-Time': `${elapsed}ms`
-      }
-    })
-
-  } catch (error) {
-    console.error('Error generating OG image:', error)
-    const tokenId = parseInt(new URL(request.url).searchParams.get('tokenId') || '0')
-    return generateFallbackImage(tokenId)
+async function processCanvasBuffer(canvasBuffer: Buffer, tokenId: number, startTime: number): Promise<NextResponse> {
+  if (!canvasBuffer || !Buffer.isBuffer(canvasBuffer)) {
+    throw new Error('Failed to capture canvas screenshot')
   }
+
+  // Create OG canvas and composite
+  const { createCanvas, loadImage } = require('canvas')
+  const ogCanvas = createCanvas(OG_WIDTH, OG_HEIGHT)
+  const ogCtx = ogCanvas.getContext('2d')
+
+  // Fill with neutral background
+  ogCtx.fillStyle = '#DEDEDE'
+  ogCtx.fillRect(0, 0, OG_WIDTH, OG_HEIGHT)
+
+  // Load canvas image
+  const canvasImage = await loadImage(canvasBuffer)
+  
+  // Calculate scaling and positioning
+  const scale = Math.min(
+    (OG_WIDTH * 0.7) / canvasImage.width,
+    (OG_HEIGHT * 0.9) / canvasImage.height
+  )
+  const scaledWidth = canvasImage.width * scale
+  const scaledHeight = canvasImage.height * scale
+  const offsetX = (OG_WIDTH - scaledWidth) / 2
+  const offsetY = (OG_HEIGHT - scaledHeight) / 2
+
+  // Draw rug canvas onto OG canvas
+  ogCtx.drawImage(canvasImage, offsetX, offsetY, scaledWidth, scaledHeight)
+
+  // Add token ID text overlay
+  ogCtx.fillStyle = '#000000'
+  ogCtx.font = 'bold 48px Arial'
+  ogCtx.textAlign = 'center'
+  ogCtx.fillText(`OnchainRug #${tokenId}`, OG_WIDTH / 2, OG_HEIGHT - 40)
+
+  // Convert to PNG buffer
+  const buffer = ogCanvas.toBuffer('image/png')
+
+  // Check timeout
+  const elapsed = Date.now() - startTime
+  if (elapsed > 3000) {
+    console.warn(`OG image generation took ${elapsed}ms (exceeded 3s limit)`)
+  }
+
+  console.log(`[OG] Successfully generated OG image in ${elapsed}ms`)
+
+  // Return PNG
+  return new NextResponse(buffer as any, {
+    headers: {
+      'Content-Type': 'image/png',
+      'Cache-Control': 'public, max-age=86400', // 24 hours
+      'X-Generation-Time': `${elapsed}ms`
+    }
+  })
 }
 
 function generateFallbackImage(tokenId: number): NextResponse {
-  const canvas = createCanvas(OG_WIDTH, OG_HEIGHT)
+  // Simple fallback - return a basic image
+  // In production, you might want to use a static fallback image
+  const canvas = require('canvas').createCanvas(OG_WIDTH, OG_HEIGHT)
   const ctx = canvas.getContext('2d')
 
-  // Simple fallback design
   ctx.fillStyle = '#1a1a2e'
   ctx.fillRect(0, 0, OG_WIDTH, OG_HEIGHT)
 
@@ -245,4 +136,148 @@ function generateFallbackImage(tokenId: number): NextResponse {
       'Cache-Control': 'public, max-age=3600'
     }
   })
+}
+
+export async function GET(request: NextRequest) {
+  const startTime = Date.now()
+  
+  try {
+    // Rate limiting
+    if (!checkRateLimit(request)) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded' },
+        { status: 429 }
+      )
+    }
+
+    // Get query params
+    const { searchParams } = new URL(request.url)
+    const tokenIdParam = searchParams.get('tokenId')
+    const chainId = searchParams.get('chainId') || '84532'
+
+    if (!tokenIdParam) {
+      return NextResponse.json(
+        { error: 'tokenId is required' },
+        { status: 400 }
+      )
+    }
+
+    const tokenId = parseInt(tokenIdParam)
+    if (isNaN(tokenId) || tokenId <= 0 || tokenId > 100000) {
+      return NextResponse.json(
+        { error: 'Invalid token ID' },
+        { status: 400 }
+      )
+    }
+
+    // Base URL - use production URL, never localhost
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.onchainrugs.xyz'
+    
+    // Construct URL with renderMode=og
+    const pageUrl = `${baseUrl}/rug-market?tokenId=${tokenId}&renderMode=og${chainId !== '84532' ? `&chainId=${chainId}` : ''}`
+
+    console.log(`[OG] Rendering rug for tokenId=${tokenId} via Puppeteer`)
+    console.log(`[OG] Page URL: ${pageUrl}`)
+
+    // Launch Puppeteer
+    let browser
+    try {
+      browser = await puppeteer.launch({
+        headless: true,
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-accelerated-2d-canvas',
+          '--disable-gpu',
+          '--window-size=1200,630'
+        ],
+        timeout: 5000
+      })
+
+      const page = await browser.newPage()
+      
+      // Set viewport to OG image size
+      await page.setViewport({
+        width: OG_WIDTH,
+        height: OG_HEIGHT,
+        deviceScaleFactor: 1
+      })
+
+      // Navigate to page
+      await page.goto(pageUrl, {
+        waitUntil: 'networkidle0',
+        timeout: 10000
+      })
+
+      // Wait for __OG_READY__ flag (set by renderMode=og script)
+      try {
+        await page.waitForFunction(
+          () => (window as any).__OG_READY__ === true,
+          { timeout: 3000 }
+        )
+        console.log(`[OG] __OG_READY__ flag detected`)
+      } catch (waitError) {
+        console.warn(`[OG] __OG_READY__ flag not detected within timeout, proceeding anyway`)
+        // Wait a bit more for rendering to complete
+        await page.waitForTimeout(500)
+      }
+
+      // Find the canvas container (NFTDisplay renders in an iframe)
+      // The canvas is inside an iframe, so we need to access it via the iframe
+      const canvasSelector = 'iframe[src^="blob:"]'
+      
+      // Wait for iframe to load
+      await page.waitForSelector(canvasSelector, { timeout: 5000 }).catch(() => {
+        console.warn(`[OG] Canvas iframe not found, trying alternative selector`)
+      })
+
+      // Get the iframe element
+      const iframeHandle = await page.$(canvasSelector)
+      
+      if (!iframeHandle) {
+        throw new Error('Canvas iframe not found')
+      }
+
+      // Get the iframe's content frame
+      const frame = await iframeHandle.contentFrame()
+      
+      if (!frame) {
+        throw new Error('Could not access iframe content')
+      }
+
+      // Wait for canvas inside iframe
+      await frame.waitForSelector('#defaultCanvas0', { timeout: 3000 })
+      
+      // Get canvas element from iframe
+      const canvasElement = await frame.$('#defaultCanvas0')
+      
+      if (!canvasElement) {
+        throw new Error('Canvas element not found in iframe')
+      }
+
+      // Screenshot the canvas
+      const canvasBuffer = await canvasElement.screenshot({
+        type: 'png',
+        omitBackground: false
+      })
+
+      await browser.close()
+
+      // Process canvas buffer and return OG image
+      return await processCanvasBuffer(canvasBuffer as Buffer, tokenId, startTime)
+
+    } catch (puppeteerError) {
+      console.error(`[OG] Puppeteer error:`, puppeteerError)
+      if (browser) {
+        await browser.close().catch(() => {})
+      }
+      throw puppeteerError
+    }
+
+  } catch (error) {
+    console.error('[OG] Error generating OG image:', error)
+    const tokenId = parseInt(new URL(request.url).searchParams.get('tokenId') || '0')
+    return generateFallbackImage(tokenId)
+  }
 }

@@ -423,7 +423,15 @@ export async function renderRug(params: RugRenderParams): Promise<RugRenderResul
     dt: null, // Will be set by script
     // Math functions
     Math,
-    console: { log: () => {}, error: () => {} },
+    console: {
+      log: (...args: any[]) => {
+        // Log to server console for debugging
+        console.log('[VM]', ...args)
+      },
+      error: (...args: any[]) => {
+        console.error('[VM ERROR]', ...args)
+      }
+    },
     // RequestAnimationFrame stub
     requestAnimationFrame: () => {},
     // Object.defineProperty for width/height getters
@@ -432,38 +440,79 @@ export async function renderRug(params: RugRenderParams): Promise<RugRenderResul
   
   const vmContext = createContext(sandbox)
   
-  // Execute scripts in EXACT same order as NFTDisplay
+  // Execute scripts in EXACT same order as NFTDisplay.generateHTMLPreview()
+  // The HTML structure is:
+  // 1. <script>rug-p5.js</script> (in <head>)
+  // 2. <div id="rug"></div> (in <body>)
+  // 3. <script>rug variables (w, h, p, sd, tr, s, cm, tl, dl, fl)</script>
+  // 4. <script>rug-algo.js</script>
+  // 5. <script>rug-frame.js</script> (if frameLevel is not 'None')
+  // 6. Browser triggers 'load' event which calls setup() and draw()
+  
   try {
-    // 1. Execute p5 script (sets up canvas APIs)
+    console.log('[renderRug] Step 1: Executing rug-p5.js...')
+    // 1. Execute p5 script (sets up canvas APIs and window methods)
     const p5Script = new Script(p5ScriptContent, { filename: 'rug-p5.js' })
-    ;(runInContext as any)(p5Script, vmContext, { timeout: 5000 })
+    ;(runInContext as any)(p5Script, vmContext, { timeout: 10000 })
+    console.log('[renderRug] Step 1 complete: rug-p5.js executed')
     
-    // 2. Execute algo script (defines setup() and draw())
+    // Verify p5 functions are available
+    if (typeof sandbox.window.createCanvas !== 'function') {
+      throw new Error('createCanvas not available after p5 script execution')
+    }
+    console.log('[renderRug] Verified: createCanvas is available')
+    
+    console.log('[renderRug] Step 2: Executing rug-algo.js...')
+    // 2. Execute algo script (defines setup() and draw() functions)
     const algoScript = new Script(algoScriptContent, { filename: 'rug-algo.js' })
-    ;(runInContext as any)(algoScript, vmContext, { timeout: 5000 })
+    ;(runInContext as any)(algoScript, vmContext, { timeout: 10000 })
+    console.log('[renderRug] Step 2 complete: rug-algo.js executed')
     
     // 3. Execute frame script (if frameLevel is not 'None')
     if (frameLevelNormalized && frameLevelNormalized !== 'None' && frameLevelNormalized !== '') {
+      console.log('[renderRug] Step 3: Executing rug-frame.js...')
       const frameScript = new Script(frameScriptContent, { filename: 'rug-frame.js' })
-      ;(runInContext as any)(frameScript, vmContext, { timeout: 2000 })
+      ;(runInContext as any)(frameScript, vmContext, { timeout: 5000 })
+      console.log('[renderRug] Step 3 complete: rug-frame.js executed')
+    } else {
+      console.log('[renderRug] Step 3 skipped: No frame (fl="None")')
     }
     
-    // 4. Manually trigger the load event handler (rug-p5.js sets this up)
-    // The load event should call setup() and draw()
-    if (sandbox.window.addEventListener) {
-      // Trigger load event synchronously
-      try {
-        // Call setup and draw directly (load event handler does this)
-        if (typeof sandbox.window.setup === 'function') {
-          sandbox.window.setup()
-        }
-        if (typeof sandbox.window.draw === 'function') {
-          sandbox.window.draw()
-        }
-      } catch (setupError) {
-        console.error('Error in setup/draw:', setupError)
-        throw setupError
-      }
+    // 4. Trigger setup() and draw() - simulate browser 'load' event
+    // In browser: window.addEventListener('load', () => { setup(); draw(); })
+    console.log('[renderRug] Step 4: Checking setup/draw functions...')
+    console.log('[renderRug] setup type:', typeof sandbox.window.setup)
+    console.log('[renderRug] draw type:', typeof sandbox.window.draw)
+    console.log('[renderRug] _p5.canvas:', sandbox._p5.canvas ? `${sandbox._p5.canvas.width}x${sandbox._p5.canvas.height}` : 'null')
+    console.log('[renderRug] _p5.ctx:', sandbox._p5.ctx ? 'exists' : 'null')
+    
+    if (typeof sandbox.window.setup !== 'function') {
+      throw new Error(`setup() is not a function (type: ${typeof sandbox.window.setup})`)
+    }
+    
+    if (typeof sandbox.window.draw !== 'function') {
+      throw new Error(`draw() is not a function (type: ${typeof sandbox.window.draw})`)
+    }
+    
+    // Call setup() - this creates the canvas and initializes everything
+    console.log('[renderRug] Calling setup()...')
+    sandbox.window.setup()
+    console.log('[renderRug] setup() completed')
+    console.log('[renderRug] After setup - _p5.canvas:', sandbox._p5.canvas ? `${sandbox._p5.canvas.width}x${sandbox._p5.canvas.height}` : 'null')
+    
+    // Call draw() - this draws the rug
+    console.log('[renderRug] Calling draw()...')
+    sandbox.window.draw()
+    console.log('[renderRug] draw() completed')
+    
+    // Verify canvas has content
+    if (sandbox._p5.canvas && sandbox._p5.ctx) {
+      const testImageData = sandbox._p5.ctx.getImageData(0, 0, Math.min(10, sandbox._p5.canvas.width), Math.min(10, sandbox._p5.canvas.height))
+      const hasPixels = testImageData.data.some((val: number, idx: number) => {
+        if (idx % 4 === 3) return val > 0 // Check alpha channel
+        return false
+      })
+      console.log('[renderRug] Canvas content check:', hasPixels ? 'HAS PIXELS' : 'BLANK')
     }
     
     // Return the rendered canvas (use canvasRef which scripts updated)
