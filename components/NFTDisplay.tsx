@@ -504,13 +504,6 @@ class RugGenerator {
       console.error('[RugGenerator] Failed to generate HTML preview:', error)
       if (error instanceof Error) {
         console.error('[RugGenerator] Error stack:', error.stack)
-      console.log('[RugGenerator] Preview generated successfully, blob URL:', blobUrl.substring(0, 50) + '...', 'HTML length:', htmlContent.length)
-      return blobUrl
-    } catch (error) {
-      console.error('[RugGenerator] Failed to generate HTML preview:', error)
-      if (error instanceof Error) {
-        console.error('[RugGenerator] Error stack:', error.stack)
->>>>>>> 7425506 (Temporarily disable per-NFT preview generation, use default OnchainRugs.png)
       }
       return ''
     }
