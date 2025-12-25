@@ -355,11 +355,4 @@ export async function GET(request: NextRequest) {
       throw puppeteerError
     }
     */
-
-  } catch (error) {
-    console.error('[OG] Error generating OG image:', error)
-    const tokenIdParam = new URL(request.url).searchParams.get('tokenId')
-    const tokenId = tokenIdParam ? parseInt(tokenIdParam) : 0
-    return generateFallbackImage(tokenId)
-  }
 }
