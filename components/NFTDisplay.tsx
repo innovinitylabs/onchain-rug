@@ -771,7 +771,6 @@ export default function NFTDisplay({
                 src={previewImage}
                 className="border-0 pointer-events-none"
                 title={`NFT ${nftData.tokenId}`}
-<<<<<<< HEAD
                 sandbox="allow-scripts allow-same-origin"
                 scrolling="no"
                 onLoad={() => {
