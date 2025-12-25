@@ -312,7 +312,39 @@ class RugGenerator {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>OnchainRug #${displayTokenId}</title>
-  <style>body{display:flex;justify-content:center;align-items:center}#defaultCanvas0{width:100%!important;height:auto!important;}</style>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: transparent;
+    }
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    #rug {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    #defaultCanvas0 {
+      width: 100% !important;
+      height: auto !important;
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+  </style>
   <script>
     ${this.rugP5Script}
   </script>
@@ -336,12 +368,37 @@ class RugGenerator {
         tl = ${textureLevel},
         dl = ${dirtLevel},
         fl = "${frameLevel}";
+    
+    // Debug logging for iframe context
+    console.log('[RugPreview] Initializing rug preview', {
+      tokenId: ${displayTokenId},
+      seed: s,
+      renderMode: '${renderMode || 'interactive'}',
+      isOGMode: ${isOGMode}
+    });
   </script>
   <script>
     ${this.rugAlgoScript}
   </script>
   <script>
     ${this.rugFrameScript}
+  </script>
+  <script>
+    // Ensure canvas is visible after render
+    window.addEventListener('load', function() {
+      setTimeout(function() {
+        const canvas = document.getElementById('defaultCanvas0');
+        if (canvas) {
+          console.log('[RugPreview] Canvas found:', {
+            width: canvas.width,
+            height: canvas.height,
+            visible: canvas.offsetWidth > 0 && canvas.offsetHeight > 0
+          });
+        } else {
+          console.warn('[RugPreview] Canvas not found!');
+        }
+      }, 500);
+    });
   </script>${ogReadyScript}
 </body>
 </html>`
@@ -417,13 +474,13 @@ class RugGenerator {
   generatePreview(traits: RugTraits, tokenId?: number, renderMode?: 'og' | 'interactive'): string {
     try {
       if (!this.scriptsLoaded) {
-        console.warn('Scripts not loaded yet, cannot generate preview')
+        console.warn('[RugGenerator] Scripts not loaded yet, cannot generate preview')
         return ''
       }
       
       // Validate scripts are loaded
       if (!this.rugP5Script || !this.rugAlgoScript || !this.rugFrameScript) {
-        console.error('Scripts are not loaded:', {
+        console.error('[RugGenerator] Scripts are not loaded:', {
           p5: !!this.rugP5Script,
           algo: !!this.rugAlgoScript,
           frame: !!this.rugFrameScript
@@ -431,22 +488,29 @@ class RugGenerator {
         return ''
       }
       
-      console.log('Generating HTML preview from traits for token', tokenId, 'renderMode:', renderMode)
+      console.log('[RugGenerator] Generating HTML preview from traits for token', tokenId, 'renderMode:', renderMode)
       const htmlContent = this.generateHTMLPreview(traits, tokenId, renderMode)
       
       if (!htmlContent || htmlContent.length === 0) {
-        console.error('Generated HTML content is empty')
+        console.error('[RugGenerator] Generated HTML content is empty')
         return ''
       }
       
       const blob = new Blob([htmlContent], { type: 'text/html' })
       const blobUrl = URL.createObjectURL(blob)
-      console.log('Generated blob URL:', blobUrl.substring(0, 50) + '...')
+      console.log('[RugGenerator] Preview generated successfully, blob URL:', blobUrl.substring(0, 50) + '...', 'HTML length:', htmlContent.length)
       return blobUrl
     } catch (error) {
-      console.error('Failed to generate HTML preview:', error)
+      console.error('[RugGenerator] Failed to generate HTML preview:', error)
       if (error instanceof Error) {
-        console.error('Error stack:', error.stack)
+        console.error('[RugGenerator] Error stack:', error.stack)
+      console.log('[RugGenerator] Preview generated successfully, blob URL:', blobUrl.substring(0, 50) + '...', 'HTML length:', htmlContent.length)
+      return blobUrl
+    } catch (error) {
+      console.error('[RugGenerator] Failed to generate HTML preview:', error)
+      if (error instanceof Error) {
+        console.error('[RugGenerator] Error stack:', error.stack)
+>>>>>>> 7425506 (Temporarily disable per-NFT preview generation, use default OnchainRugs.png)
       }
       return ''
     }
@@ -516,8 +580,20 @@ export default function NFTDisplay({
   const [lastTraitsKey, setLastTraitsKey] = useState<string | null>(null)
 
   // Reset state when tokenId changes OR when traits key changes (dynamic traits updated)
+  // TEMPORARILY SIMPLIFIED: Since we're not generating previews, just clean up blob URLs
   useEffect(() => {
     const currentTokenId = nftData?.tokenId
+    
+    // If tokenId changed, clean up old blob URLs
+    if (currentTokenId !== lastGeneratedTokenId && currentTokenId !== undefined) {
+      if (blobUrl && blobUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(blobUrl)
+        setBlobUrl(null)
+      }
+      setLastTraitsKey(null) // Reset traits key tracking
+    }
+    
+    /* COMMENTED OUT: Preview regeneration logic (disabled for now)
     const currentTraitsKey = traitsKey
     
     // If tokenId changed, always reset
@@ -547,9 +623,25 @@ export default function NFTDisplay({
         setBlobUrl(null)
       }
     }
+    */
   }, [nftData?.tokenId, lastGeneratedTokenId, blobUrl, traitsKey, lastTraitsKey])
 
   useEffect(() => {
+    // TEMPORARILY DISABLED: Per-NFT preview generation
+    // TODO: Re-enable when preview generation is fixed
+    // For now, just show default preview image
+    
+    // Use animation_url if available, otherwise use default OnchainRugs.png
+    if (nftData.animation_url) {
+      setPreviewImage(nftData.animation_url)
+    } else {
+      setPreviewImage('/OnchainRugs.png')
+    }
+    setIsGenerating(false)
+    setLastGeneratedTokenId(nftData.tokenId)
+    setLastTraitsKey(traitsKey || null)
+
+    /* COMMENTED OUT: Per-NFT preview generation code
     // Skip if we already have a preview for this exact traits key
     if (traitsKey && traitsKey === lastTraitsKey && previewImage && previewImage.length > 0) {
       return
@@ -570,7 +662,7 @@ export default function NFTDisplay({
 
           console.log('[NFTDisplay] Generating preview for tokenId:', nftData.tokenId, 'renderMode:', renderMode)
           setIsGenerating(true)
-          
+          console.log('[NFTDisplay] Generating preview for tokenId:', nftData.tokenId, 'renderMode:', renderMode)
           const imageData = rugGenerator.generatePreview(nftData.traits, nftData.tokenId, renderMode)
 
           if (!imageData || imageData.length === 0) {
@@ -620,6 +712,7 @@ export default function NFTDisplay({
     }
 
     generatePreview()
+    */
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nftData.tokenId, traitsKey, nftData.animation_url, rugGenerator, scriptsLoaded, renderMode])
 
@@ -685,10 +778,11 @@ export default function NFTDisplay({
                 src={previewImage}
                 className="border-0 pointer-events-none"
                 title={`NFT ${nftData.tokenId}`}
-                sandbox="allow-scripts"
+<<<<<<< HEAD
+                sandbox="allow-scripts allow-same-origin"
                 scrolling="no"
                 onLoad={() => {
-                  console.log('[NFTDisplay] Iframe loaded for tokenId:', nftData.tokenId)
+                  console.log('[NFTDisplay] Iframe loaded successfully for tokenId:', nftData.tokenId)
                 }}
                 onError={(e) => {
                   console.error('[NFTDisplay] Iframe load error for tokenId:', nftData.tokenId, e)
