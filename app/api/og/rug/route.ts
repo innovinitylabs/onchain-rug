@@ -214,7 +214,14 @@ export async function GET(request: NextRequest) {
     // Fallback: Generate simple default image
     return generateFallbackImage(tokenId || 0)
 
-    /* COMMENTED OUT: Puppeteer-based per-NFT preview generation
+  } catch (error) {
+    console.error('[OG] Error generating OG image:', error)
+    const tokenIdParam = new URL(request.url).searchParams.get('tokenId')
+    const tokenId = tokenIdParam ? parseInt(tokenIdParam) : 0
+    return generateFallbackImage(tokenId)
+  }
+
+  /* COMMENTED OUT: Puppeteer-based per-NFT preview generation
     // Rate limiting
     if (!checkRateLimit(request)) {
       return NextResponse.json(
