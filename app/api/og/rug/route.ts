@@ -57,6 +57,49 @@ function checkRateLimit(request: NextRequest): boolean {
 }
 
 async function processCanvasBuffer(canvasBuffer: Buffer, tokenId: number, startTime: number): Promise<NextResponse> {
+  // TEMPORARILY DISABLED: Per-NFT preview generation for Twitter/OG
+  // TODO: Re-enable when preview generation is fixed
+  // For now, return default OG image
+  
+  // Return default market OG image instead of generating per-NFT preview
+  const fs = require('fs')
+  const path = require('path')
+  const defaultImagePath = path.join(process.cwd(), 'public', 'market-og.png')
+  
+  if (fs.existsSync(defaultImagePath)) {
+    const defaultImageBuffer = fs.readFileSync(defaultImagePath)
+    return new NextResponse(defaultImageBuffer, {
+      headers: {
+        'Content-Type': 'image/png',
+        'Cache-Control': 'public, max-age=86400',
+      },
+    })
+  }
+  
+  // Fallback: Generate simple default image
+  const { createCanvas } = require('canvas')
+  const ogCanvas = createCanvas(OG_WIDTH, OG_HEIGHT)
+  const ogCtx = ogCanvas.getContext('2d')
+  
+  // Fill with neutral background
+  ogCtx.fillStyle = '#DEDEDE'
+  ogCtx.fillRect(0, 0, OG_WIDTH, OG_HEIGHT)
+  
+  // Add text overlay
+  ogCtx.fillStyle = '#000000'
+  ogCtx.font = 'bold 48px Arial'
+  ogCtx.textAlign = 'center'
+  ogCtx.fillText(`OnchainRug #${tokenId}`, OG_WIDTH / 2, OG_HEIGHT / 2)
+  
+  const buffer = ogCanvas.toBuffer('image/png')
+  return new NextResponse(buffer, {
+    headers: {
+      'Content-Type': 'image/png',
+      'Cache-Control': 'public, max-age=86400',
+    },
+  })
+
+  /* COMMENTED OUT: Per-NFT preview generation code
   if (!canvasBuffer || !Buffer.isBuffer(canvasBuffer)) {
     throw new Error('Failed to capture canvas screenshot')
   }
@@ -142,6 +185,36 @@ export async function GET(request: NextRequest) {
   const startTime = Date.now()
   
   try {
+    // TEMPORARILY DISABLED: Per-NFT preview generation for Twitter/OG
+    // TODO: Re-enable when preview generation is fixed
+    // For now, return default market OG image
+    
+    // Get query params
+    const { searchParams } = new URL(request.url)
+    const tokenIdParam = searchParams.get('tokenId')
+    
+    const tokenId = tokenIdParam ? parseInt(tokenIdParam) : null
+    
+    // Return default market OG image
+    const fs = require('fs')
+    const path = require('path')
+    const defaultImagePath = path.join(process.cwd(), 'public', 'market-og.png')
+    
+    if (fs.existsSync(defaultImagePath)) {
+      const defaultImageBuffer = fs.readFileSync(defaultImagePath)
+      console.log(`[OG] Returning default market OG image${tokenId ? ` for tokenId=${tokenId}` : ''}`)
+      return new NextResponse(defaultImageBuffer, {
+        headers: {
+          'Content-Type': 'image/png',
+          'Cache-Control': 'public, max-age=86400',
+        },
+      })
+    }
+    
+    // Fallback: Generate simple default image
+    return generateFallbackImage(tokenId || 0)
+
+    /* COMMENTED OUT: Puppeteer-based per-NFT preview generation
     // Rate limiting
     if (!checkRateLimit(request)) {
       return NextResponse.json(
@@ -274,10 +347,12 @@ export async function GET(request: NextRequest) {
       }
       throw puppeteerError
     }
+    */
 
   } catch (error) {
     console.error('[OG] Error generating OG image:', error)
-    const tokenId = parseInt(new URL(request.url).searchParams.get('tokenId') || '0')
+    const tokenIdParam = new URL(request.url).searchParams.get('tokenId')
+    const tokenId = tokenIdParam ? parseInt(tokenIdParam) : 0
     return generateFallbackImage(tokenId)
   }
 }
