@@ -117,8 +117,8 @@ function RugCard({ nft, onClick, onRefresh, onFavoriteToggle, onBuyNFT, onMakeOf
           nftData={nftData}
           size="medium"
           interactive={false}
-          className="rounded-none w-full h-full cursor-pointer"
-          onClick={onClick}
+            className="rounded-none w-full h-full cursor-pointer"
+            onClick={onClick}
           renderMode="interactive"
         />
         </div>
@@ -144,7 +144,7 @@ function RugCard({ nft, onClick, onRefresh, onFavoriteToggle, onBuyNFT, onMakeOf
             >
               <Share2 className="w-4 h-4" />
             </button>
-            {onRefresh && (
+          {onRefresh && (
               <button
                 onClick={handleRefresh}
                 disabled={isRefreshing}
@@ -154,7 +154,7 @@ function RugCard({ nft, onClick, onRefresh, onFavoriteToggle, onBuyNFT, onMakeOf
                 <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
               </button>
             )}
-          </div>
+            </div>
 
         {/* Bottom Left - Condition */}
           <div className="absolute bottom-2 left-2 pointer-events-auto">

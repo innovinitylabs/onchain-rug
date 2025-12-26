@@ -11,887 +11,773 @@ interface WhitePaperModalProps {
 }
 
 export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProps) {
-  const [activeSection, setActiveSection] = useState<'artistic' | 'project' | 'gameplay' | 'x402' | 'tech' | 'faq'>('artistic')
+  const [activeSection, setActiveSection] = useState<'overview' | 'rarity' | 'optional' | 'consequence' | 'journey' | 'pricing' | 'royalties' | 'aging' | 'frames' | 'pool' | 'agents' | 'ownership' | 'standards' | 'result'>('overview')
 
 
   if (!isOpen) return null
 
   const sections = [
-    { id: 'artistic', label: 'Artistic Vision', icon: Palette },
-    { id: 'project', label: 'Project Vision', icon: Target },
-    { id: 'gameplay', label: 'Gameplay', icon: Gamepad2 },
-    { id: 'x402', label: 'x402 Technology', icon: Cpu },
-    { id: 'tech', label: 'Technical Details', icon: Zap },
-    { id: 'faq', label: 'FAQ', icon: HelpCircle }
+    { id: 'overview', label: 'Overview', icon: Target },
+    { id: 'rarity', label: 'User-Chosen Rarity', icon: Palette },
+    { id: 'optional', label: 'Optional Maintenance', icon: Gamepad2 },
+    { id: 'consequence', label: 'Consequence, Not Rent', icon: Clock },
+    { id: 'journey', label: 'User Journey', icon: Users },
+    { id: 'pricing', label: 'Pricing Structure', icon: Zap },
+    { id: 'royalties', label: 'Royalties & Attribution', icon: Gem },
+    { id: 'aging', label: 'Aging Mechanics', icon: Clock },
+    { id: 'frames', label: 'Frame System', icon: Star },
+    { id: 'pool', label: 'Diamond Frame Pool', icon: Gem },
+    { id: 'agents', label: 'Agentic Maintenance', icon: Cpu },
+    { id: 'ownership', label: 'Ownership & Metadata', icon: FileText },
+    { id: 'standards', label: 'Standards', icon: Zap },
+    { id: 'result', label: 'Final Result', icon: HelpCircle }
   ] as const
 
   const renderSectionContent = () => {
     switch (activeSection) {
-      case 'artistic':
+      case 'overview':
+        return (
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <Target className="w-16 h-16 text-cyan-400 mx-auto mb-4" />
+              <h2 className="text-3xl font-bold text-white mb-2">OnchainRugs</h2>
+              <p className="text-white/80">Fully on-chain generative artwork that ages if neglected and improves if cared for.</p>
+            </div>
+
+            <div className="bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-400/30 rounded-lg p-6 mb-6">
+              <p className="text-white/90 text-lg leading-relaxed mb-4">
+                <strong>OnchainRugs is a fully on-chain artwork that ages if neglected and improves if cared for. Ownership comes with visible responsibility. Over time, rugs can earn frames that slow decay and turn them into gallery-grade artifacts.</strong>
+              </p>
+              <p className="text-white/90 text-lg leading-relaxed">
+                <strong>It is satire about rug pulls, but it is really about stewardship, time, and consequences.</strong>
+              </p>
+            </div>
+
+            <div className="bg-white/5 border border-white/10 rounded-lg p-6">
+              <p className="text-white/90 text-lg leading-relaxed">
+                <strong>Each rug is complete at mint.</strong>
+              </p>
+            </div>
+          </div>
+        )
+
+      case 'rarity':
         return (
           <div className="space-y-6">
             <div className="text-center mb-8">
               <Palette className="w-16 h-16 text-cyan-400 mx-auto mb-4" />
-              <h2 className="text-3xl font-bold text-white mb-2">Artistic Vision</h2>
-              <p className="text-white/80">Living fully OnChain Digital Art That Evolves With Time</p>
+              <h2 className="text-3xl font-bold text-white mb-2">User-Chosen and Post-Mint Rebalanced Rarity</h2>
+              <p className="text-white/80">Rarity system driven by user choice and post-mint outcomes, not fixed randomness.</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white/5 border border-white/10 rounded-lg p-6">
-                <h3 className="text-xl font-semibold text-cyan-300 mb-4">Generative Doormat Art</h3>
-                <p className="text-white/80 leading-relaxed">
-                  OnchainRugs features unique woven textile patterns inspired by traditional rug-making techniques.
-                  Each rug is algorithmically generated using advanced P5.js rendering, creating infinite variations
-                  of cultural textile patterns from Persian heritage to modern abstract designs.
+            <div className="bg-white/5 border border-white/10 rounded-lg p-6 mb-6">
+              <p className="text-white/90 leading-relaxed">
+                OnchainRugs use a rarity system driven by <strong>user choice and post-mint outcomes</strong>, not fixed randomness.
                 </p>
               </div>
 
+            <div className="space-y-6">
               <div className="bg-white/5 border border-white/10 rounded-lg p-6">
-                <h3 className="text-xl font-semibold text-cyan-300 mb-4">Temporal Aesthetics</h3>
-                <p className="text-white/80 leading-relaxed">
-                  Unlike static NFTs, OnchainRugs evolve visually over time through natural aging processes.
-                  Dirt accumulation and aging development create character and storytelling, turning each rug
-                  into a living digital artifact that tells the story of its care and ownership history.
-                </p>
+                <h3 className="text-xl font-semibold text-cyan-300 mb-4">Mint-Time Characteristics</h3>
+                <ul className="text-white/80 space-y-2">
+                  <li>• The generator provides <strong>102 predefined color palettes</strong>, each with an internal rarity weight.</li>
+                  <li>• Pattern structure, band count, and composition further contribute to intrinsic rarity.</li>
+                  <li>• Users may generate <strong>unlimited variations</strong> and mint only the rug they prefer.</li>
+                  <li>• Frontend rarity labels such as Common, Uncommon, Epic, etc. reflect <strong>designed rarity weights</strong>, not enforced scarcity.</li>
+                </ul>
+                <p className="text-white/80 mt-4">At this stage, rarity is <strong>suggested</strong>, not finalized.</p>
               </div>
 
               <div className="bg-white/5 border border-white/10 rounded-lg p-6">
-                <h3 className="text-xl font-semibold text-cyan-300 mb-4">Personalization Layer</h3>
-                <p className="text-white/80 leading-relaxed">
-                  Owners can embed personal messages and text within their rugs, creating meaningful connections
-                  between the art and its collector. This text integration adds emotional depth and transforms
-                  each rug into a personalized digital heirloom.
+                <h3 className="text-xl font-semibold text-cyan-300 mb-4">Post-Mint Rarity Rebalancing</h3>
+                <p className="text-white/80 mb-4">
+                  Once the collection reaches its <strong>10,000 mint cap</strong>, rarity rebalances based on <strong>actual mint behavior</strong>.
                 </p>
+                <ul className="text-white/80 space-y-2">
+                  <li>• Rarity is determined by <strong>what was minted</strong>, not what was possible.</li>
+                  <li>• A theoretically rare palette becomes common if widely chosen.</li>
+                  <li>• A common palette becomes rare if consistently avoided.</li>
+                </ul>
               </div>
 
               <div className="bg-white/5 border border-white/10 rounded-lg p-6">
-                <h3 className="text-xl font-semibold text-cyan-300 mb-4">Cultural Heritage</h3>
-                <p className="text-white/80 leading-relaxed">
-                  Drawing inspiration from centuries of textile craftsmanship, OnchainRugs celebrates the beauty
-                  of woven art while exploring how digital technology can preserve and evolve these traditions
-                  for future generations.
+                <h3 className="text-xl font-semibold text-cyan-300 mb-4">Emergent Long-Term Rarity</h3>
+                <p className="text-white/80 mb-4">After mint, additional rarity emerges organically through:</p>
+                <ul className="text-white/80 space-y-2">
+                  <li>• Aging paths</li>
+                  <li>• Maintenance or neglect</li>
+                  <li>• Laundering events</li>
+                  <li>• Frame progression</li>
+                  <li>• Recorded ownership and maintenance history</li>
+                </ul>
+                <p className="text-white/90 mt-4">
+                  <strong>No single rarity table remains authoritative.</strong>
+                </p>
+                <p className="text-white/90 mt-2">
+                  <strong>Long-term rarity is allowed to form through user preference, behavior, neglect, taste, and time.</strong>
                 </p>
               </div>
             </div>
           </div>
         )
 
-      case 'project':
+      case 'optional':
         return (
           <div className="space-y-6">
             <div className="text-center mb-8">
-              <Target className="w-16 h-16 text-green-400 mx-auto mb-4" />
-              <h2 className="text-3xl font-bold text-white mb-2">Project Vision</h2>
-              <p className="text-white/80">Redefining Digital Ownership Through Care</p>
+              <Gamepad2 className="w-16 h-16 text-green-400 mx-auto mb-4" />
+              <h2 className="text-3xl font-bold text-white mb-2">Maintenance Is Optional, Not Required</h2>
+              <p className="text-white/80">Complete artworks at mint - maintenance influences evolution, not ownership</p>
             </div>
 
-            <div className="bg-white/5 border border-white/10 rounded-lg p-6 mb-6">
-              <h3 className="text-2xl font-semibold text-white mb-4">Core Philosophy</h3>
+            <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-400/30 rounded-lg p-6 mb-6">
               <p className="text-white/90 text-lg leading-relaxed mb-4">
-                OnchainRugs represents the next evolution of NFTs - not just collectibles, but <strong>living Onchain digital artifacts </strong>
-                that require care and attention. We believe this creates deeper emotional connections between collectors
-                and their art, mirroring how we care for physical objects in the real world.
+                <strong>OnchainRugs are complete artworks at mint.</strong>
+              </p>
+              <p className="text-white/90 text-lg leading-relaxed mb-4">
+                <strong>Maintenance does not preserve ownership or baseline value.</strong>
+              </p>
+              <p className="text-white/90 text-lg leading-relaxed mb-4">
+                <strong>It only influences how the artwork ages, accrues history, and earns frames.</strong>
+              </p>
+              <p className="text-white/90 text-lg leading-relaxed">
+                <strong>Neglect is a valid path and results in a different visual and historical outcome.</strong>
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="text-center">
-                <Clock className="w-12 h-12 text-yellow-400 mx-auto mb-3" />
-                <h4 className="text-lg font-semibold text-white mb-2">Time-Based Value</h4>
-                <p className="text-white/70">
-                  Value emerges through temporal relationships - how collectors care for their rugs over time
-                  becomes part of the art itself.
-                </p>
-              </div>
-
-              <div className="text-center">
-                <Users className="w-12 h-12 text-blue-400 mx-auto mb-3" />
-                <h4 className="text-lg font-semibold text-white mb-2">Community Care</h4>
-                <p className="text-white/70">
-                  We encourage a culture of digital stewardship where collectors maintain their rugs,
-                  creating shared values and community bonds.
-                </p>
-              </div>
-
-              <div className="text-center">
-                <Gem className="w-12 h-12 text-purple-400 mx-auto mb-3" />
-                <h4 className="text-lg font-semibold text-white mb-2">Museum Quality</h4>
-                <p className="text-white/70">
-                  Diamond-framed rugs become permanent museum pieces, representing the ultimate
-                  achievement in digital curation.
-                </p>
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-400/30 rounded-lg p-6">
-              <h3 className="text-xl font-semibold text-white mb-4">Our Mission</h3>
+            <div className="bg-white/5 border border-white/10 rounded-lg p-6">
               <p className="text-white/90 leading-relaxed">
-                To explore how <strong>time and care</strong> can create meaning and value in digital ownership.
-                Inspired by the care we give physical objects, OnchainRugs brings that same sense of stewardship
-                to the digital realm, creating emotional attachments that transcend traditional collectibles.
+                There is <strong>no forced interaction</strong>, <strong>no required upkeep</strong>, <strong>no penalty beyond visual and historical evolution</strong>.
               </p>
             </div>
           </div>
         )
 
-      case 'gameplay':
-        return (
-          <div
-            className="space-y-6"
-            data-no-wallet="true"
-            style={{ isolation: 'isolate' }}
-          >
-            <div className="text-center mb-8">
-              <Gamepad2 className="w-16 h-16 text-purple-400 mx-auto mb-4" />
-              <h2 className="text-3xl font-bold text-white mb-2">Gameplay Mechanics</h2>
-              <p className="text-white/80">Living Art That Requires Active Care</p>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-white/5 border border-white/10 rounded-lg p-6">
-                <h3 className="text-xl font-semibold text-orange-300 mb-4">Dirt Accumulation System</h3>
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-3 h-3 bg-green-400 rounded-full"></div>
-                    <span className="text-white">0-3 days: Clean (no dirt)</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
-                    <span className="text-white">3 days: Light dirt accumulation</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-3 h-3 bg-red-400 rounded-full"></div>
-                    <span className="text-white">7 days: Heavy soiling</span>
-                  </div>
-                </div>
-                <p className="text-white/70 text-sm mt-4">
-                  Regular cleaning prevents dirt buildup and earns maintenance points toward frame achievements.
-                </p>
-              </div>
-
-              <div className="bg-white/5 border border-white/10 rounded-lg p-6">
-                <h3 className="text-xl font-semibold text-blue-300 mb-4">Texture Aging System</h3>
-                <div className="space-y-3">
-                  <p className="text-white/80">Texture aging occurs over time from the last cleaning:</p>
-                  <ul className="text-white/70 space-y-1 text-sm">
-                    <li>• 0-30 days from last clean: Fresh appearance</li>
-                    <li>• 31-90 days from last clean: Subtle aging development</li>
-                    <li>• 91-180 days from last clean: Noticeable wear patterns</li>
-                    <li>• 180+ days from last clean: Mature character development</li>
-                  </ul>
-                </div>
-                <div className="mt-4 space-y-3">
-                  <div className="bg-slate-800/50 rounded p-3">
-                    <h5 className="text-cyan-300 font-medium mb-2">Restoration Mechanics:</h5>
-                    <ul className="text-white/70 text-sm space-y-1">
-                      <li>• <strong>Regular Cleaning:</strong> Resets dirt + delays aging (resets aging timer)</li>
-                      <li>• <strong>Aging Restoration:</strong> Reduces aging level by 1 + cleans dirt</li>
-                      <li>• <strong>Master Restoration:</strong> Resets both dirt AND aging level to 0</li>
-                    </ul>
-                  </div>
-                  <div className="bg-slate-800/50 rounded p-3">
-                    <h5 className="text-green-300 font-medium mb-2">Cleaning Costs:</h5>
-                    <ul className="text-white/70 text-sm space-y-1">
-                      <li>• <strong>Free (7 days):</strong> No cost for first 7 days after minting</li>
-                      <li>• <strong>Grace Period:</strong> Extended free window after last cleaning</li>
-                      <li>• <strong>Minor Fee:</strong> Small onchain transaction cost after grace period</li>
-                    </ul>
-                  </div>
-                </div>
-                <p className="text-white/70 text-sm mt-4">
-                  Higher frame levels slow aging progression, preserving your rug&apos;s appearance longer.
-                </p>
-                {/* Prevent extension interference */}
-                <div style={{ display: 'none' }} data-wallet-ignore="true"></div>
-              </div>
-
-              <div className="bg-white/5 border border-white/10 rounded-lg p-6">
-                <h3 className="text-xl font-semibold text-green-300 mb-4">Frame Achievement System</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-4 h-4 bg-gray-400 rounded"></div>
-                    <span className="text-white font-medium">Bronze (25 points)</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-4 h-4 bg-gray-300 rounded"></div>
-                    <span className="text-white font-medium">Silver (50 points) - Dirt Immunity</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-4 h-4 bg-yellow-400 rounded"></div>
-                    <span className="text-white font-medium">Gold (100 points) - 25% slower aging</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-4 h-4 bg-blue-400 rounded"></div>
-                    <span className="text-white font-medium">Platinum (200 points) - 50% slower aging</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-4 h-4 bg-cyan-400 rounded"></div>
-                    <span className="text-white font-medium">Diamond (500 points) - Museum Piece</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white/5 border border-white/10 rounded-lg p-6">
-                <h3 className="text-xl font-semibold text-purple-300 mb-4">Maintenance Services</h3>
-                <div className="space-y-4">
-                  <div className="bg-slate-800/30 rounded p-3">
-                    <h5 className="text-cyan-300 font-medium mb-1">Regular Cleaning</h5>
-                    <p className="text-white/70 text-sm">Resets dirt level to 0 (aging continues from last clean)</p>
-                  </div>
-                  <div className="bg-slate-800/30 rounded p-3">
-                    <h5 className="text-cyan-300 font-medium mb-1">Texture Restoration</h5>
-                    <p className="text-white/70 text-sm">Reduces aging level by 1 + resets dirt to 0</p>
-                  </div>
-                  <div className="bg-slate-800/30 rounded p-3">
-                    <h5 className="text-cyan-300 font-medium mb-1">Master Restoration</h5>
-                    <p className="text-white/70 text-sm">Resets both dirt AND aging level to 0 (complete refresh)</p>
-                  </div>
-                  <div className="bg-slate-800/30 rounded p-3">
-                    <h5 className="text-cyan-300 font-medium mb-1">Laundering</h5>
-                    <p className="text-white/70 text-sm">Automatic full restoration on qualifying high-value sales</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-400/30 rounded-lg p-6">
-              <h3 className="text-xl font-semibold text-white mb-4">Economic Incentives</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <h4 className="text-green-300 font-medium mb-2">Well-Maintained Rugs</h4>
-                  <p className="text-white/70 text-sm">Never age if regularly cleaned, earn frame achievements</p>
-                </div>
-                <div>
-                  <h4 className="text-blue-300 font-medium mb-2">Neglected Rugs</h4>
-                  <p className="text-white/70 text-sm">Develop valuable &quot;character&quot; through natural aging</p>
-                </div>
-                <div>
-                  <h4 className="text-purple-300 font-medium mb-2">Trading Benefits</h4>
-                  <p className="text-white/70 text-sm">Higher sale prices trigger automatic rejuvenation</p>
-                </div>
-                <div>
-                  <h4 className="text-yellow-300 font-medium mb-2">Museum Status</h4>
-                  <p className="text-white/70 text-sm">Diamond frames become permanent heirlooms</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Prevent extension injection */}
-            <style jsx>{`
-              .whitepaper-modal {
-                -webkit-user-select: none;
-                -moz-user-select: none;
-                -ms-user-select: none;
-                user-select: none;
-              }
-              .whitepaper-modal * {
-                pointer-events: auto !important;
-              }
-            `}</style>
-          </div>
-        )
-
-      case 'x402':
+      case 'consequence':
         return (
           <div className="space-y-6">
             <div className="text-center mb-8">
-              <Cpu className="w-16 h-16 text-cyan-400 mx-auto mb-4" />
-              <h2 className="text-3xl font-bold text-white mb-2">x402 Technology</h2>
-              <p className="text-white/80">AI-Powered Maintenance Automation</p>
+              <Clock className="w-16 h-16 text-orange-400 mx-auto mb-4" />
+              <h2 className="text-3xl font-bold text-white mb-2">Maintenance Fees Represent Consequence, Not Rent</h2>
+              <p className="text-white/80">Reversing time carries a cost - preservation of aging integrity</p>
             </div>
 
             <div className="bg-white/5 border border-white/10 rounded-lg p-6 mb-6">
-              <h3 className="text-2xl font-semibold text-white mb-4">What is x402?</h3>
-              <p className="text-white/90 leading-relaxed">
-                x402 is a decentralized payment protocol that enables AI agents to autonomously perform
-                blockchain transactions on behalf of users. It provides a secure framework for AI-driven
-                maintenance operations, allowing rug cleaning and restoration services to be automated
-                through intelligent agents.
+              <p className="text-white/90 leading-relaxed mb-4">
+                <strong>OnchainRugs do not charge for routine care.</strong>
               </p>
+              <p className="text-white/90 leading-relaxed">
+                <strong>Cleaning is intentionally free for extended periods and can be performed indefinitely through periodic attention.</strong>
+              </p>
+            </div>
+
+            <div className="space-y-6">
+              <div className="bg-white/5 border border-white/10 rounded-lg p-6">
+                <h3 className="text-xl font-semibold text-orange-300 mb-4">Why Fees Exist</h3>
+                <ul className="text-white/80 space-y-2">
+                  <li>• <strong>Restoration</strong> and <strong>Master Restoration</strong> reverse the effects of time.</li>
+                  <li>• Reversing time is allowed.</li>
+                  <li>• Reversing time is <strong>never free</strong>.</li>
+                </ul>
+                <p className="text-white/80 mt-4">
+                  Fees introduce friction so that recovery remains possible <strong>without trivializing neglect</strong>.
+                </p>
+              </div>
+
+              <div className="bg-white/5 border border-white/10 rounded-lg p-6">
+                <h3 className="text-xl font-semibold text-orange-300 mb-4">What Fees Are Not</h3>
+                <ul className="text-white/80 space-y-2">
+                  <li>• Maintenance fees are <strong>not</strong> a revenue stream.</li>
+                  <li>• They are <strong>not</strong> rent.</li>
+                  <li>• They are <strong>not</strong> required to preserve baseline value.</li>
+                    </ul>
+                <p className="text-white/80 mt-4">
+                  They exist as a <strong>consequence mechanism</strong> that preserves aging integrity, historical continuity, and rarity credibility.
+                </p>
+            </div>
+
+              <div className="bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-400/30 rounded-lg p-6">
+                <p className="text-white/90 text-lg leading-relaxed">
+                  <strong>A rug can always be cleaned.</strong>
+                </p>
+                <p className="text-white/90 text-lg leading-relaxed">
+                  <strong>A rug can be restored.</strong>
+                </p>
+                <p className="text-white/90 text-lg leading-relaxed mb-4">
+                  <strong>But undoing time carries a cost.</strong>
+                </p>
+                <p className="text-white/90 leading-relaxed">
+                  This ensures consistent care is rewarded, occasional relapse is recoverable, and history cannot be rewritten endlessly without consequence.
+                </p>
+                <p className="text-white/90 text-lg leading-relaxed mt-4">
+                  <strong>A liability requires obligation. OnchainRugs impose none.</strong>
+                </p>
+              </div>
+            </div>
+          </div>
+        )
+
+
+
+      case 'journey':
+        return (
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <Users className="w-16 h-16 text-blue-400 mx-auto mb-4" />
+              <h2 className="text-3xl font-bold text-white mb-2">End-to-End User Journey</h2>
+              <p className="text-white/80">ERC-721-C compatible living HTML NFT that ages over time</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-white/5 border border-white/10 rounded-lg p-6">
-                <h3 className="text-xl font-semibold text-cyan-300 mb-4">How It Works</h3>
-                <div className="space-y-3">
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 bg-cyan-400 rounded-full flex items-center justify-center text-xs font-bold text-black mt-0.5">1</div>
-                    <div>
-                      <h5 className="text-white font-medium">Payment Request</h5>
-                      <p className="text-white/70 text-sm">AI agent requests permission for maintenance operation</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 bg-cyan-400 rounded-full flex items-center justify-center text-xs font-bold text-black mt-0.5">2</div>
-                    <div>
-                      <h5 className="text-white font-medium">User Approval</h5>
-                      <p className="text-white/70 text-sm">User signs payment authorization for the service</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 bg-cyan-400 rounded-full flex items-center justify-center text-xs font-bold text-black mt-0.5">3</div>
-                    <div>
-                      <h5 className="text-white font-medium">Blockchain Settlement</h5>
-                      <p className="text-white/70 text-sm">Payment is verified and settled on-chain</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 bg-cyan-400 rounded-full flex items-center justify-center text-xs font-bold text-black mt-0.5">4</div>
-                    <div>
-                      <h5 className="text-white font-medium">Service Execution</h5>
-                      <p className="text-white/70 text-sm">AI agent performs the maintenance operation</p>
-                    </div>
-                  </div>
-                </div>
+                <h3 className="text-xl font-semibold text-blue-300 mb-4">1. Generator</h3>
+                <p className="text-white/80 leading-relaxed">
+                  User customizes a rug with up to <strong>5 lines of unique text</strong> and selects from <strong>102 color palettes</strong>.
+                </p>
               </div>
 
               <div className="bg-white/5 border border-white/10 rounded-lg p-6">
-                <h3 className="text-xl font-semibold text-green-300 mb-4">Security Features</h3>
-                <ul className="space-y-2 text-white/80">
-                  <li className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                    <span className="text-sm">Cryptographic signature verification</span>
+                <h3 className="text-xl font-semibold text-blue-300 mb-4">2. Minting Cost</h3>
+                <p className="text-white/80 leading-relaxed">
+                  Cheap base price + line-by-line text cost (1–5 lines) + gas fees (dynamic entry pricing).
+                </p>
+              </div>
+
+              <div className="bg-white/5 border border-white/10 rounded-lg p-6">
+                <h3 className="text-xl font-semibold text-blue-300 mb-4">3. Ownership</h3>
+                <p className="text-white/80 leading-relaxed">
+                  <strong>ERC-721-C</strong> living HTML NFT that ages over time.
+                </p>
+              </div>
+
+              <div className="bg-white/5 border border-white/10 rounded-lg p-6">
+                <h3 className="text-xl font-semibold text-blue-300 mb-4">4. Wallet Limit</h3>
+                <p className="text-white/80 leading-relaxed">
+                  Maximum <strong>10 NFTs per wallet</strong> (default, with exception system).
+                </p>
+              </div>
+
+              <div className="bg-white/5 border border-white/10 rounded-lg p-6">
+                <h3 className="text-xl font-semibold text-blue-300 mb-4">5. Collection Cap</h3>
+                <p className="text-white/80 leading-relaxed">
+                  <strong>10,000 NFTs maximum supply</strong>.
+                </p>
+                <p className="text-white/80 leading-relaxed mt-2">
+                  Rarity rebalances when the cap is reached based on actual mint distribution.
+                </p>
+              </div>
+            </div>
+          </div>
+        )
+
+      case 'pricing':
+        return (
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <Zap className="w-16 h-16 text-purple-400 mx-auto mb-4" />
+              <h2 className="text-3xl font-bold text-white mb-2">Revenue and Pricing Structure</h2>
+              <p className="text-white/80">Complete economic model with royalties, attribution, and maintenance costs</p>
+            </div>
+
+            <div className="space-y-6">
+              <div className="bg-white/5 border border-white/10 rounded-lg p-6">
+                <h3 className="text-xl font-semibold text-purple-300 mb-4">Primary Costs (User-Paid)</h3>
+                <ul className="text-white/80 space-y-3">
+                  <li><strong>Minting:</strong> Base price + additional per text line.</li>
+                  <li><strong>Maintenance Fees:</strong>
+                    <ul className="ml-6 mt-2 space-y-1">
+                      <li>• <strong>Cleaning:</strong> Free for <strong>11 days</strong> after each cleaning.</li>
+                      <li>• <strong>Restoration:</strong> Reduces aging by one level. Optional and deliberately priced to discourage routine use.</li>
+                      <li>• <strong>Master Restoration:</strong> Full aging reset. Optional and more expensive.</li>
+                    </ul>
                   </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                    <span className="text-sm">On-chain transaction validation</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                    <span className="text-sm">User-controlled payment limits</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                    <span className="text-sm">Transparent fee structures</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                    <span className="text-sm">Emergency pause functionality</span>
+                  <li><strong>Laundering:</strong> Automatic refresh when:
+                    <ul className="ml-6 mt-1 space-y-1">
+                      <li>• Sale price exceeds a minimum threshold <strong>and</strong></li>
+                      <li>• Sale price is greater than the max of the last three sales</li>
+                    </ul>
+                    <p className="text-white/80 mt-2 ml-6">Subject to marketplace support.</p>
                   </li>
                 </ul>
               </div>
 
               <div className="bg-white/5 border border-white/10 rounded-lg p-6">
-                <h3 className="text-xl font-semibold text-blue-300 mb-4">Network Support</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-3 h-3 bg-green-400 rounded-full"></div>
-                    <span className="text-white">Shape L2 (Primary)</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-3 h-3 bg-blue-400 rounded-full"></div>
-                    <span className="text-white">Base Sepolia (Testnet)</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-3 h-3 bg-purple-400 rounded-full"></div>
-                    <span className="text-white">Ethereum Mainnet (Future)</span>
-                  </div>
-                </div>
-                <p className="text-white/70 text-sm mt-3">
-                  x402 operates on multiple networks with consistent security and functionality.
+                <h3 className="text-xl font-semibold text-green-300 mb-4">Secondary Sale Royalties (ERC-2981)</h3>
+                <p className="text-white/80 mb-4">
+                  <strong>10 percent of sale price</strong>, subject to marketplace support:
                 </p>
+                <ul className="text-white/80 space-y-2">
+                  <li>• <strong>1 percent</strong> to the Curator (original minter, for life)</li>
+                  <li>• <strong>1 percent</strong> to the Diamond Frame Pool</li>
+                  <li>• <strong>8 percent</strong> to the Creator / Protocol</li>
+                </ul>
               </div>
 
               <div className="bg-white/5 border border-white/10 rounded-lg p-6">
-                <h3 className="text-xl font-semibold text-purple-300 mb-4">Timing Parameters</h3>
-                <div className="space-y-3">
-                  <div>
-                    <h5 className="text-white font-medium">Mainnet Timing</h5>
-                    <ul className="text-white/70 text-sm space-y-1 mt-1">
-                      <li>• Dirt accumulation: Days-based</li>
-                      <li>• Texture aging: Weeks/months-based</li>
-                      <li>• Free cleaning windows: Days-based</li>
-                      <li>• Frame grace periods: Days-based</li>
-                      <li>• <strong>Regular cleaning delays aging</strong></li>
-                    </ul>
-                  </div>
-                  <div className="mt-4">
-                    <h5 className="text-white font-medium">Testnet Timing</h5>
-                    <ul className="text-white/70 text-sm space-y-1 mt-1">
-                      <li>• Dirt accumulation: Minutes-based</li>
-                      <li>• Texture aging: Hours-based</li>
-                      <li>• Free cleaning windows: Minutes-based</li>
-                      <li>• Frame grace periods: Hours-based</li>
-                      <li>• <strong>Regular cleaning delays aging</strong></li>
-                    </ul>
-                  </div>
-                </div>
+                <h3 className="text-xl font-semibold text-cyan-300 mb-4">Referral Commissions (ERC-8021 Attribution Protocol)</h3>
+                <ul className="text-white/80 space-y-2">
+                  <li>• <strong>5 percent of mint fee</strong> to referrer</li>
+                  <li>• <strong>5 percent of marketplace fee</strong> to referrer</li>
+                  <li>Referral system ready at contract level. UI pending.</li>
+                </ul>
               </div>
-            </div>
 
-            <div className="bg-white/5 border border-white/10 rounded-lg p-6">
-              <h3 className="text-xl font-semibold text-purple-300 mb-4">x402 User Manual</h3>
-              <div className="space-y-6">
-                <p className="text-white/80 leading-relaxed">
-                  x402 is a decentralized payment protocol that enables AI agents to autonomously perform
-                  blockchain transactions on behalf of users. This manual covers all aspects of using x402
-                  for rug maintenance operations.
-                </p>
-
-                <div className="bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-400/20 rounded-lg p-4">
-                  <h4 className="text-lg font-semibold text-cyan-300 mb-3">Complete x402 Flow</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="text-center">
-                      <div className="w-8 h-8 bg-cyan-400 rounded-full flex items-center justify-center text-sm font-bold text-black mx-auto mb-2">1</div>
-                      <h5 className="text-white font-medium text-sm">Create Payment Requirement</h5>
-                      <p className="text-white/60 text-xs">Request facilitator for payment details</p>
-                    </div>
-                    <div className="text-center">
-                      <div className="w-8 h-8 bg-cyan-400 rounded-full flex items-center justify-center text-sm font-bold text-black mx-auto mb-2">2</div>
-                      <h5 className="text-white font-medium text-sm">Verify Payment</h5>
-                      <p className="text-white/60 text-xs">Submit signed payment for validation</p>
-                    </div>
-                    <div className="text-center">
-                      <div className="w-8 h-8 bg-cyan-400 rounded-full flex items-center justify-center text-sm font-bold text-black mx-auto mb-2">3</div>
-                      <h5 className="text-white font-medium text-sm">Settle Payment</h5>
-                      <p className="text-white/60 text-xs">Confirm on-chain settlement</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <h4 className="text-lg font-semibold text-white">API Integration Guide</h4>
-
-                  {/* Step 1: Create Payment Requirement */}
-                  <div className="bg-slate-800/50 rounded-lg p-4">
-                    <h5 className="text-cyan-300 font-medium mb-3 flex items-center gap-2">
-                      <span className="w-6 h-6 bg-cyan-400 rounded-full flex items-center justify-center text-xs font-bold text-black">1</span>
-                      Create Payment Requirement
-                    </h5>
-                    <p className="text-white/70 text-sm mb-3">
-                      First, request payment details from the x402 facilitator for the desired maintenance operation.
-                    </p>
-                    <div className="bg-black/50 rounded p-3 font-mono text-xs text-white/90 overflow-x-auto">
-                      <div className="text-green-400 mb-2"># Request payment details for cleaning Rug #123</div>
-                      <pre className="whitespace-pre-wrap">
-{`curl -X POST \\
-  http://localhost:3000/api/x402/facilitator \\
-  -H 'Content-Type: application/json' \\
-  -d '{
-    "action": "create_payment_requirement",
-    "price": "0.00001",
-    "description": "Clean Rug #123",
-    "resource": "/api/maintenance/action/123/clean",
-    "network": "base-sepolia"
-  }'`}
-                      </pre>
-                    </div>
-                    <div className="mt-3 bg-black/50 rounded p-3">
-                      <div className="text-yellow-400 font-medium text-sm mb-2">Expected Response:</div>
-                      <div className="font-mono text-xs text-white/90 overflow-x-auto">
-                        <div className="text-blue-400">{"{"}</div>
-                        <div className="ml-4">&quot;x402Version&quot;: 1,</div>
-                        <div className="ml-4">&quot;paymentId&quot;: &quot;pay_abc123def456&quot;,</div>
-                        <div className="ml-4">&quot;accepts&quot;: [{"{"}</div>
-                        <div className="ml-8">&quot;scheme&quot;: &quot;exact&quot;,</div>
-                        <div className="ml-8">&quot;network&quot;: &quot;base-sepolia&quot;,</div>
-                        <div className="ml-8">&quot;asset&quot;: &quot;0x0000000000000000000000000000000000000000&quot;,</div>
-                        <div className="ml-8">&quot;payTo&quot;: &quot;0x742d35Cc6634C0532925a3b844Bc454e4438f44e&quot;,</div>
-                        <div className="ml-8">&quot;maxAmountRequired&quot;: &quot;10000000000000&quot;,</div>
-                        <div className="ml-8">&quot;description&quot;: &quot;Clean Rug #123&quot;</div>
-                        <div className="ml-4">{"}"}]</div>
-                        <div className="text-blue-400">{"}"}</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Step 2: Verify Payment */}
-                  <div className="bg-slate-800/50 rounded-lg p-4">
-                    <h5 className="text-green-300 font-medium mb-3 flex items-center gap-2">
-                      <span className="w-6 h-6 bg-green-400 rounded-full flex items-center justify-center text-xs font-bold text-black">2</span>
-                      Verify Payment
-                    </h5>
-                    <p className="text-white/70 text-sm mb-3">
-                      After the user signs the payment authorization, submit it to the facilitator for verification.
-                    </p>
-                    <div className="bg-black/50 rounded p-3 font-mono text-xs text-white/90 overflow-x-auto">
-                      <div className="text-green-400 mb-2"># Submit signed payment payload for verification</div>
-                      <pre className="whitespace-pre-wrap">
-{`curl -X POST \\
-  http://localhost:3000/api/x402/facilitator \\
-  -H 'Content-Type: application/json' \\
-  -d '{
-    "action": "verify_payment",
-    "paymentPayload": {
-      "paymentId": "pay_abc123def456",
-      "signature": "0x...",
-      "userAddress": "0x...",
-      "amount": "10000000000000",
-      "deadline": 1735689600
-    }
-  }'`}
-                      </pre>
-                    </div>
-                    <div className="mt-3 bg-black/50 rounded p-3">
-                      <div className="text-yellow-400 font-medium text-sm mb-2">Expected Response:</div>
-                      <div className="font-mono text-xs text-white/90 overflow-x-auto">
-                        <div className="text-blue-400">{"{"}</div>
-                        <div className="ml-4">&quot;verified&quot;: true,</div>
-                        <div className="ml-4">&quot;paymentId&quot;: &quot;pay_abc123def456&quot;,</div>
-                        <div className="ml-4">&quot;readyForSettlement&quot;: true,</div>
-                        <div className="ml-4">&quot;message&quot;: &quot;Payment verified and ready for on-chain settlement&quot;</div>
-                        <div className="text-blue-400">{"}"}</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Step 3: Settle Payment */}
-                  <div className="bg-slate-800/50 rounded-lg p-4">
-                    <h5 className="text-blue-300 font-medium mb-3 flex items-center gap-2">
-                      <span className="w-6 h-6 bg-blue-400 rounded-full flex items-center justify-center text-xs font-bold text-black">3</span>
-                      Settle Payment
-                    </h5>
-                    <p className="text-white/70 text-sm mb-3">
-                      Once the payment transaction is sent to the blockchain, notify the facilitator to settle the payment with the transaction hash.
-                    </p>
-                    <div className="bg-black/50 rounded p-3 font-mono text-xs text-white/90 overflow-x-auto">
-                      <div className="text-green-400 mb-2"># Settle payment with transaction hash</div>
-                      <pre className="whitespace-pre-wrap">
-{`curl -X POST \\
-  http://localhost:3000/api/x402/facilitator \\
-  -H 'Content-Type: application/json' \\
-  -H 'x402-payment-tx: 0x8ba1f109551b...d4c3e8f4' \\
-  -d '{
-    "action": "settle_payment",
-    "paymentPayload": {
-      "paymentId": "pay_abc123def456",
-      "signature": "0x...",
-      "userAddress": "0x...",
-      "amount": "10000000000000",
-      "deadline": 1735689600
-    }
-  }'`}
-                      </pre>
-                    </div>
-                    <div className="mt-3 bg-black/50 rounded p-3">
-                      <div className="text-yellow-400 font-medium text-sm mb-2">Expected Response:</div>
-                      <div className="font-mono text-xs text-white/90 overflow-x-auto">
-                        <div className="text-blue-400">{"{"}</div>
-                        <div className="ml-4">&quot;settled&quot;: true,</div>
-                        <div className="ml-4">&quot;paymentId&quot;: &quot;pay_abc123def456&quot;,</div>
-                        <div className="ml-4">&quot;transactionHash&quot;: &quot;0x8ba1f109551b...d4c3e8f4&quot;,</div>
-                        <div className="ml-4">&quot;blockNumber&quot;: 12345678,</div>
-                        <div className="ml-4">&quot;resourceAccessGranted&quot;: true,</div>
-                        <div className="ml-4">&quot;message&quot;: &quot;Payment settled successfully, resource access granted&quot;</div>
-                        <div className="text-blue-400">{"}"}</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-slate-800/50 rounded-lg p-4">
-                  <h4 className="text-lg font-semibold text-white mb-3">Agent Authorization in Dashboard</h4>
-                  <p className="text-white/70 text-sm mb-4">
-                    Users can authorize specific AI agents in their dashboard to perform limited maintenance operations on their rugs:
-                  </p>
-
-                  <div className="bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-400/20 rounded-lg p-3 mb-4">
-                    <h5 className="text-orange-300 font-medium text-sm mb-2">📋 Authorized Agent Capabilities</h5>
-                    <div className="space-y-1 text-xs text-white/80">
-                      <div>• <strong>Clean rugs</strong> - Remove dirt accumulation</div>
-                      <div>• <strong>Restore aging</strong> - Reduce aging levels</div>
-                      <div>• <strong>Master restore</strong> - Full dirt and aging reset</div>
-                      <div>• <strong>Limited per-owner</strong> - Only works on rugs owned by the authorizing user</div>
-                      <div>• <strong>Pay full cost</strong> - Agents must pay maintenance fees (unlike x402 agents)</div>
-                      <div>• <strong>Service fees apply</strong> - Platform takes a service fee from agent payments</div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-black/30 rounded p-3">
-                      <h5 className="text-cyan-300 font-medium text-sm mb-2">Dashboard Authorization</h5>
-                      <div className="space-y-2 text-xs">
-                        <div className="text-white/60">1. Visit your dashboard</div>
-                        <div className="text-white/60">2. Go to &quot;Authorized Agents&quot; tab</div>
-                        <div className="text-white/60">3. Add agent wallet addresses</div>
-                        <div className="text-green-400 font-mono">✓ Agents can now maintain your rugs</div>
-                        <div className="text-yellow-400 font-mono">⚠ Agents still pay full maintenance costs</div>
-                      </div>
-                    </div>
-
-                    <div className="bg-black/30 rounded p-3">
-                      <h5 className="text-cyan-300 font-medium text-sm mb-2">Smart Contract Functions</h5>
-                      <div className="space-y-2 text-xs">
-                        <div className="text-green-400 font-mono">authorizeMaintenanceAgent(address)</div>
-                        <div className="text-green-400 font-mono">revokeMaintenanceAgent(address)</div>
-                        <div className="text-green-400 font-mono">getAuthorizedAgents()</div>
-                        <div className="text-white/60">Per-owner allowlist system</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-slate-800/50 rounded-lg p-4">
-                  <h4 className="text-lg font-semibold text-white mb-3">AI Agent Integration</h4>
-                  <p className="text-white/70 text-sm mb-4">
-                    AI agents can automate the entire x402 payment flow. Here&apos;s how users can interact with AI agents:
-                  </p>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-black/30 rounded p-3">
-                      <h5 className="text-cyan-300 font-medium text-sm mb-2">Natural Language Commands</h5>
-                      <div className="space-y-2 text-xs">
-                        <div className="text-green-400 font-mono">&quot;Clean my rug #123&quot;</div>
-                        <div className="text-green-400 font-mono">&quot;Restore aging on rug #456&quot;</div>
-                        <div className="text-green-400 font-mono">&quot;Master restore rug #789&quot;</div>
-                        <div className="text-white/60">→ AI handles full payment flow</div>
-                      </div>
-                    </div>
-
-                    <div className="bg-black/30 rounded p-3">
-                      <h5 className="text-cyan-300 font-medium text-sm mb-2">Direct API Usage</h5>
-                      <div className="space-y-2 text-xs">
-                        <div className="text-green-400 font-mono">POST /api/maintenance/action/123/clean</div>
-                        <div className="text-white/60">Headers:</div>
-                        <div className="text-white/80">x402-payment-payload: {"{...}"}</div>
-                        <div className="text-white/80">x402-payment-status: payment-submitted</div>
-                        <div className="text-white/80">x402-payment-tx: 0x...</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-slate-800/50 rounded-lg p-4">
-                  <h4 className="text-lg font-semibold text-white mb-3">Error Handling & Troubleshooting</h4>
-                  <div className="space-y-3">
-                    <div className="flex items-start gap-3">
-                      <div className="w-5 h-5 bg-red-400 rounded-full flex items-center justify-center text-xs font-bold text-white mt-0.5">!</div>
-                      <div>
-                        <h5 className="text-red-300 font-medium text-sm">Payment Timeout</h5>
-                        <p className="text-white/60 text-xs">Payments must be settled within 24 hours. Use the deadline field to check expiration.</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <div className="w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center text-xs font-bold text-black mt-0.5">?</div>
-                      <div>
-                        <h5 className="text-yellow-300 font-medium text-sm">Insufficient Funds</h5>
-                        <p className="text-white/60 text-xs">Ensure wallet has enough balance + gas fees. Check network congestion.</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <div className="w-5 h-5 bg-orange-400 rounded-full flex items-center justify-center text-xs font-bold text-white mt-0.5">⚠</div>
-                      <div>
-                        <h5 className="text-orange-300 font-medium text-sm">Network Mismatch</h5>
-                        <p className="text-white/60 text-xs">Verify you&apos;re on the correct network (base-sepolia for testnet, shape for mainnet).</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-400/20 rounded-lg p-4">
-                  <h4 className="text-lg font-semibold text-purple-300 mb-3">Available Maintenance Actions</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div className="bg-slate-800/30 rounded p-3">
-                      <h5 className="text-cyan-300 font-medium text-sm">Clean</h5>
-                      <p className="text-white/60 text-xs">Resets dirt accumulation, costs ~0.00001 ETH</p>
-                    </div>
-                    <div className="bg-slate-800/30 rounded p-3">
-                      <h5 className="text-green-300 font-medium text-sm">Restore</h5>
-                      <p className="text-white/60 text-xs">Reduces aging level by 1, costs ~0.00002 ETH</p>
-                    </div>
-                    <div className="bg-slate-800/30 rounded p-3">
-                      <h5 className="text-yellow-300 font-medium text-sm">Master Restore</h5>
-                      <p className="text-white/60 text-xs">Full restoration (dirt + aging), costs ~0.00005 ETH</p>
-                    </div>
-                  </div>
-                </div>
+              <div className="bg-white/5 border border-white/10 rounded-lg p-6">
+                <h3 className="text-xl font-semibold text-yellow-300 mb-4">Marketplace Features</h3>
+                <ul className="text-white/80 space-y-2">
+                  <li>• <strong>Fixed-Price Listings:</strong> Direct buy functionality</li>
+                  <li>• <strong>Offer System:</strong> Make offers on unlisted NFTs (with expiration)</li>
+                  <li>• <strong>Trusted Marketplaces:</strong> External platforms can record sales and trigger laundering</li>
+                  <li>• <strong>Auto-Cancel Listings:</strong> Listings automatically cancel when NFT transfers (ERC-721-C compliance)</li>
+                </ul>
               </div>
-            </div>
-
-            <div className="bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-400/30 rounded-lg p-6">
-              <h3 className="text-xl font-semibold text-white mb-4">AI Agent Integration</h3>
-              <p className="text-white/90 leading-relaxed">
-                The x402 protocol enables autonomous AI agents to maintain rugs according to user-defined
-                schedules and preferences. Agents can monitor rug conditions, request payments for necessary
-                maintenance, and execute cleaning operations - all while maintaining full user control and
-                transparency over every transaction.
-              </p>
             </div>
           </div>
         )
 
-      case 'tech':
+      case 'royalties':
         return (
           <div className="space-y-6">
             <div className="text-center mb-8">
-              <Zap className="w-16 h-16 text-yellow-400 mx-auto mb-4" />
-              <h2 className="text-3xl font-bold text-white mb-2">Technical Architecture</h2>
-              <p className="text-white/80">Diamond Pattern Smart Contracts & On-Chain Art</p>
+              <Gem className="w-16 h-16 text-green-400 mx-auto mb-4" />
+              <h2 className="text-3xl font-bold text-white mb-2">Royalties and Attribution</h2>
+              <p className="text-white/80">ERC-2981 royalties and ERC-8021 attribution protocol</p>
+            </div>
+
+            <div className="bg-white/5 border border-white/10 rounded-lg p-6 mb-6">
+              <h3 className="text-xl font-semibold text-green-300 mb-4">Secondary Sale Royalties (ERC-2981)</h3>
+              <p className="text-white/80 leading-relaxed mb-4">
+                <strong>10 percent of sale price</strong>, subject to marketplace support:
+              </p>
+              <ul className="text-white/80 space-y-2 text-lg">
+                <li>• <strong>1 percent</strong> to the Curator (original minter, for life)</li>
+                <li>• <strong>1 percent</strong> to the Diamond Frame Pool</li>
+                <li>• <strong>8 percent</strong> to the Creator / Protocol</li>
+              </ul>
+            </div>
+
+            <div className="bg-white/5 border border-white/10 rounded-lg p-6">
+              <h3 className="text-xl font-semibold text-cyan-300 mb-4">Referral Commissions (ERC-8021 Attribution Protocol)</h3>
+              <ul className="text-white/80 space-y-2">
+                <li>• <strong>5 percent of mint fee</strong> to referrer</li>
+                <li>• <strong>5 percent of marketplace fee</strong> to referrer</li>
+                <li>Referral system ready at contract level. UI pending.</li>
+              </ul>
+            </div>
+          </div>
+        )
+
+      case 'aging':
+        return (
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <Clock className="w-16 h-16 text-red-400 mx-auto mb-4" />
+              <h2 className="text-3xl font-bold text-white mb-2">Aging Mechanics</h2>
+              <p className="text-white/80">Living NFT system with dirt accumulation and texture aging</p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="bg-white/5 border border-white/10 rounded-lg p-6">
-                <h3 className="text-xl font-semibold text-cyan-300 mb-4">Diamond Pattern Architecture</h3>
-                <div className="space-y-3">
-                  <p className="text-white/80">Modular smart contract system enabling:</p>
-                  <ul className="text-white/70 space-y-1">
-                    <li>• RugNFTFacet: ERC721 core functionality</li>
-                    <li>• RugAgingFacet: Dirt & aging mechanics</li>
-                    <li>• RugMaintenanceFacet: Cleaning services</li>
-                    <li>• RugCommerceFacet: Pricing & withdrawals</li>
-                    <li>• RugAdminFacet: Owner controls</li>
-                    <li>• RugLaunderingFacet: Auto-cleaning on sales</li>
-                  </ul>
-                </div>
+                <h3 className="text-xl font-semibold text-red-300 mb-4">Dirt Accumulation</h3>
+                <ul className="text-white/80 space-y-2">
+                  <li>• <strong>Level 0:</strong> Clean</li>
+                  <li>• <strong>Level 1:</strong> Dirty after 3 days</li>
+                  <li>• <strong>Level 2:</strong> Very Dirty after 7 days</li>
+                  <li>• <strong>11 days of free cleaning</strong> after each cleaning</li>
+                </ul>
               </div>
 
               <div className="bg-white/5 border border-white/10 rounded-lg p-6">
-                <h3 className="text-xl font-semibold text-green-300 mb-4">Art Generation System</h3>
-                <div className="space-y-3">
-                  <p className="text-white/80">On-chain generative art using:</p>
-                  <ul className="text-white/70 space-y-1">
-                    <li>• P5.js canvas rendering (800x1200px)</li>
-                    <li>• Deterministic seeded randomness</li>
-                    <li>• 100+ cultural color palettes</li>
-                    <li>• Pixel-perfect text integration</li>
-                    <li>• Scripty.sol external library storage</li>
-                  </ul>
-                </div>
-              </div>
-
-              <div className="bg-white/5 border border-white/10 rounded-lg p-6">
-                <h3 className="text-xl font-semibold text-blue-300 mb-4">Storage Optimization</h3>
-                <div className="space-y-3">
-                  <p className="text-white/80">Efficient on-chain storage:</p>
-                  <ul className="text-white/70 space-y-1">
-                    <li>• Minimal seed + parameters storage</li>
-                    <li>• External P5.js library via Scripty.sol</li>
-                    <li>• SSTORE2 for compressed data</li>
-                    <li>• Base64 encoded HTML output</li>
-                  </ul>
-                </div>
-              </div>
-
-              <div className="bg-white/5 border border-white/10 rounded-lg p-6">
-                <h3 className="text-xl font-semibold text-purple-300 mb-4">Security Features</h3>
-                <div className="space-y-3">
-                  <p className="text-white/80">Comprehensive protection:</p>
-                  <ul className="text-white/70 space-y-1">
-                    <li>• Reentrancy protection</li>
-                    <li>• Input validation</li>
-                    <li>• Owner controls & emergency pause</li>
-                    <li>• Transparent pricing & limits</li>
-                    <li>• Unique text hash enforcement</li>
-                  </ul>
-                </div>
-              </div>
-
-              <div className="bg-white/5 border border-white/10 rounded-lg p-6">
-                <h3 className="text-xl font-semibold text-purple-300 mb-4">x402 Integration</h3>
-                <div className="space-y-4">
-                  <p className="text-white/80 leading-relaxed">
-                    x402 protocol integration enables programmable payments for maintenance operations:
-                  </p>
-
-                  <div className="bg-slate-800/50 rounded p-4">
-                    <h5 className="text-cyan-300 font-medium mb-2">API Endpoints</h5>
-                    <div className="space-y-2 font-mono text-xs text-green-400">
-                      <div>POST /api/maintenance/action/{'{tokenId}'}/clean</div>
-                      <div>POST /api/maintenance/action/{'{tokenId}'}/restore</div>
-                      <div>POST /api/maintenance/action/{'{tokenId}'}/master-restore</div>
-                      <div>GET /api/maintenance/quote/{'{tokenId}'}/{'{action}'}</div>
-                    </div>
-                  </div>
-
-                  <div className="bg-slate-800/50 rounded p-4">
-                    <h5 className="text-cyan-300 font-medium mb-2">Payment Flow</h5>
-                    <div className="space-y-3 text-sm">
-                      <div className="flex items-start gap-3">
-                        <div className="w-6 h-6 bg-cyan-400 rounded-full flex items-center justify-center text-xs font-bold text-black mt-0.5">1</div>
-                        <div>
-                          <h6 className="text-white font-medium">Request Quote</h6>
-                          <p className="text-white/70">GET quote endpoint returns 402 with payment requirements</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="w-6 h-6 bg-cyan-400 rounded-full flex items-center justify-center text-xs font-bold text-black mt-0.5">2</div>
-                        <div>
-                          <h6 className="text-white font-medium">Submit Payment</h6>
-                          <p className="text-white/70">Send transaction to facilitator address with exact amount</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="w-6 h-6 bg-cyan-400 rounded-full flex items-center justify-center text-xs font-bold text-black mt-0.5">3</div>
-                        <div>
-                          <h6 className="text-white font-medium">Execute Action</h6>
-                          <p className="text-white/70">POST to action endpoint with payment proof</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-slate-800/50 rounded p-4">
-                    <h5 className="text-cyan-300 font-medium mb-2">Supported Networks</h5>
-                    <div className="grid grid-cols-2 gap-3 text-sm">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                        <span className="text-white/80">Shape L2 (Primary)</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                        <span className="text-white/80">Base Sepolia (Testnet)</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
-                        <span className="text-white/80">Ethereum Mainnet (Future)</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-400/30 rounded-lg p-6">
-              <h3 className="text-xl font-semibold text-white mb-4">Network & Performance</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="text-center">
-                  <h4 className="text-cyan-300 font-medium mb-2">Primary Network</h4>
-                  <p className="text-white/80 text-sm">Shape L2</p>
-                  <p className="text-white/60 text-xs">Low gas, fast transactions</p>
-                </div>
-                <div className="text-center">
-                  <h4 className="text-green-300 font-medium mb-2">Gas Estimates</h4>
-                  <p className="text-white/80 text-sm">Mint: ~25k gas</p>
-                  <p className="text-white/60 text-xs">Clean: ~15k gas</p>
-                </div>
-                <div className="text-center">
-                  <h4 className="text-blue-300 font-medium mb-2">Max Supply</h4>
-                  <p className="text-white/80 text-sm">10,000 NFTs</p>
-                  <p className="text-white/60 text-xs">Expandable by owner</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white/5 border border-white/10 rounded-lg p-6">
-              <h3 className="text-xl font-semibold text-white mb-4">Transparent Metadata System</h3>
-              <p className="text-white/90 mb-4">
-                All game data is fully visible in NFT metadata for complete transparency:
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <div className="bg-black/20 rounded p-3">
-                  <h5 className="text-cyan-300 font-medium mb-2">Core Attributes</h5>
-                  <ul className="text-white/70 space-y-1">
-                    <li>• Frame Level & Maintenance Score</li>
-                    <li>• Dirt & Texture Levels</li>
-                    <li>• Mint & Last Cleaned Times</li>
-                    <li>• Complete Ownership History</li>
-                  </ul>
-                </div>
-                <div className="bg-black/20 rounded p-3">
-                  <h5 className="text-green-300 font-medium mb-2">Maintenance History</h5>
-                  <ul className="text-white/70 space-y-1">
-                    <li>• Cleaning & Restoration Counts</li>
-                    <li>• Laundering Events</li>
-                    <li>• Frame Achievement Timestamps</li>
-                    <li>• Trading History & Prices</li>
-                  </ul>
-                </div>
+                <h3 className="text-xl font-semibold text-red-300 mb-4">Aging Progression</h3>
+                <ul className="text-white/80 space-y-2">
+                  <li>• <strong>11 levels (0–10)</strong></li>
+                  <li>• Base rate: <strong>14 days per level</strong></li>
+                  <li>• Level 10 represents maximum texture and age</li>
+                </ul>
               </div>
             </div>
           </div>
         )
 
-      case 'faq':
+      case 'frames':
+        return (
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <Star className="w-16 h-16 text-yellow-400 mx-auto mb-4" />
+              <h2 className="text-3xl font-bold text-white mb-2">Frame System</h2>
+              <p className="text-white/80">Achievement-based progression through maintenance points</p>
+            </div>
+
+            <div className="bg-white/5 border border-white/10 rounded-lg p-6 mb-6">
+              <p className="text-white/90 leading-relaxed mb-4">
+                Frames slow aging and represent long-term stewardship.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-white/5 border border-white/10 rounded-lg p-6">
+                <h3 className="text-xl font-semibold text-yellow-300 mb-4">Frame Tiers</h3>
+                <ul className="text-white/80 space-y-3">
+                  <li>• <strong>Bronze (25 points):</strong> 25 percent slower aging</li>
+                  <li>• <strong>Silver (50 points):</strong> 50 percent slower aging + dirt immunity</li>
+                  <li>• <strong>Gold (100 points):</strong> 80 percent slower aging + dirt immunity</li>
+                  <li>• <strong>Diamond (200 points):</strong> 90 percent slower aging + dirt immunity + rare (limited to 200 NFTs)</li>
+                </ul>
+              </div>
+
+              <div className="bg-white/5 border border-white/10 rounded-lg p-6">
+                <h3 className="text-xl font-semibold text-yellow-300 mb-4">Maintenance Scoring</h3>
+                <ul className="text-white/80 space-y-2">
+                  <li>• Cleaning: +2 points</li>
+                  <li>• Restoration: 0 points</li>
+                  <li>• Master Restoration: 0 points</li>
+                  <li>• Laundering: +20 points</li>
+                  <li>• Total Score = Σ all maintenance actions</li>
+                  <li>• Frame Progression: Score thresholds determine frame level</li>
+                  <li>• Points subject to final tuning before mainnet</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        )
+
+      case 'pool':
+        return (
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <Gem className="w-16 h-16 text-purple-400 mx-auto mb-4" />
+              <h2 className="text-3xl font-bold text-white mb-2">Diamond Frame Pool</h2>
+              <p className="text-white/80">Royalties fund rare diamond frames for top maintainers</p>
+            </div>
+
+            <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-400/30 rounded-lg p-6">
+              <ul className="text-white/80 space-y-3 text-lg">
+                <li>• Funded by <strong>1 percent of all secondary-sale royalties</strong></li>
+                <li>• <strong>Only Diamond-framed rugs can claim</strong></li>
+                <li>• Strictly capped at <strong>200 rugs</strong></li>
+                <li>• Prevents dilution and preserves long-term incentive integrity</li>
+              </ul>
+              <p className="text-white/90 mt-4 text-lg">
+                Once the Diamond cap is reached, <strong>Gold becomes the highest attainable tier</strong>.
+              </p>
+            </div>
+          </div>
+        )
+
+      case 'agents':
+        return (
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <Cpu className="w-16 h-16 text-cyan-400 mx-auto mb-4" />
+              <h2 className="text-3xl font-bold text-white mb-2">Agentic Maintenance System</h2>
+              <p className="text-white/80">ERC-8004 compatible AI agent ecosystem with x402 v2 protocol</p>
+            </div>
+
+            <div className="space-y-6">
+              <div className="bg-white/5 border border-white/10 rounded-lg p-6">
+                <h3 className="text-xl font-semibold text-cyan-300 mb-4">x402 v2 Protocol Overview</h3>
+                <p className="text-white/80 mb-4">
+                  x402 v2 is a decentralized payment protocol that enables AI agents to autonomously perform
+                  blockchain transactions on behalf of users. Version 2 introduces enhanced security, multi-network
+                  support, and programmable payment flows for maintenance operations.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="text-cyan-300 font-medium mb-2">Key Features</h4>
+                    <ul className="text-white/70 text-sm space-y-1">
+                      <li>• Cryptographic payment authorization</li>
+                      <li>• On-chain transaction validation</li>
+                      <li>• Multi-network compatibility</li>
+                      <li>• Programmable payment limits</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="text-cyan-300 font-medium mb-2">Security</h4>
+                    <ul className="text-white/70 text-sm space-y-1">
+                      <li>• User-controlled permissions</li>
+                      <li>• Emergency pause functionality</li>
+                      <li>• Transparent fee structures</li>
+                      <li>• Time-based payment expiration</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white/5 border border-white/10 rounded-lg p-6">
+                <h3 className="text-xl font-semibold text-cyan-300 mb-4">Delegated Maintenance Permissions</h3>
+                <p className="text-white/80 mb-4">Owners may authorize a separate address to perform maintenance actions only.</p>
+                <ul className="text-white/80 space-y-2">
+                  <li>• Delegated agents <strong>cannot transfer NFTs</strong></li>
+                  <li>• Cannot sell or approve transfers</li>
+                  <li>• Can be <strong>revoked at any time</strong></li>
+                </ul>
+                <p className="text-white/80 mt-4">
+                  This allows cold-wallet ownership, hot-wallet maintenance, and automation without custody risk.
+                </p>
+              </div>
+
+              <div className="bg-white/5 border border-white/10 rounded-lg p-6">
+                <h3 className="text-xl font-semibold text-cyan-300 mb-4">x402 v2 API Documentation</h3>
+                <p className="text-white/80 mb-4">Complete API reference for integrating with x402 v2 protocol.</p>
+
+                <div className="space-y-4">
+                  <div className="bg-slate-800/30 rounded p-4">
+                    <h4 className="text-cyan-300 font-medium mb-3">1. Create Payment Requirement</h4>
+                    <p className="text-white/70 text-sm mb-3">
+                      Request payment details from the x402 facilitator for the desired maintenance operation.
+                    </p>
+                    <div className="bg-black/50 rounded p-3">
+                      <div className="text-green-400 text-xs mb-2"># Request payment details for cleaning Rug #123</div>
+                      <div className="text-white/90 text-xs font-mono bg-black/30 p-2 rounded overflow-x-auto">
+                        <div>POST /api/x402/v2/facilitator</div>
+                        <div>Content-Type: application/json</div>
+                        <div>&nbsp;</div>
+                        <div>{"{"}</div>
+                        <div>&nbsp;&nbsp;"version": "2.0",</div>
+                        <div>&nbsp;&nbsp;"action": "create_payment_requirement",</div>
+                        <div>&nbsp;&nbsp;"price": "0.00001",</div>
+                        <div>&nbsp;&nbsp;"description": "Clean Rug #123",</div>
+                        <div>&nbsp;&nbsp;"resource": "/api/maintenance/action/123/clean",</div>
+                        <div>&nbsp;&nbsp;"network": "shape-mainnet",</div>
+                        <div>&nbsp;&nbsp;"deadline": 1735689600,</div>
+                        <div>&nbsp;&nbsp;"userAddress": "0x..."</div>
+                        <div>{"}"}</div>
+                      </div>
+                    </div>
+                    <div className="mt-3 bg-black/30 rounded p-3">
+                      <div className="text-yellow-400 text-xs font-medium mb-2">Response:</div>
+                      <div className="text-white/90 text-xs font-mono bg-black/20 p-2 rounded overflow-x-auto">
+                        <div>{"{"}</div>
+                        <div>&nbsp;&nbsp;"x402Version": "2.0",</div>
+                        <div>&nbsp;&nbsp;"paymentId": "pay_abc123def456",</div>
+                        <div>&nbsp;&nbsp;"accepts": [{"{"}</div>
+                        <div>&nbsp;&nbsp;&nbsp;&nbsp;"scheme": "exact",</div>
+                        <div>&nbsp;&nbsp;&nbsp;&nbsp;"network": "shape-mainnet",</div>
+                        <div>&nbsp;&nbsp;&nbsp;&nbsp;"asset": "0x0000000000000000000000000000000000000000",</div>
+                        <div>&nbsp;&nbsp;&nbsp;&nbsp;"payTo": "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",</div>
+                        <div>&nbsp;&nbsp;&nbsp;&nbsp;"maxAmountRequired": "10000000000000",</div>
+                        <div>&nbsp;&nbsp;&nbsp;&nbsp;"description": "Clean Rug #123",</div>
+                        <div>&nbsp;&nbsp;&nbsp;&nbsp;"deadline": 1735689600</div>
+                        <div>&nbsp;&nbsp;{"}"}],</div>
+                        <div>&nbsp;&nbsp;"facilitatorSignature": "0x..."</div>
+                        <div>{"}"}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-800/30 rounded p-4">
+                    <h4 className="text-green-300 font-medium mb-3">2. Verify Payment Authorization</h4>
+                    <p className="text-white/70 text-sm mb-3">
+                      Submit signed payment authorization for facilitator verification.
+                    </p>
+                    <div className="bg-black/50 rounded p-3">
+                      <div className="text-green-400 text-xs mb-2"># Submit signed payment payload</div>
+                      <div className="text-white/90 text-xs font-mono bg-black/30 p-2 rounded overflow-x-auto">
+                        <div>POST /api/x402/v2/facilitator</div>
+                        <div>Content-Type: application/json</div>
+                        <div>x402-payment-tx: 0x8ba1f109551b...</div>
+                        <div>&nbsp;</div>
+                        <div>{"{"}</div>
+                        <div>&nbsp;&nbsp;"version": "2.0",</div>
+                        <div>&nbsp;&nbsp;"action": "verify_payment",</div>
+                        <div>&nbsp;&nbsp;"paymentPayload": {"{"}</div>
+                        <div>&nbsp;&nbsp;&nbsp;&nbsp;"paymentId": "pay_abc123def456",</div>
+                        <div>&nbsp;&nbsp;&nbsp;&nbsp;"signature": "0x...",</div>
+                        <div>&nbsp;&nbsp;&nbsp;&nbsp;"userAddress": "0x...",</div>
+                        <div>&nbsp;&nbsp;&nbsp;&nbsp;"amount": "10000000000000",</div>
+                        <div>&nbsp;&nbsp;&nbsp;&nbsp;"deadline": 1735689600,</div>
+                        <div>&nbsp;&nbsp;&nbsp;&nbsp;"txHash": "0x8ba1f109551b..."</div>
+                        <div>&nbsp;&nbsp;{"}"}</div>
+                        <div>{"}"}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-800/30 rounded p-4">
+                    <h4 className="text-blue-300 font-medium mb-3">3. Execute Maintenance Action</h4>
+                    <p className="text-white/70 text-sm mb-3">
+                      Perform the maintenance operation with verified payment proof.
+                    </p>
+                    <div className="bg-black/50 rounded p-3">
+                      <div className="text-green-400 text-xs mb-2"># Execute cleaning with payment proof</div>
+                      <div className="text-white/90 text-xs font-mono bg-black/30 p-2 rounded overflow-x-auto">
+                        <div>POST /api/maintenance/action/123/clean</div>
+                        <div>x402-payment-verified: true</div>
+                        <div>x402-payment-id: pay_abc123def456</div>
+                        <div>x402-facilitator-sig: 0x...</div>
+                        <div>&nbsp;</div>
+                        <div>{"{"}</div>
+                        <div>&nbsp;&nbsp;"agentAddress": "0x...",</div>
+                        <div>&nbsp;&nbsp;"userAddress": "0x..."</div>
+                        <div>{"}"}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white/5 border border-white/10 rounded-lg p-6">
+                <h3 className="text-xl font-semibold text-cyan-300 mb-4">Agent Registry (ERC-8004)</h3>
+                <ul className="text-white/80 space-y-2">
+                  <li>• On-chain agent identity registration</li>
+                  <li>• Capability declaration and verification</li>
+                  <li>• Reputation scoring and feedback system</li>
+                  <li>• Cryptographic proof of service execution</li>
+                </ul>
+                <p className="text-white/80 mt-2">Smart contracts support ERC-8004, agent marketplace under development.</p>
+              </div>
+
+              <div className="bg-white/5 border border-white/10 rounded-lg p-6">
+                <h3 className="text-xl font-semibold text-cyan-300 mb-4">Agent Fees</h3>
+                <p className="text-white/80 mb-4">
+                  <strong>Free by default</strong>. Fee infrastructure exists only as long-term safeguards. No monetization of routine care or recovery unless explicitly enabled by governance.
+                </p>
+              </div>
+
+              <div className="bg-white/5 border border-white/10 rounded-lg p-6">
+                <h3 className="text-xl font-semibold text-cyan-300 mb-4">Available Agent Services</h3>
+                <ul className="text-white/80 space-y-2">
+                  <li>• <strong>Cleaning:</strong> Remove dirt overlay (free for 11 days, optional fees)</li>
+                  <li>• <strong>Restoration:</strong> Reduce aging by 1 level</li>
+                  <li>• <strong>Master Restoration:</strong> Full aging reset</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        )
+
+      case 'ownership':
+        return (
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <FileText className="w-16 h-16 text-green-400 mx-auto mb-4" />
+              <h2 className="text-3xl font-bold text-white mb-2">Ownership and Metadata</h2>
+              <p className="text-white/80">Fully on-chain ERC-721-C NFTs with complete transparency</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-white/5 border border-white/10 rounded-lg p-6">
+                <ul className="text-white/80 space-y-3">
+                  <li>• <strong>Fully on-chain Living HTML NFT</strong></li>
+                  <li>• No IPFS dependencies</li>
+                  <li>• All rendering logic and state stored on-chain</li>
+                  <li>• Unique text combinations used <strong>only once globally</strong></li>
+                  <li>• Complete maintenance and ownership history recorded permanently</li>
+                </ul>
+              </div>
+
+              <div className="bg-white/5 border border-white/10 rounded-lg p-6">
+                <h3 className="text-xl font-semibold text-green-300 mb-4">Complete Metadata</h3>
+                <ul className="text-white/80 space-y-2">
+                  <li>• All traits, history, curator address, transaction data</li>
+                  <li>• Frame Level & Maintenance Score</li>
+                  <li>• Dirt & Texture Levels</li>
+                  <li>• Mint & Last Cleaned Times</li>
+                  <li>• Complete Ownership History</li>
+                  <li>• Cleaning & Restoration Counts</li>
+                  <li>• Laundering Events</li>
+                  <li>• Frame Achievement Timestamps</li>
+                  <li>• Trading History & Prices</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        )
+
+      case 'standards':
+        return (
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <Zap className="w-16 h-16 text-blue-400 mx-auto mb-4" />
+              <h2 className="text-3xl font-bold text-white mb-2">Standards Integration</h2>
+              <p className="text-white/80">ERC compliance and technical architecture</p>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-cyan-400/20 rounded-lg flex items-center justify-center mx-auto mb-3">
+                  <span className="text-cyan-300 font-bold text-lg">721-C</span>
+                </div>
+                <div className="text-white/80 text-sm">Creator Token Standard</div>
+              </div>
+
+              <div className="text-center">
+                <div className="w-16 h-16 bg-green-400/20 rounded-lg flex items-center justify-center mx-auto mb-3">
+                  <span className="text-green-300 font-bold text-lg">2981</span>
+                </div>
+                <div className="text-white/80 text-sm">Royalty Standard</div>
+              </div>
+
+              <div className="text-center">
+                <div className="w-16 h-16 bg-yellow-400/20 rounded-lg flex items-center justify-center mx-auto mb-3">
+                  <span className="text-yellow-300 font-bold text-lg">8021</span>
+                </div>
+                <div className="text-white/80 text-sm">Attribution Protocol</div>
+              </div>
+
+              <div className="text-center">
+                <div className="w-16 h-16 bg-purple-400/20 rounded-lg flex items-center justify-center mx-auto mb-3">
+                  <span className="text-purple-300 font-bold text-lg">8004</span>
+                </div>
+                <div className="text-white/80 text-sm">AI Agent Standard</div>
+              </div>
+
+              <div className="text-center col-span-2 md:col-span-4 mt-4">
+                <div className="w-16 h-16 bg-orange-400/20 rounded-lg flex items-center justify-center mx-auto mb-3">
+                  <span className="text-orange-300 font-bold text-lg">2535</span>
+                </div>
+                <div className="text-white/80 text-sm">Diamond Standard (Multi-facet Architecture)</div>
+              </div>
+            </div>
+          </div>
+        )
+
+      case 'result':
+        return (
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <HelpCircle className="w-16 h-16 text-emerald-400 mx-auto mb-4" />
+              <h2 className="text-3xl font-bold text-white mb-2">Final Result</h2>
+              <p className="text-white/80">Living digital artifacts that behave like physical objects</p>
+            </div>
+
+            <div className="bg-gradient-to-r from-emerald-500/20 to-green-500/20 border border-emerald-400/30 rounded-lg p-6 mb-6">
+              <p className="text-white/90 text-lg leading-relaxed mb-4">
+                OnchainRugs produce <strong>fully on-chain generative artworks</strong> whose appearance, rarity, and history evolve over time.
+              </p>
+            </div>
+
+            <div className="bg-white/5 border border-white/10 rounded-lg p-6">
+              <p className="text-white/90 leading-relaxed mb-4">
+                Each rug:
+              </p>
+              <ul className="text-white/80 space-y-2">
+                <li>• Is <strong>complete at mint</strong></li>
+                <li>• <strong>Evolves visually over time</strong></li>
+                <li>• <strong>Accumulates history</strong></li>
+                <li>• Reflects care, neglect, and market validation</li>
+                <li>• Preserves provenance permanently on-chain</li>
+              </ul>
+            </div>
+
+            <div className="bg-white/5 border border-white/10 rounded-lg p-6">
+              <p className="text-white/90 leading-relaxed mb-4">
+                <strong>Rarity is not fixed.</strong>
+              </p>
+              <p className="text-white/90 leading-relaxed mb-4">
+                <strong>Value is not forced.</strong>
+              </p>
+              <p className="text-white/90 leading-relaxed mb-4">
+                <strong>Nothing is hidden.</strong>
+              </p>
+              <p className="text-white/90 leading-relaxed">
+                This is not a game of extraction. It is a system of consequence.
+              </p>
+            </div>
+          </div>
+        )
+
+      case 'result':
         return (
           <div className="space-y-6">
             <div className="text-center mb-8">
@@ -1009,7 +895,7 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
           cornerRadius={16}
         >
           <div
-            className="max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+            className="max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col relative"
             style={{
               WebkitUserSelect: 'none',
               MozUserSelect: 'none',
@@ -1022,7 +908,7 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
             data-no-wallet="true"
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-white/10">
+            <div className="flex items-center justify-between p-6 border-b border-white/10 relative z-40">
               <div className="flex items-center gap-3">
                 <FileText className="w-8 h-8 text-cyan-400" />
                 <div>
@@ -1039,29 +925,35 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
             </div>
 
             {/* Navigation */}
-            <div className="flex border-b border-white/10 overflow-x-auto min-h-[60px] items-center">
+            <div className="flex border-b border-white/10 flex-wrap min-h-[60px] items-center relative z-20">
               {sections.map((section) => {
                 const Icon = section.icon
                 return (
                   <button
                     key={section.id}
                     onClick={() => setActiveSection(section.id)}
-                    className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap ${
+                    className={`flex items-center gap-2 px-3 py-2 text-xs md:text-sm font-medium transition-colors whitespace-nowrap relative z-30 ${
                       activeSection === section.id
-                        ? 'text-cyan-300 border-b-2 border-cyan-300 bg-white/5'
+                        ? 'text-cyan-300 bg-white/5'
                         : 'text-white/70 hover:text-white hover:bg-white/5'
                     }`}
                   >
-                    <Icon className="w-4 h-4" />
-                    {section.label}
+                    <Icon className="w-3 h-3 md:w-4 md:h-4" />
+                    <span className="hidden sm:inline">{section.label}</span>
+                    <span className="sm:hidden">{section.label.split(' ')[0]}</span>
+                    {activeSection === section.id && (
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-cyan-300 z-10"></div>
+                    )}
                   </button>
                 )
               })}
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto p-6 relative z-10 pointer-events-none">
+              <div className="pointer-events-auto">
               {renderSectionContent()}
+              </div>
             </div>
           </div>
         </LiquidGlass>
