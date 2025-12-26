@@ -466,7 +466,7 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
 
       case 'agents':
         return (
-          <div className="space-y-6 overflow-x-hidden">
+          <div className="space-y-6">
             <div className="text-center mb-8">
               <Cpu className="w-16 h-16 text-cyan-400 mx-auto mb-4" />
               <h2 className="text-3xl font-bold text-white mb-2">Agentic Maintenance System</h2>
@@ -895,7 +895,7 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
           cornerRadius={16}
         >
           <div
-            className="max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+            className="max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col relative"
             style={{
               WebkitUserSelect: 'none',
               MozUserSelect: 'none',
@@ -908,7 +908,7 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
             data-no-wallet="true"
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-white/10">
+            <div className="flex items-center justify-between p-6 border-b border-white/10 relative z-40">
               <div className="flex items-center gap-3">
                 <FileText className="w-8 h-8 text-cyan-400" />
                 <div>
@@ -925,14 +925,14 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
             </div>
 
             {/* Navigation */}
-            <div className="flex border-b border-white/10 flex-wrap min-h-[60px] items-center relative">
+            <div className="flex border-b border-white/10 flex-wrap min-h-[60px] items-center relative z-20">
               {sections.map((section) => {
                 const Icon = section.icon
                 return (
                   <button
                     key={section.id}
                     onClick={() => setActiveSection(section.id)}
-                    className={`flex items-center gap-2 px-3 py-2 text-xs md:text-sm font-medium transition-colors whitespace-nowrap relative z-10 ${
+                    className={`flex items-center gap-2 px-3 py-2 text-xs md:text-sm font-medium transition-colors whitespace-nowrap relative z-30 ${
                       activeSection === section.id
                         ? 'text-cyan-300 bg-white/5'
                         : 'text-white/70 hover:text-white hover:bg-white/5'
@@ -942,7 +942,7 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
                     <span className="hidden sm:inline">{section.label}</span>
                     <span className="sm:hidden">{section.label.split(' ')[0]}</span>
                     {activeSection === section.id && (
-                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-cyan-300"></div>
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-cyan-300 z-10"></div>
                     )}
                   </button>
                 )
@@ -950,8 +950,10 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto p-6 relative z-10 pointer-events-none">
+              <div className="pointer-events-auto">
               {renderSectionContent()}
+              </div>
             </div>
           </div>
         </LiquidGlass>
