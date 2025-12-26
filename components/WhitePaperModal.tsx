@@ -925,22 +925,25 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
             </div>
 
             {/* Navigation */}
-            <div className="flex border-b border-white/10 flex-wrap min-h-[60px] items-center">
+            <div className="flex border-b border-white/10 flex-wrap min-h-[60px] items-center relative">
               {sections.map((section) => {
                 const Icon = section.icon
                 return (
                   <button
                     key={section.id}
                     onClick={() => setActiveSection(section.id)}
-                    className={`flex items-center gap-2 px-3 py-2 text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
+                    className={`flex items-center gap-2 px-3 py-2 text-xs md:text-sm font-medium transition-colors whitespace-nowrap relative z-10 ${
                       activeSection === section.id
-                        ? 'text-cyan-300 border-b-2 border-cyan-300 bg-white/5'
+                        ? 'text-cyan-300 bg-white/5'
                         : 'text-white/70 hover:text-white hover:bg-white/5'
                     }`}
                   >
                     <Icon className="w-3 h-3 md:w-4 md:h-4" />
                     <span className="hidden sm:inline">{section.label}</span>
                     <span className="sm:hidden">{section.label.split(' ')[0]}</span>
+                    {activeSection === section.id && (
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-cyan-300"></div>
+                    )}
                   </button>
                 )
               })}
