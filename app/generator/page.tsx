@@ -63,7 +63,6 @@ export default function GeneratorPage() {
   const [showTexture, setShowTexture] = useState(false)
   const [textureLevel, setTextureLevel] = useState(0) // 0 = none, 1 = 7 days, 2 = 30 days
   const [warpThickness, setWarpThickness] = useState(2) // Default warp thickness
-  const [isFlipped, setIsFlipped] = useState(false) // Rug flip state for back patterns
 
   // Debounce timer for live updates
   const liveUpdateTimerRef = useRef<NodeJS.Timeout | null>(null)
@@ -377,7 +376,35 @@ export default function GeneratorPage() {
             // Let CSS handle positioning - don't set styles here
         p.pixelDensity(2)
         p.noLoop()
+
+            // Initialize flip state from external injection (for smart contracts)
+            const defaultFlipped = (window as any).__DEFAULT_FLIPPED__ === true
+            ;(window as any).isFlipped = defaultFlipped
+
             console.log('🎨 P5.js canvas created with original dimensions')
+            console.log('🔄 Default flip state:', defaultFlipped)
+          }
+
+          // Canvas-based flip button interaction (deterministic bounds)
+          p.mousePressed = () => {
+            // Calculate button bounds using same logic as drawFlipButton
+            const buttonWidth = Math.min(80, doormatData.config.DOORMAT_WIDTH * 0.15)
+            const buttonHeight = Math.min(30, doormatData.config.DOORMAT_HEIGHT * 0.04)
+            const margin = Math.min(10, doormatData.config.DOORMAT_WIDTH * 0.02)
+            const buttonX = p.width - buttonWidth - margin
+            const buttonY = p.height - buttonHeight - margin
+
+            // Check if click is inside button bounds
+            if (p.mouseX >= buttonX && p.mouseX <= buttonX + buttonWidth &&
+                p.mouseY >= buttonY && p.mouseY <= buttonY + buttonHeight) {
+              // Toggle flip state
+              const currentFlipped = (window as any).isFlipped || false
+              ;(window as any).isFlipped = !currentFlipped
+              console.log('🔄 Flip state toggled to:', (window as any).isFlipped)
+
+              // Re-render canvas
+              p.redraw()
+            }
           }
 
           // Smart flip draw function - draw once, flip with CSS
@@ -394,50 +421,79 @@ export default function GeneratorPage() {
           const drawFullRug = (p: any, doormatData: any, seed: number, isFlipped: boolean = false) => {
             // Use original doormat.js draw logic
             p.background(222, 222, 222)
-
+            
             // Ensure PRNG is initialized with current seed before drawing
             initPRNG(seed)
-
+            
             // Create derived PRNG for drawing operations
             const drawingPRNG = createDerivedPRNG(2000)
-
+            
             // Rotate canvas 90 degrees clockwise (original)
             p.push()
             p.translate(p.width/2, p.height/2)
             p.rotate(p.PI/2)
             p.translate(-p.height/2, -p.width/2)
-
+            
             // Draw the main doormat area
             p.push()
             p.translate(doormatData.config.FRINGE_LENGTH * 2, doormatData.config.FRINGE_LENGTH * 2)
-
+            
             // Draw stripes (reverse order for flipped rug)
             const stripeArray = isFlipped ? [...doormatData.stripeData].reverse() : doormatData.stripeData
             for (const stripe of stripeArray) {
               drawStripeOriginal(p, stripe, doormatData, drawingPRNG, isFlipped)
             }
-
+            
             // Add overall texture overlay if enabled
             const currentShowTexture = (window as any).showTexture || false
             const currentTextureLevel = (window as any).textureLevel || 0
             if (currentShowTexture && currentTextureLevel > 0) {
               drawTextureOverlayWithLevel(p, doormatData, currentTextureLevel)
             }
-
+            
             // Draw fringe and selvedge within the same translation as the rug (rotated coordinate system)
             drawFringeOriginal(p, doormatData, drawingPRNG, isFlipped)
             drawSelvedgeEdgesOriginal(p, doormatData, drawingPRNG, isFlipped)
 
             p.pop()
-
+            
             // Draw dirt overlay if enabled
             const currentShowDirt = (window as any).showDirt || false
             const currentDirtLevel = (window as any).dirtLevel || 0
             if (currentShowDirt && currentDirtLevel > 0) {
               drawDirtOverlay(p, doormatData, drawingPRNG, currentDirtLevel)
             }
-
+            
             p.pop() // End rotation
+
+            // Draw flip button in bottom-right corner (outside rotation)
+            drawFlipButton(p, doormatData)
+          }
+
+          // Canvas-based flip button rendering (deterministic placement)
+          const drawFlipButton = (p: any, doormatData: any) => {
+            // Use DOORMAT_WIDTH and DOORMAT_HEIGHT for deterministic placement
+            const buttonWidth = Math.min(80, doormatData.config.DOORMAT_WIDTH * 0.15)
+            const buttonHeight = Math.min(30, doormatData.config.DOORMAT_HEIGHT * 0.04)
+            const margin = Math.min(10, doormatData.config.DOORMAT_WIDTH * 0.02)
+
+            // Position relative to canvas dimensions (accounting for rotation)
+            const buttonX = p.width - buttonWidth - margin
+            const buttonY = p.height - buttonHeight - margin
+
+            // Button background (subtle)
+            p.fill(255, 255, 255, 180)
+            p.stroke(0, 0, 0, 120)
+            p.strokeWeight(1)
+            p.rect(buttonX, buttonY, buttonWidth, buttonHeight, 3)
+
+            // Button text
+            p.fill(0, 0, 0, 200)
+            p.noStroke()
+            p.textAlign(p.CENTER, p.CENTER)
+            p.textSize(Math.min(12, buttonHeight * 0.8))
+            p.textFont('monospace')
+            p.text('reverse', buttonX + buttonWidth/2, buttonY + buttonHeight/2)
           }
 
           // Rug drawing for back side (physically flipped rug)
@@ -1127,7 +1183,7 @@ export default function GeneratorPage() {
 
       for (let y = stripe.y; y < stripe.y + stripe.height; y += weftSpacing) {
         const warpColor = p.color(stripe.primaryColor)
-
+        
         // Check if this position should be modified for text (only on front side)
         let isTextPixel = false
         if (!isFlipped && doormatData.textData && doormatData.textData.length > 0) {
@@ -1204,7 +1260,7 @@ export default function GeneratorPage() {
         const mirroredX = isFlipped ? config.DOORMAT_WIDTH - (x + warpSpacing) : x
 
         let weftColor = p.color(stripe.primaryColor)
-
+        
         // Add variation based on weave type
         if (stripe.weaveType === 'm' && stripe.secondaryColor) {
           if (p.noise(mirroredX * 0.1, y * 0.1) > 0.5) {
@@ -1214,7 +1270,7 @@ export default function GeneratorPage() {
           const noiseVal = p.noise(mirroredX * 0.05, y * 0.05)
           weftColor = p.lerpColor(p.color(stripe.primaryColor), p.color(255), noiseVal * 0.15)
         }
-
+        
         // Check if this position should be modified for text (only on front side)
         let isTextPixel = false
         if (!isFlipped && doormatData.textData && doormatData.textData.length > 0) {
@@ -1784,7 +1840,7 @@ export default function GeneratorPage() {
     const config = doormatData.config
     // Top fringe (warp ends) - relative to rug translation
     drawFringeSectionOriginal(p, 0, -config.FRINGE_LENGTH, config.DOORMAT_WIDTH, config.FRINGE_LENGTH, 'top', doormatData, drawingPRNG, isFlipped)
-
+    
     // Bottom fringe (warp ends) - relative to rug translation, minimal gap to avoid overlay
     drawFringeSectionOriginal(p, 0, config.DOORMAT_HEIGHT + 1, config.DOORMAT_WIDTH, config.FRINGE_LENGTH, 'bottom', doormatData, drawingPRNG, isFlipped)
   }
@@ -1801,9 +1857,9 @@ export default function GeneratorPage() {
       if (isFlipped) {
         strandX = w - (strandX + strandWidth - x) + x
       }
-
+      
       const strandColor = drawingPRNG.randomChoice(doormatData.selectedPalette.colors)
-
+      
       // Draw individual fringe strand with thin threads
       for (let j = 0; j < 12; j++) {
         let threadX = strandX + drawingPRNG.range(-strandWidth/6, strandWidth/6)
@@ -1894,7 +1950,7 @@ export default function GeneratorPage() {
         const radius = config.WEFT_THICKNESS * drawingPRNG.range(1.2, 1.8)
         const centerX = leftEdgeX + drawingPRNG.range(-2, 2)  // Relative to rug translation
         const centerY = y + config.WEFT_THICKNESS/2 + drawingPRNG.range(-1, 1)  // Relative to rug translation
-
+        
         // Vary the arc angles for more natural look (flip direction for flipped rug)
         const angleOffset = isFlipped ? p.PI : 0
         const startAngle = p.HALF_PI + drawingPRNG.range(-0.2, 0.2) + angleOffset
@@ -1935,7 +1991,7 @@ export default function GeneratorPage() {
         const radius = config.WEFT_THICKNESS * drawingPRNG.range(1.2, 1.8)
         const centerX = rightEdgeX + drawingPRNG.range(-2, 2)  // Relative to rug translation
         const centerY = y + config.WEFT_THICKNESS/2 + drawingPRNG.range(-1, 1)  // Relative to rug translation
-
+        
         // Vary the arc angles for more natural look (flip direction for flipped rug)
         const angleOffset = isFlipped ? p.PI : 0
         const startAngle = -p.HALF_PI + drawingPRNG.range(-0.2, 0.2) + angleOffset
@@ -2471,13 +2527,13 @@ export default function GeneratorPage() {
         value: totalCharacters,
         rarity: getCharacterRarity(totalCharacters)
       },
-
+      
       // Palette traits
       paletteName: {
         value: paletteName,
         rarity: getPaletteRarity(paletteName)
       },
-
+      
       // Visual traits
       stripeCount: {
         value: stripeCount,
@@ -2493,7 +2549,7 @@ export default function GeneratorPage() {
         value: backPatternType,
         rarity: getBackPatternRarity(backPatternType)
       },
-
+      
       // Additional traits
       warpThickness: {
         value: typeof window !== 'undefined' ? (window as any).warpThickness || 2 : 2,
@@ -2553,13 +2609,13 @@ export default function GeneratorPage() {
   const updateTextureState = (newShowTexture: boolean, newTextureLevel: number) => {
     setShowTexture(newShowTexture)
     setTextureLevel(newTextureLevel)
-
+    
     // Store globally for P5.js access
     if (typeof window !== 'undefined') {
       ;(window as any).showTexture = newShowTexture
       ;(window as any).textureLevel = newTextureLevel
     }
-
+    
     // Redraw canvas if P5.js instance exists
     if (typeof window !== 'undefined' && (window as any).p5Instance) {
       ;(window as any).p5Instance.redraw()
@@ -2567,19 +2623,6 @@ export default function GeneratorPage() {
   }
 
   // Update flip state and redraw
-  const updateFlipState = (newIsFlipped: boolean) => {
-    setIsFlipped(newIsFlipped)
-
-    // Store globally for P5.js access
-    if (typeof window !== 'undefined') {
-      ;(window as any).isFlipped = newIsFlipped
-    }
-
-    // Redraw canvas if P5.js instance exists
-    if (typeof window !== 'undefined' && (window as any).p5Instance) {
-      ;(window as any).p5Instance.redraw()
-    }
-  }
 
   // Generate from seed
   const generateFromSeed = () => {
@@ -2857,11 +2900,11 @@ export default function GeneratorPage() {
                     <div className="rounded-lg px-1 relative overflow-hidden">
                       
                                                                     {/* Canvas Container - Match P5.js canvas dimensions exactly */}
-                                                 <div
+                                                 <div 
                            ref={canvasContainerRef}
                            id="canvas-container"
-                           className={`rug-canvas-container rounded-lg relative mx-auto transition-transform duration-700 ${isFlipped ? 'flipped' : ''}`}
-                          style={{
+                           className="rug-canvas-container rounded-lg relative mx-auto"
+                          style={{ 
                             width: '100%',     // Responsive width
                             height: '0',       // Height will be set by padding-bottom
                             paddingBottom: '69.7%', // 920/1320 * 100% = 69.7% (maintains 1320:920 aspect ratio)
@@ -2897,27 +2940,8 @@ export default function GeneratorPage() {
                             position: relative !important;
                           }
 
-                          .rug-flip-container {
-                            perspective: 1000px;
-                          }
-
-                          .rug-flip-container.flipped {
-                            transform: rotateY(180deg);
-                          }
-
                           .rug-canvas-container {
-                            transition: transform 0.7s ease-in-out;
-                            transform-style: preserve-3d;
-                          }
-
-                          .rug-canvas-container.flipped {
-                            transform: rotateY(180deg);
-                          }
-
-                          .rug-canvas {
-                            transition: transform 0.6s;
-                            transform-style: preserve-3d;
-                            backface-visibility: hidden;
+                            /* No CSS transforms - flipping handled by canvas re-rendering */
                           }
                         `}</style>
                       </div>
@@ -3043,21 +3067,14 @@ export default function GeneratorPage() {
                 {/* Primary Actions - Top Priority */}
                 <div className="grid grid-cols-1 gap-3">
                   <div className="grid grid-cols-2 gap-3">
-                    <button
-                      onClick={generateNew}
-                      disabled={!isLoaded}
-                      className="bg-green-600 hover:bg-green-700 disabled:bg-gray-700 text-black font-bold px-4 py-2.5 rounded font-mono transition-all duration-200 border border-green-400 flex items-center justify-center gap-2 text-sm"
-                    >
-                      <Shuffle className="w-4 h-4" />
-                      GENERATE
-                    </button>
-                    <button
-                      onClick={() => updateFlipState(!isFlipped)}
-                      disabled={!isLoaded}
-                      className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 text-white font-bold px-4 py-2.5 rounded font-mono transition-all duration-200 border border-blue-400 flex items-center justify-center gap-2 text-sm"
-                    >
-                      🔄 {isFlipped ? 'FRONT' : 'REVERSE'}
-                    </button>
+                  <button
+                    onClick={generateNew}
+                    disabled={!isLoaded}
+                    className="bg-green-600 hover:bg-green-700 disabled:bg-gray-700 text-black font-bold px-4 py-2.5 rounded font-mono transition-all duration-200 border border-green-400 flex items-center justify-center gap-2 text-sm"
+                  >
+                    <Shuffle className="w-4 h-4" />
+                    GENERATE
+                  </button>
                   </div>
                 </div>
 
