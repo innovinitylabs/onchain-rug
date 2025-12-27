@@ -393,10 +393,11 @@ export default function GeneratorPage() {
 
           // Canvas-based flip button interaction (deterministic bounds)
           p.mousePressed = () => {
-            // Calculate button bounds using same logic as drawFlipButton
-            const buttonWidth = Math.min(80, doormatData.config.DOORMAT_WIDTH * 0.15)
-            const buttonHeight = Math.min(30, doormatData.config.DOORMAT_HEIGHT * 0.04)
-            const margin = Math.min(10, doormatData.config.DOORMAT_WIDTH * 0.02)
+            // Calculate button bounds using live config data
+            const liveDoormatData = (window as any).doormatData || doormatData
+            const buttonWidth = Math.min(80, liveDoormatData.config.DOORMAT_WIDTH * 0.15)
+            const buttonHeight = Math.min(30, liveDoormatData.config.DOORMAT_HEIGHT * 0.04)
+            const margin = Math.min(10, liveDoormatData.config.DOORMAT_WIDTH * 0.02)
             const buttonX = p.width - buttonWidth - margin
             const buttonY = p.height - buttonHeight - margin
 
@@ -414,8 +415,21 @@ export default function GeneratorPage() {
 
           // Rug rendering function - contains all drawing logic
           const renderRug = () => {
-            // Use current seed from window
+            // Read LIVE data from window (not closed-over variables)
             const currentSeed = (window as any).currentSeed || 42
+            const liveStripeData = (window as any).stripeData || []
+            const liveSelectedPalette = (window as any).selectedPalette
+            const liveWarpThickness = (window as any).warpThickness || 2
+            const liveTextData = (window as any).textData || []
+
+            // Create live doormatData object with live values
+            const liveDoormatData = {
+              ...doormatData, // Keep config, characterMap, etc.
+              stripeData: liveStripeData,
+              selectedPalette: liveSelectedPalette,
+              warpThickness: liveWarpThickness,
+              textData: liveTextData
+            }
 
             // Clear canvas and set background
             p.background(222, 222, 222)
@@ -434,24 +448,24 @@ export default function GeneratorPage() {
 
             // Draw the main doormat area
             p.push()
-            p.translate(doormatData.config.FRINGE_LENGTH * 2, doormatData.config.FRINGE_LENGTH * 2)
+            p.translate(liveDoormatData.config.FRINGE_LENGTH * 2, liveDoormatData.config.FRINGE_LENGTH * 2)
 
             // Draw stripes (reverse order for flipped rug)
-            const stripeArray = isFlipped ? [...doormatData.stripeData].reverse() : doormatData.stripeData
+            const stripeArray = isFlipped ? [...liveDoormatData.stripeData].reverse() : liveDoormatData.stripeData
             for (const stripe of stripeArray) {
-              drawStripeOriginal(p, stripe, doormatData, drawingPRNG, isFlipped)
+              drawStripeOriginal(p, stripe, liveDoormatData, drawingPRNG, isFlipped)
             }
 
             // Add overall texture overlay if enabled
             const currentShowTexture = (window as any).showTexture || false
             const currentTextureLevel = (window as any).textureLevel || 0
             if (currentShowTexture && currentTextureLevel > 0) {
-              drawTextureOverlayWithLevel(p, doormatData, currentTextureLevel)
+              drawTextureOverlayWithLevel(p, liveDoormatData, currentTextureLevel)
             }
 
             // Draw fringe and selvedge within the same translation as the rug (rotated coordinate system)
-            drawFringeOriginal(p, doormatData, drawingPRNG, isFlipped)
-            drawSelvedgeEdgesOriginal(p, doormatData, drawingPRNG, isFlipped)
+            drawFringeOriginal(p, liveDoormatData, drawingPRNG, isFlipped)
+            drawSelvedgeEdgesOriginal(p, liveDoormatData, drawingPRNG, isFlipped)
 
             p.pop()
 
@@ -459,13 +473,18 @@ export default function GeneratorPage() {
             const currentShowDirt = (window as any).showDirt || false
             const currentDirtLevel = (window as any).dirtLevel || 0
             if (currentShowDirt && currentDirtLevel > 0) {
-              drawDirtOverlay(p, doormatData, drawingPRNG, currentDirtLevel)
+              drawDirtOverlay(p, liveDoormatData, drawingPRNG, currentDirtLevel)
             }
 
             p.pop() // End rotation
 
             // Draw flip button in bottom-right corner (outside rotation)
-            drawFlipButton(p, doormatData)
+            drawFlipButton(p, liveDoormatData)
+          }
+
+          // Expose redraw hook for external calls
+          if (typeof window !== 'undefined') {
+            ;(window as any).__RERENDER_RUG__ = () => renderRug()
           }
 
           // Canvas-based flip button rendering (deterministic placement)
@@ -915,9 +934,9 @@ export default function GeneratorPage() {
       ;(window as any).doormatTextRows = doormatData.doormatTextRows
     }
     
-    // Redraw
-    if (typeof window !== 'undefined' && (window as any).p5Instance) {
-      (window as any).p5Instance.redraw()
+    // Trigger re-render using the exposed hook
+    if (typeof window !== 'undefined' && (window as any).__RERENDER_RUG__) {
+      (window as any).__RERENDER_RUG__()
     }
   }
 
