@@ -349,7 +349,7 @@ export default function GeneratorPage() {
   }
 
   // Create P5.js instance using original doormat.js logic
-  const createP5Instance = (doormatData: any) => {
+  const createP5Instance = () => {
     return new Promise<void>((resolve) => {
       if (typeof window !== 'undefined' && !(window as any).p5) {
         console.error('❌ P5.js not available')
@@ -369,9 +369,16 @@ export default function GeneratorPage() {
         const p5Instance = typeof window !== 'undefined' ? new (window as any).p5((p: any) => {
           // Original setup function from doormat.js
       p.setup = () => {
+            // Get config from window.doormatData (set during initialization)
+            const baseDoormatData = (window as any).doormatData
+            if (!baseDoormatData) {
+              console.error('❌ Base doormatData not found in window')
+              return
+            }
+
             // Create canvas with swapped dimensions for 90-degree rotation (original logic)
-            const canvas = p.createCanvas(doormatData.config.DOORMAT_HEIGHT + (doormatData.config.FRINGE_LENGTH * 4), 
-                                       doormatData.config.DOORMAT_WIDTH + (doormatData.config.FRINGE_LENGTH * 4))
+            const canvas = p.createCanvas(baseDoormatData.config.DOORMAT_HEIGHT + (baseDoormatData.config.FRINGE_LENGTH * 4),
+                                       baseDoormatData.config.DOORMAT_WIDTH + (baseDoormatData.config.FRINGE_LENGTH * 4))
             canvas.parent('canvas-container')
             // Let CSS handle positioning - don't set styles here
         p.pixelDensity(2)
@@ -390,11 +397,13 @@ export default function GeneratorPage() {
 
           // Canvas-based flip button interaction (deterministic bounds)
           p.mousePressed = () => {
-            // Calculate button bounds using live config data
-            const liveDoormatData = (window as any).doormatData || doormatData
-            const buttonWidth = Math.min(80, liveDoormatData.config.DOORMAT_WIDTH * 0.15)
-            const buttonHeight = Math.min(30, liveDoormatData.config.DOORMAT_HEIGHT * 0.04)
-            const margin = Math.min(10, liveDoormatData.config.DOORMAT_WIDTH * 0.02)
+            // Calculate button bounds using base config data
+            const baseDoormatData = (window as any).doormatData
+            if (!baseDoormatData) return
+
+            const buttonWidth = Math.min(80, baseDoormatData.config.DOORMAT_WIDTH * 0.15)
+            const buttonHeight = Math.min(30, baseDoormatData.config.DOORMAT_HEIGHT * 0.04)
+            const margin = Math.min(10, baseDoormatData.config.DOORMAT_WIDTH * 0.02)
             const buttonX = p.width - buttonWidth - margin
             const buttonY = p.height - buttonHeight - margin
 
@@ -464,24 +473,15 @@ export default function GeneratorPage() {
             drawFlipButton(p, doormatData)
           }
 
-          // Restore p5 immediate-mode rendering in p.draw()
+          // P5 immediate-mode rendering - read ALL data from window
       p.draw = () => {
-            // Read authoritative data from window (single source of truth)
+            // Read ALL data from authoritative window objects
+            const doormatData = (window as any).__DOORMAT_DATA__
             const isFlipped = (window as any).__RUG_FLIPPED__ || false
-            const doormatDataLive = (window as any).__DOORMAT_DATA__
 
-            // Use live data if available, fallback to base config
-            if (doormatDataLive) {
-              // drawFullRug expects: (p, doormatData, seed, isFlipped)
-              // But we need to merge with base config for constants
-              const mergedData = {
-                ...doormatData, // base config, characterMap, etc.
-                ...doormatDataLive // live generation data
-              }
-              drawFullRug(p, mergedData, doormatDataLive.seed || 42, isFlipped)
-            } else {
-              // Fallback to base doormatData for initial render
-              drawFullRug(p, doormatData, 42, isFlipped)
+            if (doormatData) {
+              // drawFullRug expects complete doormatData object with config
+              drawFullRug(p, doormatData, doormatData.seed || 42, isFlipped)
             }
           }
 
@@ -922,9 +922,11 @@ export default function GeneratorPage() {
       generateTextData(doormatData)
     }
     
-    // Write ALL generation output to single authoritative window object
+    // Write COMPLETE doormatData to single authoritative window object
     if (typeof window !== 'undefined') {
       ;(window as any).__DOORMAT_DATA__ = {
+        // Include ALL necessary data for drawFullRug
+        ...doormatData, // config, characterMap, etc.
         seed: seed,
         stripeData: doormatData.stripeData,
         selectedPalette: doormatData.selectedPalette,
@@ -2370,7 +2372,7 @@ export default function GeneratorPage() {
       console.log('✅ Doormat generator initialized')
 
       // Create P5.js instance
-      await createP5Instance(doormatData)
+      await createP5Instance()
       console.log('✅ P5.js instance created')
 
       // Generate initial doormat (will be replaced by auto-generation cycle after page loads)
