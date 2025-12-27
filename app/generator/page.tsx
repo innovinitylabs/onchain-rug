@@ -379,7 +379,7 @@ export default function GeneratorPage() {
 
             // Initialize flip state from external injection (for smart contracts) - read once only
             const defaultFlipped = (window as any).__DEFAULT_FLIPPED__ === true
-            ;(window as any).isFlipped = defaultFlipped
+            ;(window as any).__RUG_FLIPPED__ = defaultFlipped
 
             console.log('🎨 P5.js canvas created with original dimensions')
             console.log('🔄 Default flip state:', defaultFlipped)
@@ -401,10 +401,10 @@ export default function GeneratorPage() {
             // Check if click is inside button bounds
             if (p.mouseX >= buttonX && p.mouseX <= buttonX + buttonWidth &&
                 p.mouseY >= buttonY && p.mouseY <= buttonY + buttonHeight) {
-              // Toggle window flip state (like old website version)
-              const currentFlipped = (window as any).isFlipped || false
-              ;(window as any).isFlipped = !currentFlipped
-              console.log('🔄 Flip state toggled to:', (window as any).isFlipped)
+              // Toggle authoritative flip state
+              const currentFlipped = (window as any).__RUG_FLIPPED__ || false
+              ;(window as any).__RUG_FLIPPED__ = !currentFlipped
+              console.log('🔄 Rug flipped to:', (window as any).__RUG_FLIPPED__)
 
               // Trigger p5 redraw (only redraw trigger)
               p.redraw()
@@ -466,22 +466,23 @@ export default function GeneratorPage() {
 
           // Restore p5 immediate-mode rendering in p.draw()
       p.draw = () => {
-            // Read ALL data from window (immediate-mode)
-            const currentIsFlipped = (window as any).isFlipped || false
-            const currentSeed = (window as any).currentSeed || 42
+            // Read authoritative data from window (single source of truth)
+            const isFlipped = (window as any).__RUG_FLIPPED__ || false
+            const doormatDataLive = (window as any).__DOORMAT_DATA__
 
-            // Create live doormatData by merging base config with live window data
-            const baseDoormatData = (window as any).doormatData || doormatData
-            const liveDoormatData = {
-              ...baseDoormatData,
-              stripeData: (window as any).stripeData || baseDoormatData.stripeData || [],
-              selectedPalette: (window as any).selectedPalette || baseDoormatData.selectedPalette,
-              warpThickness: (window as any).warpThickness || baseDoormatData.warpThickness || 2,
-              textData: (window as any).textData || baseDoormatData.textData || []
+            // Use live data if available, fallback to base config
+            if (doormatDataLive) {
+              // drawFullRug expects: (p, doormatData, seed, isFlipped)
+              // But we need to merge with base config for constants
+              const mergedData = {
+                ...doormatData, // base config, characterMap, etc.
+                ...doormatDataLive // live generation data
+              }
+              drawFullRug(p, mergedData, doormatDataLive.seed || 42, isFlipped)
+            } else {
+              // Fallback to base doormatData for initial render
+              drawFullRug(p, doormatData, 42, isFlipped)
             }
-
-            // Call original drawFullRug with merged live data
-            drawFullRug(p, liveDoormatData, currentSeed, currentIsFlipped)
           }
 
           // Canvas-based flip button rendering (deterministic placement)
@@ -507,7 +508,7 @@ export default function GeneratorPage() {
             p.textAlign(p.CENTER, p.CENTER)
             p.textSize(Math.min(12, buttonHeight * 0.8))
             p.textFont('monospace')
-            p.text('reverse', buttonX + buttonWidth/2, buttonY + buttonHeight/2)
+            p.text('FLIP', buttonX + buttonWidth/2, buttonY + buttonHeight/2)
           }
 
           // Rug drawing for back side (physically flipped rug)
@@ -921,8 +922,19 @@ export default function GeneratorPage() {
       generateTextData(doormatData)
     }
     
-    // Update global variables for NFTExporter
+    // Write ALL generation output to single authoritative window object
     if (typeof window !== 'undefined') {
+      ;(window as any).__DOORMAT_DATA__ = {
+        seed: seed,
+        stripeData: doormatData.stripeData,
+        selectedPalette: doormatData.selectedPalette,
+        warpThickness: doormatData.warpThickness,
+        textData: doormatData.textData,
+        textRows: doormatData.doormatTextRows,
+        traits: doormatData.traits || {}
+      }
+
+      // Keep legacy properties for backward compatibility
       ;(window as any).selectedPalette = doormatData.selectedPalette
       ;(window as any).stripeData = doormatData.stripeData
       ;(window as any).DOORMAT_CONFIG = doormatData.config
