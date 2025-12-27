@@ -420,56 +420,56 @@ export default function GeneratorPage() {
             }
           }
 
-          // Full rug drawing function (with conditional text and mirroring)
+          // Full rug drawing function (with true mirror flip)
           const drawFullRug = (p: any, doormatData: any, seed: number, isFlipped: boolean = false) => {
             // Use original doormat.js draw logic
             p.background(222, 222, 222)
-            
+
             // Ensure PRNG is initialized with current seed before drawing
             initPRNG(seed)
-            
+
             // Create derived PRNG for drawing operations
             const drawingPRNG = createDerivedPRNG(2000)
-            
-            // Rotate canvas 90 degrees clockwise (original)
+
+            // Apply transforms: translate to center, rotate 90°, mirror if flipped, translate back
             p.push()
             p.translate(p.width/2, p.height/2)
             p.rotate(p.PI/2)
+            if (isFlipped) p.scale(-1, 1)  // True mirror flip
             p.translate(-p.height/2, -p.width/2)
-            
+
             // Draw the main doormat area
             p.push()
             p.translate(doormatData.config.FRINGE_LENGTH * 2, doormatData.config.FRINGE_LENGTH * 2)
-            
-            // Draw stripes (reverse order for flipped rug)
-            const stripeArray = isFlipped ? [...doormatData.stripeData].reverse() : doormatData.stripeData
-            for (const stripe of stripeArray) {
-              drawStripeOriginal(p, stripe, doormatData, drawingPRNG, isFlipped)
+
+            // Draw stripes (always in front order - transform handles flipping)
+            for (const stripe of doormatData.stripeData) {
+              drawStripeOriginal(p, stripe, doormatData, drawingPRNG, false) // Always front logic
             }
-            
+
             // Add overall texture overlay if enabled
             const currentShowTexture = (window as any).showTexture || false
             const currentTextureLevel = (window as any).textureLevel || 0
             if (currentShowTexture && currentTextureLevel > 0) {
               drawTextureOverlayWithLevel(p, doormatData, currentTextureLevel)
             }
-            
-            // Draw fringe and selvedge within the same translation as the rug (rotated coordinate system)
-            drawFringeOriginal(p, doormatData, drawingPRNG, isFlipped)
-            drawSelvedgeEdgesOriginal(p, doormatData, drawingPRNG, isFlipped)
+
+            // Draw fringe and selvedge (always front orientation - transform handles flipping)
+            drawFringeOriginal(p, doormatData, drawingPRNG, false) // Always front logic
+            drawSelvedgeEdgesOriginal(p, doormatData, drawingPRNG, false) // Always front logic
 
             p.pop()
-            
+
             // Draw dirt overlay if enabled
             const currentShowDirt = (window as any).showDirt || false
             const currentDirtLevel = (window as any).dirtLevel || 0
             if (currentShowDirt && currentDirtLevel > 0) {
               drawDirtOverlay(p, doormatData, drawingPRNG, currentDirtLevel)
             }
-            
-            p.pop() // End rotation
 
-            // Draw flip button in bottom-right corner (outside rotation)
+            p.pop() // End all transforms
+
+            // Draw flip button in bottom-right corner (outside transforms)
             drawFlipButton(p, doormatData)
           }
 
@@ -1206,9 +1206,6 @@ export default function GeneratorPage() {
 
     // First, draw the warp threads (vertical) as the foundation
     for (let x = 0; x < config.DOORMAT_WIDTH; x += warpSpacing) {
-      // Mirror X coordinate for flipped rug
-      const mirroredX = isFlipped ? config.DOORMAT_WIDTH - (x + warpSpacing) : x
-
       for (let y = stripe.y; y < stripe.y + stripe.height; y += weftSpacing) {
         const warpColor = p.color(stripe.primaryColor)
         
@@ -1235,7 +1232,7 @@ export default function GeneratorPage() {
           p.fill(0, 0, 0, 120)
           p.noStroke()
           const warpCurve = p.sin(y * 0.05) * 0.5
-          p.rect(mirroredX + warpCurve + 0.5, y + 0.5, doormatData.warpThickness, weftSpacing)
+          p.rect(x + warpCurve + 0.5, y + 0.5, doormatData.warpThickness, weftSpacing)
 
           // Use intelligent text color selection for warp threads
           if (stripe.weaveType === 'm' && stripe.secondaryColor) {
@@ -1277,25 +1274,22 @@ export default function GeneratorPage() {
 
         // Draw warp thread with slight curve for natural look
         const warpCurve = p.sin(y * 0.05) * 0.5
-        p.rect(mirroredX + warpCurve, y, doormatData.warpThickness, weftSpacing)
+        p.rect(x + warpCurve, y, doormatData.warpThickness, weftSpacing)
       }
     }
     
     // Now draw the weft threads (horizontal) that interlace with warp
     for (let y = stripe.y; y < stripe.y + stripe.height; y += weftSpacing) {
       for (let x = 0; x < config.DOORMAT_WIDTH; x += warpSpacing) {
-        // Mirror X coordinate for flipped rug
-        const mirroredX = isFlipped ? config.DOORMAT_WIDTH - (x + warpSpacing) : x
-
         let weftColor = p.color(stripe.primaryColor)
-        
+
         // Add variation based on weave type
         if (stripe.weaveType === 'm' && stripe.secondaryColor) {
-          if (p.noise(mirroredX * 0.1, y * 0.1) > 0.5) {
+          if (p.noise(x * 0.1, y * 0.1) > 0.5) {
             weftColor = p.color(stripe.secondaryColor)
           }
         } else if (stripe.weaveType === 't') {
-          const noiseVal = p.noise(mirroredX * 0.05, y * 0.05)
+          const noiseVal = p.noise(x * 0.05, y * 0.05)
           weftColor = p.lerpColor(p.color(stripe.primaryColor), p.color(255), noiseVal * 0.15)
         }
         
@@ -1321,8 +1315,8 @@ export default function GeneratorPage() {
           // Draw shadow for text (works on all backgrounds)
           p.fill(0, 0, 0, 120) // Semi-transparent black shadow
           p.noStroke()
-          const weftCurve = p.cos(mirroredX * 0.05) * 0.5
-          p.rect(mirroredX + 0.5, y + weftCurve + 0.5, warpSpacing, config.WEFT_THICKNESS)
+          const weftCurve = p.cos(x * 0.05) * 0.5
+          p.rect(x + 0.5, y + weftCurve + 0.5, warpSpacing, config.WEFT_THICKNESS)
 
           // Use high contrast text color
           if (stripe.weaveType === 'm' && stripe.secondaryColor) {
@@ -1657,8 +1651,8 @@ export default function GeneratorPage() {
         p.noStroke()
 
         // Draw weft thread with slight curve
-        const weftCurve = p.cos(mirroredX * 0.05) * 0.5
-        p.rect(mirroredX, y + weftCurve, warpSpacing, config.WEFT_THICKNESS)
+        const weftCurve = p.cos(x * 0.05) * 0.5
+        p.rect(x, y + weftCurve, warpSpacing, config.WEFT_THICKNESS)
       }
     }
     
@@ -1881,21 +1875,12 @@ export default function GeneratorPage() {
     for (let i = 0; i < fringeStrands; i++) {
       let strandX = x + i * strandWidth
 
-      // Mirror strand position for flipped rug
-      if (isFlipped) {
-        strandX = w - (strandX + strandWidth - x) + x
-      }
-      
       const strandColor = drawingPRNG.randomChoice(doormatData.selectedPalette.colors)
       
       // Draw individual fringe strand with thin threads
       for (let j = 0; j < 12; j++) {
         let threadX = strandX + drawingPRNG.range(-strandWidth/6, strandWidth/6)
 
-        // Mirror thread position for flipped rug
-        if (isFlipped) {
-          threadX = w - (threadX - x) + x
-        }
         const startY = side === 'top' ? y + h : y
         const endY = side === 'top' ? y : y + h
         
@@ -1941,12 +1926,12 @@ export default function GeneratorPage() {
     const weftSpacing = config.WEFT_THICKNESS + 1
     let isFirstWeft = true
     
-    // Left/Right selvedge edge - flowing semicircular weft threads (swapped for flipped)
-    const leftEdgeX = isFlipped ? config.DOORMAT_WIDTH : 0
-    const rightEdgeX = isFlipped ? 0 : config.DOORMAT_WIDTH
+    // Left/Right selvedge edge - flowing semicircular weft threads
+    const leftEdgeX = 0
+    const rightEdgeX = config.DOORMAT_WIDTH
 
-    // Process stripes (reverse order for flipped)
-    const stripeOrder = isFlipped ? [...doormatData.stripeData].reverse() : doormatData.stripeData
+    // Process stripes in normal order
+    const stripeOrder = doormatData.stripeData
 
     // Left selvedge edge
     let isFirstWeftLeft = true
