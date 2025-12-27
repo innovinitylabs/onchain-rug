@@ -480,6 +480,9 @@ export default function GeneratorPage() {
             const isFlipped = (window as any).__RUG_FLIPPED__ || false
 
             if (doormatData) {
+              // Set authoritative text gate - no text on flipped side
+              doormatData.__ALLOW_TEXT__ = !isFlipped
+
               // drawFullRug expects complete doormatData object with config
               drawFullRug(p, doormatData, doormatData.seed || 42, isFlipped)
             }
@@ -1211,7 +1214,7 @@ export default function GeneratorPage() {
         
         // Check if this position should be modified for text (only on front side)
         let isTextPixel = false
-        if (!isFlipped && doormatData.textData && doormatData.textData.length > 0) {
+        if (doormatData.__ALLOW_TEXT__ && doormatData.textData && doormatData.textData.length > 0) {
           for (const textPixel of doormatData.textData) {
             if (x >= textPixel.x && x < textPixel.x + textPixel.width &&
                 y >= textPixel.y && y < textPixel.y + textPixel.height) {
@@ -1295,7 +1298,7 @@ export default function GeneratorPage() {
         
         // Check if this position should be modified for text (only on front side)
         let isTextPixel = false
-        if (!isFlipped && doormatData.textData && doormatData.textData.length > 0) {
+        if (doormatData.__ALLOW_TEXT__ && doormatData.textData && doormatData.textData.length > 0) {
           for (const textPixel of doormatData.textData) {
             if (x >= textPixel.x && x < textPixel.x + textPixel.width &&
                 y >= textPixel.y && y < textPixel.y + textPixel.height) {
@@ -2189,7 +2192,7 @@ export default function GeneratorPage() {
     for (let y = stripe.y; y < stripe.y + stripe.height; y++) {
       for (let x = 0; x < doormatData.width; x++) {
         let isTextPixel = false
-        if (doormatData.textData && doormatData.textData.length > 0) {
+        if (doormatData.__ALLOW_TEXT__ && doormatData.textData && doormatData.textData.length > 0) {
           for (const textPixel of doormatData.textData) {
             if (x >= textPixel.x && x < textPixel.x + textPixel.width &&
                 y >= textPixel.y && y < textPixel.y + textPixel.height) {
