@@ -367,6 +367,9 @@ export default function GeneratorPage() {
       try {
         // Use original doormat.js setup and draw functions
         const p5Instance = typeof window !== 'undefined' ? new (window as any).p5((p: any) => {
+          // Local flip state - single source of truth for p5
+          let isFlipped = false
+
           // Original setup function from doormat.js
       p.setup = () => {
             // Create canvas with swapped dimensions for 90-degree rotation (original logic)
@@ -377,9 +380,9 @@ export default function GeneratorPage() {
         p.pixelDensity(2)
         p.noLoop()
 
-            // Initialize flip state from external injection (for smart contracts)
+            // Initialize flip state from external injection (for smart contracts) - read once only
             const defaultFlipped = (window as any).__DEFAULT_FLIPPED__ === true
-            ;(window as any).isFlipped = defaultFlipped
+            isFlipped = defaultFlipped
 
             console.log('🎨 P5.js canvas created with original dimensions')
             console.log('🔄 Default flip state:', defaultFlipped)
@@ -397,24 +400,22 @@ export default function GeneratorPage() {
             // Check if click is inside button bounds
             if (p.mouseX >= buttonX && p.mouseX <= buttonX + buttonWidth &&
                 p.mouseY >= buttonY && p.mouseY <= buttonY + buttonHeight) {
-              // Toggle flip state
-              const currentFlipped = (window as any).isFlipped || false
-              ;(window as any).isFlipped = !currentFlipped
-              console.log('🔄 Flip state toggled to:', (window as any).isFlipped)
+              // Toggle local flip state
+              isFlipped = !isFlipped
+              console.log('🔄 Flip state toggled to:', isFlipped)
 
               // Re-render canvas
               p.redraw()
             }
           }
 
-          // Smart flip draw function - draw once, flip with CSS
+          // Smart flip draw function - uses local flip state
       p.draw = () => {
-            // Check flip state
-            const currentIsFlipped = (window as any).isFlipped || false
+            // Use local flip state
             const currentSeed = (window as any).currentSeed || 42
 
-            // Always use the same drawing function, just pass flip state
-            drawFullRug(p, doormatData, currentSeed, currentIsFlipped)
+            // Always use the same drawing function, just pass local flip state
+            drawFullRug(p, doormatData, currentSeed, isFlipped)
           }
 
           // Full rug drawing function (with conditional text and mirroring)
