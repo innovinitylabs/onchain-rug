@@ -435,7 +435,7 @@ export default function GeneratorPage() {
             p.push()
             p.translate(p.width/2, p.height/2)
             p.rotate(p.PI/2)
-            if (isFlipped) p.scale(-1, 1)  // True mirror flip
+            if (isFlipped) p.scale(1, -1)  // Vertical mirror flip for correct physical axis
             p.translate(-p.height/2, -p.width/2)
 
             // Draw the main doormat area
