@@ -382,19 +382,17 @@ export default function GeneratorPage() {
             canvas.parent('canvas-container')
             // Let CSS handle positioning - don't set styles here
         p.pixelDensity(2)
-        p.loop()
+        p.noLoop()
 
             // Initialize flip state from external injection (for smart contracts) - read once only
             const defaultFlipped = (window as any).__DEFAULT_FLIPPED__ === true
             ;(window as any).__RUG_FLIPPED__ = defaultFlipped
 
-            // Initialize animation globals
-            ;(window as any).__FLIP_PROGRESS__ = defaultFlipped ? 1 : 0
-            ;(window as any).__FLIP_TARGET__ = defaultFlipped ? 1 : 0
-            ;(window as any).__FLIP_ANIMATING__ = false
-
             console.log('🎨 P5.js canvas created with original dimensions')
             console.log('🔄 Default flip state:', defaultFlipped)
+
+            // Trigger initial render
+            p.redraw()
           }
 
 
@@ -413,8 +411,7 @@ export default function GeneratorPage() {
             p.push()
             p.translate(p.width/2, p.height/2)
             p.rotate(p.PI/2)
-
-
+            if (isFlipped) p.scale(1, -1)  // Vertical mirror flip for correct physical axis
             p.translate(-p.height/2, -p.width/2)
 
             // Draw the main doormat area
@@ -453,77 +450,15 @@ export default function GeneratorPage() {
           // P5 immediate-mode rendering - read ALL data from window
       p.draw = () => {
             // Read ALL data from authoritative window objects
-            // Drive flip animation via time delta inside p.draw()
-            const speed = 0.12
-            const target = (window as any).__FLIP_TARGET__ || 0
-            let progress = (window as any).__FLIP_PROGRESS__ || 0
-
-            if (progress !== target) {
-              progress += (target - progress) * speed
-
-              if (Math.abs(progress - target) < 0.001) {
-                progress = target
-                ;(window as any).__FLIP_ANIMATING__ = false
-                ;(window as any).__RUG_FLIPPED__ = target === 1
-              }
-
-              ;(window as any).__FLIP_PROGRESS__ = progress
-            }
-
             const doormatData = (window as any).__DOORMAT_DATA__
             const isFlipped = (window as any).__RUG_FLIPPED__ || false
 
             if (doormatData) {
-              const flip = (window as any).__FLIP_PROGRESS__
+              // Set authoritative text gate - no text on flipped side
+              doormatData.__ALLOW_TEXT__ = !isFlipped
 
-              // EARLY RETURN for normal front side render
-              if (flip === 0) {
-                doormatData.__ALLOW_TEXT__ = true
-                drawFullRug(p, doormatData, doormatData.seed || 42, false)
-                return
-              }
-
-              // Optional fast path for fully flipped
-              if (flip === 1) {
-                doormatData.__ALLOW_TEXT__ = false
-                drawFullRug(p, doormatData, doormatData.seed || 42, true)
-                return
-              }
-
-              const foldX = flip * doormatData.config.DOORMAT_WIDTH
-
-              // Draw FRONT side with right-side clipping
-              p.push()
-              p.clip(foldX, 0, p.width, p.height)
-              doormatData.__ALLOW_TEXT__ = true
-              drawFullRug(p, doormatData, doormatData.seed || 42, false)
-              p.pop()
-
-              // Draw BACK side with left-side clipping + mirror
-              p.push()
-              p.clip(0, 0, foldX, p.height)
-
-              // simulate rug back orientation
-              p.translate(foldX, 0)
-              p.scale(-1, 1)
-              p.translate(-foldX, 0)
-
-              doormatData.__ALLOW_TEXT__ = false
-              drawFullRug(p, doormatData, doormatData.seed || 42, true)
-              p.pop()
-
-              // Add rolling curl illusion
-              const curlWidth = 40
-              const curlX = foldX
-
-              for (let i = 0; i < curlWidth; i += 2) {
-                const t = i / curlWidth
-                const lift = Math.sin(t * Math.PI) * 12 * flip
-
-                p.fill(0, 0, 0, 20 * (1 - t))
-                p.noStroke()
-                p.rect(curlX - i, lift, 2, p.height)
-              }
+              // drawFullRug expects complete doormatData object with config
+              drawFullRug(p, doormatData, doormatData.seed || 42, isFlipped)
             }
           }
 
@@ -648,6 +583,10 @@ export default function GeneratorPage() {
       ;(window as any).doormatTextRows = doormatData.doormatTextRows
     }
     
+    // Trigger p5 redraw (only redraw mechanism)
+    if (typeof window !== 'undefined' && (window as any).p5Instance) {
+      (window as any).p5Instance.redraw()
+    }
   }
 
   // Generate stripes with seeded randomness (complete original logic)
@@ -2280,29 +2219,30 @@ export default function GeneratorPage() {
     console.log('🏷️ Comprehensive traits calculated:', traits)
   }
 
-
   // Update flip state - authoritative handler for flip toggling
   const updateFlipState = (newIsFlipped: boolean) => {
-    // Prevent multiple animation triggers
-    if ((window as any).__FLIP_ANIMATING__) return
+    // Set window state (authoritative source)
+    ;(window as any).__RUG_FLIPPED__ = newIsFlipped
 
-    // Start animated flip - p5 draw loop will handle animation
-    ;(window as any).__FLIP_TARGET__ = newIsFlipped ? 1 : 0
-    ;(window as any).__FLIP_ANIMATING__ = true
+    // Trigger p5 redraw
+    if (typeof window !== 'undefined' && (window as any).p5Instance) {
+      (window as any).p5Instance.redraw()
+    }
   }
 
   // Generate new doormat
   const generateNew = () => {
-    // CRITICAL: Reset animation state to front side at start
-    ;(window as any).__FLIP_TARGET__ = 0
-    ;(window as any).__FLIP_PROGRESS__ = 0
-    ;(window as any).__RUG_FLIPPED__ = false
-
     // Generate a random seed like before
     const seed = Math.floor(Math.random() * 1000000)
     setCurrentSeed(seed)
     
     if (typeof window !== 'undefined' && (window as any).p5Instance) {
+      // Reset flip state to front side before generating new rug
+      ;(window as any).__RUG_FLIPPED__ = false
+
+      // Force redraw to show front side immediately
+      ;(window as any).p5Instance.redraw()
+
       console.log('🎨 Generating new doormat with seed:', seed)
       generateDoormatCore(seed, (window as any).doormatData)
 
@@ -2330,6 +2270,10 @@ export default function GeneratorPage() {
       ;(window as any).dirtLevel = newDirtLevel
     }
     
+    // Redraw canvas if P5.js instance exists
+    if (typeof window !== 'undefined' && (window as any).p5Instance) {
+      ;(window as any).p5Instance.redraw()
+    }
   }
 
   // Update texture state and redraw
@@ -2343,6 +2287,10 @@ export default function GeneratorPage() {
       ;(window as any).textureLevel = newTextureLevel
     }
     
+    // Redraw canvas if P5.js instance exists
+    if (typeof window !== 'undefined' && (window as any).p5Instance) {
+      ;(window as any).p5Instance.redraw()
+    }
   }
 
   // Update flip state and redraw
@@ -2411,6 +2359,10 @@ export default function GeneratorPage() {
       ;(window as any).__DOORMAT_DATA__.textData = doormatData.textData
       ;(window as any).__DOORMAT_DATA__.doormatTextRows = doormatData.doormatTextRows
 
+      // Trigger immediate redraw
+      if ((window as any).p5Instance) {
+        (window as any).p5Instance.redraw()
+      }
     }
   }
 
@@ -2453,6 +2405,11 @@ export default function GeneratorPage() {
         ;(window as any).textData = (window as any).doormatData.textData
         ;(window as any).doormatTextRows = (window as any).doormatData.doormatTextRows
       }
+      
+      // Redraw
+      if ((window as any).p5Instance) {
+        (window as any).p5Instance.redraw()
+      }
     }
   }
 
@@ -2471,6 +2428,11 @@ export default function GeneratorPage() {
       if (typeof window !== 'undefined') {
         ;(window as any).textData = []
         ;(window as any).doormatTextRows = []
+      }
+      
+      // Redraw
+      if ((window as any).p5Instance) {
+        (window as any).p5Instance.redraw()
       }
     }
   }
@@ -3252,15 +3214,9 @@ export default function GeneratorPage() {
                     </div>
                   </div>
 
-                  {/* NFT Exporter Component - Hidden */}
-                  {false && (
-                  <NFTExporter
-                    currentSeed={currentSeed}
-                    currentPalette={palette}
-                    currentStripeData={typeof window !== 'undefined' ? (window as any).stripeData || [] : []}
-                    textRows={textInputs}
-                    characterMap={typeof window !== 'undefined' ? (window as any).doormatData?.characterMap || {} : {}}
-                  />
+                  {/* NFT Exporter Component */}
+                  {isLoaded && (
+                  <NFTExporter />
                   )}
 
                   {/* Web3 Minting Component */}
