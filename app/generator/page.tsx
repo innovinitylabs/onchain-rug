@@ -382,7 +382,7 @@ export default function GeneratorPage() {
             canvas.parent('canvas-container')
             // Let CSS handle positioning - don't set styles here
         p.pixelDensity(2)
-        p.noLoop()
+        p.loop()
 
             // Initialize flip state from external injection (for smart contracts) - read once only
             const defaultFlipped = (window as any).__DEFAULT_FLIPPED__ === true
@@ -395,9 +395,6 @@ export default function GeneratorPage() {
 
             console.log('🎨 P5.js canvas created with original dimensions')
             console.log('🔄 Default flip state:', defaultFlipped)
-
-            // Trigger initial render
-            p.redraw()
           }
 
 
@@ -456,6 +453,23 @@ export default function GeneratorPage() {
           // P5 immediate-mode rendering - read ALL data from window
       p.draw = () => {
             // Read ALL data from authoritative window objects
+            // Drive flip animation via time delta inside p.draw()
+            const speed = 0.12
+            const target = (window as any).__FLIP_TARGET__ || 0
+            let progress = (window as any).__FLIP_PROGRESS__ || 0
+
+            if (progress !== target) {
+              progress += (target - progress) * speed
+
+              if (Math.abs(progress - target) < 0.001) {
+                progress = target
+                ;(window as any).__FLIP_ANIMATING__ = false
+                ;(window as any).__RUG_FLIPPED__ = target === 1
+              }
+
+              ;(window as any).__FLIP_PROGRESS__ = progress
+            }
+
             const doormatData = (window as any).__DOORMAT_DATA__
             const isFlipped = (window as any).__RUG_FLIPPED__ || false
 
@@ -634,10 +648,6 @@ export default function GeneratorPage() {
       ;(window as any).doormatTextRows = doormatData.doormatTextRows
     }
     
-    // Trigger p5 redraw (only redraw mechanism)
-    if (typeof window !== 'undefined' && (window as any).p5Instance) {
-      (window as any).p5Instance.redraw()
-    }
   }
 
   // Generate stripes with seeded randomness (complete original logic)
@@ -2270,38 +2280,15 @@ export default function GeneratorPage() {
     console.log('🏷️ Comprehensive traits calculated:', traits)
   }
 
-  // Animate flip using requestAnimationFrame
-  const animateFlip = () => {
-    const speed = 0.08
-
-    const current = (window as any).__FLIP_PROGRESS__
-    const target = (window as any).__FLIP_TARGET__
-
-    const next = current + (target - current) * speed
-    ;(window as any).__FLIP_PROGRESS__ = Math.abs(next - target) < 0.001 ? target : next
-
-    if ((window as any).p5Instance) {
-      ;(window as any).p5Instance.redraw()
-    }
-
-    if ((window as any).__FLIP_PROGRESS__ !== target) {
-      requestAnimationFrame(animateFlip)
-    } else {
-      ;(window as any).__RUG_FLIPPED__ = target === 1
-      ;(window as any).__FLIP_ANIMATING__ = false
-    }
-  }
 
   // Update flip state - authoritative handler for flip toggling
   const updateFlipState = (newIsFlipped: boolean) => {
     // Prevent multiple animation triggers
     if ((window as any).__FLIP_ANIMATING__) return
 
-    // Start animated flip
+    // Start animated flip - p5 draw loop will handle animation
     ;(window as any).__FLIP_TARGET__ = newIsFlipped ? 1 : 0
     ;(window as any).__FLIP_ANIMATING__ = true
-
-    requestAnimationFrame(animateFlip)
   }
 
   // Generate new doormat
@@ -2343,10 +2330,6 @@ export default function GeneratorPage() {
       ;(window as any).dirtLevel = newDirtLevel
     }
     
-    // Redraw canvas if P5.js instance exists
-    if (typeof window !== 'undefined' && (window as any).p5Instance) {
-      ;(window as any).p5Instance.redraw()
-    }
   }
 
   // Update texture state and redraw
@@ -2360,10 +2343,6 @@ export default function GeneratorPage() {
       ;(window as any).textureLevel = newTextureLevel
     }
     
-    // Redraw canvas if P5.js instance exists
-    if (typeof window !== 'undefined' && (window as any).p5Instance) {
-      ;(window as any).p5Instance.redraw()
-    }
   }
 
   // Update flip state and redraw
@@ -2432,10 +2411,6 @@ export default function GeneratorPage() {
       ;(window as any).__DOORMAT_DATA__.textData = doormatData.textData
       ;(window as any).__DOORMAT_DATA__.doormatTextRows = doormatData.doormatTextRows
 
-      // Trigger immediate redraw
-      if ((window as any).p5Instance) {
-        (window as any).p5Instance.redraw()
-      }
     }
   }
 
@@ -2478,11 +2453,6 @@ export default function GeneratorPage() {
         ;(window as any).textData = (window as any).doormatData.textData
         ;(window as any).doormatTextRows = (window as any).doormatData.doormatTextRows
       }
-      
-      // Redraw
-      if ((window as any).p5Instance) {
-        (window as any).p5Instance.redraw()
-      }
     }
   }
 
@@ -2501,11 +2471,6 @@ export default function GeneratorPage() {
       if (typeof window !== 'undefined') {
         ;(window as any).textData = []
         ;(window as any).doormatTextRows = []
-      }
-      
-      // Redraw
-      if ((window as any).p5Instance) {
-        (window as any).p5Instance.redraw()
       }
     }
   }
