@@ -395,30 +395,6 @@ export default function GeneratorPage() {
             p.redraw()
           }
 
-          // Canvas-based flip button interaction (deterministic bounds)
-          p.mousePressed = () => {
-            // Calculate button bounds using base config data
-            const baseDoormatData = (window as any).doormatData
-            if (!baseDoormatData) return
-
-            const buttonWidth = Math.min(80, baseDoormatData.config.DOORMAT_WIDTH * 0.15)
-            const buttonHeight = Math.min(30, baseDoormatData.config.DOORMAT_HEIGHT * 0.04)
-            const margin = Math.min(10, baseDoormatData.config.DOORMAT_WIDTH * 0.02)
-            const buttonX = p.width - buttonWidth - margin
-            const buttonY = p.height - buttonHeight - margin
-
-            // Check if click is inside button bounds
-            if (p.mouseX >= buttonX && p.mouseX <= buttonX + buttonWidth &&
-                p.mouseY >= buttonY && p.mouseY <= buttonY + buttonHeight) {
-              // Toggle authoritative flip state
-              const currentFlipped = (window as any).__RUG_FLIPPED__ || false
-              ;(window as any).__RUG_FLIPPED__ = !currentFlipped
-              console.log('🔄 Rug flipped to:', (window as any).__RUG_FLIPPED__)
-
-              // Trigger p5 redraw (only redraw trigger)
-              p.redraw()
-            }
-          }
 
           // Full rug drawing function (with true mirror flip)
           const drawFullRug = (p: any, doormatData: any, seed: number, isFlipped: boolean = false) => {
@@ -469,8 +445,6 @@ export default function GeneratorPage() {
 
             p.pop() // End all transforms
 
-            // Draw flip button in bottom-right corner (outside transforms)
-            drawFlipButton(p, doormatData)
           }
 
           // P5 immediate-mode rendering - read ALL data from window
@@ -488,31 +462,6 @@ export default function GeneratorPage() {
             }
           }
 
-          // Canvas-based flip button rendering (deterministic placement)
-          const drawFlipButton = (p: any, doormatData: any) => {
-            // Use DOORMAT_WIDTH and DOORMAT_HEIGHT for deterministic placement
-            const buttonWidth = Math.min(80, doormatData.config.DOORMAT_WIDTH * 0.15)
-            const buttonHeight = Math.min(30, doormatData.config.DOORMAT_HEIGHT * 0.04)
-            const margin = Math.min(10, doormatData.config.DOORMAT_WIDTH * 0.02)
-
-            // Position relative to canvas dimensions (accounting for rotation)
-            const buttonX = p.width - buttonWidth - margin
-            const buttonY = p.height - buttonHeight - margin
-
-            // Button background (subtle)
-            p.fill(255, 255, 255, 180)
-            p.stroke(0, 0, 0, 120)
-            p.strokeWeight(1)
-            p.rect(buttonX, buttonY, buttonWidth, buttonHeight, 3)
-
-            // Button text
-            p.fill(0, 0, 0, 200)
-            p.noStroke()
-            p.textAlign(p.CENTER, p.CENTER)
-            p.textSize(Math.min(12, buttonHeight * 0.8))
-            p.textFont('monospace')
-            p.text('FLIP', buttonX + buttonWidth/2, buttonY + buttonHeight/2)
-          }
 
 
 
@@ -2270,6 +2219,17 @@ export default function GeneratorPage() {
     console.log('🏷️ Comprehensive traits calculated:', traits)
   }
 
+  // Update flip state - authoritative handler for flip toggling
+  const updateFlipState = (newIsFlipped: boolean) => {
+    // Set window state (authoritative source)
+    ;(window as any).__RUG_FLIPPED__ = newIsFlipped
+
+    // Trigger p5 redraw
+    if (typeof window !== 'undefined' && (window as any).p5Instance) {
+      (window as any).p5Instance.redraw()
+    }
+  }
+
   // Generate new doormat
   const generateNew = () => {
     // Generate a random seed like before
@@ -2626,19 +2586,19 @@ export default function GeneratorPage() {
                     <div className="rounded-lg px-1 relative overflow-hidden">
                       
                                                                     {/* Canvas Container - Match P5.js canvas dimensions exactly */}
-                                                 <div 
+                                                 <div
                            ref={canvasContainerRef}
                            id="canvas-container"
-                           className="rug-canvas-container rounded-lg relative mx-auto"
-                          style={{ 
+                           className="rug-canvas-container rounded-lg relative mx-auto cursor-pointer"
+                           onClick={() => updateFlipState(!(window as any).__RUG_FLIPPED__ || false)}
+                          style={{
                             width: '100%',     // Responsive width
                             height: '0',       // Height will be set by padding-bottom
                             paddingBottom: '69.7%', // 920/1320 * 100% = 69.7% (maintains 1320:920 aspect ratio)
                             maxWidth: '100%',  // Responsive constraint
                             overflow: 'hidden', // Prevent canvas overflow
                             position: 'relative', // Ensure proper positioning context for loading overlay
-                            zIndex: 2, // Above scan lines
-                            transformStyle: 'preserve-3d'
+                            zIndex: 2 // Above scan lines
                           }}
                         >
                         {!isLoaded && (
