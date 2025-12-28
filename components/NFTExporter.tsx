@@ -1,4 +1,5 @@
 import React from 'react';
+import rugAlgo from '@/data/rug-algo.js?raw'
 import rugP5 from '@/data/rug-p5.js?raw'
 import rugFrame from '@/data/rug-frame.js?raw'
 
@@ -47,7 +48,7 @@ window.ts = ${doormatData.config?.TEXT_SCALE || 1};
   <div id="rug"></div>
   <script>${rugP5}</script>
   ${configScript}
-  <script src="/data/rug-algo.js"></script>
+  <script>${rugAlgo}</script>
   <script>${rugFrame}</script>
 </body>
 </html>`;
