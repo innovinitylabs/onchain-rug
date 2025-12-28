@@ -465,6 +465,21 @@ export default function GeneratorPage() {
                 ((window as any).__FLIP_TARGET__ - (window as any).__FLIP_PROGRESS__) * speed
 
               const flip = (window as any).__FLIP_PROGRESS__
+
+              // EARLY RETURN for normal front side render
+              if (flip === 0) {
+                doormatData.__ALLOW_TEXT__ = true
+                drawFullRug(p, doormatData, doormatData.seed || 42, false)
+                return
+              }
+
+              // Optional fast path for fully flipped
+              if (flip === 1) {
+                doormatData.__ALLOW_TEXT__ = false
+                drawFullRug(p, doormatData, doormatData.seed || 42, true)
+                return
+              }
+
               const foldX = flip * doormatData.config.DOORMAT_WIDTH
 
               // Draw FRONT side with right-side clipping
