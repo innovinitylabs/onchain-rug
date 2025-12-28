@@ -1,15 +1,36 @@
-import React from 'react';
-import rugP5Source from '@/data/rug-p5.js?raw'
-import rugAlgoSource from '@/data/rug-algo.js?raw'
-import rugFrameSource from '@/data/rug-frame.js?raw'
-
-// Safety check for imports (dev only)
-if (!rugP5Source || !rugAlgoSource) {
-  console.error('❌ Rug JS source missing')
-}
+import React, { useState, useEffect } from 'react';
 
 const NFTExporter: React.FC = () => {
+  const [rugP5Source, setRugP5Source] = useState<string | null>(null)
+  const [rugAlgoSource, setRugAlgoSource] = useState<string | null>(null)
+  const [rugFrameSource, setRugFrameSource] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadSources() {
+      const [p5, algo, frame] = await Promise.all([
+        fetch('/rug-p5.js').then(r => r.text()),
+        fetch('/rug-algo.js').then(r => r.text()),
+        fetch('/rug-frame.js').then(r => r.text())
+      ])
+
+      if (!cancelled) {
+        setRugP5Source(p5)
+        setRugAlgoSource(algo)
+        setRugFrameSource(frame)
+      }
+    }
+
+    loadSources()
+    return () => { cancelled = true }
+  }, [])
   const exportNFT = () => {
+    if (!rugP5Source || !rugAlgoSource) {
+      alert('JS sources not loaded yet')
+      return
+    }
+
     console.log('NFT EXPORTER USING rug-algo.js')
     console.log('rf initial:', typeof window !== 'undefined' && typeof (window as any).rf !== 'undefined' ? (window as any).rf : 'missing')
 
