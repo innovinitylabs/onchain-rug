@@ -2363,38 +2363,58 @@ export default function GeneratorPage() {
   const removeTextRow = (index: number) => {
     if (index > 0 && currentRowCount > 1) {
       setCurrentRowCount(prev => prev - 1)
-      const newInputs = textInputs.filter((_, i) => i !== index)
-      setTextInputs(newInputs)
+      setTextInputs(prev => prev.filter((_, i) => i !== index))
 
-      // Update doormat with new text (removes texture from removed row)
-      setTimeout(() => {
-        addTextToDoormat(newInputs)
-      }, 50)
+      // Update doormat with new text immediately (removes texture from removed row)
+      updateTextLive()
+    }
+  }
+
+  // Live text update - recomputes only text data for immediate canvas updates
+  const updateTextLive = () => {
+    if (typeof window !== 'undefined' && (window as any).__DOORMAT_DATA__) {
+      const doormatData = (window as any).__DOORMAT_DATA__
+      const validTexts = textInputs.filter(text => text.trim().length > 0)
+
+      // Update only text-related data
+      doormatData.doormatTextRows = validTexts
+
+      // Recompute text data and colors
+      if (typeof window !== 'undefined' && (window as any).p5Instance) {
+        updateTextColors((window as any).p5Instance, doormatData)
+        generateTextData(doormatData)
+      }
+
+      // Update window data
+      ;(window as any).__DOORMAT_DATA__.textData = doormatData.textData
+      ;(window as any).__DOORMAT_DATA__.doormatTextRows = doormatData.doormatTextRows
+
+      // Trigger immediate redraw
+      if ((window as any).p5Instance) {
+        (window as any).p5Instance.redraw()
+      }
     }
   }
 
   // Update text input with automatic embedding
   const updateTextInput = (index: number, value: string) => {
-    const newInputs = [...textInputs]
     // Allow all characters from the characterMap: A-Z, 0-9, space, ?, _, !, @, #, $, &, %, +, -, (, ), [, ], *, =, ', ", ., <, >
     const allowedChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ?_!@#$&%+-()[]*=\'"\\.><'.split('')
-    newInputs[index] = value.toUpperCase()
+    const filteredValue = value.toUpperCase()
       .split('')
       .filter(char => allowedChars.includes(char))
       .join('')
       .slice(0, 11)
 
-    setTextInputs(newInputs)
+    // Update textInputs immutably at specific index to preserve cursor position
+    setTextInputs(prev => {
+      const next = [...prev]
+      next[index] = filteredValue
+      return next
+    })
 
-    // Debounced live update to prevent lag from rapid typing
-    if (liveUpdateTimerRef.current) {
-      clearTimeout(liveUpdateTimerRef.current)
-    }
-
-    liveUpdateTimerRef.current = setTimeout(() => {
-      addTextToDoormat(newInputs)
-      liveUpdateTimerRef.current = null
-    }, 200) // Increased delay to reduce lag
+    // Immediate live update for text changes
+    updateTextLive()
   }
 
   // Add text to doormat
@@ -2429,6 +2449,7 @@ export default function GeneratorPage() {
   const clearText = () => {
     setTextInputs([''])
     setCurrentRowCount(1)
+    updateTextLive()
     
     if (typeof window !== 'undefined' && (window as any).doormatData) {
       (window as any).doormatData.doormatTextRows = []
