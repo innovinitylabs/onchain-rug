@@ -1,5 +1,4 @@
 import React from 'react';
-import rugAlgo from '@/data/rug-algo.js?raw'
 import rugP5 from '@/data/rug-p5.js?raw'
 import rugFrame from '@/data/rug-frame.js?raw'
 
@@ -48,30 +47,30 @@ window.ts = ${doormatData.config?.TEXT_SCALE || 1};
   <div id="rug"></div>
   <script>${rugP5}</script>
   ${configScript}
-  <script>${rugAlgo}</script>
+  <script src="/data/rug-algo.js"></script>
   <script>${rugFrame}</script>
 </body>
 </html>`;
 
     // Download the HTML file
     const blob = new Blob([html], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
     a.download = `onchain-rug-${doormatData.seed || 42}.html`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
   };
 
   return (
-    <button
-      onClick={exportNFT}
+        <button
+          onClick={exportNFT}
       className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-    >
+        >
       Export NFT HTML
-    </button>
+        </button>
   );
 };
 
