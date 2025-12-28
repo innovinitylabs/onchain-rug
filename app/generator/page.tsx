@@ -388,6 +388,10 @@ export default function GeneratorPage() {
             const defaultFlipped = (window as any).__DEFAULT_FLIPPED__ === true
             ;(window as any).__RUG_FLIPPED__ = defaultFlipped
 
+            // Initialize animation globals
+            ;(window as any).__FLIP_PROGRESS__ = defaultFlipped ? 1 : 0
+            ;(window as any).__FLIP_TARGET__ = defaultFlipped ? 1 : 0
+
             console.log('🎨 P5.js canvas created with original dimensions')
             console.log('🔄 Default flip state:', defaultFlipped)
 
@@ -411,7 +415,16 @@ export default function GeneratorPage() {
             p.push()
             p.translate(p.width/2, p.height/2)
             p.rotate(p.PI/2)
-            if (isFlipped) p.scale(1, -1)  // Vertical mirror flip for correct physical axis
+
+            // Animated flip transform
+            const flip = (window as any).__FLIP_PROGRESS__
+            const flipScale = Math.cos(flip * Math.PI)
+            p.scale(1, flipScale)
+
+            // Optional realism - slight lift during flip
+            const lift = Math.sin(flip * Math.PI)
+            p.scale(1, 1 - 0.08 * lift)
+
             p.translate(-p.height/2, -p.width/2)
 
             // Draw the main doormat area
@@ -454,11 +467,23 @@ export default function GeneratorPage() {
             const isFlipped = (window as any).__RUG_FLIPPED__ || false
 
             if (doormatData) {
+              // Animated interpolation for smooth flipping
+              const speed = 0.08
+              ;(window as any).__FLIP_PROGRESS__ +=
+                ((window as any).__FLIP_TARGET__ - (window as any).__FLIP_PROGRESS__) * speed
+
               // Set authoritative text gate - no text on flipped side
               doormatData.__ALLOW_TEXT__ = !isFlipped
 
               // drawFullRug expects complete doormatData object with config
               drawFullRug(p, doormatData, doormatData.seed || 42, isFlipped)
+            }
+
+            // Stop looping once animation completes
+            if (Math.abs((window as any).__FLIP_PROGRESS__ - (window as any).__FLIP_TARGET__) < 0.001) {
+              ;(window as any).__FLIP_PROGRESS__ = (window as any).__FLIP_TARGET__
+              ;(window as any).__RUG_FLIPPED__ = (window as any).__FLIP_TARGET__ === 1
+              p.noLoop()
             }
           }
 
@@ -2221,28 +2246,27 @@ export default function GeneratorPage() {
 
   // Update flip state - authoritative handler for flip toggling
   const updateFlipState = (newIsFlipped: boolean) => {
-    // Set window state (authoritative source)
-    ;(window as any).__RUG_FLIPPED__ = newIsFlipped
+    // Start animated flip instead of direct toggle
+    ;(window as any).__FLIP_TARGET__ = newIsFlipped ? 1 : 0
 
-    // Trigger p5 redraw
+    // Start animation loop
     if (typeof window !== 'undefined' && (window as any).p5Instance) {
-      (window as any).p5Instance.redraw()
+      (window as any).p5Instance.loop()
     }
   }
 
   // Generate new doormat
   const generateNew = () => {
+    // CRITICAL: Reset animation state to front side at start
+    ;(window as any).__FLIP_TARGET__ = 0
+    ;(window as any).__FLIP_PROGRESS__ = 0
+    ;(window as any).__RUG_FLIPPED__ = false
+
     // Generate a random seed like before
     const seed = Math.floor(Math.random() * 1000000)
     setCurrentSeed(seed)
     
     if (typeof window !== 'undefined' && (window as any).p5Instance) {
-      // Reset flip state to front side before generating new rug
-      ;(window as any).__RUG_FLIPPED__ = false
-
-      // Force redraw to show front side immediately
-      ;(window as any).p5Instance.redraw()
-
       console.log('🎨 Generating new doormat with seed:', seed)
       generateDoormatCore(seed, (window as any).doormatData)
 
