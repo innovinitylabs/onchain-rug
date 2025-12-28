@@ -32,10 +32,6 @@ window.fl = "${doormatData.config?.FRAME_STYLE || 'None'}";
 window.ts = ${doormatData.config?.TEXT_SCALE || 1};
 </script>`;
 
-    // rf guard script to ensure rf is defined before rug-algo.js runs
-    const rfGuardScript = `<script>
-if (typeof window.rf === 'undefined') window.rf = 0;
-</script>`;
 
     // Generate complete HTML with scripts in correct order
     const html = `<!DOCTYPE html>
@@ -52,7 +48,6 @@ if (typeof window.rf === 'undefined') window.rf = 0;
   <div id="rug"></div>
   <script>${rugP5}</script>
   ${configScript}
-  ${rfGuardScript}
   <script>${rugAlgo}</script>
   <script>${rugFrame}</script>
 </body>
