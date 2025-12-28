@@ -2237,6 +2237,12 @@ export default function GeneratorPage() {
     setCurrentSeed(seed)
     
     if (typeof window !== 'undefined' && (window as any).p5Instance) {
+      // Reset flip state to front side before generating new rug
+      ;(window as any).__RUG_FLIPPED__ = false
+
+      // Force redraw to show front side immediately
+      ;(window as any).p5Instance.redraw()
+
       console.log('🎨 Generating new doormat with seed:', seed)
       generateDoormatCore(seed, (window as any).doormatData)
 
