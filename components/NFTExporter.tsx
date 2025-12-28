@@ -73,15 +73,9 @@ window.ts = ${doormatData.config?.TEXT_SCALE || 1};
 <body>
   <div id="rug"></div>
   ${configScript}
-  <script>
-${rugP5Source}
-</script>
-  <script>
-${rugAlgoSource}
-</script>
-  <script>
-${rugFrameSource}
-</script>
+  <script>(function(){ ${rugP5Source} })();</script>
+  <script>(function(){ ${rugAlgoSource} })();</script>
+  <script>(function(){ ${rugFrameSource} })();</script>
 </body>
 </html>`;
 
