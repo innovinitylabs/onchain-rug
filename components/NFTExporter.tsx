@@ -1,7 +1,12 @@
 import React from 'react';
-import rugAlgo from '@/data/rug-algo.js?raw'
-import rugP5 from '@/data/rug-p5.js?raw'
-import rugFrame from '@/data/rug-frame.js?raw'
+import rugP5Source from '@/data/rug-p5.js?raw'
+import rugAlgoSource from '@/data/rug-algo.js?raw'
+import rugFrameSource from '@/data/rug-frame.js?raw'
+
+// Safety check for imports (dev only)
+if (!rugP5Source || !rugAlgoSource) {
+  console.error('❌ Rug JS source missing')
+}
 
 const NFTExporter: React.FC = () => {
   const exportNFT = () => {
@@ -46,10 +51,16 @@ window.ts = ${doormatData.config?.TEXT_SCALE || 1};
 </head>
 <body>
   <div id="rug"></div>
-  <script>${rugP5}</script>
   ${configScript}
-  <script>${rugAlgo}</script>
-  <script>${rugFrame}</script>
+  <script>
+${rugP5Source}
+</script>
+  <script>
+${rugAlgoSource}
+</script>
+  <script>
+${rugFrameSource}
+</script>
 </body>
 </html>`;
 
