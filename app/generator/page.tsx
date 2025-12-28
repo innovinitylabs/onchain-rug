@@ -416,14 +416,6 @@ export default function GeneratorPage() {
             p.translate(p.width/2, p.height/2)
             p.rotate(p.PI/2)
 
-            // Animated flip transform
-            const flip = (window as any).__FLIP_PROGRESS__
-            const flipScale = Math.cos(flip * Math.PI)
-            p.scale(1, flipScale)
-
-            // Optional realism - slight lift during flip
-            const lift = Math.sin(flip * Math.PI)
-            p.scale(1, 1 - 0.08 * lift)
 
             p.translate(-p.height/2, -p.width/2)
 
@@ -472,11 +464,41 @@ export default function GeneratorPage() {
               ;(window as any).__FLIP_PROGRESS__ +=
                 ((window as any).__FLIP_TARGET__ - (window as any).__FLIP_PROGRESS__) * speed
 
-              // Set authoritative text gate - no text on flipped side
-              doormatData.__ALLOW_TEXT__ = !isFlipped
+              const flip = (window as any).__FLIP_PROGRESS__
+              const foldX = flip * doormatData.config.DOORMAT_WIDTH
 
-              // drawFullRug expects complete doormatData object with config
-              drawFullRug(p, doormatData, doormatData.seed || 42, isFlipped)
+              // Draw FRONT side with right-side clipping
+              p.push()
+              p.clip(foldX, 0, p.width, p.height)
+              doormatData.__ALLOW_TEXT__ = true
+              drawFullRug(p, doormatData, doormatData.seed || 42, false)
+              p.pop()
+
+              // Draw BACK side with left-side clipping + mirror
+              p.push()
+              p.clip(0, 0, foldX, p.height)
+
+              // simulate rug back orientation
+              p.translate(foldX, 0)
+              p.scale(-1, 1)
+              p.translate(-foldX, 0)
+
+              doormatData.__ALLOW_TEXT__ = false
+              drawFullRug(p, doormatData, doormatData.seed || 42, true)
+              p.pop()
+
+              // Add rolling curl illusion
+              const curlWidth = 40
+              const curlX = foldX
+
+              for (let i = 0; i < curlWidth; i += 2) {
+                const t = i / curlWidth
+                const lift = Math.sin(t * Math.PI) * 12 * flip
+
+                p.fill(0, 0, 0, 20 * (1 - t))
+                p.noStroke()
+                p.rect(curlX - i, lift, 2, p.height)
+              }
             }
 
             // Stop looping once animation completes
