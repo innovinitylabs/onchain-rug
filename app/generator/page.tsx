@@ -2362,19 +2362,20 @@ export default function GeneratorPage() {
   // Remove text row
   const removeTextRow = (index: number) => {
     if (index > 0 && currentRowCount > 1) {
+      const nextTextInputs = textInputs.filter((_, i) => i !== index)
       setCurrentRowCount(prev => prev - 1)
-      setTextInputs(prev => prev.filter((_, i) => i !== index))
+      setTextInputs(nextTextInputs)
 
       // Update doormat with new text immediately (removes texture from removed row)
-      updateTextLive()
+      updateTextLive(nextTextInputs)
     }
   }
 
   // Live text update - recomputes only text data for immediate canvas updates
-  const updateTextLive = () => {
+  const updateTextLive = (textRows: string[]) => {
     if (typeof window !== 'undefined' && (window as any).__DOORMAT_DATA__) {
       const doormatData = (window as any).__DOORMAT_DATA__
-      const validTexts = textInputs.filter(text => text.trim().length > 0)
+      const validTexts = textRows.filter(text => text.trim().length > 0)
 
       // Update only text-related data
       doormatData.doormatTextRows = validTexts
@@ -2406,15 +2407,13 @@ export default function GeneratorPage() {
       .join('')
       .slice(0, 11)
 
-    // Update textInputs immutably at specific index to preserve cursor position
-    setTextInputs(prev => {
-      const next = [...prev]
-      next[index] = filteredValue
-      return next
-    })
+    // Compute next text inputs manually
+    const nextTextInputs = [...textInputs]
+    nextTextInputs[index] = filteredValue
 
-    // Immediate live update for text changes
-    updateTextLive()
+    // Update state and immediately update canvas with computed value
+    setTextInputs(nextTextInputs)
+    updateTextLive(nextTextInputs)
   }
 
   // Add text to doormat
@@ -2447,9 +2446,10 @@ export default function GeneratorPage() {
 
   // Clear text
   const clearText = () => {
-    setTextInputs([''])
+    const clearedTextInputs = ['']
+    setTextInputs(clearedTextInputs)
     setCurrentRowCount(1)
-    updateTextLive()
+    updateTextLive(clearedTextInputs)
     
     if (typeof window !== 'undefined' && (window as any).doormatData) {
       (window as any).doormatData.doormatTextRows = []
