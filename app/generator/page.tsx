@@ -349,7 +349,7 @@ export default function GeneratorPage() {
   }
 
   // Create P5.js instance using original doormat.js logic
-  const createP5Instance = (doormatData: any) => {
+  const createP5Instance = () => {
     return new Promise<void>((resolve) => {
       if (typeof window !== 'undefined' && !(window as any).p5) {
         console.error('❌ P5.js not available')
@@ -369,65 +369,174 @@ export default function GeneratorPage() {
         const p5Instance = typeof window !== 'undefined' ? new (window as any).p5((p: any) => {
           // Original setup function from doormat.js
       p.setup = () => {
+            // Get config from window.doormatData (set during initialization)
+            const baseDoormatData = (window as any).doormatData
+            if (!baseDoormatData) {
+              console.error('❌ Base doormatData not found in window')
+              return
+            }
+
             // Create canvas with swapped dimensions for 90-degree rotation (original logic)
-            const canvas = p.createCanvas(doormatData.config.DOORMAT_HEIGHT + (doormatData.config.FRINGE_LENGTH * 4), 
-                                       doormatData.config.DOORMAT_WIDTH + (doormatData.config.FRINGE_LENGTH * 4))
+            const canvas = p.createCanvas(baseDoormatData.config.DOORMAT_HEIGHT + (baseDoormatData.config.FRINGE_LENGTH * 4),
+                                       baseDoormatData.config.DOORMAT_WIDTH + (baseDoormatData.config.FRINGE_LENGTH * 4))
             canvas.parent('canvas-container')
             // Let CSS handle positioning - don't set styles here
         p.pixelDensity(2)
         p.noLoop()
+
+            // Initialize flip state from external injection (for smart contracts) - read once only
+            const defaultFlipped = (window as any).__DEFAULT_FLIPPED__ === true
+            ;(window as any).__RUG_FLIPPED__ = defaultFlipped
+
             console.log('🎨 P5.js canvas created with original dimensions')
+            console.log('🔄 Default flip state:', defaultFlipped)
+
+            // Trigger initial render
+            p.redraw()
           }
 
-          // Original draw function from doormat.js
-      p.draw = () => {
+          // Canvas-based flip button interaction (deterministic bounds)
+          p.mousePressed = () => {
+            // Calculate button bounds using base config data
+            const baseDoormatData = (window as any).doormatData
+            if (!baseDoormatData) return
+
+            const buttonWidth = Math.min(80, baseDoormatData.config.DOORMAT_WIDTH * 0.15)
+            const buttonHeight = Math.min(30, baseDoormatData.config.DOORMAT_HEIGHT * 0.04)
+            const margin = Math.min(10, baseDoormatData.config.DOORMAT_WIDTH * 0.02)
+            const buttonX = p.width - buttonWidth - margin
+            const buttonY = p.height - buttonHeight - margin
+
+            // Check if click is inside button bounds
+            if (p.mouseX >= buttonX && p.mouseX <= buttonX + buttonWidth &&
+                p.mouseY >= buttonY && p.mouseY <= buttonY + buttonHeight) {
+              // Toggle authoritative flip state
+              const currentFlipped = (window as any).__RUG_FLIPPED__ || false
+              ;(window as any).__RUG_FLIPPED__ = !currentFlipped
+              console.log('🔄 Rug flipped to:', (window as any).__RUG_FLIPPED__)
+
+              // Trigger p5 redraw (only redraw trigger)
+              p.redraw()
+            }
+          }
+
+          // Full rug drawing function (with true mirror flip)
+          const drawFullRug = (p: any, doormatData: any, seed: number, isFlipped: boolean = false) => {
             // Use original doormat.js draw logic
             p.background(222, 222, 222)
-            
+
             // Ensure PRNG is initialized with current seed before drawing
-            const currentSeed = (window as any).currentSeed || 42
-            initPRNG(currentSeed)
-            
+            initPRNG(seed)
+
             // Create derived PRNG for drawing operations
             const drawingPRNG = createDerivedPRNG(2000)
-            
-            // Rotate canvas 90 degrees clockwise (original)
+
+            // Apply transforms: translate to center, rotate 90°, mirror if flipped, translate back
             p.push()
             p.translate(p.width/2, p.height/2)
             p.rotate(p.PI/2)
+            if (isFlipped) p.scale(1, -1)  // Vertical mirror flip for correct physical axis
             p.translate(-p.height/2, -p.width/2)
-            
+
             // Draw the main doormat area
             p.push()
             p.translate(doormatData.config.FRINGE_LENGTH * 2, doormatData.config.FRINGE_LENGTH * 2)
-            
-            // Draw stripes using original logic
+
+            // Draw stripes (always in front order - transform handles flipping)
             for (const stripe of doormatData.stripeData) {
-              drawStripeOriginal(p, stripe, doormatData, drawingPRNG)
+              drawStripeOriginal(p, stripe, doormatData, drawingPRNG, false) // Always front logic
             }
-            
+
             // Add overall texture overlay if enabled
             const currentShowTexture = (window as any).showTexture || false
             const currentTextureLevel = (window as any).textureLevel || 0
             if (currentShowTexture && currentTextureLevel > 0) {
               drawTextureOverlayWithLevel(p, doormatData, currentTextureLevel)
             }
-            
-            // Draw fringe and selvedge within the same translation as the rug (rotated coordinate system)
-            drawFringeOriginal(p, doormatData, drawingPRNG)
-            drawSelvedgeEdgesOriginal(p, doormatData, drawingPRNG)
+
+            // Draw fringe and selvedge (always front orientation - transform handles flipping)
+            drawFringeOriginal(p, doormatData, drawingPRNG, false) // Always front logic
+            drawSelvedgeEdgesOriginal(p, doormatData, drawingPRNG, false) // Always front logic
 
             p.pop()
-            
+
             // Draw dirt overlay if enabled
             const currentShowDirt = (window as any).showDirt || false
             const currentDirtLevel = (window as any).dirtLevel || 0
             if (currentShowDirt && currentDirtLevel > 0) {
               drawDirtOverlay(p, doormatData, drawingPRNG, currentDirtLevel)
             }
-            
-            p.pop() // End rotation
+
+            p.pop() // End all transforms
+
+            // Draw flip button in bottom-right corner (outside transforms)
+            drawFlipButton(p, doormatData)
           }
+
+          // P5 immediate-mode rendering - read ALL data from window
+      p.draw = () => {
+            // Read ALL data from authoritative window objects
+            const doormatData = (window as any).__DOORMAT_DATA__
+            const isFlipped = (window as any).__RUG_FLIPPED__ || false
+
+            if (doormatData) {
+              // Set authoritative text gate - no text on flipped side
+              doormatData.__ALLOW_TEXT__ = !isFlipped
+
+              // drawFullRug expects complete doormatData object with config
+              drawFullRug(p, doormatData, doormatData.seed || 42, isFlipped)
+            }
+          }
+
+          // Canvas-based flip button rendering (deterministic placement)
+          const drawFlipButton = (p: any, doormatData: any) => {
+            // Use DOORMAT_WIDTH and DOORMAT_HEIGHT for deterministic placement
+            const buttonWidth = Math.min(80, doormatData.config.DOORMAT_WIDTH * 0.15)
+            const buttonHeight = Math.min(30, doormatData.config.DOORMAT_HEIGHT * 0.04)
+            const margin = Math.min(10, doormatData.config.DOORMAT_WIDTH * 0.02)
+
+            // Position relative to canvas dimensions (accounting for rotation)
+            const buttonX = p.width - buttonWidth - margin
+            const buttonY = p.height - buttonHeight - margin
+
+            // Button background (subtle)
+            p.fill(255, 255, 255, 180)
+            p.stroke(0, 0, 0, 120)
+            p.strokeWeight(1)
+            p.rect(buttonX, buttonY, buttonWidth, buttonHeight, 3)
+
+            // Button text
+            p.fill(0, 0, 0, 200)
+            p.noStroke()
+            p.textAlign(p.CENTER, p.CENTER)
+            p.textSize(Math.min(12, buttonHeight * 0.8))
+            p.textFont('monospace')
+            p.text('FLIP', buttonX + buttonWidth/2, buttonY + buttonHeight/2)
+          }
+
+
+
+
+
+
+
+
+          // Get intelligent pattern colors (same as text colors)
+          const getPatternColors = (doormatData: any, prng: any) => {
+            if (!doormatData.selectedPalette?.colors) return [p.color(100, 100, 100)]
+
+            const palette = doormatData.selectedPalette.colors
+            const intelligentColors = []
+
+            // Use the same color theory as text - select high contrast colors
+            for (let i = 0; i < Math.min(4, palette.length); i++) {
+              const colorIndex = (i * 2 + prng.range(0, 2)) % palette.length
+              intelligentColors.push(p.color(palette[colorIndex]))
+            }
+
+            return intelligentColors.length > 0 ? intelligentColors : [p.color(100, 100, 100)]
+          }
+
         }) : null
 
         // Store instance for later use
@@ -442,7 +551,7 @@ export default function GeneratorPage() {
     })
   }
 
-  // Generate doormat core logic (complete original logic)
+// Wrong generateDoormatCore removed - correct one defined later
   const generateDoormatCore = (seed: number, doormatData: any) => {
     console.log('🎨 Generating doormat with seed:', seed)
     
@@ -502,8 +611,21 @@ export default function GeneratorPage() {
       generateTextData(doormatData)
     }
     
-    // Update global variables for NFTExporter
+    // Write COMPLETE doormatData to single authoritative window object
     if (typeof window !== 'undefined') {
+      ;(window as any).__DOORMAT_DATA__ = {
+        // Include ALL necessary data for drawFullRug
+        ...doormatData, // config, characterMap, etc.
+        seed: seed,
+        stripeData: doormatData.stripeData,
+        selectedPalette: doormatData.selectedPalette,
+        warpThickness: doormatData.warpThickness,
+        textData: doormatData.textData,
+        textRows: doormatData.doormatTextRows,
+        traits: doormatData.traits || {}
+      }
+
+      // Keep legacy properties for backward compatibility
       ;(window as any).selectedPalette = doormatData.selectedPalette
       ;(window as any).stripeData = doormatData.stripeData
       ;(window as any).DOORMAT_CONFIG = doormatData.config
@@ -512,7 +634,7 @@ export default function GeneratorPage() {
       ;(window as any).doormatTextRows = doormatData.doormatTextRows
     }
     
-    // Redraw
+    // Trigger p5 redraw (only redraw mechanism)
     if (typeof window !== 'undefined' && (window as any).p5Instance) {
       (window as any).p5Instance.redraw()
     }
@@ -763,7 +885,7 @@ export default function GeneratorPage() {
   }
 
   // Original doormat.js drawStripe function
-  const drawStripeOriginal = (p: any, stripe: any, doormatData: any, drawingPRNG: any) => {
+  const drawStripeOriginal = (p: any, stripe: any, doormatData: any, drawingPRNG: any, isFlipped: boolean = false) => {
     const config = doormatData.config
     const warpSpacing = doormatData.warpThickness + 1
     const weftSpacing = config.WEFT_THICKNESS + 1
@@ -776,9 +898,9 @@ export default function GeneratorPage() {
       for (let y = stripe.y; y < stripe.y + stripe.height; y += weftSpacing) {
         const warpColor = p.color(stripe.primaryColor)
         
-        // Check if this position should be modified for text
+        // Check if this position should be modified for text (only on front side)
         let isTextPixel = false
-        if (doormatData.textData && doormatData.textData.length > 0) {
+        if (doormatData.__ALLOW_TEXT__ && doormatData.textData && doormatData.textData.length > 0) {
           for (const textPixel of doormatData.textData) {
             if (x >= textPixel.x && x < textPixel.x + textPixel.width &&
                 y >= textPixel.y && y < textPixel.y + textPixel.height) {
@@ -849,7 +971,7 @@ export default function GeneratorPage() {
     for (let y = stripe.y; y < stripe.y + stripe.height; y += weftSpacing) {
       for (let x = 0; x < config.DOORMAT_WIDTH; x += warpSpacing) {
         let weftColor = p.color(stripe.primaryColor)
-        
+
         // Add variation based on weave type
         if (stripe.weaveType === 'm' && stripe.secondaryColor) {
           if (p.noise(x * 0.1, y * 0.1) > 0.5) {
@@ -860,9 +982,9 @@ export default function GeneratorPage() {
           weftColor = p.lerpColor(p.color(stripe.primaryColor), p.color(255), noiseVal * 0.15)
         }
         
-        // Check if this position should be modified for text
+        // Check if this position should be modified for text (only on front side)
         let isTextPixel = false
-        if (doormatData.textData && doormatData.textData.length > 0) {
+        if (doormatData.__ALLOW_TEXT__ && doormatData.textData && doormatData.textData.length > 0) {
           for (const textPixel of doormatData.textData) {
             if (x >= textPixel.x && x < textPixel.x + textPixel.width &&
                 y >= textPixel.y && y < textPixel.y + textPixel.height) {
@@ -1425,28 +1547,29 @@ export default function GeneratorPage() {
   }
 
   // Original doormat.js drawFringe function
-  const drawFringeOriginal = (p: any, doormatData: any, drawingPRNG: any) => {
+  const drawFringeOriginal = (p: any, doormatData: any, drawingPRNG: any, isFlipped: boolean = false) => {
     const config = doormatData.config
     // Top fringe (warp ends) - relative to rug translation
-    drawFringeSectionOriginal(p, 0, -config.FRINGE_LENGTH, config.DOORMAT_WIDTH, config.FRINGE_LENGTH, 'top', doormatData, drawingPRNG)
+    drawFringeSectionOriginal(p, 0, -config.FRINGE_LENGTH, config.DOORMAT_WIDTH, config.FRINGE_LENGTH, 'top', doormatData, drawingPRNG, isFlipped)
     
     // Bottom fringe (warp ends) - relative to rug translation, minimal gap to avoid overlay
-    drawFringeSectionOriginal(p, 0, config.DOORMAT_HEIGHT + 1, config.DOORMAT_WIDTH, config.FRINGE_LENGTH, 'bottom', doormatData, drawingPRNG)
+    drawFringeSectionOriginal(p, 0, config.DOORMAT_HEIGHT + 1, config.DOORMAT_WIDTH, config.FRINGE_LENGTH, 'bottom', doormatData, drawingPRNG, isFlipped)
   }
 
   // Original doormat.js drawFringeSection function
-  const drawFringeSectionOriginal = (p: any, x: number, y: number, w: number, h: number, side: string, doormatData: any, drawingPRNG: any) => {
+  const drawFringeSectionOriginal = (p: any, x: number, y: number, w: number, h: number, side: string, doormatData: any, drawingPRNG: any, isFlipped: boolean = false) => {
     const fringeStrands = w / 12
     const strandWidth = w / fringeStrands
     
     for (let i = 0; i < fringeStrands; i++) {
-      const strandX = x + i * strandWidth
-      
+      let strandX = x + i * strandWidth
+
       const strandColor = drawingPRNG.randomChoice(doormatData.selectedPalette.colors)
       
       // Draw individual fringe strand with thin threads
       for (let j = 0; j < 12; j++) {
-        const threadX = strandX + drawingPRNG.range(-strandWidth/6, strandWidth/6)
+        let threadX = strandX + drawingPRNG.range(-strandWidth/6, strandWidth/6)
+
         const startY = side === 'top' ? y + h : y
         const endY = side === 'top' ? y : y + h
         
@@ -1487,13 +1610,21 @@ export default function GeneratorPage() {
   }
 
   // Original doormat.js drawSelvedgeEdges function
-  const drawSelvedgeEdgesOriginal = (p: any, doormatData: any, drawingPRNG: any) => {
+  const drawSelvedgeEdgesOriginal = (p: any, doormatData: any, drawingPRNG: any, isFlipped: boolean = false) => {
     const config = doormatData.config
     const weftSpacing = config.WEFT_THICKNESS + 1
     let isFirstWeft = true
     
-    // Left selvedge edge - flowing semicircular weft threads
-    for (const stripe of doormatData.stripeData) {
+    // Left/Right selvedge edge - flowing semicircular weft threads
+    const leftEdgeX = 0
+    const rightEdgeX = config.DOORMAT_WIDTH
+
+    // Process stripes in normal order
+    const stripeOrder = doormatData.stripeData
+
+    // Left selvedge edge
+    let isFirstWeftLeft = true
+    for (const stripe of stripeOrder) {
       for (let y = stripe.y; y < stripe.y + stripe.height; y += weftSpacing) {
         // Skip the very first weft thread
         if (isFirstWeft) {
@@ -1519,21 +1650,22 @@ export default function GeneratorPage() {
         p.noStroke()
         
         const radius = config.WEFT_THICKNESS * drawingPRNG.range(1.2, 1.8)
-        const centerX = drawingPRNG.range(-2, 2)  // Relative to rug translation
+        const centerX = leftEdgeX + drawingPRNG.range(-2, 2)  // Relative to rug translation
         const centerY = y + config.WEFT_THICKNESS/2 + drawingPRNG.range(-1, 1)  // Relative to rug translation
         
-        // Vary the arc angles for more natural look
-        const startAngle = p.HALF_PI + drawingPRNG.range(-0.2, 0.2)
-        const endAngle = -p.HALF_PI + drawingPRNG.range(-0.2, 0.2)
+        // Vary the arc angles for more natural look (flip direction for flipped rug)
+        const angleOffset = isFlipped ? p.PI : 0
+        const startAngle = p.HALF_PI + drawingPRNG.range(-0.2, 0.2) + angleOffset
+        const endAngle = -p.HALF_PI + drawingPRNG.range(-0.2, 0.2) + angleOffset
         
         // Draw textured semicircle with individual thread details
         drawTexturedSelvedgeArcOriginal(p, centerX, centerY, radius, startAngle, endAngle, r, g, b, 'left', drawingPRNG)
       }
     }
     
-    // Right selvedge edge - flowing semicircular weft threads
+    // Right selvedge edge
     let isFirstWeftRight = true
-    for (const stripe of doormatData.stripeData) {
+    for (const stripe of stripeOrder) {
       for (let y = stripe.y; y < stripe.y + stripe.height; y += weftSpacing) {
         // Skip the very first weft thread
         if (isFirstWeftRight) {
@@ -1559,12 +1691,13 @@ export default function GeneratorPage() {
         p.noStroke()
         
         const radius = config.WEFT_THICKNESS * drawingPRNG.range(1.2, 1.8)
-        const centerX = config.DOORMAT_WIDTH + drawingPRNG.range(-2, 2)  // Relative to rug translation
+        const centerX = rightEdgeX + drawingPRNG.range(-2, 2)  // Relative to rug translation
         const centerY = y + config.WEFT_THICKNESS/2 + drawingPRNG.range(-1, 1)  // Relative to rug translation
         
-        // Vary the arc angles for more natural look
-        const startAngle = -p.HALF_PI + drawingPRNG.range(-0.2, 0.2)
-        const endAngle = p.HALF_PI + drawingPRNG.range(-0.2, 0.2)
+        // Vary the arc angles for more natural look (flip direction for flipped rug)
+        const angleOffset = isFlipped ? p.PI : 0
+        const startAngle = -p.HALF_PI + drawingPRNG.range(-0.2, 0.2) + angleOffset
+        const endAngle = p.HALF_PI + drawingPRNG.range(-0.2, 0.2) + angleOffset
         
         // Draw textured semicircle with individual thread details
         drawTexturedSelvedgeArcOriginal(p, centerX, centerY, radius, startAngle, endAngle, r, g, b, 'right', drawingPRNG)
@@ -1745,7 +1878,7 @@ export default function GeneratorPage() {
     for (let y = stripe.y; y < stripe.y + stripe.height; y++) {
       for (let x = 0; x < doormatData.width; x++) {
         let isTextPixel = false
-        if (doormatData.textData && doormatData.textData.length > 0) {
+        if (doormatData.__ALLOW_TEXT__ && doormatData.textData && doormatData.textData.length > 0) {
           for (const textPixel of doormatData.textData) {
             if (x >= textPixel.x && x < textPixel.x + textPixel.width &&
                 y >= textPixel.y && y < textPixel.y + textPixel.height) {
@@ -1913,7 +2046,7 @@ export default function GeneratorPage() {
       console.log('✅ Doormat generator initialized')
 
       // Create P5.js instance
-      await createP5Instance(doormatData)
+      await createP5Instance()
       console.log('✅ P5.js instance created')
 
       // Generate initial doormat (will be replaced by auto-generation cycle after page loads)
@@ -2062,6 +2195,13 @@ export default function GeneratorPage() {
     }
   }
 
+  // Get back pattern rarity - now based on palette rarity since it's a flipped version
+  const getBackPatternRarity = (patternType: string) => {
+    // Since back is flipped front, it inherits the palette's rarity
+    const paletteName = typeof window !== 'undefined' ? (window as any).selectedPalette?.name || 'Unknown' : 'Unknown'
+    return getPaletteRarity(paletteName)
+  }
+
   // Calculate comprehensive traits
   const calculateTraits = () => {
     const data = {
@@ -2075,6 +2215,9 @@ export default function GeneratorPage() {
     const stripeCount = data.stripeData.length
     const stripeComplexity = calculateStripeComplexity(data.stripeData)
     const paletteName = data.selectedPalette ? data.selectedPalette.name : "Unknown"
+
+    // Calculate back pattern type - now represents flipped front patterns
+    const backPatternType = 'Flipped Front Design'
     
     const traits = {
       // Text traits
@@ -2101,6 +2244,12 @@ export default function GeneratorPage() {
       stripeComplexity: {
         value: stripeComplexity,
         rarity: getStripeComplexityRarity(stripeComplexity)
+      },
+
+      // Back pattern traits
+      backPattern: {
+        value: backPatternType,
+        rarity: getBackPatternRarity(backPatternType)
       },
       
       // Additional traits
@@ -2130,7 +2279,10 @@ export default function GeneratorPage() {
     if (typeof window !== 'undefined' && (window as any).p5Instance) {
       console.log('🎨 Generating new doormat with seed:', seed)
       generateDoormatCore(seed, (window as any).doormatData)
-      
+
+      // Reapply existing text to the new rug
+      updateTextLive(textInputs)
+
       // Update UI
       setTimeout(() => {
         updatePaletteDisplay()
@@ -2175,6 +2327,8 @@ export default function GeneratorPage() {
     }
   }
 
+  // Update flip state and redraw
+
   // Generate from seed
   const generateFromSeed = () => {
     if (typeof window !== 'undefined' && (window as any).p5Instance) {
@@ -2211,39 +2365,58 @@ export default function GeneratorPage() {
   // Remove text row
   const removeTextRow = (index: number) => {
     if (index > 0 && currentRowCount > 1) {
+      const nextTextInputs = textInputs.filter((_, i) => i !== index)
       setCurrentRowCount(prev => prev - 1)
-      const newInputs = textInputs.filter((_, i) => i !== index)
-      setTextInputs(newInputs)
+      setTextInputs(nextTextInputs)
 
-      // Update doormat with new text (removes texture from removed row)
-      setTimeout(() => {
-        addTextToDoormat(newInputs)
-      }, 50)
+      // Update doormat with new text immediately (removes texture from removed row)
+      updateTextLive(nextTextInputs)
+    }
+  }
+
+  // Live text update - recomputes only text data for immediate canvas updates
+  const updateTextLive = (textRows: string[]) => {
+    if (typeof window !== 'undefined' && (window as any).__DOORMAT_DATA__) {
+      const doormatData = (window as any).__DOORMAT_DATA__
+      const validTexts = textRows.filter(text => text.trim().length > 0)
+
+      // Update only text-related data
+      doormatData.doormatTextRows = validTexts
+
+      // Recompute text data and colors
+      if (typeof window !== 'undefined' && (window as any).p5Instance) {
+        updateTextColors((window as any).p5Instance, doormatData)
+        generateTextData(doormatData)
+      }
+
+      // Update window data
+      ;(window as any).__DOORMAT_DATA__.textData = doormatData.textData
+      ;(window as any).__DOORMAT_DATA__.doormatTextRows = doormatData.doormatTextRows
+
+      // Trigger immediate redraw
+      if ((window as any).p5Instance) {
+        (window as any).p5Instance.redraw()
+      }
     }
   }
 
   // Update text input with automatic embedding
   const updateTextInput = (index: number, value: string) => {
-    const newInputs = [...textInputs]
     // Allow all characters from the characterMap: A-Z, 0-9, space, ?, _, !, @, #, $, &, %, +, -, (, ), [, ], *, =, ', ", ., <, >
     const allowedChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ?_!@#$&%+-()[]*=\'"\\.><'.split('')
-    newInputs[index] = value.toUpperCase()
+    const filteredValue = value.toUpperCase()
       .split('')
       .filter(char => allowedChars.includes(char))
       .join('')
       .slice(0, 11)
 
-    setTextInputs(newInputs)
+    // Compute next text inputs manually
+    const nextTextInputs = [...textInputs]
+    nextTextInputs[index] = filteredValue
 
-    // Debounced live update to prevent lag from rapid typing
-    if (liveUpdateTimerRef.current) {
-      clearTimeout(liveUpdateTimerRef.current)
-    }
-
-    liveUpdateTimerRef.current = setTimeout(() => {
-      addTextToDoormat(newInputs)
-      liveUpdateTimerRef.current = null
-    }, 200) // Increased delay to reduce lag
+    // Update state and immediately update canvas with computed value
+    setTextInputs(nextTextInputs)
+    updateTextLive(nextTextInputs)
   }
 
   // Add text to doormat
@@ -2276,8 +2449,10 @@ export default function GeneratorPage() {
 
   // Clear text
   const clearText = () => {
-    setTextInputs([''])
+    const clearedTextInputs = ['']
+    setTextInputs(clearedTextInputs)
     setCurrentRowCount(1)
+    updateTextLive(clearedTextInputs)
     
     if (typeof window !== 'undefined' && (window as any).doormatData) {
       (window as any).doormatData.doormatTextRows = []
@@ -2454,7 +2629,7 @@ export default function GeneratorPage() {
                                                  <div 
                            ref={canvasContainerRef}
                            id="canvas-container"
-                           className="rounded-lg relative mx-auto"
+                           className="rug-canvas-container rounded-lg relative mx-auto"
                           style={{ 
                             width: '100%',     // Responsive width
                             height: '0',       // Height will be set by padding-bottom
@@ -2462,7 +2637,8 @@ export default function GeneratorPage() {
                             maxWidth: '100%',  // Responsive constraint
                             overflow: 'hidden', // Prevent canvas overflow
                             position: 'relative', // Ensure proper positioning context for loading overlay
-                            zIndex: 2 // Above scan lines
+                            zIndex: 2, // Above scan lines
+                            transformStyle: 'preserve-3d'
                           }}
                         >
                         {!isLoaded && (
@@ -2487,9 +2663,11 @@ export default function GeneratorPage() {
                             max-width: 100% !important;
                             max-height: 100% !important;
                             object-fit: fill !important;
-                            position: absolute !important;
-                            top: 0 !important;
-                            left: 0 !important;
+                            position: relative !important;
+                          }
+
+                          .rug-canvas-container {
+                            /* No CSS transforms - flipping handled by canvas re-rendering */
                           }
                         `}</style>
                       </div>
@@ -2614,6 +2792,7 @@ export default function GeneratorPage() {
 
                 {/* Primary Actions - Top Priority */}
                 <div className="grid grid-cols-1 gap-3">
+                  <div className="grid grid-cols-2 gap-3">
                   <button
                     onClick={generateNew}
                     disabled={!isLoaded}
@@ -2622,6 +2801,7 @@ export default function GeneratorPage() {
                     <Shuffle className="w-4 h-4" />
                     GENERATE
                   </button>
+                  </div>
                 </div>
 
                 {/* Contract Address Display */}
