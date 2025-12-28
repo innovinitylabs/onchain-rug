@@ -391,6 +391,7 @@ export default function GeneratorPage() {
             // Initialize animation globals
             ;(window as any).__FLIP_PROGRESS__ = defaultFlipped ? 1 : 0
             ;(window as any).__FLIP_TARGET__ = defaultFlipped ? 1 : 0
+            ;(window as any).__FLIP_ANIMATING__ = false
 
             console.log('🎨 P5.js canvas created with original dimensions')
             console.log('🔄 Default flip state:', defaultFlipped)
@@ -459,11 +460,6 @@ export default function GeneratorPage() {
             const isFlipped = (window as any).__RUG_FLIPPED__ || false
 
             if (doormatData) {
-              // Animated interpolation for smooth flipping
-              const speed = 0.08
-              ;(window as any).__FLIP_PROGRESS__ +=
-                ((window as any).__FLIP_TARGET__ - (window as any).__FLIP_PROGRESS__) * speed
-
               const flip = (window as any).__FLIP_PROGRESS__
 
               // EARLY RETURN for normal front side render
@@ -514,13 +510,6 @@ export default function GeneratorPage() {
                 p.noStroke()
                 p.rect(curlX - i, lift, 2, p.height)
               }
-            }
-
-            // Stop looping once animation completes
-            if (Math.abs((window as any).__FLIP_PROGRESS__ - (window as any).__FLIP_TARGET__) < 0.001) {
-              ;(window as any).__FLIP_PROGRESS__ = (window as any).__FLIP_TARGET__
-              ;(window as any).__RUG_FLIPPED__ = (window as any).__FLIP_TARGET__ === 1
-              p.noLoop()
             }
           }
 
@@ -2281,15 +2270,38 @@ export default function GeneratorPage() {
     console.log('🏷️ Comprehensive traits calculated:', traits)
   }
 
+  // Animate flip using requestAnimationFrame
+  const animateFlip = () => {
+    const speed = 0.08
+
+    const current = (window as any).__FLIP_PROGRESS__
+    const target = (window as any).__FLIP_TARGET__
+
+    const next = current + (target - current) * speed
+    ;(window as any).__FLIP_PROGRESS__ = Math.abs(next - target) < 0.001 ? target : next
+
+    if ((window as any).p5Instance) {
+      ;(window as any).p5Instance.redraw()
+    }
+
+    if ((window as any).__FLIP_PROGRESS__ !== target) {
+      requestAnimationFrame(animateFlip)
+    } else {
+      ;(window as any).__RUG_FLIPPED__ = target === 1
+      ;(window as any).__FLIP_ANIMATING__ = false
+    }
+  }
+
   // Update flip state - authoritative handler for flip toggling
   const updateFlipState = (newIsFlipped: boolean) => {
-    // Start animated flip instead of direct toggle
-    ;(window as any).__FLIP_TARGET__ = newIsFlipped ? 1 : 0
+    // Prevent multiple animation triggers
+    if ((window as any).__FLIP_ANIMATING__) return
 
-    // Start animation loop
-    if (typeof window !== 'undefined' && (window as any).p5Instance) {
-      (window as any).p5Instance.loop()
-    }
+    // Start animated flip
+    ;(window as any).__FLIP_TARGET__ = newIsFlipped ? 1 : 0
+    ;(window as any).__FLIP_ANIMATING__ = true
+
+    requestAnimationFrame(animateFlip)
   }
 
   // Generate new doormat
