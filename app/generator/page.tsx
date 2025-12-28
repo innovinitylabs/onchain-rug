@@ -2279,7 +2279,10 @@ export default function GeneratorPage() {
     if (typeof window !== 'undefined' && (window as any).p5Instance) {
       console.log('🎨 Generating new doormat with seed:', seed)
       generateDoormatCore(seed, (window as any).doormatData)
-      
+
+      // Reapply existing text to the new rug
+      updateTextLive(textInputs)
+
       // Update UI
       setTimeout(() => {
         updatePaletteDisplay()
