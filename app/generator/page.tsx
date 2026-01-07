@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { Shuffle, Download, FileText, Plus, X, Copy } from 'lucide-react'
 import Navigation from '@/components/Navigation'
@@ -2450,12 +2450,9 @@ export default function GeneratorPage() {
     }
   }
 
-  // Get aging days for texture level based on selected frame
-  const getAgingDays = (level: number, frameLevel: number = selectedFrameLevel) => {
-    // Base aging rate: 14 days per level
+  // Memoized aging days calculations for performance
+  const agingDaysData = useMemo(() => {
     const baseRate = 14
-
-    // Get frame multiplier (same as smart contract)
     const getAgingMultiplier = (frame: number) => {
       if (frame >= 4) return 10 // Diamond: 90% slower (10x longer)
       if (frame >= 3) return 20 // Gold: 80% slower (5x longer)
@@ -2464,11 +2461,21 @@ export default function GeneratorPage() {
       return 100 // None: normal speed
     }
 
-    const multiplier = getAgingMultiplier(frameLevel)
-    // adjustedInterval = (baseRate * 100) / multiplier
+    const multiplier = getAgingMultiplier(selectedFrameLevel)
     const adjustedRate = (baseRate * 100) / multiplier
 
-    return level * adjustedRate
+    // Pre-calculate all levels for performance
+    const days: number[] = []
+    for (let i = 0; i <= 10; i++) {
+      days[i] = i * adjustedRate
+    }
+
+    return days
+  }, [selectedFrameLevel])
+
+  // Get aging days for texture level (now instant lookup)
+  const getAgingDays = (level: number) => {
+    return agingDaysData[level] || 0
   }
 
   // Get frame name for display
