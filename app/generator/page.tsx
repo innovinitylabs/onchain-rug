@@ -2704,8 +2704,8 @@ export default function GeneratorPage() {
                             align-items: center;
                             gap: 32px;
                             margin-top: 12px;
-                            background: #0e120f;
-                            border: 1px solid #2c3a30;
+                            background: #2a1810;
+                            border: 2px solid #8b4513;
                             padding: 8px 12px;
                             position: relative;
                             font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -2723,16 +2723,16 @@ export default function GeneratorPage() {
                               0deg,
                               transparent,
                               transparent 1px,
-                              rgba(159, 211, 161, 0.03) 1px,
-                              rgba(159, 211, 161, 0.03) 2px
+                              rgba(139, 69, 19, 0.08) 1px,
+                              rgba(139, 69, 19, 0.08) 2px
                             );
                             pointer-events: none;
                           }
 
                           .patina-console button {
-                            background: #141a16;
-                            border: 1px solid #2c3a30;
-                            color: #9fd3a1;
+                            background: #654321;
+                            border: 2px solid #8b4513;
+                            color: #f4e4bc;
                             font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
                             font-size: 12px;
                             font-weight: bold;
@@ -2740,21 +2740,22 @@ export default function GeneratorPage() {
                             letter-spacing: -0.025em;
                             cursor: pointer;
                             transition: all 0.1s ease;
-                            text-shadow: 0 0 1px rgba(159, 211, 161, 0.3);
+                            text-shadow: 0 0 2px rgba(244, 228, 188, 0.5);
                             min-width: 32px;
                             height: 32px;
                           }
 
                           .patina-console button:hover:not(:disabled) {
-                            border-color: #4b6f5a;
-                            text-shadow: 0 0 3px rgba(159, 211, 161, 0.6);
+                            background: #8b4513;
+                            border-color: #daa520;
+                            text-shadow: 0 0 4px rgba(244, 228, 188, 0.8);
                           }
 
                           .patina-console button:active:not(:disabled) {
-                            background: #0f1512;
-                            border-color: #1a2520;
+                            background: #5d2a0c;
+                            border-color: #654321;
                             transform: translate(1px, 1px);
-                            text-shadow: 0 0 1px rgba(159, 211, 161, 0.2);
+                            text-shadow: 0 0 1px rgba(244, 228, 188, 0.3);
                           }
 
                           .patina-console button:disabled {
@@ -2763,23 +2764,23 @@ export default function GeneratorPage() {
                           }
 
                           .patina-toggle-on {
-                            background: #0f1a14;
-                            border-color: #4b6f5a;
-                            color: #c9ffd6;
-                            text-shadow: 0 0 4px rgba(201, 255, 214, 0.4);
+                            background: #daa520;
+                            border-color: #daa520;
+                            color: #2a1810;
+                            text-shadow: 0 0 2px rgba(42, 24, 16, 0.8);
                           }
 
                           .patina-toggle-off {
-                            background: #0b0f0c;
-                            border-color: #2c3a30;
-                            color: #6fa987;
-                            text-shadow: 0 0 2px rgba(111, 169, 135, 0.2);
+                            background: #654321;
+                            border-color: #8b4513;
+                            color: #d2b48c;
+                            text-shadow: 0 0 1px rgba(210, 180, 140, 0.5);
                           }
 
                           .patina-value-display {
-                            background: #0b0f0c;
-                            border: 1px solid #3e5f4c;
-                            color: #c9ffd6;
+                            background: #3d2817;
+                            border: 2px solid #8b4513;
+                            color: #f4e4bc;
                             font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
                             font-size: 11px;
                             font-weight: bold;
@@ -2788,12 +2789,13 @@ export default function GeneratorPage() {
                             padding: 4px 8px;
                             min-width: 60px;
                             text-align: center;
-                            text-shadow: 0 0 4px rgba(159, 211, 161, 0.35);
+                            text-shadow: 0 0 3px rgba(244, 228, 188, 0.6);
                           }
 
                           .patina-value-display.dirty {
-                            color: #b36b5e;
-                            text-shadow: 0 0 4px rgba(179, 107, 94, 0.35);
+                            background: #4a1c0a;
+                            color: #cd853f;
+                            text-shadow: 0 0 3px rgba(205, 133, 63, 0.6);
                           }
                           }
                         `}</style>
