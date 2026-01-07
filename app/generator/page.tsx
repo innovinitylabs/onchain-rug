@@ -2726,11 +2726,12 @@ export default function GeneratorPage() {
                           .seven-segment-display {
                             display: inline-flex;
                             gap: 3px;
-                            padding: 6px 8px;
+                            padding: 8px 10px;
                             background: #0a0a0a;
                             border: 2px solid #333;
                             border-radius: 4px;
                             box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.9), 0 0 4px rgba(239, 68, 68, 0.1);
+                            min-height: 32px;
                           }
 
                           .seven-segment-digit {
@@ -2742,24 +2743,26 @@ export default function GeneratorPage() {
 
                           .segment {
                             position: absolute;
-                            background: rgba(239, 68, 68, 0.2);
-                            box-shadow: 0 0 2px rgba(239, 68, 68, 0.3);
-                            border-radius: 1px;
+                            background: rgba(239, 68, 68, 0.3);
+                            box-shadow: 0 0 3px rgba(239, 68, 68, 0.5);
+                            border-radius: 2px;
+                            opacity: 0.7;
                           }
 
                           .segment.active {
                             background: #ef4444;
-                            box-shadow: 0 0 4px #ef4444, 0 0 8px rgba(239, 68, 68, 0.6);
+                            box-shadow: 0 0 6px #ef4444, 0 0 12px rgba(239, 68, 68, 0.8), 0 0 18px rgba(239, 68, 68, 0.4);
+                            opacity: 1;
                           }
 
-                          /* Segment positions */
-                          .segment.a { top: 0; left: 2px; width: 12px; height: 3px; }
-                          .segment.b { top: 3px; right: 0; width: 3px; height: 9px; }
-                          .segment.c { bottom: 3px; right: 0; width: 3px; height: 9px; }
-                          .segment.d { bottom: 0; left: 2px; width: 12px; height: 3px; }
-                          .segment.e { bottom: 3px; left: 0; width: 3px; height: 9px; }
-                          .segment.f { top: 3px; left: 0; width: 3px; height: 9px; }
-                          .segment.g { top: 12px; left: 2px; width: 12px; height: 3px; }
+                          /* Segment positions - made thicker for visibility */
+                          .segment.a { top: 0; left: 2px; width: 12px; height: 4px; }
+                          .segment.b { top: 3px; right: 0; width: 4px; height: 9px; }
+                          .segment.c { bottom: 3px; right: 0; width: 4px; height: 9px; }
+                          .segment.d { bottom: 0; left: 2px; width: 12px; height: 4px; }
+                          .segment.e { bottom: 3px; left: 0; width: 4px; height: 9px; }
+                          .segment.f { top: 3px; left: 0; width: 4px; height: 9px; }
+                          .segment.g { top: 11px; left: 2px; width: 12px; height: 4px; }
                         `}</style>
                       </div>
                 </div>
