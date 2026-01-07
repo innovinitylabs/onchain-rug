@@ -2783,11 +2783,7 @@ export default function GeneratorPage() {
                                       </div>
                                     </button>
                                     <div className="flex-1 text-center min-w-[80px]">
-                                      <div className={`px-3 py-2 rounded font-mono text-sm border-2 ${
-                                        dirtLevel === 0 ? 'bg-green-600 text-white border-green-400 shadow-lg shadow-green-500/30' :
-                                        dirtLevel === 1 ? 'bg-yellow-600 text-white border-yellow-400 shadow-lg shadow-yellow-500/30' :
-                                        'bg-red-600 text-white border-red-400 shadow-lg shadow-red-500/30'
-                                      }`}>
+                                      <div className="px-3 py-2 rounded font-mono text-sm border-2 border-amber-600 text-amber-800 bg-transparent">
                                         {dirtLevel === 0 ? 'CLEAN' : dirtLevel === 1 ? 'DUSTY' : 'FILTHY'}
                                       </div>
                                     </div>
@@ -2827,7 +2823,7 @@ export default function GeneratorPage() {
                                       </div>
                                     </button>
                                     <div className="flex-1 text-center min-w-[80px]">
-                                      <div className="px-3 py-2 rounded font-mono text-sm border-2 bg-gradient-to-r from-green-600 to-red-600 text-white border-gray-400">
+                                      <div className="px-3 py-2 rounded font-mono text-sm border-2 border-amber-600 text-amber-800 bg-transparent">
                                         {textureLevel}
                                       </div>
                                     </div>
