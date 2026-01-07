@@ -2720,7 +2720,7 @@ export default function GeneratorPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="w-full pb-8"
+            className="w-full pb-8 pt-2"
           >
             <div className="relative w-full px-2 md:px-3 lg:px-4">
               <div className="bg-black text-green-400 font-mono border-t-2 border-green-500 py-3 md:py-4 px-4 md:px-6">
