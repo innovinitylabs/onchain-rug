@@ -2610,6 +2610,23 @@ export default function GeneratorPage() {
     }
   }, [textInputs, focusNewRow])
 
+  // 7-segment display segment patterns for digits 0-9
+  const getSegmentActive = (segment: string, digit: string) => {
+    const patterns = {
+      '0': ['a', 'b', 'c', 'd', 'e', 'f'],
+      '1': ['b', 'c'],
+      '2': ['a', 'b', 'd', 'e', 'g'],
+      '3': ['a', 'b', 'c', 'd', 'g'],
+      '4': ['b', 'c', 'f', 'g'],
+      '5': ['a', 'c', 'd', 'f', 'g'],
+      '6': ['a', 'c', 'd', 'e', 'f', 'g'],
+      '7': ['a', 'b', 'c'],
+      '8': ['a', 'b', 'c', 'd', 'e', 'f', 'g'],
+      '9': ['a', 'b', 'c', 'd', 'f', 'g']
+    }
+    return patterns[digit as keyof typeof patterns]?.includes(segment) || false
+  }
+
   return (
     <>
       <Head>
@@ -2705,6 +2722,44 @@ export default function GeneratorPage() {
                             gap: 32px;
                             margin-top: 12px;
                           }
+
+                          .seven-segment-display {
+                            display: inline-flex;
+                            gap: 3px;
+                            padding: 6px 8px;
+                            background: #0a0a0a;
+                            border: 2px solid #333;
+                            border-radius: 4px;
+                            box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.9), 0 0 4px rgba(239, 68, 68, 0.1);
+                          }
+
+                          .seven-segment-digit {
+                            position: relative;
+                            width: 16px;
+                            height: 24px;
+                            margin: 0 1px;
+                          }
+
+                          .segment {
+                            position: absolute;
+                            background: rgba(239, 68, 68, 0.2);
+                            box-shadow: 0 0 2px rgba(239, 68, 68, 0.3);
+                            border-radius: 1px;
+                          }
+
+                          .segment.active {
+                            background: #ef4444;
+                            box-shadow: 0 0 4px #ef4444, 0 0 8px rgba(239, 68, 68, 0.6);
+                          }
+
+                          /* Segment positions */
+                          .segment.a { top: 0; left: 2px; width: 12px; height: 3px; }
+                          .segment.b { top: 3px; right: 0; width: 3px; height: 9px; }
+                          .segment.c { bottom: 3px; right: 0; width: 3px; height: 9px; }
+                          .segment.d { bottom: 0; left: 2px; width: 12px; height: 3px; }
+                          .segment.e { bottom: 3px; left: 0; width: 3px; height: 9px; }
+                          .segment.f { top: 3px; left: 0; width: 3px; height: 9px; }
+                          .segment.g { top: 12px; left: 2px; width: 12px; height: 3px; }
                         `}</style>
                       </div>
                 </div>
@@ -2831,11 +2886,18 @@ export default function GeneratorPage() {
                                       </div>
                                     </button>
                                     <div className="flex-1 text-center min-w-[80px]">
-                                      <div className="px-3 py-2 rounded font-mono text-lg font-bold bg-gray-900 border border-gray-700 text-red-500" style={{
-                                        textShadow: '0 0 6px rgba(239, 68, 68, 0.8), 0 0 12px rgba(239, 68, 68, 0.4)',
-                                        boxShadow: 'inset 0 0 4px rgba(0, 0, 0, 0.8), 0 0 8px rgba(239, 68, 68, 0.2)'
-                                      }}>
-                                        {textureLevel}
+                                      <div className="seven-segment-display">
+                                        {textureLevel.toString().padStart(2, '0').split('').map((digit, index) => (
+                                          <div key={index} className="seven-segment-digit">
+                                            <div className={`segment a ${getSegmentActive('a', digit) ? 'active' : ''}`}></div>
+                                            <div className={`segment b ${getSegmentActive('b', digit) ? 'active' : ''}`}></div>
+                                            <div className={`segment c ${getSegmentActive('c', digit) ? 'active' : ''}`}></div>
+                                            <div className={`segment d ${getSegmentActive('d', digit) ? 'active' : ''}`}></div>
+                                            <div className={`segment e ${getSegmentActive('e', digit) ? 'active' : ''}`}></div>
+                                            <div className={`segment f ${getSegmentActive('f', digit) ? 'active' : ''}`}></div>
+                                            <div className={`segment g ${getSegmentActive('g', digit) ? 'active' : ''}`}></div>
+                                          </div>
+                                        ))}
                                       </div>
                                     </div>
                                     <button
