@@ -2549,6 +2549,20 @@ export default function GeneratorPage() {
     }
   }, [isLoaded]) // Only run when isLoaded changes to true
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyPress = (event: KeyboardEvent) => {
+      // Spacebar to randomise (only when loaded and not typing in inputs)
+      if (event.code === 'Space' && isLoaded && !['INPUT', 'TEXTAREA'].includes((event.target as HTMLElement)?.tagName)) {
+        event.preventDefault()
+        generateNew()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyPress)
+    return () => document.removeEventListener('keydown', handleKeyPress)
+  }, [isLoaded, generateNew])
+
   return (
     <>
       <Head>
@@ -2758,16 +2772,15 @@ export default function GeneratorPage() {
 
                 {/* Primary Actions - Top Priority */}
                 <div className="grid grid-cols-1 gap-3">
-                  <div className="grid grid-cols-2 gap-3">
                   <button
                     onClick={generateNew}
                     disabled={!isLoaded}
-                    className="bg-green-600 hover:bg-green-700 disabled:bg-gray-700 text-black font-bold px-4 py-2.5 rounded font-mono transition-all duration-200 border border-green-400 flex items-center justify-center gap-2 text-sm"
+                    className="bg-green-600 hover:bg-green-700 disabled:bg-gray-700 text-black font-bold px-6 py-3 rounded font-mono transition-all duration-200 border border-green-400 flex items-center justify-center gap-2 text-sm w-full"
+                    title="Press SPACEBAR to randomise"
                   >
                     <Shuffle className="w-4 h-4" />
-                    GENERATE
+                    RANDOMISE
                   </button>
-                  </div>
                 </div>
 
                 {/* Contract Address Display */}
