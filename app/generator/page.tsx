@@ -2769,9 +2769,9 @@ export default function GeneratorPage() {
                       className="relative"
                     >
 
-                      {/* Collapsible Content */}
+                      {/* Collapsible Content - Always visible on mobile */}
                       <AnimatePresence>
-                        {(patinaOpen || patinaLocked) && (
+                        {(patinaOpen || patinaLocked || (typeof window !== 'undefined' && window.innerWidth < 768)) && (
                           <motion.div
                             layout
                             initial={{ opacity: 0, height: 0 }}
