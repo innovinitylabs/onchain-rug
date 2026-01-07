@@ -2842,7 +2842,19 @@ export default function GeneratorPage() {
                             ref={(el) => { textInputRefs.current[index] = el }}
                             type="text"
                             value={text}
-                            onChange={(e) => updateTextInput(index, e.target.value)}
+                            onChange={(e) => {
+                              // Preserve cursor position by deferring the update
+                              const input = e.target
+                              const cursorPosition = input.selectionStart
+                              updateTextInput(index, e.target.value)
+
+                              // Restore cursor position after state update
+                              setTimeout(() => {
+                                if (textInputRefs.current[index]) {
+                                  textInputRefs.current[index]?.setSelectionRange(cursorPosition, cursorPosition)
+                                }
+                              }, 0)
+                            }}
                             onKeyDown={(e) => {
                               if (e.key === 'Tab' && currentRowCount < 5) {
                                 e.preventDefault()
