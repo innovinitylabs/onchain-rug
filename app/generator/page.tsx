@@ -2783,27 +2783,6 @@ export default function GeneratorPage() {
                   </button>
                 </div>
 
-                {/* Contract Address Display */}
-                <div className="space-y-2">
-                  <h4 className="text-green-300 text-sm font-mono font-medium">CONTRACT ADDRESS</h4>
-                  <div className="bg-gray-900/50 p-3 rounded">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="text-green-400 text-xs font-mono break-all flex-1">
-                        {contractAddress || 'Not deployed on this network'}
-                      </div>
-                      {contractAddress && (
-                      <Copy
-                          onClick={() => copyToClipboard(contractAddress, 'contract address')}
-                        className="text-green-500 hover:text-green-300 cursor-pointer transition-colors w-4 h-4"
-                      />
-                      )}
-                    </div>
-                    <div className="text-green-500 text-xs font-mono mt-1">
-                      Network: {getChainDisplayName(chainId)}
-                    </div>
-                  </div>
-                </div>
-
                 {/* Stacked Layout: Text Embedding (Top) | Systems (Bottom) */}
                 <div className="grid grid-cols-1 gap-6">
                   {/* Left Panel - Text Embedding */}
@@ -3205,6 +3184,27 @@ export default function GeneratorPage() {
 
                 {/* Mint Button Section */}
                 <div className="border-t border-green-500/30 pt-3 mt-4">
+                  {/* Contract Address Display - Moved here for proximity to mint button */}
+                  <div className="space-y-2 mb-4">
+                    <h4 className="text-green-300 text-sm font-mono font-medium">CONTRACT ADDRESS</h4>
+                    <div className="bg-gray-900/50 p-3 rounded">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="text-green-400 text-xs font-mono break-all flex-1">
+                          {contractAddress || 'Not deployed on this network'}
+                        </div>
+                        {contractAddress && (
+                        <Copy
+                            onClick={() => copyToClipboard(contractAddress, 'contract address')}
+                          className="text-green-500 hover:text-green-300 cursor-pointer transition-colors w-4 h-4"
+                        />
+                        )}
+                      </div>
+                      <div className="text-green-500 text-xs font-mono mt-1">
+                        Network: {getChainDisplayName(chainId)}
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="text-green-300 text-sm mb-3 font-mono">🚀 Mint Your Onchain Rug</div>
 
                   {/* Minting Status */}
