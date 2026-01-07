@@ -62,7 +62,7 @@ export default function AdminPage() {
         </motion.div>
 
         {/* Admin Sections */}
-        <div className="grid gap-8 max-w-6xl mx-auto">
+        <div className="grid gap-8 max-w-[3200px] mx-auto">
           {/* Collection Management */}
           <AdminSection
             icon={<Shield className="w-6 h-6" />}

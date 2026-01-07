@@ -2620,7 +2620,7 @@ export default function GeneratorPage() {
       <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100 flex flex-col">
         <Navigation />
       <main className="flex-grow pt-28">
-        <div className="max-w-[2800px] mx-auto px-4">
+        <div className="max-w-[3200px] mx-auto px-4">
       {/* Header */}
 
         {/* New Side-by-Side Layout - Art Preview (70%) on Left, Controls (30%) on Right */}

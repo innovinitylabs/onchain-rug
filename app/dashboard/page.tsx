@@ -1079,7 +1079,7 @@ export default function DashboardPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
         <Navigation />
-        <div className="pt-20 pb-12 px-4 max-w-6xl mx-auto">
+        <div className="pt-20 pb-12 px-4 max-w-[3200px] mx-auto">
           <div className="text-center py-12">
             <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
             <h1 className="text-2xl font-bold text-white mb-2">Unsupported Network</h1>
@@ -1160,7 +1160,7 @@ export default function DashboardPage() {
         <Navigation />
 
       <main className="flex-grow">
-        <div className="max-w-6xl mx-auto px-4 py-20 pt-28">
+        <div className="max-w-[3200px] mx-auto px-4 py-20 pt-28">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -1329,7 +1329,7 @@ export default function DashboardPage() {
               </a>
             </motion.div>
           ) : (
-            <div className="max-w-6xl mx-auto" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+            <div className="max-w-[3200px] mx-auto" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
               <div className="grid grid-cols-1 gap-6 justify-items-center">
                 {userRugs.map((rug) => {
                   const dirtLevel = rug.aging.dirtLevel || 0

@@ -18,7 +18,7 @@ export default function GlassDemoPage() {
       </div>
 
       {/* Main Demo Section */}
-      <div className="max-w-7xl mx-auto space-y-16">
+      <div className="max-w-[3200px] mx-auto space-y-16">
 
         {/* Interactive Demo */}
         <section className="text-center">
