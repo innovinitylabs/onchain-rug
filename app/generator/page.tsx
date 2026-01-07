@@ -2871,7 +2871,11 @@ export default function GeneratorPage() {
                                     className="px-5 py-4 rounded font-mono text-lg transition-all duration-200 border-2 bg-amber-200 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
                                     title={(showDirt || showTexture) ? 'Disable all overlays' : 'Enable overlays'}
                                   >
-                                    <span className={(showDirt || showTexture) ? 'text-red-600' : 'text-black'}>
+                                    <span className={`text-2xl ${(showDirt || showTexture) ? 'text-red-600' : 'text-black'}`} style={{
+                                      textShadow: (showDirt || showTexture)
+                                        ? '0 0 8px rgba(220, 38, 38, 0.6), 0 0 16px rgba(220, 38, 38, 0.4), 0 0 24px rgba(220, 38, 38, 0.2)'
+                                        : 'none'
+                                    }}>
                                       ⏻
                                     </span>
                                   </button>
