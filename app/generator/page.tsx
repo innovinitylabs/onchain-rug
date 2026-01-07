@@ -2863,55 +2863,52 @@ export default function GeneratorPage() {
                         Dynamic dirt accumulation: 50% after 3 days, 100% after 7 days. Clean with onchain transaction.
                       </div>
 
-                      {/* Creative Dirt Meter */}
-                      <div className="space-y-2">
+                      {/* Dirt Accumulation Meter */}
+                      <div className="space-y-3">
                         <div className="text-xs text-green-400 font-mono">Dirt Accumulation Level:</div>
-                        <div className="flex gap-1">
+                        <div className="grid grid-cols-1 gap-2">
                           {/* Clean Level */}
                           <button
                             onClick={() => updateDirtState(false, 0)}
-                            className={`flex-1 px-2 py-2 rounded font-mono text-xs transition-all duration-200 border ${
+                            className={`w-full px-4 py-3 rounded font-mono text-sm transition-all duration-200 border-2 ${
                               !showDirt
-                                ? 'bg-green-600 text-white border-green-400 shadow-lg shadow-green-500/20'
-                                : 'bg-gray-800 text-gray-400 border-gray-600 hover:bg-gray-700'
+                                ? 'bg-green-600 text-white border-green-400 shadow-lg shadow-green-500/30'
+                                : 'bg-gray-800 text-gray-400 border-gray-600 hover:bg-gray-700 hover:border-gray-500'
                             }`}
                             title="Clean as new"
                           >
-                            <div className="text-center">
-                              <div className="text-sm">🧼</div>
-                              <div className="text-xs mt-1">Clean</div>
+                            <div className="text-center font-bold">
+                              ✨ CLEAN
                             </div>
                           </button>
 
                           {/* 50% Dirty Level */}
                           <button
                             onClick={() => updateDirtState(true, 1)}
-                            className={`flex-1 px-2 py-2 rounded font-mono text-xs transition-all duration-200 border ${
+                            className={`w-full px-4 py-3 rounded font-mono text-sm transition-all duration-200 border-2 ${
                               showDirt && dirtLevel === 1
-                                ? 'bg-yellow-600 text-white border-yellow-400 shadow-lg shadow-yellow-500/20'
-                                : 'bg-gray-800 text-gray-400 border-gray-600 hover:bg-gray-700'
+                                ? 'bg-yellow-600 text-white border-yellow-400 shadow-lg shadow-yellow-500/30'
+                                : 'bg-gray-800 text-gray-400 border-gray-600 hover:bg-gray-700 hover:border-gray-500'
                             }`}
                             title="3 days of wear"
                           >
-                            <div className="text-center">
-                              <div className="text-sm">🟡</div>
-                              <div className="text-xs mt-1">50%</div>
+                            <div className="text-center font-bold">
+                              ⚠️ 50% DUSTY
                             </div>
                           </button>
 
                           {/* 100% Dirty Level */}
                           <button
                             onClick={() => updateDirtState(true, 2)}
-                            className={`flex-1 px-2 py-2 rounded font-mono text-xs transition-all duration-200 border ${
+                            className={`w-full px-4 py-3 rounded font-mono text-sm transition-all duration-200 border-2 ${
                               showDirt && dirtLevel === 2
-                                ? 'bg-red-600 text-white border-red-400 shadow-lg shadow-red-500/20'
-                                : 'bg-gray-800 text-gray-400 border-gray-600 hover:bg-gray-700'
+                                ? 'bg-red-600 text-white border-red-400 shadow-lg shadow-red-500/30'
+                                : 'bg-gray-800 text-gray-400 border-gray-600 hover:bg-gray-700 hover:border-gray-500'
                             }`}
                             title="7 days of neglect"
                           >
-                            <div className="text-center">
-                              <div className="text-sm">🔴</div>
-                              <div className="text-xs mt-1">100%</div>
+                            <div className="text-center font-bold">
+                              🚨 100% FILTHY
                             </div>
                           </button>
                         </div>
