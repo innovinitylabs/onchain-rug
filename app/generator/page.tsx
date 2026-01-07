@@ -60,8 +60,10 @@ export default function GeneratorPage() {
   const [stripeData, setStripeData] = useState<any[]>([])
   const [showDirt, setShowDirt] = useState(false)
   const [dirtLevel, setDirtLevel] = useState(0) // 0 = clean, 1 = 50% dirty, 2 = full dirty
+  const [lastDirtLevel, setLastDirtLevel] = useState(1) // Remember last non-zero dirt level
   const [showTexture, setShowTexture] = useState(false)
   const [textureLevel, setTextureLevel] = useState(0) // 0 = none, 1 = 7 days, 2 = 30 days
+  const [lastTextureLevel, setLastTextureLevel] = useState(1) // Remember last non-zero texture level
   const [patinaOpen, setPatinaOpen] = useState(false)
   const [patinaLocked, setPatinaLocked] = useState(false)
   const [focusNewRow, setFocusNewRow] = useState(false)
@@ -2268,6 +2270,10 @@ export default function GeneratorPage() {
   const updateDirtState = (newShowDirt: boolean, newDirtLevel: number) => {
     setShowDirt(newShowDirt)
     setDirtLevel(newDirtLevel)
+    // Remember last non-zero dirt level
+    if (newDirtLevel > 0) {
+      setLastDirtLevel(newDirtLevel)
+    }
     
     // Store globally for P5.js access
     if (typeof window !== 'undefined') {
@@ -2285,6 +2291,10 @@ export default function GeneratorPage() {
   const updateTextureState = (newShowTexture: boolean, newTextureLevel: number) => {
     setShowTexture(newShowTexture)
     setTextureLevel(newTextureLevel)
+    // Remember last non-zero texture level
+    if (newTextureLevel > 0) {
+      setLastTextureLevel(newTextureLevel)
+    }
     
     // Store globally for P5.js access
     if (typeof window !== 'undefined') {
@@ -2728,13 +2738,13 @@ export default function GeneratorPage() {
                             onClick={() => {
                               const overlaysEnabled = showDirt || showTexture
                               if (overlaysEnabled) {
-                                // Disable all overlays
-                                updateDirtState(false, 0)
-                                updateTextureState(false, 0)
+                                // Disable all overlays but keep current levels
+                                updateDirtState(false, dirtLevel)
+                                updateTextureState(false, textureLevel)
                               } else {
-                                // Enable overlays with at least minimal levels
-                                updateDirtState(true, Math.max(1, dirtLevel))
-                                updateTextureState(true, Math.max(1, textureLevel))
+                                // Enable overlays with last remembered levels
+                                updateDirtState(true, lastDirtLevel)
+                                updateTextureState(true, lastTextureLevel)
                               }
                               setPatinaLocked(true)
                             }}
