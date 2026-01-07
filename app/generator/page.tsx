@@ -2758,7 +2758,11 @@ export default function GeneratorPage() {
                   {/* Relocated Patina Controls */}
                   <div
                     className="patina-console"
-                    style={{ padding: '12px 32px' }}
+                    style={{
+                      padding: typeof window !== 'undefined' && window.innerWidth < 768
+                        ? '8px 16px'
+                        : '12px 32px'
+                    }}
                     onMouseEnter={() => !patinaLocked && setPatinaOpen(true)}
                     onMouseLeave={() => !patinaLocked && setPatinaOpen(false)}
                   >
@@ -2787,7 +2791,7 @@ export default function GeneratorPage() {
                           >
                             <div className="pt-4">
                               {/* CRT Control Strip Layout */}
-                              <div className="flex items-end justify-end gap-12">
+                              <div className="flex items-end justify-end gap-6 md:gap-12">
                                 {/* Dirt Controls */}
                                 <div className="flex flex-col items-center gap-2">
                                   <div className="flex items-center gap-2 w-full">
@@ -2802,7 +2806,7 @@ export default function GeneratorPage() {
                                         updateDirtState(newLevel > 0, newLevel)
                                         setPatinaLocked(true)
                                       }}
-                                      className="px-3 py-2 rounded font-mono text-sm transition-all duration-200 border-2 bg-amber-200 text-gray-700 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
+                                      className="px-2 py-1 md:px-3 md:py-2 rounded font-mono text-xs md:text-sm transition-all duration-200 border-2 bg-amber-200 text-gray-700 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
                                       title="Decrease dirt level"
                                       disabled={dirtLevel === 0}
                                     >
@@ -2829,7 +2833,7 @@ export default function GeneratorPage() {
                                         updateDirtState(true, newLevel)
                                         setPatinaLocked(true)
                                       }}
-                                      className="px-3 py-2 rounded font-mono text-sm transition-all duration-200 border-2 bg-amber-200 text-gray-700 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
+                                      className="px-2 py-1 md:px-3 md:py-2 rounded font-mono text-xs md:text-sm transition-all duration-200 border-2 bg-amber-200 text-gray-700 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
                                       title="Increase dirt level"
                                       disabled={dirtLevel === 2}
                                     >
@@ -2854,7 +2858,7 @@ export default function GeneratorPage() {
                                         updateTextureState(newLevel > 0, newLevel)
                                         setPatinaLocked(true)
                                       }}
-                                      className="px-3 py-2 rounded font-mono text-sm transition-all duration-200 border-2 bg-amber-200 text-gray-700 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
+                                      className="px-2 py-1 md:px-3 md:py-2 rounded font-mono text-xs md:text-sm transition-all duration-200 border-2 bg-amber-200 text-gray-700 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
                                       title="Decrease aging level"
                                       disabled={textureLevel === 0}
                                     >
@@ -2883,7 +2887,7 @@ export default function GeneratorPage() {
                                         updateTextureState(true, newLevel)
                                         setPatinaLocked(true)
                                       }}
-                                      className="px-3 py-2 rounded font-mono text-sm transition-all duration-200 border-2 bg-amber-200 text-gray-700 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
+                                      className="px-2 py-1 md:px-3 md:py-2 rounded font-mono text-xs md:text-sm transition-all duration-200 border-2 bg-amber-200 text-gray-700 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
                                       title="Increase aging level"
                                       disabled={textureLevel === 10}
                                     >
@@ -2910,10 +2914,10 @@ export default function GeneratorPage() {
                                       }
                                       setPatinaLocked(true)
                                     }}
-                                    className="px-6 py-5 rounded font-mono text-lg transition-all duration-200 border-2 bg-amber-200 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
+                                    className="px-4 py-3 md:px-6 md:py-5 rounded font-mono text-sm md:text-lg transition-all duration-200 border-2 bg-amber-200 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
                                     title={(showDirt || showTexture) ? 'Disable all overlays' : 'Enable overlays'}
                                   >
-                                    <span className={`text-2xl ${(showDirt || showTexture) ? 'text-red-600' : 'text-black'}`} style={{
+                                    <span className={`text-lg md:text-2xl ${(showDirt || showTexture) ? 'text-red-600' : 'text-black'}`} style={{
                                       textShadow: (showDirt || showTexture)
                                         ? '0 0 8px rgba(220, 38, 38, 0.6), 0 0 16px rgba(220, 38, 38, 0.4), 0 0 24px rgba(220, 38, 38, 0.2)'
                                         : 'none'
