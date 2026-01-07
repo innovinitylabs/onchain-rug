@@ -2647,7 +2647,7 @@ export default function GeneratorPage() {
       <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100 flex flex-col">
         <Navigation />
       <main className="flex-grow pt-28">
-        <div className="max-w-[3200px] mx-auto px-4">
+        <div className="max-w-full mx-auto px-2 md:px-4">
       {/* Header */}
 
         {/* New Side-by-Side Layout - Art Preview (70%) on Left, Controls (30%) on Right */}
@@ -2661,7 +2661,7 @@ export default function GeneratorPage() {
           >
             <div className="p-2">
                             {/* Old-School CRT Monitor Box */}
-              <div className="relative mx-auto w-full max-w-[2000px] px-4 md:px-6 lg:px-8">
+              <div className="relative mx-auto w-full max-w-full px-2 md:px-4 lg:px-6">
                 {/* Monitor Bezel - Yellowed Plastic */}
                 <div className="bg-amber-100 border-6 border-amber-200 rounded-t-2xl rounded-b-xl p-2 md:p-3 lg:p-4 shadow-2xl">
                   {/* Monitor Screen Area */}
@@ -2814,7 +2814,7 @@ export default function GeneratorPage() {
                                         -
                                       </div>
                                     </button>
-                                    <div className="flex-1 text-center min-w-[80px]">
+                                    <div className="flex-1 text-center min-w-[60px] md:min-w-[80px]">
                                       <div key={dirtLevel} className="seven-segment-display">
                                         <div className="seven-segment-digit">
                                           <div className={`segment a ${getSegmentActive('a', dirtLevel.toString()) ? 'active' : ''}`}></div>
@@ -2866,7 +2866,7 @@ export default function GeneratorPage() {
                                         -
                                       </div>
                                     </button>
-                                    <div className="flex-1 text-center min-w-[80px]">
+                                    <div className="flex-1 text-center min-w-[60px] md:min-w-[80px]">
                                       <div key={textureLevel} className="seven-segment-display">
                                         {textureLevel.toString().padStart(2, '0').split('').map((digit, index) => (
                                           <div key={index} className="seven-segment-digit">
