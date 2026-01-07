@@ -2805,8 +2805,16 @@ export default function GeneratorPage() {
                                       </div>
                                     </button>
                                     <div className="flex-1 text-center min-w-[80px]">
-                                      <div className="px-3 py-2 rounded font-mono text-sm text-amber-800 bg-transparent">
-                                        {dirtLevel === 0 ? 'CLEAN' : dirtLevel === 1 ? 'DUSTY' : 'FILTHY'}
+                                      <div key={dirtLevel} className="seven-segment-display">
+                                        <div className="seven-segment-digit">
+                                          <div className={`segment a ${getSegmentActive('a', dirtLevel.toString()) ? 'active' : ''}`}></div>
+                                          <div className={`segment b ${getSegmentActive('b', dirtLevel.toString()) ? 'active' : ''}`}></div>
+                                          <div className={`segment c ${getSegmentActive('c', dirtLevel.toString()) ? 'active' : ''}`}></div>
+                                          <div className={`segment d ${getSegmentActive('d', dirtLevel.toString()) ? 'active' : ''}`}></div>
+                                          <div className={`segment e ${getSegmentActive('e', dirtLevel.toString()) ? 'active' : ''}`}></div>
+                                          <div className={`segment f ${getSegmentActive('f', dirtLevel.toString()) ? 'active' : ''}`}></div>
+                                          <div className={`segment g ${getSegmentActive('g', dirtLevel.toString()) ? 'active' : ''}`}></div>
+                                        </div>
                                       </div>
                                     </div>
                                     <button
