@@ -557,3 +557,43 @@ nav a {
   -webkit-font-smoothing: antialiased !important;
   -moz-osx-font-smoothing: grayscale !important;
 }
+
+/* 7-Segment LCD Display Styles */
+.seven-segment-display {
+  display: inline-flex;
+  gap: 3px;
+  padding: 8px 10px;
+  background: #0a0a0a;
+  border: 2px solid #333;
+  border-radius: 4px;
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.9), 0 0 4px rgba(239, 68, 68, 0.1);
+}
+
+.seven-segment-digit {
+  position: relative;
+  width: 18px;
+  height: 28px;
+  margin: 0 2px;
+}
+
+.segment {
+  position: absolute;
+  background: #666666;
+  border: 1px solid #555555;
+  border-radius: 1px;
+}
+
+.segment.active {
+  background: #ff0000;
+  border-color: #ff4444;
+  box-shadow: 0 0 8px #ff0000, 0 0 16px rgba(255, 0, 0, 0.8);
+}
+
+                          /* Segment positions for 18x28 digit - split vertical segments */
+                          .segment.a { top: 0; left: 3px; width: 12px; height: 4px; }
+                          .segment.b { top: 4px; right: 0; width: 4px; height: 8px; }    /* Upper right */
+                          .segment.c { top: 16px; right: 0; width: 4px; height: 8px; }  /* Lower right */
+                          .segment.d { top: 24px; left: 3px; width: 12px; height: 4px; }
+                          .segment.e { top: 16px; left: 0; width: 4px; height: 8px; }   /* Lower left */
+                          .segment.f { top: 4px; left: 0; width: 4px; height: 8px; }    /* Upper left */
+                          .segment.g { top: 12px; left: 3px; width: 12px; height: 4px; }

@@ -2610,6 +2610,23 @@ export default function GeneratorPage() {
     }
   }, [textInputs, focusNewRow])
 
+  // 7-segment display segment patterns for digits 0-9
+  const getSegmentActive = (segment: string, digit: string) => {
+    const patterns = {
+      '0': ['a', 'b', 'c', 'd', 'e', 'f'],
+      '1': ['b', 'c'],
+      '2': ['a', 'b', 'd', 'e', 'g'],
+      '3': ['a', 'b', 'c', 'd', 'g'],
+      '4': ['b', 'c', 'f', 'g'],
+      '5': ['a', 'c', 'd', 'f', 'g'],
+      '6': ['a', 'c', 'd', 'e', 'f', 'g'],
+      '7': ['a', 'b', 'c'],
+      '8': ['a', 'b', 'c', 'd', 'e', 'f', 'g'],
+      '9': ['a', 'b', 'c', 'd', 'f', 'g']
+    }
+    return patterns[digit as keyof typeof patterns]?.includes(segment) || false
+  }
+
   return (
     <>
       <Head>
@@ -2705,6 +2722,7 @@ export default function GeneratorPage() {
                             gap: 32px;
                             margin-top: 12px;
                           }
+
                         `}</style>
                       </div>
                 </div>
@@ -2763,10 +2781,14 @@ export default function GeneratorPage() {
                           >
                             <div className="pt-4">
                               {/* CRT Control Strip Layout */}
-                              <div className="flex items-end justify-end gap-8">
+                              <div className="flex items-end justify-end gap-12">
                                 {/* Dirt Controls */}
                                 <div className="flex flex-col items-center gap-2">
-                                  <h5 className="text-green-400 text-xs font-mono font-medium">DIRT</h5>
+                                  <div className="flex items-center gap-2 w-full">
+                                    <div className="flex-1 h-px bg-black"></div>
+                                    <h5 className="text-black text-xs font-mono font-medium px-2">DIRT</h5>
+                                    <div className="flex-1 h-px bg-black"></div>
+                                  </div>
                                   <div className="flex items-center gap-2">
                                     <button
                                       onClick={() => {
@@ -2774,7 +2796,7 @@ export default function GeneratorPage() {
                                         updateDirtState(newLevel > 0, newLevel)
                                         setPatinaLocked(true)
                                       }}
-                                      className="px-3 py-2 rounded font-mono text-sm transition-all duration-200 border-2 bg-gray-800 text-gray-400 border-gray-600 hover:bg-gray-700 hover:border-gray-500"
+                                      className="px-3 py-2 rounded font-mono text-sm transition-all duration-200 border-2 bg-amber-200 text-gray-700 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
                                       title="Decrease dirt level"
                                       disabled={dirtLevel === 0}
                                     >
@@ -2783,12 +2805,16 @@ export default function GeneratorPage() {
                                       </div>
                                     </button>
                                     <div className="flex-1 text-center min-w-[80px]">
-                                      <div className={`px-3 py-2 rounded font-mono text-sm border-2 ${
-                                        dirtLevel === 0 ? 'bg-green-600 text-white border-green-400 shadow-lg shadow-green-500/30' :
-                                        dirtLevel === 1 ? 'bg-yellow-600 text-white border-yellow-400 shadow-lg shadow-yellow-500/30' :
-                                        'bg-red-600 text-white border-red-400 shadow-lg shadow-red-500/30'
-                                      }`}>
-                                        {dirtLevel === 0 ? 'CLEAN' : dirtLevel === 1 ? 'DUSTY' : 'FILTHY'}
+                                      <div key={dirtLevel} className="seven-segment-display">
+                                        <div className="seven-segment-digit">
+                                          <div className={`segment a ${getSegmentActive('a', dirtLevel.toString()) ? 'active' : ''}`}></div>
+                                          <div className={`segment b ${getSegmentActive('b', dirtLevel.toString()) ? 'active' : ''}`}></div>
+                                          <div className={`segment c ${getSegmentActive('c', dirtLevel.toString()) ? 'active' : ''}`}></div>
+                                          <div className={`segment d ${getSegmentActive('d', dirtLevel.toString()) ? 'active' : ''}`}></div>
+                                          <div className={`segment e ${getSegmentActive('e', dirtLevel.toString()) ? 'active' : ''}`}></div>
+                                          <div className={`segment f ${getSegmentActive('f', dirtLevel.toString()) ? 'active' : ''}`}></div>
+                                          <div className={`segment g ${getSegmentActive('g', dirtLevel.toString()) ? 'active' : ''}`}></div>
+                                        </div>
                                       </div>
                                     </div>
                                     <button
@@ -2797,7 +2823,7 @@ export default function GeneratorPage() {
                                         updateDirtState(true, newLevel)
                                         setPatinaLocked(true)
                                       }}
-                                      className="px-3 py-2 rounded font-mono text-sm transition-all duration-200 border-2 bg-gray-800 text-gray-400 border-gray-600 hover:bg-gray-700 hover:border-gray-500"
+                                      className="px-3 py-2 rounded font-mono text-sm transition-all duration-200 border-2 bg-amber-200 text-gray-700 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
                                       title="Increase dirt level"
                                       disabled={dirtLevel === 2}
                                     >
@@ -2810,7 +2836,11 @@ export default function GeneratorPage() {
 
                                 {/* Age Controls */}
                                 <div className="flex flex-col items-center gap-2">
-                                  <h5 className="text-green-400 text-xs font-mono font-medium">AGE</h5>
+                                  <div className="flex items-center gap-2 w-full">
+                                    <div className="flex-1 h-px bg-black"></div>
+                                    <h5 className="text-black text-xs font-mono font-medium px-2">AGE</h5>
+                                    <div className="flex-1 h-px bg-black"></div>
+                                  </div>
                                   <div className="flex items-center gap-2">
                                     <button
                                       onClick={() => {
@@ -2818,7 +2848,7 @@ export default function GeneratorPage() {
                                         updateTextureState(newLevel > 0, newLevel)
                                         setPatinaLocked(true)
                                       }}
-                                      className="px-3 py-2 rounded font-mono text-sm transition-all duration-200 border-2 bg-gray-800 text-gray-400 border-gray-600 hover:bg-gray-700 hover:border-gray-500"
+                                      className="px-3 py-2 rounded font-mono text-sm transition-all duration-200 border-2 bg-amber-200 text-gray-700 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
                                       title="Decrease aging level"
                                       disabled={textureLevel === 0}
                                     >
@@ -2827,8 +2857,18 @@ export default function GeneratorPage() {
                                       </div>
                                     </button>
                                     <div className="flex-1 text-center min-w-[80px]">
-                                      <div className="px-3 py-2 rounded font-mono text-sm border-2 bg-gradient-to-r from-green-600 to-red-600 text-white border-gray-400">
-                                        {textureLevel}
+                                      <div key={textureLevel} className="seven-segment-display">
+                                        {textureLevel.toString().padStart(2, '0').split('').map((digit, index) => (
+                                          <div key={index} className="seven-segment-digit">
+                                            <div className={`segment a ${getSegmentActive('a', digit) ? 'active' : ''}`}></div>
+                                            <div className={`segment b ${getSegmentActive('b', digit) ? 'active' : ''}`}></div>
+                                            <div className={`segment c ${getSegmentActive('c', digit) ? 'active' : ''}`}></div>
+                                            <div className={`segment d ${getSegmentActive('d', digit) ? 'active' : ''}`}></div>
+                                            <div className={`segment e ${getSegmentActive('e', digit) ? 'active' : ''}`}></div>
+                                            <div className={`segment f ${getSegmentActive('f', digit) ? 'active' : ''}`}></div>
+                                            <div className={`segment g ${getSegmentActive('g', digit) ? 'active' : ''}`}></div>
+                                          </div>
+                                        ))}
                                       </div>
                                     </div>
                                     <button
@@ -2837,7 +2877,7 @@ export default function GeneratorPage() {
                                         updateTextureState(true, newLevel)
                                         setPatinaLocked(true)
                                       }}
-                                      className="px-3 py-2 rounded font-mono text-sm transition-all duration-200 border-2 bg-gray-800 text-gray-400 border-gray-600 hover:bg-gray-700 hover:border-gray-500"
+                                      className="px-3 py-2 rounded font-mono text-sm transition-all duration-200 border-2 bg-amber-200 text-gray-700 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
                                       title="Increase aging level"
                                       disabled={textureLevel === 10}
                                     >
@@ -2864,14 +2904,16 @@ export default function GeneratorPage() {
                                       }
                                       setPatinaLocked(true)
                                     }}
-                                    className={`px-4 py-3 rounded text-sm font-mono transition-all duration-200 border ${
-                                      (showDirt || showTexture)
-                                        ? 'bg-green-600 text-white border-green-400 shadow-lg shadow-green-500/30'
-                                        : 'bg-gray-600 text-gray-300 border-gray-500 hover:bg-gray-500'
-                                    }`}
+                                    className="px-5 py-4 rounded font-mono text-lg transition-all duration-200 border-2 bg-amber-200 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
                                     title={(showDirt || showTexture) ? 'Disable all overlays' : 'Enable overlays'}
                                   >
-                                    {(showDirt || showTexture) ? 'ON' : 'OFF'}
+                                    <span className={`text-2xl ${(showDirt || showTexture) ? 'text-red-600' : 'text-black'}`} style={{
+                                      textShadow: (showDirt || showTexture)
+                                        ? '0 0 8px rgba(220, 38, 38, 0.6), 0 0 16px rgba(220, 38, 38, 0.4), 0 0 24px rgba(220, 38, 38, 0.2)'
+                                        : 'none'
+                                    }}>
+                                      ⏻
+                                    </span>
                                   </button>
                                 </div>
                               </div>
