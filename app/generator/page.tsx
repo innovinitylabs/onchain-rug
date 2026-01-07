@@ -2758,6 +2758,7 @@ export default function GeneratorPage() {
                   {/* Relocated Patina Controls */}
                   <div
                     className="patina-console"
+                    style={{ padding: '12px 32px' }}
                     onMouseEnter={() => !patinaLocked && setPatinaOpen(true)}
                     onMouseLeave={() => !patinaLocked && setPatinaOpen(false)}
                   >
@@ -2909,7 +2910,7 @@ export default function GeneratorPage() {
                                       }
                                       setPatinaLocked(true)
                                     }}
-                                    className="px-5 py-4 rounded font-mono text-lg transition-all duration-200 border-2 bg-amber-200 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
+                                    className="px-6 py-5 rounded font-mono text-lg transition-all duration-200 border-2 bg-amber-200 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
                                     title={(showDirt || showTexture) ? 'Disable all overlays' : 'Enable overlays'}
                                   >
                                     <span className={`text-2xl ${(showDirt || showTexture) ? 'text-red-600' : 'text-black'}`} style={{
