@@ -2849,7 +2849,7 @@ export default function GeneratorPage() {
                                       </div>
                                     </button>
                                     <div className="flex-1 text-center min-w-[80px]">
-                                      <div className="seven-segment-display">
+                                      <div key={textureLevel} className="seven-segment-display">
                                         {textureLevel.toString().padStart(2, '0').split('').map((digit, index) => (
                                           <div key={index} className="seven-segment-digit">
                                             <div className={`segment a ${getSegmentActive('a', digit) ? 'active' : ''}`}></div>
