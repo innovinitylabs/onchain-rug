@@ -2449,9 +2449,9 @@ export default function GeneratorPage() {
     }
   }
 
-  // Get production aging days for texture level (7 days per level)
+  // Get production aging days for texture level (14 days per level base rate)
   const getAgingDays = (level: number) => {
-    return level * 7 // Each aging level advances every 7 days in production
+    return level * 14 // Each aging level advances every 14 days (base rate, modified by frame)
   }
 
   // Initialize on mount
@@ -2930,7 +2930,7 @@ export default function GeneratorPage() {
                       </div>
 
                       <div className="text-green-400 text-xs font-mono bg-gray-900/50 p-2 rounded">
-                        11-level aging progression: Level 0 (brand new) to Level 10 (maximum age). Each level advances every 7 days in production. Diamond frame requires 200 maintenance points.
+                        11-level aging progression: Level 0 (brand new) to Level 10 (maximum age). Each level advances every 14 days (base rate, modified by frame). Diamond frame requires 200 maintenance points.
                       </div>
 
                       {/* Aging Level Slider with Preview */}
@@ -2949,23 +2949,23 @@ export default function GeneratorPage() {
                         />
                         <div className="flex justify-between text-xs text-gray-400 font-mono">
                           <span>0 (Fresh)</span>
-                          <span>5 (35 days)</span>
-                          <span>10 (70 days)</span>
+                          <span>5 (70 days)</span>
+                          <span>10 (140 days)</span>
                         </div>
 
                         {/* Aging Level Preview */}
                         <div className="text-xs text-green-400 font-mono bg-gray-900/30 p-3 rounded border border-gray-600">
                           {textureLevel === 0 && "✨ Brand New - pristine condition (0 days)"}
-                          {textureLevel === 1 && "🧵 Slightly Aged - subtle signs of use (7 days)"}
-                          {textureLevel === 2 && "📅 Moderately Aged - light aging (14 days)"}
-                          {textureLevel === 3 && "🏠 Well Aged - well-used but functional (21 days)"}
-                          {textureLevel === 4 && "📆 Significantly Aged - shows character (28 days)"}
-                          {textureLevel === 5 && "🪶 Very Aged - vintage appearance (35 days)"}
-                          {textureLevel === 6 && "🎭 Extremely Aged - distinctive patina (42 days)"}
-                          {textureLevel === 7 && "🏺 Heavily Aged - rich texture (49 days)"}
-                          {textureLevel === 8 && "🏛️ Severely Aged - extreme character (56 days)"}
-                          {textureLevel === 9 && "🎨 Critically Aged - legendary status (63 days)"}
-                          {textureLevel === 10 && "💎 Maximum Age - ultimate degradation (70 days)"}
+                          {textureLevel === 1 && "🧵 Slightly Aged - subtle signs of use (14 days)"}
+                          {textureLevel === 2 && "📅 Moderately Aged - light aging (28 days)"}
+                          {textureLevel === 3 && "🏠 Well Aged - well-used but functional (42 days)"}
+                          {textureLevel === 4 && "📆 Significantly Aged - shows character (56 days)"}
+                          {textureLevel === 5 && "🪶 Very Aged - vintage appearance (70 days)"}
+                          {textureLevel === 6 && "🎭 Extremely Aged - distinctive patina (84 days)"}
+                          {textureLevel === 7 && "🏺 Heavily Aged - rich texture (98 days)"}
+                          {textureLevel === 8 && "🏛️ Severely Aged - extreme character (112 days)"}
+                          {textureLevel === 9 && "🎨 Critically Aged - legendary status (126 days)"}
+                          {textureLevel === 10 && "💎 Maximum Age - ultimate degradation (140 days)"}
                         </div>
                       </div>
                     </div>
