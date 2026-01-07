@@ -2736,33 +2736,32 @@ export default function GeneratorPage() {
 
                           .seven-segment-digit {
                             position: relative;
-                            width: 16px;
-                            height: 24px;
-                            margin: 0 1px;
+                            width: 18px;
+                            height: 28px;
+                            margin: 0 2px;
                           }
 
                           .segment {
                             position: absolute;
-                            background: rgba(239, 68, 68, 0.3);
-                            box-shadow: 0 0 3px rgba(239, 68, 68, 0.5);
-                            border-radius: 2px;
-                            opacity: 0.7;
+                            background: rgba(239, 68, 68, 0.8);
+                            border: 1px solid rgba(239, 68, 68, 0.5);
+                            border-radius: 1px;
                           }
 
                           .segment.active {
-                            background: #ef4444;
-                            box-shadow: 0 0 6px #ef4444, 0 0 12px rgba(239, 68, 68, 0.8), 0 0 18px rgba(239, 68, 68, 0.4);
-                            opacity: 1;
+                            background: #ff0000;
+                            border-color: #ff4444;
+                            box-shadow: 0 0 8px #ff0000, 0 0 16px rgba(255, 0, 0, 0.8);
                           }
 
-                          /* Segment positions - made thicker for visibility */
-                          .segment.a { top: 0; left: 2px; width: 12px; height: 4px; }
-                          .segment.b { top: 3px; right: 0; width: 4px; height: 9px; }
-                          .segment.c { bottom: 3px; right: 0; width: 4px; height: 9px; }
-                          .segment.d { bottom: 0; left: 2px; width: 12px; height: 4px; }
-                          .segment.e { bottom: 3px; left: 0; width: 4px; height: 9px; }
-                          .segment.f { top: 3px; left: 0; width: 4px; height: 9px; }
-                          .segment.g { top: 11px; left: 2px; width: 12px; height: 4px; }
+                          /* Segment positions for 18x28 digit */
+                          .segment.a { top: 0; left: 3px; width: 12px; height: 4px; }
+                          .segment.b { top: 4px; right: 0; width: 4px; height: 10px; }
+                          .segment.c { bottom: 4px; right: 0; width: 4px; height: 10px; }
+                          .segment.d { bottom: 0; left: 3px; width: 12px; height: 4px; }
+                          .segment.e { bottom: 4px; left: 0; width: 4px; height: 10px; }
+                          .segment.f { top: 4px; left: 0; width: 4px; height: 10px; }
+                          .segment.g { top: 14px; left: 3px; width: 12px; height: 4px; }
                         `}</style>
                       </div>
                 </div>
