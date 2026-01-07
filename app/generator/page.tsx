@@ -2721,7 +2721,6 @@ export default function GeneratorPage() {
                             align-items: center;
                             gap: 32px;
                             margin-top: 12px;
-                            padding: 12px 32px;
                           }
 
                         `}</style>
@@ -2759,6 +2758,7 @@ export default function GeneratorPage() {
                   {/* Relocated Patina Controls */}
                   <div
                     className="patina-console"
+                    style={{ padding: '12px 32px' }}
                     onMouseEnter={() => !patinaLocked && setPatinaOpen(true)}
                     onMouseLeave={() => !patinaLocked && setPatinaOpen(false)}
                   >
