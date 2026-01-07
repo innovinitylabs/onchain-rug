@@ -2920,7 +2920,7 @@ export default function GeneratorPage() {
                       <div className="flex items-center justify-between">
                         <h4 className="text-green-300 text-sm font-mono font-medium">AGING SYSTEM</h4>
                         <span className="text-green-500 text-xs font-mono">
-                          {showTexture ? `Level ${textureLevel}/10 aging` : 'Brand New'}
+                          {!showTexture ? '🏭 Brand New' : textureLevel <= 2 ? '🧵 Fresh' : textureLevel <= 5 ? '🏠 Aged' : textureLevel <= 8 ? '🏺 Vintage' : '💎 Ancient'}
                         </span>
                       </div>
 
@@ -2928,59 +2928,71 @@ export default function GeneratorPage() {
                         11-level aging progression: Level 0 (brand new) to Level 10 (maximum age). Each level represents increasing fabric aging and character.
                       </div>
 
-                      {/* Texture Toggle */}
-                      <div className="flex items-center gap-3">
-                        <button
-                          onClick={() => updateTextureState(!showTexture, textureLevel)}
-                          className={`px-3 py-1.5 rounded font-mono text-xs transition-all duration-200 border ${
-                            showTexture
-                              ? 'bg-purple-600/80 hover:bg-purple-600 text-white border-purple-400'
-                              : 'bg-gray-600/80 hover:bg-gray-600 text-white border-gray-400'
-                          }`}
-                        >
-                          {showTexture ? 'HIDE TEXTURE' : 'SHOW TEXTURE'}
-                        </button>
-                      </div>
-
-                      {showTexture && (
-                        <div className="space-y-3">
-                          {/* Aging Level Slider */}
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <label className="text-green-300 text-xs font-mono">Aging Level</label>
-                              <span className="text-green-500 text-xs font-mono">{textureLevel}/10</span>
+                      {/* Aging Level Buttons */}
+                      <div className="space-y-2">
+                        <div className="text-xs text-green-400 font-mono">Aging Level:</div>
+                        <div className="flex gap-1">
+                          {/* Brand New Level */}
+                          <button
+                            onClick={() => updateTextureState(false, 0)}
+                            className={`flex-1 px-1.5 py-2 rounded font-mono text-xs transition-all duration-200 border-2 ${
+                              !showTexture
+                                ? 'bg-green-600 text-white border-green-400 shadow-lg shadow-green-500/30'
+                                : 'bg-gray-800 text-gray-400 border-gray-600 hover:bg-gray-700 hover:border-gray-500'
+                            }`}
+                            title="Brand new condition"
+                          >
+                            <div className="text-center font-bold text-xs">
+                              BRAND NEW
                             </div>
-                            <input
-                              type="range"
-                              min="0"
-                              max="10"
-                              value={textureLevel}
-                              onChange={(e) => updateTextureState(showTexture, parseInt(e.target.value))}
-                              className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-green"
-                            />
-                            <div className="flex justify-between text-xs text-gray-400 font-mono">
-                              <span>0 (Fresh)</span>
-                              <span>5 (Moderate)</span>
-                              <span>10 (Maximum)</span>
-                            </div>
-                          </div>
+                          </button>
 
-                          {/* Aging Level Descriptions */}
-                          <div className="text-xs text-green-400 font-mono bg-gray-900/30 p-2 rounded">
-                            {textureLevel === 0 && "✨ Brand New - pristine condition"}
-                            {textureLevel === 1 && "🧵 Slightly Aged - subtle signs of use"}
-                            {textureLevel === 2 && "📅 Moderately Aged - light aging"}
-                            {textureLevel === 3 && "🏠 Well Aged - well-used but functional"}
-                            {textureLevel === 4 && "📆 Significantly Aged - shows character"}
-                            {textureLevel === 5 && "🪶 Very Aged - vintage appearance"}
-                            {textureLevel === 6 && "🎭 Extremely Aged - distinctive patina"}
-                            {textureLevel === 7 && "🏺 Heavily Aged - rich texture"}
-                            {textureLevel === 8 && "🏛️ Severely Aged - extreme character"}
-                            {textureLevel === 9 && "🎨 Critically Aged - legendary status"}
-                            {textureLevel === 10 && "💎 Maximum Age - ultimate degradation"}
-                          </div>
+                          {/* Moderate Aging Level */}
+                          <button
+                            onClick={() => updateTextureState(true, 4)}
+                            className={`flex-1 px-1.5 py-2 rounded font-mono text-xs transition-all duration-200 border-2 ${
+                              showTexture && textureLevel >= 3 && textureLevel <= 5
+                                ? 'bg-yellow-600 text-white border-yellow-400 shadow-lg shadow-yellow-500/30'
+                                : 'bg-gray-800 text-gray-400 border-gray-600 hover:bg-gray-700 hover:border-gray-500'
+                            }`}
+                            title="Well-used appearance"
+                          >
+                            <div className="text-center font-bold text-xs">
+                              MODERATE
+                            </div>
+                          </button>
+
+                          {/* Heavy Aging Level */}
+                          <button
+                            onClick={() => updateTextureState(true, 7)}
+                            className={`flex-1 px-1.5 py-2 rounded font-mono text-xs transition-all duration-200 border-2 ${
+                              showTexture && textureLevel >= 6 && textureLevel <= 8
+                                ? 'bg-orange-600 text-white border-orange-400 shadow-lg shadow-orange-500/30'
+                                : 'bg-gray-800 text-gray-400 border-gray-600 hover:bg-gray-700 hover:border-gray-500'
+                            }`}
+                            title="Rich vintage texture"
+                          >
+                            <div className="text-center font-bold text-xs">
+                              HEAVY
+                            </div>
+                          </button>
+
+                          {/* Maximum Aging Level */}
+                          <button
+                            onClick={() => updateTextureState(true, 10)}
+                            className={`flex-1 px-1.5 py-2 rounded font-mono text-xs transition-all duration-200 border-2 ${
+                              showTexture && textureLevel >= 9
+                                ? 'bg-red-600 text-white border-red-400 shadow-lg shadow-red-500/30'
+                                : 'bg-gray-800 text-gray-400 border-gray-600 hover:bg-gray-700 hover:border-gray-500'
+                            }`}
+                            title="Ultimate degradation"
+                          >
+                            <div className="text-center font-bold text-xs">
+                              MAXIMUM
+                            </div>
+                          </button>
                         </div>
-                      )}
+                      </div>
                     </div>
                   </div>
                 </div>
