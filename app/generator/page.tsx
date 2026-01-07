@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState, useMemo } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Shuffle, Download, FileText, Plus, X, Copy } from 'lucide-react'
 import Navigation from '@/components/Navigation'
 import NFTExporter from '@/components/NFTExporter'
@@ -62,8 +62,8 @@ export default function GeneratorPage() {
   const [dirtLevel, setDirtLevel] = useState(0) // 0 = clean, 1 = 50% dirty, 2 = full dirty
   const [showTexture, setShowTexture] = useState(false)
   const [textureLevel, setTextureLevel] = useState(0) // 0 = none, 1 = 7 days, 2 = 30 days
-  const [dirtExpanded, setDirtExpanded] = useState(false)
-  const [agingExpanded, setAgingExpanded] = useState(false)
+  const [patinaOpen, setPatinaOpen] = useState(false)
+  const [patinaLocked, setPatinaLocked] = useState(false)
   const [focusNewRow, setFocusNewRow] = useState(false)
   // Diamond frame aging (hardcoded - most impressive longevity)
   const [warpThickness, setWarpThickness] = useState(2) // Default warp thickness
@@ -2720,7 +2720,7 @@ export default function GeneratorPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="w-full pb-8"
+            className="w-full pb-8 pt-2"
           >
             <div className="relative w-full px-2 md:px-3 lg:px-4">
               <div className="bg-black text-green-400 font-mono border-t-2 border-green-500 py-3 md:py-4 px-4 md:px-6">
@@ -2899,146 +2899,187 @@ export default function GeneratorPage() {
                     </div>
                   </div>
 
-                  {/* Right Panel - Dirt & Texture Systems */}
+                  {/* Right Panel - Patina System */}
                   <div className="space-y-4">
-                    {/* Dirt System Controls - Accordion */}
-                    <div
+                    {/* Patina Controls - Unified Accordion */}
+                    <motion.div
+                      layout
                       className="relative"
-                      onMouseEnter={() => setDirtExpanded(true)}
-                      onMouseLeave={() => setDirtExpanded(false)}
+                      onMouseEnter={() => !patinaLocked && setPatinaOpen(true)}
+                      onMouseLeave={() => !patinaLocked && setPatinaOpen(false)}
                     >
                       {/* Header - Always Visible */}
                       <div className="flex items-center justify-between cursor-pointer">
-                        <h4 className="text-green-300 text-sm font-mono font-medium">DIRT SYSTEM</h4>
-                        <span className="text-green-500 text-xs font-mono">
-                          {!showDirt ? '🧼 Clean' : dirtLevel === 1 ? '🟡 50% Dusty' : '🔴 100% Filthy'}
-                        </span>
+                        <h4 className="text-green-300 text-sm font-mono font-medium">PATINA</h4>
+                        <div className="flex items-center gap-2">
+                          <span className="text-green-500 text-xs font-mono">
+                            {!showDirt && !showTexture ? '✨ Pristine' :
+                             showDirt && showTexture ? '🕰️ Weathered' :
+                             showDirt ? '🧼 Dusty' : '📅 Aged'}
+                          </span>
+                          {patinaLocked && (
+                            <button
+                              onClick={() => {
+                                setPatinaLocked(false)
+                                setPatinaOpen(false)
+                              }}
+                              className="text-green-500 hover:text-green-300 transition-colors"
+                              title="Close panel"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          )}
+                        </div>
                       </div>
 
                       {/* Collapsible Content */}
-                      <div className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                        dirtExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
-                      }`}>
-                        <div className="space-y-3 pt-3">
-                          <div className="text-green-400 text-xs font-mono bg-gray-900/50 p-2 rounded">
-                            Dynamic dirt accumulation: 50% after 3 days, 100% after 7 days. Clean with onchain transaction.
-                          </div>
-
-                          {/* Dirt Accumulation Meter */}
-                          <div className="space-y-3">
-                            <div className="text-xs text-green-400 font-mono">Dirt Accumulation Level:</div>
-                            <div className="flex gap-1">
-                              {/* Clean Level */}
-                              <button
-                                onClick={() => updateDirtState(false, 0)}
-                                className={`flex-1 px-2 py-2 rounded font-mono text-xs transition-all duration-200 border-2 ${
-                                  !showDirt
-                                    ? 'bg-green-600 text-white border-green-400 shadow-lg shadow-green-500/30'
-                                    : 'bg-gray-800 text-gray-400 border-gray-600 hover:bg-gray-700 hover:border-gray-500'
-                                }`}
-                                title="Clean as new"
-                              >
-                                <div className="text-center font-bold">
-                                  CLEAN
+                      <AnimatePresence>
+                        {(patinaOpen || patinaLocked) && (
+                          <motion.div
+                            layout
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{
+                              duration: 0.35,
+                              ease: 'easeInOut',
+                              opacity: { duration: 0.2 },
+                              height: { duration: 0.35 }
+                            }}
+                            className="overflow-hidden"
+                          >
+                            <div className="space-y-4 pt-4">
+                              {/* Dirt & Dust Subsection */}
+                              <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                  <h5 className="text-green-400 text-xs font-mono font-medium">Dirt & Dust</h5>
+                                  <span className="text-green-500 text-xs font-mono">
+                                    {!showDirt ? 'Clean' : dirtLevel === 1 ? '50% Dusty' : '100% Filthy'}
+                                  </span>
                                 </div>
-                              </button>
 
-                              {/* Dusty Level */}
-                              <button
-                                onClick={() => updateDirtState(true, 1)}
-                                className={`flex-1 px-2 py-2 rounded font-mono text-xs transition-all duration-200 border-2 ${
-                                  showDirt && dirtLevel === 1
-                                    ? 'bg-yellow-600 text-white border-yellow-400 shadow-lg shadow-yellow-500/30'
-                                    : 'bg-gray-800 text-gray-400 border-gray-600 hover:bg-gray-700 hover:border-gray-500'
-                                }`}
-                                title="3 days of wear"
-                              >
-                                <div className="text-center font-bold">
-                                  DUSTY
+                                <div className="text-green-400 text-xs font-mono bg-gray-900/50 p-2 rounded">
+                                  Natural accumulation: 50% after 3 days, 100% after 7 days. Clean with onchain transaction.
                                 </div>
-                              </button>
 
-                              {/* Filthy Level */}
-                              <button
-                                onClick={() => updateDirtState(true, 2)}
-                                className={`flex-1 px-2 py-2 rounded font-mono text-xs transition-all duration-200 border-2 ${
-                                  showDirt && dirtLevel === 2
-                                    ? 'bg-red-600 text-white border-red-400 shadow-lg shadow-red-500/30'
-                                    : 'bg-gray-800 text-gray-400 border-gray-600 hover:bg-gray-700 hover:border-gray-500'
-                                }`}
-                                title="7 days of neglect"
-                              >
-                                <div className="text-center font-bold">
-                                  FILTHY
+                                {/* Dirt Accumulation Meter */}
+                                <div className="space-y-2">
+                                  <div className="text-xs text-green-400 font-mono">Accumulation Level:</div>
+                                  <div className="flex gap-1">
+                                    {/* Clean Level */}
+                                    <button
+                                      onClick={() => {
+                                        updateDirtState(false, 0)
+                                        setPatinaLocked(true)
+                                      }}
+                                      className={`flex-1 px-2 py-2 rounded font-mono text-xs transition-all duration-200 border-2 ${
+                                        !showDirt
+                                          ? 'bg-green-600 text-white border-green-400 shadow-lg shadow-green-500/30'
+                                          : 'bg-gray-800 text-gray-400 border-gray-600 hover:bg-gray-700 hover:border-gray-500'
+                                      }`}
+                                      title="Clean as new"
+                                    >
+                                      <div className="text-center font-bold">
+                                        CLEAN
+                                      </div>
+                                    </button>
+
+                                    {/* Dusty Level */}
+                                    <button
+                                      onClick={() => {
+                                        updateDirtState(true, 1)
+                                        setPatinaLocked(true)
+                                      }}
+                                      className={`flex-1 px-2 py-2 rounded font-mono text-xs transition-all duration-200 border-2 ${
+                                        showDirt && dirtLevel === 1
+                                          ? 'bg-yellow-600 text-white border-yellow-400 shadow-lg shadow-yellow-500/30'
+                                          : 'bg-gray-800 text-gray-400 border-gray-600 hover:bg-gray-700 hover:border-gray-500'
+                                      }`}
+                                      title="3 days of wear"
+                                    >
+                                      <div className="text-center font-bold">
+                                        DUSTY
+                                      </div>
+                                    </button>
+
+                                    {/* Filthy Level */}
+                                    <button
+                                      onClick={() => {
+                                        updateDirtState(true, 2)
+                                        setPatinaLocked(true)
+                                      }}
+                                      className={`flex-1 px-2 py-2 rounded font-mono text-xs transition-all duration-200 border-2 ${
+                                        showDirt && dirtLevel === 2
+                                          ? 'bg-red-600 text-white border-red-400 shadow-lg shadow-red-500/30'
+                                          : 'bg-gray-800 text-gray-400 border-gray-600 hover:bg-gray-700 hover:border-gray-500'
+                                      }`}
+                                      title="7 days of neglect"
+                                    >
+                                      <div className="text-center font-bold">
+                                        FILTHY
+                                      </div>
+                                    </button>
+                                  </div>
                                 </div>
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                              </div>
 
-                    {/* Aging System Controls - Accordion */}
-                    <div
-                      className="relative"
-                      onMouseEnter={() => setAgingExpanded(true)}
-                      onMouseLeave={() => setAgingExpanded(false)}
-                    >
-                      {/* Header - Always Visible */}
-                      <div className="flex items-center justify-between cursor-pointer">
-                        <h4 className="text-green-300 text-sm font-mono font-medium">AGING SYSTEM</h4>
-                        <span className="text-green-500 text-xs font-mono">
-                          {!showTexture ? '🏭 Brand New' : `${getAgingDays(textureLevel)} days old (Diamond frame)`}
-                        </span>
-                      </div>
+                              {/* Time & Wear Subsection */}
+                              <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                  <h5 className="text-green-400 text-xs font-mono font-medium">Time & Wear</h5>
+                                  <span className="text-green-500 text-xs font-mono">
+                                    {!showTexture ? 'Brand New' : `${getAgingDays(textureLevel)} days old`}
+                                  </span>
+                                </div>
 
-                      {/* Collapsible Content */}
-                      <div className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                        agingExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
-                      }`}>
-                        <div className="space-y-3 pt-3">
-                          <div className="text-green-400 text-xs font-mono bg-gray-900/50 p-2 rounded">
-                            11-level aging progression: Level 0 (brand new) to Level 10 (maximum age). Shows Diamond frame aging timeline (140 days per level). Diamond frame requires 200 maintenance points.
-                          </div>
+                                <div className="text-green-400 text-xs font-mono bg-gray-900/50 p-2 rounded">
+                                  11-level aging progression: Level 0 (brand new) to Level 10 (maximum age). Shows Diamond frame aging timeline (140 days per level).
+                                </div>
 
-                          {/* Aging Level Slider with Preview */}
-                          <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                              <label className="text-green-300 text-xs font-mono">Aging Level</label>
-                              <span className="text-green-500 text-xs font-mono">{textureLevel}/10 ({getAgingDays(textureLevel)} days)</span>
-                            </div>
-                            <input
-                              type="range"
-                              min="0"
-                              max="10"
-                              value={textureLevel}
-                              onChange={(e) => updateTextureState(textureLevel > 0 || parseInt(e.target.value) > 0, parseInt(e.target.value))}
-                              className="w-full h-3 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-purple"
-                            />
-                            <div className="flex justify-between text-xs text-gray-400 font-mono">
-                              <span>0 (Fresh)</span>
-                              <span>5 ({getAgingDays(5)} days)</span>
-                              <span>10 ({getAgingDays(10)} days)</span>
-                            </div>
+                                {/* Aging Level Slider with Preview */}
+                                <div className="space-y-3">
+                                  <div className="flex items-center justify-between">
+                                    <label className="text-green-300 text-xs font-mono">Aging Level</label>
+                                    <span className="text-green-500 text-xs font-mono">{textureLevel}/10 ({getAgingDays(textureLevel)} days)</span>
+                                  </div>
+                                  <input
+                                    type="range"
+                                    min="0"
+                                    max="10"
+                                    value={textureLevel}
+                                    onChange={(e) => {
+                                      updateTextureState(textureLevel > 0 || parseInt(e.target.value) > 0, parseInt(e.target.value))
+                                      setPatinaLocked(true)
+                                    }}
+                                    className="w-full h-3 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-purple"
+                                  />
+                                  <div className="flex justify-between text-xs text-gray-400 font-mono">
+                                    <span>0 (Fresh)</span>
+                                    <span>5 ({getAgingDays(5)} days)</span>
+                                    <span>10 ({getAgingDays(10)} days)</span>
+                                  </div>
 
-                            {/* Aging Level Preview */}
-                            <div className="text-xs text-green-400 font-mono bg-gray-900/30 p-3 rounded border border-gray-600">
-                              {textureLevel === 0 && `✨ Brand New - pristine condition (0 days)`}
-                              {textureLevel === 1 && `🧵 Slightly Aged - subtle signs of use (${getAgingDays(1)} days)`}
-                              {textureLevel === 2 && `📅 Moderately Aged - light aging (${getAgingDays(2)} days)`}
-                              {textureLevel === 3 && `🏠 Well Aged - well-used but functional (${getAgingDays(3)} days)`}
-                              {textureLevel === 4 && `📆 Significantly Aged - shows character (${getAgingDays(4)} days)`}
-                              {textureLevel === 5 && `🪶 Very Aged - vintage appearance (${getAgingDays(5)} days)`}
-                              {textureLevel === 6 && `🎭 Extremely Aged - distinctive patina (${getAgingDays(6)} days)`}
-                              {textureLevel === 7 && `🏺 Heavily Aged - rich texture (${getAgingDays(7)} days)`}
-                              {textureLevel === 8 && `🏛️ Severely Aged - extreme character (${getAgingDays(8)} days)`}
-                              {textureLevel === 9 && `🎨 Critically Aged - legendary status (${getAgingDays(9)} days)`}
-                              {textureLevel === 10 && `💎 Maximum Age - ultimate degradation (${getAgingDays(10)} days)`}
+                                  {/* Aging Level Preview */}
+                                  <div className="text-xs text-green-400 font-mono bg-gray-900/30 p-3 rounded border border-gray-600">
+                                    {textureLevel === 0 && `✨ Brand New - pristine condition (0 days)`}
+                                    {textureLevel === 1 && `🧵 Slightly Aged - subtle signs of use (${getAgingDays(1)} days)`}
+                                    {textureLevel === 2 && `📅 Moderately Aged - light aging (${getAgingDays(2)} days)`}
+                                    {textureLevel === 3 && `🏠 Well Aged - well-used but functional (${getAgingDays(3)} days)`}
+                                    {textureLevel === 4 && `📆 Significantly Aged - shows character (${getAgingDays(4)} days)`}
+                                    {textureLevel === 5 && `🪶 Very Aged - vintage appearance (${getAgingDays(5)} days)`}
+                                    {textureLevel === 6 && `🎭 Extremely Aged - distinctive patina (${getAgingDays(6)} days)`}
+                                    {textureLevel === 7 && `🏺 Heavily Aged - rich texture (${getAgingDays(7)} days)`}
+                                    {textureLevel === 8 && `🏛️ Severely Aged - extreme character (${getAgingDays(8)} days)`}
+                                    {textureLevel === 9 && `🎨 Critically Aged - legendary status (${getAgingDays(9)} days)`}
+                                    {textureLevel === 10 && `💎 Maximum Age - ultimate degradation (${getAgingDays(10)} days)`}
+                                  </div>
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </motion.div>
                   </div>
                 </div>
 
