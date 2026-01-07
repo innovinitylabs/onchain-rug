@@ -2805,6 +2805,12 @@ export default function GeneratorPage() {
                             type="text"
                             value={text}
                             onChange={(e) => updateTextInput(index, e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Tab' && currentRowCount < 5) {
+                                e.preventDefault()
+                                addTextRow()
+                              }
+                            }}
                             placeholder={`Row ${index + 1}`}
                             maxLength={11}
                             className="flex-1 px-2 py-1.5 bg-gray-900 text-green-400 rounded text-sm font-mono focus:ring-1 focus:ring-green-500 transition-all"
