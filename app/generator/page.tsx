@@ -2636,7 +2636,7 @@ export default function GeneratorPage() {
                             {/* Old-School CRT Monitor Box */}
               <div className="relative mx-auto w-full px-4 md:px-6 lg:px-8">
                 {/* Monitor Bezel - Yellowed Plastic */}
-                <div className="bg-amber-100 border-6 border-amber-200 rounded-t-2xl rounded-b-xl p-2 md:p-3 lg:p-4 shadow-2xl">
+                <div className="bg-amber-100 border-6 border-amber-200 rounded-t-2xl rounded-b-xl p-2 md:p-3 lg:p-4 shadow-2xl max-h-[900px]">
                   {/* Monitor Screen Area */}
                   <div className="rounded-lg px-1 md:px-2 py-1">
                     {/* Canvas Display Area */}
@@ -2652,8 +2652,8 @@ export default function GeneratorPage() {
                             width: '100%',     // Responsive width
                             height: '0',       // Height will be set by padding-bottom
                             paddingBottom: '69.7%', // 920/1320 * 100% = 69.7% (maintains 1320:920 aspect ratio)
-                            maxWidth: '100%',  // Responsive constraint
-                            maxHeight: '800px', // Prevent excessive height on ultra-wide screens
+                            maxWidth: '1200px',  // Limit width to maintain reasonable proportions
+                            maxHeight: '700px', // Prevent excessive height on ultra-wide screens
                             overflow: 'hidden', // Prevent canvas overflow
                             position: 'relative', // Ensure proper positioning context for loading overlay
                             zIndex: 2 // Above scan lines
