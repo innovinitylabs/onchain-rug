@@ -836,7 +836,15 @@ export default function GeneratorPage() {
       currentY += stripeHeight
       stripeCount++
     }
-    
+
+    // If we hit the stripe limit but haven't filled the height, extend the last stripe
+    if (currentY < totalHeight && stripes.length > 0) {
+      const lastStripe = stripes[stripes.length - 1]
+      const heightIncrease = totalHeight - currentY
+      lastStripe.height += heightIncrease
+      currentY = totalHeight
+    }
+
     return stripes
   }
 
