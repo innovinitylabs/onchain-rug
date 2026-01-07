@@ -2831,7 +2831,10 @@ export default function GeneratorPage() {
                                       </div>
                                     </button>
                                     <div className="flex-1 text-center min-w-[80px]">
-                                      <div className="px-3 py-2 rounded font-mono text-sm text-amber-800 bg-transparent">
+                                      <div className="px-3 py-2 rounded font-mono text-lg font-bold bg-gray-900 border border-gray-700 text-red-500" style={{
+                                        textShadow: '0 0 6px rgba(239, 68, 68, 0.8), 0 0 12px rgba(239, 68, 68, 0.4)',
+                                        boxShadow: 'inset 0 0 4px rgba(0, 0, 0, 0.8), 0 0 8px rgba(239, 68, 68, 0.2)'
+                                      }}>
                                         {textureLevel}
                                       </div>
                                     </div>
