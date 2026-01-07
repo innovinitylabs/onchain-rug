@@ -812,7 +812,7 @@ export default function ExplorerPage() {
         </p>
       </motion.div>
 
-      <div className="max-w-7xl mx-auto px-6">
+      <div className="max-w-[3200px] mx-auto px-6">
         {/* Search Bar */}
         <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-blue-200/50 mb-8">
           <div className="flex flex-col md:flex-row gap-4">
