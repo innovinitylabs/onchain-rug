@@ -2721,7 +2721,33 @@ export default function GeneratorPage() {
                     >
                       {/* Header - Always Visible */}
                       <div className="flex items-center justify-between cursor-pointer">
-                        <h4 className="text-green-300 text-sm font-mono font-medium">PATINA</h4>
+                        <div className="flex items-center gap-3">
+                          <h4 className="text-green-300 text-sm font-mono font-medium">PATINA</h4>
+                          {/* Master Overlay Toggle */}
+                          <button
+                            onClick={() => {
+                              const overlaysEnabled = showDirt || showTexture
+                              if (overlaysEnabled) {
+                                // Disable all overlays
+                                updateDirtState(false, 0)
+                                updateTextureState(false, 0)
+                              } else {
+                                // Enable overlays with current levels (if any)
+                                if (dirtLevel > 0) updateDirtState(true, dirtLevel)
+                                if (textureLevel > 0) updateTextureState(true, textureLevel)
+                              }
+                              setPatinaLocked(true)
+                            }}
+                            className={`px-2 py-1 rounded text-xs font-mono transition-all duration-200 border ${
+                              (showDirt || showTexture)
+                                ? 'bg-green-600 text-white border-green-400 shadow-lg shadow-green-500/30'
+                                : 'bg-gray-600 text-gray-300 border-gray-500 hover:bg-gray-500'
+                            }`}
+                            title={(showDirt || showTexture) ? 'Disable all overlays' : 'Enable overlays'}
+                          >
+                            {(showDirt || showTexture) ? 'ON' : 'OFF'}
+                          </button>
+                        </div>
                         <div className="flex items-center gap-2">
                           <span className="text-green-500 text-xs font-mono">
                             {!showDirt && !showTexture ? '✨ Pristine' :
