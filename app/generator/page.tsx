@@ -2750,6 +2750,11 @@ export default function GeneratorPage() {
                       </div>
                     </div>
 
+                  {/* Horizontal Divider */}
+                  <div className="flex justify-center my-2">
+                    <div className="w-3/4 h-px bg-gradient-to-r from-transparent via-amber-400 to-transparent opacity-60"></div>
+                  </div>
+
                   {/* Relocated Patina Controls */}
                   <div
                     className="patina-console"
