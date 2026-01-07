@@ -2721,7 +2721,7 @@ export default function GeneratorPage() {
                             align-items: center;
                             gap: 32px;
                             margin-top: 12px;
-                            padding-right: 16px;
+                            padding-right: 32px;
                           }
 
                         `}</style>
