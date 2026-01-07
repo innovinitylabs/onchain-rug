@@ -2449,22 +2449,9 @@ export default function GeneratorPage() {
     }
   }
 
-  // Get approximate aging days for texture level
+  // Get production aging days for texture level (14 days per level)
   const getAgingDays = (level: number) => {
-    switch(level) {
-      case 0: return 0
-      case 1: return 7
-      case 2: return 30
-      case 3: return 90
-      case 4: return 180
-      case 5: return 365
-      case 6: return 730
-      case 7: return 1825
-      case 8: return 3650
-      case 9: return 7300
-      case 10: return 18250
-      default: return 0
-    }
+    return level * 14 // Each aging level advances every 14 days in production
   }
 
   // Initialize on mount
@@ -2943,7 +2930,7 @@ export default function GeneratorPage() {
                       </div>
 
                       <div className="text-green-400 text-xs font-mono bg-gray-900/50 p-2 rounded">
-                        11-level aging progression: Level 0 (brand new) to Level 10 (maximum age). Each level represents increasing fabric aging and character.
+                        11-level aging progression: Level 0 (brand new) to Level 10 (maximum age). Each level advances every 14 days in production. Diamond frame requires 200 maintenance points.
                       </div>
 
                       {/* Aging Level Slider with Preview */}
@@ -2962,23 +2949,23 @@ export default function GeneratorPage() {
                         />
                         <div className="flex justify-between text-xs text-gray-400 font-mono">
                           <span>0 (Fresh)</span>
-                          <span>5 (5 years)</span>
-                          <span>10 (50+ years)</span>
+                          <span>5 (70 days)</span>
+                          <span>10 (140 days)</span>
                         </div>
 
                         {/* Aging Level Preview */}
                         <div className="text-xs text-green-400 font-mono bg-gray-900/30 p-3 rounded border border-gray-600">
                           {textureLevel === 0 && "✨ Brand New - pristine condition (0 days)"}
-                          {textureLevel === 1 && "🧵 Slightly Aged - subtle signs of use (~7 days)"}
-                          {textureLevel === 2 && "📅 Moderately Aged - light aging (~30 days)"}
-                          {textureLevel === 3 && "🏠 Well Aged - well-used but functional (~90 days)"}
-                          {textureLevel === 4 && "📆 Significantly Aged - shows character (~180 days)"}
-                          {textureLevel === 5 && "🪶 Very Aged - vintage appearance (~1 year)"}
-                          {textureLevel === 6 && "🎭 Extremely Aged - distinctive patina (~2 years)"}
-                          {textureLevel === 7 && "🏺 Heavily Aged - rich texture (~5 years)"}
-                          {textureLevel === 8 && "🏛️ Severely Aged - extreme character (~10 years)"}
-                          {textureLevel === 9 && "🎨 Critically Aged - legendary status (~20 years)"}
-                          {textureLevel === 10 && "💎 Maximum Age - ultimate degradation (50+ years)"}
+                          {textureLevel === 1 && "🧵 Slightly Aged - subtle signs of use (14 days)"}
+                          {textureLevel === 2 && "📅 Moderately Aged - light aging (28 days)"}
+                          {textureLevel === 3 && "🏠 Well Aged - well-used but functional (42 days)"}
+                          {textureLevel === 4 && "📆 Significantly Aged - shows character (56 days)"}
+                          {textureLevel === 5 && "🪶 Very Aged - vintage appearance (70 days)"}
+                          {textureLevel === 6 && "🎭 Extremely Aged - distinctive patina (84 days)"}
+                          {textureLevel === 7 && "🏺 Heavily Aged - rich texture (98 days)"}
+                          {textureLevel === 8 && "🏛️ Severely Aged - extreme character (112 days)"}
+                          {textureLevel === 9 && "🎨 Critically Aged - legendary status (126 days)"}
+                          {textureLevel === 10 && "💎 Maximum Age - ultimate degradation (140 days)"}
                         </div>
                       </div>
                     </div>
