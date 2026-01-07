@@ -2868,14 +2868,12 @@ export default function GeneratorPage() {
                                       }
                                       setPatinaLocked(true)
                                     }}
-                                    className={`px-4 py-3 rounded text-sm font-mono transition-all duration-200 border ${
-                                      (showDirt || showTexture)
-                                        ? 'bg-green-600 text-white border-green-400 shadow-lg shadow-green-500/30'
-                                        : 'bg-gray-600 text-gray-300 border-gray-500 hover:bg-gray-500'
-                                    }`}
+                                    className="px-3 py-2 rounded font-mono text-sm transition-all duration-200 border-2 bg-amber-200 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
                                     title={(showDirt || showTexture) ? 'Disable all overlays' : 'Enable overlays'}
                                   >
-                                    {(showDirt || showTexture) ? 'ON' : 'OFF'}
+                                    <span className={(showDirt || showTexture) ? 'text-red-600' : 'text-black'}>
+                                      ⚡
+                                    </span>
                                   </button>
                                 </div>
                               </div>
