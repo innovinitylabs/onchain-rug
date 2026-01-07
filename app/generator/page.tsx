@@ -2623,8 +2623,8 @@ export default function GeneratorPage() {
         <div className="max-w-[3200px] mx-auto px-4">
       {/* Header */}
 
-        {/* New Side-by-Side Layout - Art Preview (70%) on Left, Controls (30%) on Right */}
-        <div className="grid lg:grid-cols-[70%_30%] gap-6 space-y-6 lg:space-y-0">
+        {/* Responsive Layout - Art Preview gets more space on larger screens */}
+        <div className="grid lg:grid-cols-[70%_30%] xl:grid-cols-[75%_25%] 2xl:grid-cols-[80%_20%] gap-6 space-y-6 lg:space-y-0">
           {/* Canvas Display - Left Side (70% width) */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -2634,7 +2634,7 @@ export default function GeneratorPage() {
           >
             <div className="p-2">
                             {/* Old-School CRT Monitor Box */}
-              <div className="relative mx-auto w-full max-w-7xl px-4 md:px-6 lg:px-8">
+              <div className="relative mx-auto w-full px-4 md:px-6 lg:px-8">
                 {/* Monitor Bezel - Yellowed Plastic */}
                 <div className="bg-amber-100 border-6 border-amber-200 rounded-t-2xl rounded-b-xl p-2 md:p-3 lg:p-4 shadow-2xl">
                   {/* Monitor Screen Area */}
