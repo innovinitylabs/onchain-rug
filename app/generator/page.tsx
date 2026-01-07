@@ -2620,7 +2620,7 @@ export default function GeneratorPage() {
       <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100 flex flex-col">
         <Navigation />
       <main className="flex-grow pt-28">
-        <div className="max-w-[1800px] mx-auto px-4">
+        <div className="max-w-[2800px] mx-auto px-4">
       {/* Header */}
 
         {/* New Side-by-Side Layout - Art Preview (70%) on Left, Controls (30%) on Right */}
@@ -2634,7 +2634,7 @@ export default function GeneratorPage() {
           >
             <div className="p-2">
                             {/* Old-School CRT Monitor Box */}
-              <div className="relative mx-auto w-full max-w-6xl px-4 md:px-6 lg:px-8">
+              <div className="relative mx-auto w-full max-w-7xl px-4 md:px-6 lg:px-8">
                 {/* Monitor Bezel - Yellowed Plastic */}
                 <div className="bg-amber-100 border-6 border-amber-200 rounded-t-2xl rounded-b-xl p-2 md:p-3 lg:p-4 shadow-2xl">
                   {/* Monitor Screen Area */}
