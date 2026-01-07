@@ -2763,7 +2763,7 @@ export default function GeneratorPage() {
                           >
                             <div className="pt-4">
                               {/* CRT Control Strip Layout */}
-                              <div className="flex items-end justify-end gap-8">
+                              <div className="flex items-end justify-end gap-12">
                                 {/* Dirt Controls */}
                                 <div className="flex flex-col items-center gap-2">
                                   <div className="flex items-center gap-2 w-full">
@@ -2868,7 +2868,7 @@ export default function GeneratorPage() {
                                       }
                                       setPatinaLocked(true)
                                     }}
-                                    className="px-3 py-2 rounded font-mono text-sm transition-all duration-200 border-2 bg-amber-200 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
+                                    className="px-5 py-4 rounded font-mono text-lg transition-all duration-200 border-2 bg-amber-200 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
                                     title={(showDirt || showTexture) ? 'Disable all overlays' : 'Enable overlays'}
                                   >
                                     <span className={(showDirt || showTexture) ? 'text-red-600' : 'text-black'}>
