@@ -578,8 +578,8 @@ nav a {
 
 .segment {
   position: absolute;
-  background: rgba(239, 68, 68, 0.8);
-  border: 1px solid rgba(239, 68, 68, 0.5);
+  background: #666666;
+  border: 1px solid #555555;
   border-radius: 1px;
 }
 
