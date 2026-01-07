@@ -2704,6 +2704,97 @@ export default function GeneratorPage() {
                             align-items: center;
                             gap: 32px;
                             margin-top: 12px;
+                            background: #0e120f;
+                            border: 1px solid #2c3a30;
+                            padding: 8px 12px;
+                            position: relative;
+                            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+                            letter-spacing: -0.025em;
+                          }
+
+                          .patina-console::before {
+                            content: '';
+                            position: absolute;
+                            top: 0;
+                            left: 0;
+                            right: 0;
+                            bottom: 0;
+                            background: repeating-linear-gradient(
+                              0deg,
+                              transparent,
+                              transparent 1px,
+                              rgba(159, 211, 161, 0.03) 1px,
+                              rgba(159, 211, 161, 0.03) 2px
+                            );
+                            pointer-events: none;
+                          }
+
+                          .patina-console button {
+                            background: #141a16;
+                            border: 1px solid #2c3a30;
+                            color: #9fd3a1;
+                            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+                            font-size: 12px;
+                            font-weight: bold;
+                            text-transform: uppercase;
+                            letter-spacing: -0.025em;
+                            cursor: pointer;
+                            transition: all 0.1s ease;
+                            text-shadow: 0 0 1px rgba(159, 211, 161, 0.3);
+                            min-width: 32px;
+                            height: 32px;
+                          }
+
+                          .patina-console button:hover:not(:disabled) {
+                            border-color: #4b6f5a;
+                            text-shadow: 0 0 3px rgba(159, 211, 161, 0.6);
+                          }
+
+                          .patina-console button:active:not(:disabled) {
+                            background: #0f1512;
+                            border-color: #1a2520;
+                            transform: translate(1px, 1px);
+                            text-shadow: 0 0 1px rgba(159, 211, 161, 0.2);
+                          }
+
+                          .patina-console button:disabled {
+                            opacity: 0.4;
+                            cursor: not-allowed;
+                          }
+
+                          .patina-toggle-on {
+                            background: #0f1a14;
+                            border-color: #4b6f5a;
+                            color: #c9ffd6;
+                            text-shadow: 0 0 4px rgba(201, 255, 214, 0.4);
+                          }
+
+                          .patina-toggle-off {
+                            background: #0b0f0c;
+                            border-color: #2c3a30;
+                            color: #6fa987;
+                            text-shadow: 0 0 2px rgba(111, 169, 135, 0.2);
+                          }
+
+                          .patina-value-display {
+                            background: #0b0f0c;
+                            border: 1px solid #3e5f4c;
+                            color: #c9ffd6;
+                            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+                            font-size: 11px;
+                            font-weight: bold;
+                            text-transform: uppercase;
+                            letter-spacing: -0.025em;
+                            padding: 4px 8px;
+                            min-width: 60px;
+                            text-align: center;
+                            text-shadow: 0 0 4px rgba(159, 211, 161, 0.35);
+                          }
+
+                          .patina-value-display.dirty {
+                            color: #b36b5e;
+                            text-shadow: 0 0 4px rgba(179, 107, 94, 0.35);
+                          }
                           }
                         `}</style>
                       </div>
@@ -2774,20 +2865,13 @@ export default function GeneratorPage() {
                                         updateDirtState(newLevel > 0, newLevel)
                                         setPatinaLocked(true)
                                       }}
-                                      className="px-3 py-2 rounded font-mono text-sm transition-all duration-200 border-2 bg-gray-800 text-gray-400 border-gray-600 hover:bg-gray-700 hover:border-gray-500"
                                       title="Decrease dirt level"
                                       disabled={dirtLevel === 0}
                                     >
-                                      <div className="text-center font-bold">
-                                        -
-                                      </div>
+                                      -
                                     </button>
                                     <div className="flex-1 text-center min-w-[80px]">
-                                      <div className={`px-3 py-2 rounded font-mono text-sm border-2 ${
-                                        dirtLevel === 0 ? 'bg-green-600 text-white border-green-400 shadow-lg shadow-green-500/30' :
-                                        dirtLevel === 1 ? 'bg-yellow-600 text-white border-yellow-400 shadow-lg shadow-yellow-500/30' :
-                                        'bg-red-600 text-white border-red-400 shadow-lg shadow-red-500/30'
-                                      }`}>
+                                      <div className={`patina-value-display ${dirtLevel === 2 ? 'dirty' : ''}`}>
                                         {dirtLevel === 0 ? 'CLEAN' : dirtLevel === 1 ? 'DUSTY' : 'FILTHY'}
                                       </div>
                                     </div>
@@ -2797,13 +2881,10 @@ export default function GeneratorPage() {
                                         updateDirtState(true, newLevel)
                                         setPatinaLocked(true)
                                       }}
-                                      className="px-3 py-2 rounded font-mono text-sm transition-all duration-200 border-2 bg-gray-800 text-gray-400 border-gray-600 hover:bg-gray-700 hover:border-gray-500"
                                       title="Increase dirt level"
                                       disabled={dirtLevel === 2}
                                     >
-                                      <div className="text-center font-bold">
-                                        +
-                                      </div>
+                                      +
                                     </button>
                                   </div>
                                 </div>
@@ -2818,16 +2899,13 @@ export default function GeneratorPage() {
                                         updateTextureState(newLevel > 0, newLevel)
                                         setPatinaLocked(true)
                                       }}
-                                      className="px-3 py-2 rounded font-mono text-sm transition-all duration-200 border-2 bg-gray-800 text-gray-400 border-gray-600 hover:bg-gray-700 hover:border-gray-500"
                                       title="Decrease aging level"
                                       disabled={textureLevel === 0}
                                     >
-                                      <div className="text-center font-bold">
-                                        -
-                                      </div>
+                                      -
                                     </button>
                                     <div className="flex-1 text-center min-w-[80px]">
-                                      <div className="px-3 py-2 rounded font-mono text-sm border-2 bg-gradient-to-r from-green-600 to-red-600 text-white border-gray-400">
+                                      <div className="patina-value-display">
                                         {textureLevel}
                                       </div>
                                     </div>
@@ -2837,13 +2915,10 @@ export default function GeneratorPage() {
                                         updateTextureState(true, newLevel)
                                         setPatinaLocked(true)
                                       }}
-                                      className="px-3 py-2 rounded font-mono text-sm transition-all duration-200 border-2 bg-gray-800 text-gray-400 border-gray-600 hover:bg-gray-700 hover:border-gray-500"
                                       title="Increase aging level"
                                       disabled={textureLevel === 10}
                                     >
-                                      <div className="text-center font-bold">
-                                        +
-                                      </div>
+                                      +
                                     </button>
                                   </div>
                                 </div>
@@ -2864,11 +2939,7 @@ export default function GeneratorPage() {
                                       }
                                       setPatinaLocked(true)
                                     }}
-                                    className={`px-4 py-3 rounded text-sm font-mono transition-all duration-200 border ${
-                                      (showDirt || showTexture)
-                                        ? 'bg-green-600 text-white border-green-400 shadow-lg shadow-green-500/30'
-                                        : 'bg-gray-600 text-gray-300 border-gray-500 hover:bg-gray-500'
-                                    }`}
+                                    className={(showDirt || showTexture) ? 'patina-toggle-on' : 'patina-toggle-off'}
                                     title={(showDirt || showTexture) ? 'Disable all overlays' : 'Enable overlays'}
                                   >
                                     {(showDirt || showTexture) ? 'ON' : 'OFF'}
