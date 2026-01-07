@@ -2872,7 +2872,7 @@ export default function GeneratorPage() {
                                     title={(showDirt || showTexture) ? 'Disable all overlays' : 'Enable overlays'}
                                   >
                                     <span className={(showDirt || showTexture) ? 'text-red-600' : 'text-black'}>
-                                      ⚡
+                                      ⏻
                                     </span>
                                   </button>
                                 </div>
