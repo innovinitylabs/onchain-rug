@@ -2572,14 +2572,14 @@ export default function GeneratorPage() {
         <div className="max-w-[1800px] mx-auto px-4">
       {/* Header */}
 
-        {/* Old-School Terminal Layout - Art on Top, Terminal on Bottom */}
-        <div className="space-y-0">
-          {/* Canvas Display - Full Width at Top */}
+        {/* New Side-by-Side Layout - Art Preview (70%) on Left, Controls (30%) on Right */}
+        <div className="grid lg:grid-cols-[70%_30%] gap-6 space-y-6 lg:space-y-0">
+          {/* Canvas Display - Left Side (70% width) */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="w-full mb-0"
+            className="w-full"
           >
             <div className="p-2">
                             {/* Old-School CRT Monitor Box */}
@@ -2664,14 +2664,14 @@ export default function GeneratorPage() {
             </div>
           </motion.div>
 
-          {/* Terminal Interface - Fixed at Bottom */}
+          {/* Terminal Interface - Right Side (30% width) */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.2 }}
             className="w-full pb-8"
           >
-            <div className="relative mx-auto w-full max-w-6xl px-4 md:px-6 lg:px-8">
+            <div className="relative w-full px-2 md:px-3 lg:px-4">
               <div className="bg-black text-green-400 font-mono border-t-2 border-green-500 py-3 md:py-4 px-4 md:px-6">
               {/* Terminal Header */}
               <div className="flex items-center justify-between mb-3 pb-2 border-b border-green-500/30">
@@ -2791,8 +2791,8 @@ export default function GeneratorPage() {
                   </div>
                 </div>
 
-                {/* Two-Panel Layout: Text Embedding (Left) | Systems (Right) */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Stacked Layout: Text Embedding (Top) | Systems (Bottom) */}
+                <div className="grid grid-cols-1 gap-6">
                   {/* Left Panel - Text Embedding */}
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
@@ -3216,7 +3216,13 @@ export default function GeneratorPage() {
 
                   {/* NFT Exporter Component */}
                   {isLoaded && (
-                  <NFTExporter />
+                  <NFTExporter
+                    currentSeed={currentSeed}
+                    currentPalette={palette}
+                    currentStripeData={stripeData}
+                    textRows={textInputs}
+                    characterMap={typeof window !== 'undefined' ? (window as any).doormatData?.characterMap || {} : {}}
+                  />
                   )}
 
                   {/* Web3 Minting Component */}
