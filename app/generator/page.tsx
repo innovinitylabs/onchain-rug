@@ -64,6 +64,7 @@ export default function GeneratorPage() {
   const [textureLevel, setTextureLevel] = useState(0) // 0 = none, 1 = 7 days, 2 = 30 days
   const [dirtExpanded, setDirtExpanded] = useState(false)
   const [agingExpanded, setAgingExpanded] = useState(false)
+  const [focusNewRow, setFocusNewRow] = useState(false)
   // Diamond frame aging (hardcoded - most impressive longevity)
   const [warpThickness, setWarpThickness] = useState(2) // Default warp thickness
 
@@ -92,6 +93,7 @@ export default function GeneratorPage() {
 
   const canvasContainerRef = useRef<HTMLDivElement>(null)
   const scriptsLoadedRef = useRef<Set<string>>(new Set())
+  const textInputRefs = useRef<(HTMLInputElement | null)[]>([])
 
   // Clean P5.js loading - no global pollution
   const loadP5 = () => {
@@ -2587,6 +2589,17 @@ export default function GeneratorPage() {
     return () => document.removeEventListener('keydown', handleKeyPress)
   }, [isLoaded, generateNew])
 
+  // Focus on new row when added via Tab
+  useEffect(() => {
+    if (focusNewRow && textInputRefs.current.length > 0) {
+      const lastInput = textInputRefs.current[textInputRefs.current.length - 1]
+      if (lastInput) {
+        lastInput.focus()
+        setFocusNewRow(false)
+      }
+    }
+  }, [textInputs, focusNewRow])
+
   return (
     <>
       <Head>
@@ -2826,12 +2839,14 @@ export default function GeneratorPage() {
                         <div key={index} className="flex items-center gap-2">
                           <span className="text-green-400 font-mono text-sm min-w-[20px]">{index + 1}.</span>
                           <input
+                            ref={(el) => { textInputRefs.current[index] = el }}
                             type="text"
                             value={text}
                             onChange={(e) => updateTextInput(index, e.target.value)}
                             onKeyDown={(e) => {
                               if (e.key === 'Tab' && currentRowCount < 5) {
                                 e.preventDefault()
+                                setFocusNewRow(true)
                                 addTextRow()
                               }
                             }}
