@@ -569,12 +569,20 @@ nav a {
   box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.9), 0 0 4px rgba(239, 68, 68, 0.1);
 }
 
-.seven-segment-digit {
-  position: relative;
-  width: 18px;
-  height: 28px;
-  margin: 0 2px;
-}
+                          .seven-segment-digit {
+                            position: relative;
+                            width: 14px;
+                            height: 22px;
+                            margin: 0 1px;
+                          }
+
+                          @media (min-width: 768px) {
+                            .seven-segment-digit {
+                              width: 18px;
+                              height: 28px;
+                              margin: 0 2px;
+                            }
+                          }
 
 .segment {
   position: absolute;
@@ -589,11 +597,22 @@ nav a {
   box-shadow: 0 0 8px #ff0000, 0 0 16px rgba(255, 0, 0, 0.8);
 }
 
-                          /* Segment positions for 18x28 digit - split vertical segments */
-                          .segment.a { top: 0; left: 3px; width: 12px; height: 4px; }
-                          .segment.b { top: 4px; right: 0; width: 4px; height: 8px; }    /* Upper right */
-                          .segment.c { top: 16px; right: 0; width: 4px; height: 8px; }  /* Lower right */
-                          .segment.d { top: 24px; left: 3px; width: 12px; height: 4px; }
-                          .segment.e { top: 16px; left: 0; width: 4px; height: 8px; }   /* Lower left */
-                          .segment.f { top: 4px; left: 0; width: 4px; height: 8px; }    /* Upper left */
-                          .segment.g { top: 12px; left: 3px; width: 12px; height: 4px; }
+                          /* Mobile segment positions (14x22) */
+                          .segment.a { top: 0; left: 1px; width: 12px; height: 3px; }
+                          .segment.b { top: 3px; right: 0; width: 3px; height: 7px; }    /* Upper right */
+                          .segment.c { top: 12px; right: 0; width: 3px; height: 7px; }  /* Lower right */
+                          .segment.d { top: 19px; left: 1px; width: 12px; height: 3px; }
+                          .segment.e { top: 12px; left: 0; width: 3px; height: 7px; }   /* Lower left */
+                          .segment.f { top: 3px; left: 0; width: 3px; height: 7px; }    /* Upper left */
+                          .segment.g { top: 10px; left: 1px; width: 12px; height: 3px; }
+
+                          @media (min-width: 768px) {
+                            /* Desktop segment positions (18x28) */
+                            .segment.a { top: 0; left: 3px; width: 12px; height: 4px; }
+                            .segment.b { top: 4px; right: 0; width: 4px; height: 8px; }    /* Upper right */
+                            .segment.c { top: 16px; right: 0; width: 4px; height: 8px; }  /* Lower right */
+                            .segment.d { top: 24px; left: 3px; width: 12px; height: 4px; }
+                            .segment.e { top: 16px; left: 0; width: 4px; height: 8px; }   /* Lower left */
+                            .segment.f { top: 4px; left: 0; width: 4px; height: 8px; }    /* Upper left */
+                            .segment.g { top: 12px; left: 3px; width: 12px; height: 4px; }
+                          }
