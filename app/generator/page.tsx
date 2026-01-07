@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { Shuffle, Download, FileText, Plus, X, Copy } from 'lucide-react'
 import Navigation from '@/components/Navigation'
@@ -62,6 +62,10 @@ export default function GeneratorPage() {
   const [dirtLevel, setDirtLevel] = useState(0) // 0 = clean, 1 = 50% dirty, 2 = full dirty
   const [showTexture, setShowTexture] = useState(false)
   const [textureLevel, setTextureLevel] = useState(0) // 0 = none, 1 = 7 days, 2 = 30 days
+  const [dirtExpanded, setDirtExpanded] = useState(false)
+  const [agingExpanded, setAgingExpanded] = useState(false)
+  const [focusNewRow, setFocusNewRow] = useState(false)
+  // Diamond frame aging (hardcoded - most impressive longevity)
   const [warpThickness, setWarpThickness] = useState(2) // Default warp thickness
 
   // Debounce timer for live updates
@@ -89,6 +93,7 @@ export default function GeneratorPage() {
 
   const canvasContainerRef = useRef<HTMLDivElement>(null)
   const scriptsLoadedRef = useRef<Set<string>>(new Set())
+  const textInputRefs = useRef<(HTMLInputElement | null)[]>([])
 
   // Clean P5.js loading - no global pollution
   const loadP5 = () => {
@@ -2449,6 +2454,27 @@ export default function GeneratorPage() {
     }
   }
 
+  // Memoized aging days calculations for diamond frame (hardcoded for performance)
+  const agingDaysData = useMemo(() => {
+    const baseRate = 14
+    const diamondMultiplier = 10 // Diamond: 90% slower (10x longer)
+    const adjustedRate = (baseRate * 100) / diamondMultiplier // 140 days per level
+
+    // Pre-calculate all levels for performance
+    const days: number[] = []
+    for (let i = 0; i <= 10; i++) {
+      days[i] = i * adjustedRate
+    }
+
+    return days
+  }, []) // No dependencies - diamond frame is fixed
+
+  // Get aging days for texture level (now instant lookup)
+  const getAgingDays = (level: number) => {
+    return agingDaysData[level] || 0
+  }
+
+
   // Initialize on mount
   useEffect(() => {
     let isInitialized = false
@@ -2549,6 +2575,31 @@ export default function GeneratorPage() {
     }
   }, [isLoaded]) // Only run when isLoaded changes to true
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyPress = (event: KeyboardEvent) => {
+      // Spacebar to randomise (only when loaded and not typing in inputs)
+      if (event.code === 'Space' && isLoaded && !['INPUT', 'TEXTAREA'].includes((event.target as HTMLElement)?.tagName)) {
+        event.preventDefault()
+        generateNew()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyPress)
+    return () => document.removeEventListener('keydown', handleKeyPress)
+  }, [isLoaded, generateNew])
+
+  // Focus on new row when added via Tab
+  useEffect(() => {
+    if (focusNewRow && textInputRefs.current.length > 0) {
+      const lastInput = textInputRefs.current[textInputRefs.current.length - 1]
+      if (lastInput) {
+        lastInput.focus()
+        setFocusNewRow(false)
+      }
+    }
+  }, [textInputs, focusNewRow])
+
   return (
     <>
       <Head>
@@ -2572,14 +2623,14 @@ export default function GeneratorPage() {
         <div className="max-w-[1800px] mx-auto px-4">
       {/* Header */}
 
-        {/* Old-School Terminal Layout - Art on Top, Terminal on Bottom */}
-        <div className="space-y-0">
-          {/* Canvas Display - Full Width at Top */}
+        {/* New Side-by-Side Layout - Art Preview (70%) on Left, Controls (30%) on Right */}
+        <div className="grid lg:grid-cols-[70%_30%] gap-6 space-y-6 lg:space-y-0">
+          {/* Canvas Display - Left Side (70% width) */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="w-full mb-0"
+            className="w-full"
           >
             <div className="p-2">
                             {/* Old-School CRT Monitor Box */}
@@ -2664,14 +2715,14 @@ export default function GeneratorPage() {
             </div>
           </motion.div>
 
-          {/* Terminal Interface - Fixed at Bottom */}
+          {/* Terminal Interface - Right Side (30% width) */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.2 }}
             className="w-full pb-8"
           >
-            <div className="relative mx-auto w-full max-w-6xl px-4 md:px-6 lg:px-8">
+            <div className="relative w-full px-2 md:px-3 lg:px-4">
               <div className="bg-black text-green-400 font-mono border-t-2 border-green-500 py-3 md:py-4 px-4 md:px-6">
               {/* Terminal Header */}
               <div className="flex items-center justify-between mb-3 pb-2 border-b border-green-500/30">
@@ -2758,41 +2809,19 @@ export default function GeneratorPage() {
 
                 {/* Primary Actions - Top Priority */}
                 <div className="grid grid-cols-1 gap-3">
-                  <div className="grid grid-cols-2 gap-3">
                   <button
                     onClick={generateNew}
                     disabled={!isLoaded}
-                    className="bg-green-600 hover:bg-green-700 disabled:bg-gray-700 text-black font-bold px-4 py-2.5 rounded font-mono transition-all duration-200 border border-green-400 flex items-center justify-center gap-2 text-sm"
+                    className="bg-green-600 hover:bg-green-700 disabled:bg-gray-700 text-black font-bold px-6 py-3 rounded font-mono transition-all duration-200 border border-green-400 flex items-center justify-center gap-2 text-sm w-full"
+                    title="Press SPACEBAR to randomise"
                   >
                     <Shuffle className="w-4 h-4" />
-                    GENERATE
+                    RANDOMISE
                   </button>
-                  </div>
                 </div>
 
-                {/* Contract Address Display */}
-                <div className="space-y-2">
-                  <h4 className="text-green-300 text-sm font-mono font-medium">CONTRACT ADDRESS</h4>
-                  <div className="bg-gray-900/50 p-3 rounded">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="text-green-400 text-xs font-mono break-all flex-1">
-                        {contractAddress || 'Not deployed on this network'}
-                      </div>
-                      {contractAddress && (
-                      <Copy
-                          onClick={() => copyToClipboard(contractAddress, 'contract address')}
-                        className="text-green-500 hover:text-green-300 cursor-pointer transition-colors w-4 h-4"
-                      />
-                      )}
-                    </div>
-                    <div className="text-green-500 text-xs font-mono mt-1">
-                      Network: {getChainDisplayName(chainId)}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Two-Panel Layout: Text Embedding (Left) | Systems (Right) */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Stacked Layout: Text Embedding (Top) | Systems (Bottom) */}
+                <div className="grid grid-cols-1 gap-6">
                   {/* Left Panel - Text Embedding */}
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
@@ -2810,9 +2839,29 @@ export default function GeneratorPage() {
                         <div key={index} className="flex items-center gap-2">
                           <span className="text-green-400 font-mono text-sm min-w-[20px]">{index + 1}.</span>
                           <input
+                            ref={(el) => { textInputRefs.current[index] = el }}
                             type="text"
                             value={text}
-                            onChange={(e) => updateTextInput(index, e.target.value)}
+                            onChange={(e) => {
+                              // Preserve cursor position by deferring the update
+                              const input = e.target
+                              const cursorPosition = input.selectionStart
+                              updateTextInput(index, e.target.value)
+
+                              // Restore cursor position after state update
+                              setTimeout(() => {
+                                if (textInputRefs.current[index]) {
+                                  textInputRefs.current[index]?.setSelectionRange(cursorPosition, cursorPosition)
+                                }
+                              }, 0)
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Tab' && currentRowCount < 5) {
+                                e.preventDefault()
+                                setFocusNewRow(true)
+                                addTextRow()
+                              }
+                            }}
                             placeholder={`Row ${index + 1}`}
                             maxLength={11}
                             className="flex-1 px-2 py-1.5 bg-gray-900 text-green-400 rounded text-sm font-mono focus:ring-1 focus:ring-green-500 transition-all"
@@ -2852,125 +2901,143 @@ export default function GeneratorPage() {
 
                   {/* Right Panel - Dirt & Texture Systems */}
                   <div className="space-y-4">
-                    {/* Dirt System Controls */}
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
+                    {/* Dirt System Controls - Accordion */}
+                    <div
+                      className="relative"
+                      onMouseEnter={() => setDirtExpanded(true)}
+                      onMouseLeave={() => setDirtExpanded(false)}
+                    >
+                      {/* Header - Always Visible */}
+                      <div className="flex items-center justify-between cursor-pointer">
                         <h4 className="text-green-300 text-sm font-mono font-medium">DIRT SYSTEM</h4>
                         <span className="text-green-500 text-xs font-mono">
-                          {showDirt ? `${dirtLevel === 1 ? '50%' : '100%'} dirty` : 'Clean'}
+                          {!showDirt ? '🧼 Clean' : dirtLevel === 1 ? '🟡 50% Dusty' : '🔴 100% Filthy'}
                         </span>
                       </div>
 
-                      <div className="text-green-400 text-xs font-mono bg-gray-900/50 p-2 rounded">
-                        Dynamic dirt accumulation: 50% after 3 days, 100% after 7 days. Clean with onchain transaction.
-                      </div>
-
-                      {/* Dirt Toggle */}
-                      <div className="flex items-center gap-3">
-                        <button
-                          onClick={() => updateDirtState(!showDirt, dirtLevel)}
-                          className={`px-3 py-1.5 rounded font-mono text-xs transition-all duration-200 border ${
-                            showDirt
-                              ? 'bg-orange-600/80 hover:bg-orange-600 text-white border-orange-400'
-                              : 'bg-gray-600/80 hover:bg-gray-600 text-white border-gray-400'
-                          }`}
-                        >
-                          {showDirt ? 'HIDE DIRT' : 'SHOW DIRT'}
-                        </button>
-
-                        {showDirt && (
-                          <div className="flex gap-1">
-                            <button
-                              onClick={() => updateDirtState(showDirt, 1)}
-                              className={`px-2 py-1 rounded font-mono text-xs transition-all duration-200 border ${
-                                dirtLevel === 1
-                                  ? 'bg-yellow-600 text-white border-yellow-400'
-                                  : 'bg-gray-700 text-gray-300 border-gray-500 hover:bg-gray-600'
-                              }`}
-                            >
-                              50%
-                            </button>
-                            <button
-                              onClick={() => updateDirtState(showDirt, 2)}
-                              className={`px-2 py-1 rounded font-mono text-xs transition-all duration-200 border ${
-                                dirtLevel === 2
-                                  ? 'bg-red-600 text-white border-red-400'
-                                  : 'bg-gray-700 text-gray-300 border-gray-500 hover:bg-gray-600'
-                              }`}
-                            >
-                              100%
-                            </button>
+                      {/* Collapsible Content */}
+                      <div className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                        dirtExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                      }`}>
+                        <div className="space-y-3 pt-3">
+                          <div className="text-green-400 text-xs font-mono bg-gray-900/50 p-2 rounded">
+                            Dynamic dirt accumulation: 50% after 3 days, 100% after 7 days. Clean with onchain transaction.
                           </div>
-                        )}
+
+                          {/* Dirt Accumulation Meter */}
+                          <div className="space-y-3">
+                            <div className="text-xs text-green-400 font-mono">Dirt Accumulation Level:</div>
+                            <div className="flex gap-1">
+                              {/* Clean Level */}
+                              <button
+                                onClick={() => updateDirtState(false, 0)}
+                                className={`flex-1 px-2 py-2 rounded font-mono text-xs transition-all duration-200 border-2 ${
+                                  !showDirt
+                                    ? 'bg-green-600 text-white border-green-400 shadow-lg shadow-green-500/30'
+                                    : 'bg-gray-800 text-gray-400 border-gray-600 hover:bg-gray-700 hover:border-gray-500'
+                                }`}
+                                title="Clean as new"
+                              >
+                                <div className="text-center font-bold">
+                                  CLEAN
+                                </div>
+                              </button>
+
+                              {/* Dusty Level */}
+                              <button
+                                onClick={() => updateDirtState(true, 1)}
+                                className={`flex-1 px-2 py-2 rounded font-mono text-xs transition-all duration-200 border-2 ${
+                                  showDirt && dirtLevel === 1
+                                    ? 'bg-yellow-600 text-white border-yellow-400 shadow-lg shadow-yellow-500/30'
+                                    : 'bg-gray-800 text-gray-400 border-gray-600 hover:bg-gray-700 hover:border-gray-500'
+                                }`}
+                                title="3 days of wear"
+                              >
+                                <div className="text-center font-bold">
+                                  DUSTY
+                                </div>
+                              </button>
+
+                              {/* Filthy Level */}
+                              <button
+                                onClick={() => updateDirtState(true, 2)}
+                                className={`flex-1 px-2 py-2 rounded font-mono text-xs transition-all duration-200 border-2 ${
+                                  showDirt && dirtLevel === 2
+                                    ? 'bg-red-600 text-white border-red-400 shadow-lg shadow-red-500/30'
+                                    : 'bg-gray-800 text-gray-400 border-gray-600 hover:bg-gray-700 hover:border-gray-500'
+                                }`}
+                                title="7 days of neglect"
+                              >
+                                <div className="text-center font-bold">
+                                  FILTHY
+                                </div>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Aging System Controls */}
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
+                    {/* Aging System Controls - Accordion */}
+                    <div
+                      className="relative"
+                      onMouseEnter={() => setAgingExpanded(true)}
+                      onMouseLeave={() => setAgingExpanded(false)}
+                    >
+                      {/* Header - Always Visible */}
+                      <div className="flex items-center justify-between cursor-pointer">
                         <h4 className="text-green-300 text-sm font-mono font-medium">AGING SYSTEM</h4>
                         <span className="text-green-500 text-xs font-mono">
-                          {showTexture ? `Level ${textureLevel}/10 aging` : 'Brand New'}
+                          {!showTexture ? '🏭 Brand New' : `${getAgingDays(textureLevel)} days old (Diamond frame)`}
                         </span>
                       </div>
 
-                      <div className="text-green-400 text-xs font-mono bg-gray-900/50 p-2 rounded">
-                        11-level aging progression: Level 0 (brand new) to Level 10 (maximum age). Each level represents increasing fabric aging and character.
-                      </div>
+                      {/* Collapsible Content */}
+                      <div className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                        agingExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                      }`}>
+                        <div className="space-y-3 pt-3">
+                          <div className="text-green-400 text-xs font-mono bg-gray-900/50 p-2 rounded">
+                            11-level aging progression: Level 0 (brand new) to Level 10 (maximum age). Shows Diamond frame aging timeline (140 days per level). Diamond frame requires 200 maintenance points.
+                          </div>
 
-                      {/* Texture Toggle */}
-                      <div className="flex items-center gap-3">
-                        <button
-                          onClick={() => updateTextureState(!showTexture, textureLevel)}
-                          className={`px-3 py-1.5 rounded font-mono text-xs transition-all duration-200 border ${
-                            showTexture
-                              ? 'bg-purple-600/80 hover:bg-purple-600 text-white border-purple-400'
-                              : 'bg-gray-600/80 hover:bg-gray-600 text-white border-gray-400'
-                          }`}
-                        >
-                          {showTexture ? 'HIDE TEXTURE' : 'SHOW TEXTURE'}
-                        </button>
-                      </div>
-
-                      {showTexture && (
-                        <div className="space-y-3">
-                          {/* Aging Level Slider */}
-                          <div className="space-y-2">
+                          {/* Aging Level Slider with Preview */}
+                          <div className="space-y-3">
                             <div className="flex items-center justify-between">
                               <label className="text-green-300 text-xs font-mono">Aging Level</label>
-                              <span className="text-green-500 text-xs font-mono">{textureLevel}/10</span>
+                              <span className="text-green-500 text-xs font-mono">{textureLevel}/10 ({getAgingDays(textureLevel)} days)</span>
                             </div>
                             <input
                               type="range"
                               min="0"
                               max="10"
                               value={textureLevel}
-                              onChange={(e) => updateTextureState(showTexture, parseInt(e.target.value))}
-                              className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-green"
+                              onChange={(e) => updateTextureState(textureLevel > 0 || parseInt(e.target.value) > 0, parseInt(e.target.value))}
+                              className="w-full h-3 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-purple"
                             />
                             <div className="flex justify-between text-xs text-gray-400 font-mono">
                               <span>0 (Fresh)</span>
-                              <span>5 (Moderate)</span>
-                              <span>10 (Maximum)</span>
+                              <span>5 ({getAgingDays(5)} days)</span>
+                              <span>10 ({getAgingDays(10)} days)</span>
+                            </div>
+
+                            {/* Aging Level Preview */}
+                            <div className="text-xs text-green-400 font-mono bg-gray-900/30 p-3 rounded border border-gray-600">
+                              {textureLevel === 0 && `✨ Brand New - pristine condition (0 days)`}
+                              {textureLevel === 1 && `🧵 Slightly Aged - subtle signs of use (${getAgingDays(1)} days)`}
+                              {textureLevel === 2 && `📅 Moderately Aged - light aging (${getAgingDays(2)} days)`}
+                              {textureLevel === 3 && `🏠 Well Aged - well-used but functional (${getAgingDays(3)} days)`}
+                              {textureLevel === 4 && `📆 Significantly Aged - shows character (${getAgingDays(4)} days)`}
+                              {textureLevel === 5 && `🪶 Very Aged - vintage appearance (${getAgingDays(5)} days)`}
+                              {textureLevel === 6 && `🎭 Extremely Aged - distinctive patina (${getAgingDays(6)} days)`}
+                              {textureLevel === 7 && `🏺 Heavily Aged - rich texture (${getAgingDays(7)} days)`}
+                              {textureLevel === 8 && `🏛️ Severely Aged - extreme character (${getAgingDays(8)} days)`}
+                              {textureLevel === 9 && `🎨 Critically Aged - legendary status (${getAgingDays(9)} days)`}
+                              {textureLevel === 10 && `💎 Maximum Age - ultimate degradation (${getAgingDays(10)} days)`}
                             </div>
                           </div>
-
-                          {/* Aging Level Descriptions */}
-                          <div className="text-xs text-green-400 font-mono bg-gray-900/30 p-2 rounded">
-                            {textureLevel === 0 && "✨ Brand New - pristine condition"}
-                            {textureLevel === 1 && "🧵 Slightly Aged - subtle signs of use"}
-                            {textureLevel === 2 && "📅 Moderately Aged - light aging"}
-                            {textureLevel === 3 && "🏠 Well Aged - well-used but functional"}
-                            {textureLevel === 4 && "📆 Significantly Aged - shows character"}
-                            {textureLevel === 5 && "🪶 Very Aged - vintage appearance"}
-                            {textureLevel === 6 && "🎭 Extremely Aged - distinctive patina"}
-                            {textureLevel === 7 && "🏺 Heavily Aged - rich texture"}
-                            {textureLevel === 8 && "🏛️ Severely Aged - extreme character"}
-                            {textureLevel === 9 && "🎨 Critically Aged - legendary status"}
-                            {textureLevel === 10 && "💎 Maximum Age - ultimate degradation"}
-                          </div>
                         </div>
-                      )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -3192,6 +3259,27 @@ export default function GeneratorPage() {
 
                 {/* Mint Button Section */}
                 <div className="border-t border-green-500/30 pt-3 mt-4">
+                  {/* Contract Address Display - Moved here for proximity to mint button */}
+                  <div className="space-y-2 mb-4">
+                    <h4 className="text-green-300 text-sm font-mono font-medium">CONTRACT ADDRESS</h4>
+                    <div className="bg-gray-900/50 p-3 rounded">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="text-green-400 text-xs font-mono break-all flex-1">
+                          {contractAddress || 'Not deployed on this network'}
+                        </div>
+                        {contractAddress && (
+                        <Copy
+                            onClick={() => copyToClipboard(contractAddress, 'contract address')}
+                          className="text-green-500 hover:text-green-300 cursor-pointer transition-colors w-4 h-4"
+                        />
+                        )}
+                      </div>
+                      <div className="text-green-500 text-xs font-mono mt-1">
+                        Network: {getChainDisplayName(chainId)}
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="text-green-300 text-sm mb-3 font-mono">🚀 Mint Your Onchain Rug</div>
 
                   {/* Minting Status */}
@@ -3214,12 +3302,12 @@ export default function GeneratorPage() {
                     </div>
                   </div>
 
-                  {/* NFT Exporter Component - Hidden */}
-                  {false && (
+                  {/* NFT Exporter Component - Development Only */}
+                  {isLoaded && typeof window !== 'undefined' && window.location.hostname === 'localhost' && (
                   <NFTExporter
                     currentSeed={currentSeed}
                     currentPalette={palette}
-                    currentStripeData={typeof window !== 'undefined' ? (window as any).stripeData || [] : []}
+                    currentStripeData={stripeData}
                     textRows={textInputs}
                     characterMap={typeof window !== 'undefined' ? (window as any).doormatData?.characterMap || {} : {}}
                   />
