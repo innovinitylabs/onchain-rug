@@ -62,7 +62,7 @@ export default function GeneratorPage() {
   const [dirtLevel, setDirtLevel] = useState(0) // 0 = clean, 1 = 50% dirty, 2 = full dirty
   const [showTexture, setShowTexture] = useState(false)
   const [textureLevel, setTextureLevel] = useState(0) // 0 = none, 1 = 7 days, 2 = 30 days
-  const [selectedFrameLevel, setSelectedFrameLevel] = useState(0) // 0=None, 1=Bronze, 2=Silver, 3=Gold, 4=Diamond
+  const [selectedFrameLevel, setSelectedFrameLevel] = useState(4) // 0=None, 1=Bronze, 2=Silver, 3=Gold, 4=Diamond (default to diamond)
   const [warpThickness, setWarpThickness] = useState(2) // Default warp thickness
 
   // Debounce timer for live updates
