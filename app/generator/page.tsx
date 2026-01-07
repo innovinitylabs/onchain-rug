@@ -2757,7 +2757,7 @@ export default function GeneratorPage() {
 
                   {/* Relocated Patina Controls */}
                   <div
-                    className="patina-console p-2 md:p-3"
+                    className="patina-console p-1 sm:p-2 md:p-3"
                     onMouseEnter={() => !patinaLocked && setPatinaOpen(true)}
                     onMouseLeave={() => !patinaLocked && setPatinaOpen(false)}
                   >
@@ -2786,9 +2786,9 @@ export default function GeneratorPage() {
                           >
                             <div className="pt-4">
                               {/* CRT Control Strip Layout */}
-                              <div className="flex items-end justify-end gap-4 md:gap-8 lg:gap-12">
+                              <div className="flex flex-col sm:flex-row sm:items-end sm:justify-end gap-2 sm:gap-4 md:gap-8 lg:gap-12">
                                 {/* Dirt Controls */}
-                                <div className="flex flex-col items-center gap-2">
+                                <div className="flex flex-col items-center gap-1 sm:gap-2">
                                   <div className="flex items-center gap-2 w-full">
                                     <div className="flex-1 h-px bg-black"></div>
                                     <h5 className="text-black text-xs font-mono font-medium px-2">DIRT</h5>
@@ -2801,7 +2801,7 @@ export default function GeneratorPage() {
                                         updateDirtState(newLevel > 0, newLevel)
                                         setPatinaLocked(true)
                                       }}
-                                      className="px-2 py-1 md:px-3 md:py-2 rounded font-mono text-xs md:text-sm transition-all duration-200 border-2 bg-amber-200 text-gray-700 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
+                                      className="px-1.5 py-0.5 sm:px-2 sm:py-1 md:px-3 md:py-2 rounded font-mono text-xs transition-all duration-200 border-2 bg-amber-200 text-gray-700 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
                                       title="Decrease dirt level"
                                       disabled={dirtLevel === 0}
                                     >
@@ -2809,7 +2809,7 @@ export default function GeneratorPage() {
                                         -
                                       </div>
                                     </button>
-                                    <div className="flex-1 text-center min-w-[3.75rem] md:min-w-[5rem]">
+                                    <div className="flex-1 text-center min-w-[2.5rem] sm:min-w-[3.75rem] md:min-w-[5rem]">
                                       <div key={dirtLevel} className="seven-segment-display">
                                         <div className="seven-segment-digit">
                                           <div className={`segment a ${getSegmentActive('a', dirtLevel.toString()) ? 'active' : ''}`}></div>
@@ -2828,7 +2828,7 @@ export default function GeneratorPage() {
                                         updateDirtState(true, newLevel)
                                         setPatinaLocked(true)
                                       }}
-                                      className="px-2 py-1 md:px-3 md:py-2 rounded font-mono text-xs md:text-sm transition-all duration-200 border-2 bg-amber-200 text-gray-700 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
+                                      className="px-1.5 py-0.5 sm:px-2 sm:py-1 md:px-3 md:py-2 rounded font-mono text-xs transition-all duration-200 border-2 bg-amber-200 text-gray-700 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
                                       title="Increase dirt level"
                                       disabled={dirtLevel === 2}
                                     >
@@ -2840,7 +2840,7 @@ export default function GeneratorPage() {
                                 </div>
 
                                 {/* Age Controls */}
-                                <div className="flex flex-col items-center gap-2">
+                                <div className="flex flex-col items-center gap-1 sm:gap-2">
                                   <div className="flex items-center gap-2 w-full">
                                     <div className="flex-1 h-px bg-black"></div>
                                     <h5 className="text-black text-xs font-mono font-medium px-2">AGE</h5>
@@ -2853,7 +2853,7 @@ export default function GeneratorPage() {
                                         updateTextureState(newLevel > 0, newLevel)
                                         setPatinaLocked(true)
                                       }}
-                                      className="px-2 py-1 md:px-3 md:py-2 rounded font-mono text-xs md:text-sm transition-all duration-200 border-2 bg-amber-200 text-gray-700 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
+                                      className="px-1.5 py-0.5 sm:px-2 sm:py-1 md:px-3 md:py-2 rounded font-mono text-xs transition-all duration-200 border-2 bg-amber-200 text-gray-700 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
                                       title="Decrease aging level"
                                       disabled={textureLevel === 0}
                                     >
@@ -2861,7 +2861,7 @@ export default function GeneratorPage() {
                                         -
                                       </div>
                                     </button>
-                                    <div className="flex-1 text-center min-w-[3.75rem] md:min-w-[5rem]">
+                                    <div className="flex-1 text-center min-w-[2.5rem] sm:min-w-[3.75rem] md:min-w-[5rem]">
                                       <div key={textureLevel} className="seven-segment-display">
                                         {textureLevel.toString().padStart(2, '0').split('').map((digit, index) => (
                                           <div key={index} className="seven-segment-digit">
@@ -2882,7 +2882,7 @@ export default function GeneratorPage() {
                                         updateTextureState(true, newLevel)
                                         setPatinaLocked(true)
                                       }}
-                                      className="px-2 py-1 md:px-3 md:py-2 rounded font-mono text-xs md:text-sm transition-all duration-200 border-2 bg-amber-200 text-gray-700 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
+                                      className="px-1.5 py-0.5 sm:px-2 sm:py-1 md:px-3 md:py-2 rounded font-mono text-xs transition-all duration-200 border-2 bg-amber-200 text-gray-700 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
                                       title="Increase aging level"
                                       disabled={textureLevel === 10}
                                     >
@@ -2894,7 +2894,7 @@ export default function GeneratorPage() {
                                 </div>
 
                                 {/* Master Overlay Toggle */}
-                                <div className="flex flex-col items-center gap-2">
+                                <div className="flex flex-col items-center gap-1 sm:gap-2">
                                   <button
                                     onClick={() => {
                                       const overlaysEnabled = showDirt || showTexture
@@ -2909,7 +2909,7 @@ export default function GeneratorPage() {
                                       }
                                       setPatinaLocked(true)
                                     }}
-                                    className="px-4 py-3 md:px-6 md:py-5 rounded font-mono text-sm md:text-lg transition-all duration-200 border-2 bg-amber-200 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
+                                    className="px-3 py-2 sm:px-4 sm:py-3 md:px-6 md:py-5 rounded font-mono text-xs sm:text-sm md:text-lg transition-all duration-200 border-2 bg-amber-200 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
                                     title={(showDirt || showTexture) ? 'Disable all overlays' : 'Enable overlays'}
                                   >
                                     <span className={`text-lg md:text-2xl ${(showDirt || showTexture) ? 'text-red-600' : 'text-black'}`} style={{
