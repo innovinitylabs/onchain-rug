@@ -3249,8 +3249,8 @@ export default function GeneratorPage() {
                     </div>
                   </div>
 
-                  {/* NFT Exporter Component */}
-                  {isLoaded && (
+                  {/* NFT Exporter Component - Development Only */}
+                  {isLoaded && typeof window !== 'undefined' && window.location.hostname === 'localhost' && (
                   <NFTExporter
                     currentSeed={currentSeed}
                     currentPalette={palette}
