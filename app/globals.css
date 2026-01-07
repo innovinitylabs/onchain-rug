@@ -589,11 +589,11 @@ nav a {
   box-shadow: 0 0 8px #ff0000, 0 0 16px rgba(255, 0, 0, 0.8);
 }
 
-/* Segment positions for 18x28 digit */
-.segment.a { top: 0; left: 3px; width: 12px; height: 4px; }
-.segment.b { top: 4px; right: 0; width: 4px; height: 10px; }
-.segment.c { bottom: 4px; right: 0; width: 4px; height: 10px; }
-.segment.d { bottom: 0; left: 3px; width: 12px; height: 4px; }
-.segment.e { bottom: 4px; left: 0; width: 4px; height: 10px; }
-.segment.f { top: 4px; left: 0; width: 4px; height: 10px; }
+                          /* Segment positions for 18x28 digit - split vertical segments */
+                          .segment.a { top: 0; left: 3px; width: 12px; height: 4px; }
+                          .segment.b { top: 4px; right: 0; width: 4px; height: 8px; }    /* Upper right */
+                          .segment.c { top: 16px; right: 0; width: 4px; height: 8px; }  /* Lower right */
+                          .segment.d { top: 24px; left: 3px; width: 12px; height: 4px; }
+                          .segment.e { top: 16px; left: 0; width: 4px; height: 8px; }   /* Lower left */
+                          .segment.f { top: 4px; left: 0; width: 4px; height: 8px; }    /* Upper left */
                           .segment.g { top: 12px; left: 3px; width: 12px; height: 4px; }
