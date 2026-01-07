@@ -2719,8 +2719,8 @@ export default function GeneratorPage() {
                             flex-direction: row;
                             justify-content: flex-end;
                             align-items: center;
-                            gap: 32px;
-                            margin-top: 12px;
+                            gap: 1rem;
+                            margin-top: 0.75rem;
                           }
 
                         `}</style>
@@ -2757,12 +2757,7 @@ export default function GeneratorPage() {
 
                   {/* Relocated Patina Controls */}
                   <div
-                    className="patina-console"
-                    style={{
-                      padding: typeof window !== 'undefined' && window.innerWidth < 768
-                        ? '8px 16px'
-                        : '12px 32px'
-                    }}
+                    className="patina-console p-2 md:p-3"
                     onMouseEnter={() => !patinaLocked && setPatinaOpen(true)}
                     onMouseLeave={() => !patinaLocked && setPatinaOpen(false)}
                   >
@@ -2791,7 +2786,7 @@ export default function GeneratorPage() {
                           >
                             <div className="pt-4">
                               {/* CRT Control Strip Layout */}
-                              <div className="flex items-end justify-end gap-6 md:gap-12">
+                              <div className="flex items-end justify-end gap-4 md:gap-8 lg:gap-12">
                                 {/* Dirt Controls */}
                                 <div className="flex flex-col items-center gap-2">
                                   <div className="flex items-center gap-2 w-full">
@@ -2814,7 +2809,7 @@ export default function GeneratorPage() {
                                         -
                                       </div>
                                     </button>
-                                    <div className="flex-1 text-center min-w-[60px] md:min-w-[80px]">
+                                    <div className="flex-1 text-center min-w-[3.75rem] md:min-w-[5rem]">
                                       <div key={dirtLevel} className="seven-segment-display">
                                         <div className="seven-segment-digit">
                                           <div className={`segment a ${getSegmentActive('a', dirtLevel.toString()) ? 'active' : ''}`}></div>
@@ -2866,7 +2861,7 @@ export default function GeneratorPage() {
                                         -
                                       </div>
                                     </button>
-                                    <div className="flex-1 text-center min-w-[60px] md:min-w-[80px]">
+                                    <div className="flex-1 text-center min-w-[3.75rem] md:min-w-[5rem]">
                                       <div key={textureLevel} className="seven-segment-display">
                                         {textureLevel.toString().padStart(2, '0').split('').map((digit, index) => (
                                           <div key={index} className="seven-segment-digit">
