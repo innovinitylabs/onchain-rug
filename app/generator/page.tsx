@@ -2729,14 +2729,16 @@ export default function GeneratorPage() {
                     </div>
 
                   {/* Relocated Patina Controls */}
-                  <div className="patina-console">
+                  <div
+                    className="patina-console"
+                    onMouseEnter={() => !patinaLocked && setPatinaOpen(true)}
+                    onMouseLeave={() => !patinaLocked && setPatinaOpen(false)}
+                  >
                     {/* Patina Controls - Unified Accordion */}
                     <>
                     <motion.div
                       layout
                       className="relative"
-                      onMouseEnter={() => !patinaLocked && setPatinaOpen(true)}
-                      onMouseLeave={() => !patinaLocked && setPatinaOpen(false)}
                     >
                       {/* Header - Only visible when expanded or locked */}
                       {(patinaOpen || patinaLocked) && (
