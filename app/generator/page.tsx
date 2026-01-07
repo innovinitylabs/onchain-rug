@@ -2732,9 +2732,9 @@ export default function GeneratorPage() {
                                 updateDirtState(false, 0)
                                 updateTextureState(false, 0)
                               } else {
-                                // Enable overlays with current levels (if any)
-                                if (dirtLevel > 0) updateDirtState(true, dirtLevel)
-                                if (textureLevel > 0) updateTextureState(true, textureLevel)
+                                // Enable overlays with at least minimal levels
+                                updateDirtState(true, Math.max(1, dirtLevel))
+                                updateTextureState(true, Math.max(1, textureLevel))
                               }
                               setPatinaLocked(true)
                             }}
