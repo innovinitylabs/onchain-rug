@@ -2696,6 +2696,15 @@ export default function GeneratorPage() {
                           .rug-canvas-container {
                             /* No CSS transforms - flipping handled by canvas re-rendering */
                           }
+
+                          .patina-console {
+                            display: flex;
+                            flex-direction: row;
+                            justify-content: flex-end;
+                            align-items: center;
+                            gap: 32px;
+                            margin-top: 12px;
+                          }
                         `}</style>
                       </div>
                 </div>
@@ -2720,7 +2729,7 @@ export default function GeneratorPage() {
                     </div>
 
                   {/* Relocated Patina Controls */}
-                  <div className="patina-controls-relocated">
+                  <div className="patina-console">
                     {/* Patina Controls - Unified Accordion */}
                     <>
                     <motion.div
@@ -2733,30 +2742,6 @@ export default function GeneratorPage() {
                       <div className="flex items-center justify-between cursor-pointer">
                         <div className="flex items-center gap-3">
                           <h4 className="text-green-300 text-sm font-mono font-medium">PATINA</h4>
-                          {/* Master Overlay Toggle */}
-                          <button
-                            onClick={() => {
-                              const overlaysEnabled = showDirt || showTexture
-                              if (overlaysEnabled) {
-                                // Disable all overlays but keep current levels
-                                updateDirtState(false, dirtLevel)
-                                updateTextureState(false, textureLevel)
-                              } else {
-                                // Enable overlays with last remembered levels
-                                updateDirtState(true, lastDirtLevel)
-                                updateTextureState(true, lastTextureLevel)
-                              }
-                              setPatinaLocked(true)
-                            }}
-                            className={`px-2 py-1 rounded text-xs font-mono transition-all duration-200 border ${
-                              (showDirt || showTexture)
-                                ? 'bg-green-600 text-white border-green-400 shadow-lg shadow-green-500/30'
-                                : 'bg-gray-600 text-gray-300 border-gray-500 hover:bg-gray-500'
-                            }`}
-                            title={(showDirt || showTexture) ? 'Disable all overlays' : 'Enable overlays'}
-                          >
-                            {(showDirt || showTexture) ? 'ON' : 'OFF'}
-                          </button>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-green-500 text-xs font-mono">
@@ -2795,25 +2780,13 @@ export default function GeneratorPage() {
                             }}
                             className="overflow-hidden"
                           >
-                            <div className="space-y-4 pt-4">
-                              {/* Dirt & Dust Subsection */}
-                              <div className="space-y-3">
-                                <div className="flex items-center justify-between">
-                                  <h5 className="text-green-400 text-xs font-mono font-medium">Dirt & Dust</h5>
-                                  <span className="text-green-500 text-xs font-mono">
-                                    {!showDirt ? 'Clean' : dirtLevel === 1 ? '50% Dusty' : '100% Filthy'}
-                                  </span>
-                                </div>
-
-                                <div className="text-green-400 text-xs font-mono bg-gray-900/50 p-2 rounded">
-                                  Natural accumulation: 50% after 3 days, 100% after 7 days. Clean with onchain transaction.
-                                </div>
-
-                                {/* Dirt Accumulation Meter */}
-                                <div className="space-y-2">
-                                  <div className="text-xs text-green-400 font-mono">Accumulation Level:</div>
+                            <div className="pt-4">
+                              {/* CRT Control Strip Layout */}
+                              <div className="flex items-end justify-end gap-8">
+                                {/* Dirt Controls */}
+                                <div className="flex flex-col items-center gap-2">
+                                  <h5 className="text-green-400 text-xs font-mono font-medium">DIRT</h5>
                                   <div className="flex items-center gap-2">
-                                    {/* Decrement Button */}
                                     <button
                                       onClick={() => {
                                         const newLevel = Math.max(0, dirtLevel - 1)
@@ -2828,19 +2801,15 @@ export default function GeneratorPage() {
                                         -
                                       </div>
                                     </button>
-
-                                    {/* Current Level Display */}
-                                    <div className="flex-1 text-center">
+                                    <div className="flex-1 text-center min-w-[80px]">
                                       <div className={`px-3 py-2 rounded font-mono text-sm border-2 ${
                                         dirtLevel === 0 ? 'bg-green-600 text-white border-green-400 shadow-lg shadow-green-500/30' :
                                         dirtLevel === 1 ? 'bg-yellow-600 text-white border-yellow-400 shadow-lg shadow-yellow-500/30' :
                                         'bg-red-600 text-white border-red-400 shadow-lg shadow-red-500/30'
                                       }`}>
-                                        {dirtLevel === 0 ? 'CLEAN' : dirtLevel === 1 ? 'DUSTY' : 'FILTHY'} ({dirtLevel})
+                                        {dirtLevel === 0 ? 'CLEAN' : dirtLevel === 1 ? 'DUSTY' : 'FILTHY'}
                                       </div>
                                     </div>
-
-                                    {/* Increment Button */}
                                     <button
                                       onClick={() => {
                                         const newLevel = Math.min(2, dirtLevel + 1)
@@ -2857,30 +2826,11 @@ export default function GeneratorPage() {
                                     </button>
                                   </div>
                                 </div>
-                              </div>
 
-                              {/* Time & Wear Subsection */}
-                              <div className="space-y-3">
-                                <div className="flex items-center justify-between">
-                                  <h5 className="text-green-400 text-xs font-mono font-medium">Time & Wear</h5>
-                                  <span className="text-green-500 text-xs font-mono">
-                                    {!showTexture ? 'Brand New' : `${getAgingDays(textureLevel)} days old`}
-                                  </span>
-                                </div>
-
-                                <div className="text-green-400 text-xs font-mono bg-gray-900/50 p-2 rounded">
-                                  11-level aging progression: Level 0 (brand new) to Level 10 (maximum age). Shows Diamond frame aging timeline (140 days per level).
-                                </div>
-
-                                {/* Aging Level Controls with Preview */}
-                                <div className="space-y-3">
-                                  <div className="flex items-center justify-between">
-                                    <label className="text-green-300 text-xs font-mono">Aging Level</label>
-                                    <span className="text-green-500 text-xs font-mono">{textureLevel}/10 ({getAgingDays(textureLevel)} days)</span>
-                                  </div>
-
+                                {/* Age Controls */}
+                                <div className="flex flex-col items-center gap-2">
+                                  <h5 className="text-green-400 text-xs font-mono font-medium">AGE</h5>
                                   <div className="flex items-center gap-2">
-                                    {/* Decrement Button */}
                                     <button
                                       onClick={() => {
                                         const newLevel = Math.max(0, textureLevel - 1)
@@ -2895,15 +2845,11 @@ export default function GeneratorPage() {
                                         -
                                       </div>
                                     </button>
-
-                                    {/* Current Level Display */}
-                                    <div className="flex-1 text-center">
+                                    <div className="flex-1 text-center min-w-[80px]">
                                       <div className="px-3 py-2 rounded font-mono text-sm border-2 bg-gradient-to-r from-green-600 to-red-600 text-white border-gray-400">
-                                        Level {textureLevel}
+                                        {textureLevel}
                                       </div>
                                     </div>
-
-                                    {/* Increment Button */}
                                     <button
                                       onClick={() => {
                                         const newLevel = Math.min(10, textureLevel + 1)
@@ -2919,21 +2865,33 @@ export default function GeneratorPage() {
                                       </div>
                                     </button>
                                   </div>
+                                </div>
 
-                                  {/* Aging Level Preview */}
-                                  <div className="text-xs text-green-400 font-mono bg-gray-900/30 p-3 rounded border border-gray-600">
-                                    {textureLevel === 0 && `✨ Brand New - pristine condition (0 days)`}
-                                    {textureLevel === 1 && `🧵 Slightly Aged - subtle signs of use (${getAgingDays(1)} days)`}
-                                    {textureLevel === 2 && `📅 Moderately Aged - light aging (${getAgingDays(2)} days)`}
-                                    {textureLevel === 3 && `🏠 Well Aged - well-used but functional (${getAgingDays(3)} days)`}
-                                    {textureLevel === 4 && `📆 Significantly Aged - shows character (${getAgingDays(4)} days)`}
-                                    {textureLevel === 5 && `🪶 Very Aged - vintage appearance (${getAgingDays(5)} days)`}
-                                    {textureLevel === 6 && `🎭 Extremely Aged - distinctive patina (${getAgingDays(6)} days)`}
-                                    {textureLevel === 7 && `🏺 Heavily Aged - rich texture (${getAgingDays(7)} days)`}
-                                    {textureLevel === 8 && `🏛️ Severely Aged - extreme character (${getAgingDays(8)} days)`}
-                                    {textureLevel === 9 && `🎨 Critically Aged - legendary status (${getAgingDays(9)} days)`}
-                                    {textureLevel === 10 && `💎 Maximum Age - ultimate degradation (${getAgingDays(10)} days)`}
-                                  </div>
+                                {/* Master Overlay Toggle */}
+                                <div className="flex flex-col items-center gap-2">
+                                  <button
+                                    onClick={() => {
+                                      const overlaysEnabled = showDirt || showTexture
+                                      if (overlaysEnabled) {
+                                        // Disable all overlays but keep current levels
+                                        updateDirtState(false, dirtLevel)
+                                        updateTextureState(false, textureLevel)
+                                      } else {
+                                        // Enable overlays with last remembered levels
+                                        updateDirtState(true, lastDirtLevel)
+                                        updateTextureState(true, lastTextureLevel)
+                                      }
+                                      setPatinaLocked(true)
+                                    }}
+                                    className={`px-4 py-3 rounded text-sm font-mono transition-all duration-200 border ${
+                                      (showDirt || showTexture)
+                                        ? 'bg-green-600 text-white border-green-400 shadow-lg shadow-green-500/30'
+                                        : 'bg-gray-600 text-gray-300 border-gray-500 hover:bg-gray-500'
+                                    }`}
+                                    title={(showDirt || showTexture) ? 'Disable all overlays' : 'Enable overlays'}
+                                  >
+                                    {(showDirt || showTexture) ? 'ON' : 'OFF'}
+                                  </button>
                                 </div>
                               </div>
                             </div>
