@@ -2776,58 +2776,47 @@ export default function GeneratorPage() {
                                 {/* Dirt Accumulation Meter */}
                                 <div className="space-y-2">
                                   <div className="text-xs text-green-400 font-mono">Accumulation Level:</div>
-                                  <div className="flex gap-1">
-                                    {/* Clean Level */}
+                                  <div className="flex items-center gap-2">
+                                    {/* Decrement Button */}
                                     <button
                                       onClick={() => {
-                                        updateDirtState(false, 0)
+                                        const newLevel = Math.max(0, dirtLevel - 1)
+                                        updateDirtState(newLevel > 0, newLevel)
                                         setPatinaLocked(true)
                                       }}
-                                      className={`flex-1 px-2 py-2 rounded font-mono text-xs transition-all duration-200 border-2 ${
-                                        !showDirt
-                                          ? 'bg-green-600 text-white border-green-400 shadow-lg shadow-green-500/30'
-                                          : 'bg-gray-800 text-gray-400 border-gray-600 hover:bg-gray-700 hover:border-gray-500'
-                                      }`}
-                                      title="Clean as new"
+                                      className="px-3 py-2 rounded font-mono text-sm transition-all duration-200 border-2 bg-gray-800 text-gray-400 border-gray-600 hover:bg-gray-700 hover:border-gray-500"
+                                      title="Decrease dirt level"
+                                      disabled={dirtLevel === 0}
                                     >
                                       <div className="text-center font-bold">
-                                        CLEAN
+                                        -
                                       </div>
                                     </button>
 
-                                    {/* Dusty Level */}
-                                    <button
-                                      onClick={() => {
-                                        updateDirtState(true, 1)
-                                        setPatinaLocked(true)
-                                      }}
-                                      className={`flex-1 px-2 py-2 rounded font-mono text-xs transition-all duration-200 border-2 ${
-                                        showDirt && dirtLevel === 1
-                                          ? 'bg-yellow-600 text-white border-yellow-400 shadow-lg shadow-yellow-500/30'
-                                          : 'bg-gray-800 text-gray-400 border-gray-600 hover:bg-gray-700 hover:border-gray-500'
-                                      }`}
-                                      title="3 days of wear"
-                                    >
-                                      <div className="text-center font-bold">
-                                        DUSTY
+                                    {/* Current Level Display */}
+                                    <div className="flex-1 text-center">
+                                      <div className={`px-3 py-2 rounded font-mono text-sm border-2 ${
+                                        dirtLevel === 0 ? 'bg-green-600 text-white border-green-400 shadow-lg shadow-green-500/30' :
+                                        dirtLevel === 1 ? 'bg-yellow-600 text-white border-yellow-400 shadow-lg shadow-yellow-500/30' :
+                                        'bg-red-600 text-white border-red-400 shadow-lg shadow-red-500/30'
+                                      }`}>
+                                        {dirtLevel === 0 ? 'CLEAN' : dirtLevel === 1 ? 'DUSTY' : 'FILTHY'} ({dirtLevel})
                                       </div>
-                                    </button>
+                                    </div>
 
-                                    {/* Filthy Level */}
+                                    {/* Increment Button */}
                                     <button
                                       onClick={() => {
-                                        updateDirtState(true, 2)
+                                        const newLevel = Math.min(2, dirtLevel + 1)
+                                        updateDirtState(true, newLevel)
                                         setPatinaLocked(true)
                                       }}
-                                      className={`flex-1 px-2 py-2 rounded font-mono text-xs transition-all duration-200 border-2 ${
-                                        showDirt && dirtLevel === 2
-                                          ? 'bg-red-600 text-white border-red-400 shadow-lg shadow-red-500/30'
-                                          : 'bg-gray-800 text-gray-400 border-gray-600 hover:bg-gray-700 hover:border-gray-500'
-                                      }`}
-                                      title="7 days of neglect"
+                                      className="px-3 py-2 rounded font-mono text-sm transition-all duration-200 border-2 bg-gray-800 text-gray-400 border-gray-600 hover:bg-gray-700 hover:border-gray-500"
+                                      title="Increase dirt level"
+                                      disabled={dirtLevel === 2}
                                     >
                                       <div className="text-center font-bold">
-                                        FILTHY
+                                        +
                                       </div>
                                     </button>
                                   </div>
