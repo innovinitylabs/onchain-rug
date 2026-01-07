@@ -2836,27 +2836,52 @@ export default function GeneratorPage() {
                                   11-level aging progression: Level 0 (brand new) to Level 10 (maximum age). Shows Diamond frame aging timeline (140 days per level).
                                 </div>
 
-                                {/* Aging Level Slider with Preview */}
+                                {/* Aging Level Controls with Preview */}
                                 <div className="space-y-3">
                                   <div className="flex items-center justify-between">
                                     <label className="text-green-300 text-xs font-mono">Aging Level</label>
                                     <span className="text-green-500 text-xs font-mono">{textureLevel}/10 ({getAgingDays(textureLevel)} days)</span>
                                   </div>
-                                  <input
-                                    type="range"
-                                    min="0"
-                                    max="10"
-                                    value={textureLevel}
-                                    onChange={(e) => {
-                                      updateTextureState(textureLevel > 0 || parseInt(e.target.value) > 0, parseInt(e.target.value))
-                                      setPatinaLocked(true)
-                                    }}
-                                    className="w-full h-3 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-purple"
-                                  />
-                                  <div className="flex justify-between text-xs text-gray-400 font-mono">
-                                    <span>0 (Fresh)</span>
-                                    <span>5 ({getAgingDays(5)} days)</span>
-                                    <span>10 ({getAgingDays(10)} days)</span>
+
+                                  <div className="flex items-center gap-2">
+                                    {/* Decrement Button */}
+                                    <button
+                                      onClick={() => {
+                                        const newLevel = Math.max(0, textureLevel - 1)
+                                        updateTextureState(newLevel > 0, newLevel)
+                                        setPatinaLocked(true)
+                                      }}
+                                      className="px-3 py-2 rounded font-mono text-sm transition-all duration-200 border-2 bg-gray-800 text-gray-400 border-gray-600 hover:bg-gray-700 hover:border-gray-500"
+                                      title="Decrease aging level"
+                                      disabled={textureLevel === 0}
+                                    >
+                                      <div className="text-center font-bold">
+                                        -
+                                      </div>
+                                    </button>
+
+                                    {/* Current Level Display */}
+                                    <div className="flex-1 text-center">
+                                      <div className="px-3 py-2 rounded font-mono text-sm border-2 bg-gradient-to-r from-green-600 to-red-600 text-white border-gray-400">
+                                        Level {textureLevel}
+                                      </div>
+                                    </div>
+
+                                    {/* Increment Button */}
+                                    <button
+                                      onClick={() => {
+                                        const newLevel = Math.min(10, textureLevel + 1)
+                                        updateTextureState(true, newLevel)
+                                        setPatinaLocked(true)
+                                      }}
+                                      className="px-3 py-2 rounded font-mono text-sm transition-all duration-200 border-2 bg-gray-800 text-gray-400 border-gray-600 hover:bg-gray-700 hover:border-gray-500"
+                                      title="Increase aging level"
+                                      disabled={textureLevel === 10}
+                                    >
+                                      <div className="text-center font-bold">
+                                        +
+                                      </div>
+                                    </button>
                                   </div>
 
                                   {/* Aging Level Preview */}
