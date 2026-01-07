@@ -497,7 +497,7 @@ export default function RugMarketPageContent() {
         <Navigation />
 
       <main className="container mx-auto px-4 py-8 pt-28 flex-grow">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-[3200px] mx-auto">
           {/* Notification Banner */}
           {notification && (
             <motion.div
@@ -694,7 +694,7 @@ export default function RugMarketPageContent() {
           {/* OG Mode: Show only the selected NFT preview */}
           {isOGMode && tokenIdFromUrl && selectedNFT && (
             <div className="flex items-center justify-center min-h-screen">
-              <div className="w-full max-w-4xl">
+              <div className="w-full max-w-[3200px]">
                 <NFTDisplay
                   nftData={rugMarketNFTToNFTData(selectedNFT)}
                   size="large"

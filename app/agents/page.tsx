@@ -15,7 +15,7 @@ export default function AgentsPage() {
       <Navigation />
 
       <main className="flex-grow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-28">
+        <div className="max-w-[3200px] mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-28">
           {/* Header */}
           {typeof window !== 'undefined' && (
             <motion.div
