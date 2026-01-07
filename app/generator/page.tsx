@@ -62,6 +62,7 @@ export default function GeneratorPage() {
   const [dirtLevel, setDirtLevel] = useState(0) // 0 = clean, 1 = 50% dirty, 2 = full dirty
   const [showTexture, setShowTexture] = useState(false)
   const [textureLevel, setTextureLevel] = useState(0) // 0 = none, 1 = 7 days, 2 = 30 days
+  const [selectedFrameLevel, setSelectedFrameLevel] = useState(0) // 0=None, 1=Bronze, 2=Silver, 3=Gold, 4=Diamond
   const [warpThickness, setWarpThickness] = useState(2) // Default warp thickness
 
   // Debounce timer for live updates
@@ -2449,9 +2450,37 @@ export default function GeneratorPage() {
     }
   }
 
-  // Get production aging days for texture level (14 days per level base rate)
-  const getAgingDays = (level: number) => {
-    return level * 14 // Each aging level advances every 14 days (base rate, modified by frame)
+  // Get aging days for texture level based on selected frame
+  const getAgingDays = (level: number, frameLevel: number = selectedFrameLevel) => {
+    // Base aging rate: 14 days per level
+    const baseRate = 14
+
+    // Get frame multiplier (same as smart contract)
+    const getAgingMultiplier = (frame: number) => {
+      if (frame >= 4) return 10 // Diamond: 90% slower (10x longer)
+      if (frame >= 3) return 20 // Gold: 80% slower (5x longer)
+      if (frame >= 2) return 50 // Silver: 50% slower (2x longer)
+      if (frame >= 1) return 75 // Bronze: 25% slower (1.3x longer)
+      return 100 // None: normal speed
+    }
+
+    const multiplier = getAgingMultiplier(frameLevel)
+    // adjustedInterval = (baseRate * 100) / multiplier
+    const adjustedRate = (baseRate * 100) / multiplier
+
+    return level * adjustedRate
+  }
+
+  // Get frame name for display
+  const getFrameName = (frameLevel: number) => {
+    switch(frameLevel) {
+      case 0: return 'None'
+      case 1: return 'Bronze'
+      case 2: return 'Silver'
+      case 3: return 'Gold'
+      case 4: return 'Diamond'
+      default: return 'None'
+    }
   }
 
   // Initialize on mount
@@ -2925,12 +2954,41 @@ export default function GeneratorPage() {
                       <div className="flex items-center justify-between">
                         <h4 className="text-green-300 text-sm font-mono font-medium">AGING SYSTEM</h4>
                         <span className="text-green-500 text-xs font-mono">
-                          {!showTexture ? '🏭 Brand New' : `${getAgingDays(textureLevel)} days old`}
+                          {!showTexture ? '🏭 Brand New' : `${getAgingDays(textureLevel)} days old (${getFrameName(selectedFrameLevel)} frame)`}
                         </span>
                       </div>
 
                       <div className="text-green-400 text-xs font-mono bg-gray-900/50 p-2 rounded">
-                        11-level aging progression: Level 0 (brand new) to Level 10 (maximum age). Each level advances every 14 days (base rate, modified by frame). Diamond frame requires 200 maintenance points.
+                        11-level aging progression: Level 0 (brand new) to Level 10 (maximum age). Aging rate depends on frame level. Diamond frame requires 200 maintenance points.
+                      </div>
+
+                      {/* Frame Selector */}
+                      <div className="space-y-2">
+                        <div className="text-xs text-green-400 font-mono">Frame Level (affects aging speed):</div>
+                        <div className="flex gap-1">
+                          {[
+                            { level: 0, name: 'NONE', color: 'bg-gray-600', desc: 'Normal aging' },
+                            { level: 1, name: 'BRONZE', color: 'bg-amber-600', desc: '25% slower' },
+                            { level: 2, name: 'SILVER', color: 'bg-slate-400', desc: '50% slower' },
+                            { level: 3, name: 'GOLD', color: 'bg-yellow-500', desc: '80% slower' },
+                            { level: 4, name: 'DIAMOND', color: 'bg-cyan-500', desc: '90% slower' }
+                          ].map((frame) => (
+                            <button
+                              key={frame.level}
+                              onClick={() => setSelectedFrameLevel(frame.level)}
+                              className={`flex-1 px-1.5 py-2 rounded font-mono text-xs transition-all duration-200 border-2 ${
+                                selectedFrameLevel === frame.level
+                                  ? `${frame.color} text-white border-white shadow-lg`
+                                  : 'bg-gray-800 text-gray-400 border-gray-600 hover:bg-gray-700 hover:border-gray-500'
+                              }`}
+                              title={frame.desc}
+                            >
+                              <div className="text-center font-bold text-xs">
+                                {frame.name}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
                       </div>
 
                       {/* Aging Level Slider with Preview */}
@@ -2949,23 +3007,23 @@ export default function GeneratorPage() {
                         />
                         <div className="flex justify-between text-xs text-gray-400 font-mono">
                           <span>0 (Fresh)</span>
-                          <span>5 (70 days)</span>
-                          <span>10 (140 days)</span>
+                          <span>5 ({getAgingDays(5)} days)</span>
+                          <span>10 ({getAgingDays(10)} days)</span>
                         </div>
 
                         {/* Aging Level Preview */}
                         <div className="text-xs text-green-400 font-mono bg-gray-900/30 p-3 rounded border border-gray-600">
-                          {textureLevel === 0 && "✨ Brand New - pristine condition (0 days)"}
-                          {textureLevel === 1 && "🧵 Slightly Aged - subtle signs of use (14 days)"}
-                          {textureLevel === 2 && "📅 Moderately Aged - light aging (28 days)"}
-                          {textureLevel === 3 && "🏠 Well Aged - well-used but functional (42 days)"}
-                          {textureLevel === 4 && "📆 Significantly Aged - shows character (56 days)"}
-                          {textureLevel === 5 && "🪶 Very Aged - vintage appearance (70 days)"}
-                          {textureLevel === 6 && "🎭 Extremely Aged - distinctive patina (84 days)"}
-                          {textureLevel === 7 && "🏺 Heavily Aged - rich texture (98 days)"}
-                          {textureLevel === 8 && "🏛️ Severely Aged - extreme character (112 days)"}
-                          {textureLevel === 9 && "🎨 Critically Aged - legendary status (126 days)"}
-                          {textureLevel === 10 && "💎 Maximum Age - ultimate degradation (140 days)"}
+                          {textureLevel === 0 && `✨ Brand New - pristine condition (0 days)`}
+                          {textureLevel === 1 && `🧵 Slightly Aged - subtle signs of use (${getAgingDays(1)} days)`}
+                          {textureLevel === 2 && `📅 Moderately Aged - light aging (${getAgingDays(2)} days)`}
+                          {textureLevel === 3 && `🏠 Well Aged - well-used but functional (${getAgingDays(3)} days)`}
+                          {textureLevel === 4 && `📆 Significantly Aged - shows character (${getAgingDays(4)} days)`}
+                          {textureLevel === 5 && `🪶 Very Aged - vintage appearance (${getAgingDays(5)} days)`}
+                          {textureLevel === 6 && `🎭 Extremely Aged - distinctive patina (${getAgingDays(6)} days)`}
+                          {textureLevel === 7 && `🏺 Heavily Aged - rich texture (${getAgingDays(7)} days)`}
+                          {textureLevel === 8 && `🏛️ Severely Aged - extreme character (${getAgingDays(8)} days)`}
+                          {textureLevel === 9 && `🎨 Critically Aged - legendary status (${getAgingDays(9)} days)`}
+                          {textureLevel === 10 && `💎 Maximum Age - ultimate degradation (${getAgingDays(10)} days)`}
                         </div>
                       </div>
                     </div>
