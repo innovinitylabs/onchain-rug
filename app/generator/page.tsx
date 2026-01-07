@@ -2738,31 +2738,33 @@ export default function GeneratorPage() {
                       onMouseEnter={() => !patinaLocked && setPatinaOpen(true)}
                       onMouseLeave={() => !patinaLocked && setPatinaOpen(false)}
                     >
-                      {/* Header - Always Visible */}
-                      <div className="flex items-center justify-between cursor-pointer">
-                        <div className="flex items-center gap-3">
-                          <h4 className="text-green-300 text-sm font-mono font-medium">PATINA</h4>
+                      {/* Header - Only visible when open */}
+                      {(patinaOpen || patinaLocked) && (
+                        <div className="flex items-center justify-between cursor-pointer">
+                          <div className="flex items-center gap-3">
+                            <h4 className="text-green-300 text-sm font-mono font-medium">PATINA</h4>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-green-500 text-xs font-mono">
+                              {!showDirt && !showTexture ? '✨ Pristine' :
+                               showDirt && showTexture ? '🕰️ Weathered' :
+                               showDirt ? '🧼 Dusty' : '📅 Aged'}
+                            </span>
+                            {patinaLocked && (
+                              <button
+                                onClick={() => {
+                                  setPatinaLocked(false)
+                                  setPatinaOpen(false)
+                                }}
+                                className="text-green-500 hover:text-green-300 transition-colors"
+                                title="Close panel"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-green-500 text-xs font-mono">
-                            {!showDirt && !showTexture ? '✨ Pristine' :
-                             showDirt && showTexture ? '🕰️ Weathered' :
-                             showDirt ? '🧼 Dusty' : '📅 Aged'}
-                          </span>
-                          {patinaLocked && (
-                            <button
-                              onClick={() => {
-                                setPatinaLocked(false)
-                                setPatinaOpen(false)
-                              }}
-                              className="text-green-500 hover:text-green-300 transition-colors"
-                              title="Close panel"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
-                          )}
-                        </div>
-                      </div>
+                      )}
 
                       {/* Collapsible Content */}
                       <AnimatePresence>
