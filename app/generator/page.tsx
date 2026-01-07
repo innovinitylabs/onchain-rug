@@ -2738,9 +2738,9 @@ export default function GeneratorPage() {
                       onMouseEnter={() => !patinaLocked && setPatinaOpen(true)}
                       onMouseLeave={() => !patinaLocked && setPatinaOpen(false)}
                     >
-                      {/* Header - Only visible when open */}
+                      {/* Header - Only visible when expanded or locked */}
                       {(patinaOpen || patinaLocked) && (
-                        <div className="flex items-center justify-between cursor-pointer">
+                        <div className="flex items-center justify-between cursor-pointer mb-2">
                           <div className="flex items-center gap-3">
                             <h4 className="text-green-300 text-sm font-mono font-medium">PATINA</h4>
                           </div>
