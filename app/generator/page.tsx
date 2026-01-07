@@ -2766,7 +2766,11 @@ export default function GeneratorPage() {
                               <div className="flex items-end justify-end gap-8">
                                 {/* Dirt Controls */}
                                 <div className="flex flex-col items-center gap-2">
-                                  <h5 className="text-green-400 text-xs font-mono font-medium">DIRT</h5>
+                                  <div className="flex items-center gap-2 w-full">
+                                    <div className="flex-1 h-px bg-black"></div>
+                                    <h5 className="text-black text-xs font-mono font-medium px-2">DIRT</h5>
+                                    <div className="flex-1 h-px bg-black"></div>
+                                  </div>
                                   <div className="flex items-center gap-2">
                                     <button
                                       onClick={() => {
@@ -2806,7 +2810,11 @@ export default function GeneratorPage() {
 
                                 {/* Age Controls */}
                                 <div className="flex flex-col items-center gap-2">
-                                  <h5 className="text-green-400 text-xs font-mono font-medium">AGE</h5>
+                                  <div className="flex items-center gap-2 w-full">
+                                    <div className="flex-1 h-px bg-black"></div>
+                                    <h5 className="text-black text-xs font-mono font-medium px-2">AGE</h5>
+                                    <div className="flex-1 h-px bg-black"></div>
+                                  </div>
                                   <div className="flex items-center gap-2">
                                     <button
                                       onClick={() => {
