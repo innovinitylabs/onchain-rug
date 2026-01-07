@@ -47,7 +47,7 @@ export default function AgentsPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6 mb-8">
               <div className="bg-slate-800/50 p-6 rounded-lg border border-slate-700/50 backdrop-blur-sm">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">

@@ -571,7 +571,7 @@ export default function RugMarketPageContent() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.1 }}
-            className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
+            className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-6 mb-8"
           >
             {/* <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-6 text-center">
               <div className="text-3xl font-bold text-white mb-2">{stats.totalNFTs}</div>
