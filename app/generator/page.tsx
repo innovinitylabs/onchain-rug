@@ -388,7 +388,7 @@ export default function GeneratorPage() {
                                        baseDoormatData.config.DOORMAT_WIDTH + (baseDoormatData.config.FRINGE_LENGTH * 4))
             canvas.parent('canvas-container')
             // Let CSS handle positioning - don't set styles here
-        p.pixelDensity(2)
+        p.pixelDensity(1)
         p.noLoop()
 
             // Initialize flip state from external injection (for smart contracts) - read once only
