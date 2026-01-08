@@ -2662,21 +2662,21 @@ export default function GeneratorPage() {
       {/* Header */}
 
         {/* New Side-by-Side Layout - Art Preview (70%) on Left, Controls (30%) on Right */}
-        <div className="grid lg:grid-cols-[70%_30%] gap-6 space-y-6 lg:space-y-0">
+        <div className="generator-layout-grid">
           {/* Canvas Display - Left Side (70% width) */}
-          <div className="flex flex-col items-center justify-center">
-            <div className="p-2">
+          <div className="canvas-column">
+            <div className="canvas-padding-wrapper">
                             {/* Old-School CRT Monitor Box */}
-              <div className="relative mx-auto w-full max-w-full px-2 md:px-4 lg:px-6">
+              <div className="monitor-wrapper">
                 {/* Monitor Bezel - Yellowed Plastic */}
-                <div className="bg-amber-100 border-6 border-amber-200 rounded-t-2xl rounded-b-xl p-2 md:p-3 lg:p-4 shadow-2xl">
+                <div className="monitor-bezel">
                   {/* Monitor Screen Area */}
-                  <div className="rounded-lg px-1 md:px-2 py-1">
+                  <div className="monitor-screen">
                     {/* Canvas Display Area */}
-                    <div className="rounded-lg px-1 relative overflow-hidden">
-                      
+                    <div className="canvas-display-area">
+
                                                                     {/* Canvas Container - Clean aspect-ratio based */}
-                           <div className="flex items-center justify-center w-full">
+                           <div className="canvas-centering-wrapper">
                              <div
                                ref={canvasContainerRef}
                                id="canvas-container"

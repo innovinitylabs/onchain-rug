@@ -652,3 +652,101 @@ nav a {
   display: block;
   object-fit: contain;
 }
+
+/* Canvas Layout Components */
+.generator-layout-grid {
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+@media (max-width: 1024px) {
+  .generator-layout-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+.canvas-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.canvas-padding-wrapper {
+  padding: 0.5rem;
+}
+
+.monitor-wrapper {
+  position: relative;
+  margin: 0 auto;
+  width: 100%;
+  max-width: 100%;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+@media (min-width: 768px) {
+  .monitor-wrapper {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .monitor-wrapper {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+.monitor-bezel {
+  background-color: rgb(254 243 199);
+  border: 6px solid rgb(252 211 77);
+  border-radius: 1rem 1rem 0.75rem 0.75rem;
+  padding: 0.5rem;
+  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+}
+
+@media (min-width: 768px) {
+  .monitor-bezel {
+    padding: 0.75rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .monitor-bezel {
+    padding: 1rem;
+  }
+}
+
+.monitor-screen {
+  border-radius: 0.5rem;
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
+  padding-top: 0.25rem;
+}
+
+@media (min-width: 768px) {
+  .monitor-screen {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+}
+
+.canvas-display-area {
+  border-radius: 0.5rem;
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.canvas-centering-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
