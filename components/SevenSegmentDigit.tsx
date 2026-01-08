@@ -63,11 +63,38 @@ export default function SevenSegmentDigit({
       }}
     >
       <defs>
-        {/* Glow effect for active segments */}
-        <filter id="segment-glow" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+        {/* Enhanced glow effect for active segments */}
+        <filter id="segment-glow" x="-100%" y="-100%" width="300%" height="300%">
+          <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+          <feColorMatrix
+            in="coloredBlur"
+            type="matrix"
+            values="1 0 0 0 0
+                   0 1 0 0 0
+                   0 0 1 0 0
+                   0 0 0 4 0"
+            result="brightBlur"
+          />
           <feMerge>
-            <feMergeNode in="coloredBlur"/>
+            <feMergeNode in="brightBlur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+
+        {/* Additional outer glow for more dramatic effect */}
+        <filter id="segment-outer-glow" x="-150%" y="-150%" width="400%" height="400%">
+          <feGaussianBlur stdDeviation="6" result="outerBlur"/>
+          <feColorMatrix
+            in="outerBlur"
+            type="matrix"
+            values="1 0 0 0 0
+                   0 0.5 0 0 0
+                   0 0 0.3 0 0
+                   0 0 0 2 0"
+            result="redGlow"
+          />
+          <feMerge>
+            <feMergeNode in="redGlow"/>
             <feMergeNode in="SourceGraphic"/>
           </feMerge>
         </filter>
@@ -91,7 +118,7 @@ export default function SevenSegmentDigit({
             fill={isActive ? activeColor : inactiveColor}
             stroke={isActive ? '#ff4444' : '#555555'}
             strokeWidth="1"
-            filter={isActive ? 'url(#segment-glow)' : 'none'}
+            filter={isActive ? 'url(#segment-outer-glow) url(#segment-glow)' : 'none'}
             className={isActive ? 'segment-active' : 'segment-inactive'}
           />
         )
