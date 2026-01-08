@@ -3373,7 +3373,9 @@ export default function GeneratorPage() {
       </main>
 
       {/* Footer */}
-      <Footer />
+      <div className="page-footer">
+        <Footer />
+      </div>
     </div>
     </>
   )
