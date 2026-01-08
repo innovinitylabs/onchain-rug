@@ -8,6 +8,7 @@ import NFTExporter from '@/components/NFTExporter'
 import Web3Minting from '@/components/Web3Minting'
 import SimpleMinting from '@/components/SimpleMinting'
 import Footer from '@/components/Footer'
+import SevenSegmentDisplay from '@/components/SevenSegmentDisplay'
 import { initPRNG, getPRNG, createDerivedPRNG } from '@/lib/DeterministicPRNG'
 import { config } from '@/lib/config'
 import { useChainId } from 'wagmi'
@@ -2622,21 +2623,6 @@ export default function GeneratorPage() {
   }, [textInputs, focusNewRow])
 
   // 7-segment display segment patterns for digits 0-9
-  const getSegmentActive = (segment: string, digit: string) => {
-    const patterns = {
-      '0': ['a', 'b', 'c', 'd', 'e', 'f'],
-      '1': ['b', 'c'],
-      '2': ['a', 'b', 'd', 'e', 'g'],
-      '3': ['a', 'b', 'c', 'd', 'g'],
-      '4': ['b', 'c', 'f', 'g'],
-      '5': ['a', 'c', 'd', 'f', 'g'],
-      '6': ['a', 'c', 'd', 'e', 'f', 'g'],
-      '7': ['a', 'b', 'c'],
-      '8': ['a', 'b', 'c', 'd', 'e', 'f', 'g'],
-      '9': ['a', 'b', 'c', 'd', 'f', 'g']
-    }
-    return patterns[digit as keyof typeof patterns]?.includes(segment) || false
-  }
 
   return (
     <>
@@ -2762,17 +2748,12 @@ export default function GeneratorPage() {
                                       </div>
                                     </button>
                                     <div className="control-display">
-                                      <div key={dirtLevel} className="seven-segment-display">
-                                        <div className="seven-segment-digit">
-                                          <div className={`segment a ${getSegmentActive('a', dirtLevel.toString()) ? 'active' : ''}`}></div>
-                                          <div className={`segment b ${getSegmentActive('b', dirtLevel.toString()) ? 'active' : ''}`}></div>
-                                          <div className={`segment c ${getSegmentActive('c', dirtLevel.toString()) ? 'active' : ''}`}></div>
-                                          <div className={`segment d ${getSegmentActive('d', dirtLevel.toString()) ? 'active' : ''}`}></div>
-                                          <div className={`segment e ${getSegmentActive('e', dirtLevel.toString()) ? 'active' : ''}`}></div>
-                                          <div className={`segment f ${getSegmentActive('f', dirtLevel.toString()) ? 'active' : ''}`}></div>
-                                          <div className={`segment g ${getSegmentActive('g', dirtLevel.toString()) ? 'active' : ''}`}></div>
-                                        </div>
-                                      </div>
+                                      <SevenSegmentDisplay
+                                        key={dirtLevel}
+                                        value={dirtLevel}
+                                        activeColor="#ff0000"
+                                        inactiveColor="#666666"
+                                      />
                                     </div>
                                     <button
                                       onClick={() => {
@@ -2814,19 +2795,12 @@ export default function GeneratorPage() {
                                       </div>
                                     </button>
                                     <div className="control-display">
-                                      <div key={textureLevel} className="seven-segment-display">
-                                        {textureLevel.toString().padStart(2, '0').split('').map((digit, index) => (
-                                          <div key={index} className="seven-segment-digit">
-                                            <div className={`segment a ${getSegmentActive('a', digit) ? 'active' : ''}`}></div>
-                                            <div className={`segment b ${getSegmentActive('b', digit) ? 'active' : ''}`}></div>
-                                            <div className={`segment c ${getSegmentActive('c', digit) ? 'active' : ''}`}></div>
-                                            <div className={`segment d ${getSegmentActive('d', digit) ? 'active' : ''}`}></div>
-                                            <div className={`segment e ${getSegmentActive('e', digit) ? 'active' : ''}`}></div>
-                                            <div className={`segment f ${getSegmentActive('f', digit) ? 'active' : ''}`}></div>
-                                            <div className={`segment g ${getSegmentActive('g', digit) ? 'active' : ''}`}></div>
-                                          </div>
-                                        ))}
-                                      </div>
+                                      <SevenSegmentDisplay
+                                        key={textureLevel}
+                                        value={textureLevel.toString().padStart(2, '0')}
+                                        activeColor="#ff0000"
+                                        inactiveColor="#666666"
+                                      />
                                     </div>
                                     <button
                                       onClick={() => {
