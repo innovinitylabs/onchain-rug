@@ -573,30 +573,22 @@ nav a {
 }
 
 /* 7-Segment LCD Display Styles */
-                          .seven-segment-display {
-                            display: inline-flex;
-                            gap: 0.1875rem; /* 3px */
-                            padding: 0.5rem 0.625rem; /* 8px 10px */
-                            background: #0a0a0a;
-                            border: 0.125rem solid #333; /* 2px */
-                            border-radius: 0.25rem; /* 4px */
-                            box-shadow: inset 0 0 0.5rem rgba(0, 0, 0, 0.9), 0 0 0.25rem rgba(239, 68, 68, 0.1);
-                          }
+.seven-segment-display {
+  display: inline-flex;
+  gap: clamp(0.125rem, 1vw, 0.1875rem);
+  padding: clamp(0.25rem, 2vw, 0.5rem) clamp(0.375rem, 3vw, 0.625rem);
+  background: #0a0a0a;
+  border: clamp(0.0625rem, 0.5vw, 0.125rem) solid #333;
+  border-radius: clamp(0.125rem, 1vw, 0.25rem);
+  box-shadow: inset 0 0 0.5rem rgba(0, 0, 0, 0.9), 0 0 0.25rem rgba(239, 68, 68, 0.1);
+}
 
-                          .seven-segment-digit {
-                            position: relative;
-                            width: 0.875rem; /* 14px */
-                            height: 1.375rem; /* 22px */
-                            margin: 0 0.0625rem; /* 1px */
-                          }
-
-                          @media (min-width: 768px) {
-                            .seven-segment-digit {
-                              width: 1.125rem; /* 18px */
-                              height: 1.75rem; /* 28px */
-                              margin: 0 0.125rem; /* 2px */
-                            }
-                          }
+.seven-segment-digit {
+  position: relative;
+  width: clamp(0.75rem, 4vw, 1.125rem);
+  height: clamp(1.125rem, 6vw, 1.75rem);
+  margin: 0 clamp(0.03125rem, 0.25vw, 0.125rem);
+}
 
 .segment {
   position: absolute;
@@ -835,38 +827,19 @@ nav a {
 
 /* Control Buttons */
 .control-button {
-  padding: 0.125rem 0.25rem;
+  padding: clamp(0.125rem, 1.5vw, 0.375rem) clamp(0.25rem, 3vw, 0.75rem);
   font-family: ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  font-size: 0.75rem;
+  font-size: clamp(0.75rem, 2vw, 1rem);
   transition: all 0.2s;
-  border: 2px solid rgb(251 191 36);
+  border: clamp(1px, 1vw, 2px) solid rgb(251 191 36);
   background-color: rgb(252 211 77);
   color: rgb(55 65 81);
-  border-radius: 0.25rem;
+  border-radius: clamp(0.25rem, 2vw, 0.5rem);
 }
 
 .control-button:hover {
   background-color: rgb(251 191 36);
   border-color: rgb(245 158 11);
-}
-
-@media (min-width: 640px) {
-  .control-button {
-    padding: 0.1875rem 0.375rem;
-  }
-}
-
-@media (min-width: 768px) {
-  .control-button {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.75rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .control-button {
-    padding: 0.375rem 0.75rem;
-  }
 }
 
 .control-button-text {
@@ -877,59 +850,35 @@ nav a {
 .control-display {
   flex: 1;
   text-align: center;
-  min-width: 2rem;
-}
-
-@media (min-width: 640px) {
-  .control-display {
-    min-width: 2.5rem;
-  }
-}
-
-@media (min-width: 768px) {
-  .control-display {
-    min-width: 3.75rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .control-display {
-    min-width: 5rem;
-  }
+  min-width: clamp(2rem, 8vw, 5rem);
 }
 
 .control-section {
   display: flex;
   flex-direction: column;
-  gap: 0.125rem;
-}
-
-@media (min-width: 768px) {
-  .control-section {
-    gap: 0.25rem;
-  }
+  gap: clamp(0.125rem, 1vw, 0.25rem);
 }
 
 .control-header {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: clamp(0.25rem, 2vw, 0.5rem);
   width: 100%;
 }
 
 .control-header-line {
   flex: 1;
-  height: 1px;
+  height: clamp(1px, 0.5vw, 2px);
   background-color: rgb(0 0 0);
 }
 
 .control-header-text {
   color: rgb(0 0 0);
-  font-size: 0.75rem;
+  font-size: clamp(0.75rem, 2vw, 1rem);
   font-family: ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   font-weight: 500;
-  padding-left: 0.5rem;
-  padding-right: 0.5rem;
+  padding-left: clamp(0.25rem, 2vw, 0.5rem);
+  padding-right: clamp(0.25rem, 2vw, 0.5rem);
 }
 
 /* Terminal Interface */
