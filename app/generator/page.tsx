@@ -364,16 +364,24 @@ export default function GeneratorPage() {
         return
       }
 
-      // Prevent multiple instances
-      if (typeof window !== 'undefined' && (window as any).p5Instance) {
-        console.log('⚠️ P5.js instance already exists, removing old one')
-        ;(window as any).p5Instance.remove()
-        delete (window as any).p5Instance
-      }
+      // Wait for canvas container to exist
+      const waitForContainer = () => {
+        if (!canvasContainerRef.current) {
+          console.log('⏳ Waiting for canvas container...')
+          setTimeout(waitForContainer, 50)
+          return
+        }
 
-      try {
-        // Use original doormat.js setup and draw functions
-        const p5Instance = typeof window !== 'undefined' ? new (window as any).p5((p: any) => {
+        // Prevent multiple instances
+        if (typeof window !== 'undefined' && (window as any).p5Instance) {
+          console.log('⚠️ P5.js instance already exists, removing old one')
+          ;(window as any).p5Instance.remove()
+          delete (window as any).p5Instance
+        }
+
+        try {
+          // Use original doormat.js setup and draw functions
+          const p5Instance = typeof window !== 'undefined' ? new (window as any).p5((p: any) => {
           // Original setup function from doormat.js
       p.setup = () => {
             // Get config from window.doormatData (set during initialization)
@@ -386,7 +394,7 @@ export default function GeneratorPage() {
             // Create canvas with swapped dimensions for 90-degree rotation (original logic)
             const canvas = p.createCanvas(baseDoormatData.config.DOORMAT_HEIGHT + (baseDoormatData.config.FRINGE_LENGTH * 4),
                                        baseDoormatData.config.DOORMAT_WIDTH + (baseDoormatData.config.FRINGE_LENGTH * 4))
-            canvas.parent('canvas-container')
+            canvas.parent(canvasContainerRef.current)
             // Let CSS handle positioning - don't set styles here
         p.pixelDensity(2)
         p.noLoop()
@@ -504,6 +512,10 @@ export default function GeneratorPage() {
         console.error('❌ Failed to create P5.js instance:', error)
         resolve()
       }
+      }
+
+      // Start waiting for container
+      waitForContainer()
     })
   }
 

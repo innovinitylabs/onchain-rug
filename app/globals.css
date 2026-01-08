@@ -631,7 +631,7 @@ nav a {
                             .segment.g { top: 0.75rem; left: 0.1875rem; width: 0.75rem; height: 0.25rem; }
                           }
 
-/* Stable Canvas Container - Aspect-ratio based, viewport-independent */
+/* Stable Canvas Container - Permanent DOM element, no layout thrashing */
 .rug-canvas-container {
   width: 100%;
   max-width: 800px;
@@ -642,6 +642,8 @@ nav a {
   align-items: center;
   justify-content: center;
   contain: layout paint size;
+  min-height: 1px;
+  flex-shrink: 0;
 }
 
 .rug-canvas-container canvas {
