@@ -2665,24 +2665,18 @@ export default function GeneratorPage() {
         <div className="generator-layout-grid">
           {/* Canvas Display - Left Side (70% width) */}
           <div className="canvas-column">
-            <div className="canvas-padding-wrapper">
-                            {/* Old-School CRT Monitor Box */}
-              <div className="monitor-wrapper">
-                {/* Monitor Bezel - Yellowed Plastic */}
-                <div className="monitor-bezel">
-                  {/* Monitor Screen Area */}
-                  <div className="monitor-screen">
-                    {/* Canvas Display Area */}
-                    <div className="canvas-display-area">
-
-                                                                    {/* Canvas Container - Clean aspect-ratio based */}
-                           <div className="canvas-centering-wrapper">
-                             <div
-                               ref={canvasContainerRef}
-                               id="canvas-container"
-                               className="rug-canvas-container rounded-lg cursor-pointer"
-                               onClick={() => updateFlipState(!(window as any).__RUG_FLIPPED__ || false)}
-                             >
+            <div className="monitor-wrapper">
+              {/* Monitor Bezel - Yellowed Plastic */}
+              <div className="monitor-bezel">
+                {/* Monitor Screen Area */}
+                <div className="monitor-screen">
+                  {/* Canvas Container - Direct placement */}
+                  <div
+                    ref={canvasContainerRef}
+                    id="canvas-container"
+                    className="rug-canvas-container rounded-lg cursor-pointer"
+                    onClick={() => updateFlipState(!(window as any).__RUG_FLIPPED__ || false)}
+                  >
                         {!isLoaded && (
                           <div className="absolute inset-0 flex flex-col items-center justify-center text-green-400 rounded-lg">
                             <motion.div
@@ -2719,8 +2713,6 @@ export default function GeneratorPage() {
                           }
 
                         `}</style>
-                      </div>
-                      </div>
                 </div>
               </div>
 

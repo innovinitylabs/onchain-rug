@@ -682,9 +682,6 @@ nav a {
   justify-content: flex-start;
   min-height: 0;
   flex: 1;
-}
-
-.canvas-padding-wrapper {
   padding: 0.5rem;
 }
 
@@ -692,12 +689,13 @@ nav a {
   position: relative;
   margin: 0 auto;
   width: 100%;
-  height: 100%;
   max-width: 100%;
   padding-left: clamp(0.5rem, 4vw, 2rem);
   padding-right: clamp(0.5rem, 4vw, 2rem);
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 
 .monitor-bezel {
@@ -715,20 +713,6 @@ nav a {
   padding-top: clamp(0.25rem, 2vw, 0.75rem);
 }
 
-.canvas-display-area {
-  border-radius: 0.5rem;
-  padding-left: 0.25rem;
-  padding-right: 0.25rem;
-  position: relative;
-  overflow: hidden;
-}
-
-.canvas-centering-wrapper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-}
 
 /* Page Layout Components */
 .page-wrapper {
