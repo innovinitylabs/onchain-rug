@@ -2644,21 +2644,16 @@ export default function GeneratorPage() {
         <meta name="twitter:image" content="https://onchainrugs.xyz/generator-og.jpg" />
         <link rel="canonical" href="https://onchainrugs.xyz/generator" />
       </Head>
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100 flex flex-col">
+      <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100 flex flex-col overflow-x-hidden">
         <Navigation />
-      <main className="flex-grow pt-28">
+        <main className="flex-grow pt-28">
         <div className="max-w-full mx-auto px-2 md:px-4">
       {/* Header */}
 
         {/* New Side-by-Side Layout - Art Preview (70%) on Left, Controls (30%) on Right */}
         <div className="grid lg:grid-cols-[70%_30%] gap-6 space-y-6 lg:space-y-0">
           {/* Canvas Display - Left Side (70% width) */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="canvas-grid-item w-full"
-          >
+          <div className="flex flex-col items-center">
             <div className="p-2">
                             {/* Old-School CRT Monitor Box */}
               <div className="relative mx-auto w-full max-w-full px-2 md:px-4 lg:px-6">
@@ -2669,13 +2664,13 @@ export default function GeneratorPage() {
                     {/* Canvas Display Area */}
                     <div className="rounded-lg px-1 relative overflow-hidden">
                       
-                                                                    {/* Canvas Container - Match P5.js canvas dimensions exactly */}
-                                                 <div
-                           ref={canvasContainerRef}
-                           id="canvas-container"
-                           className="rug-canvas-container rounded-lg relative mx-auto cursor-pointer"
-                           onClick={() => updateFlipState(!(window as any).__RUG_FLIPPED__ || false)}
-                        >
+                                                                    {/* Canvas Container - Clean aspect-ratio based */}
+                           <div
+                             ref={canvasContainerRef}
+                             id="canvas-container"
+                             className="rug-canvas-container rounded-lg cursor-pointer"
+                             onClick={() => updateFlipState(!(window as any).__RUG_FLIPPED__ || false)}
+                           >
                         {!isLoaded && (
                           <div className="absolute inset-0 flex flex-col items-center justify-center text-green-400 rounded-lg">
                             <motion.div
@@ -2755,7 +2750,7 @@ export default function GeneratorPage() {
                     {/* Patina Controls - Unified Accordion */}
                     <>
                     <motion.div
-                      layout
+                      layout={false}
                       className="relative"
                     >
 
@@ -2763,7 +2758,7 @@ export default function GeneratorPage() {
                       <AnimatePresence>
                         {(patinaOpen || patinaLocked || (typeof window !== 'undefined' && window.innerWidth < 768)) && (
                           <motion.div
-                            layout
+                            layout={false}
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: 'auto' }}
                             exit={{ opacity: 0, height: 0 }}
@@ -2925,7 +2920,7 @@ export default function GeneratorPage() {
                 </div>
               </div>
             </div>
-          </motion.div>
+          </div>
 
           {/* Terminal Interface - Right Side (30% width) */}
           <motion.div
