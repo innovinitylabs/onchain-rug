@@ -631,9 +631,10 @@ nav a {
                             .segment.g { top: 0.75rem; left: 0.1875rem; width: 0.75rem; height: 0.25rem; }
                           }
 
-/* Stable Canvas Container - Pure viewport scaling, no pixel constraints */
+/* Stable Canvas Container - Responsive to parent container */
 .rug-canvas-container {
-  width: min(75vw, 85vmin);
+  width: 100%;
+  max-width: min(100vw, 1200px);
   aspect-ratio: 920 / 641;
   margin: 0 auto;
   position: relative;

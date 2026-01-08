@@ -2664,7 +2664,7 @@ export default function GeneratorPage() {
         {/* New Side-by-Side Layout - Art Preview (70%) on Left, Controls (30%) on Right */}
         <div className="grid lg:grid-cols-[70%_30%] gap-6 space-y-6 lg:space-y-0">
           {/* Canvas Display - Left Side (70% width) */}
-          <div className="flex-1 min-w-0 flex flex-col items-center justify-center">
+          <div className="flex flex-col items-center justify-center">
             <div className="p-2">
                             {/* Old-School CRT Monitor Box */}
               <div className="relative mx-auto w-full max-w-full px-2 md:px-4 lg:px-6">
