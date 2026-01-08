@@ -2703,15 +2703,6 @@ export default function GeneratorPage() {
                             /* No CSS transforms - flipping handled by canvas re-rendering */
                           }
 
-                          .patina-console {
-                            display: flex;
-                            flex-direction: row;
-                            justify-content: flex-end;
-                            align-items: center;
-                            gap: 1rem;
-                            margin-top: 0.75rem;
-                          }
-
                         `}</style>
                 </div>
               </div>
