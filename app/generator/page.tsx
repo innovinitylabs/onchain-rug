@@ -2675,16 +2675,6 @@ export default function GeneratorPage() {
                            id="canvas-container"
                            className="rug-canvas-container rounded-lg relative mx-auto cursor-pointer"
                            onClick={() => updateFlipState(!(window as any).__RUG_FLIPPED__ || false)}
-                          style={{
-                            width: '100%',     // Responsive width
-                            height: '0',       // Height will be set by padding-bottom
-                            paddingBottom: '69.7%', // 920/1320 * 100% = 69.7% (maintains 1320:920 aspect ratio)
-                            maxWidth: '100%',  // Responsive constraint
-                            maxHeight: '45vh', // Responsive height using only viewport units
-                            overflow: 'hidden', // Prevent canvas overflow
-                            position: 'relative', // Ensure proper positioning context for loading overlay
-                            zIndex: 2 // Above scan lines
-                          }}
                         >
                         {!isLoaded && (
                           <div className="absolute inset-0 flex flex-col items-center justify-center text-green-400 rounded-lg">
