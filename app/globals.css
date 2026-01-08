@@ -1136,3 +1136,86 @@ nav a {
   font-family: ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   font-weight: 700;
 }
+
+/* Monitor Logo Layout */
+.monitor-logo-layout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(0.125rem, 1vw, 0.25rem);
+}
+
+@media (min-width: 768px) {
+  .monitor-logo-layout {
+    gap: clamp(0.25rem, 1vw, 0.25rem);
+  }
+}
+
+/* CRT Control Strip */
+.crt-control-strip {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: clamp(0.25rem, 2vw, 0.75rem);
+}
+
+@media (min-width: 640px) {
+  .crt-control-strip {
+    gap: clamp(0.5rem, 3vw, 1rem);
+  }
+}
+
+@media (min-width: 768px) {
+  .crt-control-strip {
+    gap: clamp(1rem, 4vw, 1.5rem);
+  }
+}
+
+@media (min-width: 1024px) {
+  .crt-control-strip {
+    gap: clamp(2rem, 6vw, 3rem);
+  }
+}
+
+@media (min-width: 1280px) {
+  .crt-control-strip {
+    gap: clamp(3rem, 8vw, 4.5rem);
+  }
+}
+
+/* Master Overlay Toggle */
+.master-overlay-toggle {
+  padding: clamp(0.5rem, 3vw, 1.25rem) clamp(0.75rem, 4vw, 1.5rem);
+  border-radius: clamp(0.25rem, 2vw, 0.5rem);
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: clamp(0.75rem, 2vw, 1rem);
+  transition: all 0.2s;
+  border: 2px solid rgb(245 158 11);
+  background-color: rgb(252 211 77);
+  border-color: rgb(245 158 11);
+  color: rgb(55 65 81);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.master-overlay-toggle:hover {
+  background-color: rgb(251 191 36);
+  border-color: rgb(245 158 11);
+}
+
+.master-overlay-icon {
+  font-size: clamp(1.125rem, 3vw, 1.5rem);
+  transition: all 0.2s;
+}
+
+@media (min-width: 768px) {
+  .master-overlay-icon {
+    font-size: clamp(1.5rem, 4vw, 2rem);
+  }
+}
+
+.master-overlay-icon.active {
+  color: rgb(220 38 38);
+  text-shadow: 0 0 8px rgba(220, 38, 38, 0.6), 0 0 16px rgba(220, 38, 38, 0.4), 0 0 24px rgba(220, 38, 38, 0.2);
+}

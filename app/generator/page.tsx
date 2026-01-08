@@ -2727,7 +2727,7 @@ export default function GeneratorPage() {
                   {/* Monitor Base - Taller Frame with Logo */}
                   <div className="monitor-logo-section">
                     {/* Rugpull Computer Logo and Text */}
-                    <div className="flex flex-col items-center space-y-0.5 md:space-y-1">
+                    <div className="monitor-logo-layout">
                       <div className="monitor-logo-circle">
                         <img
                           src="/rugpull_computer_logo.png"
@@ -2755,7 +2755,7 @@ export default function GeneratorPage() {
                     <div className="relative">
                             <div className="pt-4">
                               {/* CRT Control Strip Layout */}
-                              <div className="flex items-end justify-end gap-1 sm:gap-2 md:gap-4 lg:gap-8 xl:gap-12">
+                              <div className="crt-control-strip">
                                 {/* Dirt Controls */}
                                 <div className="control-section">
                                   <div className="control-header">
@@ -2809,11 +2809,11 @@ export default function GeneratorPage() {
                                 </div>
 
                                 {/* Age Controls */}
-                                <div className="flex flex-col items-center gap-0.5 sm:gap-1 md:gap-2">
-                                  <div className="flex items-center gap-2 w-full">
-                                    <div className="flex-1 h-px bg-black"></div>
-                                    <h5 className="text-black text-xs font-mono font-medium px-2">AGE</h5>
-                                    <div className="flex-1 h-px bg-black"></div>
+                                <div className="control-section">
+                                  <div className="control-header">
+                                    <div className="control-header-line"></div>
+                                    <h5 className="control-header-text">AGE</h5>
+                                    <div className="control-header-line"></div>
                                   </div>
                                   <div className="flex items-center gap-2">
                                     <button
@@ -2822,15 +2822,15 @@ export default function GeneratorPage() {
                                         updateTextureState(newLevel > 0, newLevel)
                                         setPatinaLocked(true)
                                       }}
-                                      className="px-1 py-0.5 sm:px-1.5 sm:py-0.5 md:px-2 md:py-1 lg:px-3 lg:py-2 rounded font-mono text-xs transition-all duration-200 border-2 bg-amber-200 text-gray-700 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
+                                      className="control-button"
                                       title="Decrease aging level"
                                       disabled={textureLevel === 0}
                                     >
-                                      <div className="text-center font-bold">
+                                      <div className="control-button-text">
                                         -
                                       </div>
                                     </button>
-                                    <div className="flex-1 text-center min-w-[2rem] sm:min-w-[2.5rem] md:min-w-[3.75rem] lg:min-w-[5rem]">
+                                    <div className="control-display">
                                       <div key={textureLevel} className="seven-segment-display">
                                         {textureLevel.toString().padStart(2, '0').split('').map((digit, index) => (
                                           <div key={index} className="seven-segment-digit">
@@ -2851,11 +2851,11 @@ export default function GeneratorPage() {
                                         updateTextureState(true, newLevel)
                                         setPatinaLocked(true)
                                       }}
-                                      className="px-1 py-0.5 sm:px-1.5 sm:py-0.5 md:px-2 md:py-1 lg:px-3 lg:py-2 rounded font-mono text-xs transition-all duration-200 border-2 bg-amber-200 text-gray-700 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
+                                      className="control-button"
                                       title="Increase aging level"
                                       disabled={textureLevel === 10}
                                     >
-                                      <div className="text-center font-bold">
+                                      <div className="control-button-text">
                                         +
                                       </div>
                                     </button>
@@ -2863,7 +2863,7 @@ export default function GeneratorPage() {
                                 </div>
 
                                 {/* Master Overlay Toggle */}
-                                <div className="flex flex-col items-center gap-0.5 sm:gap-1 md:gap-2">
+                                <div className="control-section">
                                   <button
                                     onClick={() => {
                                       const overlaysEnabled = showDirt || showTexture
@@ -2878,14 +2878,10 @@ export default function GeneratorPage() {
                                       }
                                       setPatinaLocked(true)
                                     }}
-                                    className="px-2 py-1.5 sm:px-3 sm:py-2 md:px-4 md:py-3 lg:px-6 lg:py-5 rounded font-mono text-xs sm:text-sm md:text-lg transition-all duration-200 border-2 bg-amber-200 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
+                                    className="master-overlay-toggle"
                                     title={(showDirt || showTexture) ? 'Disable all overlays' : 'Enable overlays'}
                                   >
-                                    <span className={`text-lg md:text-2xl ${(showDirt || showTexture) ? 'text-red-600' : 'text-black'}`} style={{
-                                      textShadow: (showDirt || showTexture)
-                                        ? '0 0 8px rgba(220, 38, 38, 0.6), 0 0 16px rgba(220, 38, 38, 0.4), 0 0 24px rgba(220, 38, 38, 0.2)'
-                                        : 'none'
-                                    }}>
+                                    <span className={`master-overlay-icon ${(showDirt || showTexture) ? 'active' : ''}`}>
                                       ⏻
                                     </span>
                                   </button>
