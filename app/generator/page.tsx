@@ -2846,7 +2846,7 @@ export default function GeneratorPage() {
                                 </div>
 
                                 {/* Master Overlay Toggle */}
-                                <div className="control-section">
+                                <div className="overlay-toggle-section">
                                   <button
                                     onClick={() => {
                                       const overlaysEnabled = showDirt || showTexture

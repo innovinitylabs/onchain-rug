@@ -1107,6 +1107,13 @@ nav a {
   gap: clamp(0.125rem, 0.75vw, 0.25rem);
 }
 
+/* Overlay Toggle Section */
+.overlay-toggle-section {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.125rem, 0.55vw, 0.10rem);
+}
+
 .control-header {
   display: flex;
     align-items: center;
