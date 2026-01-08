@@ -2780,11 +2780,11 @@ export default function GeneratorPage() {
                                         updateDirtState(true, newLevel)
                                         setPatinaLocked(true)
                                       }}
-                                      className="px-1 py-0.5 sm:px-1.5 sm:py-0.5 md:px-2 md:py-1 lg:px-3 lg:py-2 rounded font-mono text-xs transition-all duration-200 border-2 bg-amber-200 text-gray-700 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
+                                      className="control-button-plus"
                                       title="Increase dirt level"
                                       disabled={dirtLevel === 2}
                                     >
-                                      <div className="text-center font-bold">
+                                      <div className="control-button-plus-text">
                                         +
                                       </div>
                                     </button>

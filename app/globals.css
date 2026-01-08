@@ -1218,6 +1218,35 @@ nav a {
   text-shadow: 0 0 8px rgba(220, 38, 38, 0.6), 0 0 16px rgba(220, 38, 38, 0.4), 0 0 24px rgba(220, 38, 38, 0.2);
 }
 
+/* Patina Control Button Plus */
+.control-button-plus {
+  padding: clamp(0.125rem, 1.5vw, 0.375rem) clamp(0.25rem, 3vw, 0.75rem);
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: clamp(0.75rem, 2vw, 1rem);
+  transition: all 0.2s;
+  border: clamp(1px, 1vw, 2px) solid rgb(251 191 36);
+  background-color: rgb(252 211 77);
+  color: rgb(55 65 81);
+  border-radius: clamp(0.25rem, 2vw, 0.5rem);
+}
+
+.control-button-plus:hover:not(:disabled) {
+  background-color: rgb(251 191 36);
+  border-color: rgb(245 158 11);
+}
+
+.control-button-plus:disabled {
+  background-color: rgb(252 211 77);
+  color: rgb(245 158 11);
+  opacity: 0.6;
+}
+
+/* Control Button Plus Text */
+.control-button-plus-text {
+  text-align: center;
+  font-weight: 700;
+}
+
 /* Patina Console */
 .patina-console {
   display: flex;
