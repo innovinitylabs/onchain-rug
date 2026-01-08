@@ -2661,10 +2661,10 @@ export default function GeneratorPage() {
         <div className="generator-container">
       {/* Header */}
 
-        {/* New Side-by-Side Layout - Art Preview (70%) on Left, Controls (30%) on Right */}
-        <div className="generator-layout-grid">
-          {/* Canvas Display - Left Side (70% width) */}
-          <div className="canvas-column">
+        {/* Generator Page Layout - Monitor (Major) + Terminal (Controls) */}
+        <div className="generator-page-layout">
+          {/* Monitor Area - Major Column */}
+          <div className="monitor-column">
             <div className="monitor-wrapper">
               {/* Monitor Bezel - Yellowed Plastic */}
               <div className="monitor-bezel">
@@ -2889,13 +2889,8 @@ export default function GeneratorPage() {
             </div>
           </div>
 
-          {/* Terminal Interface - Right Side (30% width) */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="w-full pb-8 pt-2"
-          >
+          {/* Terminal Controls - Right Column */}
+          <div className="terminal-column">
             <div className="relative w-full px-2 md:px-3 lg:px-4">
               <div className="bg-amber-100 text-amber-900 font-mono border-t-2 border-amber-600 py-3 md:py-4 px-4 md:px-6">
               {/* Terminal Header */}
@@ -3364,7 +3359,7 @@ export default function GeneratorPage() {
                 </div>
               </div>
             </div>
-          </motion.div>
+          </div>
         </div>
 
 
