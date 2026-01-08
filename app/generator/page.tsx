@@ -2885,9 +2885,7 @@ export default function GeneratorPage() {
 
               </div>
                 </div>
-              </div>
             </div>
-          </div>
 
           {/* Terminal Controls - Right Column */}
           <div className="terminal-column">
@@ -3361,7 +3359,8 @@ export default function GeneratorPage() {
             </div>
           </div>
         </div>
-
+        </div>
+        </div>
 
         {/* Hidden elements for P5.js compatibility */}
         <div style={{ display: 'none' }}>
