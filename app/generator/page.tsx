@@ -2697,15 +2697,12 @@ export default function GeneratorPage() {
                           </div>
                         )}
                         
-                        {/* P5.js Canvas Styling Override */}
+                        {/* P5.js Canvas Styling Override - Minimal */}
                         <style jsx>{`
                           #defaultCanvas0 {
                             width: 100% !important;
                             height: 100% !important;
-                            max-width: 100% !important;
-                            max-height: 100% !important;
-                            object-fit: fill !important;
-                            position: relative !important;
+                            display: block !important;
                           }
 
                           .rug-canvas-container {
