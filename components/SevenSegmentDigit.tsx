@@ -63,16 +63,16 @@ export default function SevenSegmentDigit({
       }}
     >
       <defs>
-        {/* Enhanced glow effect for active segments */}
-        <filter id="segment-glow" x="-100%" y="-100%" width="300%" height="300%">
-          <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+        {/* Refined inner glow effect */}
+        <filter id="segment-glow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
           <feColorMatrix
             in="coloredBlur"
             type="matrix"
             values="1 0 0 0 0
                    0 1 0 0 0
                    0 0 1 0 0
-                   0 0 0 4 0"
+                   0 0 0 2 0"
             result="brightBlur"
           />
           <feMerge>
@@ -81,16 +81,16 @@ export default function SevenSegmentDigit({
           </feMerge>
         </filter>
 
-        {/* Additional outer glow for more dramatic effect */}
-        <filter id="segment-outer-glow" x="-150%" y="-150%" width="400%" height="400%">
-          <feGaussianBlur stdDeviation="6" result="outerBlur"/>
+        {/* Subtle outer glow */}
+        <filter id="segment-outer-glow" x="-100%" y="-100%" width="300%" height="300%">
+          <feGaussianBlur stdDeviation="2.5" result="outerBlur"/>
           <feColorMatrix
             in="outerBlur"
             type="matrix"
             values="1 0 0 0 0
-                   0 0.5 0 0 0
-                   0 0 0.3 0 0
-                   0 0 0 2 0"
+                   0 0.3 0 0 0
+                   0 0 0.2 0 0
+                   0 0 0 1.5 0"
             result="redGlow"
           />
           <feMerge>
