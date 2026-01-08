@@ -2739,15 +2739,14 @@ export default function GeneratorPage() {
                             <div className="pt-4">
                               {/* CRT Control Strip Layout */}
                               <div className="crt-control-strip">
-                                {/* Dirt Controls - Desktop 3-column layout */}
+                                {/* Dirt Controls */}
                                 <div className="control-section">
                                   <div className="control-header">
                                     <div className="control-header-line"></div>
                                     <h5 className="control-header-text">DIRT</h5>
                                     <div className="control-header-line"></div>
                                   </div>
-                                  {/* Mobile layout (single row) */}
-                                  <div className="flex items-center gap-2 md:hidden">
+                                  <div className="flex items-center gap-2">
                                     <button
                                       onClick={() => {
                                         const newLevel = Math.max(0, dirtLevel - 1)
@@ -2790,64 +2789,16 @@ export default function GeneratorPage() {
                                       </div>
                                     </button>
                                   </div>
-                                  {/* Desktop 3-column layout */}
-                                  <div className="hidden md:grid md:grid-cols-3 md:gap-2 md:items-center">
-                                    <div></div>
-                                    <div className="control-display flex justify-center">
-                                      <div key={dirtLevel} className="seven-segment-display">
-                                        <div className="seven-segment-digit">
-                                          <div className={`segment a ${getSegmentActive('a', dirtLevel.toString()) ? 'active' : ''}`}></div>
-                                          <div className={`segment b ${getSegmentActive('b', dirtLevel.toString()) ? 'active' : ''}`}></div>
-                                          <div className={`segment c ${getSegmentActive('c', dirtLevel.toString()) ? 'active' : ''}`}></div>
-                                          <div className={`segment d ${getSegmentActive('d', dirtLevel.toString()) ? 'active' : ''}`}></div>
-                                          <div className={`segment e ${getSegmentActive('e', dirtLevel.toString()) ? 'active' : ''}`}></div>
-                                          <div className={`segment f ${getSegmentActive('f', dirtLevel.toString()) ? 'active' : ''}`}></div>
-                                          <div className={`segment g ${getSegmentActive('g', dirtLevel.toString()) ? 'active' : ''}`}></div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                    <div className="flex justify-end gap-2">
-                                      <button
-                                        onClick={() => {
-                                          const newLevel = Math.max(0, dirtLevel - 1)
-                                          updateDirtState(newLevel > 0, newLevel)
-                                          setPatinaLocked(true)
-                                        }}
-                                        className="control-button"
-                                        title="Decrease dirt level"
-                                        disabled={dirtLevel === 0}
-                                      >
-                                        <div className="control-button-text">
-                                          -
-                                        </div>
-                                      </button>
-                                      <button
-                                        onClick={() => {
-                                          const newLevel = Math.min(2, dirtLevel + 1)
-                                          updateDirtState(true, newLevel)
-                                          setPatinaLocked(true)
-                                        }}
-                                        className="control-button"
-                                        title="Increase dirt level"
-                                        disabled={dirtLevel === 2}
-                                      >
-                                        <div className="control-button-text">
-                                          +
-                                        </div>
-                                      </button>
-                                    </div>
-                                  </div>
                                 </div>
 
-                                {/* Age Controls - Desktop 3-column layout */}
+                                {/* Age Controls */}
                                 <div className="control-section">
                                   <div className="control-header">
                                     <div className="control-header-line"></div>
                                     <h5 className="control-header-text">AGE</h5>
                                     <div className="control-header-line"></div>
                                   </div>
-                                  {/* Mobile layout (single row) */}
-                                  <div className="flex items-center gap-2 md:hidden">
+                                  <div className="flex items-center gap-2">
                                     <button
                                       onClick={() => {
                                         const newLevel = Math.max(0, textureLevel - 1)
@@ -2891,55 +2842,6 @@ export default function GeneratorPage() {
                                         +
                                       </div>
                                     </button>
-                                  </div>
-                                  {/* Desktop 3-column layout */}
-                                  <div className="hidden md:grid md:grid-cols-3 md:gap-2 md:items-center">
-                                    <div></div>
-                                    <div className="control-display flex justify-center">
-                                      <div key={textureLevel} className="seven-segment-display">
-                                        {textureLevel.toString().padStart(2, '0').split('').map((digit, index) => (
-                                          <div key={index} className="seven-segment-digit">
-                                            <div className={`segment a ${getSegmentActive('a', digit) ? 'active' : ''}`}></div>
-                                            <div className={`segment b ${getSegmentActive('b', digit) ? 'active' : ''}`}></div>
-                                            <div className={`segment c ${getSegmentActive('c', digit) ? 'active' : ''}`}></div>
-                                            <div className={`segment d ${getSegmentActive('d', digit) ? 'active' : ''}`}></div>
-                                            <div className={`segment e ${getSegmentActive('e', digit) ? 'active' : ''}`}></div>
-                                            <div className={`segment f ${getSegmentActive('f', digit) ? 'active' : ''}`}></div>
-                                            <div className={`segment g ${getSegmentActive('g', digit) ? 'active' : ''}`}></div>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                    <div className="flex justify-end gap-2">
-                                      <button
-                                        onClick={() => {
-                                          const newLevel = Math.max(0, textureLevel - 1)
-                                          updateTextureState(newLevel > 0, newLevel)
-                                          setPatinaLocked(true)
-                                        }}
-                                        className="control-button"
-                                        title="Decrease aging level"
-                                        disabled={textureLevel === 0}
-                                      >
-                                        <div className="control-button-text">
-                                          -
-                                        </div>
-                                      </button>
-                                      <button
-                                        onClick={() => {
-                                          const newLevel = Math.min(10, textureLevel + 1)
-                                          updateTextureState(true, newLevel)
-                                          setPatinaLocked(true)
-                                        }}
-                                        className="control-button"
-                                        title="Increase aging level"
-                                        disabled={textureLevel === 10}
-                                      >
-                                        <div className="control-button-text">
-                                          +
-                                        </div>
-                                      </button>
-                                    </div>
                                   </div>
                                 </div>
 
