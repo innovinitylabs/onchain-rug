@@ -64,7 +64,6 @@ export default function GeneratorPage() {
   const [showTexture, setShowTexture] = useState(false)
   const [textureLevel, setTextureLevel] = useState(0) // 0 = none, 1 = 7 days, 2 = 30 days
   const [lastTextureLevel, setLastTextureLevel] = useState(1) // Remember last non-zero texture level
-  const [patinaOpen, setPatinaOpen] = useState(false)
   const [patinaLocked, setPatinaLocked] = useState(false)
   const [focusNewRow, setFocusNewRow] = useState(false)
   // Diamond frame aging (hardcoded - most impressive longevity)
@@ -2731,8 +2730,6 @@ export default function GeneratorPage() {
                   {/* Monitor Base - Taller Frame with Logo */}
                   <div
                     className="bg-amber-100 mt-1 pt-1 pb-1 rounded-b-xl border-t-1 border-amber-200"
-                    onMouseEnter={() => !patinaLocked && setPatinaOpen(true)}
-                    onMouseLeave={() => !patinaLocked && setPatinaOpen(false)}
                   >
                     {/* Rugpull Computer Logo and Text */}
                     <div className="flex flex-col items-center space-y-0.5 md:space-y-1">
@@ -2755,35 +2752,12 @@ export default function GeneratorPage() {
                     <div className="w-3/4 h-px bg-gradient-to-r from-transparent via-amber-400 to-transparent opacity-60"></div>
                   </div>
 
-                  {/* Relocated Patina Controls */}
+                  {/* Relocated Patina Controls - Permanently Visible */}
                   <div
                     className="patina-console p-0.5 sm:p-1 md:p-2 lg:p-3"
-                    onMouseEnter={() => !patinaLocked && setPatinaOpen(true)}
-                    onMouseLeave={() => !patinaLocked && setPatinaOpen(false)}
                   >
-                    {/* Patina Controls - Unified Accordion */}
-                    <>
-                    <motion.div
-                      layout={false}
-                      className="relative"
-                    >
-
-                      {/* Collapsible Content - Always visible on mobile */}
-                      <AnimatePresence>
-                        {(patinaOpen || patinaLocked || (typeof window !== 'undefined' && window.innerWidth < 768)) && (
-                          <motion.div
-                            layout={false}
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            transition={{
-                              duration: 0.35,
-                              ease: 'easeInOut',
-                              opacity: { duration: 0.2 },
-                              height: { duration: 0.35 }
-                            }}
-                            className="overflow-hidden"
-                          >
+                    {/* Patina Controls - Always Visible */}
+                    <div className="relative">
                             <div className="pt-4">
                               {/* CRT Control Strip Layout */}
                               <div className="flex items-end justify-end gap-1 sm:gap-2 md:gap-4 lg:gap-8 xl:gap-12">
@@ -2923,11 +2897,7 @@ export default function GeneratorPage() {
                                 </div>
                               </div>
                             </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </motion.div>
-                    </>
+                    </div>
                   </div>
 
               </div>
