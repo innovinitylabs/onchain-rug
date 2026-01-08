@@ -2688,10 +2688,10 @@ export default function GeneratorPage() {
                             <motion.div
                               animate={{ rotate: 360 }}
                               transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                              className="w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full mb-4"
+                              className="loading-spinner"
                             />
-                            <div className="text-lg font-medium font-mono">Loading P5.js...</div>
-                            <div className="text-sm text-green-500 mt-2 font-mono">
+                            <div className="loading-text">Loading P5.js...</div>
+                            <div className="loading-subtext">
                               Initializing rug generator
                             </div>
                           </div>
@@ -2725,28 +2725,26 @@ export default function GeneratorPage() {
               </div>
 
                   {/* Monitor Base - Taller Frame with Logo */}
-                  <div
-                    className="bg-amber-100 mt-1 pt-1 pb-1 rounded-b-xl border-t-1 border-amber-200"
-                  >
+                  <div className="monitor-logo-section">
                     {/* Rugpull Computer Logo and Text */}
                     <div className="flex flex-col items-center space-y-0.5 md:space-y-1">
-                      <div className="w-8 h-8 md:w-10 md:h-10 lg:w-12 lg:h-12 xl:w-14 xl:h-14 bg-amber-200 rounded-full p-1 md:p-1.5 lg:p-2 xl:p-2">
-                        <img 
-                          src="/rugpull_computer_logo.png" 
-                          alt="Rugpull Computer Logo" 
+                      <div className="monitor-logo-circle">
+                        <img
+                          src="/rugpull_computer_logo.png"
+                          alt="Rugpull Computer Logo"
                           className="w-full h-full object-contain"
                         />
                       </div>
                       <div className="text-center">
-                        <h3 className="text-xs md:text-xs lg:text-sm xl:text-sm font-medium text-amber-800" style={{ fontFamily: 'EB Garamond, Apple Garamond, Garamond, serif' }}>
+                        <h3 className="monitor-logo-text">
                           Rugpull Computer
                         </h3>
                       </div>
                     </div>
 
                   {/* Horizontal Divider */}
-                  <div className="flex justify-center my-2">
-                    <div className="w-3/4 h-px bg-gradient-to-r from-transparent via-amber-400 to-transparent opacity-60"></div>
+                  <div className="layout-divider">
+                    <div className="layout-divider-line"></div>
                   </div>
 
                   {/* Relocated Patina Controls - Permanently Visible */}
@@ -2759,11 +2757,11 @@ export default function GeneratorPage() {
                               {/* CRT Control Strip Layout */}
                               <div className="flex items-end justify-end gap-1 sm:gap-2 md:gap-4 lg:gap-8 xl:gap-12">
                                 {/* Dirt Controls */}
-                                <div className="flex flex-col items-center gap-0.5 sm:gap-1 md:gap-2">
-                                  <div className="flex items-center gap-2 w-full">
-                                    <div className="flex-1 h-px bg-black"></div>
-                                    <h5 className="text-black text-xs font-mono font-medium px-2">DIRT</h5>
-                                    <div className="flex-1 h-px bg-black"></div>
+                                <div className="control-section">
+                                  <div className="control-header">
+                                    <div className="control-header-line"></div>
+                                    <h5 className="control-header-text">DIRT</h5>
+                                    <div className="control-header-line"></div>
                                   </div>
                                   <div className="flex items-center gap-2">
                                     <button
@@ -2772,15 +2770,15 @@ export default function GeneratorPage() {
                                         updateDirtState(newLevel > 0, newLevel)
                                         setPatinaLocked(true)
                                       }}
-                                      className="px-1 py-0.5 sm:px-1.5 sm:py-0.5 md:px-2 md:py-1 lg:px-3 lg:py-2 rounded font-mono text-xs transition-all duration-200 border-2 bg-amber-200 text-gray-700 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
+                                      className="control-button"
                                       title="Decrease dirt level"
                                       disabled={dirtLevel === 0}
                                     >
-                                      <div className="text-center font-bold">
+                                      <div className="control-button-text">
                                         -
                                       </div>
                                     </button>
-                                    <div className="flex-1 text-center min-w-[2rem] sm:min-w-[2.5rem] md:min-w-[3.75rem] lg:min-w-[5rem]">
+                                    <div className="control-display">
                                       <div key={dirtLevel} className="seven-segment-display">
                                         <div className="seven-segment-digit">
                                           <div className={`segment a ${getSegmentActive('a', dirtLevel.toString()) ? 'active' : ''}`}></div>
