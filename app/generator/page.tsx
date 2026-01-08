@@ -64,7 +64,6 @@ export default function GeneratorPage() {
   const [showTexture, setShowTexture] = useState(false)
   const [textureLevel, setTextureLevel] = useState(0) // 0 = none, 1 = 7 days, 2 = 30 days
   const [lastTextureLevel, setLastTextureLevel] = useState(1) // Remember last non-zero texture level
-  const [patinaOpen, setPatinaOpen] = useState(false)
   const [patinaLocked, setPatinaLocked] = useState(false)
   const [focusNewRow, setFocusNewRow] = useState(false)
   // Diamond frame aging (hardcoded - most impressive longevity)
@@ -364,16 +363,24 @@ export default function GeneratorPage() {
         return
       }
 
-      // Prevent multiple instances
-      if (typeof window !== 'undefined' && (window as any).p5Instance) {
-        console.log('⚠️ P5.js instance already exists, removing old one')
-        ;(window as any).p5Instance.remove()
-        delete (window as any).p5Instance
-      }
+      // Wait for canvas container to exist
+      const waitForContainer = () => {
+        if (!canvasContainerRef.current) {
+          console.log('⏳ Waiting for canvas container...')
+          setTimeout(waitForContainer, 50)
+          return
+        }
 
-      try {
-        // Use original doormat.js setup and draw functions
-        const p5Instance = typeof window !== 'undefined' ? new (window as any).p5((p: any) => {
+        // Prevent multiple instances
+        if (typeof window !== 'undefined' && (window as any).p5Instance) {
+          console.log('⚠️ P5.js instance already exists, removing old one')
+          ;(window as any).p5Instance.remove()
+          delete (window as any).p5Instance
+        }
+
+        try {
+          // Use original doormat.js setup and draw functions
+          const p5Instance = typeof window !== 'undefined' ? new (window as any).p5((p: any) => {
           // Original setup function from doormat.js
       p.setup = () => {
             // Get config from window.doormatData (set during initialization)
@@ -386,7 +393,7 @@ export default function GeneratorPage() {
             // Create canvas with swapped dimensions for 90-degree rotation (original logic)
             const canvas = p.createCanvas(baseDoormatData.config.DOORMAT_HEIGHT + (baseDoormatData.config.FRINGE_LENGTH * 4),
                                        baseDoormatData.config.DOORMAT_WIDTH + (baseDoormatData.config.FRINGE_LENGTH * 4))
-            canvas.parent('canvas-container')
+            canvas.parent(canvasContainerRef.current)
             // Let CSS handle positioning - don't set styles here
         p.pixelDensity(2)
         p.noLoop()
@@ -504,6 +511,10 @@ export default function GeneratorPage() {
         console.error('❌ Failed to create P5.js instance:', error)
         resolve()
       }
+      }
+
+      // Start waiting for container
+      waitForContainer()
     })
   }
 
@@ -2644,155 +2655,96 @@ export default function GeneratorPage() {
         <meta name="twitter:image" content="https://onchainrugs.xyz/generator-og.jpg" />
         <link rel="canonical" href="https://onchainrugs.xyz/generator" />
       </Head>
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100 flex flex-col">
+      <div className="page-wrapper">
         <Navigation />
-      <main className="flex-grow pt-28">
-        <div className="max-w-full mx-auto px-2 md:px-4">
+        <main className="page-main">
+        <div className="generator-container">
       {/* Header */}
 
-        {/* New Side-by-Side Layout - Art Preview (70%) on Left, Controls (30%) on Right */}
-        <div className="grid lg:grid-cols-[70%_30%] gap-6 space-y-6 lg:space-y-0">
-          {/* Canvas Display - Left Side (70% width) */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="w-full"
-          >
-            <div className="p-2">
-                            {/* Old-School CRT Monitor Box */}
-              <div className="relative mx-auto w-full max-w-full px-2 md:px-4 lg:px-6">
-                {/* Monitor Bezel - Yellowed Plastic */}
-                <div className="bg-amber-100 border-6 border-amber-200 rounded-t-2xl rounded-b-xl p-2 md:p-3 lg:p-4 shadow-2xl">
-                  {/* Monitor Screen Area */}
-                  <div className="rounded-lg px-1 md:px-2 py-1">
-                    {/* Canvas Display Area */}
-                    <div className="rounded-lg px-1 relative overflow-hidden">
-                      
-                                                                    {/* Canvas Container - Match P5.js canvas dimensions exactly */}
-                                                 <div
-                           ref={canvasContainerRef}
-                           id="canvas-container"
-                           className="rug-canvas-container rounded-lg relative mx-auto cursor-pointer"
-                           onClick={() => updateFlipState(!(window as any).__RUG_FLIPPED__ || false)}
-                          style={{
-                            width: '100%',     // Responsive width
-                            height: '0',       // Height will be set by padding-bottom
-                            paddingBottom: '69.7%', // 920/1320 * 100% = 69.7% (maintains 1320:920 aspect ratio)
-                            maxWidth: '100%',  // Responsive constraint
-                            overflow: 'hidden', // Prevent canvas overflow
-                            position: 'relative', // Ensure proper positioning context for loading overlay
-                            zIndex: 2 // Above scan lines
-                          }}
-                        >
+        {/* Generator Page Layout - Monitor (Major) + Terminal (Controls) */}
+        <div className="generator-page-layout">
+          {/* Monitor Area - Major Column */}
+          <div className="monitor-column">
+            <div className="monitor-wrapper">
+              {/* Monitor Bezel - Yellowed Plastic */}
+              <div className="monitor-bezel">
+                {/* Monitor Screen Area */}
+                <div className="monitor-screen">
+                  {/* Canvas Container - Direct placement */}
+                  <div
+                    ref={canvasContainerRef}
+                    id="canvas-container"
+                    className="rug-canvas-container rounded-lg cursor-pointer"
+                    onClick={() => updateFlipState(!(window as any).__RUG_FLIPPED__ || false)}
+                  >
                         {!isLoaded && (
                           <div className="absolute inset-0 flex flex-col items-center justify-center text-green-400 rounded-lg">
                             <motion.div
                               animate={{ rotate: 360 }}
                               transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                              className="w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full mb-4"
+                              className="loading-spinner"
                             />
-                            <div className="text-lg font-medium font-mono">Loading P5.js...</div>
-                            <div className="text-sm text-green-500 mt-2 font-mono">
+                            <div className="loading-text">Loading P5.js...</div>
+                            <div className="loading-subtext">
                               Initializing rug generator
                             </div>
                           </div>
                         )}
                         
-                        {/* P5.js Canvas Styling Override */}
+                        {/* P5.js Canvas Styling Override - Minimal */}
                         <style jsx>{`
                           #defaultCanvas0 {
                             width: 100% !important;
                             height: 100% !important;
-                            max-width: 100% !important;
-                            max-height: 100% !important;
-                            object-fit: fill !important;
-                            position: relative !important;
+                            display: block !important;
                           }
 
                           .rug-canvas-container {
                             /* No CSS transforms - flipping handled by canvas re-rendering */
                           }
 
-                          .patina-console {
-                            display: flex;
-                            flex-direction: row;
-                            justify-content: flex-end;
-                            align-items: center;
-                            gap: 1rem;
-                            margin-top: 0.75rem;
-                          }
-
                         `}</style>
-                      </div>
                 </div>
               </div>
 
                   {/* Monitor Base - Taller Frame with Logo */}
-                  <div
-                    className="bg-amber-100 mt-1 pt-1 pb-1 rounded-b-xl border-t-1 border-amber-200"
-                    onMouseEnter={() => !patinaLocked && setPatinaOpen(true)}
-                    onMouseLeave={() => !patinaLocked && setPatinaOpen(false)}
-                  >
+                  <div className="monitor-logo-section">
                     {/* Rugpull Computer Logo and Text */}
-                    <div className="flex flex-col items-center space-y-0.5 md:space-y-1">
-                      <div className="w-8 h-8 md:w-10 md:h-10 lg:w-12 lg:h-12 xl:w-14 xl:h-14 bg-amber-200 rounded-full p-1 md:p-1.5 lg:p-2 xl:p-2">
-                        <img 
-                          src="/rugpull_computer_logo.png" 
-                          alt="Rugpull Computer Logo" 
+                    <div className="monitor-logo-layout">
+                      <div className="monitor-logo-circle">
+                        <img
+                          src="/rugpull_computer_logo.png"
+                          alt="Rugpull Computer Logo"
                           className="w-full h-full object-contain"
                         />
                       </div>
                       <div className="text-center">
-                        <h3 className="text-xs md:text-xs lg:text-sm xl:text-sm font-medium text-amber-800" style={{ fontFamily: 'EB Garamond, Apple Garamond, Garamond, serif' }}>
+                        <h3 className="monitor-logo-text">
                           Rugpull Computer
                         </h3>
                       </div>
                     </div>
 
                   {/* Horizontal Divider */}
-                  <div className="flex justify-center my-2">
-                    <div className="w-3/4 h-px bg-gradient-to-r from-transparent via-amber-400 to-transparent opacity-60"></div>
+                  <div className="layout-divider">
+                    <div className="layout-divider-line"></div>
                   </div>
 
-                  {/* Relocated Patina Controls */}
+                  {/* Relocated Patina Controls - Permanently Visible */}
                   <div
                     className="patina-console p-0.5 sm:p-1 md:p-2 lg:p-3"
-                    onMouseEnter={() => !patinaLocked && setPatinaOpen(true)}
-                    onMouseLeave={() => !patinaLocked && setPatinaOpen(false)}
                   >
-                    {/* Patina Controls - Unified Accordion */}
-                    <>
-                    <motion.div
-                      layout
-                      className="relative"
-                    >
-
-                      {/* Collapsible Content - Always visible on mobile */}
-                      <AnimatePresence>
-                        {(patinaOpen || patinaLocked || (typeof window !== 'undefined' && window.innerWidth < 768)) && (
-                          <motion.div
-                            layout
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            transition={{
-                              duration: 0.35,
-                              ease: 'easeInOut',
-                              opacity: { duration: 0.2 },
-                              height: { duration: 0.35 }
-                            }}
-                            className="overflow-hidden"
-                          >
+                    {/* Patina Controls - Always Visible */}
+                    <div className="relative">
                             <div className="pt-4">
                               {/* CRT Control Strip Layout */}
-                              <div className="flex items-end justify-end gap-1 sm:gap-2 md:gap-4 lg:gap-8 xl:gap-12">
+                              <div className="crt-control-strip">
                                 {/* Dirt Controls */}
-                                <div className="flex flex-col items-center gap-0.5 sm:gap-1 md:gap-2">
-                                  <div className="flex items-center gap-2 w-full">
-                                    <div className="flex-1 h-px bg-black"></div>
-                                    <h5 className="text-black text-xs font-mono font-medium px-2">DIRT</h5>
-                                    <div className="flex-1 h-px bg-black"></div>
+                                <div className="control-section">
+                                  <div className="control-header">
+                                    <div className="control-header-line"></div>
+                                    <h5 className="control-header-text">DIRT</h5>
+                                    <div className="control-header-line"></div>
                                   </div>
                                   <div className="flex items-center gap-2">
                                     <button
@@ -2801,15 +2753,15 @@ export default function GeneratorPage() {
                                         updateDirtState(newLevel > 0, newLevel)
                                         setPatinaLocked(true)
                                       }}
-                                      className="px-1 py-0.5 sm:px-1.5 sm:py-0.5 md:px-2 md:py-1 lg:px-3 lg:py-2 rounded font-mono text-xs transition-all duration-200 border-2 bg-amber-200 text-gray-700 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
+                                      className="control-button"
                                       title="Decrease dirt level"
                                       disabled={dirtLevel === 0}
                                     >
-                                      <div className="text-center font-bold">
+                                      <div className="control-button-text">
                                         -
                                       </div>
                                     </button>
-                                    <div className="flex-1 text-center min-w-[2rem] sm:min-w-[2.5rem] md:min-w-[3.75rem] lg:min-w-[5rem]">
+                                    <div className="control-display">
                                       <div key={dirtLevel} className="seven-segment-display">
                                         <div className="seven-segment-digit">
                                           <div className={`segment a ${getSegmentActive('a', dirtLevel.toString()) ? 'active' : ''}`}></div>
@@ -2828,11 +2780,11 @@ export default function GeneratorPage() {
                                         updateDirtState(true, newLevel)
                                         setPatinaLocked(true)
                                       }}
-                                      className="px-1 py-0.5 sm:px-1.5 sm:py-0.5 md:px-2 md:py-1 lg:px-3 lg:py-2 rounded font-mono text-xs transition-all duration-200 border-2 bg-amber-200 text-gray-700 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
+                                      className="control-button"
                                       title="Increase dirt level"
                                       disabled={dirtLevel === 2}
                                     >
-                                      <div className="text-center font-bold">
+                                      <div className="control-button-text">
                                         +
                                       </div>
                                     </button>
@@ -2840,11 +2792,11 @@ export default function GeneratorPage() {
                                 </div>
 
                                 {/* Age Controls */}
-                                <div className="flex flex-col items-center gap-0.5 sm:gap-1 md:gap-2">
-                                  <div className="flex items-center gap-2 w-full">
-                                    <div className="flex-1 h-px bg-black"></div>
-                                    <h5 className="text-black text-xs font-mono font-medium px-2">AGE</h5>
-                                    <div className="flex-1 h-px bg-black"></div>
+                                <div className="control-section">
+                                  <div className="control-header">
+                                    <div className="control-header-line"></div>
+                                    <h5 className="control-header-text">AGE</h5>
+                                    <div className="control-header-line"></div>
                                   </div>
                                   <div className="flex items-center gap-2">
                                     <button
@@ -2853,15 +2805,15 @@ export default function GeneratorPage() {
                                         updateTextureState(newLevel > 0, newLevel)
                                         setPatinaLocked(true)
                                       }}
-                                      className="px-1 py-0.5 sm:px-1.5 sm:py-0.5 md:px-2 md:py-1 lg:px-3 lg:py-2 rounded font-mono text-xs transition-all duration-200 border-2 bg-amber-200 text-gray-700 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
+                                      className="control-button"
                                       title="Decrease aging level"
                                       disabled={textureLevel === 0}
                                     >
-                                      <div className="text-center font-bold">
+                                      <div className="control-button-text">
                                         -
                                       </div>
                                     </button>
-                                    <div className="flex-1 text-center min-w-[2rem] sm:min-w-[2.5rem] md:min-w-[3.75rem] lg:min-w-[5rem]">
+                                    <div className="control-display">
                                       <div key={textureLevel} className="seven-segment-display">
                                         {textureLevel.toString().padStart(2, '0').split('').map((digit, index) => (
                                           <div key={index} className="seven-segment-digit">
@@ -2882,11 +2834,11 @@ export default function GeneratorPage() {
                                         updateTextureState(true, newLevel)
                                         setPatinaLocked(true)
                                       }}
-                                      className="px-1 py-0.5 sm:px-1.5 sm:py-0.5 md:px-2 md:py-1 lg:px-3 lg:py-2 rounded font-mono text-xs transition-all duration-200 border-2 bg-amber-200 text-gray-700 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
+                                      className="control-button"
                                       title="Increase aging level"
                                       disabled={textureLevel === 10}
                                     >
-                                      <div className="text-center font-bold">
+                                      <div className="control-button-text">
                                         +
                                       </div>
                                     </button>
@@ -2894,7 +2846,7 @@ export default function GeneratorPage() {
                                 </div>
 
                                 {/* Master Overlay Toggle */}
-                                <div className="flex flex-col items-center gap-0.5 sm:gap-1 md:gap-2">
+                                <div className="overlay-toggle-section">
                                   <button
                                     onClick={() => {
                                       const overlaysEnabled = showDirt || showTexture
@@ -2909,40 +2861,26 @@ export default function GeneratorPage() {
                                       }
                                       setPatinaLocked(true)
                                     }}
-                                    className="px-2 py-1.5 sm:px-3 sm:py-2 md:px-4 md:py-3 lg:px-6 lg:py-5 rounded font-mono text-xs sm:text-sm md:text-lg transition-all duration-200 border-2 bg-amber-200 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
+                                    className="master-overlay-toggle"
                                     title={(showDirt || showTexture) ? 'Disable all overlays' : 'Enable overlays'}
                                   >
-                                    <span className={`text-lg md:text-2xl ${(showDirt || showTexture) ? 'text-red-600' : 'text-black'}`} style={{
-                                      textShadow: (showDirt || showTexture)
-                                        ? '0 0 8px rgba(220, 38, 38, 0.6), 0 0 16px rgba(220, 38, 38, 0.4), 0 0 24px rgba(220, 38, 38, 0.2)'
-                                        : 'none'
-                                    }}>
+                                    <span className={`master-overlay-icon ${(showDirt || showTexture) ? 'active' : ''}`}>
                                       ⏻
                                     </span>
                                   </button>
                                 </div>
                               </div>
                             </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </motion.div>
-                    </>
+                    </div>
                   </div>
 
               </div>
                 </div>
               </div>
             </div>
-          </motion.div>
 
-          {/* Terminal Interface - Right Side (30% width) */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="w-full pb-8 pt-2"
-          >
+          {/* Terminal Controls - Right Column */}
+          <div className="terminal-column">
             <div className="relative w-full px-2 md:px-3 lg:px-4">
               <div className="bg-amber-100 text-amber-900 font-mono border-t-2 border-amber-600 py-3 md:py-4 px-4 md:px-6">
               {/* Terminal Header */}
@@ -3411,9 +3349,9 @@ export default function GeneratorPage() {
                 </div>
               </div>
             </div>
-          </motion.div>
+          </div>
         </div>
-
+        </div>
 
         {/* Hidden elements for P5.js compatibility */}
         <div style={{ display: 'none' }}>
@@ -3423,11 +3361,12 @@ export default function GeneratorPage() {
           <div id="additionalRows"></div>
           <button id="toggleRowsBtn"></button>
         </div>
-      </div>
       </main>
 
       {/* Footer */}
-      <Footer />
+      <div className="page-footer">
+        <Footer />
+      </div>
     </div>
     </>
   )
