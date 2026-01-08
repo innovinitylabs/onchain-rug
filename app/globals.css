@@ -246,7 +246,7 @@ div[data-projection-id] th,
 
 .page-main {
   flex-grow: 1;
-  padding-top: 6rem; /* 28 * 0.25rem = 7rem for pt-28 */
+  padding-top: clamp(4rem, 8vw, 6rem); /* Responsive top padding - smaller on mobile/MacBook */
   padding-bottom: 12rem; /* Increased space for fixed footer */
 }
 
@@ -954,7 +954,7 @@ nav a {
 
 .page-main {
   flex-grow: 1;
-  padding-top: 6rem; /* 28 * 0.25rem = 7rem for pt-28 */
+  padding-top: clamp(4rem, 8vw, 6rem); /* Responsive top padding - smaller on mobile/MacBook */
   padding-bottom: 12rem; /* Increased space for fixed footer */
 }
 
