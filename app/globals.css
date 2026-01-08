@@ -631,10 +631,11 @@ nav a {
                             .segment.g { top: 0.75rem; left: 0.1875rem; width: 0.75rem; height: 0.25rem; }
                           }
 
-/* Stable Canvas Container - Responsive to parent container */
+/* Stable Canvas Container - Fills available space responsively */
 .rug-canvas-container {
   width: 100%;
-  max-width: min(100vw, 1200px);
+  height: 100%;
+  max-width: 100%;
   aspect-ratio: 920 / 641;
   margin: 0 auto;
   position: relative;
@@ -672,7 +673,9 @@ nav a {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+  min-height: 0;
+  flex: 1;
 }
 
 .canvas-padding-wrapper {
