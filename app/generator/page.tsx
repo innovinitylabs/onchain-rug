@@ -3376,7 +3376,6 @@ export default function GeneratorPage() {
           <div id="additionalRows"></div>
           <button id="toggleRowsBtn"></button>
         </div>
-      </div>
       </main>
 
       {/* Footer */}
