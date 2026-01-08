@@ -2680,7 +2680,7 @@ export default function GeneratorPage() {
                             height: '0',       // Height will be set by padding-bottom
                             paddingBottom: '69.7%', // 920/1320 * 100% = 69.7% (maintains 1320:920 aspect ratio)
                             maxWidth: '100%',  // Responsive constraint
-                            maxHeight: 'clamp(400px, 65vh, 800px)', // Responsive height: min 400px, max 800px, prefer 65vh
+                            maxHeight: '45vh', // Responsive height using only viewport units
                             overflow: 'hidden', // Prevent canvas overflow
                             position: 'relative', // Ensure proper positioning context for loading overlay
                             zIndex: 2 // Above scan lines
