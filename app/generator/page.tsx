@@ -2792,7 +2792,8 @@ export default function GeneratorPage() {
                                   </div>
                                   {/* Desktop 3-column layout */}
                                   <div className="hidden md:grid md:grid-cols-3 md:gap-2 md:items-center">
-                                    <div className="control-display">
+                                    <div></div>
+                                    <div className="control-display flex justify-center">
                                       <div key={dirtLevel} className="seven-segment-display">
                                         <div className="seven-segment-digit">
                                           <div className={`segment a ${getSegmentActive('a', dirtLevel.toString()) ? 'active' : ''}`}></div>
@@ -2805,7 +2806,6 @@ export default function GeneratorPage() {
                                         </div>
                                       </div>
                                     </div>
-                                    <div></div>
                                     <div className="flex justify-end gap-2">
                                       <button
                                         onClick={() => {
@@ -2894,7 +2894,8 @@ export default function GeneratorPage() {
                                   </div>
                                   {/* Desktop 3-column layout */}
                                   <div className="hidden md:grid md:grid-cols-3 md:gap-2 md:items-center">
-                                    <div className="control-display">
+                                    <div></div>
+                                    <div className="control-display flex justify-center">
                                       <div key={textureLevel} className="seven-segment-display">
                                         {textureLevel.toString().padStart(2, '0').split('').map((digit, index) => (
                                           <div key={index} className="seven-segment-digit">
@@ -2909,7 +2910,6 @@ export default function GeneratorPage() {
                                         ))}
                                       </div>
                                     </div>
-                                    <div></div>
                                     <div className="flex justify-end gap-2">
                                       <button
                                         onClick={() => {

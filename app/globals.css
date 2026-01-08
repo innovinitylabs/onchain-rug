@@ -1500,9 +1500,9 @@ nav a {
 @media (min-width: 768px) {
   .patina-console {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 1fr 2fr 1fr;
     gap: clamp(0.25rem, 0.5vw, 0.5rem);
-    justify-items: end;
-    align-items: end;
+    justify-items: center;
+    align-items: center;
   }
 }
