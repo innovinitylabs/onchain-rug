@@ -2655,9 +2655,9 @@ export default function GeneratorPage() {
         <meta name="twitter:image" content="https://onchainrugs.xyz/generator-og.jpg" />
         <link rel="canonical" href="https://onchainrugs.xyz/generator" />
       </Head>
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100 flex flex-col overflow-x-hidden">
+      <div className="page-wrapper">
         <Navigation />
-        <main className="flex-grow pt-28">
+        <main className="page-main">
         <div className="generator-container">
       {/* Header */}
 

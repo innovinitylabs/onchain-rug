@@ -728,6 +728,20 @@ nav a {
   width: 100%;
 }
 
+/* Page Layout Components */
+.page-wrapper {
+  min-height: 100vh;
+  background: linear-gradient(135deg, rgb(254 243 199) 0%, rgb(252 211 77) 100%);
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+.page-main {
+  flex-grow: 1;
+  padding-top: 7rem; /* 28 * 0.25rem = 7rem for pt-28 */
+}
+
 /* Main generator container - optimized for space utilization */
 .generator-container {
   max-width: 100%;
