@@ -631,31 +631,15 @@ nav a {
                             .segment.g { top: 0.75rem; left: 0.1875rem; width: 0.75rem; height: 0.25rem; }
                           }
 
-/* Space-Aware Canvas Container - Scales with viewport */
+/* Space-Aware Canvas Container - Continuous scaling */
 .rug-canvas-container {
-  width: min(85vw, 920px);
-  height: calc(min(85vw, 920px) * 641 / 920);
+  width: clamp(400px, 65vw, 1000px);
+  height: calc(clamp(400px, 65vw, 1000px) * 641 / 920);
   margin: 0 auto;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-/* Smaller screens */
-@media (max-width: 1200px) {
-  .rug-canvas-container {
-    width: min(90vw, 700px);
-    height: calc(min(90vw, 700px) * 488 / 700);
-  }
-}
-
-/* Mobile screens */
-@media (max-width: 768px) {
-  .rug-canvas-container {
-    width: min(95vw, 500px);
-    height: calc(min(95vw, 500px) * 349 / 500);
-  }
 }
 
 .rug-canvas-container canvas {
