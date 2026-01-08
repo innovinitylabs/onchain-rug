@@ -739,7 +739,6 @@ nav a {
   z-index: 50;
   background: rgba(252, 211, 77, 0.95);
   backdrop-filter: blur(8px);
-  border-top: 2px solid rgb(254 243 199);
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
 }
 
