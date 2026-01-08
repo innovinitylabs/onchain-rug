@@ -2885,6 +2885,7 @@ export default function GeneratorPage() {
 
               </div>
                 </div>
+              </div>
             </div>
 
           {/* Terminal Controls - Right Column */}
@@ -3358,7 +3359,6 @@ export default function GeneratorPage() {
               </div>
             </div>
           </div>
-        </div>
         </div>
         </div>
 
