@@ -727,7 +727,7 @@ nav a {
 .page-main {
   flex-grow: 1;
   padding-top: 7rem; /* 28 * 0.25rem = 7rem for pt-28 */
-  padding-bottom: 4rem; /* Space for fixed footer */
+  padding-bottom: 6rem; /* Increased space for fixed footer */
 }
 
 /* Fixed Footer */
