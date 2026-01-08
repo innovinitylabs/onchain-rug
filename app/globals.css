@@ -631,15 +631,17 @@ nav a {
                             .segment.g { top: 0.75rem; left: 0.1875rem; width: 0.75rem; height: 0.25rem; }
                           }
 
-/* Space-Aware Canvas Container - Continuous scaling */
+/* Stable Canvas Container - Aspect-ratio based, viewport-independent */
 .rug-canvas-container {
-  width: clamp(400px, 65vw, 1000px);
-  height: calc(clamp(400px, 65vw, 1000px) * 641 / 920);
+  width: 100%;
+  max-width: 800px;
+  aspect-ratio: 920 / 641;
   margin: 0 auto;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
+  contain: layout paint size;
 }
 
 .rug-canvas-container canvas {

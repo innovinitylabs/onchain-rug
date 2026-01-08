@@ -2653,7 +2653,7 @@ export default function GeneratorPage() {
         {/* New Side-by-Side Layout - Art Preview (70%) on Left, Controls (30%) on Right */}
         <div className="grid lg:grid-cols-[70%_30%] gap-6 space-y-6 lg:space-y-0">
           {/* Canvas Display - Left Side (70% width) */}
-          <div className="flex flex-col items-center">
+          <div className="flex-1 min-w-0 flex flex-col items-center justify-center">
             <div className="p-2">
                             {/* Old-School CRT Monitor Box */}
               <div className="relative mx-auto w-full max-w-full px-2 md:px-4 lg:px-6">
@@ -2665,12 +2665,13 @@ export default function GeneratorPage() {
                     <div className="rounded-lg px-1 relative overflow-hidden">
                       
                                                                     {/* Canvas Container - Clean aspect-ratio based */}
-                           <div
-                             ref={canvasContainerRef}
-                             id="canvas-container"
-                             className="rug-canvas-container rounded-lg cursor-pointer"
-                             onClick={() => updateFlipState(!(window as any).__RUG_FLIPPED__ || false)}
-                           >
+                           <div className="flex items-center justify-center w-full">
+                             <div
+                               ref={canvasContainerRef}
+                               id="canvas-container"
+                               className="rug-canvas-container rounded-lg cursor-pointer"
+                               onClick={() => updateFlipState(!(window as any).__RUG_FLIPPED__ || false)}
+                             >
                         {!isLoaded && (
                           <div className="absolute inset-0 flex flex-col items-center justify-center text-green-400 rounded-lg">
                             <motion.div
@@ -2710,6 +2711,7 @@ export default function GeneratorPage() {
                           }
 
                         `}</style>
+                      </div>
                       </div>
                 </div>
               </div>
