@@ -132,13 +132,13 @@ export default function Footer() {
         }} />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6 py-2">
+      <div className="relative z-10 w-full px-6 py-2">
         {/* Main Footer Content */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           {/* Copyright and Brand */}
           <div className="text-center md:text-left">
             <div className="text-base font-medium text-gray-300">
-              © 2025 Onchain Rugs by{' '}
+              © 2026 Onchain Rugs by{' '}
               <a
                 href="https://valipokkann.in"
                 target="_blank"
