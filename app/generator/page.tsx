@@ -2647,7 +2647,7 @@ export default function GeneratorPage() {
       <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100 flex flex-col">
         <Navigation />
       <main className="flex-grow pt-28">
-        <div className="max-w-[3200px] mx-auto px-4">
+        <div className="max-w-full mx-auto px-2 md:px-4">
       {/* Header */}
 
         {/* New Side-by-Side Layout - Art Preview (70%) on Left, Controls (30%) on Right */}
@@ -2661,7 +2661,7 @@ export default function GeneratorPage() {
           >
             <div className="p-2">
                             {/* Old-School CRT Monitor Box */}
-              <div className="relative mx-auto w-full max-w-[2000px] px-4 md:px-6 lg:px-8">
+              <div className="relative mx-auto w-full max-w-full px-2 md:px-4 lg:px-6">
                 {/* Monitor Bezel - Yellowed Plastic */}
                 <div className="bg-amber-100 border-6 border-amber-200 rounded-t-2xl rounded-b-xl p-2 md:p-3 lg:p-4 shadow-2xl">
                   {/* Monitor Screen Area */}
@@ -2719,8 +2719,8 @@ export default function GeneratorPage() {
                             flex-direction: row;
                             justify-content: flex-end;
                             align-items: center;
-                            gap: 32px;
-                            margin-top: 12px;
+                            gap: 1rem;
+                            margin-top: 0.75rem;
                           }
 
                         `}</style>
@@ -2757,12 +2757,7 @@ export default function GeneratorPage() {
 
                   {/* Relocated Patina Controls */}
                   <div
-                    className="patina-console"
-                    style={{
-                      padding: typeof window !== 'undefined' && window.innerWidth < 768
-                        ? '8px 16px'
-                        : '12px 32px'
-                    }}
+                    className="patina-console p-0.5 sm:p-1 md:p-2 lg:p-3"
                     onMouseEnter={() => !patinaLocked && setPatinaOpen(true)}
                     onMouseLeave={() => !patinaLocked && setPatinaOpen(false)}
                   >
@@ -2791,9 +2786,9 @@ export default function GeneratorPage() {
                           >
                             <div className="pt-4">
                               {/* CRT Control Strip Layout */}
-                              <div className="flex items-end justify-end gap-6 md:gap-12">
+                              <div className="flex items-end justify-end gap-1 sm:gap-2 md:gap-4 lg:gap-8 xl:gap-12">
                                 {/* Dirt Controls */}
-                                <div className="flex flex-col items-center gap-2">
+                                <div className="flex flex-col items-center gap-0.5 sm:gap-1 md:gap-2">
                                   <div className="flex items-center gap-2 w-full">
                                     <div className="flex-1 h-px bg-black"></div>
                                     <h5 className="text-black text-xs font-mono font-medium px-2">DIRT</h5>
@@ -2806,7 +2801,7 @@ export default function GeneratorPage() {
                                         updateDirtState(newLevel > 0, newLevel)
                                         setPatinaLocked(true)
                                       }}
-                                      className="px-2 py-1 md:px-3 md:py-2 rounded font-mono text-xs md:text-sm transition-all duration-200 border-2 bg-amber-200 text-gray-700 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
+                                      className="px-1 py-0.5 sm:px-1.5 sm:py-0.5 md:px-2 md:py-1 lg:px-3 lg:py-2 rounded font-mono text-xs transition-all duration-200 border-2 bg-amber-200 text-gray-700 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
                                       title="Decrease dirt level"
                                       disabled={dirtLevel === 0}
                                     >
@@ -2814,7 +2809,7 @@ export default function GeneratorPage() {
                                         -
                                       </div>
                                     </button>
-                                    <div className="flex-1 text-center min-w-[80px]">
+                                    <div className="flex-1 text-center min-w-[2rem] sm:min-w-[2.5rem] md:min-w-[3.75rem] lg:min-w-[5rem]">
                                       <div key={dirtLevel} className="seven-segment-display">
                                         <div className="seven-segment-digit">
                                           <div className={`segment a ${getSegmentActive('a', dirtLevel.toString()) ? 'active' : ''}`}></div>
@@ -2833,7 +2828,7 @@ export default function GeneratorPage() {
                                         updateDirtState(true, newLevel)
                                         setPatinaLocked(true)
                                       }}
-                                      className="px-2 py-1 md:px-3 md:py-2 rounded font-mono text-xs md:text-sm transition-all duration-200 border-2 bg-amber-200 text-gray-700 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
+                                      className="px-1 py-0.5 sm:px-1.5 sm:py-0.5 md:px-2 md:py-1 lg:px-3 lg:py-2 rounded font-mono text-xs transition-all duration-200 border-2 bg-amber-200 text-gray-700 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
                                       title="Increase dirt level"
                                       disabled={dirtLevel === 2}
                                     >
@@ -2845,7 +2840,7 @@ export default function GeneratorPage() {
                                 </div>
 
                                 {/* Age Controls */}
-                                <div className="flex flex-col items-center gap-2">
+                                <div className="flex flex-col items-center gap-0.5 sm:gap-1 md:gap-2">
                                   <div className="flex items-center gap-2 w-full">
                                     <div className="flex-1 h-px bg-black"></div>
                                     <h5 className="text-black text-xs font-mono font-medium px-2">AGE</h5>
@@ -2858,7 +2853,7 @@ export default function GeneratorPage() {
                                         updateTextureState(newLevel > 0, newLevel)
                                         setPatinaLocked(true)
                                       }}
-                                      className="px-2 py-1 md:px-3 md:py-2 rounded font-mono text-xs md:text-sm transition-all duration-200 border-2 bg-amber-200 text-gray-700 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
+                                      className="px-1 py-0.5 sm:px-1.5 sm:py-0.5 md:px-2 md:py-1 lg:px-3 lg:py-2 rounded font-mono text-xs transition-all duration-200 border-2 bg-amber-200 text-gray-700 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
                                       title="Decrease aging level"
                                       disabled={textureLevel === 0}
                                     >
@@ -2866,7 +2861,7 @@ export default function GeneratorPage() {
                                         -
                                       </div>
                                     </button>
-                                    <div className="flex-1 text-center min-w-[80px]">
+                                    <div className="flex-1 text-center min-w-[2rem] sm:min-w-[2.5rem] md:min-w-[3.75rem] lg:min-w-[5rem]">
                                       <div key={textureLevel} className="seven-segment-display">
                                         {textureLevel.toString().padStart(2, '0').split('').map((digit, index) => (
                                           <div key={index} className="seven-segment-digit">
@@ -2887,7 +2882,7 @@ export default function GeneratorPage() {
                                         updateTextureState(true, newLevel)
                                         setPatinaLocked(true)
                                       }}
-                                      className="px-2 py-1 md:px-3 md:py-2 rounded font-mono text-xs md:text-sm transition-all duration-200 border-2 bg-amber-200 text-gray-700 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
+                                      className="px-1 py-0.5 sm:px-1.5 sm:py-0.5 md:px-2 md:py-1 lg:px-3 lg:py-2 rounded font-mono text-xs transition-all duration-200 border-2 bg-amber-200 text-gray-700 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
                                       title="Increase aging level"
                                       disabled={textureLevel === 10}
                                     >
@@ -2899,7 +2894,7 @@ export default function GeneratorPage() {
                                 </div>
 
                                 {/* Master Overlay Toggle */}
-                                <div className="flex flex-col items-center gap-2">
+                                <div className="flex flex-col items-center gap-0.5 sm:gap-1 md:gap-2">
                                   <button
                                     onClick={() => {
                                       const overlaysEnabled = showDirt || showTexture
@@ -2914,7 +2909,7 @@ export default function GeneratorPage() {
                                       }
                                       setPatinaLocked(true)
                                     }}
-                                    className="px-4 py-3 md:px-6 md:py-5 rounded font-mono text-sm md:text-lg transition-all duration-200 border-2 bg-amber-200 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
+                                    className="px-2 py-1.5 sm:px-3 sm:py-2 md:px-4 md:py-3 lg:px-6 lg:py-5 rounded font-mono text-xs sm:text-sm md:text-lg transition-all duration-200 border-2 bg-amber-200 border-amber-400 hover:bg-amber-300 hover:border-amber-500"
                                     title={(showDirt || showTexture) ? 'Disable all overlays' : 'Enable overlays'}
                                   >
                                     <span className={`text-lg md:text-2xl ${(showDirt || showTexture) ? 'text-red-600' : 'text-black'}`} style={{
@@ -2949,15 +2944,15 @@ export default function GeneratorPage() {
             className="w-full pb-8 pt-2"
           >
             <div className="relative w-full px-2 md:px-3 lg:px-4">
-              <div className="bg-black text-green-400 font-mono border-t-2 border-green-500 py-3 md:py-4 px-4 md:px-6">
+              <div className="bg-amber-100 text-amber-900 font-mono border-t-2 border-amber-600 py-3 md:py-4 px-4 md:px-6">
               {/* Terminal Header */}
-              <div className="flex items-center justify-between mb-3 pb-2 border-b border-green-500/30">
+              <div className="flex items-center justify-between mb-3 pb-2 border-b border-amber-600/30">
                 <div className="flex items-center space-x-2">
-                  <span className="text-green-400">$</span>
-                  <span className="text-green-300">rug-terminal</span>
-                  <span className="text-green-500">&gt;</span>
+                  <span className="text-amber-800">&gt;</span>
+                  <span className="text-amber-700">rug-terminal</span>
+                  <span className="text-amber-600">&gt;</span>
                 </div>
-                <div className="text-sm text-green-500">
+                <div className="text-sm text-amber-600">
                   {isLoaded ? 'READY' : 'LOADING...'}
                   </div>
               </div>
@@ -2975,9 +2970,9 @@ export default function GeneratorPage() {
                       const rarityColor = getRarityColor(rarity)
 
                       return (
-                        <div key={key} className="bg-gray-900/50 border border-green-500/30 rounded p-3">
+                        <div key={key} className="bg-amber-200/50 border border-amber-600/30 rounded p-3">
                           <div className="flex justify-between items-center">
-                            <span className="text-green-400 text-sm font-mono capitalize">
+                            <span className="text-amber-800 text-sm font-mono capitalize">
                               {key.replace(/([A-Z])/g, ' $1').trim()}
                             </span>
                             <span
@@ -2991,7 +2986,7 @@ export default function GeneratorPage() {
                               {rarity}
                             </span>
                           </div>
-                          <div className="text-green-300 text-sm mt-1 font-mono">
+                          <div className="text-amber-700 text-sm mt-1 font-mono">
                             {typeof value === 'string' ? value : value.toString()}
                           </div>
                         </div>
@@ -3038,7 +3033,7 @@ export default function GeneratorPage() {
                   <button
                     onClick={generateNew}
                     disabled={!isLoaded}
-                    className="bg-green-600 hover:bg-green-700 disabled:bg-gray-700 text-black font-bold px-6 py-3 rounded font-mono transition-all duration-200 border border-green-400 flex items-center justify-center gap-2 text-sm w-full"
+                    className="bg-amber-600 hover:bg-amber-700 disabled:bg-amber-400 text-white font-bold px-6 py-3 rounded font-mono transition-all duration-200 border border-amber-500 flex items-center justify-center gap-2 text-sm w-full"
                     title="Press SPACEBAR to randomise"
                   >
                     <Shuffle className="w-4 h-4" />
@@ -3051,11 +3046,11 @@ export default function GeneratorPage() {
                   {/* Left Panel - Text Embedding */}
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <h4 className="text-green-300 text-sm font-mono font-medium">TEXT EMBEDDING</h4>
-                      <span className="text-green-500 text-xs font-mono">{currentRowCount}/5 rows</span>
+                      <h4 className="text-amber-700 text-sm font-mono font-medium">TEXT EMBEDDING</h4>
+                      <span className="text-amber-600 text-xs font-mono">{currentRowCount}/5 rows</span>
                     </div>
 
-                    <div className="text-green-400 text-xs font-mono bg-gray-900/50 p-2 rounded">
+                    <div className="text-amber-800 text-xs font-mono bg-amber-200/50 p-2 rounded">
                       Allowed: A-Z, 0-9, space, ? _ ! @ # $ & % + - ( ) [ ] * = &apos; &quot; . &lt; &gt;
                     </div>
 
@@ -3063,7 +3058,7 @@ export default function GeneratorPage() {
                     <div className="space-y-2">
                       {textInputs.map((text, index) => (
                         <div key={index} className="flex items-center gap-2">
-                          <span className="text-green-400 font-mono text-sm min-w-[20px]">{index + 1}.</span>
+                          <span className="text-amber-800 font-mono text-sm min-w-[20px]">{index + 1}.</span>
                           <input
                             ref={(el) => { textInputRefs.current[index] = el }}
                             type="text"
@@ -3090,7 +3085,7 @@ export default function GeneratorPage() {
                             }}
                             placeholder={`Row ${index + 1}`}
                             maxLength={11}
-                            className="flex-1 px-2 py-1.5 bg-gray-900 text-green-400 rounded text-sm font-mono focus:ring-1 focus:ring-green-500 transition-all"
+                            className="flex-1 px-2 py-1.5 bg-white text-amber-900 rounded text-sm font-mono focus:ring-1 focus:ring-amber-500 transition-all border border-amber-300"
                           />
                           {index > 0 && (
                             <button
@@ -3110,7 +3105,7 @@ export default function GeneratorPage() {
                       {currentRowCount < 5 && (
                         <button
                           onClick={addTextRow}
-                          className="bg-green-600/80 hover:bg-green-600 text-black font-bold px-3 py-1.5 rounded font-mono transition-all duration-200 border border-green-400 flex items-center gap-1.5 text-xs"
+                          className="bg-amber-600/80 hover:bg-amber-600 text-white font-bold px-3 py-1.5 rounded font-mono transition-all duration-200 border border-amber-500 flex items-center gap-1.5 text-xs"
                         >
                           <Plus className="w-3 h-3" />
                           ADD ROW
@@ -3118,7 +3113,7 @@ export default function GeneratorPage() {
                       )}
                       <button
                         onClick={clearText}
-                        className="bg-gray-600/80 hover:bg-gray-600 text-white px-3 py-1.5 rounded font-mono transition-all duration-200 border border-gray-400 text-xs"
+                        className="bg-amber-700/80 hover:bg-amber-700 text-white px-3 py-1.5 rounded font-mono transition-all duration-200 border border-amber-600 text-xs"
                       >
                         CLEAR
                       </button>
@@ -3132,11 +3127,11 @@ export default function GeneratorPage() {
 
                 {/* Contract Minting Data */}
                 {false && (
-                <div className="border-t border-gray-500/30 pt-3 mt-4">
-                  <div className="text-gray-300 text-sm mb-3 font-mono">🔧 Contract Minting Data</div>
+                <div className="border-t border-amber-600/30 pt-3 mt-4">
+                  <div className="text-amber-700 text-sm mb-3 font-mono">🔧 Contract Minting Data</div>
 
-                  <div className="bg-gray-900/30 border border-gray-500/30 rounded p-3">
-                    <div className="text-gray-400 text-xs font-mono mb-2">Exact Data Sent to Contract:</div>
+                  <div className="bg-amber-200/30 border border-amber-600/30 rounded p-3">
+                    <div className="text-amber-800 text-xs font-mono mb-2">Exact Data Sent to Contract:</div>
                     <div className="space-y-2 text-xs">
                       <div className="bg-gray-800/50 p-2 rounded">
                         <div className="flex justify-between items-center mb-1">
@@ -3346,32 +3341,32 @@ export default function GeneratorPage() {
                 )}
 
                 {/* Mint Button Section */}
-                <div className="border-t border-green-500/30 pt-3 mt-4">
+                <div className="border-t border-amber-600/30 pt-3 mt-4">
                   {/* Contract Address Display - Moved here for proximity to mint button */}
                   <div className="space-y-2 mb-4">
-                    <h4 className="text-green-300 text-sm font-mono font-medium">CONTRACT ADDRESS</h4>
-                    <div className="bg-gray-900/50 p-3 rounded">
+                    <h4 className="text-amber-700 text-sm font-mono font-medium">CONTRACT ADDRESS</h4>
+                    <div className="bg-amber-200/50 p-3 rounded">
                       <div className="flex items-center gap-2 mb-2">
-                        <div className="text-green-400 text-xs font-mono break-all flex-1">
+                        <div className="text-amber-800 text-xs font-mono break-all flex-1">
                           {contractAddress || 'Not deployed on this network'}
                         </div>
                         {contractAddress && (
                         <Copy
                             onClick={() => copyToClipboard(contractAddress, 'contract address')}
-                          className="text-green-500 hover:text-green-300 cursor-pointer transition-colors w-4 h-4"
+                          className="text-amber-600 hover:text-amber-700 cursor-pointer transition-colors w-4 h-4"
                         />
                         )}
                       </div>
-                      <div className="text-green-500 text-xs font-mono mt-1">
+                      <div className="text-amber-600 text-xs font-mono mt-1">
                         Network: {getChainDisplayName(chainId)}
                       </div>
                     </div>
                   </div>
 
-                  <div className="text-green-300 text-sm mb-3 font-mono">🚀 Mint Your Onchain Rug</div>
+                  <div className="text-amber-700 text-sm mb-3 font-mono">🚀 Mint Your Onchain Rug</div>
 
                   {/* Minting Status */}
-                  <div className="bg-green-900/20 border border-green-500/30 rounded p-3 mb-3">
+                  <div className="bg-amber-900/20 border border-amber-600/30 rounded p-3 mb-3">
                     <div className="text-green-400 text-xs font-mono mb-2">Minting Status:</div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
