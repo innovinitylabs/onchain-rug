@@ -575,19 +575,19 @@ nav a {
 /* 7-Segment LCD Display Styles */
                           .seven-segment-display {
                             display: inline-flex;
-  gap: clamp(0.125rem, 1vw, 0.1875rem);
-  padding: clamp(0.25rem, 2vw, 0.5rem) clamp(0.375rem, 3vw, 0.625rem);
+  gap: clamp(0.125rem, 0.75vw, 0.1875rem);
+  padding: clamp(0.25rem, 1.5vw, 0.5rem) clamp(0.375rem, 2vw, 0.625rem);
                             background: #0a0a0a;
-  border: clamp(0.0625rem, 0.5vw, 0.125rem) solid #333;
-  border-radius: clamp(0.125rem, 1vw, 0.25rem);
+  border: clamp(0.0625rem, 0.375vw, 0.125rem) solid #333;
+  border-radius: clamp(0.125rem, 0.75vw, 0.25rem);
                             box-shadow: inset 0 0 0.5rem rgba(0, 0, 0, 0.9), 0 0 0.25rem rgba(239, 68, 68, 0.1);
                           }
 
                           .seven-segment-digit {
                             position: relative;
-  width: clamp(0.75rem, 4vw, 1.125rem);
-  height: clamp(1.125rem, 6vw, 1.75rem);
-  margin: 0 clamp(0.03125rem, 0.25vw, 0.125rem);
+  width: clamp(0.75rem, 2.5vw, 1.125rem);
+  height: clamp(1.125rem, 3.75vw, 1.75rem);
+  margin: 0 clamp(0.03125rem, 0.1875vw, 0.125rem);
                           }
 
 .segment {
@@ -689,7 +689,7 @@ nav a {
 .monitor-wrapper {
   position: relative;
   margin: 0 auto;
-  width: 100%;
+  width: 90%;
   max-width: 100%;
   padding-left: clamp(0.5rem, 4vw, 2rem);
   padding-right: clamp(0.5rem, 4vw, 2rem);
@@ -726,8 +726,8 @@ nav a {
 
 .page-main {
   flex-grow: 1;
-  padding-top: 7rem; /* 28 * 0.25rem = 7rem for pt-28 */
-  padding-bottom: 6rem; /* Increased space for fixed footer */
+  padding-top: 6rem; /* 28 * 0.25rem = 7rem for pt-28 */
+  padding-bottom: 12rem; /* Increased space for fixed footer */
 }
 
 /* Fixed Footer */
@@ -849,14 +849,14 @@ nav a {
 
 /* Control Buttons */
 .control-button {
-  padding: clamp(0.125rem, 1.5vw, 0.375rem) clamp(0.25rem, 3vw, 0.75rem);
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  font-size: clamp(0.75rem, 2vw, 1rem);
-  transition: all 0.2s;
-  border: clamp(1px, 1vw, 2px) solid rgb(251 191 36);
-  background-color: rgb(252 211 77);
-  color: rgb(55 65 81);
-  border-radius: clamp(0.25rem, 2vw, 0.5rem);
+  padding: clamp(0.125rem, 1vw, 0.375rem) clamp(0.25rem, 2vw, 0.75rem);
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: clamp(0.75rem, 1.5vw, 1rem);
+    transition: all 0.2s;
+  border: clamp(1px, 0.75vw, 2px) solid rgb(251 191 36);
+    background-color: rgb(252 211 77);
+    color: rgb(55 65 81);
+  border-radius: clamp(0.25rem, 1.5vw, 0.5rem);
 }
 
 .control-button:hover {
@@ -871,34 +871,34 @@ nav a {
 
 .control-display {
   flex: 1;
-  text-align: center;
-  min-width: clamp(2rem, 8vw, 5rem);
+    text-align: center;
+  min-width: clamp(2rem, 5vw, 5rem);
 }
 
 .control-section {
   display: flex;
-  flex-direction: column;
-  gap: clamp(0.125rem, 1vw, 0.25rem);
+    flex-direction: column;
+  gap: clamp(0.125rem, 0.75vw, 0.25rem);
 }
 
 .control-header {
   display: flex;
-  align-items: center;
-  gap: clamp(0.25rem, 2vw, 0.5rem);
-  width: 100%;
+    align-items: center;
+  gap: clamp(0.25rem, 1.5vw, 0.5rem);
+    width: 100%;
 }
 
 .control-header-line {
   flex: 1;
-  height: clamp(1px, 0.5vw, 2px);
-  background-color: rgb(0 0 0);
+  height: clamp(1px, 0.375vw, 2px);
+    background-color: rgb(0 0 0);
 }
 
 .control-header-text {
-  color: rgb(0 0 0);
-  font-size: clamp(0.75rem, 2vw, 1rem);
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  font-weight: 500;
+    color: rgb(0 0 0);
+  font-size: clamp(0.75rem, 1.5vw, 1rem);
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-weight: 500;
   padding-left: clamp(0.25rem, 2vw, 0.5rem);
   padding-right: clamp(0.25rem, 2vw, 0.5rem);
 }
@@ -1183,10 +1183,10 @@ nav a {
 
 /* Master Overlay Toggle */
 .master-overlay-toggle {
-  padding: clamp(0.5rem, 3vw, 1.25rem) clamp(0.75rem, 4vw, 1.5rem);
-  border-radius: clamp(0.25rem, 2vw, 0.5rem);
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  font-size: clamp(0.75rem, 2vw, 1rem);
+  padding: clamp(0.5rem, 2vw, 1.25rem) clamp(0.75rem, 2.5vw, 1.5rem);
+  border-radius: clamp(0.25rem, 1.5vw, 0.5rem);
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: clamp(0.75rem, 1.5vw, 1rem);
   transition: all 0.2s;
   border: 2px solid rgb(245 158 11);
   background-color: rgb(252 211 77);
@@ -1203,7 +1203,7 @@ nav a {
 }
 
 .master-overlay-icon {
-  font-size: clamp(1.125rem, 3vw, 1.5rem);
+  font-size: clamp(1.125rem, 2vw, 1.5rem);
   transition: all 0.2s;
 }
 
