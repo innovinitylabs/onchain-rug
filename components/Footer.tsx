@@ -132,7 +132,7 @@ export default function Footer() {
         }} />
       </div>
 
-      <div className="relative z-10 w-full px-6 py-2">
+      <div className="relative z-10 w-full px-6 py-1 sm:py-2">
         {/* Main Footer Content */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           {/* Copyright and Brand */}
