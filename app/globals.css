@@ -728,6 +728,28 @@ nav a {
   width: 100%;
 }
 
+/* Main generator container - optimized for space utilization */
+.generator-container {
+  max-width: 100%;
+  margin: 0 auto;
+  padding-left: clamp(0.5rem, 2vw, 1rem);
+  padding-right: clamp(0.5rem, 2vw, 1rem);
+}
+
+@media (min-width: 1440px) {
+  .generator-container {
+    padding-left: clamp(1rem, 3vw, 2rem);
+    padding-right: clamp(1rem, 3vw, 2rem);
+  }
+}
+
+@media (min-width: 1920px) {
+  .generator-container {
+    padding-left: clamp(2rem, 4vw, 4rem);
+    padding-right: clamp(2rem, 4vw, 4rem);
+  }
+}
+
 /* UI Component Styles */
 
 /* Loading Spinner */

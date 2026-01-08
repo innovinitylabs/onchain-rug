@@ -2658,7 +2658,7 @@ export default function GeneratorPage() {
       <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100 flex flex-col overflow-x-hidden">
         <Navigation />
         <main className="flex-grow pt-28">
-        <div className="max-w-full mx-auto px-2 md:px-4">
+        <div className="generator-container">
       {/* Header */}
 
         {/* New Side-by-Side Layout - Art Preview (70%) on Left, Controls (30%) on Right */}
