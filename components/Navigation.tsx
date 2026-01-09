@@ -516,10 +516,10 @@ export default function Navigation() {
           </div>
 
           {/* Mobile Hamburger Menu Button */}
-          <div className="md:hidden flex items-center">
+          <div className="md:hidden flex items-center z-60">
             <button
               onClick={toggleMobileMenu}
-              className="p-2 rounded-lg hover:bg-white/10 transition-colors duration-200"
+              className="p-3 rounded-lg hover:bg-white/20 active:bg-white/30 transition-colors duration-200 bg-white/5 border border-white/10"
               aria-label="Toggle mobile menu"
             >
               <motion.div
@@ -551,7 +551,7 @@ export default function Navigation() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-40 md:hidden"
+          className="fixed inset-0 z-60 md:hidden"
           onClick={closeMobileMenu}
         >
           <motion.div
@@ -562,7 +562,7 @@ export default function Navigation() {
             className="fixed inset-0 flex items-center justify-center p-4"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="w-full max-w-sm max-h-[80vh] overflow-hidden">
+            <div className="w-full max-w-sm max-h-[80vh] overflow-hidden bg-black/95 backdrop-blur-md rounded-2xl border border-white/20 shadow-2xl">
               <LiquidGlass
                 blurAmount={0.11}
                 aberrationIntensity={3}
