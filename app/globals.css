@@ -811,10 +811,8 @@ nav a {
                           }
 
                           .seven-segment-digit {
-                            position: relative;
-  width: clamp(1rem, 1.5vw, 1.25rem);
-  height: clamp(1.5rem, 2.25vw, 2rem);
-  margin: 0 clamp(0.0625rem, 0.15vw, 0.1875rem);
+                            width: 1.25rem;
+                            height: 2rem;
                           }
 
 
@@ -1425,9 +1423,11 @@ nav a {
 
 /* Patina Control Button Plus */
 .control-button-plus {
-  padding: clamp(0.125rem, 1.5vw, 0.375rem) clamp(0.25rem, 3vw, 0.75rem);
+  padding: clamp(0.25rem, 0.6em, 0.5rem)
+           clamp(0.5rem, 1.2em, 0.75rem);
+  font-size: 0.875rem;
   font-family: ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  font-size: clamp(0.75rem, 1vw, rem);
+  
   transition: all 0.2s;
   border: clamp(1px, 1vw, 2px) solid rgb(251 191 36);
   background-color: rgb(252 211 77);
@@ -1455,10 +1455,9 @@ nav a {
 /* Patina Console */
 .patina-console {
   display: flex;
-  flex-direction: row;
+  flex-wrap: wrap;               /* critical */
   justify-content: flex-end;
-  align-items: right;
-  gap: clamp(0.25rem, 0.5vw, 0.5rem);
-  margin-top: 0.25rem;
-  min-width: 0;
+  align-items: center;
+  gap: 0.5rem;                   /* fixed gap */
+  max-width: 100%;
 }
