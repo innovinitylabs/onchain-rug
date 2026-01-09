@@ -279,7 +279,7 @@ export default function Navigation() {
           </Link>
 
           {/* Navigation Links - Desktop */}
-          <div className="hidden md:flex items-center gap-6">
+          <div className="hidden md:flex items-center gap-6" style={{ display: 'none' }}>
             <Link
               href="/"
               className="flex items-center gap-1 hover:opacity-90 transition-all duration-300"

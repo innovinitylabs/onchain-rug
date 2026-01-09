@@ -1457,6 +1457,33 @@ nav a {
   font-weight: 700;
 }
 
+/* ==========================================================================
+ * Navigation Responsive Fixes
+ * ========================================================================== */
+
+/* Force mobile navigation visibility on small screens */
+@media (max-width: 767px) {
+  /* Hide desktop navigation links on mobile */
+  div[class*="hidden md:flex items-center gap-6"] {
+    display: none !important;
+  }
+
+  /* Show mobile hamburger menu on mobile */
+  div[class*="md:hidden flex items-center"] {
+    display: flex !important;
+  }
+
+  /* Show mobile menu overlay when active */
+  div[class*="fixed inset-0 z-60 md:hidden"] {
+    display: block !important;
+  }
+
+  /* Hide wallet connect on mobile */
+  div[class*="hidden md:block"] {
+    display: none !important;
+  }
+}
+
 /* Patina Console */
 .patina-console {
   display: flex;
