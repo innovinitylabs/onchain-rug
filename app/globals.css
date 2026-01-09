@@ -1469,15 +1469,15 @@ nav a {
 }
 
 /* Density Breakpoints - Hardware UI Scaling */
-@media (max-width: 1440px) {
-  .patina-console {
-    font-size: 0.45rem;
-  }
-}
-
 @media (max-width: 1024px) {
   .patina-console {
     font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .patina-console {
+    font-size: 0.75rem;
   }
 }
 
