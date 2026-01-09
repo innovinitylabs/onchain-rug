@@ -1475,6 +1475,12 @@ nav a {
   }
 }
 
+@media (max-width: 768px) {
+  .patina-console {
+    font-size: 0.75rem;
+  }
+}
+
 @media (max-width: 640px) {
   .patina-console {
     font-size: 0.7rem;
