@@ -1462,31 +1462,29 @@ nav a {
  * Navigation Visibility Control
  * ========================================================================== */
 
-/* Mobile navigation (default hidden) */
+/* Default states - mobile first approach */
 .nav-mobile-hamburger {
   display: flex !important;
 }
 
-/* Desktop navigation (default hidden) */
 .nav-desktop-links {
-  display: flex !important;
+  display: none !important;
 }
 
-/* Wallet connect (default hidden) */
 .nav-wallet-connect {
-  display: block !important;
+  display: none !important;
 }
 
-/* Responsive overrides */
-@media (max-width: 767px) {
-  .nav-desktop-links {
+/* Desktop overrides */
+@media (min-width: 768px) {
+  .nav-mobile-hamburger {
     display: none !important;
+  }
+  .nav-desktop-links {
+    display: flex !important;
   }
   .nav-wallet-connect {
-    display: none !important;
-  }
-  .nav-mobile-hamburger {
-    display: flex !important;
+    display: block !important;
   }
 }
 
