@@ -824,7 +824,7 @@ nav a {
   max-height: calc(100vh - 14rem); /* Account for header + footer + bezel padding */
   aspect-ratio: 14.3 / 10;
   margin: 0 auto;
-  position: relative;
+                            position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -969,9 +969,9 @@ nav a {
   border-top-color: transparent;
   border-radius: 50%;
   margin-bottom: 1rem;
-}
+                          }
 
-@media (min-width: 768px) {
+                          @media (min-width: 768px) {
   .loading-spinner {
     width: 3rem;
     height: 3rem;
@@ -1121,7 +1121,7 @@ nav a {
   padding-right: 1rem;
 }
 
-@media (min-width: 768px) {
+                          @media (min-width: 768px) {
   .terminal-container {
     padding-top: 1rem;
     padding-left: 1.5rem;
@@ -1457,30 +1457,36 @@ nav a {
   font-weight: 700;
 }
 
+
 /* ==========================================================================
- * Navigation Responsive Fixes
+ * Navigation Visibility Control
  * ========================================================================== */
 
-/* Force mobile navigation visibility on small screens */
+/* Mobile navigation (default hidden) */
+.nav-mobile-hamburger {
+  display: flex !important;
+}
+
+/* Desktop navigation (default hidden) */
+.nav-desktop-links {
+  display: flex !important;
+}
+
+/* Wallet connect (default hidden) */
+.nav-wallet-connect {
+  display: block !important;
+}
+
+/* Responsive overrides */
 @media (max-width: 767px) {
-  /* Hide desktop navigation links on mobile */
-  div[class*="hidden md:flex items-center gap-6"] {
+  .nav-desktop-links {
     display: none !important;
   }
-
-  /* Show mobile hamburger menu on mobile */
-  div[class*="md:hidden flex items-center"] {
+  .nav-wallet-connect {
+    display: none !important;
+  }
+  .nav-mobile-hamburger {
     display: flex !important;
-  }
-
-  /* Show mobile menu overlay when active */
-  div[class*="fixed inset-0 z-60 md:hidden"] {
-    display: block !important;
-  }
-
-  /* Hide wallet connect on mobile */
-  div[class*="hidden md:block"] {
-    display: none !important;
   }
 }
 

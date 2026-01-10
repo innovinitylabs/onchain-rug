@@ -279,7 +279,7 @@ export default function Navigation() {
           </Link>
 
           {/* Navigation Links - Desktop */}
-          <div className="hidden md:flex items-center gap-6" style={{ display: 'none' }}>
+          <div className="nav-desktop-links items-center gap-6" style={{ display: 'none' }}>
             <Link
               href="/"
               className="flex items-center gap-1 hover:opacity-90 transition-all duration-300"
@@ -516,7 +516,7 @@ export default function Navigation() {
           </div>
 
           {/* Mobile Hamburger Menu Button */}
-          <div className="md:hidden flex items-center z-60">
+          <div className="nav-mobile-hamburger flex items-center z-60" style={{ display: 'none' }}>
             <button
               onClick={toggleMobileMenu}
               className="p-3 rounded-lg hover:bg-white/20 active:bg-white/30 transition-colors duration-200 bg-white/5 border border-white/10"
@@ -536,7 +536,7 @@ export default function Navigation() {
           </div>
 
           {/* Wallet Connection - Desktop */}
-          <div className="hidden md:block">
+          <div className="nav-wallet-connect" style={{ display: 'none' }}>
             <WalletConnect />
           </div>
         </div>
