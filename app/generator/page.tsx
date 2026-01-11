@@ -11,6 +11,7 @@ import Footer from '@/components/Footer'
 import SevenSegmentDisplay from '@/components/SevenSegmentDisplay'
 import { initPRNG, getPRNG, createDerivedPRNG } from '@/lib/DeterministicPRNG'
 import { config } from '@/lib/config'
+import { GeometricPatternRenderer, extractRugPalette, createDefaultPatternParams, PatternType, PatternParameters } from '@/lib/GeometricPatterns'
 import { useChainId } from 'wagmi'
 import { contractAddresses } from '@/lib/web3'
 import { getChainDisplayName } from '@/lib/networks'
@@ -70,6 +71,16 @@ export default function GeneratorPage() {
   // Diamond frame aging (hardcoded - most impressive longevity)
   const [warpThickness, setWarpThickness] = useState(2) // Default warp thickness
 
+  // Geometric pattern overlay state
+  const [enableGeometricOverlay, setEnableGeometricOverlay] = useState(true)
+  const [selectedPatternType, setSelectedPatternType] = useState<PatternType>('tessellation')
+  const [patternParams, setPatternParams] = useState<PatternParameters>(createDefaultPatternParams())
+
+  // Refs for synchronous access in p5.js draw function
+  const enableOverlayRef = useRef(false)
+  const selectedPatternRef = useRef<PatternType>('sacred_geometry')
+  const patternParamsRef = useRef<PatternParameters>(createDefaultPatternParams())
+
   // Debounce timer for live updates
   const liveUpdateTimerRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -81,6 +92,32 @@ export default function GeneratorPage() {
       }
     }
   }, [])
+
+  // Update refs when state changes
+  useEffect(() => {
+    enableOverlayRef.current = enableGeometricOverlay
+  }, [enableGeometricOverlay])
+
+  useEffect(() => {
+    selectedPatternRef.current = selectedPatternType
+  }, [selectedPatternType])
+
+  useEffect(() => {
+    patternParamsRef.current = patternParams
+  }, [patternParams])
+
+  // Force canvas redraw when overlay state changes
+  useEffect(() => {
+    if (typeof window !== 'undefined' && (window as any).p5Instance) {
+      console.log('🎨 Overlay state changed, triggering redraw:', enableGeometricOverlay)
+      // Force a redraw by calling redraw() on the p5 instance
+      try {
+        ;(window as any).p5Instance.redraw()
+      } catch (error) {
+        console.warn('Failed to trigger redraw:', error)
+      }
+    }
+  }, [enableGeometricOverlay, selectedPatternType, patternParams])
 
   // Copy to clipboard function
   const copyToClipboard = async (text: string, label: string) => {
@@ -448,6 +485,33 @@ export default function GeneratorPage() {
             // Draw fringe and selvedge (always front orientation - transform handles flipping)
             drawFringeOriginal(p, doormatData, drawingPRNG, false) // Always front logic
             drawSelvedgeEdgesOriginal(p, doormatData, drawingPRNG, false) // Always front logic
+
+            // RULE 2: Overlay must be rendered in rug-local coordinates (inside transform stack)
+            // We're now inside: canvas_center -> rotate -> flip -> rug_center -> fringe_offset
+            if (enableOverlayRef.current) {
+              // RULE 3: Center using rug centroid, NOT top-left math
+              p.translate(doormatData.config.DOORMAT_WIDTH / 2, doormatData.config.DOORMAT_HEIGHT / 2)
+
+              // RULE 4: Pattern renderer assumes center-origin (0,0 is center)
+              const overlayWidth = doormatData.config.DOORMAT_WIDTH * 0.8   // 80% of rug for good visibility
+              const overlayHeight = doormatData.config.DOORMAT_HEIGHT * 0.8
+
+              // Create derived PRNG for geometric patterns using the same seed
+              const patternPRNG = createDerivedPRNG(doormatData.seed || 42, 3000)
+              const patternRenderer = new GeometricPatternRenderer(p, patternPRNG)
+              const palette = extractRugPalette(doormatData)
+
+              console.log('🎨 Rendering pattern centered on rug centroid:', selectedPatternRef.current)
+              console.log('🎨 Rug centroid:', doormatData.config.DOORMAT_WIDTH / 2, doormatData.config.DOORMAT_HEIGHT / 2)
+
+              patternRenderer.renderPattern(
+                selectedPatternRef.current,
+                patternParamsRef.current,
+                palette,
+                overlayWidth,   // Size in rug coordinates
+                overlayHeight   // Size in rug coordinates
+              )
+            }
 
             p.pop()
 
@@ -3034,6 +3098,108 @@ export default function GeneratorPage() {
 
                   {/* Right Panel - Patina System */}
                   <div className="space-y-4">
+                  </div>
+
+                  {/* Geometric Pattern Overlay Controls - Temporary */}
+                  <div className="border-t border-amber-600/30 pt-4">
+                    <div className="text-amber-700 text-sm mb-3 font-mono">🎨 Geometric Pattern Overlay</div>
+                    <div className="text-amber-600 text-xs mb-3 opacity-75">Patterns render on both front and back sides</div>
+
+                    <div className="space-y-3">
+                      {/* Enable Toggle */}
+                      <label className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={enableGeometricOverlay}
+                          onChange={(e) => {
+                            console.log('🎨 Checkbox changed to:', e.target.checked)
+                            setEnableGeometricOverlay(e.target.checked)
+                          }}
+                          className="rounded border-amber-600/30 text-amber-600 focus:ring-amber-500"
+                        />
+                        <span className="text-amber-800 text-sm">Enable Overlay</span>
+                      </label>
+
+                      {/* Pattern Type Selection */}
+                      <div>
+                        <div className="text-amber-800 text-xs mb-2">Pattern Type:</div>
+                        <select
+                          value={selectedPatternType}
+                          onChange={(e) => setSelectedPatternType(e.target.value as PatternType)}
+                          className="w-full bg-white text-amber-900 rounded text-sm font-mono focus:ring-1 focus:ring-amber-500 border border-amber-300 px-2 py-1"
+                        >
+                          <option value="sacred_geometry">Sacred Geometry</option>
+                          <option value="fractal_spirals">Pingala Spirals</option>
+                          <option value="kaleidoscope">Kaleidoscope</option>
+                          <option value="tessellation">Tessellation</option>
+                          <option value="minimalist_networks">Minimalist Networks</option>
+                          <option value="dot_matrix">Dot Matrix</option>
+                        </select>
+                      </div>
+
+                      {/* Parameter Controls */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-amber-800 text-xs mb-1">Scale: {patternParams.scale.toFixed(2)}</label>
+                          <input
+                            type="range"
+                            min="0.1"
+                            max="3.0"
+                            step="0.1"
+                            value={patternParams.scale}
+                            onChange={(e) => setPatternParams(prev => ({ ...prev, scale: parseFloat(e.target.value) }))}
+                            className="w-full"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-amber-800 text-xs mb-1">Opacity: {(patternParams.opacity * 100).toFixed(0)}%</label>
+                          <input
+                            type="range"
+                            min="0.1"
+                            max="1.0"
+                            step="0.1"
+                            value={patternParams.opacity}
+                            onChange={(e) => setPatternParams(prev => ({ ...prev, opacity: parseFloat(e.target.value) }))}
+                            className="w-full"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-amber-800 text-xs mb-1">Rotation: {(patternParams.rotation * 180 / Math.PI).toFixed(0)}°</label>
+                          <input
+                            type="range"
+                            min="0"
+                            max={2 * Math.PI}
+                            step={Math.PI / 12}
+                            value={patternParams.rotation}
+                            onChange={(e) => setPatternParams(prev => ({ ...prev, rotation: parseFloat(e.target.value) }))}
+                            className="w-full"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-amber-800 text-xs mb-1">Offset X: {patternParams.xOffset}</label>
+                          <input
+                            type="range"
+                            min="-50"
+                            max="50"
+                            step="5"
+                            value={patternParams.xOffset}
+                            onChange={(e) => setPatternParams(prev => ({ ...prev, xOffset: parseFloat(e.target.value) }))}
+                            className="w-full"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Reset Button */}
+                      <button
+                        onClick={() => setPatternParams(createDefaultPatternParams())}
+                        className="w-full bg-amber-600/80 hover:bg-amber-600 text-white font-bold px-3 py-1.5 rounded font-mono transition-all duration-200 border border-amber-500 text-xs"
+                      >
+                        RESET PARAMETERS
+                      </button>
+                    </div>
                   </div>
                 </div>
 
