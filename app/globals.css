@@ -1490,42 +1490,39 @@ nav a {
   }
 }
 
-/* Mobile Navigation - Explicit Media Queries for Safari Compatibility */
+/* Mobile Navigation - Pointer/Hover Detection for Modern Devices */
 .nav-desktop-links {
-  display: none;
-}
-
-.nav-mobile-hamburger {
   display: flex;
 }
 
-.nav-wallet-connect {
+.nav-mobile-hamburger {
   display: none;
+}
+
+.nav-wallet-connect {
+  display: block;
 }
 
 .nav-mobile-overlay {
   display: none;
 }
 
-/* Show mobile overlay when menu is open (controlled by React state) */
-.nav-mobile-overlay.open {
-  display: block;
-}
-
-@media (min-width: 768px) {
+/* Touch devices (phones, tablets) - regardless of screen size */
+@media (hover: none) and (pointer: coarse) {
   .nav-desktop-links {
-    display: flex;
-  }
-
-  .nav-mobile-hamburger {
     display: none;
   }
 
-  .nav-wallet-connect {
-    display: block;
+  .nav-mobile-hamburger {
+    display: flex;
   }
 
-  .nav-mobile-overlay {
-    display: none !important;
+  .nav-wallet-connect {
+    display: none;
   }
+}
+
+/* Show mobile overlay when menu is open (controlled by React state) */
+.nav-mobile-overlay.open {
+  display: block;
 }
