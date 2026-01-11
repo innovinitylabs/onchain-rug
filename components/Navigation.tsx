@@ -39,7 +39,7 @@ export default function Navigation() {
         }}
       >
       {/* Liquid Glass Background */}
-      <div className="absolute inset-0 overflow-hidden">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <svg
           className="absolute inset-0 w-full h-full"
           viewBox="0 0 1200 80"
@@ -96,7 +96,7 @@ export default function Navigation() {
       </div>
 
       {/* Navigation Content */}
-      <div className="relative z-10 w-full px-4 sm:px-6 lg:px-8 py-2 sm:py-3">
+      <div className="relative z-10 w-full px-4 sm:px-6 lg:px-8 py-2 sm:py-3 pointer-events-auto">
         <div className="flex items-center justify-between max-w-[3200px] mx-auto">
           {/* Logo */}
           <Link href="/" className="flex items-center" onClick={closeMobileMenu}>
@@ -279,7 +279,7 @@ export default function Navigation() {
           </Link>
 
           {/* Navigation Links - Desktop */}
-          <div className="nav-desktop-links items-center gap-6">
+          <div className="hidden md:flex items-center gap-6">
             <Link
               href="/"
               className="flex items-center gap-1 hover:opacity-90 transition-all duration-300"
@@ -516,7 +516,7 @@ export default function Navigation() {
           </div>
 
           {/* Mobile Hamburger Menu Button */}
-          <div className="nav-mobile-hamburger flex items-center z-60">
+          <div className="flex md:hidden items-center z-50">
             <button
               onClick={toggleMobileMenu}
               className="p-3 rounded-lg hover:bg-white/20 active:bg-white/30 transition-colors duration-200 bg-white/5 border border-white/10"
@@ -536,7 +536,7 @@ export default function Navigation() {
           </div>
 
           {/* Wallet Connection - Desktop */}
-          <div className="nav-wallet-connect">
+          <div className="hidden md:block">
             <WalletConnect />
           </div>
         </div>
@@ -551,7 +551,7 @@ export default function Navigation() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-60 md:hidden"
+          className="fixed inset-0 z-[60] md:hidden"
           onClick={closeMobileMenu}
         >
           <motion.div

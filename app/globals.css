@@ -1458,35 +1458,6 @@ nav a {
 }
 
 
-/* ==========================================================================
- * Navigation Visibility Control
- * ========================================================================== */
-
-/* Default states - mobile first approach */
-.nav-mobile-hamburger {
-  display: flex !important;
-}
-
-.nav-desktop-links {
-  display: none !important;
-}
-
-.nav-wallet-connect {
-  display: none !important;
-}
-
-/* Desktop overrides */
-@media (min-width: 768px) {
-  .nav-mobile-hamburger {
-    display: none !important;
-  }
-  .nav-desktop-links {
-    display: flex !important;
-  }
-  .nav-wallet-connect {
-    display: block !important;
-  }
-}
 
 /* Patina Console */
 .patina-console {
