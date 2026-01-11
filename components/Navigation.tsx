@@ -32,14 +32,14 @@ export default function Navigation() {
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ duration: 0.6 }}
-        className="fixed top-0 left-0 right-0 z-50 backdrop-blur-sm"
+        className="fixed top-0 left-0 right-0 z-50 h-16 backdrop-blur-sm"
         style={{
           background: 'rgba(255, 255, 255, 0.1)',
           borderBottom: '1px solid rgba(59, 130, 246, 0.2)',
         }}
       >
       {/* Liquid Glass Background */}
-      <div className="absolute inset-0 overflow-hidden">
+      <div className="absolute inset-0 h-full overflow-hidden">
         <svg
           className="absolute inset-0 w-full h-full pointer-events-none"
           viewBox="0 0 1200 80"
