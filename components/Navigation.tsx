@@ -39,9 +39,9 @@ export default function Navigation() {
         }}
       >
       {/* Liquid Glass Background */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      <div className="absolute inset-0 overflow-hidden">
         <svg
-          className="absolute inset-0 w-full h-full"
+          className="absolute inset-0 w-full h-full pointer-events-none"
           viewBox="0 0 1200 80"
           preserveAspectRatio="xMidYMid slice"
         >
