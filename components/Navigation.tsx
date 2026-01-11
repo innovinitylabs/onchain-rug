@@ -279,7 +279,7 @@ export default function Navigation() {
           </Link>
 
           {/* Navigation Links - Desktop */}
-          <div className="hidden md:flex items-center gap-6">
+          <div className="nav-desktop-links items-center gap-6">
             <Link
               href="/"
               className="flex items-center gap-1 hover:opacity-90 transition-all duration-300"
@@ -516,7 +516,7 @@ export default function Navigation() {
           </div>
 
           {/* Mobile Hamburger Menu Button */}
-          <div className="flex md:hidden items-center z-50">
+          <div className="nav-mobile-hamburger flex items-center z-50">
             <button
               onClick={toggleMobileMenu}
               className="p-3 rounded-lg hover:bg-white/20 active:bg-white/30 transition-colors duration-200 bg-white/5 border border-white/10"
@@ -536,7 +536,7 @@ export default function Navigation() {
           </div>
 
           {/* Wallet Connection - Desktop */}
-          <div className="hidden md:block">
+          <div className="nav-wallet-connect">
             <WalletConnect />
           </div>
         </div>
@@ -551,7 +551,7 @@ export default function Navigation() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-[60] md:hidden"
+          className={`nav-mobile-overlay fixed inset-0 z-[60] ${isMobileMenuOpen ? 'open' : ''}`}
           onClick={closeMobileMenu}
         >
           <motion.div
