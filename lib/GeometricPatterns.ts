@@ -30,12 +30,12 @@ export type PatternType =
   | 'human_presence'
 
 export type HumanPose =
-  | 'standing_calm'
-  | 'walking_forward'
+  | 'standing'
+  | 'walking'
   | 'leaning'
   | 'kneeling'
-  | 'sitting_folded'
-  | 'reaching_up'
+  | 'sitting'
+  | 'reaching'
   | 'twisting'
 
 /**
@@ -415,132 +415,163 @@ export class GeometricPatternRenderer {
   }
 
   private renderHumanPresence(palette: ColorPalette, width: number, height: number): void {
-    console.log('🎨 Rendering human presence silhouette')
+    console.log('🎨 Rendering curve-based human presence silhouette')
 
     // Select one pose deterministically via PRNG
     const poseIndex = Math.floor(this.prng.next() * 7)
-    const poseTypes: HumanPose[] = ['standing_calm', 'walking_forward', 'leaning', 'kneeling', 'sitting_folded', 'reaching_up', 'twisting']
+    const poseTypes: HumanPose[] = ['standing', 'walking', 'leaning', 'kneeling', 'sitting', 'reaching', 'twisting']
     const selectedPose = poseTypes[poseIndex]
 
-    // Scale to 70-85% of rug height
+    // Scale to 70-85% of rug height, normalize to 100-unit height for curves
     const scaleFactor = 0.7 + this.prng.next() * 0.15
     const silhouetteHeight = height * scaleFactor
-    const silhouetteWidth = width * (0.3 + this.prng.next() * 0.15) // 30-45% of rug width
+    const scaleRatio = silhouetteHeight / 100 // Normalize curves to 100-unit height
 
     // Position: center X ±5-10%, slightly lower than vertical center for weight
     const offsetX = (this.prng.next() - 0.5) * width * 0.1 // ±10% of width
     const offsetY = height * 0.1 // 10% down from center for grounded feel
 
-    // Use MULTIPLY blend mode for overlay effect
+    // Use MULTIPLY blend mode for authentic shadow overlay
     this.p.blendMode(this.p.MULTIPLY)
-    this.p.fill(0, 160 + this.prng.next() * 40) // Dark gray with slight variation, not pure black
+    this.p.fill(0, 160 + this.prng.next() * 40) // Deep charcoal, not pure black
     this.p.noStroke()
 
     this.p.push()
     this.p.translate(offsetX, offsetY)
-    this.p.scale(silhouetteWidth / 100, silhouetteHeight / 100) // Normalize to reasonable coords
+    this.p.scale(scaleRatio, scaleRatio) // Scale to actual size
 
-    this.drawHumanPose(selectedPose)
+    this.drawHumanPoseCurved(selectedPose)
     this.p.pop()
 
     // Reset blend mode
     this.p.blendMode(this.p.BLEND)
   }
 
-  private drawCapsule(p: any, x: number, y: number, angle: number, w: number, h: number): void {
-    p.push()
-    p.translate(x, y)
-    p.rotate(angle)
-    p.rect(-w/2, 0, w, h, w) // Rounded rectangle with corner radius = width
-    p.pop()
-  }
 
-  private drawHumanPose(pose: HumanPose): void {
-    const torsoLength = 60
-    const armLength = 35
-    const legLength = 45
-    const headSize = 16
+  private drawHumanPoseCurved(pose: HumanPose): void {
+    // PRNG variations for subtle pose differences
+    const leanOffset = (this.prng.next() - 0.5) * 4
+    const asymmetry = (this.prng.next() - 0.5) * 3
+    const weightShift = (this.prng.next() - 0.5) * 2
+
+    this.p.beginShape()
 
     switch (pose) {
-      case 'standing_calm':
-        // Balanced, centered pose with slight asymmetry
-        this.drawCapsule(this.p, 0, 20, -0.1, 25, torsoLength)     // Torso with slight lean
-        this.p.ellipse(0, 5, 22, 18)                               // Pelvis
-        this.drawCapsule(this.p, -12, 15, -0.8, 8, armLength)     // Left arm down
-        this.drawCapsule(this.p, 12, 18, 0.6, 8, armLength)       // Right arm relaxed
-        this.drawCapsule(this.p, -8, 55, 0.1, 10, legLength)      // Left leg
-        this.drawCapsule(this.p, 8, 58, -0.1, 10, legLength)      // Right leg
-        this.p.ellipse(4, -8, headSize, headSize)                  // Head slightly offset
+      case 'standing':
+        // Balanced standing pose - subtle curves, natural weight distribution
+        this.p.vertex(-8 + asymmetry, -35)     // Top of head (left side)
+        this.p.bezierVertex(-12, -32, -14, -25, -12, -18)  // Head curve to neck
+        this.p.bezierVertex(-10, -12, -8, -5, -6, 0)       // Neck to shoulder
+        this.p.bezierVertex(-4, 5, -2, 15, 0, 25)           // Shoulder to torso center
+        this.p.bezierVertex(2, 35, 4, 45, 6, 55)            // Torso to hip
+        this.p.bezierVertex(8, 65, 10, 75, 8, 85)           // Hip to outer leg
+        this.p.bezierVertex(6, 95, 4, 100, 0, 100)          // Leg bottom to foot
+        this.p.bezierVertex(-4, 100, -6, 95, -8, 85)        // Foot to inner leg
+        this.p.bezierVertex(-10, 75, -12, 65, -14, 55)      // Inner leg to hip
+        this.p.bezierVertex(-16, 45, -18, 35, -16, 25)      // Hip to torso
+        this.p.bezierVertex(-14, 15, -12, 5, -10, 0)        // Torso to shoulder
+        this.p.bezierVertex(-12, -5, -14, -12, -12, -18)    // Shoulder to neck
+        this.p.bezierVertex(-10, -25, -8, -32, -8 + asymmetry, -35) // Neck back to head
         break
 
-      case 'walking_forward':
-        // Dynamic walking pose with forward momentum
-        this.drawCapsule(this.p, -5, 18, -0.3, 28, torsoLength)    // Leaning forward torso
-        this.p.ellipse(-3, 3, 24, 16)                              // Forward pelvis
-        this.drawCapsule(this.p, -18, 12, -1.2, 9, armLength)     // Left arm swinging back
-        this.drawCapsule(this.p, 8, 15, 0.8, 9, armLength)        // Right arm swinging forward
-        this.drawCapsule(this.p, -12, 50, -0.2, 11, legLength)    // Left leg back
-        this.drawCapsule(this.p, 4, 55, 0.3, 11, legLength)       // Right leg forward
-        this.p.ellipse(-8, -12, headSize, headSize)                // Head forward
+      case 'walking':
+        // Forward momentum - leaning forward, one leg forward
+        this.p.vertex(-10 + asymmetry, -32)    // Head forward
+        this.p.bezierVertex(-14, -28, -16, -20, -14, -12)  // Head to neck
+        this.p.bezierVertex(-12, -6, -10, 2, -8, 10)       // Neck to forward shoulder
+        this.p.bezierVertex(-6, 18, -4, 28, -2, 38)         // Shoulder to torso lean
+        this.p.bezierVertex(0, 48, 2, 58, 4, 68)            // Torso to back hip
+        this.p.bezierVertex(6, 78, 8, 88, 6, 98)            // Back hip to back leg
+        this.p.bezierVertex(4, 100, 2, 95, 0, 90)           // Back leg to ground
+        this.p.bezierVertex(-2, 95, -4, 100, -6, 98)        // Ground to front leg
+        this.p.bezierVertex(-8, 88, -10, 78, -12, 68)       // Front leg to front hip
+        this.p.bezierVertex(-14, 58, -16, 48, -14, 38)      // Front hip to torso
+        this.p.bezierVertex(-12, 28, -10, 18, -8, 10)       // Torso to back shoulder
+        this.p.bezierVertex(-6, 2, -4, -6, -2, -12)         // Back shoulder to neck
+        this.p.bezierVertex(0, -20, 2, -28, -10 + asymmetry, -32) // Neck back to head
         break
 
       case 'leaning':
-        // Weight shifted to one side, contemplative
-        this.drawCapsule(this.p, 8, 22, 0.4, 26, torsoLength)      // Torso leaning right
-        this.p.ellipse(12, 8, 20, 22)                              // Pelvis shifted
-        this.drawCapsule(this.p, -5, 20, -0.9, 8, armLength)      // Left arm crossed
-        this.drawCapsule(this.p, 25, 25, 0.3, 8, armLength)       // Right arm out
-        this.drawCapsule(this.p, 2, 58, 0.1, 10, legLength)       // Left leg straight
-        this.drawCapsule(this.p, 20, 62, -0.2, 10, legLength)     // Right leg bent
-        this.p.ellipse(18, -6, headSize, headSize)                 // Head tilted
+        // Weight shifted to one side
+        this.p.vertex(-12 + asymmetry, -30)    // Head tilted
+        this.p.bezierVertex(-16, -25, -18, -18, -16, -10)  // Head curve
+        this.p.bezierVertex(-14, -4, -12, 4, -10, 12)      // To higher shoulder
+        this.p.bezierVertex(-8, 20, -6, 30, -4, 40)         // Shoulder to torso
+        this.p.bezierVertex(-2, 50, 0, 60, 2, 70)           // Torso to lower hip
+        this.p.bezierVertex(4, 80, 6, 90, 4, 100)           // Lower hip to lower leg
+        this.p.bezierVertex(2, 105, 0, 102, -2, 100)        // Leg to ground
+        this.p.bezierVertex(-4, 102, -6, 105, -8, 100)      // Ground to upper leg
+        this.p.bezierVertex(-10, 90, -12, 80, -14, 70)      // Upper leg to upper hip
+        this.p.bezierVertex(-16, 60, -18, 50, -16, 40)      // Upper hip to torso
+        this.p.bezierVertex(-14, 30, -12, 20, -10, 12)      // Torso to lower shoulder
+        this.p.bezierVertex(-8, 4, -6, -4, -4, -10)         // Lower shoulder to neck
+        this.p.bezierVertex(-2, -18, 0, -25, -12 + asymmetry, -30) // Neck to head
         break
 
       case 'kneeling':
-        // One knee down, humble/meditative pose
-        this.drawCapsule(this.p, 0, 15, -0.2, 24, torsoLength)     // Slightly bowed torso
-        this.p.ellipse(0, 0, 26, 14)                               // Pelvis level
-        this.drawCapsule(this.p, -15, 10, -1.0, 9, armLength)     // Left arm back
-        this.drawCapsule(this.p, 15, 12, 0.7, 9, armLength)       // Right arm forward
-        this.drawCapsule(this.p, -8, 45, -0.3, 11, legLength)     // Left leg bent (knee down)
-        this.drawCapsule(this.p, 8, 55, 0.0, 11, legLength)       // Right leg extended
-        this.p.ellipse(0, -10, headSize, headSize)                 // Head centered, bowed
-        // Optional ground shadow for weight
-        this.p.ellipse(0, 75, 40, 8)
+        // One knee down, contemplative
+        this.p.vertex(-8 + asymmetry, -28)     // Head bowed
+        this.p.bezierVertex(-12, -22, -14, -14, -12, -6)   // Head to neck
+        this.p.bezierVertex(-10, 0, -8, 8, -6, 16)         // Neck to shoulders
+        this.p.bezierVertex(-4, 24, -2, 34, 0, 44)          // Shoulders to torso
+        this.p.bezierVertex(2, 54, 4, 64, 2, 74)            // Torso to hips
+        this.p.bezierVertex(0, 84, -2, 94, -4, 100)         // Hips to kneeling leg
+        this.p.bezierVertex(-6, 95, -8, 90, -10, 85)        // Kneeling leg bend
+        this.p.bezierVertex(-12, 75, -14, 65, -12, 55)      // Back to standing leg
+        this.p.bezierVertex(-10, 45, -8, 35, -6, 25)        // Standing leg
+        this.p.bezierVertex(-4, 15, -2, 5, 0, -5)           // Back to torso
+        this.p.bezierVertex(2, -15, 4, -25, -8 + asymmetry, -28) // Torso to head
         break
 
-      case 'sitting_folded':
-        // Sitting cross-legged, contemplative
-        this.drawCapsule(this.p, 0, 8, 0.1, 22, torsoLength * 0.9) // Shorter, upright torso
-        this.p.ellipse(0, -2, 28, 12)                              // Pelvis on ground
-        this.drawCapsule(this.p, -14, 5, -0.8, 8, armLength)      // Left arm resting
-        this.drawCapsule(this.p, 14, 7, 0.5, 8, armLength)        // Right arm relaxed
-        this.drawCapsule(this.p, -12, 35, -1.2, 12, legLength * 0.8) // Left leg folded
-        this.drawCapsule(this.p, 12, 35, 1.0, 12, legLength * 0.8)   // Right leg folded
-        this.p.ellipse(0, -18, headSize, headSize)                 // Head upright
+      case 'sitting':
+        // Cross-legged sitting pose
+        this.p.vertex(-6 + asymmetry, -20)     // Head upright
+        this.p.bezierVertex(-10, -12, -12, -4, -10, 4)     // Head to neck
+        this.p.bezierVertex(-8, 12, -6, 20, -4, 28)         // Neck to shoulders
+        this.p.bezierVertex(-2, 36, 0, 46, 2, 56)           // Shoulders to torso
+        this.p.bezierVertex(4, 66, 6, 76, 4, 86)            // Torso to sitting hips
+        this.p.bezierVertex(2, 96, 0, 100, -2, 98)          // Hips to folded legs
+        this.p.bezierVertex(-4, 100, -6, 96, -8, 86)        // Legs continuation
+        this.p.bezierVertex(-10, 76, -12, 66, -10, 56)      // Back to hips
+        this.p.bezierVertex(-8, 46, -6, 36, -4, 26)         // Hips to torso
+        this.p.bezierVertex(-2, 16, 0, 6, 2, -4)            // Torso to shoulders
+        this.p.bezierVertex(4, -14, 6, -24, -6 + asymmetry, -20) // Shoulders to head
         break
 
-      case 'reaching_up':
-        // Stretching upward, aspirational pose
-        this.drawCapsule(this.p, 0, 25, 0.0, 20, torsoLength)      // Upright torso
-        this.p.ellipse(0, 10, 18, 20)                              // Pelvis
-        this.drawCapsule(this.p, -20, 18, -1.8, 10, armLength * 1.2) // Left arm reaching up high
-        this.drawCapsule(this.p, 20, 18, 1.8, 10, armLength * 1.2)   // Right arm reaching up high
-        this.drawCapsule(this.p, -6, 60, 0.0, 9, legLength)       // Left leg stable
-        this.drawCapsule(this.p, 6, 60, 0.0, 9, legLength)        // Right leg stable
-        this.p.ellipse(0, -12, headSize, headSize)                 // Head back, looking up
+      case 'reaching':
+        // Arms extended upward
+        this.p.vertex(-8 + asymmetry, -38)     // Head back looking up
+        this.p.bezierVertex(-12, -30, -14, -22, -12, -14)  // Head curve
+        this.p.bezierVertex(-10, -6, -8, 2, -6, 10)         // Neck to shoulders
+        this.p.bezierVertex(-4, 18, -2, 28, 0, 38)           // Shoulders to torso
+        this.p.bezierVertex(2, 48, 4, 58, 2, 68)             // Torso to hips
+        this.p.bezierVertex(0, 78, -2, 88, -4, 98)           // Hips to legs
+        this.p.bezierVertex(-6, 100, -8, 95, -10, 85)       // Legs to feet
+        this.p.bezierVertex(-12, 75, -14, 65, -12, 55)      // Feet back to knees
+        this.p.bezierVertex(-10, 45, -8, 35, -6, 25)        // Knees to hips
+        this.p.bezierVertex(-4, 15, -2, 5, 0, -5)            // Hips to torso
+        this.p.bezierVertex(2, -15, 4, -25, -8 + asymmetry, -38) // Torso to head
         break
 
       case 'twisting':
-        // Torso twisted, dynamic turning motion
-        this.drawCapsule(this.p, 8, 20, 0.6, 25, torsoLength)      // Torso twisted right
-        this.p.ellipse(6, 5, 21, 19)                               // Pelvis following twist
-        this.drawCapsule(this.p, -8, 18, -0.5, 9, armLength)      // Left arm across
-        this.drawCapsule(this.p, 22, 22, 1.2, 9, armLength)       // Right arm back
-        this.drawCapsule(this.p, -4, 55, 0.2, 10, legLength)      // Left leg planted
-        this.drawCapsule(this.p, 12, 58, -0.1, 10, legLength)     // Right leg following
-        this.p.ellipse(16, -8, headSize, headSize)                 // Head turned
+        // Torso twisted, dynamic motion
+        this.p.vertex(-10 + asymmetry, -32)    // Head turned
+        this.p.bezierVertex(-14, -24, -16, -16, -14, -8)   // Head to neck
+        this.p.bezierVertex(-12, 0, -10, 8, -8, 16)         // Neck to twisted shoulders
+        this.p.bezierVertex(-6, 24, -4, 34, -2, 44)         // Shoulders to torso
+        this.p.bezierVertex(0, 54, 2, 64, 4, 74)            // Torso to hips
+        this.p.bezierVertex(6, 84, 8, 94, 6, 100)           // Hips to back leg
+        this.p.bezierVertex(4, 95, 2, 90, 0, 85)            // Back leg
+        this.p.bezierVertex(-2, 90, -4, 95, -6, 100)        // To front leg
+        this.p.bezierVertex(-8, 94, -10, 84, -8, 74)        // Front leg
+        this.p.bezierVertex(-6, 64, -4, 54, -2, 44)         // Back to hips
+        this.p.bezierVertex(0, 34, 2, 24, 4, 16)            // Hips to torso
+        this.p.bezierVertex(6, 8, 8, 0, 6, -8)              // Torso to shoulders
+        this.p.bezierVertex(4, -16, 2, -24, -10 + asymmetry, -32) // Shoulders to head
         break
     }
+
+    this.p.endShape(this.p.CLOSE)
   }
 }
 
