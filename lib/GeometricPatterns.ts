@@ -108,39 +108,165 @@ export class GeometricPatternRenderer {
   }
 
   private renderSacredGeometry(palette: ColorPalette, width: number, height: number): void {
-    console.log('🎨 Rendering sacred geometry with palette:', palette.colors.length)
+    console.log('🎨 Rendering Indian mandala sacred geometry with palette:', palette.colors.length)
     const centerX = 0
     const centerY = 0
-    const maxRadius = Math.min(width, height) * 0.4
+    const maxRadius = Math.min(width, height) * 0.45
 
-    // Metatron's Cube inspired pattern
-    const circles = 6 + Math.floor(this.prng.next() * 4) // 6-9 circles
+    // Draw multiple layers of sacred geometry
 
-    for (let i = 0; i < circles; i++) {
-      const radius = (maxRadius / circles) * (i + 1)
+    // 1. Central bindu (dot) - the seed of creation
+    this.p.fill(palette.colors[0].r, palette.colors[0].g, palette.colors[0].b, 200)
+    this.p.noStroke()
+    this.p.circle(centerX, centerY, 8)
+
+    // 2. Flower of Life - overlapping circles
+    const flowerCircles = 6 + Math.floor(this.prng.next() * 4) // 6-9 circles
+    this.p.strokeWeight(2)
+    this.p.noFill()
+
+    for (let i = 0; i < flowerCircles; i++) {
+      const radius = (maxRadius * 0.3) + (this.prng.next() * maxRadius * 0.4)
+      const color = palette.colors[i % palette.colors.length]
+      this.p.stroke(color.r, color.g, color.b, 120)
+      this.p.circle(centerX, centerY, radius * 2)
+    }
+
+    // 3. Lotus petals - curved petal shapes
+    const petals = 8 + Math.floor(this.prng.next() * 8) // 8-15 petals
+    this.p.strokeWeight(3)
+
+    for (let i = 0; i < petals; i++) {
+      const angle = (this.p.TWO_PI / petals) * i
+      const petalRadius = maxRadius * (0.6 + this.prng.next() * 0.3)
       const color = palette.colors[i % palette.colors.length]
 
       this.p.stroke(color.r, color.g, color.b, 150)
+      this.p.fill(color.r, color.g, color.b, 60)
+
+      // Draw curved petal
+      this.p.push()
+      this.p.translate(centerX, centerY)
+      this.p.rotate(angle)
+
+      this.p.beginShape()
+      // Inner curve
+      for (let t = 0; t <= this.p.PI; t += 0.1) {
+        const r = petalRadius * 0.3 * Math.sin(t)
+        const x = Math.cos(t) * r
+        const y = Math.sin(t) * petalRadius * 0.7
+        this.p.vertex(x, y)
+      }
+      // Outer curve
+      for (let t = this.p.PI; t >= 0; t -= 0.1) {
+        const r = petalRadius * 0.8 * Math.sin(t)
+        const x = Math.cos(t) * r
+        const y = Math.sin(t) * petalRadius
+        this.p.vertex(x, y)
+      }
+      this.p.endShape(this.p.CLOSE)
+      this.p.pop()
+    }
+
+    // 4. Sacred triangles and geometry
+    const triangles = 3 + Math.floor(this.prng.next() * 3) // 3-5 triangle layers
+
+    for (let layer = 0; layer < triangles; layer++) {
+      const triangleRadius = maxRadius * (0.5 + layer * 0.15)
+      const color = palette.colors[layer % palette.colors.length]
+
+      this.p.stroke(color.r, color.g, color.b, 100)
       this.p.strokeWeight(1)
       this.p.noFill()
-      this.p.circle(centerX, centerY, radius * 2)
 
-      // Add connecting lines
-      if (i > 0) {
-        const angleStep = this.p.TWO_PI / 12
-        for (let j = 0; j < 12; j++) {
-          const angle = j * angleStep
-          const innerRadius = (maxRadius / circles) * i
-          const outerRadius = (maxRadius / circles) * (i + 1)
+      // Draw upward triangle
+      this.p.push()
+      this.p.translate(centerX, centerY)
+      for (let i = 0; i < 3; i++) {
+        const angle1 = (this.p.TWO_PI / 3) * i - this.p.PI/2
+        const angle2 = (this.p.TWO_PI / 3) * ((i + 1) % 3) - this.p.PI/2
 
-          const x1 = centerX + Math.cos(angle) * innerRadius
-          const y1 = centerY + Math.sin(angle) * innerRadius
-          const x2 = centerX + Math.cos(angle) * outerRadius
-          const y2 = centerY + Math.sin(angle) * outerRadius
+        const x1 = Math.cos(angle1) * triangleRadius
+        const y1 = Math.sin(angle1) * triangleRadius
+        const x2 = Math.cos(angle2) * triangleRadius
+        const y2 = Math.sin(angle2) * triangleRadius
 
-          this.p.line(x1, y1, x2, y2)
-        }
+        this.p.line(x1, y1, x2, y2)
       }
+      this.p.pop()
+
+      // Draw downward triangle (interlocking)
+      this.p.push()
+      this.p.translate(centerX, centerY)
+      this.p.rotate(this.p.PI / 3) // Offset by 60 degrees
+      for (let i = 0; i < 3; i++) {
+        const angle1 = (this.p.TWO_PI / 3) * i - this.p.PI/2
+        const angle2 = (this.p.TWO_PI / 3) * ((i + 1) % 3) - this.p.PI/2
+
+        const x1 = Math.cos(angle1) * (triangleRadius * 0.8)
+        const y1 = Math.sin(angle1) * (triangleRadius * 0.8)
+        const x2 = Math.cos(angle2) * (triangleRadius * 0.8)
+        const y2 = Math.sin(angle2) * (triangleRadius * 0.8)
+
+        this.p.line(x1, y1, x2, y2)
+      }
+      this.p.pop()
+    }
+
+    // 5. Curved flourishes and mandala elements
+    const flourishes = 12 + Math.floor(this.prng.next() * 12) // 12-23 flourishes
+
+    for (let i = 0; i < flourishes; i++) {
+      const angle = (this.p.TWO_PI / flourishes) * i
+      const radius = maxRadius * (0.7 + this.prng.next() * 0.25)
+      const color = palette.colors[i % palette.colors.length]
+
+      this.p.stroke(color.r, color.g, color.b, 80)
+      this.p.strokeWeight(1)
+      this.p.noFill()
+
+      // Draw curved flourish
+      this.p.push()
+      this.p.translate(centerX, centerY)
+      this.p.rotate(angle)
+
+      this.p.beginShape()
+      for (let t = 0; t <= 1; t += 0.05) {
+        const curveRadius = radius * (1 + Math.sin(t * this.p.PI * 2) * 0.3)
+        const x = Math.cos(t * this.p.PI * 0.5) * curveRadius
+        const y = Math.sin(t * this.p.PI * 0.5) * curveRadius * 0.6
+        this.p.vertex(x, y)
+      }
+      this.p.endShape()
+      this.p.pop()
+    }
+
+    // 6. Central geometric core
+    const coreElements = 5 + Math.floor(this.prng.next() * 5) // 5-9 core elements
+
+    for (let i = 0; i < coreElements; i++) {
+      const coreRadius = maxRadius * 0.15 * (i + 1)
+      const color = palette.colors[(palette.colors.length - 1 - i) % palette.colors.length]
+
+      this.p.stroke(color.r, color.g, color.b, 100)
+      this.p.strokeWeight(1)
+      this.p.noFill()
+
+      // Draw geometric core shapes
+      const sides = 3 + Math.floor(this.prng.next() * 5) // 3-7 sides
+      this.p.push()
+      this.p.translate(centerX, centerY)
+      this.p.rotate(i * this.p.TWO_PI / coreElements)
+
+      this.p.beginShape()
+      for (let j = 0; j < sides; j++) {
+        const angle = (this.p.TWO_PI / sides) * j
+        const x = Math.cos(angle) * coreRadius
+        const y = Math.sin(angle) * coreRadius
+        this.p.vertex(x, y)
+      }
+      this.p.endShape(this.p.CLOSE)
+      this.p.pop()
     }
   }
 
