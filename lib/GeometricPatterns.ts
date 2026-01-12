@@ -220,16 +220,16 @@ export class GeometricPatternRenderer {
 
   private renderFractalSpirals(palette: ColorPalette, width: number, height: number): void {
     // Scattered Pingala spirals of multiple sizes across canvas
-    const numSpirals = 5 + Math.floor(this.prng.next() * 8) // 5-12 scattered spirals
+    const numSpirals = 4 + Math.floor(this.prng.next() * 6) // 4-9 scattered spirals (fewer for larger sizes)
 
     for (let s = 0; s < numSpirals; s++) {
       // Random position across the canvas area
       const spiralCenterX = (this.prng.next() - 0.5) * width * 0.8  // ±40% of canvas width
       const spiralCenterY = (this.prng.next() - 0.5) * height * 0.8 // ±40% of canvas height
 
-      // Random size variation (small to large spirals)
-      const sizeMultiplier = 0.3 + this.prng.next() * 0.7 // 0.3-1.0 scale
-      const maxRadius = Math.min(width, height) * 0.15 * sizeMultiplier // Smaller base radius
+      // Random size variation (small to LARGE spirals)
+      const sizeMultiplier = 0.2 + this.prng.next() * 2.8 // 0.2-3.0 scale (much wider range)
+      const maxRadius = Math.min(width, height) * 0.25 * sizeMultiplier // Larger base radius
 
       const color = palette.colors[s % palette.colors.length]
 
@@ -256,9 +256,9 @@ export class GeometricPatternRenderer {
         const x = spiralCenterX + Math.cos(angle) * radius
         const y = spiralCenterY + Math.sin(angle) * radius
 
-        // Size-based thickness variation
-        const baseThickness = 4 + sizeMultiplier * 6 // 4-10 based on size
-        const thickness = baseThickness + Math.sin(t * 3) * (baseThickness * 0.3)
+        // Size-based thickness variation (scales with spiral size)
+        const baseThickness = 3 + sizeMultiplier * 12 // 3-15 based on size (wider range)
+        const thickness = baseThickness + Math.sin(t * 3) * (baseThickness * 0.4)
 
         points.push({ x, y, thickness })
       }
