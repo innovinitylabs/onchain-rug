@@ -491,185 +491,174 @@ export class GeometricPatternRenderer {
   }
 
   private getAnatomicalPoseData(pose: HumanPose): any {
-    // 8-unit classical proportions: head=1, torso=3, legs=4 (total 8 units)
-    // Normalized to 100-unit height space, chest center at (0,0)
-    // Y-coordinates: head (-45 to -35), torso (-35 to 25), legs (25 to 100)
+    // Anatomical hard points with alternating convex-concave signals
+    // Coordinate system: pelvis center at (0,0), head at -50, feet at +50
+    // 8-unit proportions: head=1, torso=3, legs=4 (normalized to 100 units)
 
     switch (pose) {
       case 'standing':
         return {
           headTorso: [
-            { v: [0, -45] },        // Top of head
-            { b: [-6, -45, -12, -42, -15, -35] }, // Head right side
-            { b: [-18, -28, -16, -22, -12, -18] }, // Neck right
-            { b: [-20, -10, -24, -2, -22, 8] },   // Shoulder right
-            { b: [-25, 18, -22, 28, -18, 35] },   // Torso right side
-            { b: [-14, 45, -8, 52, 0, 55] },      // Hip right
-            { b: [8, 52, 14, 45, 18, 35] },       // Hip left
-            { b: [22, 28, 25, 18, 22, 8] },       // Torso left side
-            { b: [24, -2, 20, -10, 16, -18] },    // Shoulder left
-            { b: [18, -22, 12, -28, 6, -35] },    // Neck left
-            { b: [12, -42, 6, -45, 0, -45] }      // Head left side back to top
+            { v: [-10, -40] },        // Left neck start
+            { b: [-25, -35, -30, -10, -22, 0] },   // Shoulder expansion (convex)
+            { b: [-18, 10, -12, 18, -8, 22] },     // Waist pinch (concave)
+            { b: [-6, 26, -4, 30, 0, 30] },        // Hip flare (convex)
+            { b: [4, 30, 6, 26, 8, 22] },          // Right hip
+            { b: [12, 18, 18, 10, 22, 0] },        // Right waist
+            { b: [30, -10, 25, -35, 10, -40] },    // Right shoulder
+            { b: [6, -48, -6, -48, -10, -40] }     // Head top (back to neck)
           ],
           leftLeg: [
-            { v: [-8, 55] },       // Top of left leg (hip joint)
-            { b: [-12, 65, -14, 75, -12, 85] },  // Thigh outer
-            { b: [-10, 95, -6, 100, -2, 95] },   // Knee articulation (forward bulge)
-            { b: [2, 85, 6, 75, 8, 65] },        // Calf inner
-            { b: [10, 55, 9, 45, 6, 40] },       // Ankle taper inward
-            { b: [2, 42, -2, 45, -6, 50] },      // Foot base
-            { b: [-10, 48, -12, 52, -10, 55] }   // Back to hip joint
+            { v: [-6, 30] },         // Hip attachment
+            { b: [-12, 35, -16, 45, -14, 55] },   // Thigh (convex)
+            { b: [-12, 65, -8, 70, -4, 65] },     // Knee bulge (sharp convex)
+            { b: [0, 55, 4, 45, 6, 35] },         // Calf (concave)
+            { b: [8, 25, 7, 15, 4, 10] },         // Ankle taper (sharp concave)
+            { b: [0, 12, -4, 15, -6, 20] },       // Foot
+            { b: [-8, 18, -7, 22, -6, 30] }       // Back to hip
           ],
           rightLeg: [
-            { v: [8, 55] },        // Top of right leg (hip joint)
-            { b: [12, 65, 14, 75, 12, 85] },    // Thigh outer
-            { b: [10, 95, 6, 100, 2, 95] },     // Knee articulation (forward bulge)
-            { b: [-2, 85, -6, 75, -8, 65] },    // Calf inner
-            { b: [-10, 55, -9, 45, -6, 40] },   // Ankle taper inward
-            { b: [-2, 42, 2, 45, 6, 50] },      // Foot base
-            { b: [10, 48, 12, 52, 10, 55] }     // Back to hip joint
+            { v: [6, 30] },          // Hip attachment
+            { b: [12, 35, 16, 45, 14, 55] },     // Thigh (convex)
+            { b: [12, 65, 8, 70, 4, 65] },       // Knee bulge (sharp convex)
+            { b: [0, 55, -4, 45, -6, 35] },      // Calf (concave)
+            { b: [-8, 25, -7, 15, -4, 10] },     // Ankle taper (sharp concave)
+            { b: [0, 12, 4, 15, 6, 20] },        // Foot
+            { b: [8, 18, 7, 22, 6, 30] }         // Back to hip
           ]
         }
 
       case 'walking':
         return {
           headTorso: [
-            { v: [3, -45] },        // Head slightly forward
-            { b: [-3, -45, -9, -42, -12, -35] }, // Head right
-            { b: [-15, -28, -13, -22, -9, -18] }, // Neck right
-            { b: [-17, -10, -21, -2, -19, 8] },  // Shoulder right
-            { b: [-22, 18, -19, 28, -15, 35] },  // Torso right (leaning forward)
-            { b: [-11, 45, -5, 52, 3, 55] },     // Hip right
-            { b: [11, 52, 17, 45, 21, 35] },    // Hip left
-            { b: [25, 28, 28, 18, 25, 8] },     // Torso left
-            { b: [27, -2, 23, -10, 19, -18] },  // Shoulder left
-            { b: [21, -22, 15, -28, 9, -35] },  // Neck left
-            { b: [15, -42, 9, -45, 3, -45] }    // Head left back to top
+            { v: [2, -42] },         // Head forward (slightly lower)
+            { b: [-12, -38, -18, -18, -16, -2] },   // Left shoulder expansion
+            { b: [-12, 8, -8, 16, -4, 20] },        // Waist pinch (concave)
+            { b: [-2, 24, 0, 28, 4, 26] },          // Hip flare (convex)
+            { b: [8, 20, 12, 12, 16, -2] },         // Right shoulder
+            { b: [18, -18, 12, -38, 2, -42] },      // Right neck
+            { b: [-2, -50, -8, -50, -12, -46] },    // Head top
+            { b: [-16, -38, -14, -42, -12, -46] }   // Head left (back to shoulder)
           ],
           leftLeg: [
-            { v: [-5, 55] },       // Back leg (hip joint)
-            { b: [-9, 65, -11, 75, -9, 85] },  // Thigh outer
-            { b: [-7, 95, -3, 100, 1, 95] },   // Knee articulation
-            { b: [5, 85, 9, 75, 11, 65] },     // Calf inner
-            { b: [13, 55, 12, 45, 9, 40] },    // Ankle taper
-            { b: [5, 42, 1, 45, -3, 50] },     // Foot base
-            { b: [-7, 48, -9, 52, -7, 55] }    // Back to hip
+            { v: [0, 26] },          // Back leg hip
+            { b: [-6, 32, -10, 42, -8, 52] },     // Thigh bent back
+            { b: [-6, 62, -2, 66, 2, 62] },       // Bent knee (sharp convex)
+            { b: [6, 52, 10, 42, 8, 32] },        // Calf
+            { b: [10, 22, 9, 12, 6, 8] },         // Ankle sharp taper
+            { b: [2, 10, -2, 12, -6, 16] },       // Foot planted
+            { b: [-8, 14, -6, 18, 0, 26] }        // Back to hip
           ],
           rightLeg: [
-            { v: [11, 55] },       // Forward leg (hip joint)
-            { b: [15, 65, 17, 75, 15, 85] },  // Thigh outer
-            { b: [13, 95, 9, 100, 5, 95] },   // Knee forward
-            { b: [1, 85, -3, 75, -5, 65] },   // Calf inner
-            { b: [-7, 55, -6, 45, -3, 40] },  // Ankle taper
-            { b: [1, 42, 5, 45, 9, 50] },     // Foot base
-            { b: [13, 48, 15, 52, 13, 55] }   // Back to hip
+            { v: [8, 26] },          // Forward leg hip
+            { b: [14, 32, 18, 42, 16, 52] },     // Thigh forward
+            { b: [14, 62, 10, 66, 6, 62] },      // Forward knee (sharp convex)
+            { b: [2, 52, -2, 42, -4, 32] },      // Calf
+            { b: [-6, 22, -5, 12, -2, 8] },      // Ankle taper
+            { b: [2, 10, 6, 12, 10, 16] },       // Foot forward
+            { b: [12, 14, 10, 18, 8, 26] }       // Back to hip
           ]
         }
 
       case 'leaning':
         return {
           headTorso: [
-            { v: [8, -47] },        // Head tilted
-            { b: [2, -47, -4, -44, -7, -37] }, // Head right
-            { b: [-10, -30, -8, -24, -4, -20] }, // Neck right
-            { b: [-12, -12, -16, -4, -14, 4] }, // Shoulder right
-            { b: [-17, 14, -14, 24, -10, 32] }, // Torso right
-            { b: [-6, 42, 0, 49, 8, 53] },      // Hip right
-            { b: [16, 49, 22, 42, 26, 32] },    // Hip left
-            { b: [30, 24, 33, 14, 31, 4] },     // Torso left
-            { b: [33, -4, 29, -12, 25, -20] },  // Shoulder left
-            { b: [27, -24, 21, -30, 17, -37] }, // Neck left
-            { b: [21, -44, 17, -47, 11, -47] }, // Head left
-            { b: [11, -47, 8, -47, 8, -47] }    // Back to top
+            { v: [12, -45] },        // Head tilted right
+            { b: [6, -48, 0, -46, -6, -40] },     // Head left side
+            { b: [-18, -32, -22, -14, -20, 2] },  // Left shoulder expansion
+            { b: [-16, 12, -10, 20, -4, 24] },    // Waist pinch (concave)
+            { b: [0, 28, 6, 32, 12, 28] },        // Right hip flare (convex)
+            { b: [18, 20, 22, 12, 20, 2] },       // Right shoulder
+            { b: [18, -14, 12, -32, 6, -40] },    // Right neck
+            { b: [0, -46, -6, -48, -12, -46] },   // Head top
+            { b: [-18, -40, -16, -44, -12, -46] } // Head back to left shoulder
           ],
           leftLeg: [
-            { v: [0, 53] },        // Hip joint
-            { b: [-4, 63, -6, 73, -4, 83] },   // Thigh
-            { b: [-2, 93, 2, 98, 6, 93] },     // Knee
-            { b: [10, 83, 14, 73, 16, 63] },   // Calf
-            { b: [18, 53, 17, 43, 14, 38] },   // Ankle
-            { b: [10, 40, 6, 43, 2, 48] },     // Foot
-            { b: [-2, 46, -4, 50, -2, 53] }    // Back to hip
+            { v: [-6, 24] },         // Weight-bearing leg
+            { b: [-14, 30, -18, 40, -16, 50] },   // Thigh (straight)
+            { b: [-14, 60, -10, 64, -6, 60] },    // Knee articulation
+            { b: [-2, 50, 2, 40, 6, 30] },        // Calf
+            { b: [8, 20, 7, 10, 4, 6] },          // Ankle taper
+            { b: [0, 8, -4, 10, -8, 14] },        // Foot planted
+            { b: [-10, 12, -8, 16, -6, 24] }      // Back to hip
           ],
           rightLeg: [
-            { v: [16, 53] },       // Hip joint
-            { b: [20, 63, 22, 73, 20, 83] },  // Thigh
-            { b: [18, 93, 14, 98, 10, 93] },  // Knee
-            { b: [6, 83, 2, 73, 0, 63] },     // Calf
-            { b: [-2, 53, -1, 43, 2, 38] },   // Ankle
-            { b: [6, 40, 10, 43, 14, 48] },   // Foot
-            { b: [18, 46, 20, 50, 18, 53] }   // Back to hip
+            { v: [10, 28] },         // Bent leg
+            { b: [16, 34, 20, 44, 18, 54] },     // Thigh bent
+            { b: [16, 64, 12, 68, 8, 64] },      // Knee sharply bent
+            { b: [4, 54, 0, 44, -2, 34] },       // Calf
+            { b: [-4, 24, -3, 14, 0, 10] },      // Ankle taper
+            { b: [4, 12, 8, 14, 12, 18] },       // Foot raised
+            { b: [14, 16, 12, 20, 10, 28] }      // Back to hip
           ]
         }
 
       case 'kneeling':
         return {
           headTorso: [
-            { v: [0, -45] },        // Head upright
-            { b: [-6, -45, -12, -42, -15, -37] }, // Head right
-            { b: [-18, -30, -16, -24, -12, -20] }, // Neck right
-            { b: [-20, -12, -24, -4, -22, 4] },   // Shoulder right
-            { b: [-25, 14, -22, 24, -18, 32] },  // Torso right
-            { b: [-14, 42, -8, 48, 0, 50] },     // Hip right (lower)
-            { b: [8, 48, 14, 42, 18, 32] },      // Hip left
-            { b: [22, 24, 25, 14, 22, 4] },      // Torso left
-            { b: [24, -4, 20, -12, 16, -20] },   // Shoulder left
-            { b: [18, -24, 12, -30, 6, -37] },   // Neck left
-            { b: [12, -42, 6, -45, 0, -45] }     // Head left back to top
+            { v: [0, -45] },         // Head upright
+            { b: [-8, -45, -14, -42, -16, -36] }, // Head right
+            { b: [-18, -28, -16, -20, -12, -16] }, // Neck right
+            { b: [-18, -8, -22, 0, -20, 8] },     // Shoulder right
+            { b: [-22, 18, -18, 26, -12, 30] },   // Torso right
+            { b: [-8, 34, -2, 36, 0, 34] },       // Hip center (lower)
+            { b: [2, 36, 8, 34, 12, 30] },        // Hip left
+            { b: [18, 26, 22, 18, 20, 8] },       // Torso left
+            { b: [22, 0, 18, -8, 12, -16] },      // Shoulder left
+            { b: [16, -20, 10, -28, 4, -36] },    // Neck left
+            { b: [10, -42, 4, -45, 0, -45] }      // Head left back to top
           ],
           leftLeg: [
-            { v: [-8, 50] },       // Lower hip joint
-            { b: [-12, 58, -14, 66, -12, 74] }, // Thigh bent
-            { b: [-10, 82, -6, 86, -2, 82] },   // Knee bent
-            { b: [2, 74, 6, 66, 8, 58] },       // Lower leg
-            { b: [10, 50, 9, 42, 6, 38] },      // Ankle
-            { b: [2, 40, -2, 42, -6, 46] },     // Foot on ground
-            { b: [-10, 44, -12, 48, -10, 50] }  // Back to hip
+            { v: [-4, 34] },         // Knee on ground
+            { b: [-8, 38, -12, 42, -10, 46] },   // Lower thigh
+            { b: [-8, 50, -4, 52, 0, 48] },      // Ground contact
+            { b: [4, 42, 8, 38, 6, 34] },        // Back up
+            { b: [4, 30, 2, 26, 0, 24] },        // Calf taper
+            { b: [-2, 26, -4, 28, -4, 34] }      // Back to knee
           ],
           rightLeg: [
-            { v: [8, 50] },        // Lower hip joint
-            { b: [12, 58, 14, 66, 12, 74] },   // Thigh extended
-            { b: [10, 82, 6, 86, 2, 82] },     // Knee
-            { b: [-2, 74, -6, 66, -8, 58] },   // Lower leg
-            { b: [-10, 50, -9, 42, -6, 38] },  // Ankle
-            { b: [-2, 40, 2, 42, 6, 46] },     // Foot
-            { b: [10, 44, 12, 48, 10, 50] }    // Back to hip
+            { v: [4, 34] },          // Extended leg hip
+            { b: [8, 38, 12, 48, 10, 58] },     // Thigh extended
+            { b: [8, 68, 4, 72, 0, 68] },       // Knee articulation
+            { b: [-4, 58, -8, 48, -6, 38] },    // Calf
+            { b: [-4, 28, -2, 18, 1, 14] },     // Ankle taper
+            { b: [4, 16, 8, 18, 10, 22] },      // Foot extended
+            { b: [8, 26, 6, 30, 4, 34] }        // Back to hip
           ]
         }
 
       case 'reaching':
         return {
           headTorso: [
-            { v: [-2, -55] },       // Head back looking up
-            { b: [-8, -55, -14, -52, -17, -45] }, // Head right
-            { b: [-20, -38, -18, -32, -14, -28] }, // Neck right
-            { b: [-22, -20, -26, -12, -24, -4] },  // Shoulder right
-            { b: [-27, 6, -24, 16, -20, 24] },    // Torso right
-            { b: [-16, 34, -10, 40, -2, 43] },    // Hip right
-            { b: [6, 40, 12, 34, 16, 24] },       // Hip left
-            { b: [20, 16, 23, 6, 21, -4] },       // Torso left
-            { b: [23, -12, 19, -20, 15, -28] },   // Shoulder left
-            { b: [17, -32, 11, -38, 7, -45] },    // Neck left
-            { b: [13, -52, 7, -55, 1, -55] },     // Head left
-            { b: [1, -55, -2, -55, -2, -55] }     // Back to top
+            { v: [0, -55] },         // Head back looking up
+            { b: [-8, -55, -16, -52, -20, -45] }, // Head right
+            { b: [-24, -36, -22, -28, -16, -24] }, // Neck right
+            { b: [-22, -16, -28, -8, -26, 0] },   // Shoulder right + arm extension
+            { b: [-24, 10, -20, 20, -14, 28] },   // Torso right
+            { b: [-10, 36, -4, 40, 0, 38] },      // Hip center
+            { b: [4, 40, 10, 36, 14, 28] },       // Hip left
+            { b: [20, 20, 24, 10, 26, 0] },       // Torso left + arm extension
+            { b: [28, -8, 22, -16, 16, -24] },    // Shoulder left
+            { b: [22, -28, 16, -36, 8, -45] },    // Neck left
+            { b: [14, -52, 6, -55, 0, -55] }      // Head left back to top
           ],
           leftLeg: [
-            { v: [-10, 43] },      // Hip joint
-            { b: [-14, 51, -16, 59, -14, 67] }, // Thigh
-            { b: [-12, 75, -8, 79, -4, 75] },   // Knee
-            { b: [0, 67, 4, 59, 6, 51] },       // Calf
-            { b: [8, 43, 7, 35, 4, 31] },       // Ankle
-            { b: [0, 33, -4, 35, -8, 39] },     // Foot
-            { b: [-12, 37, -14, 41, -12, 43] }  // Back to hip
+            { v: [-6, 38] },         // Hip joint
+            { b: [-12, 44, -16, 54, -14, 64] },   // Thigh
+            { b: [-12, 74, -8, 78, -4, 74] },     // Knee articulation
+            { b: [0, 64, 4, 54, 8, 44] },         // Calf
+            { b: [10, 34, 9, 24, 6, 20] },        // Ankle taper
+            { b: [2, 22, -2, 24, -6, 28] },       // Foot
+            { b: [-8, 26, -7, 30, -6, 38] }       // Back to hip
           ],
           rightLeg: [
-            { v: [6, 43] },        // Hip joint
-            { b: [10, 51, 12, 59, 10, 67] },   // Thigh
-            { b: [8, 75, 4, 79, 0, 75] },      // Knee
-            { b: [-4, 67, -8, 59, -10, 51] },  // Calf
-            { b: [-12, 43, -11, 35, -8, 31] }, // Ankle
-            { b: [-4, 33, 0, 35, 4, 39] },     // Foot
-            { b: [8, 37, 10, 41, 8, 43] }      // Back to hip
+            { v: [6, 38] },          // Hip joint
+            { b: [12, 44, 16, 54, 14, 64] },     // Thigh
+            { b: [12, 74, 8, 78, 4, 74] },       // Knee articulation
+            { b: [0, 64, -4, 54, -8, 44] },      // Calf
+            { b: [-10, 34, -9, 24, -6, 20] },    // Ankle taper
+            { b: [-2, 22, 2, 24, 6, 28] },       // Foot
+            { b: [8, 26, 7, 30, 6, 38] }         // Back to hip
           ]
         }
 
