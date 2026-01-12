@@ -219,38 +219,48 @@ export class GeometricPatternRenderer {
   }
 
   private renderFractalSpirals(palette: ColorPalette, width: number, height: number): void {
-    const centerX = 0
-    const centerY = 0
-    const maxRadius = Math.min(width, height) * 0.45
+    // Scattered Pingala spirals of multiple sizes across canvas
+    const numSpirals = 5 + Math.floor(this.prng.next() * 8) // 5-12 scattered spirals
 
-    // Pool noodle Pingala spirals - thick, flowing, organic
-    const spirals = 2 + Math.floor(this.prng.next() * 2) // 2-3 thick spirals
+    for (let s = 0; s < numSpirals; s++) {
+      // Random position across the canvas area
+      const spiralCenterX = (this.prng.next() - 0.5) * width * 0.8  // ±40% of canvas width
+      const spiralCenterY = (this.prng.next() - 0.5) * height * 0.8 // ±40% of canvas height
 
-    for (let s = 0; s < spirals; s++) {
+      // Random size variation (small to large spirals)
+      const sizeMultiplier = 0.3 + this.prng.next() * 0.7 // 0.3-1.0 scale
+      const maxRadius = Math.min(width, height) * 0.15 * sizeMultiplier // Smaller base radius
+
       const color = palette.colors[s % palette.colors.length]
 
       // Thick, flowing appearance with slight transparency
-      this.p.fill(color.r, color.g, color.b, 160) // Semi-transparent fill
-      this.p.stroke(color.r, color.g, color.b, 200) // Solid stroke
-      this.p.strokeWeight(1) // Thin outline on thick fill
+      this.p.fill(color.r, color.g, color.b, 140 + this.prng.next() * 40) // Varying transparency
+      this.p.stroke(color.r, color.g, color.b, 180 + this.prng.next() * 40) // Varying stroke opacity
+      this.p.strokeWeight(1)
 
       const points = []
-      const angleOffset = (this.p.TWO_PI / spirals) * s
-      const turns = 2.5 + this.prng.next() * 1.5 // 2.5-4 turns
+      const angleOffset = this.prng.next() * this.p.TWO_PI // Random starting angle
+      const turns = 1.5 + this.prng.next() * 2.5 // 1.5-4 turns (shorter for scattered)
 
       // Generate spiral points with organic variation
-      for (let i = 0; i < 120; i++) { // More points for smoother curves
-        const t = (i / 119) * turns
+      const numPoints = 60 + Math.floor(this.prng.next() * 40) // 60-99 points based on size
+      for (let i = 0; i < numPoints; i++) {
+        const t = (i / (numPoints - 1)) * turns
         const angle = t * this.p.TWO_PI + angleOffset
         const baseRadius = (maxRadius / turns) * t * 0.382 // Golden ratio base
 
         // Add organic variation for "pool noodle" flowing effect
-        const noiseOffset = this.prng.next() * 0.1 - 0.05 // Small random variation
-        const radius = baseRadius * (0.8 + noiseOffset + Math.sin(t * 3) * 0.1)
+        const noiseOffset = this.prng.next() * 0.15 - 0.075 // Small random variation
+        const radius = baseRadius * (0.85 + noiseOffset + Math.sin(t * 2 + s) * 0.1) // Unique variation per spiral
 
-        const x = centerX + Math.cos(angle) * radius
-        const y = centerY + Math.sin(angle) * radius
-        points.push({ x, y, thickness: 8 + Math.sin(t * 4) * 3 }) // Variable thickness
+        const x = spiralCenterX + Math.cos(angle) * radius
+        const y = spiralCenterY + Math.sin(angle) * radius
+
+        // Size-based thickness variation
+        const baseThickness = 4 + sizeMultiplier * 6 // 4-10 based on size
+        const thickness = baseThickness + Math.sin(t * 3) * (baseThickness * 0.3)
+
+        points.push({ x, y, thickness })
       }
 
       // Draw thick, flowing spiral using connected circles/ovals
@@ -263,7 +273,7 @@ export class GeometricPatternRenderer {
         const dy = current.y - previous.y
         const distance = Math.sqrt(dx * dx + dy * dy)
 
-        if (distance > 0) {
+        if (distance > 0.5) { // Only draw if segments aren't too close
           // Draw thick connecting segment as oriented oval
           this.p.push()
           this.p.translate((current.x + previous.x) / 2, (current.y + previous.y) / 2)
@@ -271,15 +281,15 @@ export class GeometricPatternRenderer {
 
           // Variable thickness based on position in spiral
           const thickness = (current.thickness + previous.thickness) / 2
-          const length = distance * 1.2 // Slight overlap for smooth connection
+          const length = Math.max(distance * 1.1, thickness * 0.8) // Ensure minimum length
 
           this.p.ellipse(0, 0, length, thickness)
           this.p.pop()
         }
       }
 
-      // Add flowing end caps
-      if (points.length > 0) {
+      // Add flowing end caps for larger spirals only
+      if (sizeMultiplier > 0.6 && points.length > 0) {
         const lastPoint = points[points.length - 1]
         const secondLast = points[points.length - 2]
 
@@ -290,7 +300,7 @@ export class GeometricPatternRenderer {
           this.p.push()
           this.p.translate(lastPoint.x, lastPoint.y)
           this.p.rotate(Math.atan2(dy, dx))
-          this.p.ellipse(0, 0, lastPoint.thickness * 1.5, lastPoint.thickness)
+          this.p.ellipse(0, 0, lastPoint.thickness * 1.3, lastPoint.thickness * 0.9)
           this.p.pop()
         }
       }
