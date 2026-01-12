@@ -27,14 +27,6 @@ export type PatternType =
   | 'tessellation'
   | 'minimalist_networks'
   | 'dot_matrix'
-  | 'human_presence'
-
-export type HumanPose =
-  | 'standing'
-  | 'walking'
-  | 'leaning'
-  | 'kneeling'
-  | 'reaching'
 
 /**
  * Main geometric pattern renderer
@@ -99,9 +91,6 @@ export class GeometricPatternRenderer {
         break
       case 'dot_matrix':
         this.renderDotMatrix(palette, canvasWidth, canvasHeight)
-        break
-      case 'human_presence':
-        this.renderHumanPresence(palette, canvasWidth, canvasHeight)
         break
       default:
         // Test pattern - draw a big visible circle
@@ -232,34 +221,78 @@ export class GeometricPatternRenderer {
   private renderFractalSpirals(palette: ColorPalette, width: number, height: number): void {
     const centerX = 0
     const centerY = 0
-    const maxRadius = Math.min(width, height) * 0.5
+    const maxRadius = Math.min(width, height) * 0.45
 
-    // Pingala spiral (Indian mathematics, predecessor to Fibonacci)
-    const spirals = 3 + Math.floor(this.prng.next() * 3) // 3-5 spirals
+    // Pool noodle Pingala spirals - thick, flowing, organic
+    const spirals = 2 + Math.floor(this.prng.next() * 2) // 2-3 thick spirals
 
     for (let s = 0; s < spirals; s++) {
       const color = palette.colors[s % palette.colors.length]
-      this.p.stroke(color.r, color.g, color.b, 120)
-      this.p.strokeWeight(2)
-      this.p.noFill()
+
+      // Thick, flowing appearance with slight transparency
+      this.p.fill(color.r, color.g, color.b, 160) // Semi-transparent fill
+      this.p.stroke(color.r, color.g, color.b, 200) // Solid stroke
+      this.p.strokeWeight(1) // Thin outline on thick fill
 
       const points = []
       const angleOffset = (this.p.TWO_PI / spirals) * s
-      const turns = 3 + this.prng.next() * 2 // 3-5 turns
+      const turns = 2.5 + this.prng.next() * 1.5 // 2.5-4 turns
 
-      for (let i = 0; i < 100; i++) {
-        const t = (i / 99) * turns
+      // Generate spiral points with organic variation
+      for (let i = 0; i < 120; i++) { // More points for smoother curves
+        const t = (i / 119) * turns
         const angle = t * this.p.TWO_PI + angleOffset
-        const radius = (maxRadius / turns) * t * 0.382 // Golden ratio
+        const baseRadius = (maxRadius / turns) * t * 0.382 // Golden ratio base
+
+        // Add organic variation for "pool noodle" flowing effect
+        const noiseOffset = this.prng.next() * 0.1 - 0.05 // Small random variation
+        const radius = baseRadius * (0.8 + noiseOffset + Math.sin(t * 3) * 0.1)
 
         const x = centerX + Math.cos(angle) * radius
         const y = centerY + Math.sin(angle) * radius
-        points.push({ x, y })
+        points.push({ x, y, thickness: 8 + Math.sin(t * 4) * 3 }) // Variable thickness
       }
 
-      // Draw spiral
+      // Draw thick, flowing spiral using connected circles/ovals
       for (let i = 1; i < points.length; i++) {
-        this.p.line(points[i-1].x, points[i-1].y, points[i].x, points[i].y)
+        const current = points[i]
+        const previous = points[i-1]
+
+        // Calculate direction vector for oval orientation
+        const dx = current.x - previous.x
+        const dy = current.y - previous.y
+        const distance = Math.sqrt(dx * dx + dy * dy)
+
+        if (distance > 0) {
+          // Draw thick connecting segment as oriented oval
+          this.p.push()
+          this.p.translate((current.x + previous.x) / 2, (current.y + previous.y) / 2)
+          this.p.rotate(Math.atan2(dy, dx))
+
+          // Variable thickness based on position in spiral
+          const thickness = (current.thickness + previous.thickness) / 2
+          const length = distance * 1.2 // Slight overlap for smooth connection
+
+          this.p.ellipse(0, 0, length, thickness)
+          this.p.pop()
+        }
+      }
+
+      // Add flowing end caps
+      if (points.length > 0) {
+        const lastPoint = points[points.length - 1]
+        const secondLast = points[points.length - 2]
+
+        if (secondLast) {
+          const dx = lastPoint.x - secondLast.x
+          const dy = lastPoint.y - secondLast.y
+
+          this.p.push()
+          this.p.translate(lastPoint.x, lastPoint.y)
+          this.p.rotate(Math.atan2(dy, dx))
+          this.p.ellipse(0, 0, lastPoint.thickness * 1.5, lastPoint.thickness)
+          this.p.pop()
+        }
       }
     }
   }
@@ -409,261 +442,6 @@ export class GeometricPatternRenderer {
         const dotSize = this.prng.next() * maxDotSize
         this.p.circle(x, y, dotSize)
       }
-    }
-  }
-
-  private renderHumanPresence(palette: ColorPalette, width: number, height: number): void {
-    console.log('🎨 Rendering anatomical Bézier human silhouette')
-
-    // Select one pose deterministically via PRNG
-    const poseIndex = Math.floor(this.prng.next() * 5)
-    const poseTypes: HumanPose[] = ['standing', 'walking', 'leaning', 'kneeling', 'reaching']
-    const selectedPose = poseTypes[poseIndex]
-
-    // Scale to 70-85% of rug height, normalize to 100-unit height for curves
-    const scaleFactor = 0.7 + this.prng.next() * 0.15
-    const silhouetteHeight = height * scaleFactor
-    const scaleRatio = silhouetteHeight / 100 // Normalize curves to 100-unit height
-
-    // Position: center X ±5-10%, slightly lower than vertical center for weight
-    const offsetX = (this.prng.next() - 0.5) * width * 0.1 // ±10% of width
-    const offsetY = height * 0.1 // 10% down from center for grounded feel
-
-    // Start with outline debugging - remove this after anatomy is correct
-    this.p.blendMode(this.p.BLEND)
-    this.p.noFill()
-    this.p.stroke(0)
-    this.p.strokeWeight(2)
-
-    // Uncomment for final fill rendering:
-    // this.p.blendMode(this.p.BLEND)
-    // this.p.fill(0, 180)
-    // this.p.noStroke()
-
-    this.p.push()
-    this.p.translate(offsetX, offsetY)
-    this.p.scale(scaleRatio, scaleRatio) // Scale to actual size
-
-    this.drawHumanSilhouette(selectedPose)
-    this.p.pop()
-
-    // Reset blend mode
-    this.p.blendMode(this.p.BLEND)
-  }
-
-
-  private drawHumanSilhouette(pose: HumanPose): void {
-    // Get anatomical Bézier control points for this pose (NO PRNG noise)
-    const poseData = this.getAnatomicalPoseData(pose)
-
-    // Draw head + torso as one continuous path
-    this.p.beginShape()
-    this.drawBezierPath(poseData.headTorso)
-    this.p.endShape(this.p.CLOSE)
-
-    // Draw left leg as separate path
-    this.p.beginShape()
-    this.drawBezierPath(poseData.leftLeg)
-    this.p.endShape(this.p.CLOSE)
-
-    // Draw right leg as separate path
-    this.p.beginShape()
-    this.drawBezierPath(poseData.rightLeg)
-    this.p.endShape(this.p.CLOSE)
-  }
-
-  private drawBezierPath(path: any[]): void {
-    // First element is starting vertex
-    const startVertex = path[0]
-    this.p.vertex(startVertex.v[0], startVertex.v[1])
-
-    // Remaining elements are Bézier segments (NO PRNG perturbations)
-    for (let i = 1; i < path.length; i++) {
-      const segment = path[i]
-      if (segment.b) {
-        this.p.bezierVertex(
-          segment.b[0], segment.b[1], // control point 1
-          segment.b[2], segment.b[3], // control point 2
-          segment.b[4], segment.b[5]  // end point
-        )
-      }
-    }
-  }
-
-  private getAnatomicalPoseData(pose: HumanPose): any {
-    // Anatomical hard points with alternating convex-concave signals
-    // Coordinate system: pelvis center at (0,0), head at -50, feet at +50
-    // 8-unit proportions: head=1, torso=3, legs=4 (normalized to 100 units)
-
-    switch (pose) {
-      case 'standing':
-        return {
-          headTorso: [
-            { v: [-10, -40] },        // Left neck start
-            { b: [-25, -35, -30, -10, -22, 0] },   // Shoulder expansion (convex)
-            { b: [-18, 10, -12, 18, -8, 22] },     // Waist pinch (concave)
-            { b: [-6, 26, -4, 30, 0, 30] },        // Hip flare (convex)
-            { b: [4, 30, 6, 26, 8, 22] },          // Right hip
-            { b: [12, 18, 18, 10, 22, 0] },        // Right waist
-            { b: [30, -10, 25, -35, 10, -40] },    // Right shoulder
-            { b: [6, -48, -6, -48, -10, -40] }     // Head top (back to neck)
-          ],
-          leftLeg: [
-            { v: [-6, 30] },         // Hip attachment
-            { b: [-12, 35, -16, 45, -14, 55] },   // Thigh (convex)
-            { b: [-12, 65, -8, 70, -4, 65] },     // Knee bulge (sharp convex)
-            { b: [0, 55, 4, 45, 6, 35] },         // Calf (concave)
-            { b: [8, 25, 7, 15, 4, 10] },         // Ankle taper (sharp concave)
-            { b: [0, 12, -4, 15, -6, 20] },       // Foot
-            { b: [-8, 18, -7, 22, -6, 30] }       // Back to hip
-          ],
-          rightLeg: [
-            { v: [6, 30] },          // Hip attachment
-            { b: [12, 35, 16, 45, 14, 55] },     // Thigh (convex)
-            { b: [12, 65, 8, 70, 4, 65] },       // Knee bulge (sharp convex)
-            { b: [0, 55, -4, 45, -6, 35] },      // Calf (concave)
-            { b: [-8, 25, -7, 15, -4, 10] },     // Ankle taper (sharp concave)
-            { b: [0, 12, 4, 15, 6, 20] },        // Foot
-            { b: [8, 18, 7, 22, 6, 30] }         // Back to hip
-          ]
-        }
-
-      case 'walking':
-        return {
-          headTorso: [
-            { v: [2, -42] },         // Head forward (slightly lower)
-            { b: [-12, -38, -18, -18, -16, -2] },   // Left shoulder expansion
-            { b: [-12, 8, -8, 16, -4, 20] },        // Waist pinch (concave)
-            { b: [-2, 24, 0, 28, 4, 26] },          // Hip flare (convex)
-            { b: [8, 20, 12, 12, 16, -2] },         // Right shoulder
-            { b: [18, -18, 12, -38, 2, -42] },      // Right neck
-            { b: [-2, -50, -8, -50, -12, -46] },    // Head top
-            { b: [-16, -38, -14, -42, -12, -46] }   // Head left (back to shoulder)
-          ],
-          leftLeg: [
-            { v: [0, 26] },          // Back leg hip
-            { b: [-6, 32, -10, 42, -8, 52] },     // Thigh bent back
-            { b: [-6, 62, -2, 66, 2, 62] },       // Bent knee (sharp convex)
-            { b: [6, 52, 10, 42, 8, 32] },        // Calf
-            { b: [10, 22, 9, 12, 6, 8] },         // Ankle sharp taper
-            { b: [2, 10, -2, 12, -6, 16] },       // Foot planted
-            { b: [-8, 14, -6, 18, 0, 26] }        // Back to hip
-          ],
-          rightLeg: [
-            { v: [8, 26] },          // Forward leg hip
-            { b: [14, 32, 18, 42, 16, 52] },     // Thigh forward
-            { b: [14, 62, 10, 66, 6, 62] },      // Forward knee (sharp convex)
-            { b: [2, 52, -2, 42, -4, 32] },      // Calf
-            { b: [-6, 22, -5, 12, -2, 8] },      // Ankle taper
-            { b: [2, 10, 6, 12, 10, 16] },       // Foot forward
-            { b: [12, 14, 10, 18, 8, 26] }       // Back to hip
-          ]
-        }
-
-      case 'leaning':
-        return {
-          headTorso: [
-            { v: [12, -45] },        // Head tilted right
-            { b: [6, -48, 0, -46, -6, -40] },     // Head left side
-            { b: [-18, -32, -22, -14, -20, 2] },  // Left shoulder expansion
-            { b: [-16, 12, -10, 20, -4, 24] },    // Waist pinch (concave)
-            { b: [0, 28, 6, 32, 12, 28] },        // Right hip flare (convex)
-            { b: [18, 20, 22, 12, 20, 2] },       // Right shoulder
-            { b: [18, -14, 12, -32, 6, -40] },    // Right neck
-            { b: [0, -46, -6, -48, -12, -46] },   // Head top
-            { b: [-18, -40, -16, -44, -12, -46] } // Head back to left shoulder
-          ],
-          leftLeg: [
-            { v: [-6, 24] },         // Weight-bearing leg
-            { b: [-14, 30, -18, 40, -16, 50] },   // Thigh (straight)
-            { b: [-14, 60, -10, 64, -6, 60] },    // Knee articulation
-            { b: [-2, 50, 2, 40, 6, 30] },        // Calf
-            { b: [8, 20, 7, 10, 4, 6] },          // Ankle taper
-            { b: [0, 8, -4, 10, -8, 14] },        // Foot planted
-            { b: [-10, 12, -8, 16, -6, 24] }      // Back to hip
-          ],
-          rightLeg: [
-            { v: [10, 28] },         // Bent leg
-            { b: [16, 34, 20, 44, 18, 54] },     // Thigh bent
-            { b: [16, 64, 12, 68, 8, 64] },      // Knee sharply bent
-            { b: [4, 54, 0, 44, -2, 34] },       // Calf
-            { b: [-4, 24, -3, 14, 0, 10] },      // Ankle taper
-            { b: [4, 12, 8, 14, 12, 18] },       // Foot raised
-            { b: [14, 16, 12, 20, 10, 28] }      // Back to hip
-          ]
-        }
-
-      case 'kneeling':
-        return {
-          headTorso: [
-            { v: [0, -45] },         // Head upright
-            { b: [-8, -45, -14, -42, -16, -36] }, // Head right
-            { b: [-18, -28, -16, -20, -12, -16] }, // Neck right
-            { b: [-18, -8, -22, 0, -20, 8] },     // Shoulder right
-            { b: [-22, 18, -18, 26, -12, 30] },   // Torso right
-            { b: [-8, 34, -2, 36, 0, 34] },       // Hip center (lower)
-            { b: [2, 36, 8, 34, 12, 30] },        // Hip left
-            { b: [18, 26, 22, 18, 20, 8] },       // Torso left
-            { b: [22, 0, 18, -8, 12, -16] },      // Shoulder left
-            { b: [16, -20, 10, -28, 4, -36] },    // Neck left
-            { b: [10, -42, 4, -45, 0, -45] }      // Head left back to top
-          ],
-          leftLeg: [
-            { v: [-4, 34] },         // Knee on ground
-            { b: [-8, 38, -12, 42, -10, 46] },   // Lower thigh
-            { b: [-8, 50, -4, 52, 0, 48] },      // Ground contact
-            { b: [4, 42, 8, 38, 6, 34] },        // Back up
-            { b: [4, 30, 2, 26, 0, 24] },        // Calf taper
-            { b: [-2, 26, -4, 28, -4, 34] }      // Back to knee
-          ],
-          rightLeg: [
-            { v: [4, 34] },          // Extended leg hip
-            { b: [8, 38, 12, 48, 10, 58] },     // Thigh extended
-            { b: [8, 68, 4, 72, 0, 68] },       // Knee articulation
-            { b: [-4, 58, -8, 48, -6, 38] },    // Calf
-            { b: [-4, 28, -2, 18, 1, 14] },     // Ankle taper
-            { b: [4, 16, 8, 18, 10, 22] },      // Foot extended
-            { b: [8, 26, 6, 30, 4, 34] }        // Back to hip
-          ]
-        }
-
-      case 'reaching':
-        return {
-          headTorso: [
-            { v: [0, -55] },         // Head back looking up
-            { b: [-8, -55, -16, -52, -20, -45] }, // Head right
-            { b: [-24, -36, -22, -28, -16, -24] }, // Neck right
-            { b: [-22, -16, -28, -8, -26, 0] },   // Shoulder right + arm extension
-            { b: [-24, 10, -20, 20, -14, 28] },   // Torso right
-            { b: [-10, 36, -4, 40, 0, 38] },      // Hip center
-            { b: [4, 40, 10, 36, 14, 28] },       // Hip left
-            { b: [20, 20, 24, 10, 26, 0] },       // Torso left + arm extension
-            { b: [28, -8, 22, -16, 16, -24] },    // Shoulder left
-            { b: [22, -28, 16, -36, 8, -45] },    // Neck left
-            { b: [14, -52, 6, -55, 0, -55] }      // Head left back to top
-          ],
-          leftLeg: [
-            { v: [-6, 38] },         // Hip joint
-            { b: [-12, 44, -16, 54, -14, 64] },   // Thigh
-            { b: [-12, 74, -8, 78, -4, 74] },     // Knee articulation
-            { b: [0, 64, 4, 54, 8, 44] },         // Calf
-            { b: [10, 34, 9, 24, 6, 20] },        // Ankle taper
-            { b: [2, 22, -2, 24, -6, 28] },       // Foot
-            { b: [-8, 26, -7, 30, -6, 38] }       // Back to hip
-          ],
-          rightLeg: [
-            { v: [6, 38] },          // Hip joint
-            { b: [12, 44, 16, 54, 14, 64] },     // Thigh
-            { b: [12, 74, 8, 78, 4, 74] },       // Knee articulation
-            { b: [0, 64, -4, 54, -8, 44] },      // Calf
-            { b: [-10, 34, -9, 24, -6, 20] },    // Ankle taper
-            { b: [-2, 22, 2, 24, 6, 28] },       // Foot
-            { b: [8, 26, 7, 30, 6, 38] }         // Back to hip
-          ]
-        }
-
-      default:
-        return this.getAnatomicalPoseData('standing')
     }
   }
 }
