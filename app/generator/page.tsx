@@ -489,8 +489,8 @@ export default function GeneratorPage() {
             // RULE 2: Overlay must be rendered in rug-local coordinates (inside transform stack)
             // We're now inside: canvas_center -> rotate -> flip -> rug_center -> fringe_offset
             if (enableOverlayRef.current) {
-              // Human presence only on backside (when flipped)
-              const canRenderPattern = selectedPatternRef.current !== 'human_presence' || isFlipped
+              // Human presence on both sides for testing (normally backside only when flipped)
+              const canRenderPattern = true // selectedPatternRef.current !== 'human_presence' || isFlipped
 
               if (canRenderPattern) {
                 // RULE 3: Center using rug centroid, NOT top-left math
