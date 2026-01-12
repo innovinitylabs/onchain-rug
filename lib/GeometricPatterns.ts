@@ -34,9 +34,7 @@ export type HumanPose =
   | 'walking'
   | 'leaning'
   | 'kneeling'
-  | 'sitting'
   | 'reaching'
-  | 'twisting'
 
 /**
  * Main geometric pattern renderer
@@ -417,9 +415,9 @@ export class GeometricPatternRenderer {
   private renderHumanPresence(palette: ColorPalette, width: number, height: number): void {
     console.log('🎨 Rendering curve-based human presence silhouette')
 
-    // Select one pose deterministically via PRNG
-    const poseIndex = Math.floor(this.prng.next() * 7)
-    const poseTypes: HumanPose[] = ['standing', 'walking', 'leaning', 'kneeling', 'sitting', 'reaching', 'twisting']
+    // Select one pose deterministically via PRNG (5 available poses)
+    const poseIndex = Math.floor(this.prng.next() * 5)
+    const poseTypes: HumanPose[] = ['standing', 'walking', 'leaning', 'kneeling', 'reaching']
     const selectedPose = poseTypes[poseIndex]
 
     // Scale to 70-85% of rug height, normalize to 100-unit height for curves
@@ -449,129 +447,107 @@ export class GeometricPatternRenderer {
 
 
   private drawHumanPoseCurved(pose: HumanPose): void {
-    // PRNG variations for subtle pose differences
-    const leanOffset = (this.prng.next() - 0.5) * 4
-    const asymmetry = (this.prng.next() - 0.5) * 3
-    const weightShift = (this.prng.next() - 0.5) * 2
+    // Get the exact Bézier control points for this pose
+    const poseData = this.getPoseControlPoints(pose)
 
     this.p.beginShape()
 
-    switch (pose) {
-      case 'standing':
-        // Balanced standing pose - subtle curves, natural weight distribution
-        this.p.vertex(-8 + asymmetry, -35)     // Top of head (left side)
-        this.p.bezierVertex(-12, -32, -14, -25, -12, -18)  // Head curve to neck
-        this.p.bezierVertex(-10, -12, -8, -5, -6, 0)       // Neck to shoulder
-        this.p.bezierVertex(-4, 5, -2, 15, 0, 25)           // Shoulder to torso center
-        this.p.bezierVertex(2, 35, 4, 45, 6, 55)            // Torso to hip
-        this.p.bezierVertex(8, 65, 10, 75, 8, 85)           // Hip to outer leg
-        this.p.bezierVertex(6, 95, 4, 100, 0, 100)          // Leg bottom to foot
-        this.p.bezierVertex(-4, 100, -6, 95, -8, 85)        // Foot to inner leg
-        this.p.bezierVertex(-10, 75, -12, 65, -14, 55)      // Inner leg to hip
-        this.p.bezierVertex(-16, 45, -18, 35, -16, 25)      // Hip to torso
-        this.p.bezierVertex(-14, 15, -12, 5, -10, 0)        // Torso to shoulder
-        this.p.bezierVertex(-12, -5, -14, -12, -12, -18)    // Shoulder to neck
-        this.p.bezierVertex(-10, -25, -8, -32, -8 + asymmetry, -35) // Neck back to head
-        break
+    // Apply starting vertex
+    const startVertex = poseData[0]
+    this.p.vertex(startVertex.v[0], startVertex.v[1])
 
-      case 'walking':
-        // Forward momentum - leaning forward, one leg forward
-        this.p.vertex(-10 + asymmetry, -32)    // Head forward
-        this.p.bezierVertex(-14, -28, -16, -20, -14, -12)  // Head to neck
-        this.p.bezierVertex(-12, -6, -10, 2, -8, 10)       // Neck to forward shoulder
-        this.p.bezierVertex(-6, 18, -4, 28, -2, 38)         // Shoulder to torso lean
-        this.p.bezierVertex(0, 48, 2, 58, 4, 68)            // Torso to back hip
-        this.p.bezierVertex(6, 78, 8, 88, 6, 98)            // Back hip to back leg
-        this.p.bezierVertex(4, 100, 2, 95, 0, 90)           // Back leg to ground
-        this.p.bezierVertex(-2, 95, -4, 100, -6, 98)        // Ground to front leg
-        this.p.bezierVertex(-8, 88, -10, 78, -12, 68)       // Front leg to front hip
-        this.p.bezierVertex(-14, 58, -16, 48, -14, 38)      // Front hip to torso
-        this.p.bezierVertex(-12, 28, -10, 18, -8, 10)       // Torso to back shoulder
-        this.p.bezierVertex(-6, 2, -4, -6, -2, -12)         // Back shoulder to neck
-        this.p.bezierVertex(0, -20, 2, -28, -10 + asymmetry, -32) // Neck back to head
-        break
+    // Apply each Bézier segment with subtle PRNG perturbations (±2 units)
+    for (let i = 1; i < poseData.length; i++) {
+      const segment = poseData[i]
+      if (segment.b) {
+        // Add subtle PRNG variation to each control point (±2 units)
+        const cp1x = segment.b[0] + (this.prng.next() - 0.5) * 4
+        const cp1y = segment.b[1] + (this.prng.next() - 0.5) * 4
+        const cp2x = segment.b[2] + (this.prng.next() - 0.5) * 4
+        const cp2y = segment.b[3] + (this.prng.next() - 0.5) * 4
+        const x = segment.b[4] + (this.prng.next() - 0.5) * 4
+        const y = segment.b[5] + (this.prng.next() - 0.5) * 4
 
-      case 'leaning':
-        // Weight shifted to one side
-        this.p.vertex(-12 + asymmetry, -30)    // Head tilted
-        this.p.bezierVertex(-16, -25, -18, -18, -16, -10)  // Head curve
-        this.p.bezierVertex(-14, -4, -12, 4, -10, 12)      // To higher shoulder
-        this.p.bezierVertex(-8, 20, -6, 30, -4, 40)         // Shoulder to torso
-        this.p.bezierVertex(-2, 50, 0, 60, 2, 70)           // Torso to lower hip
-        this.p.bezierVertex(4, 80, 6, 90, 4, 100)           // Lower hip to lower leg
-        this.p.bezierVertex(2, 105, 0, 102, -2, 100)        // Leg to ground
-        this.p.bezierVertex(-4, 102, -6, 105, -8, 100)      // Ground to upper leg
-        this.p.bezierVertex(-10, 90, -12, 80, -14, 70)      // Upper leg to upper hip
-        this.p.bezierVertex(-16, 60, -18, 50, -16, 40)      // Upper hip to torso
-        this.p.bezierVertex(-14, 30, -12, 20, -10, 12)      // Torso to lower shoulder
-        this.p.bezierVertex(-8, 4, -6, -4, -4, -10)         // Lower shoulder to neck
-        this.p.bezierVertex(-2, -18, 0, -25, -12 + asymmetry, -30) // Neck to head
-        break
-
-      case 'kneeling':
-        // One knee down, contemplative
-        this.p.vertex(-8 + asymmetry, -28)     // Head bowed
-        this.p.bezierVertex(-12, -22, -14, -14, -12, -6)   // Head to neck
-        this.p.bezierVertex(-10, 0, -8, 8, -6, 16)         // Neck to shoulders
-        this.p.bezierVertex(-4, 24, -2, 34, 0, 44)          // Shoulders to torso
-        this.p.bezierVertex(2, 54, 4, 64, 2, 74)            // Torso to hips
-        this.p.bezierVertex(0, 84, -2, 94, -4, 100)         // Hips to kneeling leg
-        this.p.bezierVertex(-6, 95, -8, 90, -10, 85)        // Kneeling leg bend
-        this.p.bezierVertex(-12, 75, -14, 65, -12, 55)      // Back to standing leg
-        this.p.bezierVertex(-10, 45, -8, 35, -6, 25)        // Standing leg
-        this.p.bezierVertex(-4, 15, -2, 5, 0, -5)           // Back to torso
-        this.p.bezierVertex(2, -15, 4, -25, -8 + asymmetry, -28) // Torso to head
-        break
-
-      case 'sitting':
-        // Cross-legged sitting pose
-        this.p.vertex(-6 + asymmetry, -20)     // Head upright
-        this.p.bezierVertex(-10, -12, -12, -4, -10, 4)     // Head to neck
-        this.p.bezierVertex(-8, 12, -6, 20, -4, 28)         // Neck to shoulders
-        this.p.bezierVertex(-2, 36, 0, 46, 2, 56)           // Shoulders to torso
-        this.p.bezierVertex(4, 66, 6, 76, 4, 86)            // Torso to sitting hips
-        this.p.bezierVertex(2, 96, 0, 100, -2, 98)          // Hips to folded legs
-        this.p.bezierVertex(-4, 100, -6, 96, -8, 86)        // Legs continuation
-        this.p.bezierVertex(-10, 76, -12, 66, -10, 56)      // Back to hips
-        this.p.bezierVertex(-8, 46, -6, 36, -4, 26)         // Hips to torso
-        this.p.bezierVertex(-2, 16, 0, 6, 2, -4)            // Torso to shoulders
-        this.p.bezierVertex(4, -14, 6, -24, -6 + asymmetry, -20) // Shoulders to head
-        break
-
-      case 'reaching':
-        // Arms extended upward
-        this.p.vertex(-8 + asymmetry, -38)     // Head back looking up
-        this.p.bezierVertex(-12, -30, -14, -22, -12, -14)  // Head curve
-        this.p.bezierVertex(-10, -6, -8, 2, -6, 10)         // Neck to shoulders
-        this.p.bezierVertex(-4, 18, -2, 28, 0, 38)           // Shoulders to torso
-        this.p.bezierVertex(2, 48, 4, 58, 2, 68)             // Torso to hips
-        this.p.bezierVertex(0, 78, -2, 88, -4, 98)           // Hips to legs
-        this.p.bezierVertex(-6, 100, -8, 95, -10, 85)       // Legs to feet
-        this.p.bezierVertex(-12, 75, -14, 65, -12, 55)      // Feet back to knees
-        this.p.bezierVertex(-10, 45, -8, 35, -6, 25)        // Knees to hips
-        this.p.bezierVertex(-4, 15, -2, 5, 0, -5)            // Hips to torso
-        this.p.bezierVertex(2, -15, 4, -25, -8 + asymmetry, -38) // Torso to head
-        break
-
-      case 'twisting':
-        // Torso twisted, dynamic motion
-        this.p.vertex(-10 + asymmetry, -32)    // Head turned
-        this.p.bezierVertex(-14, -24, -16, -16, -14, -8)   // Head to neck
-        this.p.bezierVertex(-12, 0, -10, 8, -8, 16)         // Neck to twisted shoulders
-        this.p.bezierVertex(-6, 24, -4, 34, -2, 44)         // Shoulders to torso
-        this.p.bezierVertex(0, 54, 2, 64, 4, 74)            // Torso to hips
-        this.p.bezierVertex(6, 84, 8, 94, 6, 100)           // Hips to back leg
-        this.p.bezierVertex(4, 95, 2, 90, 0, 85)            // Back leg
-        this.p.bezierVertex(-2, 90, -4, 95, -6, 100)        // To front leg
-        this.p.bezierVertex(-8, 94, -10, 84, -8, 74)        // Front leg
-        this.p.bezierVertex(-6, 64, -4, 54, -2, 44)         // Back to hips
-        this.p.bezierVertex(0, 34, 2, 24, 4, 16)            // Hips to torso
-        this.p.bezierVertex(6, 8, 8, 0, 6, -8)              // Torso to shoulders
-        this.p.bezierVertex(4, -16, 2, -24, -10 + asymmetry, -32) // Shoulders to head
-        break
+        this.p.bezierVertex(cp1x, cp1y, cp2x, cp2y, x, y)
+      }
     }
 
     this.p.endShape(this.p.CLOSE)
+  }
+
+  private getPoseControlPoints(pose: HumanPose): any[] {
+    switch (pose) {
+      case 'standing':
+        return [
+          { v: [-6, -48] },
+          { b: [-20, -52, -32, -40, -30, -30] },
+          { b: [-28, -18, -26, -10, -22, -6] },
+          { b: [-34, 2, -36, 10, -34, 20] },
+          { b: [-32, 30, -30, 44, -26, 58] },
+          { b: [-24, 70, -22, 84, -18, 96] },
+          { b: [-14, 104, -6, 104, -4, 96] },
+          { b: [-2, 82, 0, 68, 4, 56] },
+          { b: [8, 42, 12, 28, 14, 14] },
+          { b: [16, 4, 18, -6, 20, -12] },
+          { b: [22, -20, 18, -32, 6, -48] }
+        ]
+
+      case 'walking':
+        return [
+          { v: [2, -46] },
+          { b: [-14, -52, -30, -42, -28, -28] },
+          { b: [-26, -14, -32, 0, -36, 14] },
+          { b: [-40, 30, -34, 48, -26, 60] },
+          { b: [-16, 76, -12, 92, -6, 100] },
+          { b: [0, 106, 10, 102, 14, 94] },
+          { b: [18, 82, 16, 66, 10, 52] },
+          { b: [4, 36, 2, 20, 6, 8] },
+          { b: [12, -4, 18, -14, 20, -24] },
+          { b: [22, -34, 14, -44, 2, -46] }
+        ]
+
+      case 'leaning':
+        return [
+          { v: [8, -50] },
+          { b: [-6, -56, -28, -46, -32, -32] },
+          { b: [-36, -14, -42, 4, -40, 18] },
+          { b: [-38, 36, -30, 54, -18, 66] },
+          { b: [-10, 82, -6, 96, 0, 100] },
+          { b: [6, 104, 16, 98, 20, 90] },
+          { b: [24, 76, 22, 60, 16, 44] },
+          { b: [10, 26, 6, 10, 10, -2] },
+          { b: [14, -16, 20, -28, 22, -38] },
+          { b: [24, -48, 16, -52, 8, -50] }
+        ]
+
+      case 'kneeling':
+        return [
+          { v: [0, -44] },
+          { b: [-18, -50, -32, -36, -30, -22] },
+          { b: [-28, -8, -30, 10, -32, 26] },
+          { b: [-34, 44, -28, 62, -18, 70] },
+          { b: [-8, 76, -4, 84, -2, 92] },
+          { b: [2, 100, 12, 98, 14, 90] },
+          { b: [16, 76, 14, 58, 10, 40] },
+          { b: [6, 22, 4, 8, 6, -4] },
+          { b: [10, -18, 12, -30, 8, -40] },
+          { b: [4, -48, 2, -46, 0, -44] }
+        ]
+
+      case 'reaching':
+        return [
+          { v: [-4, -60] },
+          { b: [-20, -66, -36, -50, -34, -34] },
+          { b: [-32, -18, -36, 2, -40, 22] },
+          { b: [-44, 42, -38, 60, -26, 72] },
+          { b: [-14, 88, -10, 104, -4, 112] },
+          { b: [4, 120, 14, 116, 18, 106] },
+          { b: [22, 90, 20, 68, 14, 50] },
+          { b: [8, 30, 6, 10, 8, -8] },
+          { b: [10, -24, 6, -40, -4, -60] }
+        ]
+
+    }
   }
 }
 
