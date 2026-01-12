@@ -233,9 +233,14 @@ export class GeometricPatternRenderer {
 
       const color = palette.colors[s % palette.colors.length]
 
-      // Single smooth tube appearance
-      this.p.fill(color.r, color.g, color.b, 160 + this.prng.next() * 40) // Solid fill for tube
-      this.p.noStroke() // No stroke for smooth tube appearance
+      // Integrated rug-like appearance - blend with rug colors and add texture
+      const blendColor = this.prng.next() > 0.5 ?
+        { r: Math.max(0, color.r - 40), g: Math.max(0, color.g - 40), b: Math.max(0, color.b - 40) } : // Darker variant
+        { r: Math.min(255, color.r + 40), g: Math.min(255, color.g + 40), b: Math.min(255, color.b + 40) } // Lighter variant
+
+      this.p.fill(blendColor.r, blendColor.g, blendColor.b, 200) // Opaque but blendable
+      this.p.stroke(color.r, color.g, color.b, 120) // Subtle outline
+      this.p.strokeWeight(0.5)
 
       const points = []
       const angleOffset = this.prng.next() * this.p.TWO_PI // Random starting angle
@@ -262,41 +267,40 @@ export class GeometricPatternRenderer {
         points.push({ x, y, thickness })
       }
 
-      // Create single smooth continuous spiral tube
-      this.p.beginShape()
+      // Create integrated rug-like spiral using pixelated approach
+      // Instead of smooth curves, create pixelated blocks that look woven
+      const avgThickness = points.reduce((sum, p) => sum + p.thickness, 0) / points.length
+      const pixelSize = Math.max(2, Math.floor(avgThickness / 3)) // Pixel blocks
 
-      // Generate outer path (expanding outward)
-      for (let i = 0; i < points.length; i++) {
-        const point = points[i]
-        const angle = Math.atan2(point.y - spiralCenterY, point.x - spiralCenterX)
-        const distance = Math.sqrt((point.x - spiralCenterX) ** 2 + (point.y - spiralCenterY) ** 2)
+      for (let i = 0; i < points.length - 1; i++) {
+        const current = points[i]
+        const next = points[i + 1]
 
-        // Offset perpendicular to spiral direction for thickness
-        const perpAngle = angle + Math.PI / 2
-        const offset = point.thickness / 2
+        // Create pixelated blocks along the spiral path
+        const steps = Math.max(1, Math.floor(Math.sqrt((next.x - current.x) ** 2 + (next.y - current.y) ** 2) / pixelSize))
 
-        const outerX = point.x + Math.cos(perpAngle) * offset
-        const outerY = point.y + Math.sin(perpAngle) * offset
+        for (let step = 0; step < steps; step++) {
+          const t = step / steps
+          const x = current.x + (next.x - current.x) * t
+          const y = current.y + (next.y - current.y) * t
+          const thickness = current.thickness + (next.thickness - current.thickness) * t
 
-        this.p.vertex(outerX, outerY)
+          // Draw pixelated block with rug-like texture
+          this.p.push()
+          this.p.translate(x, y)
+
+          // Add slight rotation and weave-like variation
+          const weaveAngle = Math.sin(i * 0.5) * 0.2
+          this.p.rotate(weaveAngle)
+
+          // Draw rectangular block with slight variation (like woven threads)
+          const blockWidth = pixelSize + Math.sin(i) * 2
+          const blockHeight = thickness * 0.8 + Math.cos(i) * 1
+
+          this.p.rect(-blockWidth/2, -blockHeight/2, blockWidth, blockHeight)
+          this.p.pop()
+        }
       }
-
-      // Generate inner path (moving inward) - reverse order
-      for (let i = points.length - 1; i >= 0; i--) {
-        const point = points[i]
-        const angle = Math.atan2(point.y - spiralCenterY, point.x - spiralCenterX)
-
-        // Offset in opposite direction for inner wall
-        const perpAngle = angle - Math.PI / 2
-        const offset = point.thickness / 2
-
-        const innerX = point.x + Math.cos(perpAngle) * offset
-        const innerY = point.y + Math.sin(perpAngle) * offset
-
-        this.p.vertex(innerX, innerY)
-      }
-
-      this.p.endShape(this.p.CLOSE)
     }
   }
 
