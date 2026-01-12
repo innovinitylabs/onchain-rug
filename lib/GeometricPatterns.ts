@@ -113,161 +113,109 @@ export class GeometricPatternRenderer {
     const centerY = 0
     const maxRadius = Math.min(width, height) * 0.45
 
-    // Draw multiple layers of sacred geometry
+    // Ensure clean state - no fill/stroke carryover
+    this.p.strokeWeight(1)
 
     // 1. Central bindu (dot) - the seed of creation
-    this.p.fill(palette.colors[0].r, palette.colors[0].g, palette.colors[0].b, 200)
+    this.p.fill(palette.colors[0].r, palette.colors[0].g, palette.colors[0].b, 255) // Solid, not transparent
     this.p.noStroke()
-    this.p.circle(centerX, centerY, 8)
+    this.p.circle(centerX, centerY, 6) // Smaller, solid dot
 
-    // 2. Flower of Life - overlapping circles
-    const flowerCircles = 6 + Math.floor(this.prng.next() * 4) // 6-9 circles
-    this.p.strokeWeight(2)
+    // 2. Flower of Life - overlapping circles (stroke only, no fill)
+    const flowerCircles = 5 + Math.floor(this.prng.next() * 3) // 5-7 circles, fewer for clarity
+    this.p.strokeWeight(1.5)
     this.p.noFill()
 
     for (let i = 0; i < flowerCircles; i++) {
-      const radius = (maxRadius * 0.3) + (this.prng.next() * maxRadius * 0.4)
+      const radius = maxRadius * (0.2 + i * 0.15) // More structured spacing
       const color = palette.colors[i % palette.colors.length]
-      this.p.stroke(color.r, color.g, color.b, 120)
+      this.p.stroke(color.r, color.g, color.b, 180) // Higher opacity for visibility
       this.p.circle(centerX, centerY, radius * 2)
     }
 
-    // 3. Lotus petals - curved petal shapes
-    const petals = 8 + Math.floor(this.prng.next() * 8) // 8-15 petals
-    this.p.strokeWeight(3)
+    // 3. Simplified lotus petals - essential curved elements only
+    const petals = 6 + Math.floor(this.prng.next() * 4) // 6-9 petals, fewer for performance
+    this.p.strokeWeight(2)
 
     for (let i = 0; i < petals; i++) {
       const angle = (this.p.TWO_PI / petals) * i
-      const petalRadius = maxRadius * (0.6 + this.prng.next() * 0.3)
+      const petalRadius = maxRadius * (0.5 + this.prng.next() * 0.2)
       const color = palette.colors[i % palette.colors.length]
 
-      this.p.stroke(color.r, color.g, color.b, 150)
-      this.p.fill(color.r, color.g, color.b, 60)
+      this.p.stroke(color.r, color.g, color.b, 160)
+      this.p.noFill() // No fill to prevent canvas accumulation
 
-      // Draw curved petal
+      // Draw simplified curved petal outline
       this.p.push()
       this.p.translate(centerX, centerY)
       this.p.rotate(angle)
 
       this.p.beginShape()
-      // Inner curve
-      for (let t = 0; t <= this.p.PI; t += 0.1) {
-        const r = petalRadius * 0.3 * Math.sin(t)
-        const x = Math.cos(t) * r
-        const y = Math.sin(t) * petalRadius * 0.7
-        this.p.vertex(x, y)
-      }
-      // Outer curve
-      for (let t = this.p.PI; t >= 0; t -= 0.1) {
-        const r = petalRadius * 0.8 * Math.sin(t)
-        const x = Math.cos(t) * r
-        const y = Math.sin(t) * petalRadius
-        this.p.vertex(x, y)
-      }
-      this.p.endShape(this.p.CLOSE)
-      this.p.pop()
-    }
-
-    // 4. Sacred triangles and geometry
-    const triangles = 3 + Math.floor(this.prng.next() * 3) // 3-5 triangle layers
-
-    for (let layer = 0; layer < triangles; layer++) {
-      const triangleRadius = maxRadius * (0.5 + layer * 0.15)
-      const color = palette.colors[layer % palette.colors.length]
-
-      this.p.stroke(color.r, color.g, color.b, 100)
-      this.p.strokeWeight(1)
-      this.p.noFill()
-
-      // Draw upward triangle
-      this.p.push()
-      this.p.translate(centerX, centerY)
-      for (let i = 0; i < 3; i++) {
-        const angle1 = (this.p.TWO_PI / 3) * i - this.p.PI/2
-        const angle2 = (this.p.TWO_PI / 3) * ((i + 1) % 3) - this.p.PI/2
-
-        const x1 = Math.cos(angle1) * triangleRadius
-        const y1 = Math.sin(angle1) * triangleRadius
-        const x2 = Math.cos(angle2) * triangleRadius
-        const y2 = Math.sin(angle2) * triangleRadius
-
-        this.p.line(x1, y1, x2, y2)
-      }
-      this.p.pop()
-
-      // Draw downward triangle (interlocking)
-      this.p.push()
-      this.p.translate(centerX, centerY)
-      this.p.rotate(this.p.PI / 3) // Offset by 60 degrees
-      for (let i = 0; i < 3; i++) {
-        const angle1 = (this.p.TWO_PI / 3) * i - this.p.PI/2
-        const angle2 = (this.p.TWO_PI / 3) * ((i + 1) % 3) - this.p.PI/2
-
-        const x1 = Math.cos(angle1) * (triangleRadius * 0.8)
-        const y1 = Math.sin(angle1) * (triangleRadius * 0.8)
-        const x2 = Math.cos(angle2) * (triangleRadius * 0.8)
-        const y2 = Math.sin(angle2) * (triangleRadius * 0.8)
-
-        this.p.line(x1, y1, x2, y2)
-      }
-      this.p.pop()
-    }
-
-    // 5. Curved flourishes and mandala elements
-    const flourishes = 12 + Math.floor(this.prng.next() * 12) // 12-23 flourishes
-
-    for (let i = 0; i < flourishes; i++) {
-      const angle = (this.p.TWO_PI / flourishes) * i
-      const radius = maxRadius * (0.7 + this.prng.next() * 0.25)
-      const color = palette.colors[i % palette.colors.length]
-
-      this.p.stroke(color.r, color.g, color.b, 80)
-      this.p.strokeWeight(1)
-      this.p.noFill()
-
-      // Draw curved flourish
-      this.p.push()
-      this.p.translate(centerX, centerY)
-      this.p.rotate(angle)
-
-      this.p.beginShape()
-      for (let t = 0; t <= 1; t += 0.05) {
-        const curveRadius = radius * (1 + Math.sin(t * this.p.PI * 2) * 0.3)
-        const x = Math.cos(t * this.p.PI * 0.5) * curveRadius
-        const y = Math.sin(t * this.p.PI * 0.5) * curveRadius * 0.6
+      // Single smooth curve for the petal
+      for (let t = 0; t <= this.p.PI; t += 0.15) { // Fewer points for performance
+        const curveOffset = Math.sin(t * 1.5) * petalRadius * 0.2
+        const x = Math.cos(t) * (petalRadius + curveOffset)
+        const y = Math.sin(t) * petalRadius * 0.8
         this.p.vertex(x, y)
       }
       this.p.endShape()
       this.p.pop()
     }
 
-    // 6. Central geometric core
-    const coreElements = 5 + Math.floor(this.prng.next() * 5) // 5-9 core elements
+    // 4. Essential sacred triangles only (stroke only)
+    const color = palette.colors[Math.floor(this.prng.next() * palette.colors.length)]
+    this.p.stroke(color.r, color.g, color.b, 140)
+    this.p.strokeWeight(1)
+    this.p.noFill()
 
-    for (let i = 0; i < coreElements; i++) {
-      const coreRadius = maxRadius * 0.15 * (i + 1)
-      const color = palette.colors[(palette.colors.length - 1 - i) % palette.colors.length]
+    // Single upward triangle
+    const triangleRadius = maxRadius * 0.7
+    this.p.push()
+    this.p.translate(centerX, centerY)
+    for (let i = 0; i < 3; i++) {
+      const angle1 = (this.p.TWO_PI / 3) * i - this.p.PI/2
+      const angle2 = (this.p.TWO_PI / 3) * ((i + 1) % 3) - this.p.PI/2
 
-      this.p.stroke(color.r, color.g, color.b, 100)
+      const x1 = Math.cos(angle1) * triangleRadius
+      const y1 = Math.sin(angle1) * triangleRadius
+      const x2 = Math.cos(angle2) * triangleRadius
+      const y2 = Math.sin(angle2) * triangleRadius
+
+      this.p.line(x1, y1, x2, y2)
+    }
+    this.p.pop()
+
+    // 5. Minimal curved flourishes (stroke only)
+    const flourishes = 8 + Math.floor(this.prng.next() * 6) // 8-13 flourishes, reduced
+
+    for (let i = 0; i < flourishes; i++) {
+      const angle = (this.p.TWO_PI / flourishes) * i
+      const radius = maxRadius * (0.75 + this.prng.next() * 0.15)
+      const color = palette.colors[i % palette.colors.length]
+
+      this.p.stroke(color.r, color.g, color.b, 120)
       this.p.strokeWeight(1)
       this.p.noFill()
 
-      // Draw geometric core shapes
-      const sides = 3 + Math.floor(this.prng.next() * 5) // 3-7 sides
+      // Simple curved line
       this.p.push()
       this.p.translate(centerX, centerY)
-      this.p.rotate(i * this.p.TWO_PI / coreElements)
+      this.p.rotate(angle)
 
       this.p.beginShape()
-      for (let j = 0; j < sides; j++) {
-        const angle = (this.p.TWO_PI / sides) * j
-        const x = Math.cos(angle) * coreRadius
-        const y = Math.sin(angle) * coreRadius
+      for (let t = 0; t <= 1; t += 0.1) {
+        const curveRadius = radius * (1 + Math.sin(t * this.p.PI) * 0.2)
+        const x = Math.cos(t * this.p.PI * 0.6) * curveRadius
+        const y = Math.sin(t * this.p.PI * 0.6) * curveRadius * 0.5
         this.p.vertex(x, y)
       }
-      this.p.endShape(this.p.CLOSE)
+      this.p.endShape()
       this.p.pop()
     }
+
+    // Reset to clean state
+    this.p.noFill()
+    this.p.strokeWeight(1)
   }
 
   private renderFractalSpirals(palette: ColorPalette, width: number, height: number): void {
