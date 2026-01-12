@@ -361,7 +361,7 @@ export function extractRugPalette(rugData: any): ColorPalette {
  */
 export function createDefaultPatternParams(): PatternParameters {
   return {
-    scale: 1.0,
+    scale: 1.0, // Default scale (overlay now sized for perfect fit)
     opacity: 0.8, // Increased for better visibility
     rotation: 0,
     xOffset: 0,

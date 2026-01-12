@@ -492,9 +492,9 @@ export default function GeneratorPage() {
               // RULE 3: Center using rug centroid, NOT top-left math
               p.translate(doormatData.config.DOORMAT_WIDTH / 2, doormatData.config.DOORMAT_HEIGHT / 2)
 
-              // RULE 4: Pattern renderer assumes center-origin (0,0 is center)
-              const overlayWidth = doormatData.config.DOORMAT_WIDTH * 0.8   // 80% of rug for good visibility
-              const overlayHeight = doormatData.config.DOORMAT_HEIGHT * 0.8
+                  // RULE 4: Pattern renderer assumes center-origin (0,0 is center)
+                  const overlayWidth = doormatData.config.DOORMAT_WIDTH * 0.96   // 96% of rug for perfect fit (was 80% * 1.2 = 96%)
+                  const overlayHeight = doormatData.config.DOORMAT_HEIGHT * 0.96
 
               // Create derived PRNG for geometric patterns using the same seed
               const patternPRNG = createDerivedPRNG(doormatData.seed || 42, 3000)
