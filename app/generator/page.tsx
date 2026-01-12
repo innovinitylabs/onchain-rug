@@ -451,7 +451,7 @@ export default function GeneratorPage() {
           // Full rug drawing function (with true mirror flip)
           const drawFullRug = (p: any, doormatData: any, seed: number, isFlipped: boolean = false) => {
             // Use original doormat.js draw logic
-            p.background(222, 222, 222)
+            p.background(234, 218, 206) // #EADACE - warm beige background
 
             // Ensure PRNG is initialized with current seed before drawing
             initPRNG(seed)
