@@ -489,28 +489,35 @@ export default function GeneratorPage() {
             // RULE 2: Overlay must be rendered in rug-local coordinates (inside transform stack)
             // We're now inside: canvas_center -> rotate -> flip -> rug_center -> fringe_offset
             if (enableOverlayRef.current) {
-              // RULE 3: Center using rug centroid, NOT top-left math
-              p.translate(doormatData.config.DOORMAT_WIDTH / 2, doormatData.config.DOORMAT_HEIGHT / 2)
+              // Human presence only on backside (when flipped)
+              const canRenderPattern = selectedPatternRef.current !== 'human_presence' || isFlipped
 
-                  // RULE 4: Pattern renderer assumes center-origin (0,0 is center)
-                  const overlayWidth = doormatData.config.DOORMAT_WIDTH * 0.96   // 96% of rug for perfect fit (was 80% * 1.2 = 96%)
-                  const overlayHeight = doormatData.config.DOORMAT_HEIGHT * 0.96
+              if (canRenderPattern) {
+                // RULE 3: Center using rug centroid, NOT top-left math
+                p.translate(doormatData.config.DOORMAT_WIDTH / 2, doormatData.config.DOORMAT_HEIGHT / 2)
 
-              // Create derived PRNG for geometric patterns using the same seed
-              const patternPRNG = createDerivedPRNG(doormatData.seed || 42, 3000)
-              const patternRenderer = new GeometricPatternRenderer(p, patternPRNG)
-              const palette = extractRugPalette(doormatData)
+                // RULE 4: Pattern renderer assumes center-origin (0,0 is center)
+                const overlayWidth = doormatData.config.DOORMAT_WIDTH * 0.96   // 96% of rug for perfect fit (was 80% * 1.2 = 96%)
+                const overlayHeight = doormatData.config.DOORMAT_HEIGHT * 0.96
 
-              console.log('🎨 Rendering pattern centered on rug centroid:', selectedPatternRef.current)
-              console.log('🎨 Rug centroid:', doormatData.config.DOORMAT_WIDTH / 2, doormatData.config.DOORMAT_HEIGHT / 2)
+                // Create derived PRNG for geometric patterns using the same seed
+                const patternPRNG = createDerivedPRNG(doormatData.seed || 42, 3000)
+                const patternRenderer = new GeometricPatternRenderer(p, patternPRNG)
+                const palette = extractRugPalette(doormatData)
 
-              patternRenderer.renderPattern(
-                selectedPatternRef.current,
-                patternParamsRef.current,
-                palette,
-                overlayWidth,   // Size in rug coordinates
-                overlayHeight   // Size in rug coordinates
-              )
+                console.log('🎨 Rendering pattern centered on rug centroid:', selectedPatternRef.current)
+                console.log('🎨 Rug centroid:', doormatData.config.DOORMAT_WIDTH / 2, doormatData.config.DOORMAT_HEIGHT / 2)
+
+                patternRenderer.renderPattern(
+                  selectedPatternRef.current,
+                  patternParamsRef.current,
+                  palette,
+                  overlayWidth,   // Size in rug coordinates
+                  overlayHeight   // Size in rug coordinates
+                )
+              } else {
+                console.log('🎨 Human presence only renders on backside (when flipped)')
+              }
             }
 
             p.pop()
@@ -3134,7 +3141,7 @@ export default function GeneratorPage() {
                           <option value="tessellation">Tessellation</option>
                           <option value="minimalist_networks">Minimalist Networks</option>
                           <option value="dot_matrix">Dot Matrix</option>
-                          <option value="human_silhouettes">Human Silhouettes</option>
+                          <option value="human_presence">Human Presence</option>
                         </select>
                       </div>
 

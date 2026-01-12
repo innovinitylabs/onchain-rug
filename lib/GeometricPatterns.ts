@@ -27,7 +27,16 @@ export type PatternType =
   | 'tessellation'
   | 'minimalist_networks'
   | 'dot_matrix'
-  | 'human_silhouettes'
+  | 'human_presence'
+
+export type HumanPose =
+  | 'standing_calm'
+  | 'walking_forward'
+  | 'leaning'
+  | 'kneeling'
+  | 'sitting_folded'
+  | 'reaching_up'
+  | 'twisting'
 
 /**
  * Main geometric pattern renderer
@@ -93,8 +102,8 @@ export class GeometricPatternRenderer {
       case 'dot_matrix':
         this.renderDotMatrix(palette, canvasWidth, canvasHeight)
         break
-      case 'human_silhouettes':
-        this.renderHumanSilhouettes(palette, canvasWidth, canvasHeight)
+      case 'human_presence':
+        this.renderHumanPresence(palette, canvasWidth, canvasHeight)
         break
       default:
         // Test pattern - draw a big visible circle
@@ -405,140 +414,133 @@ export class GeometricPatternRenderer {
     }
   }
 
-  private renderHumanSilhouettes(palette: ColorPalette, width: number, height: number): void {
-    console.log('🎨 Rendering human emotion silhouettes with palette:', palette.colors.length)
+  private renderHumanPresence(palette: ColorPalette, width: number, height: number): void {
+    console.log('🎨 Rendering human presence silhouette')
 
-    const silhouettes = 3 + Math.floor(this.prng.next() * 4) // 3-6 silhouettes
-    const emotions = ['joy', 'sadness', 'victory', 'peace', 'determination', 'reflection']
+    // Select one pose deterministically via PRNG
+    const poseIndex = Math.floor(this.prng.next() * 7)
+    const poseTypes: HumanPose[] = ['standing_calm', 'walking_forward', 'leaning', 'kneeling', 'sitting_folded', 'reaching_up', 'twisting']
+    const selectedPose = poseTypes[poseIndex]
 
-    for (let i = 0; i < silhouettes; i++) {
-      const emotion = emotions[Math.floor(this.prng.next() * emotions.length)]
-      const color = palette.colors[i % palette.colors.length]
+    // Scale to 70-85% of rug height
+    const scaleFactor = 0.7 + this.prng.next() * 0.15
+    const silhouetteHeight = height * scaleFactor
+    const silhouetteWidth = width * (0.3 + this.prng.next() * 0.15) // 30-45% of rug width
 
-      // Position silhouettes in a circular arrangement around center
-      const angle = (this.p.TWO_PI / silhouettes) * i
-      const distance = Math.min(width, height) * (0.15 + this.prng.next() * 0.2)
-      const x = Math.cos(angle) * distance
-      const y = Math.sin(angle) * distance
+    // Position: center X ±5-10%, slightly lower than vertical center for weight
+    const offsetX = (this.prng.next() - 0.5) * width * 0.1 // ±10% of width
+    const offsetY = height * 0.1 // 10% down from center for grounded feel
 
-      // Scale based on distance from center
-      const scale = 0.8 + this.prng.next() * 0.4
+    // Use MULTIPLY blend mode for overlay effect
+    this.p.blendMode(this.p.MULTIPLY)
+    this.p.fill(0, 160 + this.prng.next() * 40) // Dark gray with slight variation, not pure black
+    this.p.noStroke()
 
-      this.p.fill(color.r, color.g, color.b, 140) // Semi-transparent solid fill
-      this.p.noStroke()
+    this.p.push()
+    this.p.translate(offsetX, offsetY)
+    this.p.scale(silhouetteWidth / 100, silhouetteHeight / 100) // Normalize to reasonable coords
 
-      this.p.push()
-      this.p.translate(x, y)
-      this.p.scale(scale)
+    this.drawHumanPose(selectedPose)
+    this.p.pop()
 
-      this.drawEmotionSilhouette(emotion)
-      this.p.pop()
-    }
+    // Reset blend mode
+    this.p.blendMode(this.p.BLEND)
   }
 
-  private drawEmotionSilhouette(emotion: string): void {
-    this.p.beginShape()
+  private drawCapsule(p: any, x: number, y: number, angle: number, w: number, h: number): void {
+    p.push()
+    p.translate(x, y)
+    p.rotate(angle)
+    p.rect(-w/2, 0, w, h, w) // Rounded rectangle with corner radius = width
+    p.pop()
+  }
 
-    switch (emotion) {
-      case 'joy':
-        // Jumping with arms up - celebration pose
-        // Head
-        this.p.ellipse(0, -25, 12, 12)
-        // Body
-        this.p.rect(-6, -15, 12, 20)
-        // Arms up
-        this.p.rect(-15, -20, 8, 15) // Left arm
-        this.p.rect(7, -20, 8, 15)   // Right arm
-        // Legs apart (jumping)
-        this.p.rect(-8, 5, 6, 15)  // Left leg
-        this.p.rect(2, 5, 6, 15)   // Right leg
+  private drawHumanPose(pose: HumanPose): void {
+    const torsoLength = 60
+    const armLength = 35
+    const legLength = 45
+    const headSize = 16
+
+    switch (pose) {
+      case 'standing_calm':
+        // Balanced, centered pose with slight asymmetry
+        this.drawCapsule(this.p, 0, 20, -0.1, 25, torsoLength)     // Torso with slight lean
+        this.p.ellipse(0, 5, 22, 18)                               // Pelvis
+        this.drawCapsule(this.p, -12, 15, -0.8, 8, armLength)     // Left arm down
+        this.drawCapsule(this.p, 12, 18, 0.6, 8, armLength)       // Right arm relaxed
+        this.drawCapsule(this.p, -8, 55, 0.1, 10, legLength)      // Left leg
+        this.drawCapsule(this.p, 8, 58, -0.1, 10, legLength)      // Right leg
+        this.p.ellipse(4, -8, headSize, headSize)                  // Head slightly offset
         break
 
-      case 'sadness':
-        // Slumped posture with head down
-        // Head tilted down
-        this.p.ellipse(0, -20, 12, 14)
-        // Slumped body
-        this.p.quad(-8, -8, 8, -8, 6, 15, -6, 15)
-        // Arms hanging down
-        this.p.rect(-12, -5, 6, 12) // Left arm
-        this.p.rect(6, -5, 6, 12)   // Right arm
-        // Legs slightly bent
-        this.p.rect(-6, 15, 5, 12)  // Left leg
-        this.p.rect(1, 15, 5, 12)   // Right leg
+      case 'walking_forward':
+        // Dynamic walking pose with forward momentum
+        this.drawCapsule(this.p, -5, 18, -0.3, 28, torsoLength)    // Leaning forward torso
+        this.p.ellipse(-3, 3, 24, 16)                              // Forward pelvis
+        this.drawCapsule(this.p, -18, 12, -1.2, 9, armLength)     // Left arm swinging back
+        this.drawCapsule(this.p, 8, 15, 0.8, 9, armLength)        // Right arm swinging forward
+        this.drawCapsule(this.p, -12, 50, -0.2, 11, legLength)    // Left leg back
+        this.drawCapsule(this.p, 4, 55, 0.3, 11, legLength)       // Right leg forward
+        this.p.ellipse(-8, -12, headSize, headSize)                // Head forward
         break
 
-      case 'victory':
-        // Arms raised in V formation
-        // Head
-        this.p.ellipse(0, -25, 12, 12)
-        // Body
-        this.p.rect(-6, -15, 12, 18)
-        // Arms in V
-        this.p.quad(-8, -15, -15, -25, -12, -10, -5, -8) // Left arm
-        this.p.quad(8, -15, 15, -25, 12, -10, 5, -8)     // Right arm
-        // Legs
-        this.p.rect(-5, 3, 4, 15)   // Left leg
-        this.p.rect(1, 3, 4, 15)    // Right leg
+      case 'leaning':
+        // Weight shifted to one side, contemplative
+        this.drawCapsule(this.p, 8, 22, 0.4, 26, torsoLength)      // Torso leaning right
+        this.p.ellipse(12, 8, 20, 22)                              // Pelvis shifted
+        this.drawCapsule(this.p, -5, 20, -0.9, 8, armLength)      // Left arm crossed
+        this.drawCapsule(this.p, 25, 25, 0.3, 8, armLength)       // Right arm out
+        this.drawCapsule(this.p, 2, 58, 0.1, 10, legLength)       // Left leg straight
+        this.drawCapsule(this.p, 20, 62, -0.2, 10, legLength)     // Right leg bent
+        this.p.ellipse(18, -6, headSize, headSize)                 // Head tilted
         break
 
-      case 'peace':
-        // Meditative pose with open arms
-        // Head
-        this.p.ellipse(0, -25, 12, 12)
-        // Peaceful body
-        this.p.rect(-5, -15, 10, 20)
-        // Arms outstretched horizontally
-        this.p.rect(-18, -12, 12, 4) // Left arm
-        this.p.rect(6, -12, 12, 4)   // Right arm
-        // Legs crossed (lotus position suggestion)
-        this.p.quad(-6, 5, 6, 5, 4, 20, -4, 20)
+      case 'kneeling':
+        // One knee down, humble/meditative pose
+        this.drawCapsule(this.p, 0, 15, -0.2, 24, torsoLength)     // Slightly bowed torso
+        this.p.ellipse(0, 0, 26, 14)                               // Pelvis level
+        this.drawCapsule(this.p, -15, 10, -1.0, 9, armLength)     // Left arm back
+        this.drawCapsule(this.p, 15, 12, 0.7, 9, armLength)       // Right arm forward
+        this.drawCapsule(this.p, -8, 45, -0.3, 11, legLength)     // Left leg bent (knee down)
+        this.drawCapsule(this.p, 8, 55, 0.0, 11, legLength)       // Right leg extended
+        this.p.ellipse(0, -10, headSize, headSize)                 // Head centered, bowed
+        // Optional ground shadow for weight
+        this.p.ellipse(0, 75, 40, 8)
         break
 
-      case 'determination':
-        // Strong, forward-leaning pose with clenched fists
-        // Head forward
-        this.p.ellipse(3, -25, 12, 12)
-        // Leaning body
-        this.p.quad(-8, -15, 4, -15, 2, 12, -6, 12)
-        // Arms forward with fists
-        this.p.rect(-2, -10, 8, 4)  // Right arm (forward)
-        this.p.circle(6, -8, 3)     // Right fist
-        this.p.rect(-8, -5, 6, 4)  // Left arm
-        this.p.circle(-11, -3, 3)  // Left fist
-        // Legs planted firmly
-        this.p.rect(-6, 12, 5, 15) // Left leg
-        this.p.rect(-1, 12, 5, 15) // Right leg
+      case 'sitting_folded':
+        // Sitting cross-legged, contemplative
+        this.drawCapsule(this.p, 0, 8, 0.1, 22, torsoLength * 0.9) // Shorter, upright torso
+        this.p.ellipse(0, -2, 28, 12)                              // Pelvis on ground
+        this.drawCapsule(this.p, -14, 5, -0.8, 8, armLength)      // Left arm resting
+        this.drawCapsule(this.p, 14, 7, 0.5, 8, armLength)        // Right arm relaxed
+        this.drawCapsule(this.p, -12, 35, -1.2, 12, legLength * 0.8) // Left leg folded
+        this.drawCapsule(this.p, 12, 35, 1.0, 12, legLength * 0.8)   // Right leg folded
+        this.p.ellipse(0, -18, headSize, headSize)                 // Head upright
         break
 
-      case 'reflection':
-        // Contemplative pose with hand on chin
-        // Head slightly tilted
-        this.p.ellipse(0, -25, 12, 13)
-        // Relaxed body
-        this.p.rect(-6, -15, 12, 20)
-        // Left arm up to chin
-        this.p.quad(-8, -15, -12, -22, -10, -18, -6, -12)
-        this.p.circle(-11, -20, 2) // Hand at chin
-        // Right arm relaxed
-        this.p.rect(4, -8, 6, 4)   // Right arm
-        this.p.circle(13, -6, 2)   // Right hand
-        // Legs comfortable
-        this.p.rect(-5, 5, 4, 15)  // Left leg
-        this.p.rect(1, 5, 4, 15)   // Right leg
+      case 'reaching_up':
+        // Stretching upward, aspirational pose
+        this.drawCapsule(this.p, 0, 25, 0.0, 20, torsoLength)      // Upright torso
+        this.p.ellipse(0, 10, 18, 20)                              // Pelvis
+        this.drawCapsule(this.p, -20, 18, -1.8, 10, armLength * 1.2) // Left arm reaching up high
+        this.drawCapsule(this.p, 20, 18, 1.8, 10, armLength * 1.2)   // Right arm reaching up high
+        this.drawCapsule(this.p, -6, 60, 0.0, 9, legLength)       // Left leg stable
+        this.drawCapsule(this.p, 6, 60, 0.0, 9, legLength)        // Right leg stable
+        this.p.ellipse(0, -12, headSize, headSize)                 // Head back, looking up
         break
 
-      default:
-        // Default standing pose
-        this.p.ellipse(0, -25, 12, 12)  // Head
-        this.p.rect(-6, -15, 12, 20)    // Body
-        this.p.rect(-10, -10, 6, 12)    // Left arm
-        this.p.rect(4, -10, 6, 12)      // Right arm
-        this.p.rect(-4, 5, 3, 15)       // Left leg
-        this.p.rect(1, 5, 3, 15)        // Right leg
+      case 'twisting':
+        // Torso twisted, dynamic turning motion
+        this.drawCapsule(this.p, 8, 20, 0.6, 25, torsoLength)      // Torso twisted right
+        this.p.ellipse(6, 5, 21, 19)                               // Pelvis following twist
+        this.drawCapsule(this.p, -8, 18, -0.5, 9, armLength)      // Left arm across
+        this.drawCapsule(this.p, 22, 22, 1.2, 9, armLength)       // Right arm back
+        this.drawCapsule(this.p, -4, 55, 0.2, 10, legLength)      // Left leg planted
+        this.drawCapsule(this.p, 12, 58, -0.1, 10, legLength)     // Right leg following
+        this.p.ellipse(16, -8, headSize, headSize)                 // Head turned
+        break
     }
-
-    this.p.endShape(this.p.CLOSE)
   }
 }
 
