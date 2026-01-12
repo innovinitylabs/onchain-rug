@@ -27,6 +27,7 @@ export type PatternType =
   | 'tessellation'
   | 'minimalist_networks'
   | 'dot_matrix'
+  | 'human_silhouettes'
 
 /**
  * Main geometric pattern renderer
@@ -91,6 +92,9 @@ export class GeometricPatternRenderer {
         break
       case 'dot_matrix':
         this.renderDotMatrix(palette, canvasWidth, canvasHeight)
+        break
+      case 'human_silhouettes':
+        this.renderHumanSilhouettes(palette, canvasWidth, canvasHeight)
         break
       default:
         // Test pattern - draw a big visible circle
@@ -399,6 +403,142 @@ export class GeometricPatternRenderer {
         this.p.circle(x, y, dotSize)
       }
     }
+  }
+
+  private renderHumanSilhouettes(palette: ColorPalette, width: number, height: number): void {
+    console.log('🎨 Rendering human emotion silhouettes with palette:', palette.colors.length)
+
+    const silhouettes = 3 + Math.floor(this.prng.next() * 4) // 3-6 silhouettes
+    const emotions = ['joy', 'sadness', 'victory', 'peace', 'determination', 'reflection']
+
+    for (let i = 0; i < silhouettes; i++) {
+      const emotion = emotions[Math.floor(this.prng.next() * emotions.length)]
+      const color = palette.colors[i % palette.colors.length]
+
+      // Position silhouettes in a circular arrangement around center
+      const angle = (this.p.TWO_PI / silhouettes) * i
+      const distance = Math.min(width, height) * (0.15 + this.prng.next() * 0.2)
+      const x = Math.cos(angle) * distance
+      const y = Math.sin(angle) * distance
+
+      // Scale based on distance from center
+      const scale = 0.8 + this.prng.next() * 0.4
+
+      this.p.fill(color.r, color.g, color.b, 140) // Semi-transparent solid fill
+      this.p.noStroke()
+
+      this.p.push()
+      this.p.translate(x, y)
+      this.p.scale(scale)
+
+      this.drawEmotionSilhouette(emotion)
+      this.p.pop()
+    }
+  }
+
+  private drawEmotionSilhouette(emotion: string): void {
+    this.p.beginShape()
+
+    switch (emotion) {
+      case 'joy':
+        // Jumping with arms up - celebration pose
+        // Head
+        this.p.ellipse(0, -25, 12, 12)
+        // Body
+        this.p.rect(-6, -15, 12, 20)
+        // Arms up
+        this.p.rect(-15, -20, 8, 15) // Left arm
+        this.p.rect(7, -20, 8, 15)   // Right arm
+        // Legs apart (jumping)
+        this.p.rect(-8, 5, 6, 15)  // Left leg
+        this.p.rect(2, 5, 6, 15)   // Right leg
+        break
+
+      case 'sadness':
+        // Slumped posture with head down
+        // Head tilted down
+        this.p.ellipse(0, -20, 12, 14)
+        // Slumped body
+        this.p.quad(-8, -8, 8, -8, 6, 15, -6, 15)
+        // Arms hanging down
+        this.p.rect(-12, -5, 6, 12) // Left arm
+        this.p.rect(6, -5, 6, 12)   // Right arm
+        // Legs slightly bent
+        this.p.rect(-6, 15, 5, 12)  // Left leg
+        this.p.rect(1, 15, 5, 12)   // Right leg
+        break
+
+      case 'victory':
+        // Arms raised in V formation
+        // Head
+        this.p.ellipse(0, -25, 12, 12)
+        // Body
+        this.p.rect(-6, -15, 12, 18)
+        // Arms in V
+        this.p.quad(-8, -15, -15, -25, -12, -10, -5, -8) // Left arm
+        this.p.quad(8, -15, 15, -25, 12, -10, 5, -8)     // Right arm
+        // Legs
+        this.p.rect(-5, 3, 4, 15)   // Left leg
+        this.p.rect(1, 3, 4, 15)    // Right leg
+        break
+
+      case 'peace':
+        // Meditative pose with open arms
+        // Head
+        this.p.ellipse(0, -25, 12, 12)
+        // Peaceful body
+        this.p.rect(-5, -15, 10, 20)
+        // Arms outstretched horizontally
+        this.p.rect(-18, -12, 12, 4) // Left arm
+        this.p.rect(6, -12, 12, 4)   // Right arm
+        // Legs crossed (lotus position suggestion)
+        this.p.quad(-6, 5, 6, 5, 4, 20, -4, 20)
+        break
+
+      case 'determination':
+        // Strong, forward-leaning pose with clenched fists
+        // Head forward
+        this.p.ellipse(3, -25, 12, 12)
+        // Leaning body
+        this.p.quad(-8, -15, 4, -15, 2, 12, -6, 12)
+        // Arms forward with fists
+        this.p.rect(-2, -10, 8, 4)  // Right arm (forward)
+        this.p.circle(6, -8, 3)     // Right fist
+        this.p.rect(-8, -5, 6, 4)  // Left arm
+        this.p.circle(-11, -3, 3)  // Left fist
+        // Legs planted firmly
+        this.p.rect(-6, 12, 5, 15) // Left leg
+        this.p.rect(-1, 12, 5, 15) // Right leg
+        break
+
+      case 'reflection':
+        // Contemplative pose with hand on chin
+        // Head slightly tilted
+        this.p.ellipse(0, -25, 12, 13)
+        // Relaxed body
+        this.p.rect(-6, -15, 12, 20)
+        // Left arm up to chin
+        this.p.quad(-8, -15, -12, -22, -10, -18, -6, -12)
+        this.p.circle(-11, -20, 2) // Hand at chin
+        // Right arm relaxed
+        this.p.rect(4, -8, 6, 4)   // Right arm
+        this.p.circle(13, -6, 2)   // Right hand
+        // Legs comfortable
+        this.p.rect(-5, 5, 4, 15)  // Left leg
+        this.p.rect(1, 5, 4, 15)   // Right leg
+        break
+
+      default:
+        // Default standing pose
+        this.p.ellipse(0, -25, 12, 12)  // Head
+        this.p.rect(-6, -15, 12, 20)    // Body
+        this.p.rect(-10, -10, 6, 12)    // Left arm
+        this.p.rect(4, -10, 6, 12)      // Right arm
+        this.p.rect(-4, 5, 3, 15)       // Left leg
+        this.p.rect(1, 5, 3, 15)        // Right leg
+    }
+
+    this.p.endShape(this.p.CLOSE)
   }
 }
 

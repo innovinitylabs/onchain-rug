@@ -3134,6 +3134,7 @@ export default function GeneratorPage() {
                           <option value="tessellation">Tessellation</option>
                           <option value="minimalist_networks">Minimalist Networks</option>
                           <option value="dot_matrix">Dot Matrix</option>
+                          <option value="human_silhouettes">Human Silhouettes</option>
                         </select>
                       </div>
 
