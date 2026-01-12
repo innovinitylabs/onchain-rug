@@ -190,27 +190,30 @@ export class GeometricPatternRenderer {
 
       // Create mirrored pattern within segment
       this.p.push()
+
+      // Define clipping region (pie slice)
       this.p.clip(() => {
         this.p.arc(0, 0, maxRadius * 2, maxRadius * 2, startAngle, endAngle)
-
-        // Draw mirrored elements
-        const color = palette.colors[segment % palette.colors.length]
-        this.p.fill(color.r, color.g, color.b, 100)
-        this.p.stroke(color.r, color.g, color.b, 150)
-
-        const elements = 8 + Math.floor(this.prng.next() * 8) // 8-15 elements
-
-        for (let i = 0; i < elements; i++) {
-          const angle = startAngle + (this.prng.next() * angleStep)
-          const radius = this.prng.next() * maxRadius
-
-          const x = Math.cos(angle) * radius
-          const y = Math.sin(angle) * radius
-
-          const size = 5 + this.prng.next() * 15
-          this.p.circle(x, y, size)
-        }
       })
+
+      // Now draw elements within the clipped region
+      const color = palette.colors[segment % palette.colors.length]
+      this.p.fill(color.r, color.g, color.b, 100)
+      this.p.stroke(color.r, color.g, color.b, 150)
+
+      const elements = 8 + Math.floor(this.prng.next() * 8) // 8-15 elements
+
+      for (let i = 0; i < elements; i++) {
+        const angle = startAngle + (this.prng.next() * angleStep)
+        const radius = this.prng.next() * maxRadius
+
+        const x = Math.cos(angle) * radius
+        const y = Math.sin(angle) * radius
+
+        const size = 5 + this.prng.next() * 15
+        this.p.circle(x, y, size)
+      }
+
       this.p.pop()
     }
   }
