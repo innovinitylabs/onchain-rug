@@ -233,10 +233,9 @@ export class GeometricPatternRenderer {
 
       const color = palette.colors[s % palette.colors.length]
 
-      // Thick, flowing appearance with slight transparency
-      this.p.fill(color.r, color.g, color.b, 140 + this.prng.next() * 40) // Varying transparency
-      this.p.stroke(color.r, color.g, color.b, 180 + this.prng.next() * 40) // Varying stroke opacity
-      this.p.strokeWeight(1)
+      // Single smooth tube appearance
+      this.p.fill(color.r, color.g, color.b, 160 + this.prng.next() * 40) // Solid fill for tube
+      this.p.noStroke() // No stroke for smooth tube appearance
 
       const points = []
       const angleOffset = this.prng.next() * this.p.TWO_PI // Random starting angle
@@ -263,47 +262,41 @@ export class GeometricPatternRenderer {
         points.push({ x, y, thickness })
       }
 
-      // Draw thick, flowing spiral using connected circles/ovals
-      for (let i = 1; i < points.length; i++) {
-        const current = points[i]
-        const previous = points[i-1]
+      // Create single smooth continuous spiral tube
+      this.p.beginShape()
 
-        // Calculate direction vector for oval orientation
-        const dx = current.x - previous.x
-        const dy = current.y - previous.y
-        const distance = Math.sqrt(dx * dx + dy * dy)
+      // Generate outer path (expanding outward)
+      for (let i = 0; i < points.length; i++) {
+        const point = points[i]
+        const angle = Math.atan2(point.y - spiralCenterY, point.x - spiralCenterX)
+        const distance = Math.sqrt((point.x - spiralCenterX) ** 2 + (point.y - spiralCenterY) ** 2)
 
-        if (distance > 0.5) { // Only draw if segments aren't too close
-          // Draw thick connecting segment as oriented oval
-          this.p.push()
-          this.p.translate((current.x + previous.x) / 2, (current.y + previous.y) / 2)
-          this.p.rotate(Math.atan2(dy, dx))
+        // Offset perpendicular to spiral direction for thickness
+        const perpAngle = angle + Math.PI / 2
+        const offset = point.thickness / 2
 
-          // Variable thickness based on position in spiral
-          const thickness = (current.thickness + previous.thickness) / 2
-          const length = Math.max(distance * 1.1, thickness * 0.8) // Ensure minimum length
+        const outerX = point.x + Math.cos(perpAngle) * offset
+        const outerY = point.y + Math.sin(perpAngle) * offset
 
-          this.p.ellipse(0, 0, length, thickness)
-          this.p.pop()
-        }
+        this.p.vertex(outerX, outerY)
       }
 
-      // Add flowing end caps for larger spirals only
-      if (sizeMultiplier > 0.6 && points.length > 0) {
-        const lastPoint = points[points.length - 1]
-        const secondLast = points[points.length - 2]
+      // Generate inner path (moving inward) - reverse order
+      for (let i = points.length - 1; i >= 0; i--) {
+        const point = points[i]
+        const angle = Math.atan2(point.y - spiralCenterY, point.x - spiralCenterX)
 
-        if (secondLast) {
-          const dx = lastPoint.x - secondLast.x
-          const dy = lastPoint.y - secondLast.y
+        // Offset in opposite direction for inner wall
+        const perpAngle = angle - Math.PI / 2
+        const offset = point.thickness / 2
 
-          this.p.push()
-          this.p.translate(lastPoint.x, lastPoint.y)
-          this.p.rotate(Math.atan2(dy, dx))
-          this.p.ellipse(0, 0, lastPoint.thickness * 1.3, lastPoint.thickness * 0.9)
-          this.p.pop()
-        }
+        const innerX = point.x + Math.cos(perpAngle) * offset
+        const innerY = point.y + Math.sin(perpAngle) * offset
+
+        this.p.vertex(innerX, innerY)
       }
+
+      this.p.endShape(this.p.CLOSE)
     }
   }
 
