@@ -20,13 +20,294 @@ export interface ColorPalette {
   }>
 }
 
+/**
+ * Generic interface for engraving masks that influence thread colors
+ * Masks are pure, deterministic functions that return engraving strength at any coordinate
+ */
+export interface EngravingMask {
+  /**
+   * Returns true if engraving should be applied at this coordinate
+   */
+  isActive(x: number, y: number): boolean
+
+  /**
+   * Returns engraving strength from 0-1 at this coordinate
+   * 0 = no engraving, 1 = full engraving strength
+   */
+  strength(x: number, y: number): number
+}
+
+/**
+ * 2D vector for shape coordinates
+ */
+type Vec2 = { x: number, y: number }
+
+/**
+ * Block shape definitions for engraving masks
+ */
+type BlockShape =
+  | { type: 'circle', cx: number, cy: number, r: number, stripeRotation?: number }
+  | { type: 'rect', cx: number, cy: number, cw: number, ch: number, rot: number }
+  | { type: 'triangle', p1: Vec2, p2: Vec2, p3: Vec2 }
+
+/**
+ * Block pattern mask that combines multiple shapes
+ */
+export class BlockPatternMask implements EngravingMask {
+  private shapes: BlockShape[]
+  private patternType?: PatternType
+
+  constructor(shapes: BlockShape[], patternType?: PatternType) {
+    this.shapes = shapes
+    this.patternType = patternType
+  }
+
+  isActive(x: number, y: number): boolean {
+    return this.strength(x, y) > 0
+  }
+
+  strength(x: number, y: number): number {
+    let maxStrength = 0
+    for (const shape of this.shapes) {
+      const s = this.shapeStrengthAt(shape, x, y)
+      if (s > maxStrength) maxStrength = s
+    }
+    return maxStrength
+  }
+
+  /**
+   * Get rotation angle at a specific point (for circle_interference patterns)
+   */
+  getRotationAt(x: number, y: number): number | null {
+    // For circle_interference, find the smallest circle that contains this point
+    let smallestRadius = Infinity
+    let rotationAngle: number | null = null
+
+    for (const shape of this.shapes) {
+      if (shape.type === 'circle') {
+        const dx = x - shape.cx
+        const dy = y - shape.cy
+        const distance = Math.sqrt(dx * dx + dy * dy)
+
+        // Check if point is inside this circle and it's smaller than previous candidates
+        if (distance <= shape.r && shape.r < smallestRadius) {
+          smallestRadius = shape.r
+          // Access stripeRotation property
+          rotationAngle = shape.stripeRotation ?? 0
+        }
+      }
+    }
+
+    return rotationAngle
+  }
+
+  private shapeStrengthAt(shape: BlockShape, x: number, y: number): number {
+    switch (shape.type) {
+      case 'circle':
+        const dx = x - shape.cx
+        const dy = y - shape.cy
+        return (dx * dx + dy * dy <= shape.r * shape.r) ? 1 : 0
+
+      case 'rect':
+        // Transform point relative to rectangle center and rotation
+        const cos = Math.cos(-shape.rot)
+        const sin = Math.sin(-shape.rot)
+        const localX = (x - shape.cx) * cos - (y - shape.cy) * sin
+        const localY = (x - shape.cx) * sin + (y - shape.cy) * cos
+
+        // Check if point is inside axis-aligned rectangle
+        return (Math.abs(localX) <= shape.cw / 2 && Math.abs(localY) <= shape.ch / 2) ? 1 : 0
+
+      case 'triangle':
+        return this.pointInTriangle(x, y, shape.p1, shape.p2, shape.p3) ? 1 : 0
+
+      default:
+        return 0
+    }
+  }
+
+  private pointInTriangle(px: number, py: number, p1: Vec2, p2: Vec2, p3: Vec2): boolean {
+    // Barycentric coordinate method
+    const denominator = (p2.y - p3.y) * (p1.x - p3.x) + (p3.x - p2.x) * (p1.y - p3.y)
+    if (Math.abs(denominator) < 1e-10) return false // Degenerate triangle
+
+    const a = ((p2.y - p3.y) * (px - p3.x) + (p3.x - p2.x) * (py - p3.y)) / denominator
+    const b = ((p3.y - p1.y) * (px - p3.x) + (p1.x - p3.x) * (py - p3.y)) / denominator
+    const c = 1 - a - b
+
+    return a >= 0 && b >= 0 && c >= 0
+  }
+}
+
+/**
+ * Text mask implementation that checks if coordinates fall within text pixels
+ */
+export class TextMask implements EngravingMask {
+  private textPixels: Array<{x: number, y: number, width: number, height: number}>
+
+  constructor(textPixels: Array<{x: number, y: number, width: number, height: number}>) {
+    this.textPixels = textPixels
+  }
+
+  isActive(x: number, y: number): boolean {
+    for (const textPixel of this.textPixels) {
+      if (x >= textPixel.x && x < textPixel.x + textPixel.width &&
+          y >= textPixel.y && y < textPixel.y + textPixel.height) {
+        return true
+      }
+    }
+    return false
+  }
+
+  strength(x: number, y: number): number {
+    // Text pixels are always fully engraved
+    return this.isActive(x, y) ? 1 : 0
+  }
+}
+
+/**
+ * Parameters for resolving engraved thread colors
+ */
+export interface EngravingResolverParams {
+  baseColor: any // p5.Color
+  stripe: any
+  isWarp: boolean
+  maskStrength: number
+  p: any // p5 instance
+  x?: number // For text locality
+  y?: number // For text locality
+  doormatData?: any // For text locality
+}
+
+/**
+ * Precompute engraving profile for a stripe (called once per stripe)
+ * Samples representative points and caches engraving colors for performance
+ */
+export function precomputeEngravingProfile(stripe: any, palette: ColorPalette, p: any, doormatData: any): void {
+  const samplePoints = 32 // Sample 32 representative points per stripe
+  const sampleColors: any[] = []
+
+  // Sample representative points across the stripe
+  for (let i = 0; i < samplePoints; i++) {
+    const sampleX = Math.floor((i / samplePoints) * doormatData.config.DOORMAT_WIDTH)
+    const sampleY = stripe.y + Math.floor((i % 4) / 4 * stripe.height)
+
+    // Bounds checking
+    if (sampleX >= 0 && sampleX < doormatData.config.DOORMAT_WIDTH &&
+        sampleY >= stripe.y && sampleY < stripe.y + stripe.height) {
+
+      // Determine thread color at this position
+      let threadColor = p.color(stripe.primaryColor)
+      if (stripe.weaveType === 'm' && stripe.secondaryColor) {
+        const noiseVal = p.noise(sampleX * 0.1, sampleY * 0.1)
+        if (noiseVal > 0.5) {
+          threadColor = p.color(stripe.secondaryColor)
+        }
+      }
+      sampleColors.push(threadColor)
+    }
+  }
+
+  if (sampleColors.length === 0) {
+    sampleColors.push(p.color(stripe.primaryColor))
+  }
+
+  // Compute average background luminance
+  const luminance = (c: any) =>
+    (p.red(c) * 0.2126 + p.green(c) * 0.7152 + p.blue(c) * 0.0722) / 255
+
+  const avgBackgroundLum = sampleColors.reduce((sum, c) => sum + luminance(c), 0) / sampleColors.length
+
+  // Find best contrast colors from palette
+  const paletteColors = palette.colors.map(c => p.color(c.r, c.g, c.b))
+  let darkerColor = paletteColors[0]
+  let lighterColor = paletteColors[0]
+
+  let bestDarkerDelta = 0
+  let bestLighterDelta = 0
+
+  for (const paletteColor of paletteColors) {
+    const paletteLum = luminance(paletteColor)
+    const lumDelta = paletteLum - avgBackgroundLum
+
+    // Find darkest color below background
+    if (lumDelta < 0 && Math.abs(lumDelta) > bestDarkerDelta) {
+      darkerColor = paletteColor
+      bestDarkerDelta = Math.abs(lumDelta)
+    }
+
+    // Find lightest color above background
+    if (lumDelta > 0 && lumDelta > bestLighterDelta) {
+      lighterColor = paletteColor
+      bestLighterDelta = lumDelta
+    }
+  }
+
+  // If no good contrast found, use subtle adjustments
+  if (bestDarkerDelta === 0) {
+    darkerColor = p.lerpColor(paletteColors[0], p.color(0, 0, 0), 0.15)
+  }
+  if (bestLighterDelta === 0) {
+    lighterColor = p.lerpColor(paletteColors[0], p.color(255, 255, 255), 0.2)
+  }
+
+  // Create vivid pattern colors - no desaturation for patterns
+  const warpBiasColor = p.lerpColor(darkerColor, p.color(0, 0, 0), 0.1) // Warp: slightly darker, rich
+  const weftBiasColor = p.lerpColor(lighterColor, p.color(255, 255, 255), 0.1) // Weft: slightly brighter, vivid
+
+  // Store on stripe - patterns don't use desaturated colors
+  stripe.__engravingProfile = {
+    warpBiasColor,
+    weftBiasColor
+  }
+}
+
+/**
+ * Legacy text engraving resolver - restores old text rendering system
+ * Uses base thread color as starting point, modifies via luminance/desaturation
+ */
+
+/**
+ * Pattern engraving resolver - vivid palette-driven engraving
+ * Handles geometric patterns with saturated, dyed-thread appearance
+ */
+export function resolvePatternThreadColor(params: EngravingResolverParams): any {
+  const { baseColor, stripe, isWarp, maskStrength, p } = params
+
+  if (maskStrength <= 0) {
+    return baseColor
+  }
+
+  // Use precomputed engraving profile for this stripe
+  const profile = stripe.__engravingProfile
+  if (!profile) {
+    // Fallback if profile not computed
+    return p.lerpColor(baseColor, p.color(0, 0, 0), maskStrength * 0.3)
+  }
+
+  // Select appropriate vivid bias color - patterns don't use desaturated colors
+  const targetColor = isWarp ? profile.warpBiasColor : profile.weftBiasColor
+
+  // Assertive blending for patterns - stronger presence, not faded
+  const assertiveStrength = Math.min(maskStrength * 1.2, 1.0)
+
+  // Blend with vivid pattern color
+  let blended = p.lerpColor(baseColor, targetColor, assertiveStrength)
+
+  // Add micro-variation for woven feel (deterministic noise) - subtle for patterns
+  const noiseInput = stripe.y * 0.01 + (isWarp ? 1000 : 2000) + maskStrength * 10
+  const variation = (p.noise(noiseInput) - 0.5) * 0.04 // ±2% variation - less than text
+  const variedStrength = Math.max(0, Math.min(1, assertiveStrength + variation))
+
+  return p.lerpColor(baseColor, targetColor, variedStrength)
+}
+
 export type PatternType =
-  | 'sacred_geometry'
-  | 'fractal_spirals'
-  | 'kaleidoscope'
-  | 'tessellation'
-  | 'minimalist_networks'
-  | 'dot_matrix'
+  | 'block_circles'
+  | 'block_rectangles'
+  | 'block_triangles'
+  | 'circle_interference'
+  | 'stripe_rotation_illusion'
 
 /**
  * Main geometric pattern renderer
@@ -41,443 +322,404 @@ export class GeometricPatternRenderer {
   }
 
   /**
-   * Render a geometric pattern overlay
+   * Create a geometric pattern engraving mask
    */
-  renderPattern(
+  createPatternMask(
     patternType: PatternType,
     params: PatternParameters,
     palette: ColorPalette,
     canvasWidth: number,
     canvasHeight: number
-  ): void {
-    console.log('🎨 renderPattern called with type:', patternType, 'palette:', palette.colors.length)
+  ): EngravingMask {
+    console.log('🎨 createPatternMask called with type:', patternType, 'palette:', palette.colors.length)
 
-    this.p.push()
-
-    // Set blend mode for overlay (try different modes for testing)
-    this.p.blendMode(this.p.ADD)  // Changed to ADD for better visibility
-    console.log('🎨 Blend mode set to ADD')
-
-    // RULE 4: Pattern renderer assumes center-origin (0,0 is center)
-    // Generator has already positioned us at rug centroid, so just apply user adjustments
-    this.p.translate(params.xOffset, params.yOffset)
-    this.p.rotate(params.rotation)
-    this.p.scale(params.scale)
-    console.log('🎨 Pattern centered at origin (0,0) - user offset:', params.xOffset, 'scale:', params.scale)
-
-    // Set opacity
-    this.p.push()
-    this.p.fill(255, params.opacity * 255)
-    this.p.stroke(255, params.opacity * 255)
-    console.log('🎨 Opacity set to:', params.opacity)
-
-    // Render specific pattern
-    console.log('🎨 Switching to pattern type:', patternType)
     switch (patternType) {
-      case 'sacred_geometry':
-        this.renderSacredGeometry(palette, canvasWidth, canvasHeight)
-        break
-      case 'fractal_spirals':
-        this.renderFractalSpirals(palette, canvasWidth, canvasHeight)
-        break
-      case 'kaleidoscope':
-        this.renderKaleidoscope(palette, canvasWidth, canvasHeight)
-        break
-      case 'tessellation':
-        this.renderTessellation(palette, canvasWidth, canvasHeight)
-        break
-      case 'minimalist_networks':
-        this.renderMinimalistNetworks(palette, canvasWidth, canvasHeight)
-        break
-      case 'dot_matrix':
-        this.renderDotMatrix(palette, canvasWidth, canvasHeight)
-        break
+      case 'block_circles': {
+        const shapes = this.generateBlockCircleShapes(canvasWidth, canvasHeight)
+        return new BlockPatternMask(shapes, patternType)
+      }
+      case 'block_rectangles': {
+        const shapes = this.generateBlockRectangleShapes(canvasWidth, canvasHeight)
+        return new BlockPatternMask(shapes, patternType)
+      }
+      case 'block_triangles': {
+        const shapes = this.generateBlockTriangleShapes(canvasWidth, canvasHeight)
+        return new BlockPatternMask(shapes, patternType)
+      }
+      case 'circle_interference': {
+        const shapes = this.generateInterferenceCircles(canvasWidth, canvasHeight)
+        return new BlockPatternMask(shapes, patternType)
+      }
+      case 'stripe_rotation_illusion': {
+        const shapes = this.generateStripeRotationIllusion(canvasWidth, canvasHeight)
+        return new BlockPatternMask(shapes, patternType)
+      }
       default:
-        // Test pattern - draw a big visible circle
-        console.log('🎨 Drawing test pattern - BIG RED CIRCLE')
-        this.p.fill(255, 0, 0, 255) // Bright red with full opacity
-        this.p.stroke(0, 255, 0, 255) // Green stroke
-        this.p.strokeWeight(5)
-        this.p.circle(0, 0, Math.min(canvasWidth, canvasHeight) * 0.4) // Bigger circle
-        console.log('🎨 Test circle drawn at center with radius:', Math.min(canvasWidth, canvasHeight) * 0.4)
-        break
+        // Test pattern - return empty mask
+        console.log('🎨 Creating empty test pattern mask')
+        return new BlockPatternMask([])
     }
-
-    this.p.pop()
-    this.p.pop()
   }
 
-  private renderSacredGeometry(palette: ColorPalette, width: number, height: number): void {
-    console.log('🎨 Rendering Indian mandala sacred geometry with palette:', palette.colors.length)
-    const centerX = 0
-    const centerY = 0
-    const maxRadius = Math.min(width, height) * 0.45
+  private generateBlockCircleShapes(width: number, height: number): BlockShape[] {
+    // BIG BLOCK CIRCLES - 3-7 massive circles, no finesse
+    const count = 3 + Math.floor(this.prng.next() * 5) // 3-7 circles
+    const shapes: BlockShape[] = []
+    const maxAttempts = 50 // Prevent infinite loops
 
-    // Ensure clean state - no fill/stroke carryover
-    this.p.strokeWeight(1)
+    for (let i = 0; i < count; i++) {
+      let attempts = 0
+      let placed = false
 
-    // 1. Central bindu (dot) - the seed of creation
-    this.p.fill(palette.colors[0].r, palette.colors[0].g, palette.colors[0].b, 255) // Solid, not transparent
-    this.p.noStroke()
-    this.p.circle(centerX, centerY, 6) // Smaller, solid dot
+      while (!placed && attempts < maxAttempts) {
+        // Random position centered on canvas, accounting for circle radius
+        const radius = Math.min(width, height) * (0.15 + this.prng.next() * 0.25)
+        // Center the circles around the middle 60% of the canvas
+        const centerZoneWidth = width * 0.6
+        const centerZoneHeight = height * 0.6
+        const x = width/2 + (this.prng.next() - 0.5) * (centerZoneWidth - radius * 2)
+        const y = height/2 + (this.prng.next() - 0.5) * (centerZoneHeight - radius * 2)
 
-    // 2. Flower of Life - overlapping circles (stroke only, no fill)
-    const flowerCircles = 5 + Math.floor(this.prng.next() * 3) // 5-7 circles, fewer for clarity
-    this.p.strokeWeight(1.5)
-    this.p.noFill()
-
-    for (let i = 0; i < flowerCircles; i++) {
-      const radius = maxRadius * (0.2 + i * 0.15) // More structured spacing
-      const color = palette.colors[i % palette.colors.length]
-      this.p.stroke(color.r, color.g, color.b, 180) // Higher opacity for visibility
-      this.p.circle(centerX, centerY, radius * 2)
-    }
-
-    // 3. Simplified lotus petals - essential curved elements only
-    const petals = 6 + Math.floor(this.prng.next() * 4) // 6-9 petals, fewer for performance
-    this.p.strokeWeight(2)
-
-    for (let i = 0; i < petals; i++) {
-      const angle = (this.p.TWO_PI / petals) * i
-      const petalRadius = maxRadius * (0.5 + this.prng.next() * 0.2)
-      const color = palette.colors[i % palette.colors.length]
-
-      this.p.stroke(color.r, color.g, color.b, 160)
-      this.p.noFill() // No fill to prevent canvas accumulation
-
-      // Draw simplified curved petal outline
-      this.p.push()
-      this.p.translate(centerX, centerY)
-      this.p.rotate(angle)
-
-      this.p.beginShape()
-      // Single smooth curve for the petal
-      for (let t = 0; t <= this.p.PI; t += 0.15) { // Fewer points for performance
-        const curveOffset = Math.sin(t * 1.5) * petalRadius * 0.2
-        const x = Math.cos(t) * (petalRadius + curveOffset)
-        const y = Math.sin(t) * petalRadius * 0.8
-        this.p.vertex(x, y)
-      }
-      this.p.endShape()
-      this.p.pop()
-    }
-
-    // 4. Essential sacred triangles only (stroke only)
-    const color = palette.colors[Math.floor(this.prng.next() * palette.colors.length)]
-    this.p.stroke(color.r, color.g, color.b, 140)
-    this.p.strokeWeight(1)
-    this.p.noFill()
-
-    // Single upward triangle
-    const triangleRadius = maxRadius * 0.7
-    this.p.push()
-    this.p.translate(centerX, centerY)
-    for (let i = 0; i < 3; i++) {
-      const angle1 = (this.p.TWO_PI / 3) * i - this.p.PI/2
-      const angle2 = (this.p.TWO_PI / 3) * ((i + 1) % 3) - this.p.PI/2
-
-      const x1 = Math.cos(angle1) * triangleRadius
-      const y1 = Math.sin(angle1) * triangleRadius
-      const x2 = Math.cos(angle2) * triangleRadius
-      const y2 = Math.sin(angle2) * triangleRadius
-
-      this.p.line(x1, y1, x2, y2)
-    }
-    this.p.pop()
-
-    // 5. Minimal curved flourishes (stroke only)
-    const flourishes = 8 + Math.floor(this.prng.next() * 6) // 8-13 flourishes, reduced
-
-    for (let i = 0; i < flourishes; i++) {
-      const angle = (this.p.TWO_PI / flourishes) * i
-      const radius = maxRadius * (0.75 + this.prng.next() * 0.15)
-      const color = palette.colors[i % palette.colors.length]
-
-      this.p.stroke(color.r, color.g, color.b, 120)
-      this.p.strokeWeight(1)
-      this.p.noFill()
-
-      // Simple curved line
-      this.p.push()
-      this.p.translate(centerX, centerY)
-      this.p.rotate(angle)
-
-      this.p.beginShape()
-      for (let t = 0; t <= 1; t += 0.1) {
-        const curveRadius = radius * (1 + Math.sin(t * this.p.PI) * 0.2)
-        const x = Math.cos(t * this.p.PI * 0.6) * curveRadius
-        const y = Math.sin(t * this.p.PI * 0.6) * curveRadius * 0.5
-        this.p.vertex(x, y)
-      }
-      this.p.endShape()
-      this.p.pop()
-    }
-
-    // Reset to clean state
-    this.p.noFill()
-    this.p.strokeWeight(1)
-  }
-
-  private renderFractalSpirals(palette: ColorPalette, width: number, height: number): void {
-    // Scattered Pingala spirals of multiple sizes across canvas
-    const numSpirals = 4 + Math.floor(this.prng.next() * 6) // 4-9 scattered spirals (fewer for larger sizes)
-
-    for (let s = 0; s < numSpirals; s++) {
-      // Random position across the canvas area
-      const spiralCenterX = (this.prng.next() - 0.5) * width * 0.8  // ±40% of canvas width
-      const spiralCenterY = (this.prng.next() - 0.5) * height * 0.8 // ±40% of canvas height
-
-      // Random size variation (small to LARGE spirals)
-      const sizeMultiplier = 0.2 + this.prng.next() * 2.8 // 0.2-3.0 scale (much wider range)
-      const maxRadius = Math.min(width, height) * 0.25 * sizeMultiplier // Larger base radius
-
-      const color = palette.colors[s % palette.colors.length]
-
-      // Integrated rug-like appearance - blend with rug colors and add texture
-      const blendColor = this.prng.next() > 0.5 ?
-        { r: Math.max(0, color.r - 40), g: Math.max(0, color.g - 40), b: Math.max(0, color.b - 40) } : // Darker variant
-        { r: Math.min(255, color.r + 40), g: Math.min(255, color.g + 40), b: Math.min(255, color.b + 40) } // Lighter variant
-
-      this.p.fill(blendColor.r, blendColor.g, blendColor.b, 200) // Opaque but blendable
-      this.p.stroke(color.r, color.g, color.b, 120) // Subtle outline
-      this.p.strokeWeight(0.5)
-
-      const points = []
-      const angleOffset = this.prng.next() * this.p.TWO_PI // Random starting angle
-      const turns = 1.5 + this.prng.next() * 2.5 // 1.5-4 turns (shorter for scattered)
-
-      // Generate spiral points with organic variation
-      const numPoints = 60 + Math.floor(this.prng.next() * 40) // 60-99 points based on size
-      for (let i = 0; i < numPoints; i++) {
-        const t = (i / (numPoints - 1)) * turns
-        const angle = t * this.p.TWO_PI + angleOffset
-        const baseRadius = (maxRadius / turns) * t * 0.382 // Golden ratio base
-
-        // Add organic variation for "pool noodle" flowing effect
-        const noiseOffset = this.prng.next() * 0.15 - 0.075 // Small random variation
-        const radius = baseRadius * (0.85 + noiseOffset + Math.sin(t * 2 + s) * 0.1) // Unique variation per spiral
-
-        const x = spiralCenterX + Math.cos(angle) * radius
-        const y = spiralCenterY + Math.sin(angle) * radius
-
-        // Size-based thickness variation (scales with spiral size)
-        const baseThickness = 3 + sizeMultiplier * 12 // 3-15 based on size (wider range)
-        const thickness = baseThickness + Math.sin(t * 3) * (baseThickness * 0.4)
-
-        points.push({ x, y, thickness })
-      }
-
-      // Create integrated rug-like spiral using pixelated approach
-      // Instead of smooth curves, create pixelated blocks that look woven
-      const avgThickness = points.reduce((sum, p) => sum + p.thickness, 0) / points.length
-      const pixelSize = Math.max(2, Math.floor(avgThickness / 3)) // Pixel blocks
-
-      for (let i = 0; i < points.length - 1; i++) {
-        const current = points[i]
-        const next = points[i + 1]
-
-        // Create pixelated blocks along the spiral path
-        const steps = Math.max(1, Math.floor(Math.sqrt((next.x - current.x) ** 2 + (next.y - current.y) ** 2) / pixelSize))
-
-        for (let step = 0; step < steps; step++) {
-          const t = step / steps
-          const x = current.x + (next.x - current.x) * t
-          const y = current.y + (next.y - current.y) * t
-          const thickness = current.thickness + (next.thickness - current.thickness) * t
-
-          // Draw pixelated block with rug-like texture
-          this.p.push()
-          this.p.translate(x, y)
-
-          // Add slight rotation and weave-like variation
-          const weaveAngle = Math.sin(i * 0.5) * 0.2
-          this.p.rotate(weaveAngle)
-
-          // Draw rectangular block with slight variation (like woven threads)
-          const blockWidth = pixelSize + Math.sin(i) * 2
-          const blockHeight = thickness * 0.8 + Math.cos(i) * 1
-
-          this.p.rect(-blockWidth/2, -blockHeight/2, blockWidth, blockHeight)
-          this.p.pop()
+        const newShape = {
+          type: 'circle' as const,
+          cx: x,
+          cy: y,
+          r: radius
         }
-      }
-    }
-  }
 
-  private renderKaleidoscope(palette: ColorPalette, width: number, height: number): void {
-    const segments = 6 + Math.floor(this.prng.next() * 4) // 6-9 segments
-    const maxRadius = Math.min(width, height) * 0.4
-
-    for (let segment = 0; segment < segments; segment++) {
-      const angleStep = this.p.TWO_PI / segments
-      const startAngle = segment * angleStep
-      const endAngle = (segment + 1) * angleStep
-
-      // Create mirrored pattern within segment
-      this.p.push()
-
-      // Define clipping region (pie slice)
-      this.p.clip(() => {
-        this.p.arc(0, 0, maxRadius * 2, maxRadius * 2, startAngle, endAngle)
-      })
-
-      // Now draw elements within the clipped region
-      const color = palette.colors[segment % palette.colors.length]
-      this.p.fill(color.r, color.g, color.b, 100)
-      this.p.stroke(color.r, color.g, color.b, 150)
-
-      const elements = 8 + Math.floor(this.prng.next() * 8) // 8-15 elements
-
-      for (let i = 0; i < elements; i++) {
-        const angle = startAngle + (this.prng.next() * angleStep)
-        const radius = this.prng.next() * maxRadius
-
-        const x = Math.cos(angle) * radius
-        const y = Math.sin(angle) * radius
-
-        const size = 5 + this.prng.next() * 15
-        this.p.circle(x, y, size)
-      }
-
-      this.p.pop()
-    }
-  }
-
-  private renderTessellation(palette: ColorPalette, width: number, height: number): void {
-    const gridSize = 20 + Math.floor(this.prng.next() * 20) // 20-40
-    const halfWidth = width / 2
-    const halfHeight = height / 2
-
-    for (let x = -halfWidth; x < halfWidth; x += gridSize) {
-      for (let y = -halfHeight; y < halfHeight; y += gridSize) {
-        const colorIndex = Math.floor(this.prng.next() * palette.colors.length)
-        const color = palette.colors[colorIndex]
-
-        this.p.fill(color.r, color.g, color.b, 80)
-        this.p.stroke(color.r, color.g, color.b, 120)
-        this.p.strokeWeight(1)
-
-        // Random shape selection
-        const shapeType = Math.floor(this.prng.next() * 4)
-
-        switch (shapeType) {
-          case 0: // Triangle
-            this.p.triangle(
-              x, y,
-              x + gridSize, y,
-              x + gridSize/2, y + gridSize
-            )
+        // Check for overlap with existing shapes
+        let overlaps = false
+        for (const existingShape of shapes) {
+          if (this.shapesOverlap(newShape, existingShape)) {
+            overlaps = true
             break
-          case 1: // Hexagon
-            this.p.push()
-            this.p.translate(x + gridSize/2, y + gridSize/2)
-            this.p.beginShape()
-            for (let i = 0; i < 6; i++) {
-              const angle = (i * this.p.TWO_PI) / 6
-              const hx = Math.cos(angle) * (gridSize * 0.4)
-              const hy = Math.sin(angle) * (gridSize * 0.4)
-              this.p.vertex(hx, hy)
-            }
-            this.p.endShape(this.p.CLOSE)
-            this.p.pop()
-            break
-          case 2: // Circle
-            this.p.circle(x + gridSize/2, y + gridSize/2, gridSize * 0.8)
-            break
-          case 3: // Square
-            this.p.rect(x, y, gridSize, gridSize)
-            break
+          }
         }
+
+        if (!overlaps) {
+          shapes.push(newShape)
+          placed = true
+        }
+
+        attempts++
       }
+
+      // If we couldn't place the shape after max attempts, skip it
+      if (!placed) {
+        console.warn('Could not place circle without overlap, skipping')
+      }
+    }
+
+    return shapes
+  }
+
+  private shapesOverlap(shape1: BlockShape, shape2: BlockShape): boolean {
+    if (shape1.type === 'circle' && shape2.type === 'circle') {
+      // Circle-circle collision
+      const dx = shape1.cx - shape2.cx
+      const dy = shape1.cy - shape2.cy
+      const distance = Math.sqrt(dx * dx + dy * dy)
+      return distance < (shape1.r + shape2.r)
+    } else if (shape1.type === 'rect' && shape2.type === 'rect') {
+      // Rectangle-rectangle collision (axis-aligned bounding box)
+      return !(shape1.cx + shape1.cw/2 < shape2.cx - shape2.cw/2 ||
+               shape1.cx - shape1.cw/2 > shape2.cx + shape2.cw/2 ||
+               shape1.cy + shape1.ch/2 < shape2.cy - shape2.ch/2 ||
+               shape1.cy - shape1.ch/2 > shape2.cy + shape2.ch/2)
+    } else if (shape1.type === 'triangle' && shape2.type === 'triangle') {
+      // Triangle-triangle collision (simplified bounding box)
+      const bounds1 = this.getTriangleBounds(shape1)
+      const bounds2 = this.getTriangleBounds(shape2)
+      return !(bounds1.maxX < bounds2.minX || bounds1.minX > bounds2.maxX ||
+               bounds1.maxY < bounds2.minY || bounds1.minY > bounds2.maxY)
+    } else {
+      // Mixed shape types - use bounding circles for simplicity
+      const bounds1 = this.getShapeBoundingCircle(shape1)
+      const bounds2 = this.getShapeBoundingCircle(shape2)
+      const dx = bounds1.cx - bounds2.cx
+      const dy = bounds1.cy - bounds2.cy
+      const distance = Math.sqrt(dx * dx + dy * dy)
+      return distance < (bounds1.r + bounds2.r)
     }
   }
 
-  private renderMinimalistNetworks(palette: ColorPalette, width: number, height: number): void {
-    const nodes = 12 + Math.floor(this.prng.next() * 12) // 12-23 nodes
-    const connections = Math.floor(nodes * 1.5) // 1.5x connections per node
+  private getShapeBoundingCircle(shape: BlockShape): { cx: number, cy: number, r: number } {
+    switch (shape.type) {
+      case 'circle':
+        return { cx: shape.cx, cy: shape.cy, r: shape.r }
+      case 'rect':
+        return {
+          cx: shape.cx,
+          cy: shape.cy,
+          r: Math.sqrt((shape.cw/2) ** 2 + (shape.ch/2) ** 2)
+        }
+      case 'triangle':
+        const bounds = this.getTriangleBounds(shape)
+        const cx = (bounds.minX + bounds.maxX) / 2
+        const cy = (bounds.minY + bounds.maxY) / 2
+        const r = Math.sqrt((bounds.maxX - bounds.minX) ** 2 + (bounds.maxY - bounds.minY) ** 2) / 2
+        return { cx, cy, r }
+    }
+  }
 
-    const nodePositions: Array<{x: number, y: number}> = []
+  private getTriangleBounds(shape: BlockShape & { type: 'triangle' }): { minX: number, maxX: number, minY: number, maxY: number } {
+    const { p1, p2, p3 } = shape
+    const xs = [p1.x, p2.x, p3.x]
+    const ys = [p1.y, p2.y, p3.y]
+    return {
+      minX: Math.min(...xs),
+      maxX: Math.max(...xs),
+      minY: Math.min(...ys),
+      maxY: Math.max(...ys)
+    }
+  }
 
-    // Generate node positions
-    for (let i = 0; i < nodes; i++) {
-      nodePositions.push({
-        x: (this.prng.next() - 0.5) * width * 0.8,
-        y: (this.prng.next() - 0.5) * height * 0.8
+  private generateBlockRectangleShapes(width: number, height: number): BlockShape[] {
+    // BIG BLOCK RECTANGLES - 3-6 massive rectangles, no finesse
+    const count = 3 + Math.floor(this.prng.next() * 4) // 3-6 rectangles
+    const shapes: BlockShape[] = []
+    const maxAttempts = 50 // Prevent infinite loops
+
+    for (let i = 0; i < count; i++) {
+      let attempts = 0
+      let placed = false
+
+      while (!placed && attempts < maxAttempts) {
+        // MASSIVE size - 15-40% of canvas size
+        const rectWidth = width * (0.15 + this.prng.next() * 0.25)
+        const rectHeight = height * (0.15 + this.prng.next() * 0.25)
+
+        // Random position centered on canvas, accounting for rectangle size
+        const centerZoneWidth = width * 0.6
+        const centerZoneHeight = height * 0.6
+        const x = width/2 + (this.prng.next() - 0.5) * (centerZoneWidth - rectWidth)
+        const y = height/2 + (this.prng.next() - 0.5) * (centerZoneHeight - rectHeight)
+
+        // Small random rotation only
+        const rotation = (this.prng.next() - 0.5) * 0.3 // ±0.15 radians
+
+        const newShape = {
+          type: 'rect' as const,
+          cx: x,
+          cy: y,
+          cw: rectWidth,
+          ch: rectHeight,
+          rot: rotation
+        }
+
+        // Check for overlap with existing shapes
+        let overlaps = false
+        for (const existingShape of shapes) {
+          if (this.shapesOverlap(newShape, existingShape)) {
+            overlaps = true
+            break
+          }
+        }
+
+        if (!overlaps) {
+          shapes.push(newShape)
+          placed = true
+        }
+
+        attempts++
+      }
+
+      // If we couldn't place the shape after max attempts, skip it
+      if (!placed) {
+        console.warn('Could not place rectangle without overlap, skipping')
+      }
+    }
+
+    return shapes
+  }
+
+  private generateBlockTriangleShapes(width: number, height: number): BlockShape[] {
+    // BIG BLOCK TRIANGLES - 3-8 massive triangles, no finesse
+    const count = 3 + Math.floor(this.prng.next() * 6) // 3-8 triangles
+    const shapes: BlockShape[] = []
+    const maxAttempts = 50 // Prevent infinite loops
+
+    for (let i = 0; i < count; i++) {
+      let attempts = 0
+      let placed = false
+
+      while (!placed && attempts < maxAttempts) {
+        // MASSIVE size - 15-40% of canvas size
+        const size = Math.min(width, height) * (0.15 + this.prng.next() * 0.25)
+
+        // Calculate triangle bounding box
+        const h = size * Math.sqrt(3) / 2
+        const boundingWidth = size
+        const boundingHeight = h
+
+        // Random position centered on canvas, accounting for triangle size
+        const centerZoneWidth = width * 0.6
+        const centerZoneHeight = height * 0.6
+        const x = width/2 + (this.prng.next() - 0.5) * (centerZoneWidth - boundingWidth)
+        const y = height/2 + (this.prng.next() - 0.5) * (centerZoneHeight - boundingHeight)
+
+        // Random orientation
+        const rotation = this.prng.next() * Math.PI * 2
+
+        // Calculate rotated triangle points
+        const cos = Math.cos(rotation)
+        const sin = Math.sin(rotation)
+
+        const p1 = {
+          x: x + (0) * cos - (-h/2) * sin,
+          y: y + (0) * sin + (-h/2) * cos
+        }
+        const p2 = {
+          x: x + (-size/2) * cos - (h/2) * sin,
+          y: y + (-size/2) * sin + (h/2) * cos
+        }
+        const p3 = {
+          x: x + (size/2) * cos - (h/2) * sin,
+          y: y + (size/2) * sin + (h/2) * cos
+        }
+
+        const newShape = {
+          type: 'triangle' as const,
+          p1,
+          p2,
+          p3
+        }
+
+        // Check for overlap with existing shapes
+        let overlaps = false
+        for (const existingShape of shapes) {
+          if (this.shapesOverlap(newShape, existingShape)) {
+            overlaps = true
+            break
+          }
+        }
+
+        if (!overlaps) {
+          shapes.push(newShape)
+          placed = true
+        }
+
+        attempts++
+      }
+
+      // If we couldn't place the shape after max attempts, skip it
+      if (!placed) {
+        console.warn('Could not place triangle without overlap, skipping')
+      }
+    }
+
+    return shapes
+  }
+
+  private generateInterferenceCircles(width: number, height: number): BlockShape[] {
+    const shapes: BlockShape[] = []
+
+    // ---- RULE 2: Fixed ratio set ----
+    const radiusRatios = [1.0, 0.62, 0.38]
+
+    // Base radius derived from canvas
+    const baseRadius = Math.min(width, height) * 0.28
+
+    // ---- RULE 6: Center bias ----
+    const cx = width * 0.5 + (this.prng.next() - 0.5) * width * 0.15
+    const cy = height * 0.5 + (this.prng.next() - 0.5) * height * 0.12
+
+    // ---- Dominant circle ----
+    const rotationAngles = [-Math.PI / 12, -Math.PI / 8, Math.PI / 12, Math.PI / 8]
+    shapes.push({
+      type: 'circle',
+      cx,
+      cy,
+      r: baseRadius,
+      stripeRotation: rotationAngles[Math.floor(this.prng.next() * rotationAngles.length)]
+    })
+
+    // ---- Optional nested / overlapping circle ----
+    if (this.prng.next() < 0.6) {
+      const ratio = radiusRatios[Math.floor(this.prng.next() * (radiusRatios.length - 1)) + 1]
+      const offset = baseRadius * 0.15
+
+      shapes.push({
+        type: 'circle',
+        cx: cx + (this.prng.next() - 0.5) * offset,
+        cy: cy + (this.prng.next() - 0.5) * offset,
+        r: baseRadius * ratio,
+        stripeRotation: rotationAngles[Math.floor(this.prng.next() * rotationAngles.length)]
       })
     }
 
-    // Draw connections
-    this.p.strokeWeight(1)
-    for (let i = 0; i < connections; i++) {
-      const node1 = nodePositions[Math.floor(this.prng.next() * nodes)]
-      const node2 = nodePositions[Math.floor(this.prng.next() * nodes)]
-
-      if (node1 !== node2) {
-        const color = palette.colors[i % palette.colors.length]
-        this.p.stroke(color.r, color.g, color.b, 100)
-        this.p.line(node1.x, node1.y, node2.x, node2.y)
-      }
-    }
-
-    // Draw nodes
-    for (let i = 0; i < nodes; i++) {
-      const node = nodePositions[i]
-      const color = palette.colors[i % palette.colors.length]
-      this.p.fill(color.r, color.g, color.b, 150)
-      this.p.stroke(color.r, color.g, color.b, 200)
-      this.p.strokeWeight(2)
-      this.p.circle(node.x, node.y, 4 + this.prng.next() * 6)
-    }
+    return shapes
   }
 
-  private renderDotMatrix(palette: ColorPalette, width: number, height: number): void {
-    const dotSpacing = 15 + Math.floor(this.prng.next() * 10) // 15-25
-    const maxDotSize = 8 + this.prng.next() * 8 // 8-16
+  private generateStripeRotationIllusion(width: number, height: number): BlockShape[] {
+    const shapes: BlockShape[] = []
 
-    const cols = Math.ceil(width / dotSpacing)
-    const rows = Math.ceil(height / dotSpacing)
+    const r = Math.min(width, height) * (0.22 + this.prng.next() * 0.12)
 
-    for (let col = 0; col < cols; col++) {
-      for (let row = 0; row < rows; row++) {
-        const x = (col * dotSpacing) - width/2 + (this.prng.next() - 0.5) * dotSpacing * 0.5
-        const y = (row * dotSpacing) - height/2 + (this.prng.next() - 0.5) * dotSpacing * 0.5
+    const cx = width * 0.5 + (this.prng.next() - 0.5) * width * 0.2
+    const cy = height * 0.5 + (this.prng.next() - 0.5) * height * 0.2
 
-        const color = palette.colors[(col + row) % palette.colors.length]
-        this.p.fill(color.r, color.g, color.b, 120)
-        this.p.noStroke()
+    // Generate continuous rotation angles for visual richness
+    // Base angle range: [π/20, 5π/12] (~9° to 75° for clearly visible diagonal bands)
+    // Minimum 9° ensures illusion is obvious, not mistaken for error
+    // Maximum 75° provides dramatic diagonal effect without being too extreme
+    const minAngle = Math.PI / 20  // ~9°
+    const maxAngle = 5 * Math.PI / 12  // ~75°
 
-        const dotSize = this.prng.next() * maxDotSize
-        this.p.circle(x, y, dotSize)
-      }
-    }
+    // Randomly choose positive or negative direction
+    const direction = this.prng.next() < 0.5 ? -1 : 1
+    const baseAngle = minAngle + (this.prng.next() * (maxAngle - minAngle))
+
+    // Add small deterministic jitter: ±π/36 (~5°)
+    const jitterRange = Math.PI / 36
+    const jitter = (this.prng.next() - 0.5) * 2 * jitterRange
+
+    const finalAngle = direction * (baseAngle + jitter)
+
+    shapes.push({
+      type: 'circle',
+      cx,
+      cy,
+      r,
+      stripeRotation: finalAngle
+    })
+
+    return shapes
   }
 }
 
 /**
  * Extract color palette from rug data
  */
-export function extractRugPalette(rugData: any): ColorPalette {
+export function extractRugPalette(rugData: any, p?: any): ColorPalette {
   console.log('🎨 Extracting palette from rugData:', !!rugData, 'palette exists:', !!rugData?.selectedPalette)
   const colors: ColorPalette['colors'] = []
 
   if (rugData?.selectedPalette?.colors) {
     console.log('🎨 Found selectedPalette with', rugData.selectedPalette.colors.length, 'colors')
-    // Extract from palette
+    // Extract from palette - supports both hex strings and RGB objects
     rugData.selectedPalette.colors.forEach((color: any, index: number) => {
       console.log('🎨 Color', index, ':', color)
-      if (typeof color === 'object' && 'r' in color && 'g' in color && 'b' in color) {
+      if (typeof color === 'string') {
+        // Handle hex strings by converting to RGB
+        const p5Color = p.color(color)
+        colors.push({
+          r: Math.round(p.red(p5Color)),
+          g: Math.round(p.green(p5Color)),
+          b: Math.round(p.blue(p5Color))
+        })
+      } else if (typeof color === 'object' && 'r' in color && 'g' in color && 'b' in color) {
+        // Handle RGB objects
         colors.push({ r: color.r, g: color.g, b: color.b })
       }
     })
   }
 
-  // Fallback colors if no palette found
-  if (colors.length === 0) {
-    console.log('🎨 Using fallback colors')
+  // Only fall back to brown if palette data structure doesn't exist at all
+  if (colors.length === 0 && !rugData?.selectedPalette) {
+    console.log('🎨 No palette data found, using minimal fallback')
     colors.push({ r: 139, g: 69, b: 19 }) // Saddle brown
     colors.push({ r: 160, g: 82, b: 45 }) // Sienna
-    colors.push({ r: 205, g: 133, b: 63 }) // Peru
-    colors.push({ r: 210, g: 180, b: 140 }) // Tan
   }
 
   console.log('🎨 Final palette:', colors.length, 'colors')
