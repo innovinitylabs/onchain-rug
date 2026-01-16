@@ -2215,7 +2215,6 @@ export default function GeneratorPage() {
     doormatData.darkTextColor = p.lerpColor(p.color(darkest), p.color(0), 0.4)
   }
 
-  }
 
   // Generate text data (original function)
   const generateTextData = (doormatData: any) => {
