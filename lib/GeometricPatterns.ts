@@ -660,11 +660,11 @@ export class GeometricPatternRenderer {
     const cy = height * 0.5 + (this.prng.next() - 0.5) * height * 0.2
 
     // Generate continuous rotation angles for visual richness
-    // Base angle range: [π/20, 5π/12] (~9° to 75° for clearly visible diagonal bands)
-    // Minimum 9° ensures illusion is obvious, not mistaken for error
-    // Maximum 75° provides dramatic diagonal effect without being too extreme
-    const minAngle = Math.PI / 20  // ~9°
-    const maxAngle = 5 * Math.PI / 12  // ~75°
+    // Base angle range: [π/9, 17π/36] (~20° to 85° for clearly visible diagonal bands)
+    // Minimum 20° ensures illusion is obviously intentional, not mistaken for error
+    // Maximum ~85° provides dramatic near-vertical diagonal effects
+    const minAngle = Math.PI / 9  // ~20°
+    const maxAngle = 17 * Math.PI / 36  // ~85°
 
     // Randomly choose positive or negative direction
     const direction = this.prng.next() < 0.5 ? -1 : 1
