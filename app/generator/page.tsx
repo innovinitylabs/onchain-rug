@@ -82,7 +82,6 @@ export default function GeneratorPage() {
   const [textureLevel, setTextureLevel] = useState(0) // 0 = none, 1 = 7 days, 2 = 30 days
   const [lastTextureLevel, setLastTextureLevel] = useState(1) // Remember last non-zero texture level
   const [patinaLocked, setPatinaLocked] = useState(false)
-  const [enableSpirals, setEnableSpirals] = useState(true)
   const [focusNewRow, setFocusNewRow] = useState(false)
   // Diamond frame aging (hardcoded - most impressive longevity)
   const [warpThickness, setWarpThickness] = useState(2) // Default warp thickness
@@ -551,7 +550,6 @@ export default function GeneratorPage() {
             if (doormatData) {
               // Set authoritative text gate - no text on flipped side
               doormatData.__ALLOW_TEXT__ = !isFlipped
-            doormatData.__ALLOW_SPIRALS__ = enableSpirals && !isFlipped
 
               // drawFullRug expects complete doormatData object with config
               drawFullRug(p, doormatData, doormatData.seed || 42, isFlipped)
@@ -658,7 +656,6 @@ export default function GeneratorPage() {
     if (typeof window !== 'undefined' && (window as any).p5Instance) {
       updateTextColors((window as any).p5Instance, doormatData)
       generateTextData(doormatData)
-      generateSpiralData(doormatData)
 
       // Generate pattern mask for engraving
       if (selectedPatternRef.current && selectedPatternRef.current !== 'block_circles' &&
@@ -2163,18 +2160,7 @@ export default function GeneratorPage() {
           }
         }
 
-        let isSpiralPixel = false
-        if (doormatData.__ALLOW_SPIRALS__ && doormatData.spiralData && doormatData.spiralData.length > 0) {
-          for (const spiralPix of doormatData.spiralData) {
-            if (x >= spiralPix.x && x < spiralPix.x + spiralPix.width &&
-                y >= spiralPix.y && y < spiralPix.y + spiralPix.height) {
-              isSpiralPixel = true
-              break
-            }
-          }
-        }
-
-        if (isTextPixel || isSpiralPixel) {
+        if (isTextPixel) {
           textPixels.push({x, y})
         }
       }
@@ -2229,89 +2215,6 @@ export default function GeneratorPage() {
     doormatData.darkTextColor = p.lerpColor(p.color(darkest), p.color(0), 0.4)
   }
 
-  // Generate spiral data (pixel-based like text)
-  const generateSpiralData = (doormatData: any) => {
-    doormatData.spiralData = []
-
-    // Only generate spirals if enabled
-    if (!doormatData.__ALLOW_SPIRALS__) return
-
-    // Get PRNG for deterministic spiral generation
-    const prng = doormatData.prng
-
-    // Use thread spacing for pixel-perfect integration
-    const warpSpacing = doormatData.warpThickness + 1
-    const weftSpacing = doormatData.config.WEFT_THICKNESS + 1
-
-    // Generate multiple spirals
-    const numSpirals = 4 + Math.floor(prng.next() * 6) // 4-9 spirals
-
-    for (let spiralIndex = 0; spiralIndex < numSpirals; spiralIndex++) {
-      // Random position within rug bounds (excluding fringes)
-      const rugWidth = doormatData.config.DOORMAT_WIDTH - 2 * doormatData.config.DOORMAT_WIDTH * 0.1 // Exclude fringes
-      const rugHeight = doormatData.config.DOORMAT_HEIGHT - 2 * doormatData.config.DOORMAT_HEIGHT * 0.1
-
-      const centerX = doormatData.config.DOORMAT_WIDTH * 0.1 + prng.next() * rugWidth
-      const centerY = doormatData.config.DOORMAT_HEIGHT * 0.1 + prng.next() * rugHeight
-
-      // Size based on available space
-      const maxRadius = Math.min(rugWidth, rugHeight) * (0.1 + prng.next() * 0.3) // 10%-40% of rug size
-      const sizeMultiplier = 0.2 + prng.next() * 2.8 // 0.2-3.0 (wide range)
-
-      // Generate spiral points
-      const points: any[] = []
-      const numTurns = 2 + prng.next() * 4 // 2-6 turns
-      const pointsPerTurn = 20 + Math.floor(prng.next() * 30) // 20-50 points per turn
-      const totalPoints = Math.floor(numTurns * pointsPerTurn)
-
-      for (let i = 0; i < totalPoints; i++) {
-        const t = i / (totalPoints - 1)
-        const angle = t * numTurns * Math.PI * 2
-        const radius = t * maxRadius * sizeMultiplier
-
-        const x = centerX + Math.cos(angle) * radius
-        const y = centerY + Math.sin(angle) * radius
-        const thickness = (2 + prng.next() * 8) * (1 + t * 2) // Variable thickness
-
-        points.push({ x, y, thickness })
-      }
-
-      // Convert spiral points to pixel rectangles (like text)
-      for (let i = 0; i < points.length - 1; i++) {
-        const current = points[i]
-        const next = points[i + 1]
-
-        // Create pixelated blocks along the spiral path
-        const steps = Math.max(1, Math.floor(Math.sqrt((next.x - current.x) ** 2 + (next.y - current.y) ** 2) / warpSpacing))
-
-        for (let step = 0; step < steps; step++) {
-          const t = step / steps
-          const x = current.x + (next.x - current.x) * t
-          const y = current.y + (next.y - current.y) * t
-          const thickness = current.thickness + (next.thickness - current.thickness) * t
-
-          // Snap to grid and create pixel rectangle
-          const pixelX = Math.floor(x / warpSpacing) * warpSpacing
-          const pixelY = Math.floor(y / weftSpacing) * weftSpacing
-          const pixelWidth = warpSpacing
-          const pixelHeight = weftSpacing
-
-          // Add slight weave-like variation
-          const weaveAngle = Math.sin(i * 0.5) * 0.2
-          const blockWidth = pixelWidth + Math.sin(i) * 2
-          const blockHeight = thickness * 0.8 + Math.cos(i) * 1
-
-          doormatData.spiralData.push({
-            x: pixelX - blockWidth/2,
-            y: pixelY - blockHeight/2,
-            width: blockWidth,
-            height: blockHeight,
-            spiralIndex,
-            thickness
-          })
-        }
-      }
-    }
   }
 
   // Generate text data (original function)
@@ -2424,7 +2327,6 @@ export default function GeneratorPage() {
       // Now that p5Instance exists, regenerate text data for the initial rug
       updateTextColors((window as any).p5Instance, doormatData)
       generateTextData(doormatData)
-      generateSpiralData(doormatData)
 
       // Generate initial doormat (will be replaced by auto-generation cycle after page loads)
       generateDoormatCore(currentSeed, doormatData)
@@ -2850,7 +2752,6 @@ export default function GeneratorPage() {
       if (typeof window !== 'undefined' && (window as any).p5Instance) {
         updateTextColors((window as any).p5Instance, doormatData)
         generateTextData(doormatData)
-      generateSpiralData(doormatData)
       }
 
       // Update window data
@@ -3712,23 +3613,6 @@ export default function GeneratorPage() {
                     </div>
                   </div>
 
-                  {/* Integrated Spirals Controls */}
-                  <div className="border-t border-amber-600/30 pt-4 mt-4">
-                    <div className="text-amber-700 text-sm mb-3 font-mono">🌀 Integrated Spirals</div>
-                    <div className="text-amber-600 text-xs mb-3 opacity-75">Spirals woven into rug fabric (not overlay)</div>
-
-                    <div className="space-y-3">
-                      <label className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          checked={enableSpirals}
-                          onChange={(e) => setEnableSpirals(e.target.checked)}
-                          className="rounded border-amber-600/30 text-amber-600 focus:ring-amber-500"
-                        />
-                        <span className="text-amber-800 text-sm">Enable Spirals</span>
-                      </label>
-                    </div>
-                  </div>
                 </div>
 
                 {/* Contract Minting Data */}
