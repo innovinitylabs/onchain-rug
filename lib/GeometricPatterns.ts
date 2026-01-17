@@ -87,43 +87,28 @@ export class BlockPatternMask implements EngravingMask {
 
   /**
    * Calculate strength for circle_interference using boolean operations
+   * circle_interference uses primary-minus-secondary only
    */
   private booleanStrength(x: number, y: number): number {
-    // Find primary and secondary circles
-    const primaryCircle = this.shapes.find(shape =>
-      shape.type === 'circle' && shape.booleanRole === 'primary'
-    ) as (BlockShape & { type: 'circle' }) | undefined
+    const primary = this.shapes.find(
+      s => s.type === 'circle' && s.booleanRole === 'primary'
+    ) as any
 
-    const secondaryCircle = this.shapes.find(shape =>
-      shape.type === 'circle' && shape.booleanRole === 'secondary'
-    ) as (BlockShape & { type: 'circle' }) | undefined
+    const secondary = this.shapes.find(
+      s => s.type === 'circle' && s.booleanRole === 'secondary'
+    ) as any
 
-    if (!primaryCircle || !secondaryCircle) {
-      return 0
-    }
+    if (!primary || !secondary) return 0
 
-    // Check if point is inside each circle
-    const inPrimary = this.isPointInCircle(x, y, primaryCircle.cx, primaryCircle.cy, primaryCircle.r)
-    const inSecondary = this.isPointInCircle(x, y, secondaryCircle.cx, secondaryCircle.cy, secondaryCircle.r)
+    const inPrimary =
+      (x - primary.cx) ** 2 + (y - primary.cy) ** 2 <= primary.r ** 2
 
-    // Apply boolean operation
-    if (this.booleanMode === 'intersection') {
-      return (inPrimary && inSecondary) ? 1 : 0
-    } else if (this.booleanMode === 'difference') {
-      return (inPrimary && !inSecondary) ? 1 : 0
-    }
+    const inSecondary =
+      (x - secondary.cx) ** 2 + (y - secondary.cy) ** 2 <= secondary.r ** 2
 
-    return 0
+    return inPrimary && !inSecondary ? 1 : 0
   }
 
-  /**
-   * Helper to check if point is inside circle
-   */
-  private isPointInCircle(x: number, y: number, cx: number, cy: number, r: number): boolean {
-    const dx = x - cx
-    const dy = y - cy
-    return dx * dx + dy * dy <= r * r
-  }
 
   /**
    * Get rotation angle at a specific point (for circle-based patterns)
@@ -898,10 +883,8 @@ export class GeometricPatternRenderer {
       booleanRole: 'secondary'
     })
 
-    // Choose boolean mode
-    const booleanMode: 'intersection' | 'difference' = this.prng.next() < 0.5 ? 'intersection' : 'difference'
-
-    return { shapes, booleanMode }
+    // circle_interference uses primary-minus-secondary only
+    return { shapes, booleanMode: 'difference' }
   }
 
   private generateStripeRotationIllusion(width: number, height: number): BlockShape[] {
