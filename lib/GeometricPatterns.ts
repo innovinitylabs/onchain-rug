@@ -46,7 +46,7 @@ type Vec2 = { x: number, y: number }
  * Block shape definitions for engraving masks
  */
 type BlockShape =
-  | { type: 'circle', cx: number, cy: number, r: number, stripeRotation?: number }
+  | { type: 'circle', cx: number, cy: number, r: number, stripeRotation?: number, booleanRole?: 'primary' | 'secondary' }
   | { type: 'rect', cx: number, cy: number, cw: number, ch: number, rot: number }
   | { type: 'triangle', p1: Vec2, p2: Vec2, p3: Vec2 }
 
@@ -56,10 +56,14 @@ type BlockShape =
 export class BlockPatternMask implements EngravingMask {
   private shapes: BlockShape[]
   private patternType?: PatternType
+  private maskType?: MaskType
+  private booleanMode?: 'intersection' | 'difference'
 
-  constructor(shapes: BlockShape[], patternType?: PatternType) {
+  constructor(shapes: BlockShape[], patternType?: PatternType, maskType?: MaskType, booleanMode?: 'intersection' | 'difference') {
     this.shapes = shapes
     this.patternType = patternType
+    this.maskType = maskType
+    this.booleanMode = booleanMode
   }
 
   isActive(x: number, y: number): boolean {
@@ -67,6 +71,12 @@ export class BlockPatternMask implements EngravingMask {
   }
 
   strength(x: number, y: number): number {
+    // Special handling for circle_interference with boolean operations
+    if (this.maskType === 'circle_interference' && this.booleanMode) {
+      return this.booleanStrength(x, y)
+    }
+
+    // Default behavior for all other mask types
     let maxStrength = 0
     for (const shape of this.shapes) {
       const s = this.shapeStrengthAt(shape, x, y)
@@ -76,7 +86,47 @@ export class BlockPatternMask implements EngravingMask {
   }
 
   /**
-   * Get rotation angle at a specific point (for circle_interference patterns)
+   * Calculate strength for circle_interference using boolean operations
+   */
+  private booleanStrength(x: number, y: number): number {
+    // Find primary and secondary circles
+    const primaryCircle = this.shapes.find(shape =>
+      shape.type === 'circle' && shape.booleanRole === 'primary'
+    ) as (BlockShape & { type: 'circle' }) | undefined
+
+    const secondaryCircle = this.shapes.find(shape =>
+      shape.type === 'circle' && shape.booleanRole === 'secondary'
+    ) as (BlockShape & { type: 'circle' }) | undefined
+
+    if (!primaryCircle || !secondaryCircle) {
+      return 0
+    }
+
+    // Check if point is inside each circle
+    const inPrimary = this.isPointInCircle(x, y, primaryCircle.cx, primaryCircle.cy, primaryCircle.r)
+    const inSecondary = this.isPointInCircle(x, y, secondaryCircle.cx, secondaryCircle.cy, secondaryCircle.r)
+
+    // Apply boolean operation
+    if (this.booleanMode === 'intersection') {
+      return (inPrimary && inSecondary) ? 1 : 0
+    } else if (this.booleanMode === 'difference') {
+      return (inPrimary && !inSecondary) ? 1 : 0
+    }
+
+    return 0
+  }
+
+  /**
+   * Helper to check if point is inside circle
+   */
+  private isPointInCircle(x: number, y: number, cx: number, cy: number, r: number): boolean {
+    const dx = x - cx
+    const dy = y - cy
+    return dx * dx + dy * dy <= r * r
+  }
+
+  /**
+   * Get rotation angle at a specific point (for circle-based patterns)
    */
   getRotationAt(x: number, y: number): number | null {
     // For circle_interference, find the smallest circle that contains this point
@@ -177,6 +227,143 @@ export interface EngravingResolverParams {
   x?: number // For text locality
   y?: number // For text locality
   doormatData?: any // For text locality
+}
+
+/**
+ * Interface for stripe field effects that modify stripe sampling inside masks
+ */
+export interface StripeField {
+  /**
+   * Returns the source stripe index to sample from at the given coordinates
+   * @param x - X coordinate
+   * @param y - Y coordinate
+   * @param baseStripeIndex - Original stripe index that would be used
+   * @param stripeData - Array of all stripe data
+   * @param mask - The engraving mask (for rotation hints, etc.)
+   * @param doormatData - Full doormat data context
+   * @param evolutionStrength - Evolution strength from 0-1
+   * @returns The stripe index to sample from
+   */
+  getSourceStripeIndex(
+    x: number,
+    y: number,
+    baseStripeIndex: number,
+    stripeData: any[],
+    mask: EngravingMask | null,
+    doormatData: any,
+    evolutionStrength: number
+  ): number
+}
+
+/**
+ * Stripe rotation field - creates diagonal band illusions by rotating stripe sampling
+ */
+export class StripeRotationField implements StripeField {
+  getSourceStripeIndex(
+    x: number,
+    y: number,
+    baseStripeIndex: number,
+    stripeData: any[],
+    mask: EngravingMask | null,
+    doormatData: any,
+    evolutionStrength: number
+  ): number {
+    // Only apply rotation if mask is active at this position
+    if (!mask || !mask.isActive(x, y)) {
+      return baseStripeIndex
+    }
+
+    // Calculate average stripe height for consistent rotation illusion
+    const averageStripeHeight = stripeData.reduce((sum, s) => sum + s.height, 0) / stripeData.length
+
+    // Get rotation angle - prefer mask-specific angle, fallback to global angle
+    const angle =
+      (mask as any).getRotationAt?.(x, y) ??
+      doormatData.__stripeRotationAngle
+
+    if (angle !== null && angle !== undefined) {
+      // Project point onto rotated stripe normal to get stripe coordinate
+      // This creates infinite parallel diagonal bands independent of current stripe
+      const rotatedStripeCoord = (x * Math.sin(angle)) + (y * Math.cos(angle))
+
+      // Map rotated coordinate to virtual stripe index using average stripe height
+      // This ensures ALL stripes inside mask participate, not just some
+      const virtualStripeIndex = Math.floor(rotatedStripeCoord / averageStripeHeight)
+
+      // Blend between base and rotated based on evolution strength
+      if (evolutionStrength < 1) {
+        return evolutionStrength < 0.5 ? baseStripeIndex : virtualStripeIndex
+      }
+
+      return virtualStripeIndex
+    }
+
+    // Fallback to base stripe index if no angle available
+    return baseStripeIndex
+  }
+}
+
+/**
+ * Diagonal drift field - creates subtle diagonal movement effects
+ */
+export class DiagonalDriftField implements StripeField {
+  getSourceStripeIndex(
+    x: number,
+    y: number,
+    baseStripeIndex: number,
+    stripeData: any[],
+    mask: EngravingMask | null,
+    doormatData: any,
+    evolutionStrength: number
+  ): number {
+    // Diagonal drift creates a subtle phase shift based on x position
+    // This creates a gentle diagonal wave effect
+    const drift = Math.sin(x * 0.015) * 0.6
+    const phase = doormatData.patternEvolutionPhase || 0
+    const effectivePhase = Math.max(0, Math.min(phase + drift, phase + 0.99))
+
+    // Simple borrowing logic based on effective phase
+    if (effectivePhase >= 1 && effectivePhase < 2) {
+      // Phase 1: borrow from previous stripe
+      const prevIndex = baseStripeIndex > 0 ? baseStripeIndex - 1 : baseStripeIndex
+      return prevIndex
+    } else if (effectivePhase >= 2) {
+      // Phase 2+: borrow from next stripe
+      const nextIndex = baseStripeIndex < stripeData.length - 1 ? baseStripeIndex + 1 : baseStripeIndex
+      return nextIndex
+    }
+
+    return baseStripeIndex
+  }
+}
+
+/**
+ * Two-stripe borrow field - borrows colors from adjacent stripes
+ */
+export class TwoStripeBorrowField implements StripeField {
+  getSourceStripeIndex(
+    x: number,
+    y: number,
+    baseStripeIndex: number,
+    stripeData: any[],
+    mask: EngravingMask | null,
+    doormatData: any,
+    evolutionStrength: number
+  ): number {
+    // Two-stripe borrow uses a deterministic hash to choose between prev2 and next2 stripes
+    const hash01 = (x: number, y: number, seed: number): number => {
+      const h = (x * 73856093) ^ (y * 19349663) ^ (seed * 83492791)
+      return (h & 0x7fffffff) / 0x7fffffff
+    }
+
+    const phase = doormatData.patternEvolutionPhase || 0
+    const prev2Index = baseStripeIndex > 1 ? baseStripeIndex - 2 : baseStripeIndex
+    const next2Index = baseStripeIndex < stripeData.length - 2 ? baseStripeIndex + 2 : baseStripeIndex
+
+    // Use hash to deterministically choose between prev2 and next2
+    const choice = hash01(x, y, phase * 131)
+    return choice < 0.5 ? prev2Index : next2Index
+  }
 }
 
 /**
@@ -302,12 +489,35 @@ export function resolvePatternThreadColor(params: EngravingResolverParams): any 
   return p.lerpColor(baseColor, targetColor, variedStrength)
 }
 
+/**
+ * Legacy pattern type - kept for backward compatibility
+ * Will be deprecated in favor of separate MaskType and FieldType
+ */
 export type PatternType =
   | 'block_circles'
   | 'block_rectangles'
   | 'block_triangles'
   | 'circle_interference'
   | 'stripe_rotation_illusion'
+
+/**
+ * Mask types define where geometric effects apply
+ */
+export type MaskType =
+  | 'none'
+  | 'block_circles'
+  | 'block_rectangles'
+  | 'block_triangles'
+  | 'circle_interference'
+
+/**
+ * Field types define how stripe sampling behaves inside masks
+ */
+export type FieldType =
+  | 'none'
+  | 'stripe_rotation'
+  | 'diagonal_drift'
+  | 'two_stripe_borrow'
 
 /**
  * Main geometric pattern renderer
@@ -322,7 +532,8 @@ export class GeometricPatternRenderer {
   }
 
   /**
-   * Create a geometric pattern engraving mask
+   * Create a geometric pattern engraving mask (legacy method - deprecated)
+   * @deprecated Use createMask with MaskType instead
    */
   createPatternMask(
     patternType: PatternType,
@@ -333,30 +544,64 @@ export class GeometricPatternRenderer {
   ): EngravingMask {
     console.log('🎨 createPatternMask called with type:', patternType, 'palette:', palette.colors.length)
 
+    // Convert legacy pattern type to mask type for backward compatibility
+    let maskType: MaskType = 'none'
     switch (patternType) {
+      case 'block_circles':
+        maskType = 'block_circles'
+        break
+      case 'block_rectangles':
+        maskType = 'block_rectangles'
+        break
+      case 'block_triangles':
+        maskType = 'block_triangles'
+        break
+      case 'circle_interference':
+        maskType = 'circle_interference'
+        break
+      case 'stripe_rotation_illusion':
+        // For backward compatibility, stripe_rotation_illusion maps to circle_interference
+        // since stripe rotation is now a field effect, not a mask type
+        maskType = 'circle_interference'
+        break
+    }
+
+    return this.createMask(maskType, params, palette, canvasWidth, canvasHeight)
+  }
+
+  /**
+   * Create a geometric engraving mask
+   */
+  createMask(
+    maskType: MaskType,
+    params: PatternParameters,
+    palette: ColorPalette,
+    canvasWidth: number,
+    canvasHeight: number
+  ): EngravingMask {
+    console.log('🎨 createMask called with type:', maskType, 'palette:', palette.colors.length)
+
+    switch (maskType) {
       case 'block_circles': {
         const shapes = this.generateBlockCircleShapes(canvasWidth, canvasHeight)
-        return new BlockPatternMask(shapes, patternType)
+        return new BlockPatternMask(shapes, undefined, maskType)
       }
       case 'block_rectangles': {
         const shapes = this.generateBlockRectangleShapes(canvasWidth, canvasHeight)
-        return new BlockPatternMask(shapes, patternType)
+        return new BlockPatternMask(shapes, undefined, maskType)
       }
       case 'block_triangles': {
         const shapes = this.generateBlockTriangleShapes(canvasWidth, canvasHeight)
-        return new BlockPatternMask(shapes, patternType)
+        return new BlockPatternMask(shapes, undefined, maskType)
       }
       case 'circle_interference': {
-        const shapes = this.generateInterferenceCircles(canvasWidth, canvasHeight)
-        return new BlockPatternMask(shapes, patternType)
+        const { shapes, booleanMode } = this.generateInterferenceCircles(canvasWidth, canvasHeight)
+        return new BlockPatternMask(shapes, undefined, maskType, booleanMode)
       }
-      case 'stripe_rotation_illusion': {
-        const shapes = this.generateStripeRotationIllusion(canvasWidth, canvasHeight)
-        return new BlockPatternMask(shapes, patternType)
-      }
+      case 'none':
       default:
-        // Test pattern - return empty mask
-        console.log('🎨 Creating empty test pattern mask')
+        // Empty mask for 'none' type
+        console.log('🎨 Creating empty mask')
         return new BlockPatternMask([])
     }
   }
@@ -380,11 +625,16 @@ export class GeometricPatternRenderer {
         const x = width/2 + (this.prng.next() - 0.5) * (centerZoneWidth - radius * 2)
         const y = height/2 + (this.prng.next() - 0.5) * (centerZoneHeight - radius * 2)
 
+        // Generate a random rotation angle for stripe rotation effect
+        const rotationAngles = [-Math.PI / 12, -Math.PI / 8, Math.PI / 12, Math.PI / 8]
+        const randomRotation = rotationAngles[Math.floor(this.prng.next() * rotationAngles.length)]
+
         const newShape = {
           type: 'circle' as const,
           cx: x,
           cy: y,
-          r: radius
+          r: radius,
+          stripeRotation: randomRotation
         }
 
         // Check for overlap with existing shapes
@@ -611,44 +861,47 @@ export class GeometricPatternRenderer {
     return shapes
   }
 
-  private generateInterferenceCircles(width: number, height: number): BlockShape[] {
+  private generateInterferenceCircles(width: number, height: number): { shapes: BlockShape[], booleanMode: 'intersection' | 'difference' } {
     const shapes: BlockShape[] = []
 
-    // ---- RULE 2: Fixed ratio set ----
-    const radiusRatios = [1.0, 0.62, 0.38]
-
     // Base radius derived from canvas
-    const baseRadius = Math.min(width, height) * 0.28
+    const baseRadius = Math.min(width, height) * 0.25
 
-    // ---- RULE 6: Center bias ----
-    const cx = width * 0.5 + (this.prng.next() - 0.5) * width * 0.15
-    const cy = height * 0.5 + (this.prng.next() - 0.5) * height * 0.12
+    // Primary (dominant) circle near canvas center
+    const primaryCx = width * 0.5 + (this.prng.next() - 0.5) * width * 0.1
+    const primaryCy = height * 0.5 + (this.prng.next() - 0.5) * height * 0.08
 
-    // ---- Dominant circle ----
     const rotationAngles = [-Math.PI / 12, -Math.PI / 8, Math.PI / 12, Math.PI / 8]
     shapes.push({
       type: 'circle',
-      cx,
-      cy,
+      cx: primaryCx,
+      cy: primaryCy,
       r: baseRadius,
-      stripeRotation: rotationAngles[Math.floor(this.prng.next() * rotationAngles.length)]
+      stripeRotation: rotationAngles[Math.floor(this.prng.next() * rotationAngles.length)],
+      booleanRole: 'primary'
     })
 
-    // ---- Optional nested / overlapping circle ----
-    if (this.prng.next() < 0.6) {
-      const ratio = radiusRatios[Math.floor(this.prng.next() * (radiusRatios.length - 1)) + 1]
-      const offset = baseRadius * 0.15
+    // Secondary (intruder) circle with overlap
+    const secondaryRadius = baseRadius * (0.6 + this.prng.next() * 0.4) // 60-100% of primary radius
+    const overlapDistance = (baseRadius + secondaryRadius) * (0.3 + this.prng.next() * 0.4) // 30-70% overlap
 
-      shapes.push({
-        type: 'circle',
-        cx: cx + (this.prng.next() - 0.5) * offset,
-        cy: cy + (this.prng.next() - 0.5) * offset,
-        r: baseRadius * ratio,
-        stripeRotation: rotationAngles[Math.floor(this.prng.next() * rotationAngles.length)]
-      })
-    }
+    const angle = this.prng.next() * Math.PI * 2
+    const secondaryCx = primaryCx + Math.cos(angle) * overlapDistance
+    const secondaryCy = primaryCy + Math.sin(angle) * overlapDistance
 
-    return shapes
+    shapes.push({
+      type: 'circle',
+      cx: secondaryCx,
+      cy: secondaryCy,
+      r: secondaryRadius,
+      stripeRotation: rotationAngles[Math.floor(this.prng.next() * rotationAngles.length)],
+      booleanRole: 'secondary'
+    })
+
+    // Choose boolean mode
+    const booleanMode: 'intersection' | 'difference' = this.prng.next() < 0.5 ? 'intersection' : 'difference'
+
+    return { shapes, booleanMode }
   }
 
   private generateStripeRotationIllusion(width: number, height: number): BlockShape[] {
@@ -724,6 +977,38 @@ export function extractRugPalette(rugData: any, p?: any): ColorPalette {
 
   console.log('🎨 Final palette:', colors.length, 'colors')
   return { colors }
+}
+
+/**
+ * Get evolution strength multiplier for a stripe based on phase and parity
+ * @param phase - Evolution phase (0-3)
+ * @param stripeIndex - Index of the stripe
+ * @returns Strength multiplier (0-1)
+ */
+export function getEvolutionStrength(phase: number, stripeIndex: number): number {
+  if (phase <= 0) return 0
+  if (phase === 1) return stripeIndex % 2 === 0 ? 0.4 : 0
+  if (phase === 2) return stripeIndex % 2 === 0 ? 0.8 : 0.3
+  return 1.0 // Phase 3: full strength
+}
+
+/**
+ * Create a stripe field based on field type
+ * @param fieldType - The type of field to create
+ * @returns StripeField instance or null if none
+ */
+export function createStripeField(fieldType: FieldType): StripeField | null {
+  switch (fieldType) {
+    case 'stripe_rotation':
+      return new StripeRotationField()
+    case 'diagonal_drift':
+      return new DiagonalDriftField()
+    case 'two_stripe_borrow':
+      return new TwoStripeBorrowField()
+    case 'none':
+    default:
+      return null
+  }
 }
 
 /**
