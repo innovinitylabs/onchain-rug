@@ -31,21 +31,17 @@ contract RugReferralRegistryFacet {
     error CodeTooShort();
     error CodeTooLong();
     error InvalidCodeFormat();
-    error CodeNotRegistered();
     error ReferrerAlreadyRegistered();
-    error NoCodeRegistered();
     error CannotReferSelf();
 
     // Constants
-    string private constant REFERRAL_PREFIX = "";
     uint256 private constant MIN_CODE_LENGTH = 3;
     uint256 private constant MAX_CODE_LENGTH = 20;
-    uint8 private constant SHORT_CODE_LENGTH = 8; // 8-character base62 codes
 
     /**
      * @notice Register a referral code for the caller
-     * @param _code Referral code (e.g., "alice123" will be stored as "ref-alice123")
-     * @dev Code must be unique, 3-20 characters, and start with "ref-"
+     * @param _code Referral code (e.g., "alice123" - base62 format)
+     * @dev Code must be unique, 3-20 characters, valid base62 format
      */
 
     function registerReferralCode(string memory _code) external {
@@ -66,9 +62,6 @@ contract RugReferralRegistryFacet {
 
         // Validate the code is valid base62
         if (!LibBase62.isValidBase62(_code)) revert InvalidCodeFormat();
-
-        // Extract actual code part (no prefix to remove)
-        string memory actualCode = _code;
 
         // Validate length
         uint256 actualCodeLength = codeLength;
@@ -239,7 +232,7 @@ contract RugReferralRegistryFacet {
      * @param codes Array of attribution codes from ERC-8021
      * @param referee Address of the person using the referral code (to prevent self-referral)
      * @return referrer Address of referrer if referral code found, address(0) otherwise
-     * @dev Looks for codes starting with "ref-" prefix and prevents self-referral
+     * @dev Looks for registered base62 referral codes and prevents self-referral
      */
     function extractReferrerFromCodes(string[] memory codes, address referee) 
         external 
@@ -250,17 +243,14 @@ contract RugReferralRegistryFacet {
         
         for (uint256 i = 0; i < codes.length; i++) {
             string memory code = codes[i];
-            
-            // Check if code starts with "ref-"
-            if (_startsWith(code, REFERRAL_PREFIX)) {
-                // Check if code is registered
-                if (rs.codeExists[code]) {
-                    address referrer = rs.codeToReferrer[code];
-                    
-                    // Prevent self-referral
-                    if (referrer != address(0) && referrer != referee) {
-                        return referrer;
-                    }
+
+            // Check if code is registered (direct lookup, no prefix check needed)
+            if (rs.codeExists[code]) {
+                address referrer = rs.codeToReferrer[code];
+
+                // Prevent self-referral
+                if (referrer != address(0) && referrer != referee) {
+                    return referrer;
                 }
             }
         }
@@ -379,8 +369,8 @@ contract RugReferralRegistryFacet {
 
     /**
      * @notice Set code length limits (admin only)
-     * @param minLength Minimum code length (after "ref-" prefix)
-     * @param maxLength Maximum code length (after "ref-" prefix)
+     * @param minLength Minimum code length for base62 referral codes
+     * @param maxLength Maximum code length for base62 referral codes
      */
     function setCodeLengthLimits(uint256 minLength, uint256 maxLength) external {
         LibDiamond.enforceIsContractOwner();
@@ -392,27 +382,5 @@ contract RugReferralRegistryFacet {
         rs.maxCodeLength = maxLength;
     }
 
-    /**
-     * @notice Helper to check if string starts with prefix
-     * @param str String to check
-     * @param prefix Prefix to look for
-     * @return True if string starts with prefix
-     */
-    function _startsWith(string memory str, string memory prefix) private pure returns (bool) {
-        bytes memory strBytes = bytes(str);
-        bytes memory prefixBytes = bytes(prefix);
-        
-        if (strBytes.length < prefixBytes.length) {
-            return false;
-        }
-        
-        for (uint256 i = 0; i < prefixBytes.length; i++) {
-            if (strBytes[i] != prefixBytes[i]) {
-                return false;
-            }
-        }
-        
-        return true;
-    }
 }
 
