@@ -36,9 +36,13 @@ export default function Web3Minting({
   const chainId = useChainId()
   const { writeContract, data: hash, error, isPending } = useWriteContract()
   const { sendTransactionAsync } = useSendTransaction()
+  const [directMintHash, setDirectMintHash] = useState<`0x${string}` | undefined>()
+  const [directMintPending, setDirectMintPending] = useState(false)
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
-    hash,
+    hash: directMintHash || hash,
   })
+
+  const isAnyPending = isPending || directMintPending
 
   const publicClient = usePublicClient()
   const [gasEstimate, setGasEstimate] = useState<bigint | null>(null)
@@ -265,6 +269,10 @@ export default function Web3Minting({
     contractAddress: string
     mintCost: string
   }) => {
+    // Reset previous transaction states
+    setDirectMintHash(undefined)
+    setDirectMintPending(false)
+
     const { destinationChainId, payChainId, contractAddress, mintCost } = params
 
     // Validate bridge security first
@@ -488,63 +496,18 @@ export default function Web3Minting({
 
         console.log('Direct mint with referral codes:', codes)
 
-        // For now, fall back to standard minting without custom referral handling
-        // TODO: Fix wagmi v2 compatibility for direct minting with referrals
-        await writeContract({
-          address: contractAddress as `0x${string}`,
-          abi: [
-            {
-              "inputs": [
-                {"internalType": "string[]", "name": "textRows", "type": "string[]"},
-                {"internalType": "uint256", "name": "seed", "type": "uint256"},
-                {
-                  "components": [
-                    {"internalType": "uint8", "name": "warpThickness", "type": "uint8"},
-                    {"internalType": "uint256", "name": "stripeCount", "type": "uint256"}
-                  ],
-                  "internalType": "struct RugNFTFacet.VisualConfig",
-                  "name": "visual",
-                  "type": "tuple"
-                },
-                {
-                  "components": [
-                    {"internalType": "string", "name": "paletteName", "type": "string"},
-                    {"internalType": "string", "name": "minifiedPalette", "type": "string"},
-                    {"internalType": "string", "name": "minifiedStripeData", "type": "string"},
-                    {"internalType": "string", "name": "filteredCharacterMap", "type": "string"}
-                  ],
-                  "internalType": "struct RugNFTFacet.ArtData",
-                  "name": "art",
-                  "type": "tuple"
-                },
-                {"internalType": "uint256", "name": "characterCount", "type": "uint256"}
-              ],
-              "name": "mintRug",
-              "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-              "stateMutability": "payable",
-              "type": "function"
-            }
-          ] as const,
-          functionName: 'mintRug',
-          args: [
-            optimized.textRows,
-            BigInt(seed),
-            {
-              warpThickness: warpThickness,
-              stripeCount: BigInt(optimized.stripeData.length)
-            },
-            {
-              paletteName: optimized.palette.name,
-              minifiedPalette: JSON.stringify(optimized.palette),
-              minifiedStripeData: JSON.stringify(optimized.stripeData),
-              filteredCharacterMap: JSON.stringify(optimized.characterMap)
-            },
-            BigInt(optimized.textRows.join('').length)
-          ],
-          value: parseEther(mintCost.toString()),
-          chain: getWagmiChainById(chainId),
-          account: address
-        })
+        // Send transaction with ERC-8021 referral attribution
+        setDirectMintPending(true)
+        try {
+          const txHash = await sendTransactionAsync({
+            to: contractAddress as `0x${string}`,
+            data: dataWithReferrals,
+            value: parseEther(mintCost.toString()),
+          })
+          setDirectMintHash(txHash)
+        } finally {
+          setDirectMintPending(false)
+        }
       } else {
         const callData = encodeFunctionData({
           abi: [
@@ -633,13 +596,13 @@ export default function Web3Minting({
 
   const getButtonText = () => {
     if (!isConnected) return '🔗 Connect Wallet First'
-    if (isPending) return '⏳ Sending Transaction...'
+    if (isAnyPending) return '⏳ Sending Transaction...'
     if (isConfirming) return '⏳ Confirming on Blockchain...'
     if (isSuccess) return '✅ NFT Minted Successfully!'
     return `🚀 Mint Rug (${mintCost} ETH)`
   }
 
-  const isButtonDisabled = !isConnected || isPending || isConfirming
+  const isButtonDisabled = !isConnected || isAnyPending || isConfirming
 
   return (
     <div className="space-y-3">
@@ -653,10 +616,10 @@ export default function Web3Minting({
       )}
 
       {/* Transaction Status */}
-      {(hash || relayTxHash) && (
+      {(hash || relayTxHash || directMintHash) && (
         <div className="bg-blue-900/30 border border-blue-500/30 rounded p-2">
           <div className="text-blue-400 text-xs font-mono">
-            📝 Transaction: {(hash || relayTxHash)?.slice(0, 10)}...{(hash || relayTxHash)?.slice(-8)}
+            📝 Transaction: {(hash || relayTxHash || directMintHash)?.slice(0, 10)}...{(hash || relayTxHash || directMintHash)?.slice(-8)}
           </div>
           {relayTxHash && isRelayConfirming && (
             <div className="text-amber-400 text-xs mt-1">
