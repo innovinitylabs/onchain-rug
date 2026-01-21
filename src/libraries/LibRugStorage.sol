@@ -258,7 +258,10 @@ library LibRugStorage {
         mapping(string => address) codeToReferrer;    // Referral code => referrer wallet
         mapping(address => string) referrerToCode;    // Referrer wallet => referral code
         mapping(string => bool) codeExists;           // Track if code is registered
-        
+
+        // Deterministic registration tracking
+        mapping(address => bool) registeredReferrers; // Referrer wallet => is registered
+
         // Referral statistics
         mapping(address => ReferralStats) referralStats;  // Referrer => stats
         

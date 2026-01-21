@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useChainId, usePublicClient } from 'wagmi'
 import { parseEther, encodeFunctionData } from 'viem'
+import { appendERC8021Suffix, getAllAttributionCodes } from '@/utils/erc8021-utils'
 import { shapeSepolia, shapeMainnet, contractAddresses } from '@/lib/web3'
 import { config } from '@/lib/config'
 import { getChainDisplayName, NETWORKS } from '@/lib/networks'
@@ -424,8 +425,9 @@ export default function Web3Minting({
 
       if (isDirect) {
         const destChain = getWagmiChainById(destinationChainId)
-        await writeContract({
-          address: contractAddress as `0x${string}`,
+
+        // Encode the function call data
+        const encodedData = encodeFunctionData({
           abi: [
             {
               "inputs": [
@@ -474,7 +476,20 @@ export default function Web3Minting({
               filteredCharacterMap: JSON.stringify(optimized.characterMap)
             },
             BigInt(optimized.textRows.join('').length)
-          ],
+          ]
+        })
+
+        // Get attribution codes (includes referral codes)
+        const codes = getAllAttributionCodes({ walletAddress: address })
+
+        // Append ERC-8021 suffix with referral codes
+        const dataWithReferrals = appendERC8021Suffix(encodedData, codes)
+
+        console.log('Direct mint with referral codes:', codes)
+
+        await writeContract({
+          address: contractAddress as `0x${string}`,
+          data: dataWithReferrals,
           value: parseEther(mintCost.toString()),
           gas: gasLimit,
           chain: destChain,

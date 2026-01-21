@@ -228,7 +228,7 @@ contract UpgradeBaseSepoliaERC8021 is Script {
     }
 
     function _getRugReferralRegistrySelectors() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](14);
+        bytes4[] memory selectors = new bytes4[](18);
         selectors[0] = RugReferralRegistryFacet.registerReferralCode.selector;
         selectors[1] = RugReferralRegistryFacet.getReferrerFromCode.selector;
         selectors[2] = RugReferralRegistryFacet.getCodeFromReferrer.selector;
@@ -243,6 +243,10 @@ contract UpgradeBaseSepoliaERC8021 is Script {
         selectors[11] = RugReferralRegistryFacet.setReferralPercentages.selector;
         selectors[12] = RugReferralRegistryFacet.setCodeLengthLimits.selector;
         selectors[13] = RugReferralRegistryFacet.initializeReferralSystem.selector;
+        selectors[14] = RugReferralRegistryFacet.registerForReferrals.selector;
+        selectors[15] = RugReferralRegistryFacet.getReferralCode.selector;
+        selectors[16] = RugReferralRegistryFacet.generateShortCode.selector;
+        selectors[17] = RugReferralRegistryFacet.isRegistered.selector;
         return selectors;
     }
 }

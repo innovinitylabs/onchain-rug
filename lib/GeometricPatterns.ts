@@ -38,6 +38,17 @@ export interface EngravingMask {
 }
 
 /**
+ * Extended engraving mask interface that supports region classification
+ */
+export interface RegionalEngravingMask extends EngravingMask {
+  /**
+   * Returns the region name at this coordinate, or null if inactive
+   * Used for conditional color/engraving behavior based on regions
+   */
+  getRegion?(x: number, y: number): string | null
+}
+
+/**
  * 2D vector for shape coordinates
  */
 type Vec2 = { x: number, y: number }
@@ -46,7 +57,7 @@ type Vec2 = { x: number, y: number }
  * Block shape definitions for engraving masks
  */
 type BlockShape =
-  | { type: 'circle', cx: number, cy: number, r: number, stripeRotation?: number, booleanRole?: 'primary' | 'secondary' }
+  | { type: 'circle', cx: number, cy: number, r: number, stripeRotation?: number, booleanRole?: 'primary' | 'secondary', secondaryMode?: 'cut' | 'touch' }
   | { type: 'rect', cx: number, cy: number, cw: number, ch: number, rot: number }
   | { type: 'triangle', p1: Vec2, p2: Vec2, p3: Vec2 }
 
@@ -71,8 +82,8 @@ export class BlockPatternMask implements EngravingMask {
   }
 
   strength(x: number, y: number): number {
-    // Special handling for circle_interference with boolean operations
-    if (this.maskType === 'circle_interference' && this.booleanMode) {
+    // Special handling for boolean mask types
+    if ((this.maskType === 'circle_interference' || this.maskType === 'compass_cut') && this.booleanMode) {
       return this.booleanStrength(x, y)
     }
 
@@ -90,6 +101,43 @@ export class BlockPatternMask implements EngravingMask {
    * circle_interference uses primary-minus-secondary only
    */
   private booleanStrength(x: number, y: number): number {
+    if (this.maskType === 'compass_cut') {
+      const primary = this.shapes.find(
+        s => s.type === 'circle' && s.booleanRole === 'primary'
+      ) as any
+      if (!primary) return 0
+
+      const inPrimary = this.isPointInCircle(x, y, primary.cx, primary.cy, primary.r)
+      let inCutSecondary = false
+      let touchSecondaryCount = 0
+
+      for (const shape of this.shapes) {
+        if (shape.type === 'circle' && shape.booleanRole === 'secondary') {
+          if (this.isPointInCircle(x, y, shape.cx, shape.cy, shape.r)) {
+            if (shape.secondaryMode === 'touch') {
+              touchSecondaryCount++
+            } else {
+              inCutSecondary = true
+            }
+          }
+        }
+      }
+
+      if (inPrimary) {
+        return inCutSecondary ? 0 : 1
+      }
+
+      const dx = x - primary.cx
+      const dy = y - primary.cy
+      const distPrimary = Math.sqrt(dx * dx + dy * dy)
+      const attachmentBand = Math.max(1, primary.r * 0.09)
+      const nearPrimary = distPrimary <= primary.r + attachmentBand
+
+      if (inCutSecondary && nearPrimary) return 1
+      if (touchSecondaryCount >= 2 && nearPrimary) return 1
+      return 0
+    }
+
     const primary = this.shapes.find(
       s => s.type === 'circle' && s.booleanRole === 'primary'
     ) as any
@@ -100,11 +148,9 @@ export class BlockPatternMask implements EngravingMask {
 
     if (!primary || !secondary) return 0
 
-    const inPrimary =
-      (x - primary.cx) ** 2 + (y - primary.cy) ** 2 <= primary.r ** 2
+    const inPrimary = this.isPointInCircle(x, y, primary.cx, primary.cy, primary.r)
 
-    const inSecondary =
-      (x - secondary.cx) ** 2 + (y - secondary.cy) ** 2 <= secondary.r ** 2
+    const inSecondary = this.isPointInCircle(x, y, secondary.cx, secondary.cy, secondary.r)
 
     return inPrimary && !inSecondary ? 1 : 0
   }
@@ -161,6 +207,12 @@ export class BlockPatternMask implements EngravingMask {
     }
   }
 
+  private isPointInCircle(x: number, y: number, cx: number, cy: number, r: number): boolean {
+    const dx = x - cx
+    const dy = y - cy
+    return dx * dx + dy * dy <= r * r
+  }
+
   private pointInTriangle(px: number, py: number, p1: Vec2, p2: Vec2, p3: Vec2): boolean {
     // Barycentric coordinate method
     const denominator = (p2.y - p3.y) * (p1.x - p3.x) + (p3.x - p2.x) * (p1.y - p3.y)
@@ -171,6 +223,348 @@ export class BlockPatternMask implements EngravingMask {
     const c = 1 - a - b
 
     return a >= 0 && b >= 0 && c >= 0
+  }
+}
+
+/**
+ * Circle partition cut mask - creates a dominant filled circle carved by secondary circles
+ * and partitioned by one straight line. Regions are classified as "upper" or "lower".
+ */
+export class CirclePartitionCutMask implements RegionalEngravingMask {
+  private primaryCircle: { cx: number, cy: number, r: number }
+  private secondaryCircles: Array<{ cx: number, cy: number, r: number }>
+  private partitionLine: { point: Vec2, normal: Vec2 }
+
+  constructor(primaryCircle: { cx: number, cy: number, r: number },
+              secondaryCircles: Array<{ cx: number, cy: number, r: number }>,
+              partitionLine: { point: Vec2, normal: Vec2 }) {
+    this.primaryCircle = primaryCircle
+    this.secondaryCircles = secondaryCircles
+    this.partitionLine = partitionLine
+  }
+
+  isActive(x: number, y: number): boolean {
+    return this.strength(x, y) > 0
+  }
+
+  strength(x: number, y: number): number {
+    // Check if point is inside primary circle
+    const dx = x - this.primaryCircle.cx
+    const dy = y - this.primaryCircle.cy
+    const distPrimary = Math.sqrt(dx * dx + dy * dy)
+
+    if (distPrimary > this.primaryCircle.r) {
+      return 0 // Outside primary circle
+    }
+
+    // Check if point is inside any secondary circle (these carve out area)
+    for (const secondary of this.secondaryCircles) {
+      const dxSec = x - secondary.cx
+      const dySec = y - secondary.cy
+      const distSec = Math.sqrt(dxSec * dxSec + dySec * dySec)
+      if (distSec <= secondary.r) {
+        return 0 // Inside secondary circle - carved out
+      }
+    }
+
+    // Point survives all boolean cuts
+    return 1
+  }
+
+  getRegion(x: number, y: number): string | null {
+    if (!this.isActive(x, y)) {
+      return null
+    }
+
+    // Calculate signed distance to partition line
+    const signedDistance = this.signedDistanceToLine(x, y, this.partitionLine.point, this.partitionLine.normal)
+
+    // Classify as upper or lower based on signed distance
+    // Positive distance = above line, negative = below line
+    return signedDistance >= 0 ? "upper" : "lower"
+  }
+
+  /**
+   * Calculate signed distance from point to infinite line
+   * @param px Point x coordinate
+   * @param py Point y coordinate
+   * @param linePoint A point on the line
+   * @param lineNormal Normalized normal vector of the line
+   * @returns Signed distance (positive = above line, negative = below line)
+   */
+  private signedDistanceToLine(px: number, py: number, linePoint: Vec2, lineNormal: Vec2): number {
+    const dx = px - linePoint.x
+    const dy = py - linePoint.y
+    return dx * lineNormal.x + dy * lineNormal.y
+  }
+}
+
+/**
+ * Circle boolean cut mask - primary circle minus secondary circles, then cut by straight line
+ * Implements hard boolean geometry with one dominant primary circle and multiple secondary cut circles
+ */
+export class CircleBooleanCutMask implements RegionalEngravingMask {
+  private primaryCircle: { cx: number, cy: number, r: number }
+  private secondaryCircles: Array<{ cx: number, cy: number, r: number }>
+  private partitionLine: { point: Vec2, normal: Vec2 }
+
+  constructor(primaryCircle: { cx: number, cy: number, r: number },
+              secondaryCircles: Array<{ cx: number, cy: number, r: number }>,
+              partitionLine: { point: Vec2, normal: Vec2 }) {
+    this.primaryCircle = primaryCircle
+    this.secondaryCircles = secondaryCircles
+    this.partitionLine = partitionLine
+  }
+
+  isActive(x: number, y: number): boolean {
+    return this.strength(x, y) > 0
+  }
+
+  strength(x: number, y: number): number {
+    // First apply circle boolean operation: primary minus all secondary circles
+    const inPrimary = this.isPointInCircle(x, y, this.primaryCircle.cx, this.primaryCircle.cy, this.primaryCircle.r)
+
+    if (!inPrimary) {
+      return 0 // Outside primary circle
+    }
+
+    // Check if point is inside any secondary circle (these carve out area)
+    for (const secondary of this.secondaryCircles) {
+      if (this.isPointInCircle(x, y, secondary.cx, secondary.cy, secondary.r)) {
+        return 0 // Inside secondary circle - carved out
+      }
+    }
+
+    // Point survived circle boolean operation, now apply straight line constraint
+    const signedDistance = this.signedDistanceToLine(x, y, this.partitionLine.point, this.partitionLine.normal)
+
+    // Keep only one side of the line (upper side for consistency)
+    return signedDistance >= 0 ? 1 : 0
+  }
+
+  getRegion(x: number, y: number): string | null {
+    if (!this.isActive(x, y)) {
+      return null
+    }
+
+    // Calculate signed distance to partition line
+    const signedDistance = this.signedDistanceToLine(x, y, this.partitionLine.point, this.partitionLine.normal)
+
+    // Classify as upper or lower based on signed distance
+    return signedDistance >= 0 ? "upper" : "lower"
+  }
+
+  /**
+   * Check if point is inside circle
+   */
+  private isPointInCircle(px: number, py: number, cx: number, cy: number, r: number): boolean {
+    const dx = px - cx
+    const dy = py - cy
+    return dx * dx + dy * dy <= r * r
+  }
+
+  /**
+   * Calculate signed distance from point to infinite line
+   * @param px Point x coordinate
+   * @param py Point y coordinate
+   * @param linePoint A point on the line
+   * @param lineNormal Normalized normal vector of the line
+   * @returns Signed distance (positive = above line, negative = below line)
+   */
+  private signedDistanceToLine(px: number, py: number, linePoint: Vec2, lineNormal: Vec2): number {
+    const dx = px - linePoint.x
+    const dy = py - linePoint.y
+    return dx * lineNormal.x + dy * lineNormal.y
+  }
+}
+
+/**
+ * Arc partition mask using signed distance fields for non-boolean geometry
+ * Each point is assigned to exactly one region based on dominant geometric constraints
+ */
+export class ArcPartitionMask implements RegionalEngravingMask {
+  private primaryCircle: { cx: number, cy: number, r: number }
+  private secondaryCircles: Array<{ cx: number, cy: number, r: number }>
+  private partitionLine: { point: Vec2, normal: Vec2 }
+
+  constructor(primaryCircle: { cx: number, cy: number, r: number },
+              secondaryCircles: Array<{ cx: number, cy: number, r: number }>,
+              partitionLine: { point: Vec2, normal: Vec2 }) {
+    this.primaryCircle = primaryCircle
+    this.secondaryCircles = secondaryCircles
+    this.partitionLine = partitionLine
+  }
+
+  isActive(x: number, y: number): boolean {
+    return this.strength(x, y) > 0
+  }
+
+  strength(x: number, y: number): number {
+    // Only active inside primary circle
+    const dx = x - this.primaryCircle.cx
+    const dy = y - this.primaryCircle.cy
+    const distPrimary = Math.sqrt(dx * dx + dy * dy)
+
+    return distPrimary <= this.primaryCircle.r ? 1 : 0
+  }
+
+  getRegion(x: number, y: number): string | null {
+    if (!this.isActive(x, y)) {
+      return null
+    }
+
+    // Compute signed distances for all constraints
+    const distances: Array<{ value: number, regionId: string }> = []
+
+    // Primary circle constraint: d_primary = primary_radius - distance_to_primary_center
+    const dx = x - this.primaryCircle.cx
+    const dy = y - this.primaryCircle.cy
+    const distPrimary = Math.sqrt(dx * dx + dy * dy)
+    distances.push({
+      value: this.primaryCircle.r - distPrimary,
+      regionId: "primary_core"
+    })
+
+    // Secondary circle constraints: d_secondary_i = distance_to_secondary_center_i - secondary_radius_i
+    this.secondaryCircles.forEach((secondary, index) => {
+      const dxSec = x - secondary.cx
+      const dySec = y - secondary.cy
+      const distSec = Math.sqrt(dxSec * dxSec + dySec * dySec)
+      distances.push({
+        value: distSec - secondary.r,
+        regionId: `secondary_${index}_arc`
+      })
+    })
+
+    // Line constraint: signed distance to line
+    const lineDist = this.signedDistanceToLine(x, y, this.partitionLine.point, this.partitionLine.normal)
+    distances.push({
+      value: lineDist,
+      regionId: lineDist >= 0 ? "line_upper" : "line_lower"
+    })
+
+    // Find the constraint with the smallest absolute value (dominant constraint)
+    let minAbsValue = Infinity
+    let dominantRegion = "primary_core" // fallback
+
+    for (const dist of distances) {
+      const absValue = Math.abs(dist.value)
+      if (absValue < minAbsValue) {
+        minAbsValue = absValue
+        dominantRegion = dist.regionId
+      }
+    }
+
+    return dominantRegion
+  }
+
+  /**
+   * Calculate signed distance from point to infinite line
+   * @param px Point x coordinate
+   * @param py Point y coordinate
+   * @param linePoint A point on the line
+   * @param lineNormal Normalized normal vector of the line
+   * @returns Signed distance (positive = above line, negative = below line)
+   */
+  private signedDistanceToLine(px: number, py: number, linePoint: Vec2, lineNormal: Vec2): number {
+    const dx = px - linePoint.x
+    const dy = py - linePoint.y
+    return dx * lineNormal.x + dy * lineNormal.y
+  }
+}
+
+/**
+ * Arc Dominance Partition Mask
+ * Divides space by which geometric boundary is closest using absolute distances
+ * Primary circle defines the active region, secondary circles and line create partitions
+ */
+export class ArcDominancePartitionMask implements RegionalEngravingMask {
+  private primaryCircle: { cx: number, cy: number, r: number }
+  private secondaryCircles: Array<{ cx: number, cy: number, r: number }>
+  private partitionLine: { point: Vec2, normal: Vec2 }
+
+  constructor(primaryCircle: { cx: number, cy: number, r: number },
+              secondaryCircles: Array<{ cx: number, cy: number, r: number }>,
+              partitionLine: { point: Vec2, normal: Vec2 }) {
+    this.primaryCircle = primaryCircle
+    this.secondaryCircles = secondaryCircles
+    this.partitionLine = partitionLine
+  }
+
+  isActive(x: number, y: number): boolean {
+    return this.strength(x, y) > 0
+  }
+
+  strength(x: number, y: number): number {
+    // Only active inside primary circle - this mask NEVER removes pixels from the primary circle
+    const dx = x - this.primaryCircle.cx
+    const dy = y - this.primaryCircle.cy
+    const distPrimary = Math.sqrt(dx * dx + dy * dy)
+
+    return distPrimary <= this.primaryCircle.r ? 1 : 0
+  }
+
+  getRegion(x: number, y: number): string | null {
+    if (!this.isActive(x, y)) {
+      return null
+    }
+
+    // Compute absolute distances for all constraints
+    const distances: Array<{ value: number, regionId: string }> = []
+
+    // Primary circle constraint: d_primary = abs(distance_to_primary_center - primary_radius)
+    const dx = x - this.primaryCircle.cx
+    const dy = y - this.primaryCircle.cy
+    const distPrimary = Math.sqrt(dx * dx + dy * dy)
+    distances.push({
+      value: Math.abs(distPrimary - this.primaryCircle.r),
+      regionId: "primary_core"
+    })
+
+    // Secondary circle constraints: d_secondary_i = abs(distance_to_secondary_center_i - secondary_radius_i)
+    this.secondaryCircles.forEach((secondary, index) => {
+      const dxSec = x - secondary.cx
+      const dySec = y - secondary.cy
+      const distSec = Math.sqrt(dxSec * dxSec + dySec * dySec)
+      distances.push({
+        value: Math.abs(distSec - secondary.r),
+        regionId: `secondary_${index}_arc`
+      })
+    })
+
+    // Line constraint: d_line = abs(signed_distance_to_infinite_line)
+    const lineDist = this.signedDistanceToLine(x, y, this.partitionLine.point, this.partitionLine.normal)
+    distances.push({
+      value: Math.abs(lineDist),
+      regionId: lineDist >= 0 ? "line_upper" : "line_lower"
+    })
+
+    // Find the constraint with the smallest absolute distance (dominant constraint)
+    let minDistance = Infinity
+    let dominantRegion = "primary_core" // fallback
+
+    for (const dist of distances) {
+      if (dist.value < minDistance) {
+        minDistance = dist.value
+        dominantRegion = dist.regionId
+      }
+    }
+
+    return dominantRegion
+  }
+
+  /**
+   * Calculate signed distance from point to infinite line
+   * @param px Point x coordinate
+   * @param py Point y coordinate
+   * @param linePoint A point on the line
+   * @param lineNormal Normalized normal vector of the line
+   * @returns Signed distance (positive = above line, negative = below line)
+   */
+  private signedDistanceToLine(px: number, py: number, linePoint: Vec2, lineNormal: Vec2): number {
+    const dx = px - linePoint.x
+    const dy = py - linePoint.y
+    return dx * lineNormal.x + dy * lineNormal.y
   }
 }
 
@@ -352,6 +746,73 @@ export class TwoStripeBorrowField implements StripeField {
 }
 
 /**
+ * Arc region field - reacts to region identity from arc partition masks
+ * Applies different stripe sampling behaviors based on geometric regions
+ */
+export class ArcRegionField implements StripeField {
+  getSourceStripeIndex(
+    x: number,
+    y: number,
+    baseStripeIndex: number,
+    stripeData: any[],
+    mask: EngravingMask | null,
+    doormatData: any,
+    evolutionStrength: number
+  ): number {
+    // Only apply region-based effects if mask is active and has regions
+    if (!mask || !mask.isActive(x, y) || !('getRegion' in mask)) {
+      return baseStripeIndex
+    }
+
+    const regionalMask = mask as RegionalEngravingMask
+    const regionId = regionalMask.getRegion(x, y)
+
+    if (!regionId) {
+      return baseStripeIndex
+    }
+
+    // Apply different behaviors based on region identity
+    switch (regionId) {
+      case 'primary_core':
+        // Primary core: keep base stripes but with subtle evolution
+        if (evolutionStrength >= 0.3) {
+          // Slight rotation effect for primary core
+          const rotationOffset = Math.floor((x + y) * 0.01 * evolutionStrength)
+          return (baseStripeIndex + rotationOffset) % stripeData.length
+        }
+        return baseStripeIndex
+
+      case 'line_upper':
+      case 'line_lower':
+        // Line regions: borrow from adjacent stripes with evolution scaling
+        if (evolutionStrength >= 0.2) {
+          const direction = regionId === 'line_upper' ? 1 : -1
+          const offset = Math.floor(evolutionStrength * 2) * direction
+          const newIndex = baseStripeIndex + offset
+          // Clamp to valid range
+          return Math.max(0, Math.min(newIndex, stripeData.length - 1))
+        }
+        return baseStripeIndex
+
+      default:
+        // Secondary arc regions: rotate stripes based on region index
+        if (regionId.startsWith('secondary_') && regionId.endsWith('_arc')) {
+          const regionIndex = parseInt(regionId.split('_')[1])
+          if (!isNaN(regionIndex) && evolutionStrength >= 0.1) {
+            // Use region index to determine rotation direction and magnitude
+            const rotationDirection = regionIndex % 2 === 0 ? 1 : -1
+            const rotationMagnitude = Math.floor(evolutionStrength * (regionIndex + 1))
+            const rotatedIndex = baseStripeIndex + (rotationDirection * rotationMagnitude)
+            // Wrap around stripe array
+            return ((rotatedIndex % stripeData.length) + stripeData.length) % stripeData.length
+          }
+        }
+        return baseStripeIndex
+    }
+  }
+}
+
+/**
  * Precompute engraving profile for a stripe (called once per stripe)
  * Samples representative points and caches engraving colors for performance
  */
@@ -494,6 +955,11 @@ export type MaskType =
   | 'block_rectangles'
   | 'block_triangles'
   | 'circle_interference'
+  | 'compass_cut'
+  | 'circle_partition_cut'
+  | 'circle_boolean_cut'
+  | 'arc_partition'
+  | 'arc_dominance_partition'
 
 /**
  * Field types define how stripe sampling behaves inside masks
@@ -503,6 +969,7 @@ export type FieldType =
   | 'stripe_rotation'
   | 'diagonal_drift'
   | 'two_stripe_borrow'
+  | 'arc_region_field'
 
 /**
  * Main geometric pattern renderer
@@ -582,6 +1049,22 @@ export class GeometricPatternRenderer {
       case 'circle_interference': {
         const { shapes, booleanMode } = this.generateInterferenceCircles(canvasWidth, canvasHeight)
         return new BlockPatternMask(shapes, undefined, maskType, booleanMode)
+      }
+      case 'compass_cut': {
+        const shapes = this.generateCompassCutCircles(canvasWidth, canvasHeight)
+        return new BlockPatternMask(shapes, undefined, 'compass_cut', 'difference')
+      }
+      case 'circle_partition_cut': {
+        return this.generateCirclePartitionCutShapes(canvasWidth, canvasHeight)
+      }
+      case 'circle_boolean_cut': {
+        return this.generateCircleBooleanCutShapes(canvasWidth, canvasHeight)
+      }
+      case 'arc_partition': {
+        return this.generateArcPartitionShapes(canvasWidth, canvasHeight)
+      }
+      case 'arc_dominance_partition': {
+        return this.generateArcDominancePartitionShapes(canvasWidth, canvasHeight)
       }
       case 'none':
       default:
@@ -887,6 +1370,421 @@ export class GeometricPatternRenderer {
     return { shapes, booleanMode: 'difference' }
   }
 
+  private generateCompassCutCircles(width: number, height: number): BlockShape[] {
+    const shapes: BlockShape[] = []
+
+    const baseRadius = Math.min(width, height) * (0.28 + this.prng.next() * 0.05)
+
+    const cx = width * 0.5
+    const cy = height * 0.5
+
+    // Primary circle (kept)
+    shapes.push({
+      type: 'circle',
+      cx,
+      cy,
+      r: baseRadius,
+      booleanRole: 'primary'
+    })
+
+    // Primary retention target (adjustable)
+    const primaryRetentionBase = 0.42
+    const primaryRetentionJitter = 0.06
+    const primaryRetentionRaw = primaryRetentionBase + (this.prng.next() - 0.5) * primaryRetentionJitter
+    const primaryRetention = Math.max(0.4, Math.min(0.55, primaryRetentionRaw))
+    const maxCutArea = (1 - primaryRetention) * Math.PI * baseRadius * baseRadius
+
+    // Total circles in composition: 5-6 (1 primary + 4-5 secondary)
+    const secondaryCount = 4 + Math.floor(this.prng.next() * 2)
+    const cutCount = Math.min(secondaryCount, 2 + Math.floor(this.prng.next() * 2))
+    const touchCount = secondaryCount - cutCount
+    const baseAngle = this.prng.next() * Math.PI * 2
+    const cutAngleSpread = Math.PI / 3
+    const touchAngleSpread = Math.PI / 2
+
+    const mainCutRadius = baseRadius * (0.95 + this.prng.next() * 0.15)
+    const mainAngle = baseAngle
+    const mainCutShare = 0.8
+    const mainOverlapTarget = Math.min(0.65, (maxCutArea * mainCutShare) / (Math.PI * mainCutRadius * mainCutRadius))
+    const mainDistance = this.distanceForOverlapRatio(baseRadius, mainCutRadius, Math.max(0.3, mainOverlapTarget))
+    const mainOverlapArea = this.circleIntersectionArea(baseRadius, mainCutRadius, mainDistance)
+    let remainingCutArea = Math.max(0, maxCutArea - mainOverlapArea)
+
+    const secondaryConfigs: Array<{ radius: number; angle: number }> = []
+    let sumSecondaryArea = 0
+
+    // Remaining cut secondaries
+    for (let i = 1; i < cutCount; i++) {
+      const radiusScale = 0.6 + this.prng.next() * 0.3 // equal or lesser dimension
+      const cutRadius = baseRadius * radiusScale
+      const angleJitter = (this.prng.next() - 0.5) * cutAngleSpread
+      const angle = mainAngle + angleJitter
+
+      secondaryConfigs.push({ radius: cutRadius, angle })
+      sumSecondaryArea += Math.PI * cutRadius * cutRadius
+    }
+
+    // Maintain equal cut/expose area by targeting a 0.5 overlap ratio
+    const overlapRatioBase = 0.5
+    const overlapRatioJitter = 0.05
+    const overlapRatioRaw = overlapRatioBase + (this.prng.next() - 0.5) * overlapRatioJitter
+    const overlapRatioTarget = Math.max(0.42, Math.min(0.56, overlapRatioRaw))
+    const overlapRatioLimit = sumSecondaryArea > 0 ? remainingCutArea / sumSecondaryArea : overlapRatioTarget
+    const overlapRatio = Math.max(0.2, Math.min(overlapRatioTarget, overlapRatioLimit))
+
+    // Add main cut circle first for a crescent-like primary arc
+    shapes.push({
+      type: 'circle',
+      cx: cx + Math.cos(mainAngle) * mainDistance,
+      cy: cy + Math.sin(mainAngle) * mainDistance,
+      r: mainCutRadius,
+      booleanRole: 'secondary',
+      secondaryMode: 'cut'
+    })
+
+    for (const config of secondaryConfigs) {
+      const cutDistance = this.distanceForOverlapRatio(baseRadius, config.radius, overlapRatio)
+      shapes.push({
+        type: 'circle',
+        cx: cx + Math.cos(config.angle) * cutDistance,
+        cy: cy + Math.sin(config.angle) * cutDistance,
+        r: config.radius,
+        booleanRole: 'secondary',
+        secondaryMode: 'cut'
+      })
+    }
+
+    // Touching circles (no cut) used for lens gaps between circles
+    const touchClusterAngle = baseAngle + Math.PI + (this.prng.next() - 0.5) * 0.35
+    for (let i = 0; i < touchCount; i++) {
+      const radiusScale = 0.55 + this.prng.next() * 0.3
+      const touchRadius = baseRadius * radiusScale
+      const angleJitter = (this.prng.next() - 0.5) * touchAngleSpread
+      const angle = touchClusterAngle + (i - (touchCount - 1) / 2) * (Math.PI / 8) + angleJitter
+      const touchOverlap = Math.min(touchRadius, baseRadius) * 0.01
+      const touchDistance = baseRadius + touchRadius - touchOverlap
+
+      shapes.push({
+        type: 'circle',
+        cx: cx + Math.cos(angle) * touchDistance,
+        cy: cy + Math.sin(angle) * touchDistance,
+        r: touchRadius,
+        booleanRole: 'secondary',
+        secondaryMode: 'touch'
+      })
+    }
+
+    return shapes
+  }
+
+  private generateCirclePartitionCutShapes(width: number, height: number): CirclePartitionCutMask {
+    // Generate ONE primary circle (cx, cy, r) - defines maximum drawable area
+    const primaryRadius = Math.min(width, height) * (0.25 + this.prng.next() * 0.15)
+    const primaryCx = width * 0.5 + (this.prng.next() - 0.5) * width * 0.1  // Slight centering jitter
+    const primaryCy = height * 0.5 + (this.prng.next() - 0.5) * height * 0.1
+
+    const primaryCircle = {
+      cx: primaryCx,
+      cy: primaryCy,
+      r: primaryRadius
+    }
+
+    // Generate 3–6 secondary circles placed around or overlapping the primary circle
+    const secondaryCount = 3 + Math.floor(this.prng.next() * 4) // 3-6 circles
+    const secondaryCircles: Array<{ cx: number, cy: number, r: number }> = []
+
+    for (let i = 0; i < secondaryCount; i++) {
+      // Secondary circles should be smaller than primary and can overlap
+      const secondaryRadius = primaryRadius * (0.2 + this.prng.next() * 0.4) // 20-60% of primary radius
+
+      // Place around the primary circle with some overlap potential
+      const angle = (i / secondaryCount) * Math.PI * 2 + (this.prng.next() - 0.5) * Math.PI * 0.5
+      const distance = primaryRadius * (0.3 + this.prng.next() * 0.8) // 30-110% of primary radius for overlap
+
+      const secondaryCx = primaryCx + Math.cos(angle) * distance
+      const secondaryCy = primaryCy + Math.sin(angle) * distance
+
+      // Add slight jitter to placement
+      const jitterAmount = primaryRadius * 0.1
+      const jitteredCx = secondaryCx + (this.prng.next() - 0.5) * jitterAmount
+      const jitteredCy = secondaryCy + (this.prng.next() - 0.5) * jitterAmount
+
+      secondaryCircles.push({
+        cx: jitteredCx,
+        cy: jitteredCy,
+        r: secondaryRadius
+      })
+    }
+
+    // Generate ONE straight infinite line (defined by point + normal)
+    // The line should be independent of circle geometry
+    // Place a random point on the canvas and create a random normal vector
+    const linePoint: Vec2 = {
+      x: width * (0.2 + this.prng.next() * 0.6),   // 20-80% across canvas
+      y: height * (0.2 + this.prng.next() * 0.6)   // 20-80% down canvas
+    }
+
+    // Random normal vector (direction perpendicular to line)
+    const lineAngle = this.prng.next() * Math.PI * 2
+    const lineNormal: Vec2 = {
+      x: Math.cos(lineAngle),
+      y: Math.sin(lineAngle)
+    }
+
+    const partitionLine = {
+      point: linePoint,
+      normal: lineNormal
+    }
+
+    // Ensure at least one secondary circle intersects the straight line to create asymmetric regions
+    // (This happens naturally due to random placement, but we could add logic to guarantee it)
+
+    return new CirclePartitionCutMask(primaryCircle, secondaryCircles, partitionLine)
+  }
+
+  private generateCircleBooleanCutShapes(width: number, height: number): CircleBooleanCutMask {
+    // Generate ONE primary circle - dominant circle
+    // Radius = 28%–35% of min(canvasWidth, canvasHeight)
+    const minDim = Math.min(width, height)
+    const primaryRadius = minDim * (0.28 + this.prng.next() * 0.07)
+
+    // Center near canvas center (±8% jitter)
+    const primaryCx = width * 0.5 + (this.prng.next() - 0.5) * width * 0.08
+    const primaryCy = height * 0.5 + (this.prng.next() - 0.5) * height * 0.08
+
+    const primaryCircle = {
+      cx: primaryCx,
+      cy: primaryCy,
+      r: primaryRadius
+    }
+
+    // Generate 2–4 secondary circles
+    const secondaryCount = 2 + Math.floor(this.prng.next() * 3) // 2-4 circles
+    const secondaryCircles: Array<{ cx: number, cy: number, r: number }> = []
+
+    for (let i = 0; i < secondaryCount; i++) {
+      // Secondary radius = 40%–75% of primary radius
+      const secondaryRadius = primaryRadius * (0.4 + this.prng.next() * 0.35)
+
+      // Placement rule: center MUST be outside OR near the edge of primary
+      // Distance from primary center must be in range [primary.r * 0.7, primary.r * 1.2]
+      // This guarantees partial intersection, never full containment
+      const minDistance = primaryRadius * 0.7
+      const maxDistance = primaryRadius * 1.2
+      const distance = minDistance + this.prng.next() * (maxDistance - minDistance)
+
+      // Random angle for placement
+      const angle = this.prng.next() * Math.PI * 2
+
+      const secondaryCx = primaryCx + Math.cos(angle) * distance
+      const secondaryCy = primaryCy + Math.sin(angle) * distance
+
+      secondaryCircles.push({
+        cx: secondaryCx,
+        cy: secondaryCy,
+        r: secondaryRadius
+      })
+    }
+
+    // Generate ONE straight infinite line constraint
+    // Angle randomized but biased to near-horizontal or near-vertical
+    const angleBias = Math.floor(this.prng.next() * 4) // 0,1,2,3 for four quadrants
+    const baseAngles = [0, Math.PI/2, Math.PI, 3*Math.PI/2] // horizontal, vertical
+    const angleJitter = (this.prng.next() - 0.5) * Math.PI * 0.3 // ±15° jitter
+    const lineAngle = baseAngles[angleBias] + angleJitter
+
+    // Place line point near canvas center with some jitter
+    const linePoint: Vec2 = {
+      x: width * (0.4 + this.prng.next() * 0.2),   // 40-60% across canvas
+      y: height * (0.4 + this.prng.next() * 0.2)   // 40-60% down canvas
+    }
+
+    // Normal vector (direction perpendicular to line)
+    const lineNormal: Vec2 = {
+      x: Math.cos(lineAngle),
+      y: Math.sin(lineAngle)
+    }
+
+    const partitionLine = {
+      point: linePoint,
+      normal: lineNormal
+    }
+
+    return new CircleBooleanCutMask(primaryCircle, secondaryCircles, partitionLine)
+  }
+
+  private circleIntersectionArea(r1: number, r2: number, d: number): number {
+    if (d >= r1 + r2) return 0
+    if (d <= Math.abs(r1 - r2)) {
+      const rMin = Math.min(r1, r2)
+      return Math.PI * rMin * rMin
+    }
+
+    const r1Sq = r1 * r1
+    const r2Sq = r2 * r2
+    const dSq = d * d
+
+    const alpha = Math.acos((dSq + r1Sq - r2Sq) / (2 * d * r1))
+    const beta = Math.acos((dSq + r2Sq - r1Sq) / (2 * d * r2))
+
+    const term =
+      (-d + r1 + r2) *
+      (d + r1 - r2) *
+      (d - r1 + r2) *
+      (d + r1 + r2)
+
+    return r1Sq * alpha + r2Sq * beta - 0.5 * Math.sqrt(Math.max(0, term))
+  }
+
+  private distanceForOverlapRatio(rPrimary: number, rSecondary: number, overlapRatio: number): number {
+    const clampedRatio = Math.max(0.15, Math.min(0.85, overlapRatio))
+    const targetArea = clampedRatio * Math.PI * rSecondary * rSecondary
+
+    const minD = Math.abs(rPrimary - rSecondary) + 1e-4
+    const maxD = rPrimary + rSecondary - 1e-4
+
+    let low = minD
+    let high = maxD
+
+    for (let i = 0; i < 30; i++) {
+      const mid = (low + high) * 0.5
+      const area = this.circleIntersectionArea(rPrimary, rSecondary, mid)
+      if (area > targetArea) {
+        low = mid
+      } else {
+        high = mid
+      }
+    }
+
+    return (low + high) * 0.5
+  }
+
+  private generateArcPartitionShapes(width: number, height: number): ArcPartitionMask {
+    // Generate ONE primary circle (cx, cy, r) - defines maximum drawable area
+    const primaryRadius = Math.min(width, height) * (0.25 + this.prng.next() * 0.15)
+    const primaryCx = width * 0.5 + (this.prng.next() - 0.5) * width * 0.1  // Slight centering jitter
+    const primaryCy = height * 0.5 + (this.prng.next() - 0.5) * height * 0.1
+
+    const primaryCircle = {
+      cx: primaryCx,
+      cy: primaryCy,
+      r: primaryRadius
+    }
+
+    // Generate 3–6 secondary circles placed radially around primary circle
+    const secondaryCount = 3 + Math.floor(this.prng.next() * 4) // 3-6 circles
+    const secondaryCircles: Array<{ cx: number, cy: number, r: number }> = []
+
+    for (let i = 0; i < secondaryCount; i++) {
+      // Secondary circles should be smaller than primary and overlap primary
+      const secondaryRadius = primaryRadius * (0.2 + this.prng.next() * 0.4) // 20-60% of primary radius
+
+      // Place radially around primary circle, overlapping it
+      const angle = (i / secondaryCount) * Math.PI * 2 + (this.prng.next() - 0.5) * Math.PI * 0.5
+      const distance = primaryRadius * (0.3 + this.prng.next() * 0.8) // 30-110% of primary radius for overlap
+
+      const secondaryCx = primaryCx + Math.cos(angle) * distance
+      const secondaryCy = primaryCy + Math.sin(angle) * distance
+
+      // Add slight jitter to placement
+      const jitterAmount = primaryRadius * 0.1
+      const jitteredCx = secondaryCx + (this.prng.next() - 0.5) * jitterAmount
+      const jitteredCy = secondaryCy + (this.prng.next() - 0.5) * jitterAmount
+
+      secondaryCircles.push({
+        cx: jitteredCx,
+        cy: jitteredCy,
+        r: secondaryRadius
+      })
+    }
+
+    // Generate ONE infinite straight line with random angle and slight offset
+    const linePoint: Vec2 = {
+      x: width * (0.2 + this.prng.next() * 0.6),   // 20-80% across canvas
+      y: height * (0.2 + this.prng.next() * 0.6)   // 20-80% down canvas
+    }
+
+    // Random normal vector (direction perpendicular to line)
+    const lineAngle = this.prng.next() * Math.PI * 2
+    const lineNormal: Vec2 = {
+      x: Math.cos(lineAngle),
+      y: Math.sin(lineAngle)
+    }
+
+    const partitionLine = {
+      point: linePoint,
+      normal: lineNormal
+    }
+
+    return new ArcPartitionMask(primaryCircle, secondaryCircles, partitionLine)
+  }
+
+  private generateArcDominancePartitionShapes(width: number, height: number): ArcDominancePartitionMask {
+    // Generate ONE primary circle (cx, cy, r) - defines maximum drawable area
+    const primaryRadius = Math.min(width, height) * (0.25 + this.prng.next() * 0.15)
+    const primaryCx = width * 0.5 + (this.prng.next() - 0.5) * width * 0.1  // Slight centering jitter
+    const primaryCy = height * 0.5 + (this.prng.next() - 0.5) * height * 0.1
+
+    const primaryCircle = {
+      cx: primaryCx,
+      cy: primaryCy,
+      r: primaryRadius
+    }
+
+    // Generate 2–4 secondary circles that intersect with primary circle boundary
+    const secondaryCount = 2 + Math.floor(this.prng.next() * 3) // 2-4 circles
+    const secondaryCircles: Array<{ cx: number, cy: number, r: number }> = []
+
+    for (let i = 0; i < secondaryCount; i++) {
+      // Secondary radius = 20%–50% of primary radius (smaller than original to create tighter arcs)
+      const secondaryRadius = primaryRadius * (0.2 + this.prng.next() * 0.3)
+
+      // Placement rule: center positioned so circles intersect primary boundary
+      // Distance from primary center must guarantee intersection: [primary.r - secondary.r, primary.r + secondary.r]
+      const minDistance = Math.abs(primaryRadius - secondaryRadius) + secondaryRadius * 0.1 // slight overlap
+      const maxDistance = primaryRadius + secondaryRadius * 0.8 // partial containment
+      const distance = minDistance + this.prng.next() * (maxDistance - minDistance)
+
+      // Random angle for placement
+      const angle = (i / secondaryCount) * Math.PI * 2 + (this.prng.next() - 0.5) * Math.PI * 0.5
+
+      const secondaryCx = primaryCx + Math.cos(angle) * distance
+      const secondaryCy = primaryCy + Math.sin(angle) * distance
+
+      secondaryCircles.push({
+        cx: secondaryCx,
+        cy: secondaryCy,
+        r: secondaryRadius
+      })
+    }
+
+    // Generate ONE infinite straight line crossing through the primary circle
+    // Angle randomized but biased to create interesting intersections
+    const angleBias = Math.floor(this.prng.next() * 4) // 0,1,2,3 for four quadrants
+    const baseAngles = [0, Math.PI/2, Math.PI, 3*Math.PI/2] // horizontal, vertical
+    const angleJitter = (this.prng.next() - 0.5) * Math.PI * 0.4 // ±20° jitter
+    const lineAngle = baseAngles[angleBias] + angleJitter
+
+    // Place line point near primary circle center with some jitter
+    const linePoint: Vec2 = {
+      x: primaryCx + (this.prng.next() - 0.5) * primaryRadius * 0.5,
+      y: primaryCy + (this.prng.next() - 0.5) * primaryRadius * 0.5
+    }
+
+    // Normal vector (direction perpendicular to line)
+    const lineNormal: Vec2 = {
+      x: Math.cos(lineAngle),
+      y: Math.sin(lineAngle)
+    }
+
+    const partitionLine = {
+      point: linePoint,
+      normal: lineNormal
+    }
+
+    return new ArcDominancePartitionMask(primaryCircle, secondaryCircles, partitionLine)
+  }
+
   private generateStripeRotationIllusion(width: number, height: number): BlockShape[] {
     const shapes: BlockShape[] = []
 
@@ -988,6 +1886,8 @@ export function createStripeField(fieldType: FieldType): StripeField | null {
       return new DiagonalDriftField()
     case 'two_stripe_borrow':
       return new TwoStripeBorrowField()
+    case 'arc_region_field':
+      return new ArcRegionField()
     case 'none':
     default:
       return null

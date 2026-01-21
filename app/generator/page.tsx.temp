@@ -15,12 +15,8 @@ import {
   GeometricPatternRenderer,
   extractRugPalette,
   PatternType,
-  MaskType,
-  FieldType,
   EngravingMask,
-  TextMask,
-  createStripeField,
-  getEvolutionStrength
+  TextMask
 } from '@/lib/GeometricPatterns'
 
 // Default pattern parameters since we're not using them anymore
@@ -36,7 +32,6 @@ import { contractAddresses } from '@/lib/web3'
 import { getChainDisplayName } from '@/lib/networks'
 import { Metadata } from 'next'
 import Head from 'next/head'
-import { ReferralCodeDisplay } from '@/components/referrals'
 
 // SEO metadata for the generator page
 const metadata: Metadata = {
@@ -96,17 +91,15 @@ export default function GeneratorPage() {
   // Default evolution phase for all generations
   const DEFAULT_EVOLUTION_PHASE = 3
 
-  // New mask/field system (ONLY active controls)
-  const [selectedMaskType, setSelectedMaskType] = useState<MaskType>('block_circles')
-  const [selectedFieldType, setSelectedFieldType] = useState<FieldType>('stripe_rotation')
-
+  const [selectedPatternType, setSelectedPatternType] = useState<PatternType>('block_circles')
   const [evolutionPhase, setEvolutionPhase] = useState(DEFAULT_EVOLUTION_PHASE)
+  const [enableTwoStripeBorrow, setEnableTwoStripeBorrow] = useState(false)
+  const [enableDiagonalDrift, setEnableDiagonalDrift] = useState(false)
   const [showPatternDropdown, setShowPatternDropdown] = useState(false)
 
   // Refs for synchronous access in p5.js draw function
   const enableOverlayRef = useRef(false)
-  const selectedMaskRef = useRef<MaskType>('block_circles')
-  const selectedFieldRef = useRef<FieldType>('stripe_rotation')
+  const selectedPatternRef = useRef<PatternType>('block_circles')
 
   // Debounce timer for live updates
   const liveUpdateTimerRef = useRef<NodeJS.Timeout | null>(null)
@@ -126,12 +119,8 @@ export default function GeneratorPage() {
   }, [enableGeometricOverlay])
 
   useEffect(() => {
-    selectedMaskRef.current = selectedMaskType
-  }, [selectedMaskType])
-
-  useEffect(() => {
-    selectedFieldRef.current = selectedFieldType
-  }, [selectedFieldType])
+    selectedPatternRef.current = selectedPatternType
+  }, [selectedPatternType])
 
   // Close pattern dropdown when clicking outside
   useEffect(() => {
@@ -149,14 +138,14 @@ export default function GeneratorPage() {
     // Update global evolution phase for immediate rendering
     if (typeof window !== 'undefined' && (window as any).__DOORMAT_DATA__) {
       ;(window as any).__DOORMAT_DATA__.patternEvolutionPhase = evolutionPhase
-      ;(window as any).__DOORMAT_DATA__.selectedMaskType = selectedMaskType
-      ;(window as any).__DOORMAT_DATA__.selectedFieldType = selectedFieldType
+      ;(window as any).__DOORMAT_DATA__.__ENABLE_TWO_STRIPE_BORROW__ = enableTwoStripeBorrow
+      ;(window as any).__DOORMAT_DATA__.__ENABLE_DIAGONAL_DRIFT__ = enableDiagonalDrift
       // Trigger immediate redraw
       if ((window as any).p5Instance) {
         (window as any).p5Instance.redraw()
       }
     }
-  }, [evolutionPhase, selectedMaskType, selectedFieldType])
+  }, [evolutionPhase, enableTwoStripeBorrow, enableDiagonalDrift])
 
   // Force canvas redraw when overlay state changes
   useEffect(() => {
@@ -169,7 +158,7 @@ export default function GeneratorPage() {
         console.warn('Failed to trigger redraw:', error)
       }
     }
-  }, [enableGeometricOverlay, selectedMaskType, selectedFieldType])
+  }, [enableGeometricOverlay, selectedPatternType])
 
   // Copy to clipboard function
   const copyToClipboard = async (text: string, label: string) => {
@@ -185,49 +174,6 @@ export default function GeneratorPage() {
   const canvasContainerRef = useRef<HTMLDivElement>(null)
   const scriptsLoadedRef = useRef<Set<string>>(new Set())
   const textInputRefs = useRef<(HTMLInputElement | null)[]>([])
-
-  // Helper functions for mask/field regeneration
-  const regenerateMask = (maskType: MaskType) => {
-    if (typeof window !== 'undefined' && (window as any).p5Instance && (window as any).doormatData) {
-      // Only create mask if overlay is enabled
-      if (enableOverlayRef.current) {
-        // Use derived PRNG for deterministic mask generation
-        const currentSeed = (window as any).currentSeed || 42
-        const maskPRNG = createDerivedPRNG(currentSeed, 1000) // Use offset 1000 for mask generation
-        const patternRenderer = new GeometricPatternRenderer((window as any).p5Instance, maskPRNG)
-        const palette = extractRugPalette((window as any).doormatData, (window as any).p5Instance)
-        ;(window as any).doormatData.patternMask = patternRenderer.createMask(
-          maskType,
-          defaultPatternParams,
-          palette,
-          (window as any).doormatData.config.DOORMAT_WIDTH,
-          (window as any).doormatData.config.DOORMAT_HEIGHT
-        )
-      } else {
-        // Disable overlay by setting patternMask to null
-        ;(window as any).doormatData.patternMask = null
-      }
-      ;(window as any).__DOORMAT_DATA__.patternMask = (window as any).doormatData.patternMask
-      ;(window as any).p5Instance.redraw()
-    }
-  }
-
-  const regenerateField = (fieldType: FieldType) => {
-    if (typeof window !== 'undefined' && (window as any).doormatData) {
-      ;(window as any).doormatData.stripeField = createStripeField(fieldType)
-
-      // Generate rotation angle for stripe rotation field
-      const prng = getPRNG()
-      ;(window as any).doormatData.__stripeRotationAngle =
-        (prng.next() < 0.5 ? -1 : 1) *
-        (Math.PI / 9 + prng.next() * (Math.PI / 6))
-
-      ;(window as any).__DOORMAT_DATA__.stripeField = (window as any).doormatData.stripeField
-      if ((window as any).p5Instance) {
-        ;(window as any).p5Instance.redraw()
-      }
-    }
-  }
 
   // Clean P5.js loading - no global pollution
   const loadP5 = () => {
@@ -484,21 +430,7 @@ export default function GeneratorPage() {
     }
     
     console.log('✅ Self-contained doormat generator initialized')
-    return {
-      config,
-      colorPalettes,
-      characterMap,
-      selectedPalette,
-      stripeData,
-      textData,
-      doormatTextRows,
-      warpThickness,
-      patternEvolutionPhase: DEFAULT_EVOLUTION_PHASE,
-      selectedMaskType: 'block_circles' as MaskType,
-      selectedFieldType: 'stripe_rotation' as FieldType,
-      patternMask: null,
-      stripeField: null
-    }
+    return { config, colorPalettes, characterMap, selectedPalette, stripeData, textData, doormatTextRows, warpThickness }
   }
 
   // Create P5.js instance using original doormat.js logic
@@ -725,30 +657,23 @@ export default function GeneratorPage() {
       updateTextColors((window as any).p5Instance, doormatData)
       generateTextData(doormatData)
 
-      // Generate pattern mask for engraving using new mask system (only if overlay enabled)
-      if (enableOverlayRef.current) {
-        // Use derived PRNG for deterministic mask generation
-        const maskPRNG = createDerivedPRNG(seed, 1000) // Use offset 1000 for mask generation
-        const patternRenderer = new GeometricPatternRenderer((window as any).p5Instance, maskPRNG)
+      // Generate pattern mask for engraving
+      if (selectedPatternRef.current && selectedPatternRef.current !== 'block_circles' &&
+          selectedPatternRef.current !== 'block_rectangles' && selectedPatternRef.current !== 'block_triangles' &&
+          selectedPatternRef.current !== 'circle_interference' &&
+          selectedPatternRef.current !== 'stripe_rotation_illusion') {
+        // Skip pattern mask for block types - they use engraving
+      } else {
+        const patternRenderer = new GeometricPatternRenderer((window as any).p5Instance, prng)
         const palette = extractRugPalette(doormatData, (window as any).p5Instance)
-        doormatData.patternMask = patternRenderer.createMask(
-          selectedMaskRef.current,
+        doormatData.patternMask = patternRenderer.createPatternMask(
+          selectedPatternRef.current,
           defaultPatternParams,
           palette,
           doormatData.config.DOORMAT_WIDTH,
           doormatData.config.DOORMAT_HEIGHT
         )
-      } else {
-        doormatData.patternMask = null
       }
-
-      // Create stripe field for pattern effects
-      doormatData.stripeField = createStripeField(selectedFieldRef.current)
-
-      // Generate rotation angle for stripe rotation field
-      doormatData.__stripeRotationAngle =
-        (prng.next() < 0.5 ? -1 : 1) *
-        (Math.PI / 9 + prng.next() * (Math.PI / 6))
     }
     
     // Write COMPLETE doormatData to single authoritative window object
@@ -763,11 +688,7 @@ export default function GeneratorPage() {
         textData: doormatData.textData,
         textRows: doormatData.doormatTextRows,
         traits: doormatData.traits || {},
-        patternEvolutionPhase: DEFAULT_EVOLUTION_PHASE,
-        selectedMaskType: selectedMaskType,
-        selectedFieldType: selectedFieldType,
-        patternMask: doormatData.patternMask,
-        stripeField: doormatData.stripeField
+        patternEvolutionPhase: DEFAULT_EVOLUTION_PHASE
       }
 
       // Keep legacy properties for backward compatibility
@@ -1084,46 +1005,64 @@ export default function GeneratorPage() {
         // Compute pattern strength once per thread
         const basePatternStrength = patternMask?.strength(x, y) ?? 0
 
-        // Get evolution strength for this stripe
-        const evolutionStrength = getEvolutionStrength(doormatData.patternEvolutionPhase || 0, stripeIndex)
-
-        // Apply field effects to get source stripe index
-        let sourceStripeIndex = stripeArrayIndex
-
-        // Apply active field if mask is active and field exists
-        if (doormatData.stripeField && patternMask?.isActive(x, y)) {
-          sourceStripeIndex = doormatData.stripeField.getSourceStripeIndex(
-            x,
-            y,
-            stripeArrayIndex,
-            doormatData.stripeData,
-            patternMask,
-            doormatData,
-            evolutionStrength
-          )
+        // Compute effective phase per column (diagonal drift)
+        let effectivePhase = doormatData.patternEvolutionPhase || 0
+        if (doormatData.__ENABLE_DIAGONAL_DRIFT__) {
+          const drift = Math.sin(x * 0.015) * 0.6
+          effectivePhase = Math.max(0, Math.min(effectivePhase + drift, effectivePhase + 0.99))
         }
 
-        // Restore one-stripe borrow as evolution behavior when no field is selected
-        const phase = doormatData.patternEvolutionPhase || 0
-        if (
-          phase > 0 &&
-          doormatData.selectedFieldType === 'none' &&
-          patternMask?.isActive(x, y)
-        ) {
-          const borrowStrength = getEvolutionStrength(phase, stripeArrayIndex)
+        // Introduce borrowing probability
+        let borrowProbability = 0
+        if (effectivePhase >= 1 && effectivePhase < 2) borrowProbability = 0.15
+        if (effectivePhase >= 2 && effectivePhase < 3) borrowProbability = 0.65
+        if (effectivePhase >= 3) borrowProbability = 1.0
 
-          if (borrowStrength > 0) {
-            if (stripeArrayIndex > 0) {
-              sourceStripeIndex = stripeArrayIndex - 1
-            }
+        // Stripe rotation illusion - project onto rotated stripe coordinate system
+        let sourceStripe = stripe
+        if (
+          selectedPatternRef.current === 'stripe_rotation_illusion' &&
+          basePatternStrength > 0 &&
+          patternMask &&
+          (patternMask as any).getRotationAt
+        ) {
+          const angle = (patternMask as any).getRotationAt(x, y)
+
+          if (angle !== null) {
+            // Project point onto rotated stripe normal to get stripe coordinate
+            // This creates infinite parallel diagonal bands independent of current stripe
+            const rotatedStripeCoord = (x * Math.sin(angle)) + (y * Math.cos(angle))
+
+            // Map rotated coordinate to virtual stripe index using average stripe height
+            // This ensures ALL stripes inside mask participate, not just some
+            const virtualStripeIndex = Math.floor(rotatedStripeCoord / averageStripeHeight)
+
+            // Clamp to valid stripe indices
+            const clampedIndex = Math.max(0, Math.min(virtualStripeIndex, doormatData.stripeData.length - 1))
+            sourceStripe = doormatData.stripeData[clampedIndex]
           }
         }
 
-        // Clamp source stripe index safely
-        sourceStripeIndex = Math.max(0, Math.min(sourceStripeIndex, doormatData.stripeData.length - 1))
-
-        // Get the source stripe
-        const sourceStripe = doormatData.stripeData[sourceStripeIndex]
+        // Select stripe color source based on evolution phase
+        // Skip borrowing for stripe_rotation_illusion to preserve band coherence
+        if (selectedPatternRef.current !== 'stripe_rotation_illusion' && basePatternStrength > 0 && effectivePhase > 0) {
+          const borrowRoll = drawingPRNG.next()
+          if (borrowRoll < borrowProbability) {
+            if (doormatData.__ENABLE_TWO_STRIPE_BORROW__ && effectivePhase >= 3) {
+              if (prev2Stripe && next2Stripe) {
+                sourceStripe = hash01(x, y, effectivePhase * 131) < 0.5 ? prev2Stripe : next2Stripe
+              }
+            } else {
+              if (effectivePhase >= 1 && effectivePhase < 2 && prevStripe) {
+                sourceStripe = prevStripe
+              } else if (effectivePhase >= 2 && effectivePhase < 3 && nextStripe) {
+                sourceStripe = nextStripe
+              } else if (effectivePhase >= 3 && prevStripe && nextStripe) {
+                sourceStripe = hash01(x, y, effectivePhase * 91) < 0.5 ? prevStripe : nextStripe
+              }
+            }
+          }
+        }
 
         const warpColor = p.color(sourceStripe.primaryColor)
         
@@ -1183,7 +1122,22 @@ export default function GeneratorPage() {
 
         // Handle pattern engraving (only if not already handled by text)
         if (!isTextPixel) {
-          let patternStrength = basePatternStrength * evolutionStrength
+          let patternStrength = basePatternStrength
+
+          if (effectivePhase >= 1) {
+            // Phase 1: alternating reveal
+            patternStrength *= isEvenStripe ? 1.0 : 0.0
+          }
+
+          if (effectivePhase >= 2) {
+            // Phase 2: staggered amplification
+            patternStrength *= isEvenStripe ? 1.4 : 0.6
+          }
+
+          if (effectivePhase >= 3) {
+            // Phase 3: strong band alternation
+            patternStrength *= isEvenStripe ? 1.8 : 0.4
+          }
 
           // Pattern darkening bias removed - color source replacement does the work now
         }
@@ -1207,46 +1161,64 @@ export default function GeneratorPage() {
         // Compute pattern strength once per thread
         const basePatternStrength = patternMask?.strength(x, y) ?? 0
 
-        // Get evolution strength for this stripe
-        const evolutionStrength = getEvolutionStrength(doormatData.patternEvolutionPhase || 0, stripeIndex)
-
-        // Apply field effects to get source stripe index
-        let sourceStripeIndex = stripeArrayIndex
-
-        // Apply active field if mask is active and field exists
-        if (doormatData.stripeField && patternMask?.isActive(x, y)) {
-          sourceStripeIndex = doormatData.stripeField.getSourceStripeIndex(
-            x,
-            y,
-            stripeArrayIndex,
-            doormatData.stripeData,
-            patternMask,
-            doormatData,
-            evolutionStrength
-          )
+        // Compute effective phase per column (diagonal drift)
+        let effectivePhase = doormatData.patternEvolutionPhase || 0
+        if (doormatData.__ENABLE_DIAGONAL_DRIFT__) {
+          const drift = Math.sin(x * 0.015) * 0.6
+          effectivePhase = Math.max(0, Math.min(effectivePhase + drift, effectivePhase + 0.99))
         }
 
-        // Restore one-stripe borrow as evolution behavior when no field is selected
-        const phase = doormatData.patternEvolutionPhase || 0
-        if (
-          phase > 0 &&
-          doormatData.selectedFieldType === 'none' &&
-          patternMask?.isActive(x, y)
-        ) {
-          const borrowStrength = getEvolutionStrength(phase, stripeArrayIndex)
+        // Introduce borrowing probability
+        let borrowProbability = 0
+        if (effectivePhase >= 1 && effectivePhase < 2) borrowProbability = 0.15
+        if (effectivePhase >= 2 && effectivePhase < 3) borrowProbability = 0.65
+        if (effectivePhase >= 3) borrowProbability = 1.0
 
-          if (borrowStrength > 0) {
-            if (stripeArrayIndex > 0) {
-              sourceStripeIndex = stripeArrayIndex - 1
-            }
+        // Stripe rotation illusion - project onto rotated stripe coordinate system
+        let sourceStripe = stripe
+        if (
+          selectedPatternRef.current === 'stripe_rotation_illusion' &&
+          basePatternStrength > 0 &&
+          patternMask &&
+          (patternMask as any).getRotationAt
+        ) {
+          const angle = (patternMask as any).getRotationAt(x, y)
+
+          if (angle !== null) {
+            // Project point onto rotated stripe normal to get stripe coordinate
+            // This creates infinite parallel diagonal bands independent of current stripe
+            const rotatedStripeCoord = (x * Math.sin(angle)) + (y * Math.cos(angle))
+
+            // Map rotated coordinate to virtual stripe index using average stripe height
+            // This ensures ALL stripes inside mask participate, not just some
+            const virtualStripeIndex = Math.floor(rotatedStripeCoord / averageStripeHeight)
+
+            // Clamp to valid stripe indices
+            const clampedIndex = Math.max(0, Math.min(virtualStripeIndex, doormatData.stripeData.length - 1))
+            sourceStripe = doormatData.stripeData[clampedIndex]
           }
         }
 
-        // Clamp source stripe index safely
-        sourceStripeIndex = Math.max(0, Math.min(sourceStripeIndex, doormatData.stripeData.length - 1))
-
-        // Get the source stripe
-        const sourceStripe = doormatData.stripeData[sourceStripeIndex]
+        // Select stripe color source based on evolution phase
+        // Skip borrowing for stripe_rotation_illusion to preserve band coherence
+        if (selectedPatternRef.current !== 'stripe_rotation_illusion' && basePatternStrength > 0 && effectivePhase > 0) {
+          const borrowRoll = drawingPRNG.next()
+          if (borrowRoll < borrowProbability) {
+            if (doormatData.__ENABLE_TWO_STRIPE_BORROW__ && effectivePhase >= 3) {
+              if (prev2Stripe && next2Stripe) {
+                sourceStripe = hash01(x, y, effectivePhase * 131) < 0.5 ? prev2Stripe : next2Stripe
+              }
+            } else {
+              if (effectivePhase >= 1 && effectivePhase < 2 && prevStripe) {
+                sourceStripe = prevStripe
+              } else if (effectivePhase >= 2 && effectivePhase < 3 && nextStripe) {
+                sourceStripe = nextStripe
+              } else if (effectivePhase >= 3 && prevStripe && nextStripe) {
+                sourceStripe = hash01(x, y, effectivePhase * 91) < 0.5 ? prevStripe : nextStripe
+              }
+            }
+          }
+        }
 
         let weftColor = p.color(sourceStripe.primaryColor)
 
@@ -1616,7 +1588,24 @@ export default function GeneratorPage() {
 
         // Handle pattern engraving (only if not already handled by text)
         if (!isTextPixel) {
-          let patternStrength = basePatternStrength * evolutionStrength
+          let patternStrength = basePatternStrength
+
+          const phase = doormatData.patternEvolutionPhase || 0
+
+          if (phase >= 1) {
+            // Phase 1: alternating reveal
+            patternStrength *= isEvenStripe ? 1.0 : 0.0
+          }
+
+          if (phase >= 2) {
+            // Phase 2: staggered amplification
+            patternStrength *= isEvenStripe ? 1.4 : 0.6
+          }
+
+          if (phase >= 3) {
+            // Phase 3: strong band alternation
+            patternStrength *= isEvenStripe ? 1.8 : 0.4
+          }
 
           // Pattern brightening bias removed - color source replacement does the work now
         }
@@ -2226,6 +2215,7 @@ export default function GeneratorPage() {
     doormatData.darkTextColor = p.lerpColor(p.color(darkest), p.color(0), 0.4)
   }
 
+  }
 
   // Generate text data (original function)
   const generateTextData = (doormatData: any) => {
@@ -2342,6 +2332,8 @@ export default function GeneratorPage() {
       generateDoormatCore(currentSeed, doormatData)
 
       // Initialize preview flags and evolution phase
+      doormatData.__ENABLE_TWO_STRIPE_BORROW__ = false
+      doormatData.__ENABLE_DIAGONAL_DRIFT__ = false
       doormatData.patternEvolutionPhase = DEFAULT_EVOLUTION_PHASE
 
       // Sync React state to generator default
@@ -3040,8 +3032,6 @@ export default function GeneratorPage() {
     }
   }, [textInputs, focusNewRow])
 
-  // 7-segment display segment patterns for digits 0-9
-
   return (
     <>
       <Head>
@@ -3237,8 +3227,7 @@ export default function GeneratorPage() {
                                   </div>
                                 </div>
 
-                                {/* Master Overlay Toggle - Development Only */}
-                                {isLoaded && typeof window !== 'undefined' && window.location.hostname === 'localhost' ? (
+                                {/* Master Overlay Toggle */}
                                 <div className="overlay-toggle-section">
                                   <button
                                     onClick={() => {
@@ -3262,7 +3251,6 @@ export default function GeneratorPage() {
                                     </span>
                                   </button>
                                 </div>
-                                ) : null}
                               </div>
                             </div>
                     </div>
@@ -3456,8 +3444,7 @@ export default function GeneratorPage() {
                   <div className="space-y-4">
                   </div>
 
-                  {/* Geometric Pattern Overlay Controls - Development Only */}
-                  {isLoaded && typeof window !== 'undefined' && window.location.hostname === 'localhost' ? (
+                  {/* Geometric Pattern Overlay Controls - Temporary */}
                   <div className="border-t border-amber-600/30 pt-4">
                     <div className="text-amber-700 text-sm mb-3 font-mono">🎨 Geometric Pattern Overlay</div>
                     <div className="text-amber-600 text-xs mb-3 opacity-75">Patterns render on both front and back sides</div>
@@ -3469,92 +3456,160 @@ export default function GeneratorPage() {
                           type="checkbox"
                           checked={enableGeometricOverlay}
                           onChange={(e) => {
-                            const newEnabled = e.target.checked
-                            setEnableGeometricOverlay(newEnabled)
-                            enableOverlayRef.current = newEnabled
-                            regenerateMask(selectedMaskType)
+                            console.log('🎨 Checkbox changed to:', e.target.checked)
+                            setEnableGeometricOverlay(e.target.checked)
                           }}
                           className="rounded border-amber-600/30 text-amber-600 focus:ring-amber-500"
                         />
                         <span className="text-amber-800 text-sm">Enable Overlay</span>
                       </label>
 
-                      {/* Mask Type Selection */}
+                      {/* Pattern Type Selection */}
                       <div>
-                        <div className="text-amber-800 text-xs mb-2">Mask Type:</div>
-                        <select
-                          value={selectedMaskType}
-                          onChange={(e) => {
-                            const newMaskType = e.target.value as MaskType
-                            setSelectedMaskType(newMaskType)
-
-                            // Auto-select appropriate field type for region-based masks
-                            if (newMaskType === 'arc_dominance_partition' || newMaskType === 'arc_partition') {
-                              if (selectedFieldType !== 'arc_region_field') {
-                                setSelectedFieldType('arc_region_field')
-                              }
-                            }
-
-                            regenerateMask(newMaskType)
-                          }}
-                          className="w-full bg-white text-amber-900 rounded text-sm font-mono focus:ring-1 focus:ring-amber-500 border border-amber-300 px-2 py-1"
-                        >
-                          <option value="none">None</option>
-                          <option value="block_circles">Block Circles</option>
-                          <option value="block_rectangles">Block Rectangles</option>
-                          <option value="block_triangles">Block Triangles</option>
-                          <option value="circle_interference">Circle Interference</option>
-                          <option value="compass_cut">Compass Cut</option>
-                          <option value="circle_partition_cut">Circle Partition Cut</option>
-                          <option value="circle_boolean_cut">Circle Boolean Cut</option>
-                          <option value="arc_partition">Arc Partition</option>
-                          <option value="arc_dominance_partition">Arc Dominance Partition</option>
-                        </select>
+                        <div className="text-amber-800 text-xs mb-2">Pattern Type:</div>
+                        <div className="relative pattern-dropdown">
+                          <button
+                            type="button"
+                            onClick={() => setShowPatternDropdown(!showPatternDropdown)}
+                            className="w-full bg-white text-amber-900 rounded text-sm font-mono focus:ring-1 focus:ring-amber-500 border border-amber-300 px-2 py-1 text-left flex items-center justify-between"
+                          >
+                            <span>
+                              {selectedPatternType === 'block_circles' && 'Block Circles'}
+                              {selectedPatternType === 'block_rectangles' && 'Block Rectangles'}
+                              {selectedPatternType === 'block_triangles' && 'Block Triangles'}
+                              {selectedPatternType === 'circle_interference' && 'Circle Interference'}
+                              {selectedPatternType === 'stripe_rotation_illusion' && 'Stripe Rotation Illusion'}
+                            </span>
+                            <span className="text-amber-600">▼</span>
+                          </button>
+                          {showPatternDropdown && (
+                            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-amber-300 rounded shadow-lg z-50">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedPatternType('block_circles')
+                                  setShowPatternDropdown(false)
+                                }}
+                                className="w-full text-left px-3 py-2 text-sm font-mono text-amber-900 hover:bg-amber-50 first:rounded-t last:rounded-b"
+                              >
+                                Block Circles
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedPatternType('block_rectangles')
+                                  setShowPatternDropdown(false)
+                                }}
+                                className="w-full text-left px-3 py-2 text-sm font-mono text-amber-900 hover:bg-amber-50 first:rounded-t last:rounded-b"
+                              >
+                                Block Rectangles
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedPatternType('block_triangles')
+                                  setShowPatternDropdown(false)
+                                }}
+                                className="w-full text-left px-3 py-2 text-sm font-mono text-amber-900 hover:bg-amber-50 first:rounded-t last:rounded-b"
+                              >
+                                Block Triangles
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedPatternType('circle_interference')
+                                  setShowPatternDropdown(false)
+                                }}
+                                className="w-full text-left px-3 py-2 text-sm font-mono text-amber-900 hover:bg-amber-50"
+                              >
+                                Circle Interference
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedPatternType('stripe_rotation_illusion')
+                                  setShowPatternDropdown(false)
+                                }}
+                                className="w-full text-left px-3 py-2 text-sm font-mono text-amber-900 hover:bg-amber-50 last:rounded-b"
+                              >
+                                Stripe Rotation Illusion
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
 
-                      {/* Field Type Selection */}
-                      <div>
-                        <div className="text-amber-800 text-xs mb-2">Field Type:</div>
-                        <select
-                          value={selectedFieldType}
-                          onChange={(e) => {
-                            const newFieldType = e.target.value as FieldType
-                            setSelectedFieldType(newFieldType)
-                            regenerateField(newFieldType)
-                          }}
-                          className="w-full bg-white text-amber-900 rounded text-sm font-mono focus:ring-1 focus:ring-amber-500 border border-amber-300 px-2 py-1"
-                        >
-                          <option value="none">None</option>
-                          <option value="stripe_rotation">Stripe Rotation</option>
-                          <option value="diagonal_drift">Diagonal Drift</option>
-                          <option value="two_stripe_borrow">Two-Stripe Borrow</option>
-                          <option value="arc_region_field">Arc Region Field</option>
-                        </select>
-                      </div>
                     </div>
+                  </div>
 
-                    {/* Evolution Phase Controls */}
-                    <div className="border-t border-amber-600/30 pt-4 mt-4">
-                      <div className="text-amber-700 text-sm mb-3 font-mono">⚡ Evolution Phase</div>
-                      <div className="text-amber-600 text-xs mb-3 opacity-75">Pattern prominence through alternating stripe bands</div>
+                  {/* Evolution Phase Controls */}
+                  <div className="border-t border-amber-600/30 pt-4 mt-4">
+                    <div className="text-amber-700 text-sm mb-3 font-mono">⚡ Evolution Phase</div>
+                    <div className="text-amber-600 text-xs mb-3 opacity-75">Pattern prominence through alternating stripe bands</div>
 
-                      <div className="space-y-3">
-                        <div>
-                          <label className="block text-amber-800 text-xs mb-1">Evolution Phase: {evolutionPhase}</label>
-                          <input
-                            type="range"
-                            min="0"
-                            max="3"
-                            step="1"
-                            value={evolutionPhase}
-                            onChange={(e) => setEvolutionPhase(parseInt(e.target.value))}
-                            className="w-full"
-                          />
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-amber-800 text-xs mb-1">Evolution Phase: {evolutionPhase}</label>
+                        <input
+                          type="range"
+                          min="0"
+                          max="3"
+                          step="1"
+                          value={evolutionPhase}
+                          onChange={(e) => setEvolutionPhase(parseInt(e.target.value))}
+                          className="w-full"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-amber-800 text-xs mb-1">Advanced Modes (Experimental)</label>
+                        <div className="space-y-2">
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              id="twoStripeBorrow"
+                              checked={enableTwoStripeBorrow}
+                              onChange={(e) => {
+                                const checked = e.target.checked
+                                setEnableTwoStripeBorrow(checked)
+
+                                if (typeof window !== 'undefined' && (window as any).__DOORMAT_DATA__) {
+                                  ;(window as any).__DOORMAT_DATA__.__ENABLE_TWO_STRIPE_BORROW__ = checked
+                                }
+
+                                if ((window as any).p5Instance) {
+                                  (window as any).p5Instance.redraw()
+                                }
+                              }}
+                              className="rounded"
+                            />
+                            <label htmlFor="twoStripeBorrow" className="text-amber-700 text-xs">Two-Stripe Borrowing</label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              id="diagonalDrift"
+                              checked={enableDiagonalDrift}
+                              onChange={(e) => {
+                                const checked = e.target.checked
+                                setEnableDiagonalDrift(checked)
+
+                                if (typeof window !== 'undefined' && (window as any).__DOORMAT_DATA__) {
+                                  ;(window as any).__DOORMAT_DATA__.__ENABLE_DIAGONAL_DRIFT__ = checked
+                                }
+
+                                if ((window as any).p5Instance) {
+                                  (window as any).p5Instance.redraw()
+                                }
+                              }}
+                              className="rounded"
+                            />
+                            <label htmlFor="diagonalDrift" className="text-amber-700 text-xs">Diagonal Phase Drift</label>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                  ) : null}
 
                 </div>
 
@@ -3838,11 +3893,6 @@ export default function GeneratorPage() {
                     warpThickness={warpThickness}
                     seed={currentSeed}
                   />
-
-                  {/* Referral Program Component */}
-                  <div className="mt-6 pt-4 border-t border-amber-600/30 pb-8">
-                    <ReferralCodeDisplay />
-                  </div>
 
                 </div>
 

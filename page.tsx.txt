@@ -11,32 +11,11 @@ import Footer from '@/components/Footer'
 import SevenSegmentDisplay from '@/components/SevenSegmentDisplay'
 import { initPRNG, getPRNG, createDerivedPRNG } from '@/lib/DeterministicPRNG'
 import { config } from '@/lib/config'
-import {
-  GeometricPatternRenderer,
-  extractRugPalette,
-  PatternType,
-  MaskType,
-  FieldType,
-  EngravingMask,
-  TextMask,
-  createStripeField,
-  getEvolutionStrength
-} from '@/lib/GeometricPatterns'
-
-// Default pattern parameters since we're not using them anymore
-const defaultPatternParams = {
-  scale: 1.0,
-  opacity: 0.8,
-  rotation: 0,
-  xOffset: 0,
-  yOffset: 0
-}
 import { useChainId } from 'wagmi'
 import { contractAddresses } from '@/lib/web3'
 import { getChainDisplayName } from '@/lib/networks'
 import { Metadata } from 'next'
 import Head from 'next/head'
-import { ReferralCodeDisplay } from '@/components/referrals'
 
 // SEO metadata for the generator page
 const metadata: Metadata = {
@@ -91,23 +70,6 @@ export default function GeneratorPage() {
   // Diamond frame aging (hardcoded - most impressive longevity)
   const [warpThickness, setWarpThickness] = useState(2) // Default warp thickness
 
-  // Geometric pattern overlay state
-  const [enableGeometricOverlay, setEnableGeometricOverlay] = useState(true)
-  // Default evolution phase for all generations
-  const DEFAULT_EVOLUTION_PHASE = 3
-
-  // New mask/field system (ONLY active controls)
-  const [selectedMaskType, setSelectedMaskType] = useState<MaskType>('block_circles')
-  const [selectedFieldType, setSelectedFieldType] = useState<FieldType>('stripe_rotation')
-
-  const [evolutionPhase, setEvolutionPhase] = useState(DEFAULT_EVOLUTION_PHASE)
-  const [showPatternDropdown, setShowPatternDropdown] = useState(false)
-
-  // Refs for synchronous access in p5.js draw function
-  const enableOverlayRef = useRef(false)
-  const selectedMaskRef = useRef<MaskType>('block_circles')
-  const selectedFieldRef = useRef<FieldType>('stripe_rotation')
-
   // Debounce timer for live updates
   const liveUpdateTimerRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -119,57 +81,6 @@ export default function GeneratorPage() {
       }
     }
   }, [])
-
-  // Update refs when state changes
-  useEffect(() => {
-    enableOverlayRef.current = enableGeometricOverlay
-  }, [enableGeometricOverlay])
-
-  useEffect(() => {
-    selectedMaskRef.current = selectedMaskType
-  }, [selectedMaskType])
-
-  useEffect(() => {
-    selectedFieldRef.current = selectedFieldType
-  }, [selectedFieldType])
-
-  // Close pattern dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (showPatternDropdown && !(event.target as Element).closest('.pattern-dropdown')) {
-        setShowPatternDropdown(false)
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [showPatternDropdown])
-
-  useEffect(() => {
-    // Update global evolution phase for immediate rendering
-    if (typeof window !== 'undefined' && (window as any).__DOORMAT_DATA__) {
-      ;(window as any).__DOORMAT_DATA__.patternEvolutionPhase = evolutionPhase
-      ;(window as any).__DOORMAT_DATA__.selectedMaskType = selectedMaskType
-      ;(window as any).__DOORMAT_DATA__.selectedFieldType = selectedFieldType
-      // Trigger immediate redraw
-      if ((window as any).p5Instance) {
-        (window as any).p5Instance.redraw()
-      }
-    }
-  }, [evolutionPhase, selectedMaskType, selectedFieldType])
-
-  // Force canvas redraw when overlay state changes
-  useEffect(() => {
-    if (typeof window !== 'undefined' && (window as any).p5Instance) {
-      console.log('🎨 Overlay state changed, triggering redraw:', enableGeometricOverlay)
-      // Force a redraw by calling redraw() on the p5 instance
-      try {
-        ;(window as any).p5Instance.redraw()
-      } catch (error) {
-        console.warn('Failed to trigger redraw:', error)
-      }
-    }
-  }, [enableGeometricOverlay, selectedMaskType, selectedFieldType])
 
   // Copy to clipboard function
   const copyToClipboard = async (text: string, label: string) => {
@@ -185,49 +96,6 @@ export default function GeneratorPage() {
   const canvasContainerRef = useRef<HTMLDivElement>(null)
   const scriptsLoadedRef = useRef<Set<string>>(new Set())
   const textInputRefs = useRef<(HTMLInputElement | null)[]>([])
-
-  // Helper functions for mask/field regeneration
-  const regenerateMask = (maskType: MaskType) => {
-    if (typeof window !== 'undefined' && (window as any).p5Instance && (window as any).doormatData) {
-      // Only create mask if overlay is enabled
-      if (enableOverlayRef.current) {
-        // Use derived PRNG for deterministic mask generation
-        const currentSeed = (window as any).currentSeed || 42
-        const maskPRNG = createDerivedPRNG(currentSeed, 1000) // Use offset 1000 for mask generation
-        const patternRenderer = new GeometricPatternRenderer((window as any).p5Instance, maskPRNG)
-        const palette = extractRugPalette((window as any).doormatData, (window as any).p5Instance)
-        ;(window as any).doormatData.patternMask = patternRenderer.createMask(
-          maskType,
-          defaultPatternParams,
-          palette,
-          (window as any).doormatData.config.DOORMAT_WIDTH,
-          (window as any).doormatData.config.DOORMAT_HEIGHT
-        )
-      } else {
-        // Disable overlay by setting patternMask to null
-        ;(window as any).doormatData.patternMask = null
-      }
-      ;(window as any).__DOORMAT_DATA__.patternMask = (window as any).doormatData.patternMask
-      ;(window as any).p5Instance.redraw()
-    }
-  }
-
-  const regenerateField = (fieldType: FieldType) => {
-    if (typeof window !== 'undefined' && (window as any).doormatData) {
-      ;(window as any).doormatData.stripeField = createStripeField(fieldType)
-
-      // Generate rotation angle for stripe rotation field
-      const prng = getPRNG()
-      ;(window as any).doormatData.__stripeRotationAngle =
-        (prng.next() < 0.5 ? -1 : 1) *
-        (Math.PI / 9 + prng.next() * (Math.PI / 6))
-
-      ;(window as any).__DOORMAT_DATA__.stripeField = (window as any).doormatData.stripeField
-      if ((window as any).p5Instance) {
-        ;(window as any).p5Instance.redraw()
-      }
-    }
-  }
 
   // Clean P5.js loading - no global pollution
   const loadP5 = () => {
@@ -484,21 +352,7 @@ export default function GeneratorPage() {
     }
     
     console.log('✅ Self-contained doormat generator initialized')
-    return {
-      config,
-      colorPalettes,
-      characterMap,
-      selectedPalette,
-      stripeData,
-      textData,
-      doormatTextRows,
-      warpThickness,
-      patternEvolutionPhase: DEFAULT_EVOLUTION_PHASE,
-      selectedMaskType: 'block_circles' as MaskType,
-      selectedFieldType: 'stripe_rotation' as FieldType,
-      patternMask: null,
-      stripeField: null
-    }
+    return { config, colorPalettes, characterMap, selectedPalette, stripeData, textData, doormatTextRows, warpThickness }
   }
 
   // Create P5.js instance using original doormat.js logic
@@ -560,7 +414,7 @@ export default function GeneratorPage() {
           // Full rug drawing function (with true mirror flip)
           const drawFullRug = (p: any, doormatData: any, seed: number, isFlipped: boolean = false) => {
             // Use original doormat.js draw logic
-            p.background(234, 218, 206) // #EADACE - warm beige background
+            p.background(222, 222, 222)
 
             // Ensure PRNG is initialized with current seed before drawing
             initPRNG(seed)
@@ -594,7 +448,6 @@ export default function GeneratorPage() {
             // Draw fringe and selvedge (always front orientation - transform handles flipping)
             drawFringeOriginal(p, doormatData, drawingPRNG, false) // Always front logic
             drawSelvedgeEdgesOriginal(p, doormatData, drawingPRNG, false) // Always front logic
-
 
             p.pop()
 
@@ -724,31 +577,6 @@ export default function GeneratorPage() {
     if (typeof window !== 'undefined' && (window as any).p5Instance) {
       updateTextColors((window as any).p5Instance, doormatData)
       generateTextData(doormatData)
-
-      // Generate pattern mask for engraving using new mask system (only if overlay enabled)
-      if (enableOverlayRef.current) {
-        // Use derived PRNG for deterministic mask generation
-        const maskPRNG = createDerivedPRNG(seed, 1000) // Use offset 1000 for mask generation
-        const patternRenderer = new GeometricPatternRenderer((window as any).p5Instance, maskPRNG)
-        const palette = extractRugPalette(doormatData, (window as any).p5Instance)
-        doormatData.patternMask = patternRenderer.createMask(
-          selectedMaskRef.current,
-          defaultPatternParams,
-          palette,
-          doormatData.config.DOORMAT_WIDTH,
-          doormatData.config.DOORMAT_HEIGHT
-        )
-      } else {
-        doormatData.patternMask = null
-      }
-
-      // Create stripe field for pattern effects
-      doormatData.stripeField = createStripeField(selectedFieldRef.current)
-
-      // Generate rotation angle for stripe rotation field
-      doormatData.__stripeRotationAngle =
-        (prng.next() < 0.5 ? -1 : 1) *
-        (Math.PI / 9 + prng.next() * (Math.PI / 6))
     }
     
     // Write COMPLETE doormatData to single authoritative window object
@@ -762,12 +590,7 @@ export default function GeneratorPage() {
         warpThickness: doormatData.warpThickness,
         textData: doormatData.textData,
         textRows: doormatData.doormatTextRows,
-        traits: doormatData.traits || {},
-        patternEvolutionPhase: DEFAULT_EVOLUTION_PHASE,
-        selectedMaskType: selectedMaskType,
-        selectedFieldType: selectedFieldType,
-        patternMask: doormatData.patternMask,
-        stripeField: doormatData.stripeField
+        traits: doormatData.traits || {}
       }
 
       // Keep legacy properties for backward compatibility
@@ -1032,48 +855,8 @@ export default function GeneratorPage() {
   // Original doormat.js drawStripe function
   const drawStripeOriginal = (p: any, stripe: any, doormatData: any, drawingPRNG: any, isFlipped: boolean = false) => {
     const config = doormatData.config
-      const warpSpacing = doormatData.warpThickness + 1
-      const weftSpacing = config.WEFT_THICKNESS + 1
-
-      // Compute stripe parity for evolution
-      const stripeIndex = Math.floor(stripe.y / stripe.height)
-      const isEvenStripe = stripeIndex % 2 === 0
-
-      // Identify neighboring stripes for color borrowing
-      const stripes = doormatData.stripeData
-      const stripeArrayIndex = stripes.indexOf(stripe)
-      const prevStripe = stripeArrayIndex > 0 ? stripes[stripeArrayIndex - 1] : null
-      const nextStripe = stripeArrayIndex < stripes.length - 1 ? stripes[stripeArrayIndex + 1] : null
-
-      // Extend neighbor lookup for two-stripe borrowing (safe)
-      const prev2Stripe = stripeArrayIndex > 1 ? stripes[stripeArrayIndex - 2] : null
-      const next2Stripe = stripeArrayIndex < stripes.length - 2 ? stripes[stripeArrayIndex + 2] : null
-
-    // Hash function for deterministic spatial variation
-    const hash01 = (x: number, y: number, seed: number): number => {
-        const h = (x * 73856093) ^ (y * 19349663) ^ (seed * 83492791)
-        return (h & 0x7fffffff) / 0x7fffffff
-    }
-
-    // Helper function to get stripe index at Y position
-    function getStripeIndexAtY(y: number, stripeData: any[]): number {
-        for (let i = 0; i < stripeData.length; i++) {
-            const s = stripeData[i]
-            if (y >= s.y && y < s.y + s.height) return i
-        }
-        return -1
-    }
-
-    // Calculate average stripe height for consistent rotation illusion
-    const averageStripeHeight = doormatData.stripeData.reduce((sum, s) => sum + s.height, 0) / doormatData.stripeData.length
-
-      // Create engraving masks
-    const textMask: EngravingMask | null = (doormatData.__ALLOW_TEXT__ && doormatData.textData)
-      ? new TextMask(doormatData.textData)
-      : null
-
-    // Pattern masks for geometric patterns
-    const patternMask: EngravingMask | null = doormatData.patternMask || null
+    const warpSpacing = doormatData.warpThickness + 1
+    const weftSpacing = config.WEFT_THICKNESS + 1
 
     // Draw character outlines first (for mixed weaves)
     drawCharacterOutlines(p, stripe, doormatData)
@@ -1081,51 +864,7 @@ export default function GeneratorPage() {
     // First, draw the warp threads (vertical) as the foundation
     for (let x = 0; x < config.DOORMAT_WIDTH; x += warpSpacing) {
       for (let y = stripe.y; y < stripe.y + stripe.height; y += weftSpacing) {
-        // Compute pattern strength once per thread
-        const basePatternStrength = patternMask?.strength(x, y) ?? 0
-
-        // Get evolution strength for this stripe
-        const evolutionStrength = getEvolutionStrength(doormatData.patternEvolutionPhase || 0, stripeIndex)
-
-        // Apply field effects to get source stripe index
-        let sourceStripeIndex = stripeArrayIndex
-
-        // Apply active field if mask is active and field exists
-        if (doormatData.stripeField && patternMask?.isActive(x, y)) {
-          sourceStripeIndex = doormatData.stripeField.getSourceStripeIndex(
-            x,
-            y,
-            stripeArrayIndex,
-            doormatData.stripeData,
-            patternMask,
-            doormatData,
-            evolutionStrength
-          )
-        }
-
-        // Restore one-stripe borrow as evolution behavior when no field is selected
-        const phase = doormatData.patternEvolutionPhase || 0
-        if (
-          phase > 0 &&
-          doormatData.selectedFieldType === 'none' &&
-          patternMask?.isActive(x, y)
-        ) {
-          const borrowStrength = getEvolutionStrength(phase, stripeArrayIndex)
-
-          if (borrowStrength > 0) {
-            if (stripeArrayIndex > 0) {
-              sourceStripeIndex = stripeArrayIndex - 1
-            }
-          }
-        }
-
-        // Clamp source stripe index safely
-        sourceStripeIndex = Math.max(0, Math.min(sourceStripeIndex, doormatData.stripeData.length - 1))
-
-        // Get the source stripe
-        const sourceStripe = doormatData.stripeData[sourceStripeIndex]
-
-        const warpColor = p.color(sourceStripe.primaryColor)
+        const warpColor = p.color(stripe.primaryColor)
         
         // Check if this position should be modified for text (only on front side)
         let isTextPixel = false
@@ -1138,14 +877,20 @@ export default function GeneratorPage() {
             }
           }
         }
-
+        
         // Add subtle variation to warp threads
         let r = p.red(warpColor) + drawingPRNG.range(-15, 15)
         let g = p.green(warpColor) + drawingPRNG.range(-15, 15)
         let b = p.blue(warpColor) + drawingPRNG.range(-15, 15)
-
+        
         // Handle text pixels in warp threads
         if (isTextPixel) {
+          // Draw shadow for text
+          p.fill(0, 0, 0, 120)
+          p.noStroke()
+          const warpCurve = p.sin(y * 0.05) * 0.5
+          p.rect(x + warpCurve + 0.5, y + 0.5, doormatData.warpThickness, weftSpacing)
+
           // Use intelligent text color selection for warp threads
           if (stripe.weaveType === 'm' && stripe.secondaryColor) {
             // For mixed weaves, choose text color that contrasts best with BOTH colors
@@ -1181,17 +926,6 @@ export default function GeneratorPage() {
         g = p.constrain(g, 0, 255)
         b = p.constrain(b, 0, 255)
 
-        // Handle pattern engraving (only if not already handled by text)
-        if (!isTextPixel) {
-          let patternStrength = basePatternStrength * evolutionStrength
-
-          // Pattern darkening bias removed - color source replacement does the work now
-        }
-
-        r = p.constrain(r, 0, 255)
-        g = p.constrain(g, 0, 255)
-        b = p.constrain(b, 0, 255)
-
         p.fill(r, g, b)
         p.noStroke()
 
@@ -1204,51 +938,7 @@ export default function GeneratorPage() {
     // Now draw the weft threads (horizontal) that interlace with warp
     for (let y = stripe.y; y < stripe.y + stripe.height; y += weftSpacing) {
       for (let x = 0; x < config.DOORMAT_WIDTH; x += warpSpacing) {
-        // Compute pattern strength once per thread
-        const basePatternStrength = patternMask?.strength(x, y) ?? 0
-
-        // Get evolution strength for this stripe
-        const evolutionStrength = getEvolutionStrength(doormatData.patternEvolutionPhase || 0, stripeIndex)
-
-        // Apply field effects to get source stripe index
-        let sourceStripeIndex = stripeArrayIndex
-
-        // Apply active field if mask is active and field exists
-        if (doormatData.stripeField && patternMask?.isActive(x, y)) {
-          sourceStripeIndex = doormatData.stripeField.getSourceStripeIndex(
-            x,
-            y,
-            stripeArrayIndex,
-            doormatData.stripeData,
-            patternMask,
-            doormatData,
-            evolutionStrength
-          )
-        }
-
-        // Restore one-stripe borrow as evolution behavior when no field is selected
-        const phase = doormatData.patternEvolutionPhase || 0
-        if (
-          phase > 0 &&
-          doormatData.selectedFieldType === 'none' &&
-          patternMask?.isActive(x, y)
-        ) {
-          const borrowStrength = getEvolutionStrength(phase, stripeArrayIndex)
-
-          if (borrowStrength > 0) {
-            if (stripeArrayIndex > 0) {
-              sourceStripeIndex = stripeArrayIndex - 1
-            }
-          }
-        }
-
-        // Clamp source stripe index safely
-        sourceStripeIndex = Math.max(0, Math.min(sourceStripeIndex, doormatData.stripeData.length - 1))
-
-        // Get the source stripe
-        const sourceStripe = doormatData.stripeData[sourceStripeIndex]
-
-        let weftColor = p.color(sourceStripe.primaryColor)
+        let weftColor = p.color(stripe.primaryColor)
 
         // Add variation based on weave type
         if (stripe.weaveType === 'm' && stripe.secondaryColor) {
@@ -1259,7 +949,7 @@ export default function GeneratorPage() {
           const noiseVal = p.noise(x * 0.05, y * 0.05)
           weftColor = p.lerpColor(p.color(stripe.primaryColor), p.color(255), noiseVal * 0.15)
         }
-
+        
         // Check if this position should be modified for text (only on front side)
         let isTextPixel = false
         if (doormatData.__ALLOW_TEXT__ && doormatData.textData && doormatData.textData.length > 0) {
@@ -1271,7 +961,7 @@ export default function GeneratorPage() {
             }
           }
         }
-
+        
         // Add fabric irregularities
         let r = p.red(weftColor) + drawingPRNG.range(-20, 20)
         let g = p.green(weftColor) + drawingPRNG.range(-20, 20)
@@ -1614,24 +1304,19 @@ export default function GeneratorPage() {
         g = p.constrain(g, 0, 255)
         b = p.constrain(b, 0, 255)
 
-        // Handle pattern engraving (only if not already handled by text)
-        if (!isTextPixel) {
-          let patternStrength = basePatternStrength * evolutionStrength
-
-          // Pattern brightening bias removed - color source replacement does the work now
-        }
-
-        r = p.constrain(r, 0, 255)
-        g = p.constrain(g, 0, 255)
-        b = p.constrain(b, 0, 255)
-
         p.fill(r, g, b)
-
         p.noStroke()
 
         // Draw weft thread with slight curve
         const weftCurve = p.cos(x * 0.05) * 0.5
         p.rect(x, y + weftCurve, warpSpacing, config.WEFT_THICKNESS)
+      }
+    }
+    
+    // Add the interlacing effect - make some threads appear to go over/under
+    for (let y = stripe.y; y < stripe.y + stripe.height; y += weftSpacing * 2) {
+      for (let x = 0; x < config.DOORMAT_WIDTH; x += warpSpacing * 2) {
+        // Create shadow effect for threads that appear to go under
         p.fill(0, 0, 0, 40)
         p.noStroke()
         p.rect(x + 1, y + 1, warpSpacing - 2, weftSpacing - 2)
@@ -2170,7 +1855,6 @@ export default function GeneratorPage() {
             }
           }
         }
-
         if (isTextPixel) {
           textPixels.push({x, y})
         }
@@ -2225,7 +1909,6 @@ export default function GeneratorPage() {
     doormatData.lightTextColor = p.lerpColor(p.color(lightest), p.color(255), 0.3)
     doormatData.darkTextColor = p.lerpColor(p.color(darkest), p.color(0), 0.4)
   }
-
 
   // Generate text data (original function)
   const generateTextData = (doormatData: any) => {
@@ -2334,28 +2017,8 @@ export default function GeneratorPage() {
       await createP5Instance()
       console.log('✅ P5.js instance created')
 
-      // Now that p5Instance exists, regenerate text data for the initial rug
-      updateTextColors((window as any).p5Instance, doormatData)
-      generateTextData(doormatData)
-
       // Generate initial doormat (will be replaced by auto-generation cycle after page loads)
       generateDoormatCore(currentSeed, doormatData)
-
-      // Initialize preview flags and evolution phase
-      doormatData.patternEvolutionPhase = DEFAULT_EVOLUTION_PHASE
-
-      // Sync React state to generator default
-      setEvolutionPhase(DEFAULT_EVOLUTION_PHASE)
-
-      // Invalidate cached engraving profiles so patterns and text apply immediately
-      if (doormatData?.stripeData) {
-        for (const stripe of doormatData.stripeData) {
-          delete stripe.__engravingProfile
-        }
-      }
-
-      // Reapply existing text to the initial rug
-      updateTextLive(textInputs)
 
       // Update warp thickness and complexity state from generated doormat data
       setWarpThickness(doormatData.warpThickness)
@@ -2602,26 +2265,6 @@ export default function GeneratorPage() {
       console.log('🎨 Generating new doormat with seed:', seed)
       generateDoormatCore(seed, (window as any).doormatData)
 
-      // Initialize preview flags and evolution phase
-      ;(window as any).doormatData.__ENABLE_TWO_STRIPE_BORROW__ = false
-      ;(window as any).doormatData.__ENABLE_DIAGONAL_DRIFT__ = false
-      ;(window as any).doormatData.patternEvolutionPhase = DEFAULT_EVOLUTION_PHASE
-
-      // Sync React state to generator default
-      setEvolutionPhase(DEFAULT_EVOLUTION_PHASE)
-
-      // Invalidate cached engraving profiles so patterns apply immediately
-      if ((window as any).doormatData?.stripeData) {
-        for (const stripe of (window as any).doormatData.stripeData) {
-          delete stripe.__engravingProfile
-        }
-      }
-
-      // Force redraw to apply evolution immediately
-      if ((window as any).p5Instance) {
-        (window as any).p5Instance.redraw()
-      }
-
       // Reapply existing text to the new rug
       updateTextLive(textInputs)
 
@@ -2684,29 +2327,6 @@ export default function GeneratorPage() {
     if (typeof window !== 'undefined' && (window as any).p5Instance) {
       console.log('🎨 Generating doormat from seed:', currentSeed)
       generateDoormatCore(currentSeed, (window as any).doormatData)
-
-      // Initialize preview flags and evolution phase
-      ;(window as any).doormatData.__ENABLE_TWO_STRIPE_BORROW__ = false
-      ;(window as any).doormatData.__ENABLE_DIAGONAL_DRIFT__ = false
-      ;(window as any).doormatData.patternEvolutionPhase = DEFAULT_EVOLUTION_PHASE
-
-      // Sync React state to generator default
-      setEvolutionPhase(DEFAULT_EVOLUTION_PHASE)
-
-      // Invalidate cached engraving profiles so patterns apply immediately
-      if ((window as any).doormatData?.stripeData) {
-        for (const stripe of (window as any).doormatData.stripeData) {
-          delete stripe.__engravingProfile
-        }
-      }
-
-      // Reapply existing text to the new rug
-      updateTextLive(textInputs)
-
-      // Force redraw to apply evolution immediately
-      if ((window as any).p5Instance) {
-        (window as any).p5Instance.redraw()
-      }
       
       // Update UI
       setTimeout(() => {
@@ -2951,25 +2571,6 @@ export default function GeneratorPage() {
             const randomSeed = Math.floor(Math.random() * 100000)
             console.log(`🎲 Auto-generation ${currentGeneration + 1}/${generationCount} with seed: ${randomSeed}`)
             generateDoormatCore(randomSeed, doormatData)
-
-            // Initialize preview flags and evolution phase
-            doormatData.__ENABLE_TWO_STRIPE_BORROW__ = false
-            doormatData.__ENABLE_DIAGONAL_DRIFT__ = false
-            doormatData.patternEvolutionPhase = DEFAULT_EVOLUTION_PHASE
-
-            // Sync React state to generator default
-            setEvolutionPhase(DEFAULT_EVOLUTION_PHASE)
-
-            // Invalidate cached engraving profiles so patterns apply immediately
-            if (doormatData?.stripeData) {
-              for (const stripe of doormatData.stripeData) {
-                delete stripe.__engravingProfile
-              }
-            }
-
-            // Reapply existing text to the new rug
-            updateTextLive(textInputs)
-
             setWarpThickness(doormatData.warpThickness) // Update warp thickness state
  // Update complexity state
             currentGeneration++
@@ -2981,25 +2582,6 @@ export default function GeneratorPage() {
             const finalSeed = Math.floor(Math.random() * 100000)
             console.log(`🎯 Final generation with seed: ${finalSeed}`)
             generateDoormatCore(finalSeed, doormatData)
-
-            // Initialize preview flags and evolution phase
-            doormatData.__ENABLE_TWO_STRIPE_BORROW__ = false
-            doormatData.__ENABLE_DIAGONAL_DRIFT__ = false
-            doormatData.patternEvolutionPhase = DEFAULT_EVOLUTION_PHASE
-
-            // Sync React state to generator default
-            setEvolutionPhase(DEFAULT_EVOLUTION_PHASE)
-
-            // Invalidate cached engraving profiles so patterns apply immediately
-            if (doormatData?.stripeData) {
-              for (const stripe of doormatData.stripeData) {
-                delete stripe.__engravingProfile
-              }
-            }
-
-            // Reapply existing text to the new rug
-            updateTextLive(textInputs)
-
             setCurrentSeed(finalSeed) // Update the state so minting works
             setWarpThickness(doormatData.warpThickness) // Update warp thickness state
  // Update complexity state
@@ -3237,8 +2819,7 @@ export default function GeneratorPage() {
                                   </div>
                                 </div>
 
-                                {/* Master Overlay Toggle - Development Only */}
-                                {isLoaded && typeof window !== 'undefined' && window.location.hostname === 'localhost' ? (
+                                {/* Master Overlay Toggle */}
                                 <div className="overlay-toggle-section">
                                   <button
                                     onClick={() => {
@@ -3262,7 +2843,6 @@ export default function GeneratorPage() {
                                     </span>
                                   </button>
                                 </div>
-                                ) : null}
                               </div>
                             </div>
                     </div>
@@ -3455,107 +3035,6 @@ export default function GeneratorPage() {
                   {/* Right Panel - Patina System */}
                   <div className="space-y-4">
                   </div>
-
-                  {/* Geometric Pattern Overlay Controls - Development Only */}
-                  {isLoaded && typeof window !== 'undefined' && window.location.hostname === 'localhost' ? (
-                  <div className="border-t border-amber-600/30 pt-4">
-                    <div className="text-amber-700 text-sm mb-3 font-mono">🎨 Geometric Pattern Overlay</div>
-                    <div className="text-amber-600 text-xs mb-3 opacity-75">Patterns render on both front and back sides</div>
-
-                    <div className="space-y-3">
-                      {/* Enable Toggle */}
-                      <label className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          checked={enableGeometricOverlay}
-                          onChange={(e) => {
-                            const newEnabled = e.target.checked
-                            setEnableGeometricOverlay(newEnabled)
-                            enableOverlayRef.current = newEnabled
-                            regenerateMask(selectedMaskType)
-                          }}
-                          className="rounded border-amber-600/30 text-amber-600 focus:ring-amber-500"
-                        />
-                        <span className="text-amber-800 text-sm">Enable Overlay</span>
-                      </label>
-
-                      {/* Mask Type Selection */}
-                      <div>
-                        <div className="text-amber-800 text-xs mb-2">Mask Type:</div>
-                        <select
-                          value={selectedMaskType}
-                          onChange={(e) => {
-                            const newMaskType = e.target.value as MaskType
-                            setSelectedMaskType(newMaskType)
-
-                            // Auto-select appropriate field type for region-based masks
-                            if (newMaskType === 'arc_dominance_partition' || newMaskType === 'arc_partition') {
-                              if (selectedFieldType !== 'arc_region_field') {
-                                setSelectedFieldType('arc_region_field')
-                              }
-                            }
-
-                            regenerateMask(newMaskType)
-                          }}
-                          className="w-full bg-white text-amber-900 rounded text-sm font-mono focus:ring-1 focus:ring-amber-500 border border-amber-300 px-2 py-1"
-                        >
-                          <option value="none">None</option>
-                          <option value="block_circles">Block Circles</option>
-                          <option value="block_rectangles">Block Rectangles</option>
-                          <option value="block_triangles">Block Triangles</option>
-                          <option value="circle_interference">Circle Interference</option>
-                          <option value="compass_cut">Compass Cut</option>
-                          <option value="circle_partition_cut">Circle Partition Cut</option>
-                          <option value="circle_boolean_cut">Circle Boolean Cut</option>
-                          <option value="arc_partition">Arc Partition</option>
-                          <option value="arc_dominance_partition">Arc Dominance Partition</option>
-                        </select>
-                      </div>
-
-                      {/* Field Type Selection */}
-                      <div>
-                        <div className="text-amber-800 text-xs mb-2">Field Type:</div>
-                        <select
-                          value={selectedFieldType}
-                          onChange={(e) => {
-                            const newFieldType = e.target.value as FieldType
-                            setSelectedFieldType(newFieldType)
-                            regenerateField(newFieldType)
-                          }}
-                          className="w-full bg-white text-amber-900 rounded text-sm font-mono focus:ring-1 focus:ring-amber-500 border border-amber-300 px-2 py-1"
-                        >
-                          <option value="none">None</option>
-                          <option value="stripe_rotation">Stripe Rotation</option>
-                          <option value="diagonal_drift">Diagonal Drift</option>
-                          <option value="two_stripe_borrow">Two-Stripe Borrow</option>
-                          <option value="arc_region_field">Arc Region Field</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    {/* Evolution Phase Controls */}
-                    <div className="border-t border-amber-600/30 pt-4 mt-4">
-                      <div className="text-amber-700 text-sm mb-3 font-mono">⚡ Evolution Phase</div>
-                      <div className="text-amber-600 text-xs mb-3 opacity-75">Pattern prominence through alternating stripe bands</div>
-
-                      <div className="space-y-3">
-                        <div>
-                          <label className="block text-amber-800 text-xs mb-1">Evolution Phase: {evolutionPhase}</label>
-                          <input
-                            type="range"
-                            min="0"
-                            max="3"
-                            step="1"
-                            value={evolutionPhase}
-                            onChange={(e) => setEvolutionPhase(parseInt(e.target.value))}
-                            className="w-full"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  ) : null}
-
                 </div>
 
                 {/* Contract Minting Data */}
@@ -3838,11 +3317,6 @@ export default function GeneratorPage() {
                     warpThickness={warpThickness}
                     seed={currentSeed}
                   />
-
-                  {/* Referral Program Component */}
-                  <div className="mt-6 pt-4 border-t border-amber-600/30 pb-8">
-                    <ReferralCodeDisplay />
-                  </div>
 
                 </div>
 

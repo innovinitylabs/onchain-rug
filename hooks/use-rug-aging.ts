@@ -223,7 +223,7 @@ export function useRestoreRug() {
       })
 
       // Get attribution codes (builder + referral + aggregator)
-      const codes = getAllAttributionCodes()
+      const codes = getAllAttributionCodes({ walletAddress: address })
 
       // Append ERC-8021 suffix to calldata
       const callDataWithAttribution = appendERC8021Suffix(encodedData, codes)
@@ -379,7 +379,7 @@ export function useMasterRestoreRug() {
       })
 
       // Get attribution codes (builder + referral + aggregator)
-      const codes = getAllAttributionCodes()
+      const codes = getAllAttributionCodes({ walletAddress: address })
 
       // Append ERC-8021 suffix to calldata
       const callDataWithAttribution = appendERC8021Suffix(encodedData, codes)
@@ -548,7 +548,7 @@ export function useCleanRug() {
       })
 
       // Get attribution codes (builder + referral + aggregator)
-      const codes = getAllAttributionCodes()
+      const codes = getAllAttributionCodes({ walletAddress: address })
 
       // Append ERC-8021 suffix to calldata
       const callDataWithAttribution = appendERC8021Suffix(encodedData, codes)

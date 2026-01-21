@@ -2,6 +2,7 @@
 pragma solidity ^0.8.22;
 
 import {LibRugStorage} from "../libraries/LibRugStorage.sol";
+import {LibBase62} from "../libraries/LibBase62.sol";
 import {LibDiamond} from "../diamond/libraries/LibDiamond.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
@@ -36,9 +37,10 @@ contract RugReferralRegistryFacet {
     error CannotReferSelf();
 
     // Constants
-    string private constant REFERRAL_PREFIX = "ref-";
+    string private constant REFERRAL_PREFIX = "";
     uint256 private constant MIN_CODE_LENGTH = 3;
     uint256 private constant MAX_CODE_LENGTH = 20;
+    uint8 private constant SHORT_CODE_LENGTH = 8; // 8-character base62 codes
 
     /**
      * @notice Register a referral code for the caller
@@ -59,15 +61,17 @@ contract RugReferralRegistryFacet {
         bytes memory codeBytes = bytes(_code);
         uint256 codeLength = codeBytes.length;
 
-        // Check if code starts with "ref-"
-        if (codeLength < 7) revert CodeTooShort(); // "ref-" + at least 3 chars = 7 minimum
-        if (!_startsWith(_code, REFERRAL_PREFIX)) revert InvalidCodeFormat();
+        // Check minimum length (at least 3 chars for base62 code)
+        if (codeLength < 3) revert CodeTooShort();
 
-        // Extract actual code part (after "ref-")
+        // Validate the code is valid base62
+        if (!LibBase62.isValidBase62(_code)) revert InvalidCodeFormat();
+
+        // Extract actual code part (no prefix to remove)
         string memory actualCode = _code;
-        
-        // Validate length (actual code part should be 3-20 chars)
-        uint256 actualCodeLength = codeLength - 4; // Subtract "ref-" length
+
+        // Validate length
+        uint256 actualCodeLength = codeLength;
         if (actualCodeLength < rs.minCodeLength) revert CodeTooShort();
         if (actualCodeLength > rs.maxCodeLength) revert CodeTooLong();
         
@@ -84,6 +88,75 @@ contract RugReferralRegistryFacet {
         rs.codeExists[_code] = true;
 
         emit ReferralCodeRegistered(msg.sender, _code);
+    }
+
+    /**
+     * @notice Register wallet for deterministic referral system
+     * @dev Generates deterministic 8-character code from wallet address
+     *      Requires gas payment as anti-abuse measure
+     */
+    function registerForReferrals() external {
+        LibRugStorage.ReferralConfig storage rs = LibRugStorage.referralStorage();
+
+        // Check if referral system is enabled
+        if (!rs.referralSystemEnabled) revert ReferralSystemDisabled();
+
+        // Check if already registered
+        if (rs.registeredReferrers[msg.sender]) revert ReferrerAlreadyRegistered();
+
+        // Generate deterministic short code
+        string memory fullCode = LibBase62.generateReferralCode(msg.sender);
+
+        // Verify code uniqueness (should be guaranteed by determinism, but double-check)
+        if (rs.codeExists[fullCode]) {
+            revert("Code collision detected"); // Should never happen
+        }
+
+        // Register mappings
+        rs.registeredReferrers[msg.sender] = true;
+        rs.codeToReferrer[fullCode] = msg.sender;
+        rs.referrerToCode[msg.sender] = fullCode;
+        rs.codeExists[fullCode] = true;
+
+        // Initialize stats
+        rs.referralStats[msg.sender] = LibRugStorage.ReferralStats(0, 0, block.timestamp);
+
+        emit ReferralCodeRegistered(msg.sender, fullCode);
+    }
+
+    /**
+     * @notice Get referral code for a wallet (deterministic)
+     * @param wallet The wallet address
+     * @return The referral code if registered, empty string otherwise
+     */
+    function getReferralCode(address wallet) external view returns (string memory) {
+        LibRugStorage.ReferralConfig storage rs = LibRugStorage.referralStorage();
+
+        if (!rs.registeredReferrers[wallet]) {
+            return "";
+        }
+
+        return rs.referrerToCode[wallet];
+    }
+
+    /**
+     * @notice Generate short code for wallet (public for frontend use)
+     * @param wallet The wallet address
+     * @return Short alphanumeric code
+     * @dev Public function for frontend to generate codes without registration
+     */
+    function generateShortCode(address wallet) external pure returns (string memory) {
+        return LibBase62.generateReferralCode(wallet);
+    }
+
+    /**
+     * @notice Check if wallet is registered for referrals
+     * @param wallet The wallet address to check
+     * @return True if registered
+     */
+    function isRegistered(address wallet) external view returns (bool) {
+        LibRugStorage.ReferralConfig storage rs = LibRugStorage.referralStorage();
+        return rs.registeredReferrers[wallet];
     }
 
     /**

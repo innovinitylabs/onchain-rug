@@ -6,6 +6,7 @@
  */
 
 import { concat, bytesToHex } from 'viem'
+import { generateReferralCode, getReferralCodeForWallet } from './base62'
 
 /**
  * ERC-8021 Marker (16 bytes)
@@ -197,27 +198,33 @@ export function saveReferralCode(code: string): void {
 export function getAllAttributionCodes(options?: {
   aggregatorCode?: string
   overrideReferralCode?: string
+  walletAddress?: string // For deterministic referral codes
 }): string[] {
   const codes: string[] = []
-  
+
   // 1. Add builder code (for Base rewards)
   codes.push(getDefaultBuilderCode())
-  
+
   // 2. Add aggregator code if provided
   if (options?.aggregatorCode) {
     codes.push(options.aggregatorCode)
   }
-  
-  // 3. Add referral code (priority: override > URL > stored)
-  const referralCode = 
-    options?.overrideReferralCode || 
-    getReferralCodeFromURL() || 
+
+  // 3. Add referral code (priority: override > URL > stored > deterministic)
+  let referralCode =
+    options?.overrideReferralCode ||
+    getReferralCodeFromURL() ||
     getStoredReferralCode()
-  
+
+  // If no stored/URL code and wallet provided, use deterministic code
+  if (!referralCode && options?.walletAddress) {
+    referralCode = getReferralCodeForWallet(options.walletAddress)
+  }
+
   if (referralCode) {
     codes.push(referralCode)
   }
-  
+
   return codes
 }
 

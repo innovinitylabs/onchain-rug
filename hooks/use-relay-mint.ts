@@ -84,7 +84,7 @@ export function useRelayMint() {
     })
 
     // Get attribution codes (builder + referral + aggregator)
-    const codes = getAllAttributionCodes()
+    const codes = getAllAttributionCodes({ walletAddress: address })
 
     // Append ERC-8021 suffix to calldata
     const data = appendERC8021Suffix(encodedData, codes)
