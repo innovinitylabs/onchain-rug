@@ -6,13 +6,13 @@ import "forge-std/console.sol";
 import "../src/facets/RugNFTFacet.sol";
 import "../src/facets/RugMarketplaceFacet.sol";
 import "../src/facets/RugMaintenanceFacet.sol";
-import "../src/facets/RugReferralRegistryFacet.sol";
+import "../src/facets/RugAttributionRegistryFacet.sol";
 import "../src/diamond/interfaces/IDiamondCut.sol";
 import "../src/diamond/libraries/LibDiamond.sol";
 
 /**
- * @title Upgrade Base Sepolia for ERC-8021 & Referral System
- * @dev Upgrades existing facets and adds new RugReferralRegistryFacet
+ * @title Upgrade Base Sepolia for ERC-8021 & Attribution System
+ * @dev Upgrades existing facets and adds new RugAttributionRegistryFacet
  */
 contract UpgradeBaseSepoliaERC8021 is Script {
     address public diamondAddr;
@@ -21,7 +21,7 @@ contract UpgradeBaseSepoliaERC8021 is Script {
     RugNFTFacet public rugNFTFacet;
     RugMarketplaceFacet public rugMarketplaceFacet;
     RugMaintenanceFacet public rugMaintenanceFacet;
-    RugReferralRegistryFacet public rugReferralRegistryFacet;
+    RugAttributionRegistryFacet public rugAttributionRegistryFacet;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -44,8 +44,8 @@ contract UpgradeBaseSepoliaERC8021 is Script {
         console.log("   RugMaintenanceFacet deployed at:", address(rugMaintenanceFacet));
         
         // Deploy new referral registry facet
-        rugReferralRegistryFacet = new RugReferralRegistryFacet();
-        console.log("   RugReferralRegistryFacet deployed at:", address(rugReferralRegistryFacet));
+        rugAttributionRegistryFacet = new RugAttributionRegistryFacet();
+        console.log("   RugAttributionRegistryFacet deployed at:", address(rugAttributionRegistryFacet));
 
         console.log("2. Upgrading existing facets...");
         
@@ -85,25 +85,25 @@ contract UpgradeBaseSepoliaERC8021 is Script {
 
         console.log("3. Adding new RugReferralRegistryFacet...");
         
-        // Add new referral registry facet
+        // Replace referral registry facet with cleaned up version
         IDiamondCut.FacetCut[] memory referralCut = new IDiamondCut.FacetCut[](1);
         referralCut[0] = IDiamondCut.FacetCut({
-            facetAddress: address(rugReferralRegistryFacet),
-            action: IDiamondCut.FacetCutAction.Add,
+            facetAddress: address(rugAttributionRegistryFacet),
+            action: IDiamondCut.FacetCutAction.Replace,
             functionSelectors: _getRugReferralRegistrySelectors()
         });
         IDiamondCut(diamondAddr).diamondCut(referralCut, address(0), "");
-        console.log("   RugReferralRegistryFacet added");
+        console.log("   RugAttributionRegistryFacet replaced with cleaned up version");
 
-        console.log("4. Initializing referral system...");
-        
-        // Initialize referral system with 5% default percentages
-        RugReferralRegistryFacet(diamondAddr).initializeReferralSystem();
-        console.log("   Referral system initialized with 5% defaults");
+        console.log("4. Initializing attribution system...");
 
-        // Set referral percentages to 5% (500 basis points) for both mint and marketplace
-        RugReferralRegistryFacet(diamondAddr).setReferralPercentages(500, 500);
-        console.log("   Referral percentages set to 5% (500 basis points)");
+        // Initialize attribution system with 2.5% default percentages
+        RugAttributionRegistryFacet(diamondAddr).initializeAttributionSystem();
+        console.log("   Attribution system initialized with 2.5% defaults");
+
+        // Set attribution percentages to 2.5% (250 basis points) for both mint and marketplace
+        RugAttributionRegistryFacet(diamondAddr).setAttributionPercentages(250, 250);
+        console.log("   Attribution percentages set to 2.5% (250 basis points)");
 
         console.log("5. Configuration complete!");
         console.log("   - ERC-8021 attribution parsing enabled");

@@ -3,7 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import BackgroundRotator from "@/components/BackgroundRotator";
-import ReferralUrlHandler from "@/components/ReferralUrlHandler";
+import AttributionUrlHandler from "@/components/AttributionUrlHandler";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
@@ -268,7 +268,7 @@ export default function RootLayout({
       >
         <BackgroundRotator />
         <Providers>
-          <ReferralUrlHandler />
+          <AttributionUrlHandler />
           {children}
         </Providers>
         <Analytics />

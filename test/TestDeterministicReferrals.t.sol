@@ -2,7 +2,7 @@
 pragma solidity ^0.8.22;
 
 import {Test, console} from "forge-std/Test.sol";
-import {RugReferralRegistryFacet} from "../src/facets/RugReferralRegistryFacet.sol";
+import {RugAttributionRegistryFacet} from "../src/facets/RugAttributionRegistryFacet.sol";
 import {LibRugStorage} from "../src/libraries/LibRugStorage.sol";
 
 /**
@@ -11,21 +11,21 @@ import {LibRugStorage} from "../src/libraries/LibRugStorage.sol";
  */
 contract TestDeterministicReferrals is Test {
     address constant DIAMOND = 0x3d6670aC0A881Dcc742c17D687F5dfE05Af81cff;
-    RugReferralRegistryFacet referralFacet;
+    RugAttributionRegistryFacet attributionFacet;
 
     address alice = address(0x1234567890abcdef1234567890abcdef12345678);
     address bob = address(0x9876543210fedcba9876543210fedcba98765432);
 
     function setUp() public {
-        referralFacet = RugReferralRegistryFacet(DIAMOND);
+        attributionFacet = RugAttributionRegistryFacet(DIAMOND);
     }
 
     /**
      * @notice Test deterministic code generation
      */
     function test_GenerateShortCode() public {
-        string memory aliceCode = referralFacet.generateShortCode(alice);
-        string memory bobCode = referralFacet.generateShortCode(bob);
+        string memory aliceCode = attributionFacet.generateAttributionCode(alice);
+        string memory bobCode = attributionFacet.generateAttributionCode(bob);
 
         console.log("Alice code:", aliceCode);
         console.log("Bob code:", bobCode);
@@ -42,8 +42,8 @@ contract TestDeterministicReferrals is Test {
      * @notice Test deterministic code consistency
      */
     function test_DeterministicConsistency() public {
-        string memory code1 = referralFacet.generateShortCode(alice);
-        string memory code2 = referralFacet.generateShortCode(alice);
+        string memory code1 = attributionFacet.generateAttributionCode(alice);
+        string memory code2 = attributionFacet.generateAttributionCode(alice);
 
         assertEq(code1, code2, "Same wallet should generate same code");
     }
@@ -52,7 +52,7 @@ contract TestDeterministicReferrals is Test {
      * @notice Test registration status (should be false initially)
      */
     function test_InitialRegistrationStatus() public {
-        bool isRegistered = referralFacet.isRegistered(alice);
+        bool isRegistered = attributionFacet.isAttributionRegistered(alice);
         assertFalse(isRegistered, "Alice should not be registered initially");
     }
 
@@ -60,7 +60,7 @@ contract TestDeterministicReferrals is Test {
      * @notice Test getting referral code (should be empty initially)
      */
     function test_GetReferralCodeInitiallyEmpty() public {
-        string memory code = referralFacet.getReferralCode(alice);
+        string memory code = attributionFacet.getAttributionCode(alice);
         assertEq(bytes(code).length, 0, "Should return empty string for unregistered wallet");
     }
 

@@ -17,7 +17,7 @@ import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {ReentrancyGuard} from "solady/utils/ReentrancyGuard.sol";
 import {RugLaunderingFacet} from "./RugLaunderingFacet.sol";
 import {RugCommerceFacet} from "./RugCommerceFacet.sol";
-import {RugReferralRegistryFacet} from "./RugReferralRegistryFacet.sol";
+import {RugAttributionRegistryFacet} from "./RugAttributionRegistryFacet.sol";
 
 /**
  * @title RugMarketplaceFacet
@@ -215,21 +215,21 @@ contract RugMarketplaceFacet is ReentrancyGuard {
             emit TransactionAttributed(tokenId, msg.sender, price, attribution.codes);
             
             // Process referral rewards if referral code found
-            RugReferralRegistryFacet referralFacet = RugReferralRegistryFacet(address(this));
-            address referrer = referralFacet.extractReferrerFromCodes(attribution.codes, msg.sender);
-            
+            RugAttributionRegistryFacet attributionFacet = RugAttributionRegistryFacet(address(this));
+            address referrer = attributionFacet.extractReferrerFromAttributionCodes(attribution.codes, msg.sender);
+
             if (referrer != address(0)) {
-                // Calculate marketplace fee for referral reward calculation
+                // Calculate marketplace fee for attribution reward calculation
                 uint256 marketplaceFee = LibRugStorage.safeMul(price, ms.marketplaceFeePercent) / 10000;
-                
-                // Calculate referral reward (percentage of marketplace fee)
-                uint256 referralReward = referralFacet.calculateMarketplaceReferralReward(marketplaceFee);
-                
-                if (referralReward > 0 && address(this).balance >= referralReward) {
-                    (bool success, ) = payable(referrer).call{value: referralReward}("");
+
+                // Calculate attribution reward (percentage of marketplace fee)
+                uint256 attributionReward = attributionFacet.calculateMarketplaceAttributionReward(marketplaceFee);
+
+                if (attributionReward > 0 && address(this).balance >= attributionReward) {
+                    (bool success, ) = payable(referrer).call{value: attributionReward}("");
                     if (success) {
-                        // Record referral
-                        referralFacet.recordReferral(referrer, msg.sender, tokenId, "buy", referralReward);
+                        // Record attribution
+                        attributionFacet.recordAttribution(referrer, msg.sender, tokenId, "buy", attributionReward);
                     }
                 }
             }

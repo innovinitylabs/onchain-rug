@@ -1059,6 +1059,7 @@ export type MaskType =
   | 'arc_partition'
   | 'arc_dominance_partition'
   | 'rug_area'
+  | 'crypto_punk'
 
 /**
  * Field types define how stripe sampling behaves inside masks
@@ -1076,6 +1077,8 @@ export type FieldType =
 export class GeometricPatternRenderer {
   private p: any
   private prng: any
+  private punkSvgs: { [key: number]: string } = {}
+  private punkPixels: { [key: number]: boolean[][] } = {}
 
   constructor(p5Instance: any, prngInstance: any) {
     this.p = p5Instance
@@ -1128,7 +1131,8 @@ export class GeometricPatternRenderer {
     params: PatternParameters,
     palette: ColorPalette,
     canvasWidth: number,
-    canvasHeight: number
+    canvasHeight: number,
+    punkId?: number
   ): EngravingMask {
     console.log('🎨 createMask called with type:', maskType, 'palette:', palette.colors.length)
 
@@ -1167,6 +1171,9 @@ export class GeometricPatternRenderer {
       }
       case 'rug_area': {
         return this.generateRugAreaMask(canvasWidth, canvasHeight)
+      }
+      case 'crypto_punk': {
+        return this.generateCryptoPunkMask(canvasWidth, canvasHeight, punkId || 0)
       }
       case 'none':
       default:
@@ -1958,6 +1965,256 @@ export class GeometricPatternRenderer {
 
     return shapes
   }
+
+  private generateCryptoPunkMask(canvasWidth: number, canvasHeight: number, punkId: number = 0): EngravingMask {
+    // Position punk in center-bottom of rug (back side)
+    // Increased size to 25% for better visibility
+    const punkSize = Math.min(canvasWidth, canvasHeight) * 0.25; // 25% of canvas
+    const centerX = canvasWidth / 2;
+    const centerY = canvasHeight * 0.75; // 3/4 down the rug
+
+    console.log(`🎨 Generating punk mask for ID ${punkId}, size: ${punkSize}, data loaded: ${!!this.punkPixels[punkId]}`);
+    if (this.punkPixels[punkId]) {
+      // Count how many pixels are set for debugging
+      let pixelCount = 0;
+      for (let y = 0; y < 24; y++) {
+        for (let x = 0; x < 24; x++) {
+          if (this.punkPixels[punkId][y][x]) pixelCount++;
+        }
+      }
+      console.log(`📊 Punk ${punkId} has ${pixelCount} engraved pixels out of 576 total`);
+    }
+
+    return {
+      isActive: (x: number, y: number) => {
+        // Check if point is within punk area
+        const localX = x - (centerX - punkSize/2);
+        const localY = y - (centerY - punkSize/2);
+
+        return localX >= 0 && localX < punkSize && localY >= 0 && localY < punkSize;
+      },
+
+      strength: (x: number, y: number) => {
+        const localX = (x - (centerX - punkSize/2)) / punkSize * 24;
+        const localY = (y - (centerY - punkSize/2)) / punkSize * 24;
+
+        const pixelX = Math.floor(localX);
+        const pixelY = Math.floor(localY);
+
+        if (pixelX < 0 || pixelX >= 24 || pixelY < 0 || pixelY >= 24) return 0;
+
+        // Use real punk pixel data with higher engraving strength
+        if (this.punkPixels[punkId] && this.punkPixels[punkId][pixelY] && this.punkPixels[punkId][pixelY][pixelX]) {
+          return 1.0; // Maximum engraving strength for punk pixels
+        }
+
+        // For testing: if punk data is loaded but this pixel is empty, still engrave lightly
+        // This creates a visible border around the punk
+        if (this.punkPixels[punkId]) {
+          // Check if we're near an engraved pixel (create outline effect)
+          for (let dy = -1; dy <= 1; dy++) {
+            for (let dx = -1; dx <= 1; dx++) {
+              const checkX = pixelX + dx;
+              const checkY = pixelY + dy;
+              if (checkX >= 0 && checkX < 24 && checkY >= 0 && checkY < 24 &&
+                  this.punkPixels[punkId][checkY][checkX]) {
+                return 0.5; // Medium engraving for outline
+              }
+            }
+          }
+        }
+
+        return 0; // No engraving
+      }
+    };
+  }
+
+  /**
+   * Load a Cryptopunk SVG and parse it into pixel data
+   */
+  loadPunkSvg(punkId: number, svgString: string) {
+    this.punkSvgs[punkId] = svgString;
+    this.punkPixels[punkId] = this.parsePunkSvg(svgString);
+  }
+
+  /**
+   * Parse Cryptopunk SVG into 24x24 boolean pixel array
+   * SVGs contain <rect> elements representing pixels
+   */
+  private parsePunkSvg(svgString: string): boolean[][] {
+    const pixels: boolean[][] = Array(24).fill(null).map(() => Array(24).fill(false));
+
+    try {
+      // Extract rect elements from SVG
+      const rectRegex = /<rect[^>]*x="(\d+)"[^>]*y="(\d+)"[^>]*width="1"[^>]*height="1"[^>]*>/g;
+      let match;
+
+      while ((match = rectRegex.exec(svgString)) !== null) {
+        const x = parseInt(match[1]);
+        const y = parseInt(match[2]);
+
+        if (x >= 0 && x < 24 && y >= 0 && y < 24) {
+          pixels[y][x] = true; // Note: SVG y=0 is top, our array y=0 is top
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to parse punk SVG:', error);
+    }
+
+    return pixels;
+  }
+
+  /**
+   * Fetch punk SVG from CryptoPunksData contract (for development/testing)
+   * Note: This requires a real RPC endpoint with API key for production use
+   */
+  async fetchPunkSvg(punkId: number): Promise<string> {
+    try {
+      // For demo purposes, return a simple SVG. In production, you'd use:
+      // const response = await fetch('https://eth-mainnet.g.alchemy.com/v2/YOUR_API_KEY', { ... })
+
+      console.log(`🎨 Fetching punk ${punkId} SVG...`);
+
+      // For now, return empty string. Load real SVGs from files instead
+      return '';
+
+      /* Production code would be:
+      const response = await fetch('https://eth-mainnet.g.alchemy.com/v2/YOUR_API_KEY', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          method: 'eth_call',
+          params: [{
+            to: '0x16f5a35647d6f03d5d3da7b35409d65ba03af3b2', // CryptoPunksData
+            data: `0xc87b56dd${punkId.toString(16).padStart(64, '0')}` // punkImageSvg(uint16)
+          }, 'latest'],
+          id: 1
+        })
+      });
+
+      const result = await response.json();
+      const svgData = result.result;
+
+      // Decode the returned bytes to string
+      let svg = '';
+      for (let i = 2; i < svgData.length; i += 2) {
+        svg += String.fromCharCode(parseInt(svgData.substr(i, 2), 16));
+      }
+      return svg;
+      */
+    } catch (error) {
+      console.warn(`Failed to fetch punk ${punkId}:`, error);
+      return ''; // No fallback - use loadPunksFromFiles instead
+    }
+  }
+
+
+
+  /**
+   * Batch load real Cryptopunk SVGs (use with caution - rate limited)
+   */
+  async loadRealPunks(punkIds: number[], rpcUrl?: string) {
+    console.log('🎨 Loading real Cryptopunk SVGs from blockchain...');
+
+    for (const punkId of punkIds) {
+      try {
+        const svg = await this.fetchRealPunkSvg(punkId, rpcUrl);
+        if (svg) {
+          this.loadPunkSvg(punkId, svg);
+          console.log(`✅ Loaded real punk ${punkId}`);
+        }
+      } catch (error) {
+        console.warn(`❌ Failed to load real punk ${punkId}:`, error);
+      }
+
+      // Rate limiting
+      await new Promise(resolve => setTimeout(resolve, 200));
+    }
+  }
+
+  /**
+   * Fetch real punk SVG from CryptoPunksData contract
+   */
+  private async fetchRealPunkSvg(punkId: number, rpcUrl?: string): Promise<string> {
+    const endpoint = rpcUrl || 'https://eth-mainnet.g.alchemy.com/v2/demo';
+
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          method: 'eth_call',
+          params: [{
+            to: '0x16f5a35647d6f03d5d3da7b35409d65ba03af3b2', // CryptoPunksData
+            data: `0xc87b56dd${punkId.toString(16).padStart(64, '0')}` // punkImageSvg(uint16)
+          }, 'latest'],
+          id: 1
+        })
+      });
+
+      const result = await response.json();
+      const svgData = result.result;
+
+      // The result is already a string (SVG), not hex-encoded bytes for this function
+      return svgData;
+    } catch (error) {
+      console.warn(`Failed to fetch real punk ${punkId}:`, error);
+      return '';
+    }
+  }
+
+  /**
+   * Load punk SVGs from downloaded JSON files
+   */
+  async loadPunksFromFiles() {
+    console.log('🎨 Loading 625+ Cryptopunk SVGs...');
+
+    try {
+      // Load all punks-*.json files from data/cryptopunks/ directory
+      const files = [
+        'punks-000.json', 'punks-001.json', 'punks-002.json', 'punks-003.json',
+        'punks-004.json', 'punks-005.json', 'punks-006.json', 'punks-007.json',
+        'punks-008.json', 'punks-009.json', 'punks-010.json', 'punks-011.json',
+        'punks-012.json', 'punks-013.json', 'punks-014.json', 'punks-015.json',
+        'punks-016.json', 'punks-017.json', 'punks-018.json', 'punks-019.json',
+        'punks-020.json', 'punks-021.json', 'punks-022.json', 'punks-023.json',
+        'punks-024.json'
+      ];
+
+      let totalLoaded = 0;
+
+      for (const filename of files) {
+        try {
+          const response = await fetch(`/data/cryptopunks/${filename}`);
+          if (!response.ok) {
+            console.warn(`⚠️ Skipping ${filename} - not found`);
+            continue;
+          }
+
+          const batchData = await response.json();
+
+          for (const punk of batchData) {
+            this.loadPunkSvg(punk.id, punk.svg);
+          }
+
+          totalLoaded += batchData.length;
+          console.log(`✅ Loaded ${batchData.length} punks from ${filename} (${totalLoaded} total)`);
+        } catch (error) {
+          console.warn(`❌ Failed to load ${filename}:`, error);
+        }
+      }
+
+      console.log(`🎉 Successfully loaded ${totalLoaded} Cryptopunk SVGs!`);
+      return totalLoaded;
+    } catch (error) {
+      console.warn('❌ Failed to load punks from files:', error);
+      console.log('💡 Make sure punk files are in public/data/cryptopunks/');
+      return 0;
+    }
+  }
+
 }
 
 /**

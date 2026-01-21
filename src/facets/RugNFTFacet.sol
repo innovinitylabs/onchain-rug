@@ -20,7 +20,7 @@ import {LibDiamond} from "../diamond/libraries/LibDiamond.sol";
 import {LibERC8021} from "../libraries/LibERC8021.sol";
 import {LibTransferSecurity} from "../libraries/LibTransferSecurity.sol";
 import {OnchainRugsHTMLGenerator} from "../OnchainRugsHTMLGenerator.sol";
-import {RugReferralRegistryFacet} from "./RugReferralRegistryFacet.sol";
+import {RugAttributionRegistryFacet} from "./RugAttributionRegistryFacet.sol";
 import {ICreatorToken} from "@limitbreak/creator-token-contracts/interfaces/ICreatorToken.sol";
 import {ICreatorTokenTransferValidator} from "@limitbreak/creator-token-contracts/interfaces/ICreatorTokenTransferValidator.sol";
 import {TransferSecurityLevels, CollectionSecurityPolicy} from "@limitbreak/creator-token-contracts/utils/TransferPolicy.sol";
@@ -196,23 +196,23 @@ contract RugNFTFacet is ICreatorToken {
             emit MintAttributed(tokenId, recipient, attribution.codes);
             
             // Process referral rewards if referral code found
-            RugReferralRegistryFacet referralFacet = RugReferralRegistryFacet(address(this));
-            address referrer = referralFacet.extractReferrerFromCodes(attribution.codes, recipient);
-            
+            RugAttributionRegistryFacet attributionFacet = RugAttributionRegistryFacet(address(this));
+            address referrer = attributionFacet.extractReferrerFromAttributionCodes(attribution.codes, recipient);
+
             if (referrer != address(0)) {
-                // Calculate referral reward (percentage of mint fee)
-                uint256 referralReward = referralFacet.calculateMintReferralReward(price);
+                // Calculate attribution reward (percentage of mint fee)
+                uint256 attributionReward = attributionFacet.calculateMintAttributionReward(price);
                 
-                if (referralReward > 0) {
+                if (attributionReward > 0) {
                     // Pay referrer (only if contract has sufficient balance)
                     // Note: For mints, the fee comes from msg.value, so we need to ensure we have enough
-                    // In practice, referral rewards are paid from protocol revenue, not directly from mint fee
+                    // In practice, attribution rewards are paid from protocol revenue, not directly from mint fee
                     // This is a design decision - we can adjust based on business model
-                    if (address(this).balance >= referralReward) {
-                        (bool success, ) = payable(referrer).call{value: referralReward}("");
+                    if (address(this).balance >= attributionReward) {
+                        (bool success, ) = payable(referrer).call{value: attributionReward}("");
                         if (success) {
-                            // Record referral
-                            referralFacet.recordReferral(referrer, recipient, tokenId, "mint", referralReward);
+                            // Record attribution
+                            attributionFacet.recordAttribution(referrer, recipient, tokenId, "mint", attributionReward);
                         }
                     }
                 }

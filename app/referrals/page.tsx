@@ -1,7 +1,7 @@
 import { Metadata } from 'next'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
-import { ReferralDashboard } from '@/components/referrals'
+import { AttributionDashboard } from '@/components/attribution'
 
 export const metadata: Metadata = {
   title: "Referral Program - Earn 5% Commission | OnchainRugs",
@@ -41,7 +41,7 @@ export default function ReferralsPage() {
       <Navigation />
       <main className="page-main">
         <div className="container mx-auto px-4 py-8">
-          <ReferralDashboard />
+          <AttributionDashboard />
         </div>
       </main>
       <div className="page-footer">

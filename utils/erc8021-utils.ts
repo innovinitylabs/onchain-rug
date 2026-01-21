@@ -6,7 +6,7 @@
  */
 
 import { concat, bytesToHex } from 'viem'
-import { generateReferralCode, getReferralCodeForWallet, isValidBase62 } from './base62'
+import { generateAttributionCode, getAttributionCodeForWallet, isValidBase62 } from './base62'
 
 /**
  * ERC-8021 Marker (16 bytes)
@@ -144,10 +144,10 @@ export function getDefaultBuilderCode(): string {
 }
 
 /**
- * Extracts referral code from URL parameters
+ * Extracts ERC-8021 attribution code from URL parameters
  * Looks for 'ref' query parameter
  */
-export function getReferralCodeFromURL(): string | null {
+export function getAttributionCodeFromURL(): string | null {
   if (typeof window === 'undefined') return null
 
   const params = new URLSearchParams(window.location.search)
@@ -161,26 +161,26 @@ export function getReferralCodeFromURL(): string | null {
 }
 
 /**
- * Gets referral code from localStorage (if user has one saved)
+ * Gets ERC-8021 attribution code from localStorage (if user has one saved)
  */
-export function getStoredReferralCode(): string | null {
+export function getStoredAttributionCode(): string | null {
   if (typeof window === 'undefined') return null
   
   try {
-    return localStorage.getItem('referral_code')
+    return localStorage.getItem('attribution_code')
   } catch {
     return null
   }
 }
 
 /**
- * Saves referral code to localStorage
+ * Saves ERC-8021 attribution code to localStorage
  */
-export function saveReferralCode(code: string): void {
+export function saveAttributionCode(code: string): void {
   if (typeof window === 'undefined') return
   
   try {
-    localStorage.setItem('referral_code', code)
+    localStorage.setItem('attribution_code', code)
   } catch {
     // Ignore localStorage errors
   }
@@ -192,8 +192,8 @@ export function saveReferralCode(code: string): void {
  */
 export function getAllAttributionCodes(options?: {
   aggregatorCode?: string
-  overrideReferralCode?: string
-  walletAddress?: string // For deterministic referral codes
+  overrideAttributionCode?: string
+  walletAddress?: string // For deterministic attribution codes
 }): string[] {
   const codes: string[] = []
 
@@ -205,19 +205,19 @@ export function getAllAttributionCodes(options?: {
     codes.push(options.aggregatorCode)
   }
 
-  // 3. Add referral code (priority: override > URL > stored > deterministic)
-  let referralCode =
-    options?.overrideReferralCode ||
-    getReferralCodeFromURL() ||
-    getStoredReferralCode()
+  // 3. Add attribution code (priority: override > URL > stored > deterministic)
+  let attributionCode =
+    options?.overrideAttributionCode ||
+    getAttributionCodeFromURL() ||
+    getStoredAttributionCode()
 
   // If no stored/URL code and wallet provided, use deterministic code
-  if (!referralCode && options?.walletAddress) {
-    referralCode = getReferralCodeForWallet(options.walletAddress)
+  if (!attributionCode && options?.walletAddress) {
+    attributionCode = getAttributionCodeForWallet(options.walletAddress)
   }
 
-  if (referralCode) {
-    codes.push(referralCode)
+  if (attributionCode) {
+    codes.push(attributionCode)
   }
 
   return codes

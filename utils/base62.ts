@@ -40,7 +40,7 @@ export function encodeBase62(value: bigint, length: number): string {
  * @param walletAddress Ethereum wallet address (0x...)
  * @returns 8-character base62 string
  */
-export function generateReferralCode(walletAddress: string): string {
+export function generateAttributionCode(walletAddress: string): string {
   // Convert address to bytes (matches Solidity abi.encodePacked)
   const addressBytes = new Uint8Array(20);
   for (let i = 0; i < 20; i++) {
@@ -73,12 +73,12 @@ export function isValidBase62(str: string): boolean {
 }
 
 /**
- * Get full referral code (no prefix)
+ * Get full ERC-8021 attribution code (no prefix)
  * @param walletAddress Ethereum address
- * @returns Referral code (XXXXXXXX)
+ * @returns ERC-8021 attribution code (XXXXXXXX)
  */
-export function getReferralCodeForWallet(walletAddress: string): string {
-  return generateReferralCode(walletAddress);
+export function getAttributionCodeForWallet(walletAddress: string): string {
+  return generateAttributionCode(walletAddress);
 }
 
 /**

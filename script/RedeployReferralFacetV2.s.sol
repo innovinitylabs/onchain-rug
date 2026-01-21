@@ -3,7 +3,7 @@ pragma solidity ^0.8.22;
 
 import "forge-std/Script.sol";
 import "forge-std/console.sol";
-import "../src/facets/RugReferralRegistryFacet.sol";
+import "../src/facets/RugAttributionRegistryFacet.sol";
 import "../src/diamond/interfaces/IDiamondCut.sol";
 import "../src/diamond/libraries/LibDiamond.sol";
 

@@ -36,7 +36,7 @@ import { contractAddresses } from '@/lib/web3'
 import { getChainDisplayName } from '@/lib/networks'
 import { Metadata } from 'next'
 import Head from 'next/head'
-import { ReferralCodeDisplay } from '@/components/referrals'
+import { AttributionCodeDisplay } from '@/components/attribution'
 
 // SEO metadata for the generator page
 const metadata: Metadata = {
@@ -99,6 +99,8 @@ export default function GeneratorPage() {
   // New mask/field system (ONLY active controls)
   const [selectedMaskType, setSelectedMaskType] = useState<MaskType>('block_circles')
   const [selectedFieldType, setSelectedFieldType] = useState<FieldType>('stripe_rotation')
+  const [selectedPunkId, setSelectedPunkId] = useState<number>(0)
+  const [selectedPunkPattern, setSelectedPunkPattern] = useState<string>('classic')
 
   const [evolutionPhase, setEvolutionPhase] = useState(DEFAULT_EVOLUTION_PHASE)
   const [showPatternDropdown, setShowPatternDropdown] = useState(false)
@@ -151,12 +153,13 @@ export default function GeneratorPage() {
       ;(window as any).__DOORMAT_DATA__.patternEvolutionPhase = evolutionPhase
       ;(window as any).__DOORMAT_DATA__.selectedMaskType = selectedMaskType
       ;(window as any).__DOORMAT_DATA__.selectedFieldType = selectedFieldType
+      ;(window as any).selectedPunkId = selectedPunkId
       // Trigger immediate redraw
       if ((window as any).p5Instance) {
         (window as any).p5Instance.redraw()
       }
     }
-  }, [evolutionPhase, selectedMaskType, selectedFieldType])
+  }, [evolutionPhase, selectedMaskType, selectedFieldType, selectedPunkId])
 
   // Force canvas redraw when overlay state changes
   useEffect(() => {
@@ -186,22 +189,57 @@ export default function GeneratorPage() {
   const scriptsLoadedRef = useRef<Set<string>>(new Set())
   const textInputRefs = useRef<(HTMLInputElement | null)[]>([])
 
+  // Helper function to get punk ID for pattern type
+  const getPunkIdForPattern = (pattern: string): number => {
+    const patternMap: { [key: string]: number } = {
+      '0': 0,        // Genesis punk
+      '1': 1,        // First ape
+      '2': 2,        // First zombie
+      '3': 3,        // First female
+      '4': 4,        // First male
+      '5': 5,        // First alien
+      '29': 29,      // Beanie example
+      '26': 26,      // Cap example
+      '95': 95,      // Crazy hair example
+      '58': 58,      // Nerd glasses example
+      '64': 64,      // Shades example
+      '3100': 3100,  // Famous punk
+      '5217': 5217,  // Famous punk
+      '7804': 7804,  // Famous punk
+      'custom': selectedPunkId // Keep current custom value
+    };
+    return patternMap[pattern] || 0;
+  };
+
   // Helper functions for mask/field regeneration
-  const regenerateMask = (maskType: MaskType) => {
+  const regenerateMask = (maskType: MaskType, punkId?: number) => {
     if (typeof window !== 'undefined' && (window as any).p5Instance && (window as any).doormatData) {
       // Only create mask if overlay is enabled
       if (enableOverlayRef.current) {
-        // Use derived PRNG for deterministic mask generation
-        const currentSeed = (window as any).currentSeed || 42
-        const maskPRNG = createDerivedPRNG(currentSeed, 1000) // Use offset 1000 for mask generation
-        const patternRenderer = new GeometricPatternRenderer((window as any).p5Instance, maskPRNG)
+        // Get or create pattern renderer with punk data preloaded
+        let patternRenderer = (window as any).p5Instance.patternRenderer;
+        if (!patternRenderer) {
+          const currentSeed = (window as any).currentSeed || 42
+          const maskPRNG = createDerivedPRNG(currentSeed, 1000)
+          patternRenderer = new GeometricPatternRenderer((window as any).p5Instance, maskPRNG)
+          ;(window as any).p5Instance.patternRenderer = patternRenderer
+
+          // Auto-load punk data in background
+          patternRenderer.loadPunksFromFiles().then(() => {
+            console.log('🎨 Cryptopunk SVGs preloaded successfully!')
+          }).catch((error) => {
+            console.warn('❌ Failed to preload punk SVGs:', error)
+          })
+        }
+
         const palette = extractRugPalette((window as any).doormatData, (window as any).p5Instance)
         ;(window as any).doormatData.patternMask = patternRenderer.createMask(
           maskType,
           defaultPatternParams,
           palette,
           (window as any).doormatData.config.DOORMAT_WIDTH,
-          (window as any).doormatData.config.DOORMAT_HEIGHT
+          (window as any).doormatData.config.DOORMAT_HEIGHT,
+          punkId
         )
       } else {
         // Disable overlay by setting patternMask to null
@@ -727,16 +765,29 @@ export default function GeneratorPage() {
 
       // Generate pattern mask for engraving using new mask system (only if overlay enabled)
       if (enableOverlayRef.current) {
-        // Use derived PRNG for deterministic mask generation
-        const maskPRNG = createDerivedPRNG(seed, 1000) // Use offset 1000 for mask generation
-        const patternRenderer = new GeometricPatternRenderer((window as any).p5Instance, maskPRNG)
+        // Get or create pattern renderer with punk data preloaded
+        let patternRenderer = (window as any).p5Instance.patternRenderer;
+        if (!patternRenderer) {
+          const maskPRNG = createDerivedPRNG(seed, 1000) // Use offset 1000 for mask generation
+          patternRenderer = new GeometricPatternRenderer((window as any).p5Instance, maskPRNG)
+          ;(window as any).p5Instance.patternRenderer = patternRenderer
+
+          // Auto-load punk data in background
+          patternRenderer.loadPunksFromFiles().then(() => {
+            console.log('🎨 Cryptopunk SVGs preloaded successfully!')
+          }).catch((error) => {
+            console.warn('❌ Failed to preload punk SVGs:', error)
+          })
+        }
+
         const palette = extractRugPalette(doormatData, (window as any).p5Instance)
         doormatData.patternMask = patternRenderer.createMask(
           selectedMaskRef.current,
           defaultPatternParams,
           palette,
           doormatData.config.DOORMAT_WIDTH,
-          doormatData.config.DOORMAT_HEIGHT
+          doormatData.config.DOORMAT_HEIGHT,
+          (window as any).selectedPunkId || 0
         )
       } else {
         doormatData.patternMask = null
@@ -3472,7 +3523,7 @@ export default function GeneratorPage() {
                             const newEnabled = e.target.checked
                             setEnableGeometricOverlay(newEnabled)
                             enableOverlayRef.current = newEnabled
-                            regenerateMask(selectedMaskType)
+                            regenerateMask(selectedMaskType, selectedPunkId)
                           }}
                           className="rounded border-amber-600/30 text-amber-600 focus:ring-amber-500"
                         />
@@ -3495,7 +3546,7 @@ export default function GeneratorPage() {
                               }
                             }
 
-                            regenerateMask(newMaskType)
+                            regenerateMask(newMaskType, selectedPunkId)
                           }}
                           className="w-full bg-white text-amber-900 rounded text-sm font-mono focus:ring-1 focus:ring-amber-500 border border-amber-300 px-2 py-1"
                         >
@@ -3510,6 +3561,7 @@ export default function GeneratorPage() {
                           <option value="arc_partition">Arc Partition</option>
                           <option value="arc_dominance_partition">Arc Dominance Partition</option>
                           <option value="rug_area">Rug Area</option>
+                          <option value="crypto_punk">Crypto Punk</option>
                         </select>
                       </div>
 
@@ -3532,6 +3584,82 @@ export default function GeneratorPage() {
                           <option value="arc_region_field">Arc Region Field</option>
                         </select>
                       </div>
+
+                      {/* Punk Controls - only show when crypto_punk is selected */}
+                      {selectedMaskType === 'crypto_punk' && (
+                        <div className="space-y-3">
+                          <div>
+                            <div className="text-amber-800 text-xs mb-2">Punk Selection:</div>
+                            <select
+                              value={selectedPunkPattern}
+                              onChange={(e) => {
+                                const newPattern = e.target.value
+                                setSelectedPunkPattern(newPattern)
+                                // Update punkId based on pattern selection
+                                const newPunkId = getPunkIdForPattern(newPattern)
+                                setSelectedPunkId(newPunkId)
+                                regenerateMask(selectedMaskType, newPunkId)
+                              }}
+                              className="w-full bg-white text-amber-900 rounded text-sm font-mono focus:ring-1 focus:ring-amber-500 border border-amber-300 px-2 py-1"
+                            >
+                              <option value="0">Punk #0000 (Genesis)</option>
+                              <option value="1">Punk #0001 (Ape)</option>
+                              <option value="2">Punk #0002 (Zombie)</option>
+                              <option value="3">Punk #0003 (Female)</option>
+                              <option value="4">Punk #0004 (Male)</option>
+                              <option value="5">Punk #0005 (Alien)</option>
+                              <option value="29">Punk #0029 (Beanie)</option>
+                              <option value="26">Punk #0026 (Cap)</option>
+                              <option value="95">Punk #0095 (Crazy Hair)</option>
+                              <option value="58">Punk #0058 (Nerd Glasses)</option>
+                              <option value="64">Punk #0064 (Shades)</option>
+                              <option value="3100">Punk #3100 (Famous)</option>
+                              <option value="5217">Punk #5217 (Famous)</option>
+                              <option value="7804">Punk #7804 (Famous)</option>
+                              <option value="custom">Custom Punk ID</option>
+                            </select>
+                          </div>
+
+                          {selectedPunkPattern === 'custom' && (
+                            <div>
+                              <div className="text-amber-800 text-xs mb-2">Punk ID (0-9999):</div>
+                              <input
+                                type="number"
+                                min="0"
+                                max="9999"
+                                value={selectedPunkId}
+                                onChange={(e) => {
+                                  const newPunkId = Math.max(0, Math.min(9999, parseInt(e.target.value) || 0))
+                                  setSelectedPunkId(newPunkId)
+                                  regenerateMask(selectedMaskType, newPunkId)
+                                }}
+                                className="w-full bg-white text-amber-900 rounded text-sm font-mono focus:ring-1 focus:ring-amber-500 border border-amber-300 px-2 py-1"
+                              />
+                            </div>
+                          )}
+
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between bg-gray-800 rounded">
+                              <div className="flex-1 text-green-400 text-xs font-mono py-2 px-3">
+                                🎨 Auto-loading Cryptopunk SVGs...
+                              </div>
+
+                              <div className="bg-green-800 text-green-100 text-xs font-mono px-2 py-2 rounded-r">
+                                {typeof window !== 'undefined' && (window as any).p5Instance &&
+                                 (window as any).p5Instance.patternRenderer &&
+                                 Object.keys((window as any).p5Instance.patternRenderer.punkPixels || {}).length > 0
+                                  ? `${Object.keys((window as any).p5Instance.patternRenderer.punkPixels).length}/625 loaded`
+                                  : 'auto-loading...'
+                                }
+                              </div>
+                            </div>
+
+                            <div className="text-xs text-amber-600">
+                              💡 Tip: Select a punk ID (0-624) and regenerate your rug to see the engraving!
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Evolution Phase Controls */}
@@ -3842,7 +3970,7 @@ export default function GeneratorPage() {
 
                   {/* Referral Program Component */}
                   <div className="mt-6 pt-4 border-t border-amber-600/30 pb-8">
-                    <ReferralCodeDisplay />
+                    <AttributionCodeDisplay />
                   </div>
 
                 </div>
