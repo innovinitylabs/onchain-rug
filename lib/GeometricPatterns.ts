@@ -695,6 +695,11 @@ export class DiagonalDriftField implements StripeField {
     doormatData: any,
     evolutionStrength: number
   ): number {
+    // Only apply diagonal drift if mask is active at this position
+    if (!mask || !mask.isActive(x, y)) {
+      return baseStripeIndex
+    }
+
     // Diagonal drift creates a subtle phase shift based on x position
     // This creates a gentle diagonal wave effect
     const drift = Math.sin(x * 0.015) * 0.6
@@ -729,6 +734,11 @@ export class TwoStripeBorrowField implements StripeField {
     doormatData: any,
     evolutionStrength: number
   ): number {
+    // Only apply two-stripe borrow if mask is active at this position
+    if (!mask || !mask.isActive(x, y)) {
+      return baseStripeIndex
+    }
+
     // Two-stripe borrow uses a deterministic hash to choose between prev2 and next2 stripes
     const hash01 = (x: number, y: number, seed: number): number => {
       const h = (x * 73856093) ^ (y * 19349663) ^ (seed * 83492791)
@@ -759,18 +769,30 @@ export class ArcRegionField implements StripeField {
     doormatData: any,
     evolutionStrength: number
   ): number {
-    // Only apply region-based effects if mask is active and has regions
-    if (!mask || !mask.isActive(x, y) || !('getRegion' in mask)) {
+    // Only apply effects if mask is active at this position
+    if (!mask || !mask.isActive(x, y)) {
       return baseStripeIndex
     }
 
-    const regionalMask = mask as RegionalEngravingMask
-    const regionId = regionalMask.getRegion(x, y)
+    // Check if mask has region information
+    if ('getRegion' in mask) {
+      const regionalMask = mask as RegionalEngravingMask
+      const regionId = regionalMask.getRegion(x, y)
 
-    if (!regionId) {
-      return baseStripeIndex
+      if (regionId) {
+        // Use region-based effects for regional masks
+        return this.applyRegionEffect(regionId, x, y, baseStripeIndex, stripeData, evolutionStrength)
+      }
     }
 
+    // Fallback: Use position-based effects for non-regional masks
+    return this.applyPositionEffect(x, y, baseStripeIndex, stripeData, evolutionStrength)
+  }
+
+  /**
+   * Apply region-based effects for masks that provide region information
+   */
+  private applyRegionEffect(regionId: string, x: number, y: number, baseStripeIndex: number, stripeData: any[], evolutionStrength: number): number {
     // Apply different behaviors based on region identity
     switch (regionId) {
       case 'primary_core':
@@ -794,21 +816,97 @@ export class ArcRegionField implements StripeField {
         }
         return baseStripeIndex
 
+      case 'upper':
+        // Upper region from circle partitions: upward borrowing
+        if (evolutionStrength >= 0.15) {
+          const offset = Math.floor(evolutionStrength * 3)
+          const newIndex = baseStripeIndex - offset
+          return Math.max(0, newIndex)
+        }
+        return baseStripeIndex
+
+      case 'lower':
+        // Lower region from circle partitions: downward borrowing
+        if (evolutionStrength >= 0.15) {
+          const offset = Math.floor(evolutionStrength * 3)
+          const newIndex = baseStripeIndex + offset
+          return Math.min(newIndex, stripeData.length - 1)
+        }
+        return baseStripeIndex
+
       default:
-        // Secondary arc regions: rotate stripes based on region index
-        if (regionId.startsWith('secondary_') && regionId.endsWith('_arc')) {
-          const regionIndex = parseInt(regionId.split('_')[1])
-          if (!isNaN(regionIndex) && evolutionStrength >= 0.1) {
-            // Use region index to determine rotation direction and magnitude
-            const rotationDirection = regionIndex % 2 === 0 ? 1 : -1
-            const rotationMagnitude = Math.floor(evolutionStrength * (regionIndex + 1))
-            const rotatedIndex = baseStripeIndex + (rotationDirection * rotationMagnitude)
-            // Wrap around stripe array
-            return ((rotatedIndex % stripeData.length) + stripeData.length) % stripeData.length
+        // Generic region handling for any unknown region types
+        // Use region name as seed for deterministic effects
+        const regionHash = this.hashString(regionId)
+        const effectType = regionHash % 4 // 4 different effect types
+
+        if (evolutionStrength >= 0.1) {
+          switch (effectType) {
+            case 0: // Rotation effect
+              const rotationDirection = (regionHash % 2) === 0 ? 1 : -1
+              const rotationMagnitude = Math.floor(evolutionStrength * ((regionHash % 3) + 2))
+              const rotatedIndex = baseStripeIndex + (rotationDirection * rotationMagnitude)
+              return ((rotatedIndex % stripeData.length) + stripeData.length) % stripeData.length
+
+            case 1: // Borrowing effect toward higher indices
+              const borrowUp = Math.floor(evolutionStrength * ((regionHash % 2) + 2))
+              return Math.min(baseStripeIndex + borrowUp, stripeData.length - 1)
+
+            case 2: // Borrowing effect toward lower indices
+              const borrowDown = Math.floor(evolutionStrength * ((regionHash % 2) + 2))
+              return Math.max(baseStripeIndex - borrowDown, 0)
+
+            case 3: // Position-based modulation
+              const positionMod = Math.floor((x + y) * 0.01 * evolutionStrength * (regionHash % 3))
+              return (baseStripeIndex + positionMod) % stripeData.length
           }
         }
         return baseStripeIndex
     }
+  }
+
+  /**
+   * Apply position-based effects for non-regional masks
+   */
+  private applyPositionEffect(x: number, y: number, baseStripeIndex: number, stripeData: any[], evolutionStrength: number): number {
+    // Use position to create deterministic effects for non-regional masks
+    const positionHash = this.hashString(`${Math.floor(x / 50)}_${Math.floor(y / 50)}`)
+    const effectType = positionHash % 3
+
+    if (evolutionStrength >= 0.1) {
+      switch (effectType) {
+        case 0: // Position-based rotation
+          const rotationOffset = Math.floor((x + y) * 0.01 * evolutionStrength)
+          return (baseStripeIndex + rotationOffset) % stripeData.length
+
+        case 1: // Radial borrowing effect
+          const radialDistance = Math.sqrt(x * x + y * y)
+          const direction = radialDistance > 500 ? 1 : -1
+          const offset = Math.floor(evolutionStrength * 3 * direction)
+          const newIndex = baseStripeIndex + offset
+          return Math.max(0, Math.min(newIndex, stripeData.length - 1))
+
+        case 2: // Quadrant-based effect
+          const quadrant = (x > 400 ? 2 : 0) + (y > 600 ? 1 : 0)
+          const quadrantOffset = Math.floor(evolutionStrength * 4)
+          return (baseStripeIndex + quadrantOffset) % stripeData.length
+      }
+    }
+
+    return baseStripeIndex
+  }
+
+  /**
+   * Generate a simple hash from string for deterministic effects
+   */
+  private hashString(str: string): number {
+    let hash = 0
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i)
+      hash = ((hash << 5) - hash) + char
+      hash = hash & hash // Convert to 32-bit integer
+    }
+    return Math.abs(hash)
   }
 }
 
@@ -960,6 +1058,7 @@ export type MaskType =
   | 'circle_boolean_cut'
   | 'arc_partition'
   | 'arc_dominance_partition'
+  | 'rug_area'
 
 /**
  * Field types define how stripe sampling behaves inside masks
@@ -1066,12 +1165,51 @@ export class GeometricPatternRenderer {
       case 'arc_dominance_partition': {
         return this.generateArcDominancePartitionShapes(canvasWidth, canvasHeight)
       }
+      case 'rug_area': {
+        return this.generateRugAreaMask(canvasWidth, canvasHeight)
+      }
       case 'none':
       default:
         // Empty mask for 'none' type
         console.log('🎨 Creating empty mask')
         return new BlockPatternMask([])
     }
+  }
+
+  private generateRugAreaMask(canvasWidth: number, canvasHeight: number): EngravingMask {
+    // Create a rectangular mask covering the main rug area (excluding fringe and background)
+    // Based on rug-algo.js: canvas has 55px margins, rug has 2*f fringe area
+    // Canvas: (R+110, F+110), Rug positioned with translate(2*f, 2*f)
+
+    // Assuming typical frame width of 8 (wt = 8 from rug-algo.js)
+    const frameWidth = 8
+    const canvasMargin = 55
+    const fringeMargin = 2 * frameWidth
+
+    // Total margin from canvas edge to rug content: canvasMargin + fringeMargin
+    const totalMargin = canvasMargin + fringeMargin
+
+    // The main rug area rectangle (excluding margins on all sides)
+    const rugArea = {
+      x: totalMargin,
+      y: totalMargin,
+      width: canvasWidth - 2 * totalMargin,
+      height: canvasHeight - 2 * totalMargin
+    }
+
+    console.log('🎨 Rug area mask:', rugArea)
+
+    // Create a simple rectangular shape covering the main rug area
+    const shapes: BlockShape[] = [{
+      type: 'rect' as const,
+      cx: rugArea.x + rugArea.width / 2,  // center x
+      cy: rugArea.y + rugArea.height / 2, // center y
+      cw: rugArea.width,                   // width
+      ch: rugArea.height,                  // height
+      rot: 0                               // no rotation
+    }]
+
+    return new BlockPatternMask(shapes, undefined, 'rug_area')
   }
 
   private generateBlockCircleShapes(width: number, height: number): BlockShape[] {
