@@ -1,4 +1,4 @@
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useChainId, useReadContract, useConfig, useSendTransaction } from 'wagmi'
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useChainId, useReadContract, useSendTransaction } from 'wagmi'
 import { parseEther, encodeFunctionData } from 'viem'
 import { config } from '@/lib/config'
 import { contractAddresses, shapeSepolia, shapeMainnet, onchainRugsABI } from '@/lib/web3'
@@ -202,8 +202,6 @@ export function useApproveMarketplace(tokenId: number) {
   const { address } = useAccount()
   const chainId = useChainId()
   const contractAddress = contractAddresses[chainId]
-  const wagmiConfig = useConfig()
-
   const { writeContract, data: hash, isPending, error } = useWriteContract()
 
   const approve = () => {
@@ -213,8 +211,10 @@ export function useApproveMarketplace(tokenId: number) {
       address: contractAddress as `0x${string}`,
       abi: marketplaceABI,
       functionName: 'setApprovalForAll',
-      args: [contractAddress as `0x${string}`, true]
-    }, wagmiConfig)
+      args: [contractAddress as `0x${string}`, true],
+      chain: shapeSepolia,
+      account: address
+    })
   }
 
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
@@ -238,18 +238,17 @@ export function useCreateListing() {
   const { address } = useAccount()
   const chainId = useChainId()
   const contractAddress = contractAddresses[chainId]
-  const wagmiConfig = useConfig()
-
   const { writeContract, data: hash, isPending, error } = useWriteContract()
 
   const createListing = (tokenId: number, price: string, duration: number = 0) => {
-    // @ts-ignore - wagmi v2 type checking issue
     writeContract({
       address: contractAddress as `0x${string}`,
       abi: marketplaceABI,
       functionName: 'createListing',
-      args: [BigInt(tokenId), parseEther(price), BigInt(duration)]
-    }, wagmiConfig)
+      args: [BigInt(tokenId), parseEther(price), BigInt(duration)],
+      chain: shapeSepolia,
+      account: address
+    })
   }
 
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
@@ -273,7 +272,6 @@ export function useBuyListing() {
   const { address } = useAccount()
   const chainId = useChainId()
   const contractAddress = contractAddresses[chainId]
-  const wagmiConfig = useConfig()
 
   const { sendTransaction, data: hash, isPending, error } = useSendTransaction()
 
@@ -288,7 +286,7 @@ export function useBuyListing() {
     })
 
     // Get attribution codes (builder + referral + aggregator)
-    const codes = getAllAttributionCodes()
+    const codes = getAllAttributionCodes({ walletAddress: address })
 
     // Append ERC-8021 suffix to calldata
     const dataWithAttribution = appendERC8021Suffix(encodedData, codes)
@@ -322,18 +320,17 @@ export function useCancelListing() {
   const { address } = useAccount()
   const chainId = useChainId()
   const contractAddress = contractAddresses[chainId]
-  const wagmiConfig = useConfig()
-
   const { writeContract, data: hash, isPending, error } = useWriteContract()
 
   const cancelListing = (tokenId: number) => {
-    // @ts-ignore - wagmi v2 type checking issue
     writeContract({
       address: contractAddress as `0x${string}`,
       abi: marketplaceABI,
       functionName: 'cancelListing',
-      args: [BigInt(tokenId)]
-    }, wagmiConfig)
+      args: [BigInt(tokenId)],
+      chain: shapeSepolia,
+      account: address
+    })
   }
 
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
@@ -357,18 +354,17 @@ export function useUpdateListingPrice() {
   const { address } = useAccount()
   const chainId = useChainId()
   const contractAddress = contractAddresses[chainId]
-  const wagmiConfig = useConfig()
-
   const { writeContract, data: hash, isPending, error } = useWriteContract()
 
   const updateListingPrice = (tokenId: number, newPrice: string) => {
-    // @ts-ignore - wagmi v2 type checking issue
     writeContract({
       address: contractAddress as `0x${string}`,
       abi: marketplaceABI,
       functionName: 'updateListingPrice',
-      args: [BigInt(tokenId), parseEther(newPrice)]
-    }, wagmiConfig)
+      args: [BigInt(tokenId), parseEther(newPrice)],
+      chain: shapeSepolia,
+      account: address
+    })
   }
 
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
@@ -392,19 +388,18 @@ export function useMakeOffer() {
   const { address } = useAccount()
   const chainId = useChainId()
   const contractAddress = contractAddresses[chainId]
-  const wagmiConfig = useConfig()
-
   const { writeContract, data: hash, isPending, error } = useWriteContract()
 
   const makeOffer = (tokenId: number, price: string, duration: number = 0) => {
-    // @ts-ignore - wagmi v2 type checking issue
     writeContract({
       address: contractAddress as `0x${string}`,
       abi: marketplaceABI,
       functionName: 'makeOffer',
       args: [BigInt(tokenId), BigInt(duration)],
-      value: parseEther(price)
-    }, wagmiConfig)
+      value: parseEther(price),
+      chain: shapeSepolia,
+      account: address
+    })
   }
 
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
@@ -428,7 +423,6 @@ export function useAcceptOffer() {
   const { address } = useAccount()
   const chainId = useChainId()
   const contractAddress = contractAddresses[chainId]
-  const wagmiConfig = useConfig()
 
   const { sendTransaction, data: hash, isPending, error } = useSendTransaction()
 
@@ -443,7 +437,7 @@ export function useAcceptOffer() {
     })
 
     // Get attribution codes (builder + referral + aggregator)
-    const codes = getAllAttributionCodes()
+    const codes = getAllAttributionCodes({ walletAddress: address })
 
     // Append ERC-8021 suffix to calldata
     const dataWithAttribution = appendERC8021Suffix(encodedData, codes)
@@ -476,18 +470,17 @@ export function useCancelOffer() {
   const { address } = useAccount()
   const chainId = useChainId()
   const contractAddress = contractAddresses[chainId]
-  const wagmiConfig = useConfig()
-
   const { writeContract, data: hash, isPending, error } = useWriteContract()
 
   const cancelOffer = (offerId: number) => {
-    // @ts-ignore - wagmi v2 type checking issue
     writeContract({
       address: contractAddress as `0x${string}`,
       abi: marketplaceABI,
       functionName: 'cancelOffer',
-      args: [BigInt(offerId)]
-    }, wagmiConfig)
+      args: [BigInt(offerId)],
+      chain: shapeSepolia,
+      account: address
+    })
   }
 
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({

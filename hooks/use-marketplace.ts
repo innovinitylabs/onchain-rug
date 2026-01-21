@@ -1,4 +1,4 @@
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, useChainId } from 'wagmi'
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useChainId } from 'wagmi'
 import { config } from '@/lib/config'
 import { onchainRugsABI, contractAddresses, shapeSepolia, shapeMainnet } from '@/lib/web3'
 
@@ -27,7 +27,6 @@ export function useMarketplace() {
     if (!writeContract || !address) return
 
     try {
-      const chain = chainId === 360 ? shapeMainnet : shapeSepolia
       await writeContract({
         address: contractAddress as `0x${string}`,
         abi: [
@@ -46,7 +45,7 @@ export function useMarketplace() {
         ] as const,
         functionName: 'recordSale',
         args: [BigInt(tokenId), from as `0x${string}`, to as `0x${string}`, BigInt(salePrice)],
-        chain,
+        chain: shapeSepolia,
         account: address,
       })
     } catch (err) {

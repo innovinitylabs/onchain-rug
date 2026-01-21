@@ -388,6 +388,60 @@ export const onchainRugsABI = [
     stateMutability: 'nonpayable',
     type: 'function',
   },
+  // Referral System Functions
+  {
+    inputs: [{ name: '_code', type: 'string' }],
+    name: 'registerReferralCode',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'registerForReferrals',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [{ name: 'wallet', type: 'address' }],
+    name: 'getReferralCode',
+    outputs: [{ name: '', type: 'string' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [{ name: 'wallet', type: 'address' }],
+    name: 'isRegistered',
+    outputs: [{ name: '', type: 'bool' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [{ name: 'wallet', type: 'address' }],
+    name: 'generateShortCode',
+    outputs: [{ name: '', type: 'string' }],
+    stateMutability: 'pure',
+    type: 'function',
+  },
+  {
+    inputs: [{ name: 'code', type: 'string' }],
+    name: 'getReferrerFromCode',
+    outputs: [{ name: '', type: 'address' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [{ name: 'referrer', type: 'address' }],
+    name: 'getReferralStats',
+    outputs: [
+      { name: 'totalReferrals', type: 'uint256' },
+      { name: 'totalEarned', type: 'uint256' },
+      { name: 'lastReferralTime', type: 'uint256' }
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
   // Events for listening to new mints
   {
     anonymous: false,

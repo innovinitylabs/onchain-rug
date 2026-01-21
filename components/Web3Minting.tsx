@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useChainId, usePublicClient } from 'wagmi'
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useChainId, usePublicClient, useSendTransaction } from 'wagmi'
 import { parseEther, encodeFunctionData } from 'viem'
+import { appendERC8021Suffix, getAllAttributionCodes } from '@/utils/erc8021-utils'
 import { shapeSepolia, shapeMainnet, contractAddresses } from '@/lib/web3'
 import { config } from '@/lib/config'
 import { getChainDisplayName, NETWORKS } from '@/lib/networks'
@@ -34,9 +35,14 @@ export default function Web3Minting({
   const { address, isConnected } = useAccount()
   const chainId = useChainId()
   const { writeContract, data: hash, error, isPending } = useWriteContract()
+  const { sendTransactionAsync } = useSendTransaction()
+  const [directMintHash, setDirectMintHash] = useState<`0x${string}` | undefined>()
+  const [directMintPending, setDirectMintPending] = useState(false)
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
-    hash,
+    hash: directMintHash || hash,
   })
+
+  const isAnyPending = isPending || directMintPending
 
   const publicClient = usePublicClient()
   const [gasEstimate, setGasEstimate] = useState<bigint | null>(null)
@@ -263,6 +269,10 @@ export default function Web3Minting({
     contractAddress: string
     mintCost: string
   }) => {
+    // Reset previous transaction states
+    setDirectMintHash(undefined)
+    setDirectMintPending(false)
+
     const { destinationChainId, payChainId, contractAddress, mintCost } = params
 
     // Validate bridge security first
@@ -424,8 +434,9 @@ export default function Web3Minting({
 
       if (isDirect) {
         const destChain = getWagmiChainById(destinationChainId)
-        await writeContract({
-          address: contractAddress as `0x${string}`,
+
+        // Encode the function call data
+        const encodedData = encodeFunctionData({
           abi: [
             {
               "inputs": [
@@ -474,12 +485,29 @@ export default function Web3Minting({
               filteredCharacterMap: JSON.stringify(optimized.characterMap)
             },
             BigInt(optimized.textRows.join('').length)
-          ],
-          value: parseEther(mintCost.toString()),
-          gas: gasLimit,
-          chain: destChain,
-          account: address
+          ]
         })
+
+        // Get attribution codes (includes referral codes)
+        const codes = getAllAttributionCodes({ walletAddress: address })
+
+        // Append ERC-8021 suffix with referral codes
+        const dataWithReferrals = appendERC8021Suffix(encodedData, codes)
+
+        console.log('Direct mint with referral codes:', codes)
+
+        // Send transaction with ERC-8021 referral attribution
+        setDirectMintPending(true)
+        try {
+          const txHash = await sendTransactionAsync({
+            to: contractAddress as `0x${string}`,
+            data: dataWithReferrals,
+            value: parseEther(mintCost.toString()),
+          })
+          setDirectMintHash(txHash)
+        } finally {
+          setDirectMintPending(false)
+        }
       } else {
         const callData = encodeFunctionData({
           abi: [
@@ -568,13 +596,13 @@ export default function Web3Minting({
 
   const getButtonText = () => {
     if (!isConnected) return '🔗 Connect Wallet First'
-    if (isPending) return '⏳ Sending Transaction...'
+    if (isAnyPending) return '⏳ Sending Transaction...'
     if (isConfirming) return '⏳ Confirming on Blockchain...'
     if (isSuccess) return '✅ NFT Minted Successfully!'
     return `🚀 Mint Rug (${mintCost} ETH)`
   }
 
-  const isButtonDisabled = !isConnected || isPending || isConfirming
+  const isButtonDisabled = !isConnected || isAnyPending || isConfirming
 
   return (
     <div className="space-y-3">
@@ -588,10 +616,10 @@ export default function Web3Minting({
       )}
 
       {/* Transaction Status */}
-      {(hash || relayTxHash) && (
+      {(hash || relayTxHash || directMintHash) && (
         <div className="bg-blue-900/30 border border-blue-500/30 rounded p-2">
           <div className="text-blue-400 text-xs font-mono">
-            📝 Transaction: {(hash || relayTxHash)?.slice(0, 10)}...{(hash || relayTxHash)?.slice(-8)}
+            📝 Transaction: {(hash || relayTxHash || directMintHash)?.slice(0, 10)}...{(hash || relayTxHash || directMintHash)?.slice(-8)}
           </div>
           {relayTxHash && isRelayConfirming && (
             <div className="text-amber-400 text-xs mt-1">

@@ -101,7 +101,7 @@ export function useRugMinting() {
         })
 
         // Get attribution codes (builder + referral + aggregator)
-        const codes = getAllAttributionCodes()
+        const codes = getAllAttributionCodes({ walletAddress: address })
 
         // Append ERC-8021 suffix to calldata
         const dataWithAttribution = appendERC8021Suffix(encodedData, codes)

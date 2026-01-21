@@ -1,0 +1,823 @@
+/**
+ * Geometric Pattern Library for Rug Canvas Overlays
+ * Provides deterministic geometric patterns using p5.js
+ * Designed to work as overlay on flipped rug canvases
+ */
+
+export interface PatternParameters {
+  scale: number
+  opacity: number
+  rotation: number
+  xOffset: number
+  yOffset: number
+}
+
+export interface ColorPalette {
+  colors: Array<{
+    r: number
+    g: number
+    b: number
+  }>
+}
+
+/**
+ * Generic interface for engraving masks that influence thread colors
+ * Masks are pure, deterministic functions that return engraving strength at any coordinate
+ */
+export interface EngravingMask {
+  /**
+   * Returns true if engraving should be applied at this coordinate
+   */
+  isActive(x: number, y: number): boolean
+
+  /**
+   * Returns engraving strength from 0-1 at this coordinate
+   * 0 = no engraving, 1 = full engraving strength
+   */
+  strength(x: number, y: number): number
+}
+
+/**
+ * Text mask implementation that checks if coordinates fall within text pixels
+ */
+export class TextMask implements EngravingMask {
+  private textPixels: Array<{x: number, y: number, width: number, height: number}>
+
+  constructor(textPixels: Array<{x: number, y: number, width: number, height: number}>) {
+    this.textPixels = textPixels
+  }
+
+  isActive(x: number, y: number): boolean {
+    for (const textPixel of this.textPixels) {
+      if (x >= textPixel.x && x < textPixel.x + textPixel.width &&
+          y >= textPixel.y && y < textPixel.y + textPixel.height) {
+        return true
+      }
+    }
+    return false
+  }
+
+  strength(x: number, y: number): number {
+    // Text pixels are always fully engraved
+    return this.isActive(x, y) ? 1 : 0
+  }
+}
+
+/**
+ * Parameters for resolving engraved thread colors
+ */
+export interface EngravingResolverParams {
+  baseColor: any // p5.Color
+  stripe: any
+  isWarp: boolean
+  maskStrength: number
+  palette: ColorPalette
+  prng: any
+  p: any // p5 instance
+  doormatData: any
+  x?: number
+  y?: number
+}
+
+/**
+ * Shared function that resolves the final color for an engraved thread
+ * Handles all the complex color theory logic for both text and patterns
+ */
+export function resolveEngravedThreadColor(params: EngravingResolverParams): any {
+  const { baseColor, stripe, isWarp, maskStrength, palette, prng, p, doormatData, x, y } = params
+
+  if (maskStrength <= 0) {
+    return baseColor
+  }
+
+  // For warp threads - simpler logic
+  if (isWarp) {
+    if (stripe.weaveType === 'm' && stripe.secondaryColor) {
+      // For mixed weaves, choose text color that contrasts best with BOTH colors
+      const primaryBrightness = (p.red(p.color(stripe.primaryColor)) + p.green(p.color(stripe.primaryColor)) + p.blue(p.color(stripe.primaryColor))) / 3
+      const secondaryBrightness = (p.red(p.color(stripe.secondaryColor)) + p.green(p.color(stripe.secondaryColor)) + p.blue(p.color(stripe.secondaryColor))) / 3
+
+      // Test contrast with black vs white
+      const blackContrastPrimary = Math.abs(primaryBrightness - 0)
+      const blackContrastSecondary = Math.abs(secondaryBrightness - 0)
+      const whiteContrastPrimary = Math.abs(primaryBrightness - 255)
+      const whiteContrastSecondary = Math.abs(secondaryBrightness - 255)
+
+      // Use the color that gives better minimum contrast
+      const blackMinContrast = Math.min(blackContrastPrimary, blackContrastSecondary)
+      const whiteMinContrast = Math.min(whiteContrastPrimary, whiteContrastSecondary)
+
+      if (whiteMinContrast > blackMinContrast) {
+        return p.color(255, 255, 255) // White
+      } else {
+        return p.color(0, 0, 0) // Black
+      }
+    } else {
+      return p.color(0, 0, 0) // Black for warp threads
+    }
+  }
+
+  // For weft threads - complex logic
+  if (stripe.weaveType === 'm' && stripe.secondaryColor) {
+    // For mixed weaves: analyse local background and choose a high-contrast colour
+    const sampleColors: any[] = []
+    const checkRadius = 2
+    const stripeWidth = doormatData.config?.DOORMAT_WIDTH || 100
+
+    // Always include the current weft colour
+    sampleColors.push(p.color(baseColor))
+
+    if (x !== undefined && y !== undefined) {
+      for (let dx = -checkRadius; dx <= checkRadius; dx++) {
+        for (let dy = -checkRadius; dy <= checkRadius; dy++) {
+          if (dx === 0 && dy === 0) continue
+
+          const checkX = x + dx
+          const checkY = y + dy
+
+          if (checkY < stripe.y || checkY >= stripe.y + stripe.height) continue
+          if (checkX < 0 || checkX >= stripeWidth) continue
+
+          let checkWeftColor = p.color(stripe.primaryColor)
+          const noiseVal = p.noise(checkX * 0.1, checkY * 0.1)
+          if (noiseVal > 0.5) {
+            checkWeftColor = p.color(stripe.secondaryColor)
+          }
+          sampleColors.push(checkWeftColor)
+        }
+      }
+    }
+
+    if (sampleColors.length === 0) {
+      sampleColors.push(p.color(stripe.primaryColor))
+    }
+
+    // Complex color selection logic (extracted from original code)
+    const toRelativeLuminance = (colorObj: any) => {
+      const convert = (value: number) => {
+        const channel = value / 255
+        return channel <= 0.03928 ? channel / 12.92 : Math.pow((channel + 0.055) / 1.055, 2.4)
+      }
+      const rLum = convert(p.red(colorObj))
+      const gLum = convert(p.green(colorObj))
+      const bLum = convert(p.blue(colorObj))
+      return 0.2126 * rLum + 0.7152 * gLum + 0.0722 * bLum
+    }
+
+    const contrastRatio = (a: any, b: any) => {
+      const lumA = toRelativeLuminance(a)
+      const lumB = toRelativeLuminance(b)
+      const lighter = Math.max(lumA, lumB)
+      const darker = Math.min(lumA, lumB)
+      return (lighter + 0.05) / (darker + 0.05)
+    }
+
+    const rgbToXyz = (r: number, g: number, b: number) => {
+      r = r / 255; g = g / 255; b = b / 255
+      r = r > 0.04045 ? Math.pow((r + 0.055) / 1.055, 2.4) : r / 12.92
+      g = g > 0.04045 ? Math.pow((g + 0.055) / 1.055, 2.4) : g / 12.92
+      b = b > 0.04045 ? Math.pow((b + 0.055) / 1.055, 2.4) : b / 12.92
+      const x = r * 0.4124 + g * 0.3576 + b * 0.1805
+      const y = r * 0.2126 + g * 0.7152 + b * 0.0722
+      const z = r * 0.0193 + g * 0.1192 + b * 0.9505
+      return { x, y, z }
+    }
+
+    const xyzToLab = (x: number, y: number, z: number) => {
+      x = x / 0.95047; y = y / 1.00000; z = z / 1.08883
+      const f = (t: number) => t > Math.pow(6/29, 3) ? Math.pow(t, 1/3) : (1/3) * Math.pow(29/6, 2) * t + 4/29
+      const L = 116 * f(y) - 16
+      const a = 500 * (f(x) - f(y))
+      const b_lab = 200 * (f(y) - f(z))
+      return { L, a, b: b_lab }
+    }
+
+    const deltaE2000 = (lab1: any, lab2: any) => {
+      const { L: L1, a: a1, b: b1 } = lab1
+      const { L: L2, a: a2, b: b2 } = lab2
+      const kL = 1, kC = 1, kH = 1
+      const deltaLPrime = L2 - L1
+      const LBar = (L1 + L2) / 2
+      const C1 = Math.sqrt(a1 * a1 + b1 * b1)
+      const C2 = Math.sqrt(a2 * a2 + b2 * b2)
+      const CBar = (C1 + C2) / 2
+      const aPrime1 = a1 * (1 + 0.5 * (Math.sqrt(Math.pow(CBar, 7) / (Math.pow(CBar, 7) + Math.pow(25, 7)))))
+      const aPrime2 = a2 * (1 + 0.5 * (Math.sqrt(Math.pow(CBar, 7) / (Math.pow(CBar, 7) + Math.pow(25, 7)))))
+      const CPrime1 = Math.sqrt(aPrime1 * aPrime1 + b1 * b1)
+      const CPrime2 = Math.sqrt(aPrime2 * aPrime2 + b2 * b2)
+      const CBarPrime = (CPrime1 + CPrime2) / 2
+      const deltaCPrime = CPrime2 - CPrime1
+      const hPrime1 = Math.atan2(b1, aPrime1) * 180 / Math.PI
+      const hPrime2 = Math.atan2(b2, aPrime2) * 180 / Math.PI
+      const deltahPrime = Math.abs(hPrime1 - hPrime2) <= 180 ? hPrime2 - hPrime1 : (hPrime2 - hPrime1 > 180 ? hPrime2 - hPrime1 - 360 : hPrime2 - hPrime1 + 360)
+      const deltaHPrime = 2 * Math.sqrt(CPrime1 * CPrime2) * Math.sin(deltahPrime * Math.PI / 360)
+      const HBarPrime = Math.abs(hPrime1 - hPrime2) <= 180 ? (hPrime1 + hPrime2) / 2 : (hPrime1 + hPrime2 >= 360 ? (hPrime1 + hPrime2) / 2 : (hPrime1 + hPrime2 + 360) / 2)
+      const T = 1 - 0.17 * Math.cos(HBarPrime * Math.PI / 180 - 30) + 0.24 * Math.cos(2 * HBarPrime * Math.PI / 180) + 0.32 * Math.cos(3 * HBarPrime * Math.PI / 180 + 6) - 0.20 * Math.cos(4 * HBarPrime * Math.PI / 180 - 63)
+      const SL = 1 + (0.015 * Math.pow(LBar - 50, 2)) / Math.sqrt(20 + Math.pow(LBar - 50, 2))
+      const SC = 1 + 0.045 * CBarPrime
+      const SH = 1 + 0.015 * CBarPrime * T
+      const RT = -Math.sin(2 * (HBarPrime * Math.PI / 180 - 55) * Math.PI / 180) * (2 * Math.sqrt(Math.pow(CBarPrime, 7) / (Math.pow(CBarPrime, 7) + Math.pow(25, 7))))
+      const kL_SL = kL * SL
+      const kC_SC = kC * SC
+      const kH_SH = kH * SH
+      const termL = deltaLPrime / kL_SL
+      const termC = deltaCPrime / kC_SC
+      const termH = deltaHPrime / kH_SH
+  return Math.sqrt(termL * termL + termC * termC + termH * termH + RT * termC * termH)
+}
+/**
+ * Base class for pattern masks that handles coordinate transformations
+ */
+abstract class BasePatternMask implements EngravingMask {
+  protected params: PatternParameters
+  protected palette: ColorPalette
+  protected canvasWidth: number
+  protected canvasHeight: number
+  protected prng: any
+  protected seed?: number
+
+  constructor(
+    params: PatternParameters,
+    palette: ColorPalette,
+    canvasWidth: number,
+    canvasHeight: number,
+    prng: any,
+    seed?: number
+  ) {
+    this.params = params
+    this.palette = palette
+    this.canvasWidth = canvasWidth
+    this.canvasHeight = canvasHeight
+    this.prng = prng
+    this.seed = seed
+  }
+
+  /**
+   * Transform world coordinates to pattern-local coordinates
+   * Applies scale, rotation, and offset transformations
+   */
+  protected transformCoordinates(x: number, y: number): { x: number, y: number } {
+    // Center coordinates (0,0 becomes center)
+    let tx = x - this.canvasWidth / 2
+    let ty = y - this.canvasHeight / 2
+
+    // Apply user offset (inverse of the translation that was applied during rendering)
+    tx -= this.params.xOffset
+    ty -= this.params.yOffset
+
+    // Apply scale (inverse)
+    tx /= this.params.scale
+    ty /= this.params.scale
+
+    // Apply rotation (inverse)
+    const cos = Math.cos(-this.params.rotation)
+    const sin = Math.sin(-this.params.rotation)
+    const rx = tx * cos - ty * sin
+    const ry = tx * sin + ty * cos
+
+    return { x: rx, y: ry }
+  }
+
+  abstract isActive(x: number, y: number): boolean
+  abstract strength(x: number, y: number): number
+}
+
+/**
+ * Test pattern mask - simple circle for debugging
+ */
+class TestPatternMask extends BasePatternMask {
+  isActive(x: number, y: number): boolean {
+    const { x: px, y: py } = this.transformCoordinates(x, y)
+    const radius = Math.min(this.canvasWidth, this.canvasHeight) * 0.4
+    return px * px + py * py <= radius * radius
+  }
+
+  strength(x: number, y: number): number {
+    return this.isActive(x, y) ? 1 : 0
+  }
+}
+
+/**
+ * Sacred geometry pattern mask
+ */
+class SacredGeometryMask extends BasePatternMask {
+  private flowerCircles: Array<{ centerX: number, centerY: number, radius: number }> = []
+  private lotusPetals: Array<{ x: number, y: number, angle: number, radius: number }> = []
+  private triangles: Array<{ points: Array<{ x: number, y: number }> }> = []
+  private flourishes: Array<{ x: number, y: number, angle: number, radius: number }> = []
+
+  constructor(
+    params: PatternParameters,
+    palette: ColorPalette,
+    canvasWidth: number,
+    canvasHeight: number,
+    prng: any,
+    seed?: number
+  ) {
+    super(params, palette, canvasWidth, canvasHeight, prng, seed)
+    this.generateGeometry()
+  }
+
+  private generateGeometry(): void {
+    const centerX = 0
+    const centerY = 0
+    const maxRadius = Math.min(this.canvasWidth, this.canvasHeight) * 0.45
+
+    // Flower of Life - overlapping circles
+    const flowerCircles = 5 + Math.floor(this.prng.next() * 3)
+    for (let i = 0; i < flowerCircles; i++) {
+      const radius = maxRadius * (0.2 + i * 0.15)
+      this.flowerCircles.push({ centerX, centerY, radius })
+    }
+
+    // Lotus petals
+    const petals = 6 + Math.floor(this.prng.next() * 4)
+    for (let i = 0; i < petals; i++) {
+      const angle = (Math.PI * 2 / petals) * i
+      const petalRadius = maxRadius * (0.5 + this.prng.next() * 0.2)
+      this.lotusPetals.push({ x: centerX, y: centerY, angle, radius: petalRadius })
+    }
+
+    // Sacred triangles
+    const triangleRadius = maxRadius * 0.7
+    const trianglePoints = []
+    for (let i = 0; i < 3; i++) {
+      const angle = (Math.PI * 2 / 3) * i - Math.PI/2
+      const x = Math.cos(angle) * triangleRadius
+      const y = Math.sin(angle) * triangleRadius
+      trianglePoints.push({ x, y })
+    }
+    this.triangles.push({ points: trianglePoints })
+
+    // Curved flourishes
+    const flourishes = 8 + Math.floor(this.prng.next() * 6)
+    for (let i = 0; i < flourishes; i++) {
+      const angle = (Math.PI * 2 / flourishes) * i
+      const radius = maxRadius * (0.75 + this.prng.next() * 0.15)
+      this.flourishes.push({ x: centerX, y: centerY, angle, radius })
+    }
+  }
+
+  isActive(x: number, y: number): boolean {
+    const { x: px, y: py } = this.transformCoordinates(x, y)
+
+    // Check flower circles
+    for (const circle of this.flowerCircles) {
+      const dx = px - circle.centerX
+      const dy = py - circle.centerY
+      if (dx * dx + dy * dy <= circle.radius * circle.radius) {
+        return true
+      }
+    }
+
+    // Check lotus petals (simplified as arcs)
+    for (const petal of this.lotusPetals) {
+      const dx = px - petal.x
+      const dy = py - petal.y
+      const distance = Math.sqrt(dx * dx + dy * dy)
+      const angle = Math.atan2(dy, dx)
+      const angleDiff = Math.abs(angle - petal.angle)
+      if (distance <= petal.radius && angleDiff <= Math.PI * 0.3) { // 60 degree arc
+        return true
+      }
+    }
+
+    // Check triangles
+    for (const triangle of this.triangles) {
+      if (this.pointInTriangle(px, py, triangle.points)) {
+        return true
+      }
+    }
+
+    // Check flourishes (simplified as curved lines)
+    for (const flourish of this.flourishes) {
+      const dx = px - flourish.x
+      const dy = py - flourish.y
+      const distance = Math.sqrt(dx * dx + dy * dy)
+      const angle = Math.atan2(dy, dx)
+      const angleDiff = Math.abs(angle - flourish.angle)
+      if (distance <= flourish.radius && distance >= flourish.radius * 0.8 && angleDiff <= Math.PI * 0.1) {
+        return true
+      }
+    }
+
+    return false
+  }
+
+  private pointInTriangle(px: number, py: number, points: Array<{ x: number, y: number }>): boolean {
+    // Simple point-in-triangle test using barycentric coordinates
+    const [p1, p2, p3] = points
+    const denominator = (p2.y - p3.y) * (p1.x - p3.x) + (p3.x - p2.x) * (p1.y - p3.y)
+    const a = ((p2.y - p3.y) * (px - p3.x) + (p3.x - p2.x) * (py - p3.y)) / denominator
+    const b = ((p3.y - p1.y) * (px - p3.x) + (p1.x - p3.x) * (py - p3.y)) / denominator
+    const c = 1 - a - b
+    return a >= 0 && b >= 0 && c >= 0
+  }
+
+  strength(x: number, y: number): number {
+    return this.isActive(x, y) ? 1 : 0
+  }
+}
+
+/**
+ * Fractal spirals pattern mask
+ */
+class FractalSpiralsMask extends BasePatternMask {
+  private spirals: Array<Array<{ x: number, y: number, thickness: number }>> = []
+
+  constructor(
+    params: PatternParameters,
+    palette: ColorPalette,
+    canvasWidth: number,
+    canvasHeight: number,
+    prng: any,
+    seed?: number
+  ) {
+    super(params, palette, canvasWidth, canvasHeight, prng, seed)
+    this.generateSpirals()
+  }
+
+  private generateSpirals(): void {
+    const numSpirals = 4 + Math.floor(this.prng.next() * 6)
+    const maxRadius = Math.min(this.canvasWidth, this.canvasHeight) * 0.25
+
+    for (let s = 0; s < numSpirals; s++) {
+      const spiralCenterX = (this.prng.next() - 0.5) * this.canvasWidth * 0.8
+      const spiralCenterY = (this.prng.next() - 0.5) * this.canvasHeight * 0.8
+      const sizeMultiplier = 0.2 + this.prng.next() * 2.8
+      const radius = maxRadius * sizeMultiplier
+      const angleOffset = this.prng.next() * Math.PI * 2
+      const turns = 1.5 + this.prng.next() * 2.5
+      const numPoints = 60 + Math.floor(this.prng.next() * 40)
+
+      const points = []
+      for (let i = 0; i < numPoints; i++) {
+        const t = (i / (numPoints - 1)) * turns
+        const angle = t * Math.PI * 2 + angleOffset
+        const baseRadius = (radius / turns) * t * 0.382
+        const noiseOffset = this.prng.next() * 0.15 - 0.075
+        const spiralRadius = baseRadius * (0.85 + noiseOffset + Math.sin(t * 2 + s) * 0.1)
+
+        const x = spiralCenterX + Math.cos(angle) * spiralRadius
+        const y = spiralCenterY + Math.sin(angle) * spiralRadius
+        const baseThickness = 3 + sizeMultiplier * 12
+        const thickness = baseThickness + Math.sin(t * 3) * (baseThickness * 0.4)
+
+        points.push({ x, y, thickness })
+      }
+
+      this.spirals.push(points)
+    }
+  }
+
+  isActive(x: number, y: number): boolean {
+    const { x: px, y: py } = this.transformCoordinates(x, y)
+
+    for (const spiral of this.spirals) {
+      for (let i = 0; i < spiral.length - 1; i++) {
+        const current = spiral[i]
+        const next = spiral[i + 1]
+        const steps = Math.max(1, Math.floor(Math.sqrt((next.x - current.x) ** 2 + (next.y - current.y) ** 2) / 2))
+
+        for (let step = 0; step < steps; step++) {
+          const t = step / steps
+          const sx = current.x + (next.x - current.x) * t
+          const sy = current.y + (next.y - current.y) * t
+          const thickness = current.thickness + (next.thickness - current.thickness) * t
+
+          const dx = px - sx
+          const dy = py - sy
+          if (dx * dx + dy * dy <= (thickness * 0.8) * (thickness * 0.8)) {
+            return true
+          }
+        }
+      }
+    }
+
+    return false
+  }
+
+  strength(x: number, y: number): number {
+    return this.isActive(x, y) ? 1 : 0
+  }
+}
+
+/**
+ * Kaleidoscope pattern mask
+ */
+class KaleidoscopeMask extends BasePatternMask {
+  private segments: Array<{ startAngle: number, endAngle: number, elements: Array<{ x: number, y: number, size: number }> }> = []
+
+  constructor(
+    params: PatternParameters,
+    palette: ColorPalette,
+    canvasWidth: number,
+    canvasHeight: number,
+    prng: any,
+    seed?: number
+  ) {
+    super(params, palette, canvasWidth, canvasHeight, prng, seed)
+    this.generateKaleidoscope()
+  }
+
+  private generateKaleidoscope(): void {
+    const segments = 6 + Math.floor(this.prng.next() * 4)
+    const maxRadius = Math.min(this.canvasWidth, this.canvasHeight) * 0.4
+    const angleStep = Math.PI * 2 / segments
+
+    for (let segment = 0; segment < segments; segment++) {
+      const startAngle = segment * angleStep
+      const endAngle = (segment + 1) * angleStep
+      const elements = []
+
+      const numElements = 8 + Math.floor(this.prng.next() * 8)
+      for (let i = 0; i < numElements; i++) {
+        const angle = startAngle + (this.prng.next() * angleStep)
+        const radius = this.prng.next() * maxRadius
+        const x = Math.cos(angle) * radius
+        const y = Math.sin(angle) * radius
+        const size = 5 + this.prng.next() * 15
+        elements.push({ x, y, size })
+      }
+
+      this.segments.push({ startAngle, endAngle, elements })
+    }
+  }
+
+  isActive(x: number, y: number): boolean {
+    const { x: px, y: py } = this.transformCoordinates(x, y)
+
+    for (const segment of this.segments) {
+      // Check if point is within the segment's pie slice
+      const angle = Math.atan2(py, px)
+      const normalizedAngle = angle < 0 ? angle + Math.PI * 2 : angle
+      const startAngle = segment.startAngle < 0 ? segment.startAngle + Math.PI * 2 : segment.startAngle
+      const endAngle = segment.endAngle < 0 ? segment.endAngle + Math.PI * 2 : segment.endAngle
+
+      let inSlice = false
+      if (startAngle < endAngle) {
+        inSlice = normalizedAngle >= startAngle && normalizedAngle <= endAngle
+      } else {
+        inSlice = normalizedAngle >= startAngle || normalizedAngle <= endAngle
+      }
+
+      if (inSlice) {
+        const distance = Math.sqrt(px * px + py * py)
+        for (const element of segment.elements) {
+          const dx = px - element.x
+          const dy = py - element.y
+          if (dx * dx + dy * dy <= (element.size / 2) * (element.size / 2)) {
+            return true
+          }
+        }
+      }
+    }
+
+    return false
+  }
+
+  strength(x: number, y: number): number {
+    return this.isActive(x, y) ? 1 : 0
+  }
+}
+
+/**
+ * Tessellation pattern mask
+ */
+class TessellationMask extends BasePatternMask {
+  private shapes: Array<{ x: number, y: number, type: number }> = []
+
+  constructor(
+    params: PatternParameters,
+    palette: ColorPalette,
+    canvasWidth: number,
+    canvasHeight: number,
+    prng: any,
+    seed?: number
+  ) {
+    super(params, palette, canvasWidth, canvasHeight, prng, seed)
+    this.generateTessellation()
+  }
+
+  private generateTessellation(): void {
+    const gridSize = 20 + Math.floor(this.prng.next() * 20)
+    const halfWidth = this.canvasWidth / 2
+    const halfHeight = this.canvasHeight / 2
+
+    for (let x = -halfWidth; x < halfWidth; x += gridSize) {
+      for (let y = -halfHeight; y < halfHeight; y += gridSize) {
+        const shapeType = Math.floor(this.prng.next() * 4)
+        this.shapes.push({ x, y, type: shapeType })
+      }
+    }
+  }
+
+  isActive(x: number, y: number): boolean {
+    const { x: px, y: py } = this.transformCoordinates(x, y)
+
+    for (const shape of this.shapes) {
+      const dx = px - shape.x
+      const dy = py - shape.y
+      const gridSize = 20 + Math.floor(this.prng.next() * 20) // Same as generation
+
+      switch (shape.type) {
+        case 0: // Triangle
+          if (this.pointInTriangle(px, py, [
+            { x: shape.x, y: shape.y },
+            { x: shape.x + gridSize, y: shape.y },
+            { x: shape.x + gridSize/2, y: shape.y + gridSize }
+          ])) {
+            return true
+          }
+          break
+        case 1: // Hexagon
+          if (this.pointInHexagon(px, py, shape.x + gridSize/2, shape.y + gridSize/2, gridSize * 0.4)) {
+            return true
+          }
+          break
+        case 2: // Circle
+          if (dx * dx + dy * dy <= (gridSize * 0.8 / 2) * (gridSize * 0.8 / 2)) {
+            return true
+          }
+          break
+        case 3: // Square
+          if (Math.abs(dx) <= gridSize/2 && Math.abs(dy) <= gridSize/2) {
+            return true
+          }
+          break
+      }
+    }
+
+    return false
+  }
+
+  private pointInTriangle(px: number, py: number, points: Array<{ x: number, y: number }>): boolean {
+    const [p1, p2, p3] = points
+    const denominator = (p2.y - p3.y) * (p1.x - p3.x) + (p3.x - p2.x) * (p1.y - p3.y)
+    const a = ((p2.y - p3.y) * (px - p3.x) + (p3.x - p2.x) * (py - p3.y)) / denominator
+    const b = ((p3.y - p1.y) * (px - p3.x) + (p1.x - p3.x) * (py - p3.y)) / denominator
+    const c = 1 - a - b
+    return a >= 0 && b >= 0 && c >= 0
+  }
+
+  private pointInHexagon(px: number, py: number, cx: number, cy: number, radius: number): boolean {
+    const dx = px - cx
+    const dy = py - cy
+    const distance = Math.sqrt(dx * dx + dy * dy)
+    return distance <= radius
+  }
+
+  strength(x: number, y: number): number {
+    return this.isActive(x, y) ? 1 : 0
+  }
+}
+
+/**
+ * Minimalist networks pattern mask
+ */
+class MinimalistNetworksMask extends BasePatternMask {
+  private nodes: Array<{ x: number, y: number, size: number }> = []
+  private connections: Array<{ node1: number, node2: number }> = []
+
+  constructor(
+    params: PatternParameters,
+    palette: ColorPalette,
+    canvasWidth: number,
+    canvasHeight: number,
+    prng: any,
+    seed?: number
+  ) {
+    super(params, palette, canvasWidth, canvasHeight, prng, seed)
+    this.generateNetwork()
+  }
+
+  private generateNetwork(): void {
+    const nodes = 12 + Math.floor(this.prng.next() * 12)
+
+    // Generate node positions
+    for (let i = 0; i < nodes; i++) {
+      const x = (this.prng.next() - 0.5) * this.canvasWidth * 0.8
+      const y = (this.prng.next() - 0.5) * this.canvasHeight * 0.8
+      const size = 4 + this.prng.next() * 6
+      this.nodes.push({ x, y, size })
+    }
+
+    // Generate connections
+    const connections = Math.floor(nodes * 1.5)
+    for (let i = 0; i < connections; i++) {
+      const node1 = Math.floor(this.prng.next() * nodes)
+      const node2 = Math.floor(this.prng.next() * nodes)
+      if (node1 !== node2) {
+        this.connections.push({ node1, node2 })
+      }
+    }
+  }
+
+  isActive(x: number, y: number): boolean {
+    const { x: px, y: py } = this.transformCoordinates(x, y)
+
+    // Check nodes
+    for (const node of this.nodes) {
+      const dx = px - node.x
+      const dy = py - node.y
+      if (dx * dx + dy * dy <= (node.size / 2) * (node.size / 2)) {
+        return true
+      }
+    }
+
+    // Check connections (simplified as thick lines)
+    for (const connection of this.connections) {
+      const node1 = this.nodes[connection.node1]
+      const node2 = this.nodes[connection.node2]
+      if (this.pointNearLine(px, py, node1.x, node1.y, node2.x, node2.y, 1)) {
+        return true
+      }
+    }
+
+    return false
+  }
+
+  private pointNearLine(px: number, py: number, x1: number, y1: number, x2: number, y2: number, thickness: number): boolean {
+    const dx = x2 - x1
+    const dy = y2 - y1
+    const length = Math.sqrt(dx * dx + dy * dy)
+    if (length === 0) return false
+
+    const t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / (length * length)))
+    const closestX = x1 + t * dx
+    const closestY = y1 + t * dy
+
+    const distance = Math.sqrt((px - closestX) * (px - closestX) + (py - closestY) * (py - closestY))
+    return distance <= thickness
+  }
+
+  strength(x: number, y: number): number {
+    return this.isActive(x, y) ? 1 : 0
+  }
+}
+
+/**
+ * Dot matrix pattern mask
+ */
+class DotMatrixMask extends BasePatternMask {
+  private dots: Array<{ x: number, y: number, size: number }> = []
+
+  constructor(
+    params: PatternParameters,
+    palette: ColorPalette,
+    canvasWidth: number,
+    canvasHeight: number,
+    prng: any,
+    seed?: number
+  ) {
+    super(params, palette, canvasWidth, canvasHeight, prng, seed)
+    this.generateDots()
+  }
+
+  private generateDots(): void {
+    const dotSpacing = 15 + Math.floor(this.prng.next() * 10)
+    const maxDotSize = 8 + this.prng.next() * 8
+    const cols = Math.ceil(this.canvasWidth / dotSpacing)
+    const rows = Math.ceil(this.canvasHeight / dotSpacing)
+
+    for (let col = 0; col < cols; col++) {
+      for (let row = 0; row < rows; row++) {
+        const x = (col * dotSpacing) - this.canvasWidth/2 + (this.prng.next() - 0.5) * dotSpacing * 0.5
+        const y = (row * dotSpacing) - this.canvasHeight/2 + (this.prng.next() - 0.5) * dotSpacing * 0.5
+        const dotSize = this.prng.next() * maxDotSize
+        this.dots.push({ x, y, size: dotSize })
+      }
+    }
+  }
+
+  isActive(x: number, y: number): boolean {
+    const { x: px, y: py } = this.transformCoordinates(x, y)
+
+    for (const dot of this.dots) {
+      const dx = px - dot.x
+      const dy = py - dot.y
+      if (dx * dx + dy * dy <= (dot.size / 2) * (dot.size / 2)) {
+        return true
+      }
+    }
+
+    return false
+  }
+
+  strength(x: number, y: number): number {
+    return this.isActive(x, y) ? 1 : 0
+  }
+}
+
+/**
+ * Create pattern parameters with defaults
+ */
+export function createDefaultPatternParams(): PatternParameters {
+  return {
+    scale: 1.0, // Default scale (overlay now sized for perfect fit)
+    opacity: 0.8, // Increased for better visibility
+    rotation: 0,
+    xOffset: 0,
+    yOffset: 0
+  }
+}
