@@ -6,7 +6,7 @@
  */
 
 import { concat, bytesToHex } from 'viem'
-import { generateReferralCode, getReferralCodeForWallet } from './base62'
+import { generateReferralCode, getReferralCodeForWallet, isValidBase62 } from './base62'
 
 /**
  * ERC-8021 Marker (16 bytes)
@@ -149,19 +149,27 @@ export function getDefaultBuilderCode(): string {
  */
 export function getReferralCodeFromURL(): string | null {
   if (typeof window === 'undefined') return null
-  
+
   const params = new URLSearchParams(window.location.search)
   const refCode = params.get('ref')
-  
+
   if (refCode) {
-    // Validate format: should start with "ref-"
+    // Handle legacy "ref-" prefixed codes for backward compatibility
     if (refCode.startsWith('ref-')) {
+      // Extract the code part after "ref-"
+      const codePart = refCode.slice(4)
+      if (isValidBase62(codePart)) {
+        return codePart
+      }
+      return null
+    }
+
+    // Check if it's a direct base62 code (new format)
+    if (isValidBase62(refCode)) {
       return refCode
     }
-    // Auto-prefix if missing
-    return `ref-${refCode}`
   }
-  
+
   return null
 }
 
