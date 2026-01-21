@@ -20,7 +20,7 @@ export default function ReferralUrlHandler() {
         // Validate the referral code format
         const cleanCode = refParam.trim()
 
-        // Check if it's a valid referral code (either starts with 'ref-' or is valid base62)
+        // Check if it's a valid base62 referral code
         let referralCode = ''
 
         if (isValidBase62(cleanCode)) {
