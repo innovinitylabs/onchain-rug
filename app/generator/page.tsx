@@ -3509,6 +3509,7 @@ export default function GeneratorPage() {
                           <option value="circle_boolean_cut">Circle Boolean Cut</option>
                           <option value="arc_partition">Arc Partition</option>
                           <option value="arc_dominance_partition">Arc Dominance Partition</option>
+                          <option value="rug_area">Rug Area</option>
                         </select>
                       </div>
 
