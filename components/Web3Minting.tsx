@@ -542,6 +542,8 @@ export default function Web3Minting({
             BigInt(optimized.textRows.join('').length)
           ],
           value: parseEther(mintCost.toString()),
+          chain: getWagmiChainById(chainId),
+          account: address
         })
       } else {
         const callData = encodeFunctionData({
