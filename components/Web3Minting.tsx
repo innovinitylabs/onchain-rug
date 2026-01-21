@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useChainId, usePublicClient } from 'wagmi'
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useChainId, usePublicClient, useSendTransaction } from 'wagmi'
 import { parseEther, encodeFunctionData } from 'viem'
 import { appendERC8021Suffix, getAllAttributionCodes } from '@/utils/erc8021-utils'
 import { shapeSepolia, shapeMainnet, contractAddresses } from '@/lib/web3'
@@ -35,6 +35,7 @@ export default function Web3Minting({
   const { address, isConnected } = useAccount()
   const chainId = useChainId()
   const { writeContract, data: hash, error, isPending } = useWriteContract()
+  const { sendTransactionAsync } = useSendTransaction()
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
   })
@@ -487,13 +488,60 @@ export default function Web3Minting({
 
         console.log('Direct mint with referral codes:', codes)
 
+        // For now, fall back to standard minting without custom referral handling
+        // TODO: Fix wagmi v2 compatibility for direct minting with referrals
         await writeContract({
           address: contractAddress as `0x${string}`,
-          data: dataWithReferrals,
+          abi: [
+            {
+              "inputs": [
+                {"internalType": "string[]", "name": "textRows", "type": "string[]"},
+                {"internalType": "uint256", "name": "seed", "type": "uint256"},
+                {
+                  "components": [
+                    {"internalType": "uint8", "name": "warpThickness", "type": "uint8"},
+                    {"internalType": "uint256", "name": "stripeCount", "type": "uint256"}
+                  ],
+                  "internalType": "struct RugNFTFacet.VisualConfig",
+                  "name": "visual",
+                  "type": "tuple"
+                },
+                {
+                  "components": [
+                    {"internalType": "string", "name": "paletteName", "type": "string"},
+                    {"internalType": "string", "name": "minifiedPalette", "type": "string"},
+                    {"internalType": "string", "name": "minifiedStripeData", "type": "string"},
+                    {"internalType": "string", "name": "filteredCharacterMap", "type": "string"}
+                  ],
+                  "internalType": "struct RugNFTFacet.ArtData",
+                  "name": "art",
+                  "type": "tuple"
+                },
+                {"internalType": "uint256", "name": "characterCount", "type": "uint256"}
+              ],
+              "name": "mintRug",
+              "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+              "stateMutability": "payable",
+              "type": "function"
+            }
+          ] as const,
+          functionName: 'mintRug',
+          args: [
+            optimized.textRows,
+            BigInt(seed),
+            {
+              warpThickness: warpThickness,
+              stripeCount: BigInt(optimized.stripeData.length)
+            },
+            {
+              paletteName: optimized.palette.name,
+              minifiedPalette: JSON.stringify(optimized.palette),
+              minifiedStripeData: JSON.stringify(optimized.stripeData),
+              filteredCharacterMap: JSON.stringify(optimized.characterMap)
+            },
+            BigInt(optimized.textRows.join('').length)
+          ],
           value: parseEther(mintCost.toString()),
-          gas: gasLimit,
-          chain: destChain,
-          account: address
         })
       } else {
         const callData = encodeFunctionData({
