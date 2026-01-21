@@ -153,21 +153,8 @@ export function getReferralCodeFromURL(): string | null {
   const params = new URLSearchParams(window.location.search)
   const refCode = params.get('ref')
 
-  if (refCode) {
-    // Handle legacy "ref-" prefixed codes for backward compatibility
-    if (refCode.startsWith('ref-')) {
-      // Extract the code part after "ref-"
-      const codePart = refCode.slice(4)
-      if (isValidBase62(codePart)) {
-        return codePart
-      }
-      return null
-    }
-
-    // Check if it's a direct base62 code (new format)
-    if (isValidBase62(refCode)) {
-      return refCode
-    }
+  if (refCode && isValidBase62(refCode)) {
+    return refCode
   }
 
   return null
