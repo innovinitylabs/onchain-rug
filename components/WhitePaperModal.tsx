@@ -98,11 +98,11 @@ export default function SpecificationModal({ isOpen, onClose }: SpecificationMod
         </button>
         <div className="px-8 pt-8 pb-6">
           <h1 className="text-xl font-medium text-amber-100/90 mb-6">Specification</h1>
-          <nav className="flex space-x-6 mb-8">
+          <nav className="flex flex-nowrap space-x-4 md:space-x-6 mb-8 overflow-x-auto px-2">
             {sections.map((section) => (
               <button
                 key={section.id}
-                className={`flex items-center text-sm font-medium transition-colors border-b-2 ${
+                className={`flex items-center flex-shrink-0 whitespace-nowrap text-sm font-medium transition-colors border-b-2 ${
                   activeSection === section.id
                     ? 'text-amber-200 border-amber-600'
                     : 'text-amber-300/50 border-transparent hover:text-amber-200/70'
