@@ -82,8 +82,8 @@ export default function SpecificationModal({ isOpen, onClose }: SpecificationMod
       case 'overview':
         return (
           <div className="space-y-6">
-            <h2 className="text-2xl font-medium text-amber-100/90">OnchainRugs</h2>
-            <p className="text-amber-200/70 text-base leading-relaxed">
+            <h2 className="text-2xl font-medium text-amber-100/95">OnchainRugs</h2>
+            <p className="text-amber-200/65 text-base leading-relaxed">
               Fully on-chain generative rugs. Each piece is complete at mint and records time, care, and neglect directly on Ethereum.
             </p>
           </div>
@@ -91,7 +91,7 @@ export default function SpecificationModal({ isOpen, onClose }: SpecificationMod
       case 'object':
         return (
           <div className="space-y-4">
-            <ul className="text-amber-200/60 space-y-3 text-sm leading-relaxed">
+            <ul className="text-amber-200/55 space-y-3 text-sm leading-relaxed">
               <li>• Fully on-chain P5JS and logic</li>
               <li>• No IPFS or external storage</li>
               <li>• Front side is user-curated</li>
@@ -103,7 +103,7 @@ export default function SpecificationModal({ isOpen, onClose }: SpecificationMod
       case 'aging':
         return (
           <div className="space-y-4">
-            <ul className="text-amber-200/60 space-y-3 text-sm leading-relaxed">
+            <ul className="text-amber-200/55 space-y-3 text-sm leading-relaxed">
               <li>• Aging begins only after the first cleaning</li>
               <li>• Dirt and texture accumulate with time</li>
               <li>• Cleaning and restoration are optional</li>
@@ -114,7 +114,7 @@ export default function SpecificationModal({ isOpen, onClose }: SpecificationMod
       case 'economics':
         return (
           <div className="space-y-4">
-            <ul className="text-amber-200/60 space-y-3 text-sm leading-relaxed">
+            <ul className="text-amber-200/55 space-y-3 text-sm leading-relaxed">
               <li>• Mint price = base cost + optional text lines</li>
               <li>• Secondary royalties follow ERC-2981</li>
               <li>• 1% attribution to original minter</li>
@@ -126,10 +126,10 @@ export default function SpecificationModal({ isOpen, onClose }: SpecificationMod
       case 'notes':
         return (
           <div className="space-y-4">
-            <p className="text-amber-200/60 text-sm leading-relaxed">
+            <p className="text-amber-200/55 text-sm leading-relaxed">
               All state changes are on-chain and irreversible. There are no hidden mechanics, no off-chain upgrades, and no mutable metadata.
             </p>
-            <p className="text-amber-200/60 text-sm leading-relaxed">
+            <p className="text-amber-200/55 text-sm leading-relaxed">
               The contract is the source of truth.
             </p>
           </div>
@@ -140,17 +140,17 @@ export default function SpecificationModal({ isOpen, onClose }: SpecificationMod
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-amber-950/90">
-      <div className="relative w-full max-w-md mx-auto bg-amber-900/95 rounded-lg shadow-xl border border-amber-700/30">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-amber-950/80">
+      <div className="relative w-full max-w-md mx-auto bg-amber-900/90 rounded-lg shadow-xl border border-amber-700/20">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-amber-200/60 hover:text-amber-100/80"
+          className="absolute top-4 right-4 text-amber-200/55 hover:text-amber-100/85"
           aria-label="Close"
         >
           <X className="w-6 h-6" />
         </button>
         <div className="px-8 pt-8 pb-6">
-          <h1 className="text-xl font-medium text-amber-100/90 mb-6">Specification</h1>
+          <h1 className="text-xl font-medium text-amber-100/95 mb-6">Specification</h1>
           <nav
             ref={navRef}
             className="flex flex-nowrap space-x-4 md:space-x-6 mb-8 overflow-x-auto px-2"
@@ -167,7 +167,7 @@ export default function SpecificationModal({ isOpen, onClose }: SpecificationMod
                 className={`flex items-center flex-shrink-0 whitespace-nowrap text-sm font-medium transition-colors border-b-2 ${
                   activeSection === section.id
                     ? 'text-amber-200 border-amber-600'
-                    : 'text-amber-300/50 border-transparent hover:text-amber-200/70'
+                    : 'text-amber-300/40 border-transparent hover:text-amber-200/60'
                 }`}
                 onClick={() => setActiveSection(section.id)}
                 type="button"
