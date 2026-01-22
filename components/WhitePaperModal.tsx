@@ -1,7 +1,7 @@
 // Minimal, launch-safe Specification modal
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { X, FileText, Palette, Target, Clock, Gem } from 'lucide-react'
 
 interface SpecificationModalProps {
@@ -21,6 +21,59 @@ type SectionId = typeof sections[number]['id']
 
 export default function SpecificationModal({ isOpen, onClose }: SpecificationModalProps) {
   const [activeSection, setActiveSection] = useState<SectionId>('overview')
+  const navRef = useRef<HTMLElement>(null)
+  const scrollAnimationRef = useRef<number | undefined>(undefined)
+
+  const handleNavMouseMove = useCallback((e: React.MouseEvent<HTMLElement>) => {
+    if (!navRef.current) return
+
+    const nav = navRef.current
+    const rect = nav.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const edgeThreshold = 24
+
+    // Check if content overflows
+    if (nav.scrollWidth <= nav.clientWidth) return
+
+    let scrollDirection = 0
+
+    if (x <= edgeThreshold) {
+      scrollDirection = -1 // Scroll left
+    } else if (x >= rect.width - edgeThreshold) {
+      scrollDirection = 1 // Scroll right
+    }
+
+    if (scrollDirection !== 0) {
+      const scrollStep = () => {
+        if (!navRef.current) return
+
+        const currentNav = navRef.current
+        const maxScroll = currentNav.scrollWidth - currentNav.clientWidth
+
+        if ((scrollDirection < 0 && currentNav.scrollLeft > 0) ||
+            (scrollDirection > 0 && currentNav.scrollLeft < maxScroll)) {
+          currentNav.scrollLeft += scrollDirection * 2 // Slow, calm scroll speed
+          scrollAnimationRef.current = requestAnimationFrame(scrollStep)
+        }
+      }
+
+      if (!scrollAnimationRef.current) {
+        scrollAnimationRef.current = requestAnimationFrame(scrollStep)
+      }
+    } else {
+      if (scrollAnimationRef.current) {
+        cancelAnimationFrame(scrollAnimationRef.current)
+        scrollAnimationRef.current = undefined
+      }
+    }
+  }, [])
+
+  const handleNavMouseLeave = useCallback(() => {
+    if (scrollAnimationRef.current) {
+      cancelAnimationFrame(scrollAnimationRef.current)
+      scrollAnimationRef.current = undefined
+    }
+  }, [])
 
   if (!isOpen) return null
 
@@ -98,7 +151,16 @@ export default function SpecificationModal({ isOpen, onClose }: SpecificationMod
         </button>
         <div className="px-8 pt-8 pb-6">
           <h1 className="text-xl font-medium text-amber-100/90 mb-6">Specification</h1>
-          <nav className="flex flex-nowrap space-x-4 md:space-x-6 mb-8 overflow-x-auto px-2">
+          <nav
+            ref={navRef}
+            className="flex flex-nowrap space-x-4 md:space-x-6 mb-8 overflow-x-auto px-2"
+            onMouseMove={handleNavMouseMove}
+            onMouseLeave={handleNavMouseLeave}
+            style={{
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none'
+            }}
+          >
             {sections.map((section) => (
               <button
                 key={section.id}
