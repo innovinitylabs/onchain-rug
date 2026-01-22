@@ -1,4 +1,5 @@
-import { getAllAttributionCodes, getReferralCodeForWallet } from '../erc8021-utils'
+import { getAllAttributionCodes } from '../erc8021-utils'
+import { getReferralCodeForWallet } from '../base62'
 
 describe('ERC-8021 Utils', () => {
   test('builds attribution codes with wallet', () => {
@@ -12,7 +13,7 @@ describe('ERC-8021 Utils', () => {
     expect(codes.length).toBe(3)
     expect(codes[0]).toBe('onchainrugs') // builder code
     expect(codes[1]).toBe('blur') // aggregator code
-    expect(codes[2].startsWith('ref-')).toBe(true) // referral code
+    expect(codes[2]).toBe(getReferralCodeForWallet(wallet)) // deterministic attribution code
   })
 
   test('prioritizes codes correctly', () => {
@@ -20,11 +21,11 @@ describe('ERC-8021 Utils', () => {
 
     // Test priority: override > URL > stored > deterministic
     const codes = getAllAttributionCodes({
-      overrideReferralCode: 'ref-override',
+      overrideReferralCode: 'override123',
       walletAddress: wallet
     })
 
-    expect(codes[2]).toBe('ref-override') // Override takes priority
+    expect(codes[2]).toBe('override123') // Override takes priority
   })
 
   test('handles missing wallet gracefully', () => {

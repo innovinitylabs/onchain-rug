@@ -3,7 +3,7 @@ pragma solidity ^0.8.22;
 
 import "forge-std/Script.sol";
 import "forge-std/console.sol";
-import "../src/facets/RugReferralRegistryFacet.sol";
+import "../src/facets/RugAttributionRegistryFacet.sol";
 import "../src/diamond/interfaces/IDiamondCut.sol";
 import "../src/diamond/libraries/LibDiamond.sol";
 
@@ -24,10 +24,10 @@ contract AddMissingReferralFunctions is Script {
 
         // Get the missing selectors
         bytes4[] memory selectorsToAdd = new bytes4[](4);
-        selectorsToAdd[0] = RugReferralRegistryFacet.registerForReferrals.selector; // 0xa53bb4e4
-        selectorsToAdd[1] = RugReferralRegistryFacet.getReferralCode.selector; // 0x92c40344
-        selectorsToAdd[2] = RugReferralRegistryFacet.generateShortCode.selector; // 0xd4917c75
-        selectorsToAdd[3] = RugReferralRegistryFacet.isRegistered.selector; // 0xc3c5a547
+        selectorsToAdd[0] = RugAttributionRegistryFacet.registerForAttribution.selector; // 0xa53bb4e4
+        selectorsToAdd[1] = RugAttributionRegistryFacet.getAttributionCode.selector; // 0x92c40344
+        selectorsToAdd[2] = RugAttributionRegistryFacet.generateAttributionCode.selector; // 0xd4917c75
+        selectorsToAdd[3] = RugAttributionRegistryFacet.isAttributionRegistered.selector; // 0xc3c5a547
 
         console.log("Adding", selectorsToAdd.length, "missing selectors");
 

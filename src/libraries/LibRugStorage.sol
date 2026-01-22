@@ -245,18 +245,18 @@ library LibRugStorage {
         }
     }
 
-    // ===== REFERRAL STRUCTS =====
+    // ===== ATTRIBUTION STRUCTS =====
 
     struct ReferralStats {
-        uint256 totalReferrals;      // Total number of successful referrals
-        uint256 totalEarned;         // Total ETH earned from referrals
-        uint256 lastReferralTime;    // Timestamp of last referral
+        uint256 totalReferrals;      // Total number of successful attributions
+        uint256 totalEarned;         // Total ETH earned from attributions
+        uint256 lastReferralTime;    // Timestamp of last attribution
     }
 
     struct ReferralConfig {
         // Code mappings
-        mapping(string => address) codeToReferrer;    // Referral code => referrer wallet
-        mapping(address => string) referrerToCode;    // Referrer wallet => referral code
+        mapping(string => address) codeToReferrer;    // Attribution code => referrer wallet
+        mapping(address => string) referrerToCode;    // Referrer wallet => attribution code
         mapping(string => bool) codeExists;           // Track if code is registered
 
         // Deterministic registration tracking
@@ -275,7 +275,7 @@ library LibRugStorage {
         uint256 maxCodeLength;                        // Maximum referral code length (default: 20)
     }
 
-    function referralStorage() internal pure returns (ReferralConfig storage rs) {
+    function attributionStorage() internal pure returns (ReferralConfig storage rs) {
         bytes32 position = REFERRAL_STORAGE_POSITION;
         assembly {
             rs.slot := position

@@ -4,7 +4,7 @@ pragma solidity ^0.8.22;
 import {Test, console} from "forge-std/Test.sol";
 import {LibBase62} from "../src/libraries/LibBase62.sol";
 import {LibRugStorage} from "../src/libraries/LibRugStorage.sol";
-import {RugReferralRegistryFacet} from "../src/facets/RugReferralRegistryFacet.sol";
+import {RugAttributionRegistryFacet} from "../src/facets/RugAttributionRegistryFacet.sol";
 
 /**
  * @title DeterministicReferralsTest
@@ -13,14 +13,14 @@ import {RugReferralRegistryFacet} from "../src/facets/RugReferralRegistryFacet.s
 contract DeterministicReferralsTest is Test {
     using LibBase62 for bytes;
 
-    RugReferralRegistryFacet referralFacet;
+    RugAttributionRegistryFacet attributionFacet;
     address alice = address(0x1234567890123456789012345678901234567890);
     address bob = address(0x9876543210987654321098765432109876543210);
     address charlie = address(0xabcdefabcdefabcdefabcdefabcdefabcdefabcd);
 
     function setUp() public {
         // Deploy facet
-        referralFacet = new RugReferralRegistryFacet();
+        attributionFacet = new RugAttributionRegistryFacet();
 
         // Initialize storage
         LibRugStorage.ReferralConfig storage rs = LibRugStorage.referralStorage();
@@ -82,21 +82,21 @@ contract DeterministicReferralsTest is Test {
      */
     function test_ReferralRegistration() public {
         vm.prank(alice);
-        referralFacet.registerForReferrals();
+        attributionFacet.registerForAttribution();
 
         // Check registration status
-        bool isRegistered = referralFacet.isRegistered(alice);
+        bool isRegistered = attributionFacet.isAttributionRegistered(alice);
         assertTrue(isRegistered, "Alice should be registered");
 
         // Check code generation
-        string memory code = referralFacet.getReferralCode(alice);
+        string memory code = attributionFacet.getAttributionCode(alice);
         assertTrue(bytes(code).length > 0, "Should have a referral code");
 
         // Check code is valid base62 (no prefix)
         assertTrue(LibBase62.isValidBase62(code), "Code should be valid base62");
 
         // Check code is registered
-        assertTrue(referralFacet.codeExists(code), "Code should exist in registry");
+        assertTrue(attributionFacet.codeExists(code), "Code should exist in registry");
     }
 
     /**
@@ -109,8 +109,8 @@ contract DeterministicReferralsTest is Test {
 
         // Register and get code
         vm.prank(alice);
-        referralFacet.registerForReferrals();
-        string memory registeredCode = referralFacet.getReferralCode(alice);
+        attributionFacet.registerForAttribution();
+        string memory registeredCode = attributionFacet.getReferralCode(alice);
 
         assertEq(fullDirectCode, registeredCode, "Direct generation should match registered code");
     }
@@ -120,12 +120,12 @@ contract DeterministicReferralsTest is Test {
      */
     function test_OneWalletOneRegistration() public {
         vm.prank(alice);
-        referralFacet.registerForReferrals();
+        attributionFacet.registerForAttribution();
 
         // Try to register again - should revert
         vm.expectRevert("AlreadyRegistered");
         vm.prank(alice);
-        referralFacet.registerForReferrals();
+        attributionFacet.registerForAttribution();
     }
 
     /**
@@ -138,7 +138,7 @@ contract DeterministicReferralsTest is Test {
 
         vm.expectRevert("ReferralSystemDisabled");
         vm.prank(alice);
-        referralFacet.registerForReferrals();
+        attributionFacet.registerForAttribution();
     }
 
     /**
@@ -147,9 +147,9 @@ contract DeterministicReferralsTest is Test {
     function test_SelfReferralPrevention() public {
         // Register Alice
         vm.prank(alice);
-        referralFacet.registerForReferrals();
+        attributionFacet.registerForAttribution();
 
-        string memory aliceCode = referralFacet.getReferralCode(alice);
+        string memory aliceCode = attributionFacet.getReferralCode(alice);
 
         // Create mock transaction data
         bytes memory mockData = abi.encodeWithSignature("mintRug()", "");
@@ -158,7 +158,7 @@ contract DeterministicReferralsTest is Test {
         string[] memory codes = new string[](1);
         codes[0] = aliceCode;
 
-        address referrer = referralFacet.extractReferrerFromCodes(codes, alice);
+        address referrer = attributionFacet.extractReferrerFromAttributionCodes(codes, alice);
         assertEq(referrer, address(0), "Self-referral should return zero address");
     }
 
@@ -168,15 +168,15 @@ contract DeterministicReferralsTest is Test {
     function test_ValidReferralAttribution() public {
         // Register Alice
         vm.prank(alice);
-        referralFacet.registerForReferrals();
+        attributionFacet.registerForAttribution();
 
-        string memory aliceCode = referralFacet.getReferralCode(alice);
+        string memory aliceCode = attributionFacet.getReferralCode(alice);
 
         // Bob uses Alice's referral
         string[] memory codes = new string[](1);
         codes[0] = aliceCode;
 
-        address referrer = referralFacet.extractReferrerFromCodes(codes, bob);
+        address referrer = attributionFacet.extractReferrerFromCodes(codes, bob);
         assertEq(referrer, alice, "Should extract Alice as referrer");
     }
 
@@ -186,12 +186,12 @@ contract DeterministicReferralsTest is Test {
     function test_MultipleAttributionCodes() public {
         // Register both Alice and Bob
         vm.prank(alice);
-        referralFacet.registerForReferrals();
+        attributionFacet.registerForAttribution();
         vm.prank(bob);
-        referralFacet.registerForReferrals();
+        attributionFacet.registerForAttribution();
 
-        string memory aliceCode = referralFacet.getReferralCode(alice);
-        string memory bobCode = referralFacet.getReferralCode(bob);
+        string memory aliceCode = attributionFacet.getReferralCode(alice);
+        string memory bobCode = attributionFacet.getReferralCode(bob);
 
         // Codes array with builder code, aggregator, and referral
         string[] memory codes = new string[](3);
@@ -199,7 +199,7 @@ contract DeterministicReferralsTest is Test {
         codes[1] = aliceCode;     // referral
         codes[2] = "blur";        // aggregator
 
-        address referrer = referralFacet.extractReferrerFromCodes(codes, charlie);
+        address referrer = attributionFacet.extractReferrerFromCodes(codes, charlie);
         assertEq(referrer, alice, "Should extract first valid referral code");
     }
 
@@ -211,7 +211,7 @@ contract DeterministicReferralsTest is Test {
         codes[0] = "invalid@code"; // Contains invalid character for base62
         codes[1] = "onchainrugs";
 
-        address referrer = referralFacet.extractReferrerFromCodes(codes, alice);
+        address referrer = attributionFacet.extractReferrerFromAttributionCodes(codes, alice);
         assertEq(referrer, address(0), "Invalid codes should return zero address");
     }
 
@@ -243,7 +243,7 @@ contract DeterministicReferralsTest is Test {
         vm.prank(alice);
 
         uint256 gasBefore = gasleft();
-        referralFacet.registerForReferrals();
+        attributionFacet.registerForAttribution();
         uint256 gasUsed = gasBefore - gasleft();
 
         console.log("Registration gas used:", gasUsed);
@@ -256,10 +256,10 @@ contract DeterministicReferralsTest is Test {
     function test_ReferralStatistics() public {
         // Register Alice
         vm.prank(alice);
-        referralFacet.registerForReferrals();
+        attributionFacet.registerForAttribution();
 
         // Initially should have zero stats
-        (uint256 totalReferrals, uint256 totalEarned, uint256 lastReferralTime) = referralFacet.getReferralStats(alice);
+        (uint256 totalAttributions, uint256 totalEarned, uint256 lastAttributionTime) = attributionFacet.getAttributionStats(alice);
         assertEq(totalReferrals, 0, "Should start with zero referrals");
         assertEq(totalEarned, 0, "Should start with zero earnings");
     }
@@ -278,7 +278,7 @@ contract DeterministicReferralsTest is Test {
 
         // Test empty codes array
         string[] memory emptyCodes = new string[](0);
-        address referrer = referralFacet.extractReferrerFromCodes(emptyCodes, alice);
+        address referrer = attributionFacet.extractReferrerFromCodes(emptyCodes, alice);
         assertEq(referrer, address(0), "Empty codes should return zero address");
     }
 

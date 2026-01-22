@@ -69,7 +69,7 @@ library LibBase62 {
      *
      * @dev Always produces the same code for the same wallet address
      */
-    function generateReferralCode(address wallet)
+    function generateAttributionCode(address wallet)
         internal
         pure
         returns (string memory)

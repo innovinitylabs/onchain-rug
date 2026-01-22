@@ -488,20 +488,20 @@ export default function Web3Minting({
           ]
         })
 
-        // Get attribution codes (includes referral codes)
+        // Get attribution codes (includes ERC-8021 attribution codes)
         const codes = getAllAttributionCodes({ walletAddress: address })
 
-        // Append ERC-8021 suffix with referral codes
-        const dataWithReferrals = appendERC8021Suffix(encodedData, codes)
+        // Append ERC-8021 suffix with attribution codes
+        const dataWithAttribution = appendERC8021Suffix(encodedData, codes)
 
-        console.log('Direct mint with referral codes:', codes)
+        console.log('Direct mint with ERC-8021 attribution codes:', codes)
 
-        // Send transaction with ERC-8021 referral attribution
+        // Send transaction with ERC-8021 attribution
         setDirectMintPending(true)
         try {
           const txHash = await sendTransactionAsync({
             to: contractAddress as `0x${string}`,
-            data: dataWithReferrals,
+            data: dataWithAttribution,
             value: parseEther(mintCost.toString()),
           })
           setDirectMintHash(txHash)
