@@ -11,7 +11,7 @@ interface WhitePaperModalProps {
 }
 
 export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProps) {
-  const [activeSection, setActiveSection] = useState<'overview' | 'rarity' | 'optional' | 'consequence' | 'journey' | 'pricing' | 'royalties' | 'aging' | 'frames' | 'pool' | 'agents' | 'ownership' | 'standards' | 'result'>('overview')
+  const [activeSection, setActiveSection] = useState<'overview' | 'rarity' | 'optional' | 'journey' | 'pricing' | 'royalties' | 'aging' | 'frames' | 'pool' | 'agents' | 'ownership' | 'standards' | 'result'>('overview')
 
 
   if (!isOpen) return null
@@ -20,7 +20,6 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
     { id: 'overview', label: 'Overview', icon: Target },
     { id: 'rarity', label: 'User-Chosen Rarity', icon: Palette },
     { id: 'optional', label: 'Optional Maintenance', icon: Gamepad2 },
-    { id: 'consequence', label: 'Consequence, Not Rent', icon: Clock },
     { id: 'journey', label: 'User Journey', icon: Users },
     { id: 'pricing', label: 'Pricing Structure', icon: Zap },
     { id: 'royalties', label: 'Royalties & Attribution', icon: Gem },
@@ -153,69 +152,6 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
           </div>
         )
 
-      case 'consequence':
-        return (
-          <div className="space-y-6">
-            <div className="text-center mb-8">
-              <Clock className="w-16 h-16 text-orange-400 mx-auto mb-4" />
-              <h2 className="text-3xl font-bold text-white mb-2">Maintenance Fees Represent Consequence, Not Rent</h2>
-              <p className="text-white/80">Reversing time carries a cost - preservation of aging integrity</p>
-            </div>
-
-            <div className="bg-white/5 border border-white/10 rounded-lg p-6 mb-6">
-              <p className="text-white/90 leading-relaxed mb-4">
-                <strong>OnchainRugs do not charge for routine care.</strong>
-              </p>
-              <p className="text-white/90 leading-relaxed">
-                <strong>Cleaning is intentionally free for extended periods and can be performed indefinitely through periodic attention.</strong>
-              </p>
-            </div>
-
-            <div className="space-y-6">
-              <div className="bg-white/5 border border-white/10 rounded-lg p-6">
-                <h3 className="text-xl font-semibold text-orange-300 mb-4">Why Fees Exist</h3>
-                <ul className="text-white/80 space-y-2">
-                  <li>• <strong>Restoration</strong> and <strong>Master Restoration</strong> reverse the effects of time.</li>
-                  <li>• Reversing time is allowed.</li>
-                  <li>• Reversing time is <strong>never free</strong>.</li>
-                </ul>
-                <p className="text-white/80 mt-4">
-                  Fees introduce friction so that recovery remains possible <strong>without trivializing neglect</strong>.
-                </p>
-              </div>
-
-              <div className="bg-white/5 border border-white/10 rounded-lg p-6">
-                <h3 className="text-xl font-semibold text-orange-300 mb-4">What Fees Are Not</h3>
-                <ul className="text-white/80 space-y-2">
-                  <li>• Maintenance fees are <strong>not</strong> a revenue stream.</li>
-                  <li>• They are <strong>not</strong> rent.</li>
-                  <li>• They are <strong>not</strong> required to preserve baseline value.</li>
-                    </ul>
-                <p className="text-white/80 mt-4">
-                  They exist as a <strong>consequence mechanism</strong> that preserves aging integrity, historical continuity, and rarity credibility.
-                </p>
-            </div>
-
-              <div className="bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-400/30 rounded-lg p-6">
-                <p className="text-white/90 text-lg leading-relaxed">
-                  <strong>A rug can always be cleaned.</strong>
-                </p>
-                <p className="text-white/90 text-lg leading-relaxed">
-                  <strong>A rug can be restored.</strong>
-                </p>
-                <p className="text-white/90 text-lg leading-relaxed mb-4">
-                  <strong>But undoing time carries a cost.</strong>
-                </p>
-                <p className="text-white/90 leading-relaxed">
-                  This ensures consistent care is rewarded, occasional relapse is recoverable, and history cannot be rewritten endlessly without consequence.
-                </p>
-                <p className="text-white/90 text-lg leading-relaxed mt-4">
-                  <strong>A liability requires obligation. OnchainRugs impose none.</strong>
-                </p>
-              </div>
-            </div>
-          </div>
-        )
 
 
 
@@ -314,10 +250,9 @@ export default function WhitePaperModal({ isOpen, onClose }: WhitePaperModalProp
               </div>
 
               <div className="bg-white/5 border border-white/10 rounded-lg p-6">
-                <h3 className="text-xl font-semibold text-cyan-300 mb-4">Referral Commissions (ERC-8021 Attribution Protocol)</h3>
+                <h3 className="text-xl font-semibold text-cyan-300 mb-4">ERC-8021 Attribution</h3>
                 <ul className="text-white/80 space-y-2">
-                  <li>• <strong>5 percent of mint fee</strong> to referrer</li>
-                  <li>• <strong>5 percent of marketplace fee</strong> to referrer</li>
+                  <li>• <strong>2.5 percent of mint fee</strong> to referrer</li>
                   <li>Referral system ready at contract level. UI pending.</li>
                 </ul>
               </div>
