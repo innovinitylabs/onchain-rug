@@ -1104,8 +1104,12 @@ function getPunkPixelColorAtPosition(x: number, y: number, punkId: number): {r: 
     return null
   }
 
+  // Apply 90-degree counter-clockwise rotation to compensate for rug rotation
+  const rotatedPixelX = pixelY
+  const rotatedPixelY = 23 - pixelX
+
   // Return actual punk pixel color (already in RGB format)
-  return punkRenderer.punkPixels[punkId][pixelY][pixelX]
+  return punkRenderer.punkPixels[punkId][rotatedPixelY][rotatedPixelX]
 }
 
 /**
@@ -2076,8 +2080,12 @@ export class GeometricPatternRenderer {
         const pixelX = Math.floor((localX / punkSize) * 24);
         const pixelY = Math.floor((localY / punkSize) * 24);
 
-        // Only active if corresponding punk pixel exists
-        return this.punkPixels[punkId] && this.punkPixels[punkId][pixelY] && this.punkPixels[punkId][pixelY][pixelX] !== null;
+        // Apply 90-degree counter-clockwise rotation to match rug rotation
+        const rotatedPixelX = pixelY;
+        const rotatedPixelY = 23 - pixelX;
+
+        // Only active if corresponding rotated punk pixel exists
+        return this.punkPixels[punkId] && this.punkPixels[punkId][rotatedPixelY] && this.punkPixels[punkId][rotatedPixelY][rotatedPixelX] !== null;
       },
 
       strength: (x: number, y: number) => {
@@ -2089,9 +2097,13 @@ export class GeometricPatternRenderer {
 
         if (pixelX < 0 || pixelX >= 24 || pixelY < 0 || pixelY >= 24) return 0;
 
-        // Return maximum engraving strength ONLY for actual punk pixels
+        // Apply 90-degree counter-clockwise rotation to match rug rotation
+        const rotatedPixelX = pixelY;
+        const rotatedPixelY = 23 - pixelX;
+
+        // Return maximum engraving strength ONLY for actual rotated punk pixels
         // This creates the pixelated punk pattern instead of a solid block
-        if (this.punkPixels[punkId] && this.punkPixels[punkId][pixelY] && this.punkPixels[punkId][pixelY][pixelX] !== null) {
+        if (this.punkPixels[punkId] && this.punkPixels[punkId][rotatedPixelY] && this.punkPixels[punkId][rotatedPixelY][rotatedPixelX] !== null) {
           return 1.0; // Maximum engraving for punk pixels only
         }
 
