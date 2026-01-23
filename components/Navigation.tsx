@@ -467,10 +467,12 @@ export default function Navigation() {
             )}
 
             {/* Agent Leaderboard - Always visible */}
-            <Link
-              href="/agents"
-              className="flex items-center gap-1 hover:opacity-90 transition-all duration-300"
-            >
+            {/* Agents link - only visible on localhost */}
+            {typeof window !== 'undefined' && window.location.hostname === 'localhost' && (
+              <Link
+                href="/agents"
+                className="flex items-center gap-1 hover:opacity-90 transition-all duration-300"
+              >
               <Sparkles className="w-5 h-5 text-white" />
               <svg
                 height="28px"
@@ -513,6 +515,7 @@ export default function Navigation() {
                 </text>
               </svg>
             </Link>
+            )}
           </div>
 
           {/* Mobile Hamburger Menu Button */}
@@ -610,14 +613,17 @@ export default function Navigation() {
                 <span className="text-lg font-medium">Rug Market</span>
               </Link>
 
-              <Link
-                href="/agents"
-                onClick={closeMobileMenu}
-                className="flex items-center gap-3 px-6 py-4 text-white hover:bg-white/10 transition-colors duration-200"
-              >
-                <Sparkles className="w-6 h-6 text-white" />
-                <span className="text-lg font-medium">Agents</span>
-              </Link>
+              {/* Agents link - only visible on localhost */}
+              {typeof window !== 'undefined' && window.location.hostname === 'localhost' && (
+                <Link
+                  href="/agents"
+                  onClick={closeMobileMenu}
+                  className="flex items-center gap-3 px-6 py-4 text-white hover:bg-white/10 transition-colors duration-200"
+                >
+                  <Sparkles className="w-6 h-6 text-white" />
+                  <span className="text-lg font-medium">Agents</span>
+                </Link>
+              )}
 
               {/* My Rugs Link - Only visible when connected */}
               {/* Use isMounted to prevent hydration mismatch */}
