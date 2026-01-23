@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-import { Home, Palette, Image, Sparkles, Menu, X, ShoppingCart, BrushCleaning } from 'lucide-react'
+import { Home, Palette, Image, Menu, X, ShoppingCart, BrushCleaning } from 'lucide-react'
 import { useAccount } from 'wagmi'
 import { WalletConnect } from './wallet-connect'
 import LiquidGlass from './LiquidGlass'
@@ -467,52 +467,6 @@ export default function Navigation() {
             )}
 
             {/* Agent Leaderboard - Always visible */}
-            <Link
-              href="/agents"
-              className="flex items-center gap-1 hover:opacity-90 transition-all duration-300"
-            >
-              <Sparkles className="w-5 h-5 text-white" />
-              <svg
-                height="28px"
-                viewBox="0 0 80 20"
-                style={{
-                  display: 'block',
-                  height: '28px',
-                  filter: 'drop-shadow(0 0 6px rgba(108, 190, 230, 0.3))',
-                }}
-              >
-                <defs>
-                  <filter id="nav-link-depth-agents" x="-100%" y="-100%" width="300%" height="300%">
-                    <feTurbulence baseFrequency="0.02" numOctaves="2" seed="48" type="fractalNoise" result="LINK_BASE_AGENTS" />
-                    <feDisplacementMap in="SourceGraphic" in2="LINK_BASE_AGENTS" scale="3" xChannelSelector="R" yChannelSelector="G" result="LINK_DISPLACED_AGENTS" />
-                    <feGaussianBlur in="LINK_DISPLACED_AGENTS" stdDeviation="0.5" result="LINK_BLUR_AGENTS" />
-                  </filter>
-                  <linearGradient id="nav-link-gradient-agents" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" style={{ stopColor: 'rgba(255, 255, 255, 0.9)', stopOpacity: 1 }} />
-                    <stop offset="100%" style={{ stopColor: 'rgba(255, 255, 255, 0.9)', stopOpacity: 1 }} />
-                  </linearGradient>
-                </defs>
-                <text
-                  x="50%"
-                  y="12"
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  style={{
-                    fill: 'url(#nav-link-gradient-agents)',
-                    filter: 'url(#nav-link-depth-agents)',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    fontFamily: 'system-ui, -apple-system, sans-serif',
-                    WebkitFontSmoothing: 'antialiased',
-                    MozOsxFontSmoothing: 'grayscale',
-                    textRendering: 'optimizeLegibility',
-                    fontFeatureSettings: '"kern" 1',
-                  }}
-                >
-                  Agents
-                </text>
-              </svg>
-            </Link>
           </div>
 
           {/* Mobile Hamburger Menu Button */}
@@ -610,14 +564,6 @@ export default function Navigation() {
                 <span className="text-lg font-medium">Rug Market</span>
               </Link>
 
-              <Link
-                href="/agents"
-                onClick={closeMobileMenu}
-                className="flex items-center gap-3 px-6 py-4 text-white hover:bg-white/10 transition-colors duration-200"
-              >
-                <Sparkles className="w-6 h-6 text-white" />
-                <span className="text-lg font-medium">Agents</span>
-              </Link>
 
               {/* My Rugs Link - Only visible when connected */}
               {/* Use isMounted to prevent hydration mismatch */}

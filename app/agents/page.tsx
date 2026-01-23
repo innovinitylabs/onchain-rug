@@ -10,6 +10,24 @@ export const metadata: Metadata = {
 }
 
 export default function AgentsPage() {
+  // Only show on localhost for development/testing
+  const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+
+  if (!isLocalhost) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col">
+        <Navigation />
+        <main className="flex-grow flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-6xl mb-4">🤖</div>
+            <h1 className="text-2xl font-bold text-white mb-4">Agent Leaderboard</h1>
+            <p className="text-slate-400">This page is only available in development mode.</p>
+          </div>
+        </main>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col">
       <Navigation />
