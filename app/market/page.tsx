@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { useAccount, useChainId } from 'wagmi'
 import {
@@ -70,6 +71,9 @@ export default function MarketPage() {
 
   const contractAddress = contractAddresses[chainId] // No fallback - safer to show error
   const itemsPerPage = 24
+  const searchParams = useSearchParams()
+  const tokenIdParam = searchParams.get('tokenId')
+  const actionParam = searchParams.get('action')
 
   // Fetch NFT data
   useEffect(() => {
@@ -160,6 +164,18 @@ export default function MarketPage() {
 
     fetchNFTs()
   }, [contractAddress, chainId])
+
+  // Auto-open modal for specific tokenId from URL params
+  useEffect(() => {
+    if (tokenIdParam && nfts.length > 0 && !loading) {
+      const tokenId = parseInt(tokenIdParam)
+      const nft = nfts.find(n => n.tokenId === tokenId)
+      if (nft) {
+        setSelectedNFT(nft)
+        // If action=list, the NFTDetailModal will handle showing the listing form
+      }
+    }
+  }, [tokenIdParam, nfts, loading])
 
   // Calculate rarity score
   const calculateRarityScore = (traits: any): number => {
