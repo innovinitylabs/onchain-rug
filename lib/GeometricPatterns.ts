@@ -2134,9 +2134,7 @@ export class GeometricPatternRenderer {
       let match;
       let rectCount = 0;
 
-      console.log(`🎨 Parsing SVG for punk, length: ${svgString.length}`);
-
-      while ((match = rectRegex.exec(svgString)) !== null) {
+        while ((match = rectRegex.exec(svgString)) !== null) {
         rectCount++;
         const x = parseInt(match[1]);
         const y = parseInt(match[2]);
@@ -2151,8 +2149,6 @@ export class GeometricPatternRenderer {
           pixels[y][x] = { r, g, b }; // Note: SVG y=0 is top, our array y=0 is top
         }
       }
-      console.log(`📊 Parsed ${rectCount} rect elements from SVG`);
-
     } catch (error) {
       console.warn('Failed to parse punk SVG:', error);
     }
@@ -2306,6 +2302,58 @@ export class GeometricPatternRenderer {
     } catch (error) {
       console.warn('❌ Failed to load punks from files:', error);
       console.log('💡 Make sure punk files are in public/data/cryptopunks/');
+      return 0;
+    }
+  }
+
+  /**
+   * Load ALL punk data synchronously - for immediate availability
+   * Only ~625 punks loaded (subset), very fast
+   */
+  loadPunksFromFilesSync() {
+    console.log('🎨 Loading Cryptopunk SVGs synchronously...');
+
+    try {
+      // Load all punks-*.json files from data/cryptopunks/ directory
+      const files = [
+        'punks-000.json', 'punks-001.json', 'punks-002.json', 'punks-003.json',
+        'punks-004.json', 'punks-005.json', 'punks-006.json', 'punks-007.json',
+        'punks-008.json', 'punks-009.json', 'punks-010.json', 'punks-011.json',
+        'punks-012.json', 'punks-013.json', 'punks-014.json', 'punks-016.json',
+        'punks-019.json', 'punks-020.json', 'punks-021.json', 'punks-022.json',
+        'punks-023.json', 'punks-024.json', 'punks-031.json'
+      ];
+
+      let totalLoaded = 0;
+
+      // Use XMLHttpRequest for synchronous loading
+      for (const filename of files) {
+        try {
+          const xhr = new XMLHttpRequest();
+          xhr.open('GET', `/data/cryptopunks/${filename}`, false); // Synchronous!
+          xhr.send();
+
+          if (xhr.status !== 200) {
+            console.warn(`⚠️ Skipping ${filename} - HTTP ${xhr.status}`);
+            continue;
+          }
+
+          const batchData = JSON.parse(xhr.responseText);
+
+          for (const punk of batchData) {
+            this.loadPunkSvg(punk.id, punk.svg);
+          }
+
+          totalLoaded += batchData.length;
+        } catch (error) {
+          console.warn(`❌ Failed to load ${filename}:`, error);
+        }
+      }
+
+      console.log(`🎉 Successfully loaded ${totalLoaded} Cryptopunk SVGs synchronously!`);
+      return totalLoaded;
+    } catch (error) {
+      console.error('💥 Failed to load Cryptopunk SVGs synchronously:', error);
       return 0;
     }
   }

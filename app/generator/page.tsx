@@ -227,12 +227,10 @@ export default function GeneratorPage() {
           patternRenderer = new GeometricPatternRenderer((window as any).p5Instance, maskPRNG)
           ;(window as any).p5Instance.patternRenderer = patternRenderer
 
-          // Auto-load punk data in background
-          patternRenderer.loadPunksFromFiles().then(() => {
-            console.log('🎨 Cryptopunk SVGs preloaded successfully!')
-          }).catch((error) => {
-            console.warn('❌ Failed to preload punk SVGs:', error)
-          })
+          // Load ALL punk data synchronously - it's only ~10k punks, not much data
+          console.log('🎨 Loading all Cryptopunk SVGs synchronously...')
+          patternRenderer.loadPunksFromFilesSync()
+          console.log('✅ All Cryptopunk SVGs loaded synchronously!')
         }
 
         const palette = extractRugPalette((window as any).doormatData, (window as any).p5Instance)
@@ -249,6 +247,7 @@ export default function GeneratorPage() {
         ;(window as any).doormatData.patternMask = null
       }
       ;(window as any).__DOORMAT_DATA__.patternMask = (window as any).doormatData.patternMask
+      ;(window as any).__DOORMAT_DATA__.selectedMaskType = maskType
       ;(window as any).p5Instance.redraw()
     }
   }
@@ -1236,7 +1235,7 @@ export default function GeneratorPage() {
         b = p.constrain(b, 0, 255)
 
         // Handle cryptopunk engraving (only for crypto_punk mask type)
-        if (!isTextPixel && (window as any).__DOORMAT_DATA__?.selectedMaskType === 'crypto_punk') {
+        if (!isTextPixel && (window as any).__DOORMAT_DATA__ && (window as any).__DOORMAT_DATA__.selectedMaskType === 'crypto_punk') {
           let engravingStrength = basePatternStrength * evolutionStrength
 
 
@@ -1686,7 +1685,7 @@ export default function GeneratorPage() {
         b = p.constrain(b, 0, 255)
 
         // Handle cryptopunk engraving (only for crypto_punk mask type)
-        if (!isTextPixel && (window as any).__DOORMAT_DATA__?.selectedMaskType === 'crypto_punk') {
+        if (!isTextPixel && (window as any).__DOORMAT_DATA__ && (window as any).__DOORMAT_DATA__.selectedMaskType === 'crypto_punk') {
           let engravingStrength = basePatternStrength * evolutionStrength
 
 
