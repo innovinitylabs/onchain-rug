@@ -7,11 +7,15 @@ interface LeaderboardTableProps {
 }
 
 export function LeaderboardTable({ agents }: LeaderboardTableProps) {
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+  const formatDate = (timestamp: number) => {
+    return new Date(timestamp * 1000).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric'
     })
+  }
+
+  const formatAddress = (address: string) => {
+    return `${address.slice(0, 6)}...${address.slice(-4)}`
   }
 
   const getRatingBadge = (rating: number) => {
@@ -38,19 +42,19 @@ export function LeaderboardTable({ agents }: LeaderboardTableProps) {
                 Agent
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
-                Rating
+                Reputation Score
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
-                Success Rate
+                Reviews
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
-                Operations
+                Tasks Completed
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
-                Avg Cost
+                Capabilities
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
-                Last Active
+                Registered
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                 Status
@@ -76,36 +80,45 @@ export function LeaderboardTable({ agents }: LeaderboardTableProps) {
                           </span>
                         )}
                       </div>
-                      <div className="text-sm text-slate-400">{agent.creator}</div>
+                      <div className="text-sm text-slate-400 font-mono">{formatAddress(agent.address)}</div>
                     </div>
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRatingBadge(agent.performance.averageRating)}`}>
-                    ⭐ {agent.performance.averageRating.toFixed(1)}
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRatingBadge(agent.reputation.reputationScore / 20)}`}>
+                    ⭐ {(agent.reputation.reputationScore / 20).toFixed(1)}
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`text-sm font-medium ${getSuccessRateColor(agent.performance.successRate)}`}>
-                    {agent.performance.successRate.toFixed(1)}%
+                  <span className="text-sm font-medium text-white">
+                    {agent.reputation.totalFeedback}
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
-                  {agent.performance.totalOperations.toLocaleString()}
+                  {agent.reputation.totalTasks}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
-                  {agent.performance.averageCost}
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex flex-wrap gap-1 max-w-xs">
+                    {agent.capabilities.slice(0, 2).map((cap) => (
+                      <span key={cap} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-700/50 text-slate-300 border border-slate-600/30">
+                        {cap.replace('_', ' ')}
+                      </span>
+                    ))}
+                    {agent.capabilities.length > 2 && (
+                      <span className="text-xs text-slate-500">+{agent.capabilities.length - 2}</span>
+                    )}
+                  </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
-                  {formatDate(agent.performance.lastActive)}
+                  {formatDate(agent.registeredAt)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center gap-2">
                     <div className={`w-2 h-2 rounded-full ${
-                      agent.isOfficial ? 'bg-blue-500' : 'bg-green-500'
+                      agent.active ? 'bg-green-500' : 'bg-red-500'
                     }`}></div>
                     <span className="text-sm text-white">
-                      {agent.isOfficial ? 'Official' : 'Community'}
+                      {agent.active ? 'Active' : 'Inactive'}
                     </span>
                   </div>
                 </td>

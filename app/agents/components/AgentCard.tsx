@@ -7,12 +7,16 @@ interface AgentCardProps {
 }
 
 export function AgentCard({ agent }: AgentCardProps) {
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+  const formatDate = (timestamp: number) => {
+    return new Date(timestamp * 1000).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
     })
+  }
+
+  const formatAddress = (address: string) => {
+    return `${address.slice(0, 6)}...${address.slice(-4)}`
   }
 
   const getRatingColor = (rating: number) => {
@@ -46,8 +50,13 @@ export function AgentCard({ agent }: AgentCardProps) {
                   Official
                 </span>
               )}
+              {!agent.active && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-500/20 text-red-300 border border-red-400/30">
+                  Inactive
+                </span>
+              )}
             </div>
-            <p className="text-sm text-slate-400">by {agent.creator}</p>
+            <p className="text-sm text-slate-400 font-mono">{formatAddress(agent.address)}</p>
           </div>
         </div>
 
@@ -71,41 +80,50 @@ export function AgentCard({ agent }: AgentCardProps) {
         </div>
       </div>
 
-      {/* Performance Stats */}
+      {/* ERC-8004 Performance Stats */}
       <div className="px-6 pb-4">
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div className="text-center">
             <div className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-semibold ${getRatingColor(agent.performance.averageRating)}`}>
-              ⭐ {agent.performance.averageRating.toFixed(1)}
+              ⭐ {(agent.reputation.reputationScore / 20).toFixed(1)}
             </div>
-            <p className="text-xs text-gray-600 mt-1">Rating</p>
+            <p className="text-xs text-slate-500 mt-1">Overall Rating</p>
           </div>
           <div className="text-center">
             <div className={`text-lg font-semibold ${getSuccessRateColor(agent.performance.successRate)}`}>
-              {agent.performance.successRate.toFixed(1)}%
+              {agent.reputation.totalFeedback}
             </div>
-            <p className="text-xs text-gray-600 mt-1">Success Rate</p>
+            <p className="text-xs text-slate-500 mt-1">Total Reviews</p>
           </div>
         </div>
 
-        <div className="space-y-2 text-sm text-slate-400">
+        {/* ERC-8004 Detailed Metrics */}
+        <div className="space-y-2 text-sm text-slate-400 mb-3">
           <div className="flex justify-between">
-            <span>Total Operations:</span>
-            <span className="font-medium text-white">{agent.performance.totalOperations.toLocaleString()}</span>
+            <span>Accuracy:</span>
+            <span className="font-medium text-white">{agent.reputation.averageAccuracy.toFixed(1)}/5</span>
           </div>
           <div className="flex justify-between">
-            <span>Average Cost:</span>
-            <span className="font-medium text-white">{agent.performance.averageCost}</span>
+            <span>Timeliness:</span>
+            <span className="font-medium text-white">{agent.reputation.averageTimeliness.toFixed(1)}/5</span>
           </div>
           <div className="flex justify-between">
-            <span>Average Time:</span>
-            <span className="font-medium text-white">{agent.performance.averageTime}</span>
+            <span>Reliability:</span>
+            <span className="font-medium text-white">{agent.reputation.averageReliability.toFixed(1)}/5</span>
           </div>
           <div className="flex justify-between">
-            <span>Last Active:</span>
-            <span className="font-medium text-white">{formatDate(agent.performance.lastActive)}</span>
+            <span>Total Tasks:</span>
+            <span className="font-medium text-white">{agent.reputation.totalTasks}</span>
           </div>
         </div>
+
+        {/* Validation Proofs Indicator */}
+        {agent.validationProofs.length > 0 && (
+          <div className="flex items-center gap-2 text-xs text-green-400 mb-2">
+            <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+            <span>{agent.validationProofs.filter(p => p.verified).length} Verified Proofs</span>
+          </div>
+        )}
       </div>
 
       {/* Footer */}

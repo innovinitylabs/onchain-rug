@@ -92,7 +92,7 @@ export default function SpecificationModal({ isOpen, onClose }: SpecificationMod
         return (
           <div className="space-y-4">
             <ul className="text-slate-300/60 space-y-3 text-sm leading-relaxed">
-              <li>• Fully on-chain P5JS and logic</li>
+              <li>• Fully on-chain generative rendering and logic</li>
               <li>• No IPFS or external storage</li>
               <li>• Front side is user-curated</li>
               <li>• Reverse side is deterministically generated (WIP)</li>
