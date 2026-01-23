@@ -23,7 +23,7 @@ import {
   createStripeField,
   getEvolutionStrength,
   resolvePatternThreadColor,
-  getPunkPixelColorAtPosition
+  resolvePunkThreadColor
 } from '@/lib/GeometricPatterns'
 
 // Default pattern parameters since we're not using them anymore
@@ -1176,23 +1176,10 @@ export default function GeneratorPage() {
         // Clamp source stripe index safely
         sourceStripeIndex = Math.max(0, Math.min(sourceStripeIndex, doormatData.stripeData.length - 1))
 
-        // Get the source stripe (or use punk colors for special marker)
-        let warpColor
-        if (sourceStripeIndex === -999) {
-          // Punk field active - use punk pixel color
-          const punkColor = getPunkPixelColorAtPosition(x, y, (window as any).selectedPunkId || 0)
-          if (punkColor) {
-            warpColor = p.color(punkColor.r, punkColor.g, punkColor.b)
-          } else {
-            // Fallback to base stripe if no punk pixel
-            const fallbackStripe = doormatData.stripeData[stripeArrayIndex]
-            warpColor = p.color(fallbackStripe.primaryColor)
-          }
-        } else {
-          // Normal field behavior
-          const sourceStripe = doormatData.stripeData[sourceStripeIndex]
-          warpColor = p.color(sourceStripe.primaryColor)
-        }
+        // Get the source stripe
+        const sourceStripe = doormatData.stripeData[sourceStripeIndex]
+
+        const warpColor = p.color(sourceStripe.primaryColor)
         
         // Check if this position should be modified for text (only on front side)
         let isTextPixel = false
@@ -1248,13 +1235,13 @@ export default function GeneratorPage() {
         g = p.constrain(g, 0, 255)
         b = p.constrain(b, 0, 255)
 
-        // Handle pattern engraving (only if not already handled by text)
-        if (!isTextPixel) {
+        // Handle cryptopunk engraving (only for crypto_punk mask type)
+        if (!isTextPixel && (window as any).selectedMaskType === 'crypto_punk') {
           let engravingStrength = basePatternStrength * evolutionStrength
 
           if (engravingStrength > 0) {
-            // Apply pattern engraving color modification
-            const engravedColor = resolvePatternThreadColor({
+            // Apply punk engraving with actual pixel colors
+            const engravedColor = resolvePunkThreadColor({
               baseColor: p.color(r, g, b),
               stripe: sourceStripe,
               isWarp: true,
@@ -1325,26 +1312,13 @@ export default function GeneratorPage() {
           }
         }
 
-        // Get the source stripe (or use punk colors for special marker)
-        let weftColor
-        if (sourceStripeIndex === -999) {
-          // Punk field active - use punk pixel color
-          const punkColor = getPunkPixelColorAtPosition(x, y, (window as any).selectedPunkId || 0)
-          if (punkColor) {
-            weftColor = p.color(punkColor.r, punkColor.g, punkColor.b)
-          } else {
-            // Fallback to base stripe if no punk pixel
-            const fallbackStripe = doormatData.stripeData[stripeArrayIndex]
-            weftColor = p.color(fallbackStripe.primaryColor)
-          }
-        } else {
-          // Clamp source stripe index safely for normal fields
-          sourceStripeIndex = Math.max(0, Math.min(sourceStripeIndex, doormatData.stripeData.length - 1))
+        // Clamp source stripe index safely
+        sourceStripeIndex = Math.max(0, Math.min(sourceStripeIndex, doormatData.stripeData.length - 1))
 
-          // Normal field behavior
-          const sourceStripe = doormatData.stripeData[sourceStripeIndex]
-          weftColor = p.color(sourceStripe.primaryColor)
-        }
+        // Get the source stripe
+        const sourceStripe = doormatData.stripeData[sourceStripeIndex]
+
+        let weftColor = p.color(sourceStripe.primaryColor)
 
         // Add variation based on weave type
         if (stripe.weaveType === 'm' && stripe.secondaryColor) {
@@ -1710,13 +1684,13 @@ export default function GeneratorPage() {
         g = p.constrain(g, 0, 255)
         b = p.constrain(b, 0, 255)
 
-        // Handle pattern engraving (only if not already handled by text)
-        if (!isTextPixel) {
+        // Handle cryptopunk engraving (only for crypto_punk mask type)
+        if (!isTextPixel && (window as any).selectedMaskType === 'crypto_punk') {
           let engravingStrength = basePatternStrength * evolutionStrength
 
           if (engravingStrength > 0) {
-            // Apply pattern engraving color modification
-            const engravedColor = resolvePatternThreadColor({
+            // Apply punk engraving with actual pixel colors
+            const engravedColor = resolvePunkThreadColor({
               baseColor: p.color(r, g, b),
               stripe: sourceStripe,
               isWarp: false, // Weft threads are horizontal
@@ -3642,7 +3616,6 @@ export default function GeneratorPage() {
                           <option value="diagonal_drift">Diagonal Drift</option>
                           <option value="two_stripe_borrow">Two-Stripe Borrow</option>
                           <option value="arc_region_field">Arc Region Field</option>
-                          <option value="crypto_punk_field">Cryptopunk Field</option>
                         </select>
                       </div>
 
@@ -4054,7 +4027,7 @@ export default function GeneratorPage() {
       </main>
 
       {/* ERC Attribution Section */}
-      <section className="bg-gradient-to-br from-amber-50 via-amber-100 to-amber-50 border-t border-amber-300 py-12 px-4 w-full mt-8 mb-8 relative z-10">
+      <section className="bg-gradient-to-br from-amber-50 via-blue-50 to-indigo-50 border-t border-amber-200/50 py-12 px-4 w-full mt-8 mb-8 relative z-10">
         <div className="w-full">
           <div className="text-center mb-6">
             <h2 className="text-2xl font-bold text-amber-900 mb-2">ERC-8021 Attribution Program</h2>
