@@ -1034,6 +1034,81 @@ export function resolvePatternThreadColor(params: EngravingResolverParams): any 
 }
 
 /**
+ * Cryptopunk engraving resolver - uses actual punk pixel colors
+ * Creates vibrant, pixel-perfect punk engravings on the rug base
+ */
+export function resolvePunkThreadColor(params: EngravingResolverParams): any {
+  const { baseColor, stripe, isWarp, maskStrength, p } = params
+
+  if (maskStrength <= 0) {
+    return baseColor
+  }
+
+  // Get punk pixel color at this position
+  const punkColor = getPunkPixelColorAtPosition(params.x, params.y, (window as any).selectedPunkId || 0)
+
+  if (!punkColor) {
+    return baseColor // No punk pixel here, use original thread color
+  }
+
+  // Create punk pixel color object
+  const punkColorObj = p.color(punkColor.r, punkColor.g, punkColor.b)
+
+  // Strong engraving for punk pixels - they should be very visible
+  const engravingStrength = Math.min(maskStrength * 1.8, 1.0)
+
+  // Blend base rug thread with punk pixel color
+  let blended = p.lerpColor(baseColor, punkColorObj, engravingStrength)
+
+  // Add subtle variation for woven texture (less than patterns)
+  const noiseInput = stripe.y * 0.005 + (isWarp ? 3000 : 4000) + maskStrength * 5
+  const variation = (p.noise(noiseInput) - 0.5) * 0.02 // ±1% variation
+  const variedStrength = Math.max(0, Math.min(1, engravingStrength + variation))
+
+  return p.lerpColor(baseColor, punkColorObj, variedStrength)
+}
+
+/**
+ * Get punk pixel color at canvas position
+ * Returns actual RGB values from Cryptopunk SVG data
+ */
+function getPunkPixelColorAtPosition(x: number, y: number, punkId: number): {r: number, g: number, b: number} | null {
+  // Get punk renderer from global p5 instance
+  const punkRenderer = (window as any).p5Instance?.patternRenderer
+  if (!punkRenderer?.punkPixels?.[punkId]) {
+    return null // No punk data loaded
+  }
+
+  // Punk positioning (same as in generateCryptoPunkMask)
+  const canvasWidth = (window as any).doormatData?.config?.DOORMAT_WIDTH || 800
+  const canvasHeight = (window as any).doormatData?.config?.DOORMAT_HEIGHT || 1200
+  const punkSize = Math.min(canvasWidth, canvasHeight) * 0.70
+  const centerX = canvasWidth / 2
+  const centerY = canvasHeight * 0.55
+
+  // Convert canvas position to local punk coordinates
+  const localX = x - (centerX - punkSize/2)
+  const localY = y - (centerY - punkSize/2)
+
+  // Check bounds
+  if (localX < 0 || localX >= punkSize || localY < 0 || localY >= punkSize) {
+    return null // Outside punk area
+  }
+
+  // Map to 24x24 punk pixel grid
+  const pixelX = Math.floor((localX / punkSize) * 24)
+  const pixelY = Math.floor((localY / punkSize) * 24)
+
+  // Bounds check for pixel coordinates
+  if (pixelX < 0 || pixelX >= 24 || pixelY < 0 || pixelY >= 24) {
+    return null
+  }
+
+  // Return actual punk pixel color (already in RGB format)
+  return punkRenderer.punkPixels[punkId][pixelY][pixelX]
+}
+
+/**
  * Legacy pattern type - kept for backward compatibility
  * Will be deprecated in favor of separate MaskType and FieldType
  */
@@ -1078,7 +1153,7 @@ export class GeometricPatternRenderer {
   private p: any
   private prng: any
   private punkSvgs: { [key: number]: string } = {}
-  private punkPixels: { [key: number]: boolean[][] } = {}
+  private punkPixels: { [key: number]: ({r: number, g: number, b: number} | null)[][] } = {}
 
   constructor(p5Instance: any, prngInstance: any) {
     this.p = p5Instance
@@ -2002,7 +2077,7 @@ export class GeometricPatternRenderer {
         const pixelY = Math.floor((localY / punkSize) * 24);
 
         // Only active if corresponding punk pixel exists
-        return this.punkPixels[punkId] && this.punkPixels[punkId][pixelY] && this.punkPixels[punkId][pixelY][pixelX];
+        return this.punkPixels[punkId] && this.punkPixels[punkId][pixelY] && this.punkPixels[punkId][pixelY][pixelX] !== null;
       },
 
       strength: (x: number, y: number) => {
@@ -2016,7 +2091,7 @@ export class GeometricPatternRenderer {
 
         // Return maximum engraving strength ONLY for actual punk pixels
         // This creates the pixelated punk pattern instead of a solid block
-        if (this.punkPixels[punkId] && this.punkPixels[punkId][pixelY] && this.punkPixels[punkId][pixelY][pixelX]) {
+        if (this.punkPixels[punkId] && this.punkPixels[punkId][pixelY] && this.punkPixels[punkId][pixelY][pixelX] !== null) {
           return 1.0; // Maximum engraving for punk pixels only
         }
 
@@ -2034,23 +2109,29 @@ export class GeometricPatternRenderer {
   }
 
   /**
-   * Parse Cryptopunk SVG into 24x24 boolean pixel array
-   * SVGs contain <rect> elements representing pixels
+   * Parse Cryptopunk SVG into 24x24 pixel color array
+   * SVGs contain <rect> elements with fill colors representing pixels
    */
-  private parsePunkSvg(svgString: string): boolean[][] {
-    const pixels: boolean[][] = Array(24).fill(null).map(() => Array(24).fill(false));
+  private parsePunkSvg(svgString: string): ({r: number, g: number, b: number} | null)[][] {
+    const pixels: ({r: number, g: number, b: number} | null)[][] = Array(24).fill(null).map(() => Array(24).fill(null));
 
     try {
-      // Extract rect elements from SVG
-      const rectRegex = /<rect[^>]*x="(\d+)"[^>]*y="(\d+)"[^>]*width="1"[^>]*height="1"[^>]*>/g;
+      // Extract rect elements from SVG with their fill colors
+      const rectRegex = /<rect[^>]*x="(\d+)"[^>]*y="(\d+)"[^>]*fill="#([0-9a-fA-F]{6})"[^>]*width="1"[^>]*height="1"[^>]*>/g;
       let match;
 
       while ((match = rectRegex.exec(svgString)) !== null) {
         const x = parseInt(match[1]);
         const y = parseInt(match[2]);
+        const hexColor = match[3];
 
-        if (x >= 0 && x < 24 && y >= 0 && y < 24) {
-          pixels[y][x] = true; // Note: SVG y=0 is top, our array y=0 is top
+        if (x >= 0 && x < 24 && y >= 0 && y < 24 && hexColor) {
+          // Convert hex color to RGB
+          const r = parseInt(hexColor.substring(0, 2), 16);
+          const g = parseInt(hexColor.substring(2, 4), 16);
+          const b = parseInt(hexColor.substring(4, 6), 16);
+
+          pixels[y][x] = { r, g, b }; // Note: SVG y=0 is top, our array y=0 is top
         }
       }
     } catch (error) {

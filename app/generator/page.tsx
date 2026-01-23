@@ -21,7 +21,9 @@ import {
   EngravingMask,
   TextMask,
   createStripeField,
-  getEvolutionStrength
+  getEvolutionStrength,
+  resolvePatternThreadColor,
+  resolvePunkThreadColor
 } from '@/lib/GeometricPatterns'
 
 // Default pattern parameters since we're not using them anymore
@@ -1233,11 +1235,35 @@ export default function GeneratorPage() {
         g = p.constrain(g, 0, 255)
         b = p.constrain(b, 0, 255)
 
-        // Handle pattern engraving (only if not already handled by text)
+        // Handle pattern/punk engraving (only if not already handled by text)
         if (!isTextPixel) {
-          let patternStrength = basePatternStrength * evolutionStrength
+          let engravingStrength = basePatternStrength * evolutionStrength
 
-          // Pattern darkening bias removed - color source replacement does the work now
+          if (engravingStrength > 0) {
+            // Choose the appropriate engraving resolver based on mask type
+            let engravingResolver
+            if ((window as any).selectedMaskType === 'crypto_punk') {
+              engravingResolver = resolvePunkThreadColor
+            } else {
+              engravingResolver = resolvePatternThreadColor
+            }
+
+            // Apply engraving color modification
+            const engravedColor = engravingResolver({
+              baseColor: p.color(r, g, b),
+              stripe: sourceStripe,
+              isWarp: true,
+              maskStrength: engravingStrength,
+              p: p,
+              x: x,
+              y: y
+            })
+
+            // Extract RGB from engraved color
+            r = p.red(engravedColor)
+            g = p.green(engravedColor)
+            b = p.blue(engravedColor)
+          }
         }
 
         r = p.constrain(r, 0, 255)
@@ -1666,11 +1692,35 @@ export default function GeneratorPage() {
         g = p.constrain(g, 0, 255)
         b = p.constrain(b, 0, 255)
 
-        // Handle pattern engraving (only if not already handled by text)
+        // Handle pattern/punk engraving (only if not already handled by text)
         if (!isTextPixel) {
-          let patternStrength = basePatternStrength * evolutionStrength
+          let engravingStrength = basePatternStrength * evolutionStrength
 
-          // Pattern brightening bias removed - color source replacement does the work now
+          if (engravingStrength > 0) {
+            // Choose the appropriate engraving resolver based on mask type
+            let engravingResolver
+            if ((window as any).selectedMaskType === 'crypto_punk') {
+              engravingResolver = resolvePunkThreadColor
+            } else {
+              engravingResolver = resolvePatternThreadColor
+            }
+
+            // Apply engraving color modification
+            const engravedColor = engravingResolver({
+              baseColor: p.color(r, g, b),
+              stripe: sourceStripe,
+              isWarp: false, // Weft threads are horizontal
+              maskStrength: engravingStrength,
+              p: p,
+              x: x,
+              y: y
+            })
+
+            // Extract RGB from engraved color
+            r = p.red(engravedColor)
+            g = p.green(engravedColor)
+            b = p.blue(engravedColor)
+          }
         }
 
         r = p.constrain(r, 0, 255)
