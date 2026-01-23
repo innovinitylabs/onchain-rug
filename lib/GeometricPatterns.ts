@@ -2129,11 +2129,15 @@ export class GeometricPatternRenderer {
     const pixels: ({r: number, g: number, b: number} | null)[][] = Array(24).fill(null).map(() => Array(24).fill(null));
 
     try {
-      // Extract rect elements from SVG with their fill colors
-      const rectRegex = /<rect[^>]*x="(\d+)"[^>]*y="(\d+)"[^>]*fill="#([0-9a-fA-F]{6})"[^>]*width="1"[^>]*height="1"[^>]*>/g;
+      // Extract rect elements from SVG with their fill colors (RGB only, ignore alpha)
+      const rectRegex = /<rect[^>]*x="(\d+)"[^>]*y="(\d+)"[^>]*fill="#([0-9a-fA-F]{6})[0-9a-fA-F]{0,2}"[^>]*width="1"[^>]*height="1"[^>]*>/g;
       let match;
+      let rectCount = 0;
+
+      console.log(`🎨 Parsing SVG for punk, length: ${svgString.length}`);
 
       while ((match = rectRegex.exec(svgString)) !== null) {
+        rectCount++;
         const x = parseInt(match[1]);
         const y = parseInt(match[2]);
         const hexColor = match[3];
@@ -2147,6 +2151,8 @@ export class GeometricPatternRenderer {
           pixels[y][x] = { r, g, b }; // Note: SVG y=0 is top, our array y=0 is top
         }
       }
+      console.log(`📊 Parsed ${rectCount} rect elements from SVG`);
+
     } catch (error) {
       console.warn('Failed to parse punk SVG:', error);
     }
