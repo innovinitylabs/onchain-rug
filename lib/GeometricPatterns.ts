@@ -911,6 +911,26 @@ export class ArcRegionField implements StripeField {
 }
 
 /**
+ * Cryptopunk field - replaces stripe colors with actual punk pixel colors
+ * Creates a field where Cryptopunk pixels directly determine the rug colors
+ */
+export class CryptoPunkField implements StripeField {
+  getSourceStripeIndex(
+    x: number,
+    y: number,
+    baseStripeIndex: number,
+    stripeData: any[],
+    mask: EngravingMask | null,
+    doormatData: any,
+    evolutionStrength: number
+  ): number {
+    // For punk field, we return a special value to indicate punk color replacement
+    // The rendering code will detect this and use punk colors instead of stripe colors
+    return -999 // Special marker for punk color replacement
+  }
+}
+
+/**
  * Precompute engraving profile for a stripe (called once per stripe)
  * Samples representative points and caches engraving colors for performance
  */
@@ -1072,7 +1092,7 @@ export function resolvePunkThreadColor(params: EngravingResolverParams): any {
  * Get punk pixel color at canvas position
  * Returns actual RGB values from Cryptopunk SVG data
  */
-function getPunkPixelColorAtPosition(x: number, y: number, punkId: number): {r: number, g: number, b: number} | null {
+export function getPunkPixelColorAtPosition(x: number, y: number, punkId: number): {r: number, g: number, b: number} | null {
   // Get punk renderer from global p5 instance
   const punkRenderer = (window as any).p5Instance?.patternRenderer
   if (!punkRenderer?.punkPixels?.[punkId]) {
@@ -1149,6 +1169,7 @@ export type FieldType =
   | 'diagonal_drift'
   | 'two_stripe_borrow'
   | 'arc_region_field'
+  | 'crypto_punk_field'
 
 /**
  * Main geometric pattern renderer
@@ -2372,6 +2393,8 @@ export function createStripeField(fieldType: FieldType): StripeField | null {
       return new TwoStripeBorrowField()
     case 'arc_region_field':
       return new ArcRegionField()
+    case 'crypto_punk_field':
+      return new CryptoPunkField()
     case 'none':
     default:
       return null
