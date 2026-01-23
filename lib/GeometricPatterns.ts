@@ -1252,6 +1252,7 @@ export class GeometricPatternRenderer {
         return this.generateRugAreaMask(canvasWidth, canvasHeight)
       }
       case 'crypto_punk': {
+        console.log('🎯 Creating crypto_punk mask for punkId:', punkId);
         return this.generateCryptoPunkMask(canvasWidth, canvasHeight, punkId || 0)
       }
       case 'none':
