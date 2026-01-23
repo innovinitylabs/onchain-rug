@@ -1239,13 +1239,6 @@ export default function GeneratorPage() {
         if (!isTextPixel && (window as any).__DOORMAT_DATA__?.selectedMaskType === 'crypto_punk') {
           let engravingStrength = basePatternStrength * evolutionStrength
 
-          console.log('🎨 Warp punk engraving check:', {
-            selectedMaskType: (window as any).__DOORMAT_DATA__?.selectedMaskType,
-            basePatternStrength,
-            evolutionStrength,
-            engravingStrength,
-            punkId: (window as any).selectedPunkId
-          })
 
           if (engravingStrength > 0) {
             // Apply punk engraving with actual pixel colors
@@ -1696,13 +1689,6 @@ export default function GeneratorPage() {
         if (!isTextPixel && (window as any).__DOORMAT_DATA__?.selectedMaskType === 'crypto_punk') {
           let engravingStrength = basePatternStrength * evolutionStrength
 
-          console.log('🎨 Weft punk engraving check:', {
-            selectedMaskType: (window as any).__DOORMAT_DATA__?.selectedMaskType,
-            basePatternStrength,
-            evolutionStrength,
-            engravingStrength,
-            punkId: (window as any).selectedPunkId
-          })
 
           if (engravingStrength > 0) {
             // Apply punk engraving with actual pixel colors
