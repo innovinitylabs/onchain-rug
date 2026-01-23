@@ -1968,12 +1968,13 @@ export class GeometricPatternRenderer {
 
   private generateCryptoPunkMask(canvasWidth: number, canvasHeight: number, punkId: number = 0): EngravingMask {
     // Position punk in center-bottom of rug (back side)
-    // Increased size to 25% for better visibility
-    const punkSize = Math.min(canvasWidth, canvasHeight) * 0.25; // 25% of canvas
+    // Make it prominent as requested - 70% of canvas for visibility
+    const punkSize = Math.min(canvasWidth, canvasHeight) * 0.70; // 70% of canvas
     const centerX = canvasWidth / 2;
-    const centerY = canvasHeight * 0.75; // 3/4 down the rug
+    const centerY = canvasHeight * 0.55; // Center it better on the rug
 
     console.log(`🎨 Generating punk mask for ID ${punkId}, size: ${punkSize}, data loaded: ${!!this.punkPixels[punkId]}`);
+
     if (this.punkPixels[punkId]) {
       // Count how many pixels are set for debugging
       let pixelCount = 0;
@@ -1987,44 +1988,39 @@ export class GeometricPatternRenderer {
 
     return {
       isActive: (x: number, y: number) => {
-        // Check if point is within punk area
+        // Check if point is within punk area - only engrave where punk pixels exist
         const localX = x - (centerX - punkSize/2);
         const localY = y - (centerY - punkSize/2);
 
-        return localX >= 0 && localX < punkSize && localY >= 0 && localY < punkSize;
+        // Must be within punk bounding box
+        if (localX < 0 || localX >= punkSize || localY < 0 || localY >= punkSize) {
+          return false;
+        }
+
+        // Map to punk pixel coordinates (24x24 grid)
+        const pixelX = Math.floor((localX / punkSize) * 24);
+        const pixelY = Math.floor((localY / punkSize) * 24);
+
+        // Only active if corresponding punk pixel exists
+        return this.punkPixels[punkId] && this.punkPixels[punkId][pixelY] && this.punkPixels[punkId][pixelY][pixelX];
       },
 
       strength: (x: number, y: number) => {
-        const localX = (x - (centerX - punkSize/2)) / punkSize * 24;
-        const localY = (y - (centerY - punkSize/2)) / punkSize * 24;
+        const localX = x - (centerX - punkSize/2);
+        const localY = y - (centerY - punkSize/2);
 
-        const pixelX = Math.floor(localX);
-        const pixelY = Math.floor(localY);
+        const pixelX = Math.floor((localX / punkSize) * 24);
+        const pixelY = Math.floor((localY / punkSize) * 24);
 
         if (pixelX < 0 || pixelX >= 24 || pixelY < 0 || pixelY >= 24) return 0;
 
-        // Use real punk pixel data with higher engraving strength
+        // Return maximum engraving strength ONLY for actual punk pixels
+        // This creates the pixelated punk pattern instead of a solid block
         if (this.punkPixels[punkId] && this.punkPixels[punkId][pixelY] && this.punkPixels[punkId][pixelY][pixelX]) {
-          return 1.0; // Maximum engraving strength for punk pixels
+          return 1.0; // Maximum engraving for punk pixels only
         }
 
-        // For testing: if punk data is loaded but this pixel is empty, still engrave lightly
-        // This creates a visible border around the punk
-        if (this.punkPixels[punkId]) {
-          // Check if we're near an engraved pixel (create outline effect)
-          for (let dy = -1; dy <= 1; dy++) {
-            for (let dx = -1; dx <= 1; dx++) {
-              const checkX = pixelX + dx;
-              const checkY = pixelY + dy;
-              if (checkX >= 0 && checkX < 24 && checkY >= 0 && checkY < 24 &&
-                  this.punkPixels[punkId][checkY][checkX]) {
-                return 0.5; // Medium engraving for outline
-              }
-            }
-          }
-        }
-
-        return 0; // No engraving
+        return 0; // No engraving for empty pixels
       }
     };
   }

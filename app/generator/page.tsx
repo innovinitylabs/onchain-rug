@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { SectionWrapper } from '@/components/ui/section-wrapper'
 import { Shuffle, Download, FileText, Plus, X, Copy } from 'lucide-react'
 import Navigation from '@/components/Navigation'
 import NFTExporter from '@/components/NFTExporter'
@@ -3094,8 +3095,8 @@ export default function GeneratorPage() {
   // 7-segment display segment patterns for digits 0-9
 
   return (
-    <>
-      <Head>
+      <div className="page-wrapper">
+        <Head>
         <title>Rug Factory - Create Your Onchain Rug NFT | OnchainRugs</title>
         <meta name="description" content="Create unique, living Onchain Rug NFTs with custom text, 102 color palettes, and authentic cloth physics. Each rug ages over time and requires maintenance. Mint directly on Shape L2 blockchain." />
         <meta name="keywords" content="NFT generator, create NFT, generative art, custom NFT, rug NFT, textile NFT, woven art NFT, blockchain art generator, Shape L2 NFT, living NFT, aging NFT, NFT minting, custom text NFT" />
@@ -3110,14 +3111,13 @@ export default function GeneratorPage() {
         <meta name="twitter:image" content="https://onchainrugs.xyz/generator-og.jpg" />
         <link rel="canonical" href="https://onchainrugs.xyz/generator" />
       </Head>
-      <div className="page-wrapper">
-        <Navigation />
-        <main className="page-main">
+      <Navigation />
+      <main className="page-main pb-8">
         <div className="generator-container">
-      {/* Header */}
+          {/* Header */}
 
-        {/* Generator Page Layout - Monitor (Major) + Terminal (Controls) */}
-        <div className="generator-page-layout">
+          {/* Generator Page Layout - Monitor (Major) + Terminal (Controls) */}
+          <div className="generator-page-layout">
           {/* Monitor Area - Major Column */}
           <div className="monitor-column">
             <div className="monitor-wrapper">
@@ -3970,7 +3970,7 @@ export default function GeneratorPage() {
 
                   {/* Referral Program Component */}
                   <div className="mt-6 pt-4 border-t border-amber-600/30 pb-8">
-                    <AttributionCodeDisplay />
+                    {/* ERC Attribution moved to separate bottom section */}
                   </div>
 
                 </div>
@@ -3992,12 +3992,24 @@ export default function GeneratorPage() {
         </div>
       </main>
 
+      {/* ERC Attribution Section */}
+      <section className="bg-gradient-to-br from-amber-50 via-blue-50 to-indigo-50 border-t border-amber-200/50 py-12 px-4 w-full mt-8 mb-8 relative z-10">
+        <div className="w-full">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-bold text-amber-900 mb-2">ERC-8021 Attribution Program</h2>
+            <p className="text-amber-700">Share your unique ERC-8021 attribution code and earn commissions on referrals</p>
+          </div>
+          <div className="w-full">
+            <AttributionCodeDisplay />
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <div className="page-footer">
         <Footer />
       </div>
     </div>
-    </>
   )
 }
 

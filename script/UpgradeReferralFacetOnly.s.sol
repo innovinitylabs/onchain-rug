@@ -13,7 +13,7 @@ contract UpgradeReferralFacetOnly is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         // Get existing diamond address
-        diamondAddr = vm.envAddress("NEXT_PUBLIC_BASE_SEPOLIA_CONTRACT");
+        diamondAddr = vm.envAddress("NEXT_PUBLIC_ETHEREUM_SEPOLIA_CONTRACT");
         console.log("Upgrading referral facet at:", diamondAddr);
 
         // Deploy new referral facet

@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cryptopunk Rug Engraving - Pixelated Permanence</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            display: flex;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            max-width: 1400px;
+            width: 100%;
+            min-height: 800px;
+        }
+
+        .sidebar {
+            width: 320px;
+            background: #1a202c;
+            color: white;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .logo h1 {
+            font-family: 'Lora', serif;
+            font-size: 24px;
+            font-weight: 600;
+            color: #e2e8f0;
+            margin-bottom: 4px;
+        }
+
+        .logo p {
+            font-size: 14px;
+            color: #a0aec0;
+            font-weight: 300;
+        }
+
+        .section {
+            margin-bottom: 32px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #e2e8f0;
+            margin-bottom: 16px;
+            border-bottom: 1px solid #2d3748;
+            padding-bottom: 8px;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group label {
+            display: block;
+            font-size: 14px;
+            color: #e2e8f0;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .control-group input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #4a5568;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .control-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #4299e1;
+            cursor: pointer;
+        }
+
+        .control-group input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #4299e1;
+            cursor: pointer;
+            border: none;
+        }
+
+        .value-display {
+            display: inline-block;
+            margin-left: 8px;
+            font-size: 12px;
+            color: #a0aec0;
+            min-width: 40px;
+        }
+
+        .seed-display {
+            background: #2d3748;
+            border: 1px solid #4a5568;
+            border-radius: 6px;
+            padding: 12px;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            color: #4299e1;
+            margin-bottom: 12px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .btn {
+            flex: 1;
+            background: #4299e1;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .btn:hover {
+            background: #3182ce;
+        }
+
+        .btn.secondary {
+            background: #4a5568;
+        }
+
+        .btn.secondary:hover {
+            background: #2d3748;
+        }
+
+        .canvas-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #f7fafc;
+            position: relative;
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .loading {
+            color: #4a5568;
+            font-size: 18px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <div class="logo">
+                <h1>Pixelated Permanence</h1>
+                <p>Cryptopunk Rug Engraving</p>
+            </div>
+
+            <!-- Seed Section -->
+            <div class="section">
+                <div class="section-title">Seed</div>
+                <div class="seed-display" id="seed-display">12345</div>
+                <div class="button-group">
+                    <button class="btn secondary" id="prev-seed">← Prev</button>
+                    <button class="btn secondary" id="next-seed">Next →</button>
+                </div>
+                <button class="btn" id="random-seed">🎲 Random Seed</button>
+                <div class="control-group" style="margin-top: 12px;">
+                    <label>Jump to Seed:</label>
+                    <input type="number" id="jump-seed" placeholder="Enter seed..." style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #4a5568; background: #2d3748; color: white;">
+                    <button class="btn" id="go-seed" style="margin-top: 8px;">Go</button>
+                </div>
+            </div>
+
+            <!-- Parameters Section -->
+            <div class="section">
+                <div class="section-title">Parameters</div>
+
+                <div class="control-group">
+                    <label>Punk ID: <span class="value-display" id="punk-id-value">0</span></label>
+                    <input type="range" id="punk-id" min="0" max="624" step="1" value="0">
+                </div>
+
+                <div class="control-group">
+                    <label>Engraving Depth: <span class="value-display" id="depth-value">1.0</span></label>
+                    <input type="range" id="depth" min="0.1" max="2.0" step="0.1" value="1.0">
+                </div>
+
+                <div class="control-group">
+                    <label>Particle Count: <span class="value-display" id="particles-value">500</span></label>
+                    <input type="range" id="particles" min="100" max="2000" step="50" value="500">
+                </div>
+
+                <div class="control-group">
+                    <label>Flow Strength: <span class="value-display" id="flow-value">0.5</span></label>
+                    <input type="range" id="flow" min="0.1" max="1.0" step="0.1" value="0.5">
+                </div>
+
+                <div class="control-group">
+                    <label>Pixelation Scale: <span class="value-display" id="scale-value">1.0</span></label>
+                    <input type="range" id="scale" min="0.5" max="2.0" step="0.1" value="1.0">
+                </div>
+            </div>
+
+            <!-- Actions Section -->
+            <div class="section">
+                <div class="section-title">Actions</div>
+                <button class="btn" id="regenerate">🔄 Regenerate</button>
+                <button class="btn secondary" id="reset">↺ Reset</button>
+                <button class="btn secondary" id="download">💾 Download PNG</button>
+            </div>
+        </div>
+
+        <div class="canvas-container">
+            <div id="canvas-container">
+                <div class="loading">Initializing Cryptopunk Rug Engraving...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Algorithmic parameters
+        let params = {
+            seed: 12345,
+            punkId: 0,
+            depth: 1.0,
+            particleCount: 500,
+            flowStrength: 0.5,
+            pixelationScale: 1.0
+        };
+
+        // Sample Cryptopunk pixel data (24x24) - this would normally be loaded
+        let samplePunkPixels = [
+            // This is a simplified representation - in reality this would be loaded from actual punk data
+            [false, false, false, false, false, false, false, false, true, true, true, true, true, true, false, false, false, false, false, false, false, false, false, false],
+            [false, false, false, false, false, false, false, true, true, true, true, true, true, true, true, false, false, false, false, false, false, false, false, false],
+            [false, false, false, false, false, false, true, true, true, true, true, true, true, true, true, true, false, false, false, false, false, false, false, false],
+            [false, false, false, false, false, true, true, true, true, true, true, true, true, true, true, true, true, false, false, false, false, false, false, false],
+            [false, false, false, false, true, true, true, true, true, true, true, true, true, true, true, true, true, true, false, false, false, false, false, false],
+            [false, false, false, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, false, false, false, false, false],
+            [false, false, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, false, false, false, false],
+            [false, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, false, false, false],
+            [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, false, false],
+            [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, false, false],
+            [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, false, false],
+            [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, false, false],
+            [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, false, false],
+            [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, false, false],
+            [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, false, false],
+            [false, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, false, false, false],
+            [false, false, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, false, false, false, false],
+            [false, false, false, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, false, false, false, false, false],
+            [false, false, false, false, true, true, true, true, true, true, true, true, true, true, true, true, true, true, false, false, false, false, false, false],
+            [false, false, false, false, false, true, true, true, true, true, true, true, true, true, true, true, true, false, false, false, false, false, false, false],
+            [false, false, false, false, false, false, true, true, true, true, true, true, true, true, true, true, false, false, false, false, false, false, false, false],
+            [false, false, false, false, false, false, false, true, true, true, true, true, true, true, true, false, false, false, false, false, false, false, false, false],
+            [false, false, false, false, false, false, false, false, true, true, true, true, true, true, false, false, false, false, false, false, false, false, false, false],
+            [false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false]
+        ];
+
+        let particles = [];
+        let flowField = [];
+        let cols, rows;
+        let rugWidth, rugHeight;
+
+        function setup() {
+            // Create canvas to fit container
+            let container = document.getElementById('canvas-container');
+            let containerWidth = container.offsetWidth;
+            let containerHeight = container.offsetHeight;
+
+            // Use square canvas for rug
+            let size = Math.min(containerWidth, containerHeight) - 40;
+            let canvas = createCanvas(size, size);
+            canvas.parent('canvas-container');
+
+            rugWidth = width;
+            rugHeight = height;
+
+            // Initialize flow field
+            cols = floor(width / 20);
+            rows = floor(height / 20);
+            flowField = new Array(cols * rows);
+
+            // Initialize particles
+            initParticles();
+
+            // Set seeded randomness
+            randomSeed(params.seed);
+            noiseSeed(params.seed);
+
+            noLoop(); // We'll control rendering manually
+            redraw();
+        }
+
+        function initParticles() {
+            particles = [];
+            for (let i = 0; i < params.particleCount; i++) {
+                particles.push({
+                    x: random(width),
+                    y: random(height),
+                    vx: 0,
+                    vy: 0,
+                    life: random(100, 500),
+                    maxLife: 500,
+                    trail: []
+                });
+            }
+        }
+
+        function generateFlowField() {
+            for (let x = 0; x < cols; x++) {
+                for (let y = 0; y < rows; y++) {
+                    let angle = noise(x * 0.1, y * 0.1, params.seed * 0.001) * TWO_PI * 2;
+                    let vector = p5.Vector.fromAngle(angle);
+                    vector.mult(params.flowStrength);
+                    flowField[x + y * cols] = vector;
+                }
+            }
+        }
+
+        function updateParticles() {
+            for (let particle of particles) {
+                // Get flow field force
+                let x = floor(particle.x / 20);
+                let y = floor(particle.y / 20);
+                let index = x + y * cols;
+
+                if (index >= 0 && index < flowField.length) {
+                    let force = flowField[index];
+                    particle.vx += force.x * 0.1;
+                    particle.vy += force.y * 0.1;
+                }
+
+                // Add some noise for organic movement
+                particle.vx += (noise(particle.x * 0.01, particle.y * 0.01, frameCount * 0.01) - 0.5) * 0.5;
+                particle.vy += (noise(particle.x * 0.01 + 1000, particle.y * 0.01, frameCount * 0.01) - 0.5) * 0.5;
+
+                // Apply damping
+                particle.vx *= 0.98;
+                particle.vy *= 0.98;
+
+                // Update position
+                particle.x += particle.vx;
+                particle.y += particle.vy;
+
+                // Add to trail
+                particle.trail.push({x: particle.x, y: particle.y});
+
+                // Limit trail length
+                if (particle.trail.length > 20) {
+                    particle.trail.shift();
+                }
+
+                // Boundary wrapping
+                if (particle.x < 0) particle.x = width;
+                if (particle.x > width) particle.x = 0;
+                if (particle.y < 0) particle.y = height;
+                if (particle.y > height) particle.y = 0;
+
+                // Age particle
+                particle.life--;
+                if (particle.life <= 0) {
+                    // Respawn
+                    particle.x = random(width);
+                    particle.y = random(height);
+                    particle.vx = 0;
+                    particle.vy = 0;
+                    particle.life = random(100, 500);
+                    particle.trail = [];
+                }
+            }
+        }
+
+        function draw() {
+            // Generate flow field
+            generateFlowField();
+
+            // Update particles
+            updateParticles();
+
+            // Clear background with subtle gradient
+            for (let y = 0; y < height; y++) {
+                let inter = map(y, 0, height, 0, 1);
+                let c = lerpColor(color(245, 245, 220), color(220, 220, 200), inter);
+                stroke(c);
+                line(0, y, width, y);
+            }
+
+            // Draw rug texture
+            drawRugTexture();
+
+            // Draw Cryptopunk engraving
+            drawCryptopunkEngraving();
+
+            // Draw particle trails (engraving effect)
+            drawParticleEngravings();
+
+            // Draw rug border
+            drawRugBorder();
+        }
+
+        function drawRugTexture() {
+            // Draw subtle weave pattern
+            stroke(139, 69, 19, 30);
+            strokeWeight(1);
+
+            let spacing = 8;
+            for (let x = 0; x < width; x += spacing) {
+                if (random() > 0.7) {
+                    line(x, 0, x, height);
+                }
+            }
+
+            for (let y = 0; y < height; y += spacing) {
+                if (random() > 0.7) {
+                    line(0, y, width, y);
+                }
+            }
+        }
+
+        function drawCryptopunkEngraving() {
+            // Calculate punk position and size (centered)
+            let punkSize = min(width, height) * 0.7;
+            let punkX = (width - punkSize) / 2;
+            let punkY = (height - punkSize) / 2;
+
+            // Draw pixelated punk
+            noStroke();
+            for (let py = 0; py < 24; py++) {
+                for (let px = 0; px < 24; px++) {
+                    if (samplePunkPixels[py] && samplePunkPixels[py][px]) {
+                        // Calculate screen position
+                        let screenX = punkX + (px / 24) * punkSize;
+                        let screenY = punkY + (py / 24) * punkSize;
+                        let pixelSize = punkSize / 24;
+
+                        // Add depth/engraving effect
+                        let depth = params.depth;
+                        fill(101, 67, 33, 150 * depth); // Brown engraving color
+                        rect(screenX, screenY, pixelSize, pixelSize);
+                    }
+                }
+            }
+        }
+
+        function drawParticleEngravings() {
+            // Draw particle trails as engraving marks
+            for (let particle of particles) {
+                // Draw trail
+                for (let i = 0; i < particle.trail.length - 1; i++) {
+                    let alpha = map(i, 0, particle.trail.length - 1, 50, 150);
+                    stroke(101, 67, 33, alpha);
+                    strokeWeight(0.5);
+                    line(
+                        particle.trail[i].x,
+                        particle.trail[i].y,
+                        particle.trail[i + 1].x,
+                        particle.trail[i + 1].y
+                    );
+                }
+
+                // Draw particle as small engraving mark
+                noStroke();
+                fill(139, 69, 19, 100);
+                ellipse(particle.x, particle.y, 2, 2);
+            }
+        }
+
+        function drawRugBorder() {
+            // Draw decorative border
+            stroke(139, 69, 19);
+            strokeWeight(3);
+            noFill();
+            rect(10, 10, width - 20, height - 20);
+
+            // Add fringe effect
+            strokeWeight(1);
+            for (let i = 0; i < 50; i++) {
+                let x = random(width);
+                let y = random([0, height]);
+                let len = random(5, 15);
+                line(x, y, x, y + len);
+            }
+        }
+
+        // UI Event Handlers
+        function updateParam(param, value) {
+            params[param] = parseFloat(value) || value;
+
+            // Update display
+            document.getElementById(param + '-value').textContent = value;
+
+            // Special handling for seed
+            if (param === 'seed') {
+                randomSeed(params.seed);
+                noiseSeed(params.seed);
+                document.getElementById('seed-display').textContent = params.seed;
+            }
+
+            // Regenerate on parameter change
+            if (param !== 'seed') {
+                redraw();
+            }
+        }
+
+        // Initialize controls
+        document.addEventListener('DOMContentLoaded', function() {
+            // Parameter sliders
+            const params = ['punk-id', 'depth', 'particles', 'flow', 'scale'];
+            params.forEach(param => {
+                const element = document.getElementById(param);
+                const display = document.getElementById(param + '-value');
+                if (element && display) {
+                    display.textContent = element.value;
+                    element.addEventListener('input', function(e) {
+                        updateParam(param.replace('-', ''), e.target.value);
+                    });
+                }
+            });
+
+            // Seed controls
+            document.getElementById('prev-seed').addEventListener('click', function() {
+                params.seed--;
+                updateParam('seed', params.seed);
+                redraw();
+            });
+
+            document.getElementById('next-seed').addEventListener('click', function() {
+                params.seed++;
+                updateParam('seed', params.seed);
+                redraw();
+            });
+
+            document.getElementById('random-seed').addEventListener('click', function() {
+                params.seed = floor(random(1000000));
+                updateParam('seed', params.seed);
+                redraw();
+            });
+
+            document.getElementById('jump-seed').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    const seed = parseInt(this.value);
+                    if (!isNaN(seed)) {
+                        params.seed = seed;
+                        updateParam('seed', params.seed);
+                        redraw();
+                    }
+                }
+            });
+
+            document.getElementById('go-seed').addEventListener('click', function() {
+                const seed = parseInt(document.getElementById('jump-seed').value);
+                if (!isNaN(seed)) {
+                    params.seed = seed;
+                    updateParam('seed', params.seed);
+                    redraw();
+                }
+            });
+
+            // Action buttons
+            document.getElementById('regenerate').addEventListener('click', function() {
+                redraw();
+            });
+
+            document.getElementById('reset').addEventListener('click', function() {
+                // Reset to defaults
+                params.depth = 1.0;
+                params.particleCount = 500;
+                params.flowStrength = 0.5;
+                params.pixelationScale = 1.0;
+
+                // Update UI
+                document.getElementById('depth').value = params.depth;
+                document.getElementById('depth-value').textContent = params.depth;
+                document.getElementById('particles').value = params.particleCount;
+                document.getElementById('particles-value').textContent = params.particleCount;
+                document.getElementById('flow').value = params.flowStrength;
+                document.getElementById('flow-value').textContent = params.flowStrength;
+                document.getElementById('scale').value = params.pixelationScale;
+                document.getElementById('scale-value').textContent = params.pixelationScale;
+
+                initParticles();
+                redraw();
+            });
+
+            document.getElementById('download').addEventListener('click', function() {
+                saveCanvas('cryptopunk-rug-engraving-' + params.seed, 'png');
+            });
+        });
+    </script>
+</body>
+</html>
