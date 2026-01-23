@@ -11,8 +11,8 @@ export const metadata: Metadata = {
     "OnchainRugs referrals", "NFT affiliate program", "earn from NFT sales", "referral commissions"
   ],
   openGraph: {
-    title: "Referral Program - Earn 5% Commission | OnchainRugs",
-    description: "Earn 5% commission on every NFT mint and marketplace purchase through our referral program. Share your unique link and start earning today.",
+    title: "Referral Program - Earn 2.5% Commission | OnchainRugs",
+    description: "Earn 2.5% commission on every NFT mint and marketplace purchase through our referral program. Share your unique link and start earning today.",
     url: 'https://onchainrugs.xyz/referrals',
     siteName: 'OnchainRugs',
     images: [
@@ -29,8 +29,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: "Referral Program - Earn 5% Commission | OnchainRugs",
-    description: "Earn 5% commission on every NFT mint and marketplace purchase through our referral program.",
+    title: "Referral Program - Earn 2.5% Commission | OnchainRugs",
+    description: "Earn 2.5% commission on every NFT mint and marketplace purchase through our referral program.",
     images: ['/OnchainRugs.png'],
   },
 }

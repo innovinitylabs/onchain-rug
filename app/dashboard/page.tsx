@@ -128,6 +128,7 @@ export default function DashboardPage() {
   const [refreshing, setRefreshing] = useState(false)
   const [fullScreenMode, setFullScreenMode] = useState(false)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
+  const [refreshingNFT, setRefreshingNFT] = useState<number | null>(null)
 
   // AI Agent Authorization State
   const [agentAddress, setAgentAddress] = useState('')
@@ -749,6 +750,8 @@ export default function DashboardPage() {
   const handleRefreshNFT = async (tokenId: number) => {
     console.log(`Refreshing specific NFT #${tokenId}...`)
 
+    setRefreshingNFT(tokenId)
+
     try {
       // Find the NFT in the current collection
       const existingIndex = userRugs.findIndex(rug => rug.tokenId === tokenId)
@@ -779,6 +782,8 @@ export default function DashboardPage() {
       }
     } catch (error) {
       console.error(`Failed to refresh NFT #${tokenId}:`, error)
+    } finally {
+      setRefreshingNFT(null)
     }
   }
 
@@ -1463,14 +1468,20 @@ export default function DashboardPage() {
 
                         {/* Quick Actions - Bottom */}
                         <div className="space-y-2 pt-4 border-t border-white/10">
-                          <button className="w-full px-3 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded transition-colors duration-200 text-sm">
+                          <a
+                            href={`/market?tokenId=${rug.tokenId}`}
+                            className="w-full px-3 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded transition-colors duration-200 text-sm inline-flex items-center justify-center"
+                          >
                             <ExternalLink className="w-3 h-3 inline mr-1" />
-                            OpenSea
-                          </button>
-                          <button className="w-full px-3 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 rounded transition-colors duration-200 text-sm">
+                            View on Marketplace
+                          </a>
+                          <a
+                            href={`/market?tokenId=${rug.tokenId}&action=list`}
+                            className="w-full px-3 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 rounded transition-colors duration-200 text-sm inline-flex items-center justify-center"
+                          >
                             <TrendingUp className="w-3 h-3 inline mr-1" />
-                            List
-                          </button>
+                            List for Sale
+                          </a>
                         </div>
                       </div>
                     </div>
@@ -1515,11 +1526,17 @@ export default function DashboardPage() {
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleRefreshNFT(selectedRug.tokenId)}
-                          disabled={refreshing}
-                          className="text-white/60 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed p-1"
-                          title="Refresh NFT data"
+                          disabled={refreshingNFT === selectedRug.tokenId}
+                          className={`p-2 rounded-md transition-all duration-200 ${
+                            refreshingNFT === selectedRug.tokenId
+                              ? 'bg-blue-500/20 text-blue-400 cursor-not-allowed'
+                              : 'text-white/60 hover:text-white hover:bg-white/10'
+                          }`}
+                          title={refreshingNFT === selectedRug.tokenId ? 'Refreshing...' : 'Refresh NFT data'}
                         >
-                          <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
+                          <RefreshCw className={`w-4 h-4 ${
+                            refreshingNFT === selectedRug.tokenId ? 'animate-spin' : ''
+                          }`} />
                         </button>
                         <button
                           onClick={() => setSelectedRug(null)}
@@ -1601,14 +1618,20 @@ export default function DashboardPage() {
                     {!fullScreenMode && (
                       <>
                         <div className="grid grid-cols-2 gap-3 max-w-md mx-auto">
-                      <button className="px-4 py-3 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded-lg transition-colors duration-200">
+                      <a
+                        href={`/market?tokenId=${selectedRug.tokenId}`}
+                        className="px-4 py-3 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded-lg transition-colors duration-200 inline-flex items-center justify-center"
+                      >
                         <ExternalLink className="w-4 h-4 inline mr-2" />
-                        View on OpenSea
-                      </button>
-                      <button className="px-4 py-3 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 rounded-lg transition-colors duration-200">
+                        View on Marketplace
+                      </a>
+                      <a
+                        href={`/market?tokenId=${selectedRug.tokenId}&action=list`}
+                        className="px-4 py-3 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 rounded-lg transition-colors duration-200 inline-flex items-center justify-center"
+                      >
                         <TrendingUp className="w-4 h-4 inline mr-2" />
                         List for Sale
-                      </button>
+                      </a>
                     </div>
 
                     {/* Management Panel - Below Art */}
