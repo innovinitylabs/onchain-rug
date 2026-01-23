@@ -10,10 +10,10 @@ export const metadata: Metadata = {
 }
 
 export default function AgentsPage() {
-  // Only show on localhost for development/testing
-  const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+  // Check if we're in development mode
+  const isDevelopment = process.env.NODE_ENV === 'development'
 
-  if (!isLocalhost) {
+  if (!isDevelopment) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col">
         <Navigation />
