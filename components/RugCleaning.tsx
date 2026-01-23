@@ -6,7 +6,7 @@ import { estimateContractGasWithRetry, getRecommendedGasOptions, formatGasEstima
 import { useRugAging, useCleanRug, useRestoreRug, useMasterRestoreRug, useMaintenanceOptions } from '@/hooks/use-rug-aging'
 import { useContractConfig } from '@/hooks/use-contract-config'
 import { motion } from 'framer-motion'
-import { Droplets, AlertCircle, CheckCircle, Clock, Sparkles, Crown } from 'lucide-react'
+import { Droplets, AlertCircle, CheckCircle, Clock, Sparkles, Crown, ChevronDown, ChevronUp } from 'lucide-react'
 import { config, agingConfig } from '@/lib/config'
 import { formatEther } from 'viem'
 import { SUPPORTED_CHAIN_IDS, getChainName } from '@/lib/networks'
@@ -72,6 +72,7 @@ export function RugCleaning({ tokenId, mintTime, lastCleaned: propLastCleaned, o
   const [showShareModal, setShowShareModal] = useState(false)
   const [shareAction, setShareAction] = useState<ShareAction>('clean')
   const [shareTxHash, setShareTxHash] = useState<string | undefined>()
+  const [showAdvancedRestore, setShowAdvancedRestore] = useState(false)
 
   // Monitor transaction completion and refetch data (only once per transaction)
   useEffect(() => {
@@ -631,29 +632,6 @@ export function RugCleaning({ tokenId, mintTime, lastCleaned: propLastCleaned, o
         </div>
       )}
 
-      {/* Restore Gas Estimation Display */}
-      {restoreGasEstimate && (
-        <div className="bg-purple-900/50 border border-purple-500/30 rounded p-3">
-          <div className="flex items-center gap-2 text-purple-400 text-sm font-mono mb-1">
-            ⛽ Restore Gas Estimate
-          </div>
-          <div className="text-purple-300 text-xs font-mono break-all">
-            {restoreGasEstimate}
-          </div>
-        </div>
-      )}
-
-      {/* Master Restore Gas Estimation Display */}
-      {masterRestoreGasEstimate && (
-        <div className="bg-indigo-900/50 border border-indigo-500/30 rounded p-3">
-          <div className="flex items-center gap-2 text-indigo-400 text-sm font-mono mb-1">
-            ⛽ Master Restore Gas Estimate
-          </div>
-          <div className="text-indigo-300 text-xs font-mono break-all">
-            {masterRestoreGasEstimate}
-          </div>
-        </div>
-      )}
 
       {/* Clean Button */}
       <motion.button
@@ -667,29 +645,87 @@ export function RugCleaning({ tokenId, mintTime, lastCleaned: propLastCleaned, o
         {getCleanButtonText()}
       </motion.button>
 
-      {/* Restore Aging Button */}
-      <motion.button
-        onClick={handleRestore}
-        disabled={!isConnected || !isCorrectChain || agingLevel === 0 || restorePending || restoreConfirming}
-        className={`w-full px-4 py-3 rounded font-mono transition-all duration-200 border flex items-center justify-center gap-2 text-sm ${getRestoreButtonClass()}`}
-        whileHover={{ scale: isConnected && isCorrectChain && agingLevel > 0 ? 1.02 : 1 }}
-        whileTap={{ scale: isConnected && isCorrectChain && agingLevel > 0 ? 0.98 : 1 }}
-      >
-        <Sparkles className="w-4 h-4" />
-        {getRestoreButtonText()}
-      </motion.button>
+      {/* Advanced Restore Options - Collapsible */}
+      <div className="border border-slate-600/50 rounded-lg overflow-hidden">
+        <button
+          onClick={() => setShowAdvancedRestore(!showAdvancedRestore)}
+          className="w-full px-4 py-3 bg-slate-700/30 hover:bg-slate-700/50 text-slate-300 hover:text-white transition-all duration-200 flex items-center justify-between text-sm font-mono"
+        >
+          <span className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4" />
+            Advanced Restoration (Emergency Only)
+          </span>
+          {showAdvancedRestore ? (
+            <ChevronUp className="w-4 h-4" />
+          ) : (
+            <ChevronDown className="w-4 h-4" />
+          )}
+        </button>
 
-      {/* Master Restore Button */}
-      <motion.button
-        onClick={handleMasterRestore}
-        disabled={!isConnected || !isCorrectChain || agingLevel === 0 || masterRestorePending || masterRestoreConfirming}
-        className={`w-full px-4 py-3 rounded font-mono transition-all duration-200 border flex items-center justify-center gap-2 text-sm ${getMasterRestoreButtonClass()}`}
-        whileHover={{ scale: isConnected && isCorrectChain && agingLevel > 0 ? 1.02 : 1 }}
-        whileTap={{ scale: isConnected && isCorrectChain && agingLevel > 0 ? 0.98 : 1 }}
-      >
-        <Crown className="w-4 h-4" />
-        {getMasterRestoreButtonText()}
-      </motion.button>
+        {showAdvancedRestore && (
+          <div className="p-4 bg-slate-800/50 space-y-4">
+            {/* Restore Gas Estimation Display */}
+            {restoreGasEstimate && (
+              <div className="bg-purple-900/50 border border-purple-500/30 rounded p-3">
+                <div className="flex items-center gap-2 text-purple-400 text-sm font-mono mb-1">
+                  ⛽ Restore Gas Estimate
+                </div>
+                <div className="text-purple-300 text-xs font-mono break-all">
+                  {restoreGasEstimate}
+                </div>
+              </div>
+            )}
+
+            {/* Master Restore Gas Estimation Display */}
+            {masterRestoreGasEstimate && (
+              <div className="bg-indigo-900/50 border border-indigo-500/30 rounded p-3">
+                <div className="flex items-center gap-2 text-indigo-400 text-sm font-mono mb-1">
+                  ⛽ Master Restore Gas Estimate
+                </div>
+                <div className="text-indigo-300 text-xs font-mono break-all">
+                  {masterRestoreGasEstimate}
+                </div>
+              </div>
+            )}
+
+            {/* Restore Aging Button */}
+            <motion.button
+              onClick={handleRestore}
+              disabled={!isConnected || !isCorrectChain || agingLevel === 0 || restorePending || restoreConfirming}
+              className={`w-full px-4 py-3 rounded font-mono transition-all duration-200 border flex items-center justify-center gap-2 text-sm ${getRestoreButtonClass()}`}
+              whileHover={{ scale: isConnected && isCorrectChain && agingLevel > 0 ? 1.02 : 1 }}
+              whileTap={{ scale: isConnected && isCorrectChain && agingLevel > 0 ? 0.98 : 1 }}
+            >
+              <Sparkles className="w-4 h-4" />
+              {getRestoreButtonText()}
+            </motion.button>
+
+            {/* Master Restore Button */}
+            <motion.button
+              onClick={handleMasterRestore}
+              disabled={!isConnected || !isCorrectChain || agingLevel === 0 || masterRestorePending || masterRestoreConfirming}
+              className={`w-full px-4 py-3 rounded font-mono transition-all duration-200 border flex items-center justify-center gap-2 text-sm ${getMasterRestoreButtonClass()}`}
+              whileHover={{ scale: isConnected && isCorrectChain && agingLevel > 0 ? 1.02 : 1 }}
+              whileTap={{ scale: isConnected && isCorrectChain && agingLevel > 0 ? 0.98 : 1 }}
+            >
+              <Crown className="w-4 h-4" />
+              {getMasterRestoreButtonText()}
+            </motion.button>
+
+            <div className="bg-amber-900/30 border border-amber-500/30 rounded p-3">
+              <div className="flex items-center gap-2 text-amber-400 text-sm font-mono mb-2">
+                <AlertCircle className="w-4 h-4" />
+                Warning
+              </div>
+              <div className="text-amber-300 text-xs font-mono space-y-1">
+                <div>• These restoration functions are expensive and should only be used in emergencies</div>
+                <div>• They ensure rug conditions are not permanently irreversible</div>
+                <div>• Consider regular cleaning as the primary maintenance method</div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Network Warning */}
       {isConnected && !isCorrectChain && (
@@ -718,11 +754,10 @@ export function RugCleaning({ tokenId, mintTime, lastCleaned: propLastCleaned, o
         </div>
         <div className="text-blue-300 text-xs font-mono space-y-1">
           <div>• <strong>Clean:</strong> Removes dirt and delays aging progression (free maintenance periods available)</div>
-          <div>• <strong>Restore Aging:</strong> Repairs aging (reduces aging level by 1)</div>
-          <div>• <strong>Master Restore:</strong> Complete aging restoration (resets aging to pristine)</div>
+          <div>• <strong>Advanced Restoration:</strong> Emergency aging repair options (expand below for details)</div>
           <div>• Cleaning: Free for first {contractConfig ? Math.floor(contractConfig.freeCleanDays / 60) : agingConfig.freeCleaningDays} minutes, then {contractConfig ? formatEther(BigInt(contractConfig.cleaningCost)) : formatEther(BigInt(agingConfig.cleaningCosts.paid))} ETH</div>
-          <div>• Aging Restoration: {contractConfig ? formatEther(BigInt(contractConfig.restorationCost)) : formatEther(BigInt(agingConfig.restorationCosts.paid))} ETH</div>
-          <div>• Master Aging Restoration: {contractConfig ? formatEther(BigInt(contractConfig.masterRestorationCost)) : formatEther(BigInt(agingConfig.masterRestorationCosts.paid))} ETH</div>
+          <div>• Aging Restoration: {contractConfig ? formatEther(BigInt(contractConfig.restorationCost)) : formatEther(BigInt(agingConfig.restorationCosts.paid))} ETH (advanced option)</div>
+          <div>• Master Aging Restoration: {contractConfig ? formatEther(BigInt(contractConfig.masterRestorationCost)) : formatEther(BigInt(agingConfig.masterRestorationCosts.paid))} ETH (advanced option)</div>
         </div>
       </div>
     </div>

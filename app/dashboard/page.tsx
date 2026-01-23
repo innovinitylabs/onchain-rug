@@ -1228,74 +1228,76 @@ export default function DashboardPage() {
           </div>
         </motion.div>
 
-        {/* Diamond Frame Royalty Pool Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.15 }}
-          className="mb-8"
-        >
-          <div className="bg-gradient-to-r from-yellow-600/20 to-amber-600/20 border border-yellow-500/30 rounded-xl p-6 backdrop-blur-sm">
-            <div className="flex items-center gap-3 mb-4">
-              <Coins className="w-6 h-6 text-yellow-400" />
-              <h2 className="text-xl font-bold text-white">Diamond Frame Royalties</h2>
-              <Crown className="w-5 h-5 text-yellow-400" />
-            </div>
-
-            <p className="text-white/70 mb-4">
-              Claim your share of royalties from the Diamond Frame Pool. Only NFTs with diamond frames are eligible.
-            </p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-              <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
-                <div className="text-xs text-white/60 mb-1">Pool Balance</div>
-                <div className="text-lg font-bold text-yellow-400">
-                  {poolBalanceLoading ? (
-                    <span className="text-white/40">Loading...</span>
-                  ) : poolBalance !== undefined ? (
-                    `${formatEther(poolBalance)} ETH`
-                  ) : (
-                    <span className="text-white/40">N/A</span>
-                  )}
-                </div>
+        {/* Diamond Frame Royalty Pool Section - Only visible on localhost */}
+        {typeof window !== 'undefined' && window.location.hostname === 'localhost' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.15 }}
+            className="mb-8"
+          >
+            <div className="bg-gradient-to-r from-yellow-600/20 to-amber-600/20 border border-yellow-500/30 rounded-xl p-6 backdrop-blur-sm">
+              <div className="flex items-center gap-3 mb-4">
+                <Coins className="w-6 h-6 text-yellow-400" />
+                <h2 className="text-xl font-bold text-white">Diamond Frame Royalties</h2>
+                <Crown className="w-5 h-5 text-yellow-400" />
               </div>
-              <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
-                <div className="text-xs text-white/60 mb-1">Your Diamond Frames</div>
-                <div className="text-lg font-bold text-yellow-400">
-                  {getDiamondFrameNFTs().length}
-                </div>
-              </div>
-            </div>
 
-            <button
-              onClick={handleClaimRoyalties}
-              disabled={!hasDiamondFrames || isClaimingRoyalties || isPending || isConfirming || !contractAddress}
-              className={`w-full px-6 py-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 shadow-lg ${
-                hasDiamondFrames && contractAddress
-                  ? 'bg-gradient-to-r from-yellow-600 to-amber-600 hover:from-yellow-700 hover:to-amber-700 text-white transform hover:scale-105 active:scale-95'
-                  : 'bg-gray-600 text-gray-400 cursor-not-allowed'
-              }`}
-            >
-              {isClaimingRoyalties || isPending ? (
-                <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  {isConfirming ? 'Confirming...' : 'Claiming...'}
-                </>
-              ) : (
-                <>
-                  <Coins className="w-4 h-4" />
-                  {hasDiamondFrames ? 'Claim Royalties' : 'No Diamond Frame NFTs'}
-                </>
-              )}
-            </button>
-
-            {!hasDiamondFrames && (
-              <p className="mt-3 text-sm text-white/50 text-center">
-                You need at least one NFT with a diamond frame to claim royalties
+              <p className="text-white/70 mb-4">
+                Claim your share of royalties from the Diamond Frame Pool. Only NFTs with diamond frames are eligible.
               </p>
-            )}
-          </div>
-        </motion.div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
+                  <div className="text-xs text-white/60 mb-1">Pool Balance</div>
+                  <div className="text-lg font-bold text-yellow-400">
+                    {poolBalanceLoading ? (
+                      <span className="text-white/40">Loading...</span>
+                    ) : poolBalance !== undefined ? (
+                      `${formatEther(poolBalance)} ETH`
+                    ) : (
+                      <span className="text-white/40">N/A</span>
+                    )}
+                  </div>
+                </div>
+                <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
+                  <div className="text-xs text-white/60 mb-1">Your Diamond Frames</div>
+                  <div className="text-lg font-bold text-yellow-400">
+                    {getDiamondFrameNFTs().length}
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={handleClaimRoyalties}
+                disabled={!hasDiamondFrames || isClaimingRoyalties || isPending || isConfirming || !contractAddress}
+                className={`w-full px-6 py-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 shadow-lg ${
+                  hasDiamondFrames && contractAddress
+                    ? 'bg-gradient-to-r from-yellow-600 to-amber-600 hover:from-yellow-700 hover:to-amber-700 text-white transform hover:scale-105 active:scale-95'
+                    : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                {isClaimingRoyalties || isPending ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    {isConfirming ? 'Confirming...' : 'Claiming...'}
+                  </>
+                ) : (
+                  <>
+                    <Coins className="w-4 h-4" />
+                    {hasDiamondFrames ? 'Claim Royalties' : 'No Diamond Frame NFTs'}
+                  </>
+                )}
+              </button>
+
+              {!hasDiamondFrames && (
+                <p className="mt-3 text-sm text-white/50 text-center">
+                  You need at least one NFT with a diamond frame to claim royalties
+                </p>
+              )}
+            </div>
+          </motion.div>
+        )}
 
         {/* Refresh Button */}
         <div className="flex justify-center mb-8 relative z-10">
@@ -1663,15 +1665,6 @@ export default function DashboardPage() {
                         onRefreshNFT={handleRefreshNFT}
                       />
 
-                      {/* Marketplace */}
-                      <div className="bg-slate-700/50 rounded-lg p-4">
-                        <h3 className="text-lg font-semibold text-white mb-3">Marketplace</h3>
-                        <RugMarketplace
-                          tokenId={selectedRug.tokenId}
-                          isOwner={true}
-                          currentPrice={undefined}
-                        />
-                      </div>
 
                       {/* Transfer */}
                       <div className="bg-slate-700/50 rounded-lg p-4">
