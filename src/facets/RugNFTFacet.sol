@@ -195,14 +195,14 @@ contract RugNFTFacet is ICreatorToken {
         if (attribution.hasAttribution && attribution.codes.length > 0) {
             emit MintAttributed(tokenId, recipient, attribution.codes);
             
-            // Process referral rewards if referral code found
+            // Process attribution rewards if attribution code found
             RugAttributionRegistryFacet attributionFacet = RugAttributionRegistryFacet(address(this));
             address referrer = attributionFacet.extractReferrerFromAttributionCodes(attribution.codes, recipient);
 
             if (referrer != address(0)) {
                 // Calculate attribution reward (percentage of mint fee)
                 uint256 attributionReward = attributionFacet.calculateMintAttributionReward(price);
-                
+
                 if (attributionReward > 0) {
                     // Pay referrer (only if contract has sufficient balance)
                     // Note: For mints, the fee comes from msg.value, so we need to ensure we have enough

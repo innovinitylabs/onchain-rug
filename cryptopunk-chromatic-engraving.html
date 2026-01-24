@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cryptopunk Chromatic Engraving - Spectral Carving</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            display: flex;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            max-width: 1400px;
+            width: 100%;
+            min-height: 800px;
+        }
+
+        .sidebar {
+            width: 320px;
+            background: #1a202c;
+            color: white;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .logo h1 {
+            font-family: 'Lora', serif;
+            font-size: 20px;
+            font-weight: 600;
+            color: #e2e8f0;
+            margin-bottom: 4px;
+        }
+
+        .logo p {
+            font-size: 12px;
+            color: #a0aec0;
+            font-weight: 300;
+        }
+
+        .section {
+            margin-bottom: 32px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #e2e8f0;
+            margin-bottom: 16px;
+            border-bottom: 1px solid #2d3748;
+            padding-bottom: 8px;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group label {
+            display: block;
+            font-size: 14px;
+            color: #e2e8f0;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .control-group input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #4a5568;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .control-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #4299e1;
+            cursor: pointer;
+        }
+
+        .control-group input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #4299e1;
+            cursor: pointer;
+            border: none;
+        }
+
+        .value-display {
+            display: inline-block;
+            margin-left: 8px;
+            font-size: 12px;
+            color: #a0aec0;
+            min-width: 40px;
+        }
+
+        .seed-display {
+            background: #2d3748;
+            border: 1px solid #4a5568;
+            border-radius: 6px;
+            padding: 12px;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            color: #4299e1;
+            margin-bottom: 12px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .btn {
+            flex: 1;
+            background: #4299e1;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .btn:hover {
+            background: #3182ce;
+        }
+
+        .btn.secondary {
+            background: #4a5568;
+        }
+
+        .btn.secondary:hover {
+            background: #2d3748;
+        }
+
+        .canvas-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #f7fafc;
+            position: relative;
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .loading {
+            color: #4a5568;
+            font-size: 18px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <div class="logo">
+                <h1>Spectral Carving</h1>
+                <p>Chromatic Engraving</p>
+            </div>
+
+            <!-- Seed Section -->
+            <div class="section">
+                <div class="section-title">Seed</div>
+                <div class="seed-display" id="seed-display">12345</div>
+                <div class="button-group">
+                    <button class="btn secondary" id="prev-seed">← Prev</button>
+                    <button class="btn secondary" id="next-seed">Next →</button>
+                </div>
+                <button class="btn" id="random-seed">🎲 Random Seed</button>
+                <div class="control-group" style="margin-top: 12px;">
+                    <label>Jump to Seed:</label>
+                    <input type="number" id="jump-seed" placeholder="Enter seed..." style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #4a5568; background: #2d3748; color: white;">
+                    <button class="btn" id="go-seed" style="margin-top: 8px;">Go</button>
+                </div>
+            </div>
+
+            <!-- Parameters Section -->
+            <div class="section">
+                <div class="section-title">Parameters</div>
+
+                <div class="control-group">
+                    <label>Punk ID: <span class="value-display" id="punk-id-value">0</span></label>
+                    <input type="range" id="punk-id" min="0" max="624" step="1" value="0">
+                </div>
+
+                <div class="control-group">
+                    <label>Color Influence: <span class="value-display" id="color-influence-value">0.8</span></label>
+                    <input type="range" id="color-influence" min="0.1" max="1.0" step="0.1" value="0.8">
+                </div>
+
+                <div class="control-group">
+                    <label>Depth Mapping: <span class="value-display" id="depth-mapping-value">rgb</span></label>
+                    <select id="depth-mapping" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #4a5568; background: #2d3748; color: white;">
+                        <option value="rgb">RGB Channels</option>
+                        <option value="hsv">HSV Values</option>
+                        <option value="luminance">Luminance</option>
+                        <option value="saturation">Saturation</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label>Engraving Style: <span class="value-display" id="style-value">depth</span></label>
+                    <select id="style" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #4a5568; background: #2d3748; color: white;">
+                        <option value="depth">Depth Carving</option>
+                        <option value="texture">Texture Variation</option>
+                        <option value="hybrid">Hybrid Approach</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label>Particle Density: <span class="value-display" id="particles-value">300</span></label>
+                    <input type="range" id="particles" min="50" max="1000" step="25" value="300">
+                </div>
+            </div>
+
+            <!-- Actions Section -->
+            <div class="section">
+                <div class="section-title">Actions</div>
+                <button class="btn" id="regenerate">🔄 Regenerate</button>
+                <button class="btn secondary" id="reset">↺ Reset</button>
+                <button class="btn secondary" id="download">💾 Download PNG</button>
+            </div>
+        </div>
+
+        <div class="canvas-container">
+            <div id="canvas-container">
+                <div class="loading">Initializing Chromatic Engraving...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Algorithmic parameters
+        let params = {
+            seed: 12345,
+            punkId: 0,
+            colorInfluence: 0.8,
+            depthMapping: 'rgb',
+            style: 'depth',
+            particleDensity: 300
+        };
+
+        // Sample Cryptopunk pixel data with COLORS (24x24) - this would normally be loaded from SVG
+        let samplePunkPixels = [
+            // Row 0
+            [null, null, null, null, null, null, null, null, {r:255, g:246, b:142}, {r:255, g:246, b:142}, {r:255, g:246, b:142}, {r:255, g:246, b:142}, {r:255, g:246, b:142}, {r:255, g:246, b:142}, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+            // Row 1
+            [null, null, null, null, null, null, null, {r:255, g:246, b:142}, {r:255, g:246, b:142}, {r:255, g:246, b:142}, {r:255, g:246, b:142}, {r:255, g:246, b:142}, {r:255, g:246, b:142}, {r:255, g:246, b:142}, {r:255, g:246, b:142}, null, null, null, null, null, null, null, null, null, null],
+            // Row 2
+            [null, null, null, null, null, null, {r:255, g:246, b:142}, {r:255, g:246, b:142}, {r:255, g:246, b:142}, {r:255, g:246, b:142}, {r:255, g:246, b:142}, {r:255, g:246, b:142}, {r:255, g:246, b:142}, {r:255, g:246, b:142}, {r:255, g:246, b:142}, {r:255, g:246, b:142}, null, null, null, null, null, null, null, null],
+            // Row 3
+            [null, null, null, null, null, {r:255, g:246, b:142}, {r:255, g:246, b:142}, {r:255, g:246, b:142}, {r:255, g:246, b:142}, {r:255, g:246, b:142}, {r:255, g:246, b:142}, {r:255, g:246, b:142}, {r:255, g:246, b:142}, {r:255, g:246, b:142}, {r:255, g:246, b:142}, {r:255, g:246, b:142}, {r:255, g:246, b:142}, null, null, null, null, null, null, null],
+            // Row 4
+            [null, null, null, null, {r:255, g:246, b:142}, {r:255, g:246, b:142}, {r:255, g:246, b:142}, {r:255, g:246, b:142}, {r:255, g:246, b:142}, {r:255, g:246, b:142}, {r:255, g:246, b:142}, {r:255, g:246, b:142}, {r:255, g:246, b:142}, {r:255, g:246, b:142}, {r:255, g:246, b:142}, {r:255, g:246, b:142}, {r:255, g:246, b:142}, {r:255, g:246, b:142}, null, null, null, null, null, null],
+            // Add more rows... (simplified for demo)
+            // In a real implementation, this would be parsed from actual SVG data
+        ];
+
+        // Fill the rest with nulls for demo
+        while (samplePunkPixels.length < 24) {
+            samplePunkPixels.push(new Array(24).fill(null));
+        }
+
+        let particles = [];
+        let engravingField = [];
+        let cols, rows;
+        let rugWidth, rugHeight;
+
+        function setup() {
+            let container = document.getElementById('canvas-container');
+            let containerWidth = container.offsetWidth;
+            let containerHeight = container.offsetHeight;
+
+            let size = Math.min(containerWidth, containerHeight) - 40;
+            let canvas = createCanvas(size, size);
+            canvas.parent('canvas-container');
+
+            rugWidth = width;
+            rugHeight = height;
+
+            cols = floor(width / 20);
+            rows = floor(height / 20);
+            engravingField = new Array(cols * rows);
+
+            initParticles();
+            randomSeed(params.seed);
+            noiseSeed(params.seed);
+
+            noLoop();
+            redraw();
+        }
+
+        function initParticles() {
+            particles = [];
+            for (let i = 0; i < params.particleDensity; i++) {
+                particles.push({
+                    x: random(width),
+                    y: random(height),
+                    vx: 0,
+                    vy: 0,
+                    life: random(200, 800),
+                    maxLife: 800,
+                    color: {r: random(255), g: random(255), b: random(255)},
+                    engravingDepth: random(0.1, 1.0)
+                });
+            }
+        }
+
+        function updateParticles() {
+            for (let particle of particles) {
+                // Movement influenced by engraving field
+                let x = floor(particle.x / 20);
+                let y = floor(particle.y / 20);
+                let index = x + y * cols;
+
+                if (index >= 0 && index < engravingField.length && engravingField[index]) {
+                    let force = engravingField[index];
+                    particle.vx += force.x * 0.05;
+                    particle.vy += force.y * 0.05;
+                }
+
+                // Add some organic movement
+                particle.vx += (noise(particle.x * 0.005, particle.y * 0.005, frameCount * 0.01) - 0.5) * 0.3;
+                particle.vy += (noise(particle.x * 0.005 + 1000, particle.y * 0.005, frameCount * 0.01) - 0.5) * 0.3;
+
+                particle.vx *= 0.96;
+                particle.vy *= 0.96;
+
+                particle.x += particle.vx;
+                particle.y += particle.vy;
+
+                // Boundary wrapping
+                if (particle.x < 0) particle.x = width;
+                if (particle.x > width) particle.x = 0;
+                if (particle.y < 0) particle.y = height;
+                if (particle.y > height) particle.y = 0;
+
+                particle.life--;
+                if (particle.life <= 0) {
+                    particle.x = random(width);
+                    particle.y = random(height);
+                    particle.vx = 0;
+                    particle.vy = 0;
+                    particle.life = random(200, 800);
+                }
+            }
+        }
+
+        function generateEngravingField() {
+            for (let x = 0; x < cols; x++) {
+                for (let y = 0; y < rows; y++) {
+                    // Create field based on punk engraving
+                    let angle = noise(x * 0.1, y * 0.1, params.seed * 0.001) * TWO_PI * 2;
+                    let force = 0.5;
+
+                    // Modify based on engraving style
+                    if (params.style === 'texture') {
+                        force = noise(x * 0.05, y * 0.05) * 1.0;
+                    } else if (params.style === 'hybrid') {
+                        force = (noise(x * 0.1, y * 0.1) + noise(x * 0.05, y * 0.05)) * 0.5;
+                    }
+
+                    let vector = p5.Vector.fromAngle(angle);
+                    vector.mult(force);
+                    engravingField[x + y * cols] = vector;
+                }
+            }
+        }
+
+        function draw() {
+            generateEngravingField();
+            updateParticles();
+
+            // Draw base rug with gradient
+            for (let y = 0; y < height; y++) {
+                let inter = map(y, 0, height, 0, 1);
+                let c = lerpColor(color(245, 245, 220), color(220, 220, 200), inter);
+                stroke(c);
+                line(0, y, width, y);
+            }
+
+            // Draw chromatic Cryptopunk engraving
+            drawChromaticPunkEngraving();
+
+            // Draw particle-based engraving effects
+            drawParticleEngravings();
+
+            // Draw rug border
+            drawRugBorder();
+        }
+
+        function drawChromaticPunkEngraving() {
+            let punkSize = min(width, height) * 0.7;
+            let punkX = (width - punkSize) / 2;
+            let punkY = (height - punkSize) / 2;
+
+            noStroke();
+
+            // Draw each pixel with its actual color and depth
+            for (let py = 0; py < 24; py++) {
+                for (let px = 0; px < 24; px++) {
+                    let pixelData = samplePunkPixels[py] && samplePunkPixels[py][px];
+
+                    if (pixelData) {
+                        let screenX = punkX + (px / 24) * punkSize;
+                        let screenY = punkY + (py / 24) * punkSize;
+                        let pixelSize = punkSize / 24;
+
+                        // Calculate engraving depth based on color and mapping mode
+                        let depth = calculateEngravingDepth(pixelData);
+
+                        // Create shadow/highlight effect based on depth
+                        let shadowOffset = depth * 2;
+                        let highlightOffset = -depth * 1;
+
+                        // Draw shadow
+                        fill(pixelData.r * 0.3, pixelData.g * 0.3, pixelData.b * 0.3, 100);
+                        rect(screenX + shadowOffset, screenY + shadowOffset, pixelSize, pixelSize);
+
+                        // Draw main pixel with engraving effect
+                        fill(pixelData.r, pixelData.g, pixelData.b, 180 + depth * 75);
+                        rect(screenX, screenY, pixelSize, pixelSize);
+
+                        // Draw highlight
+                        fill(pixelData.r * 1.2, pixelData.g * 1.2, pixelData.b * 1.2, 50);
+                        rect(screenX + highlightOffset, screenY + highlightOffset, pixelSize * 0.8, pixelSize * 0.8);
+                    }
+                }
+            }
+        }
+
+        function calculateEngravingDepth(pixelData) {
+            let depth = 0;
+
+            switch (params.depthMapping) {
+                case 'rgb':
+                    // RGB channel averaging for depth
+                    depth = (pixelData.r + pixelData.g + pixelData.b) / (255 * 3);
+                    break;
+                case 'hsv':
+                    // Convert to HSV-like depth
+                    let max = Math.max(pixelData.r, pixelData.g, pixelData.b);
+                    let min = Math.min(pixelData.r, pixelData.g, pixelData.b);
+                    depth = max / 255; // Value component
+                    break;
+                case 'luminance':
+                    // Standard luminance calculation
+                    depth = (0.299 * pixelData.r + 0.587 * pixelData.g + 0.114 * pixelData.b) / 255;
+                    break;
+                case 'saturation':
+                    // Saturation-like depth
+                    let max = Math.max(pixelData.r, pixelData.g, pixelData.b);
+                    let min = Math.min(pixelData.r, pixelData.g, pixelData.b);
+                    depth = max === 0 ? 0 : (max - min) / max;
+                    break;
+            }
+
+            return depth * params.colorInfluence;
+        }
+
+        function drawParticleEngravings() {
+            for (let particle of particles) {
+                let alpha = map(particle.life, 0, particle.maxLife, 20, 120);
+                let size = map(particle.engravingDepth, 0, 1, 1, 3);
+
+                // Color influenced engraving marks
+                stroke(particle.color.r * 0.5, particle.color.g * 0.5, particle.color.b * 0.5, alpha);
+                strokeWeight(size);
+                point(particle.x, particle.y);
+
+                // Create small engraving texture
+                noStroke();
+                fill(particle.color.r * 0.3, particle.color.g * 0.3, particle.color.b * 0.3, alpha * 0.5);
+                ellipse(particle.x, particle.y, size * 2, size * 2);
+            }
+        }
+
+        function drawRugBorder() {
+            stroke(139, 69, 19);
+            strokeWeight(3);
+            noFill();
+            rect(10, 10, width - 20, height - 20);
+
+            // Add fringe effect
+            strokeWeight(1);
+            for (let i = 0; i < 50; i++) {
+                let x = random([0, width]);
+                let y = random([0, height]);
+                let len = random(5, 15);
+                if (x === 0 || x === width) {
+                    line(x, y, x, y + len);
+                } else {
+                    line(x, y, x + len, y);
+                }
+            }
+        }
+
+        // UI Event Handlers
+        function updateParam(param, value) {
+            params[param] = parseFloat(value) || value;
+
+            document.getElementById(param + '-value').textContent = value;
+
+            if (param === 'seed') {
+                randomSeed(params.seed);
+                noiseSeed(params.seed);
+                document.getElementById('seed-display').textContent = params.seed;
+            }
+
+            redraw();
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Parameter sliders
+            const sliders = ['punk-id', 'color-influence', 'particles'];
+            sliders.forEach(param => {
+                const element = document.getElementById(param);
+                const display = document.getElementById(param + '-value');
+                if (element && display) {
+                    display.textContent = element.value;
+                    element.addEventListener('input', function(e) {
+                        updateParam(param.replace('-', ''), e.target.value);
+                    });
+                }
+            });
+
+            // Select elements
+            ['depth-mapping', 'style'].forEach(param => {
+                const element = document.getElementById(param);
+                if (element) {
+                    element.addEventListener('change', function(e) {
+                        updateParam(param.replace('-', ''), e.target.value);
+                    });
+                }
+            });
+
+            // Seed controls
+            document.getElementById('prev-seed').addEventListener('click', function() {
+                params.seed--;
+                updateParam('seed', params.seed);
+            });
+
+            document.getElementById('next-seed').addEventListener('click', function() {
+                params.seed++;
+                updateParam('seed', params.seed);
+            });
+
+            document.getElementById('random-seed').addEventListener('click', function() {
+                params.seed = floor(random(1000000));
+                updateParam('seed', params.seed);
+            });
+
+            document.getElementById('jump-seed').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    const seed = parseInt(this.value);
+                    if (!isNaN(seed)) {
+                        params.seed = seed;
+                        updateParam('seed', params.seed);
+                    }
+                }
+            });
+
+            document.getElementById('go-seed').addEventListener('click', function() {
+                const seed = parseInt(document.getElementById('jump-seed').value);
+                if (!isNaN(seed)) {
+                    params.seed = seed;
+                    updateParam('seed', params.seed);
+                }
+            });
+
+            // Action buttons
+            document.getElementById('regenerate').addEventListener('click', function() {
+                redraw();
+            });
+
+            document.getElementById('reset').addEventListener('click', function() {
+                params.colorInfluence = 0.8;
+                params.depthMapping = 'rgb';
+                params.style = 'depth';
+                params.particleDensity = 300;
+
+                document.getElementById('color-influence').value = params.colorInfluence;
+                document.getElementById('color-influence-value').textContent = params.colorInfluence;
+                document.getElementById('depth-mapping').value = params.depthMapping;
+                document.getElementById('style').value = params.style;
+                document.getElementById('particles').value = params.particleDensity;
+                document.getElementById('particles-value').textContent = params.particleDensity;
+
+                initParticles();
+                redraw();
+            });
+
+            document.getElementById('download').addEventListener('click', function() {
+                saveCanvas('cryptopunk-chromatic-engraving-' + params.seed, 'png');
+            });
+        });
+    </script>
+</body>
+</html>
