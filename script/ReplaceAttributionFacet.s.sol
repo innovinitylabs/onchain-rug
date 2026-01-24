@@ -5,7 +5,7 @@ import "forge-std/Script.sol";
 import "../src/facets/RugAttributionRegistryFacet.sol";
 import "../src/diamond/interfaces/IDiamondCut.sol";
 
-contract UpgradeReferralFacetOnly is Script {
+contract ReplaceAttributionFacet is Script {
     address public diamondAddr;
 
     function run() external {
@@ -14,17 +14,16 @@ contract UpgradeReferralFacetOnly is Script {
 
         // Get existing diamond address
         diamondAddr = vm.envAddress("NEXT_PUBLIC_BASE_SEPOLIA_CONTRACT");
-        console.log("Upgrading referral facet at:", diamondAddr);
+        console.log("Replacing attribution facet at:", diamondAddr);
 
-        // Deploy new referral facet
-        RugAttributionRegistryFacet rugAttributionRegistryFacet = new RugAttributionRegistryFacet();
-        console.log("New RugAttributionRegistryFacet deployed at:", address(rugAttributionRegistryFacet));
+        // Deploy new attribution facet
+        RugAttributionRegistryFacet newFacet = new RugAttributionRegistryFacet();
+        console.log("New RugAttributionRegistryFacet deployed at:", address(newFacet));
 
-        // Replace the existing attribution facet with updated version
+        // Replace the existing attribution facet
         IDiamondCut.FacetCut[] memory cuts = new IDiamondCut.FacetCut[](1);
 
-        // Replace the existing attribution facet with updated version (includes code length init and mapping fix)
-        bytes4[] memory allSelectors = new bytes4[](17);
+        bytes4[] memory allSelectors = new bytes4[](15);
         allSelectors[0] = RugAttributionRegistryFacet.registerAttributionCode.selector;
         allSelectors[1] = RugAttributionRegistryFacet.registerForAttribution.selector;
         allSelectors[2] = RugAttributionRegistryFacet.isAttributionRegistered.selector;
@@ -40,17 +39,15 @@ contract UpgradeReferralFacetOnly is Script {
         allSelectors[12] = RugAttributionRegistryFacet.getAttributionStats.selector;
         allSelectors[13] = RugAttributionRegistryFacet.getAttributionConfig.selector;
         allSelectors[14] = RugAttributionRegistryFacet.getReferrerFromAttributionCode.selector;
-        allSelectors[15] = RugAttributionRegistryFacet.fixAttributionMapping.selector;
-        allSelectors[16] = RugAttributionRegistryFacet.initializeCodeLengths.selector;
 
         cuts[0] = IDiamondCut.FacetCut({
-            facetAddress: address(rugAttributionRegistryFacet),
+            facetAddress: address(newFacet),
             action: IDiamondCut.FacetCutAction.Replace,
             functionSelectors: allSelectors
         });
 
         IDiamondCut(diamondAddr).diamondCut(cuts, address(0), "");
-        console.log("Referral facet upgraded successfully!");
+        console.log("Attribution facet replaced successfully!");
 
         vm.stopBroadcast();
     }

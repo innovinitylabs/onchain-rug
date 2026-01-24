@@ -106,7 +106,7 @@ export function AttributionCodeDisplay() {
                     🚀 Start Earning Commissions
                   </h4>
                   <p className="text-sm text-slate-300">
-                    Your wallet generates a unique ERC-8021 attribution code automatically. Register to start earning commission on every mint and marketplace purchase made through your link.
+                    Your wallet generates a unique ERC-8021 attribution code automatically. Register to start earning commission on every mint made through your link, completely onchain.
                   </p>
                 </div>
 

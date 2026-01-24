@@ -46,11 +46,17 @@ contract RugAttributionRegistryFacet {
 
     function registerAttributionCode(string memory _code) external {
         LibRugStorage.ReferralConfig storage rs = LibRugStorage.attributionStorage();
-        
+
         // Initialize storage if needed
         if (rs.minCodeLength == 0) {
             rs.minCodeLength = MIN_CODE_LENGTH;
             rs.maxCodeLength = MAX_CODE_LENGTH;
+        }
+
+        // Debug: Force initialize if still not set
+        if (rs.minCodeLength == 0) {
+            rs.minCodeLength = 3;
+            rs.maxCodeLength = 20;
         }
 
         // Validate code format
@@ -62,6 +68,10 @@ contract RugAttributionRegistryFacet {
 
         // Validate the code is valid base62
         if (!LibBase62.isValidBase62(_code)) revert InvalidCodeFormat();
+
+        // Force initialize code lengths
+        rs.minCodeLength = 3;
+        rs.maxCodeLength = 20;
 
         // Validate length
         uint256 actualCodeLength = codeLength;
@@ -75,7 +85,8 @@ contract RugAttributionRegistryFacet {
         // Check if code is already taken
         if (rs.codeExists[_code]) revert CodeAlreadyTaken();
 
-        // Register code
+        // Register referrer and code mappings
+        rs.registeredReferrers[msg.sender] = true;
         rs.codeToReferrer[_code] = msg.sender;
         rs.referrerToCode[msg.sender] = _code;
         rs.codeExists[_code] = true;
@@ -273,7 +284,7 @@ contract RugAttributionRegistryFacet {
         uint256 tokenId,
         string memory action,
         uint256 rewardAmount
-    ) external {
+    ) public {
         // Only callable by this contract (diamond pattern - other facets can call via address(this))
         require(msg.sender == address(this) || msg.sender == LibDiamond.contractOwner(), "Unauthorized");
         
@@ -293,6 +304,16 @@ contract RugAttributionRegistryFacet {
         
         // Emit event
         emit AttributionRewardPaid(referrer, referee, tokenId, action, rewardAmount);
+    }
+
+
+    // Temporary function to initialize code lengths
+    function initializeCodeLengths() external {
+        LibRugStorage.ReferralConfig storage rs = LibRugStorage.attributionStorage();
+        if (rs.minCodeLength == 0) {
+            rs.minCodeLength = 3;
+            rs.maxCodeLength = 20;
+        }
     }
 
     /**
