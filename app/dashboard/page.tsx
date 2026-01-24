@@ -1719,13 +1719,7 @@ export default function DashboardPage() {
             <h2 className="text-xl font-bold text-slate-100 mb-2">AI Agent Authorization</h2>
             <p className="text-slate-300">Authorize an AI agent to automatically maintain your rugs</p>
           </div>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="max-w-4xl mx-auto"
-          >
-            <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-t border-slate-700 rounded-xl p-6 backdrop-blur-sm">
+          <div className="w-full">
               <div className="flex items-center gap-3 mb-4">
                 <Bot className="w-6 h-6 text-slate-300" />
                 <span className="text-xs bg-slate-700 text-slate-300 px-2 py-1 rounded-full">NEW</span>
@@ -1896,9 +1890,8 @@ export default function DashboardPage() {
                     </a>
                   )}
                 </div>
-              )}
-            </div>
-          </motion.div>
+            )}
+          </div>
         </div>
       </section>
 
