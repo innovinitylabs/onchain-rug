@@ -94,8 +94,8 @@ export default function GeneratorPage() {
   // Diamond frame aging (hardcoded - most impressive longevity)
   const [warpThickness, setWarpThickness] = useState(2) // Default warp thickness
 
-  // Geometric pattern overlay state
-  const [enableGeometricOverlay, setEnableGeometricOverlay] = useState(true)
+  // Geometric pattern overlay state (disabled by default, only available on localhost)
+  const [enableGeometricOverlay, setEnableGeometricOverlay] = useState(false)
   // Default evolution phase for all generations
   const DEFAULT_EVOLUTION_PHASE = 3
 
@@ -4028,11 +4028,11 @@ export default function GeneratorPage() {
       </main>
 
       {/* ERC Attribution Section */}
-      <section className="bg-gradient-to-br from-amber-50 via-blue-50 to-indigo-50 border-t border-amber-200/50 py-12 px-4 w-full mt-8 mb-8 relative z-10">
+      <section className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-t border-slate-700 py-12 px-4 w-full mt-8 mb-8 relative z-10">
         <div className="w-full">
           <div className="text-center mb-6">
-            <h2 className="text-2xl font-bold text-amber-900 mb-2">ERC-8021 Attribution Program</h2>
-            <p className="text-amber-700">Share your unique ERC-8021 attribution code and earn commissions on referrals</p>
+            <h2 className="text-2xl font-bold text-slate-100 mb-2">ERC-8021 Attribution Program</h2>
+            <p className="text-slate-300">Share your unique ERC-8021 attribution code and earn commissions on referrals</p>
           </div>
           <div className="w-full">
             <AttributionCodeDisplay />
