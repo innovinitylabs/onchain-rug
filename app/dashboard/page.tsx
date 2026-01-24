@@ -1716,14 +1716,14 @@ export default function DashboardPage() {
           transition={{ delay: 0.2 }}
           className="mb-8"
         >
-          <div className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 rounded-xl p-6 backdrop-blur-sm">
+          <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-t border-slate-700 rounded-xl p-6 backdrop-blur-sm">
             <div className="flex items-center gap-3 mb-4">
-              <Bot className="w-6 h-6 text-blue-400" />
-              <h2 className="text-xl font-bold text-white">AI Agent Authorization</h2>
-              <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded-full">NEW</span>
+              <Bot className="w-6 h-6 text-slate-300" />
+              <h2 className="text-xl font-bold text-slate-100">AI Agent Authorization</h2>
+              <span className="text-xs bg-slate-700 text-slate-300 px-2 py-1 rounded-full">NEW</span>
             </div>
 
-            <p className="text-white/70 mb-4">
+            <p className="text-slate-300 mb-4">
               Authorize an AI agent to automatically maintain your rugs. The agent will pay service fees while keeping your rugs clean and well-maintained.
             </p>
 
@@ -1733,12 +1733,12 @@ export default function DashboardPage() {
                 placeholder="Enter AI Agent wallet address (0x...)"
                 value={agentAddress}
                 onChange={(e) => setAgentAddress(e.target.value)}
-                className="flex-1 px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="flex-1 px-4 py-3 bg-slate-900 border border-slate-600 rounded-lg text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
               />
               <button
                 onClick={handleAuthorizeAgent}
                 disabled={isAuthorizing || isPending || isConfirming || !agentAddress}
-                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-600 disabled:to-gray-600 text-white font-medium rounded-lg transition-all duration-200 flex items-center gap-2 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"
+                className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 disabled:bg-slate-800 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-all duration-200 flex items-center gap-2 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"
               >
                 {isAuthorizing || isPending ? (
                   <>
@@ -1754,7 +1754,7 @@ export default function DashboardPage() {
               </button>
             </div>
 
-            <div className="mt-4 text-sm text-white/60">
+            <div className="mt-4 text-sm text-slate-400">
               <p>• Agent can only perform maintenance operations (cleaning, restoration)</p>
               <p>• Agent cannot transfer, sell, or modify ownership of your rugs</p>
               <p>• Agent pays flat service fee (0.00042 ETH) for each maintenance action</p>
@@ -1762,7 +1762,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Debug Info */}
-            <div className="mt-4 p-3 bg-slate-800/50 rounded-lg text-xs text-white/60">
+            <div className="mt-4 p-3 bg-slate-800 rounded-lg text-xs text-slate-400">
               <div>Debug: Contract: {contractAddress || 'none'} | Agents: {agentsLoading ? 'loading...' : authorizedAgents?.length || 0} | Error: {agentsError ? 'yes' : 'no'}</div>
               <div>User Address: {address || 'not connected'} | Chain: {chain?.id}</div>
               {agentsError && <div className="text-red-400">Error: {agentsError.message}</div>}
@@ -1770,21 +1770,21 @@ export default function DashboardPage() {
 
             {/* Authorized Agents List */}
             <div className="mt-6">
-              <h3 className="text-lg font-semibold text-white mb-3">Authorized Agents</h3>
+              <h3 className="text-lg font-semibold text-slate-100 mb-3">Authorized Agents</h3>
               {agentsLoading ? (
-                <div className="text-white/60 text-sm">Loading authorized agents...</div>
+                <div className="text-slate-400 text-sm">Loading authorized agents...</div>
               ) : authorizedAgents && authorizedAgents.length > 0 ? (
                 <div className="space-y-3">
                   {authorizedAgents.map((agent: string, index: number) => (
-                    <div key={agent} className="bg-slate-700/50 rounded-lg p-3 border border-slate-600/50">
+                    <div key={agent} className="bg-slate-800 rounded-lg p-3 border border-slate-700">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <Bot className="w-5 h-5 text-blue-400" />
+                          <Bot className="w-5 h-5 text-slate-300" />
                           <div>
-                            <div className="text-white font-mono text-sm">
+                            <div className="text-slate-100 font-mono text-sm">
                               {agent}
                             </div>
-                            <div className="text-white/60 text-xs">
+                            <div className="text-slate-400 text-xs">
                               Agent #{index + 1}
                             </div>
                           </div>
@@ -1799,7 +1799,7 @@ export default function DashboardPage() {
                           </button>
                           <button
                             onClick={() => navigator.clipboard.writeText(agent)}
-                            className="p-1 text-white/60 hover:text-white/80 transition-colors"
+                            className="p-1 text-slate-400 hover:text-slate-200 transition-colors"
                             title="Copy address"
                           >
                             <Copy className="w-4 h-4" />
@@ -1810,7 +1810,7 @@ export default function DashboardPage() {
                   ))}
                 </div>
               ) : (
-                <div className="text-white/60 text-sm">
+                <div className="text-slate-400 text-sm">
                   {agentsError ? 'Error loading agents' : 'No authorized agents yet. Authorize an agent above to get started.'}
                 </div>
               )}
@@ -1819,20 +1819,20 @@ export default function DashboardPage() {
             {/* Revoke Confirmation Modal */}
             {showRevokeConfirm && (
               <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                <div className="bg-slate-800 border border-slate-600 rounded-lg p-6 max-w-md w-full mx-4">
+                <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 max-w-md w-full mx-4">
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-10 h-10 bg-red-600/20 rounded-full flex items-center justify-center">
                       <Bot className="w-5 h-5 text-red-400" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-white">Revoke Agent Authorization</h3>
-                      <p className="text-white/60 text-sm">This action cannot be undone</p>
+                      <h3 className="text-lg font-semibold text-slate-100">Revoke Agent Authorization</h3>
+                      <p className="text-slate-400 text-sm">This action cannot be undone</p>
                     </div>
                   </div>
 
                   <div className="mb-6">
-                    <p className="text-white/80 mb-2">Are you sure you want to revoke authorization for this agent?</p>
-                    <div className="bg-slate-700/50 rounded p-3 font-mono text-sm text-white/80 break-all">
+                    <p className="text-slate-200 mb-2">Are you sure you want to revoke authorization for this agent?</p>
+                    <div className="bg-slate-900 rounded p-3 font-mono text-sm text-slate-200 break-all">
                       {showRevokeConfirm}
                     </div>
                     <p className="text-yellow-400 text-sm mt-2">
@@ -1843,7 +1843,7 @@ export default function DashboardPage() {
                   <div className="flex gap-3">
                     <button
                       onClick={() => setShowRevokeConfirm(null)}
-                      className="flex-1 px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded transition-colors"
+                      className="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-100 rounded transition-colors"
                     >
                       Cancel
                     </button>
@@ -1864,14 +1864,14 @@ export default function DashboardPage() {
 
             {/* Transaction Status */}
             {(isPending || isConfirming || isConfirmed) && (
-              <div className="mt-4 p-3 bg-slate-700/50 rounded-lg">
+              <div className="mt-4 p-3 bg-slate-800 rounded-lg">
                 <div className="flex items-center gap-2">
                   {isConfirmed ? (
                     <CheckCircle className="w-4 h-4 text-green-400" />
                   ) : (
-                    <RefreshCw className="w-4 h-4 animate-spin text-blue-400" />
+                    <RefreshCw className="w-4 h-4 animate-spin text-emerald-400" />
                   )}
-                  <span className="text-white text-sm">
+                  <span className="text-slate-100 text-sm">
                     {isConfirmed ? 'Authorization successful!' :
                      isConfirming ? 'Confirming transaction...' :
                      'Transaction submitted'}
@@ -1882,7 +1882,7 @@ export default function DashboardPage() {
                     href={`https://sepolia.shapescan.xyz/tx/${hash}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-400 hover:text-blue-300 text-xs mt-1 inline-flex items-center gap-1"
+                    className="text-emerald-400 hover:text-emerald-300 text-xs mt-1 inline-flex items-center gap-1"
                   >
                     View on ShapeScan <ExternalLink className="w-3 h-3" />
                   </a>
