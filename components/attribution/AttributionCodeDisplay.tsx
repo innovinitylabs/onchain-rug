@@ -120,7 +120,7 @@ export function AttributionCodeDisplay() {
                 <button
                   onClick={register}
                   disabled={isLoading || !address}
-                  className="w-full bg-slate-700 hover:bg-slate-600 disabled:bg-slate-800 disabled:cursor-not-allowed text-slate-100 px-4 py-2 rounded font-mono text-sm transition-colors border border-slate-600"
+                  className="w-full bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 disabled:bg-slate-800 disabled:cursor-not-allowed text-white px-4 py-3 rounded-lg font-mono text-sm font-bold transition-all transform hover:scale-[1.02] active:scale-[0.98] border border-emerald-400 shadow-lg shadow-emerald-900/50"
                 >
                   {isLoading ? (
                     <div className="flex items-center justify-center gap-2">
