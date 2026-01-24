@@ -37,6 +37,8 @@ shape = "https://sepolia.shape.network"  # Alias for Shape Sepolia
 base-sepolia = "https://sepolia.base.org"
 base-mainnet = "https://mainnet.base.org"
 base = "https://sepolia.base.org"  # Alias for Base Sepolia
+sepolia = "https://rpc.sepolia.org"  # Ethereum Sepolia
+ethereum-sepolia = "https://rpc.sepolia.org"  # Alias for Ethereum Sepolia
 
 [etherscan]
 shape-sepolia = { key = "your-api-key", url = "https://explorer-sepolia.shape.network/api" }

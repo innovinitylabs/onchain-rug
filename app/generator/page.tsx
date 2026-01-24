@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { SectionWrapper } from '@/components/ui/section-wrapper'
 import { Shuffle, Download, FileText, Plus, X, Copy } from 'lucide-react'
 import Navigation from '@/components/Navigation'
 import NFTExporter from '@/components/NFTExporter'
@@ -20,7 +21,9 @@ import {
   EngravingMask,
   TextMask,
   createStripeField,
-  getEvolutionStrength
+  getEvolutionStrength,
+  resolvePatternThreadColor,
+  resolvePunkThreadColor
 } from '@/lib/GeometricPatterns'
 
 // Default pattern parameters since we're not using them anymore
@@ -91,8 +94,8 @@ export default function GeneratorPage() {
   // Diamond frame aging (hardcoded - most impressive longevity)
   const [warpThickness, setWarpThickness] = useState(2) // Default warp thickness
 
-  // Geometric pattern overlay state
-  const [enableGeometricOverlay, setEnableGeometricOverlay] = useState(true)
+  // Geometric pattern overlay state (disabled by default, only available on localhost)
+  const [enableGeometricOverlay, setEnableGeometricOverlay] = useState(false)
   // Default evolution phase for all generations
   const DEFAULT_EVOLUTION_PHASE = 3
 
@@ -224,12 +227,10 @@ export default function GeneratorPage() {
           patternRenderer = new GeometricPatternRenderer((window as any).p5Instance, maskPRNG)
           ;(window as any).p5Instance.patternRenderer = patternRenderer
 
-          // Auto-load punk data in background
-          patternRenderer.loadPunksFromFiles().then(() => {
-            console.log('🎨 Cryptopunk SVGs preloaded successfully!')
-          }).catch((error) => {
-            console.warn('❌ Failed to preload punk SVGs:', error)
-          })
+          // Load ALL punk data synchronously - it's only ~10k punks, not much data
+          console.log('🎨 Loading all Cryptopunk SVGs synchronously...')
+          patternRenderer.loadPunksFromFilesSync()
+          console.log('✅ All Cryptopunk SVGs loaded synchronously!')
         }
 
         const palette = extractRugPalette((window as any).doormatData, (window as any).p5Instance)
@@ -246,6 +247,7 @@ export default function GeneratorPage() {
         ;(window as any).doormatData.patternMask = null
       }
       ;(window as any).__DOORMAT_DATA__.patternMask = (window as any).doormatData.patternMask
+      ;(window as any).__DOORMAT_DATA__.selectedMaskType = maskType
       ;(window as any).p5Instance.redraw()
     }
   }
@@ -1232,11 +1234,28 @@ export default function GeneratorPage() {
         g = p.constrain(g, 0, 255)
         b = p.constrain(b, 0, 255)
 
-        // Handle pattern engraving (only if not already handled by text)
-        if (!isTextPixel) {
-          let patternStrength = basePatternStrength * evolutionStrength
+        // Handle cryptopunk engraving (only for crypto_punk mask type)
+        if (!isTextPixel && (window as any).__DOORMAT_DATA__ && (window as any).__DOORMAT_DATA__.selectedMaskType === 'crypto_punk') {
+          let engravingStrength = basePatternStrength * evolutionStrength
 
-          // Pattern darkening bias removed - color source replacement does the work now
+
+          if (engravingStrength > 0) {
+            // Apply punk engraving with actual pixel colors
+            const engravedColor = resolvePunkThreadColor({
+              baseColor: p.color(r, g, b),
+              stripe: sourceStripe,
+              isWarp: true,
+              maskStrength: engravingStrength,
+              p: p,
+              x: x,
+              y: y
+            })
+
+            // Extract RGB from engraved color
+            r = p.red(engravedColor)
+            g = p.green(engravedColor)
+            b = p.blue(engravedColor)
+          }
         }
 
         r = p.constrain(r, 0, 255)
@@ -1665,11 +1684,28 @@ export default function GeneratorPage() {
         g = p.constrain(g, 0, 255)
         b = p.constrain(b, 0, 255)
 
-        // Handle pattern engraving (only if not already handled by text)
-        if (!isTextPixel) {
-          let patternStrength = basePatternStrength * evolutionStrength
+        // Handle cryptopunk engraving (only for crypto_punk mask type)
+        if (!isTextPixel && (window as any).__DOORMAT_DATA__ && (window as any).__DOORMAT_DATA__.selectedMaskType === 'crypto_punk') {
+          let engravingStrength = basePatternStrength * evolutionStrength
 
-          // Pattern brightening bias removed - color source replacement does the work now
+
+          if (engravingStrength > 0) {
+            // Apply punk engraving with actual pixel colors
+            const engravedColor = resolvePunkThreadColor({
+              baseColor: p.color(r, g, b),
+              stripe: sourceStripe,
+              isWarp: false, // Weft threads are horizontal
+              maskStrength: engravingStrength,
+              p: p,
+              x: x,
+              y: y
+            })
+
+            // Extract RGB from engraved color
+            r = p.red(engravedColor)
+            g = p.green(engravedColor)
+            b = p.blue(engravedColor)
+          }
         }
 
         r = p.constrain(r, 0, 255)
@@ -3094,8 +3130,8 @@ export default function GeneratorPage() {
   // 7-segment display segment patterns for digits 0-9
 
   return (
-    <>
-      <Head>
+      <div className="page-wrapper">
+        <Head>
         <title>Rug Factory - Create Your Onchain Rug NFT | OnchainRugs</title>
         <meta name="description" content="Create unique, living Onchain Rug NFTs with custom text, 102 color palettes, and authentic cloth physics. Each rug ages over time and requires maintenance. Mint directly on Shape L2 blockchain." />
         <meta name="keywords" content="NFT generator, create NFT, generative art, custom NFT, rug NFT, textile NFT, woven art NFT, blockchain art generator, Shape L2 NFT, living NFT, aging NFT, NFT minting, custom text NFT" />
@@ -3110,14 +3146,13 @@ export default function GeneratorPage() {
         <meta name="twitter:image" content="https://onchainrugs.xyz/generator-og.jpg" />
         <link rel="canonical" href="https://onchainrugs.xyz/generator" />
       </Head>
-      <div className="page-wrapper">
-        <Navigation />
-        <main className="page-main">
+      <Navigation />
+      <main className="page-main pb-8">
         <div className="generator-container">
-      {/* Header */}
+          {/* Header */}
 
-        {/* Generator Page Layout - Monitor (Major) + Terminal (Controls) */}
-        <div className="generator-page-layout">
+          {/* Generator Page Layout - Monitor (Major) + Terminal (Controls) */}
+          <div className="generator-page-layout">
           {/* Monitor Area - Major Column */}
           <div className="monitor-column">
             <div className="monitor-wrapper">
@@ -3970,7 +4005,7 @@ export default function GeneratorPage() {
 
                   {/* Referral Program Component */}
                   <div className="mt-6 pt-4 border-t border-amber-600/30 pb-8">
-                    <AttributionCodeDisplay />
+                    {/* ERC Attribution moved to separate bottom section */}
                   </div>
 
                 </div>
@@ -3992,12 +4027,24 @@ export default function GeneratorPage() {
         </div>
       </main>
 
+      {/* ERC Attribution Section */}
+      <section className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-t border-slate-700 py-12 px-4 w-full mt-8 mb-8 relative z-10">
+        <div className="w-full">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-bold text-slate-100 mb-2">ERC-8021 Attribution Program</h2>
+            <p className="text-slate-300">Share your unique ERC-8021 attribution code and earn commissions on referrals</p>
+          </div>
+          <div className="w-full">
+            <AttributionCodeDisplay />
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <div className="page-footer">
         <Footer />
       </div>
     </div>
-    </>
   )
 }
 
