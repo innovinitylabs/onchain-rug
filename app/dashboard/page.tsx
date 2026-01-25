@@ -583,26 +583,26 @@ export default function DashboardPage() {
           console.log(`✅ Balance check shows ${balance} NFTs, proceeding with loading...`)
         }
 
-        // Get NFTs owned by user from Alchemy
-        const apiUrl = `${window.location.origin}/api/alchemy?endpoint=getNFTsForOwner&contractAddresses[]=${contractAddress}&owner=${address}&chainId=${chain.id}`
-        console.log('Calling Alchemy API:', apiUrl)
-        
+        // Get NFTs owned by user from Redis-cached API (reuses marketplace infrastructure)
+        const apiUrl = `${window.location.origin}/api/user/nfts?owner=${address}&chainId=${chain.id}`
+        console.log('Calling User NFTs API:', apiUrl)
+
         const ownerResponse = await fetch(apiUrl)
-        
+
         // CRITICAL: Check if API call succeeded
         if (!ownerResponse.ok) {
           const errorData = await ownerResponse.json().catch(() => ({ error: 'Unknown error' }))
-          console.error('❌ Alchemy API error:', ownerResponse.status, errorData)
+          console.error('❌ User NFTs API error:', ownerResponse.status, errorData)
           setUserRugs([])
           setLoading(false)
           return
         }
 
         const ownerData = await ownerResponse.json()
-        
+
         // CRITICAL: Check if response contains error
         if (ownerData.error) {
-          console.error('❌ Alchemy API returned error:', ownerData.error)
+          console.error('❌ User NFTs API returned error:', ownerData.error)
           setUserRugs([])
           setLoading(false)
           return
@@ -716,6 +716,21 @@ export default function DashboardPage() {
 
         console.log(`Final rug count: ${rugs.length}`)
         setUserRugs(rugs)
+
+        // Trigger background refresh for latest blockchain data (non-blocking)
+        if (rugs.length > 0) {
+          console.log('🔄 Starting background refresh for latest blockchain data...')
+          // Use setTimeout to make it truly background and non-blocking
+          setTimeout(() => {
+            rugs.forEach((rug, index) => {
+              // Stagger the refreshes to avoid overwhelming the network
+              setTimeout(() => {
+                console.log(`🔄 Background refreshing NFT #${rug.tokenId}...`)
+                handleRefreshNFT(rug.tokenId)
+              }, index * 1000) // 1 second delay between each refresh
+            })
+          }, 2000) // Wait 2 seconds after initial load before starting background refresh
+        }
       } catch (error) {
         console.error('Failed to fetch user rugs:', error)
         setUserRugs([])
@@ -1356,14 +1371,15 @@ export default function DashboardPage() {
                       }}
                     >
                       <div style={{ width: 'fit-content' }}>
-                      <LiquidGlass
-                    blurAmount={0.1}
-                    aberrationIntensity={2}
-                    elasticity={0.1}
-                    cornerRadius={12}
-                    className="overflow-hidden"
-                  >
-                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 p-4">
+                      <div className="relative">
+                        <LiquidGlass
+                      blurAmount={0.1}
+                      aberrationIntensity={2}
+                      elasticity={0.1}
+                      cornerRadius={12}
+                      className="overflow-hidden"
+                    >
+                      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 p-4">
                       {/* Main Preview - Takes up 3/4 of space */}
                       <div className="lg:col-span-3">
                         {/* Rug Header */}
@@ -1484,8 +1500,14 @@ export default function DashboardPage() {
                           </a>
                         </div>
                       </div>
-                    </div>
-                  </LiquidGlass>
+                        </div>
+                      </LiquidGlass>
+
+                        {/* Subtle glaze animation overlay during refresh */}
+                        {refreshingNFT === rug.tokenId && (
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-pulse rounded-lg pointer-events-none" />
+                        )}
+                        </div>
                       </div>
                     </motion.div>
                   )
