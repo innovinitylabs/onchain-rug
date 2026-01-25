@@ -4028,7 +4028,7 @@ export default function GeneratorPage() {
       </main>
 
       {/* ERC Attribution Section */}
-      <section className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-t border-slate-700 py-12 px-4 w-full mt-8 mb-8 relative z-10">
+      <section className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-t border-slate-700 py-12 px-4 w-full mt-8 mb-0 relative z-10">
         <div className="w-full">
           <div className="text-center mb-6">
             <h2 className="text-2xl font-bold text-slate-100 mb-2">ERC-8021 Attribution Program</h2>
