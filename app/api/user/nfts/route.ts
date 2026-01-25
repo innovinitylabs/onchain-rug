@@ -87,15 +87,12 @@ export async function GET(request: NextRequest) {
         })
 
         // Combine cached and fresh NFTs in correct order
+        // We already verified ownership through multicall, so we can safely include all NFTs
         validCachedNFTs.forEach(nft => {
-          if (nft.permanent.owner?.toLowerCase() === ownerAddress.toLowerCase()) {
-            nfts.push(nft)
-          }
+          nfts.push(nft)
         })
         validStoredNFTs.forEach(nft => {
-          if (nft.permanent.owner?.toLowerCase() === ownerAddress.toLowerCase()) {
-            nfts.push(nft)
-          }
+          nfts.push(nft)
         })
 
       } catch (blockchainError) {
@@ -230,8 +227,8 @@ async function getOwnedTokenIds(ownerAddress: string, contractAddress: string, c
     for (let i = 0; i < ownershipResults.length; i++) {
       const result = ownershipResults[i]
       if (result.status === 'fulfilled') {
-        const owner = result.value as string
-        if (owner && owner.toLowerCase() === ownerAddress.toLowerCase()) {
+        const owner = result.value as unknown as string
+        if (owner && typeof owner === 'string' && owner.toLowerCase() === ownerAddress.toLowerCase()) {
           ownedRugs.push(tokenIds[i])
           foundInBatch++
         }
