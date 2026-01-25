@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Heart, Tag, TrendingUp, Eye } from 'lucide-react'
 import LiquidGlass from '../LiquidGlass'
+import LazyIframe from './LazyIframe'
 import { formatEth, formatTimeRemaining, getConditionColor, isListingExpired } from '@/utils/marketplace-utils'
 import { useListingData } from '@/hooks/use-marketplace-data'
 import { useRoyaltyInfo } from '@/hooks/use-royalty-info'
@@ -25,8 +26,6 @@ export default function ListingCard({
   onToggleFavorite,
   viewMode = 'grid'
 }: ListingCardProps) {
-  const [imageLoaded, setImageLoaded] = useState(false)
-  
   // Fetch marketplace data
   const { listing } = useListingData(tokenId)
   const { royaltyPercentage, isLoading: royaltyLoading } = useRoyaltyInfo(tokenId)
@@ -86,11 +85,15 @@ export default function ListingCard({
             {/* NFT Preview - Small */}
             <div className="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 bg-gradient-to-br from-blue-100/20 to-indigo-100/20">
               {nftData?.animation_url ? (
-                <iframe
+                <LazyIframe
                   src={nftData.animation_url}
-                  className="w-full h-full"
                   title={`Rug #${tokenId}`}
-                  style={{ border: 'none', background: 'transparent' }}
+                  className="w-full h-full rounded-lg"
+                  placeholder={
+                    <div className="w-full h-full flex items-center justify-center text-white/50">
+                      <span className="text-xl">🧵</span>
+                    </div>
+                  }
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-white/50">
@@ -203,16 +206,18 @@ export default function ListingCard({
           >
             <div className="absolute inset-0">
               {nftData?.animation_url ? (
-                <iframe
+                <LazyIframe
                   src={nftData.animation_url}
-                  className="w-full h-full"
                   title={`Rug #${tokenId}`}
-                  style={{
-                    border: 'none',
-                    background: 'transparent',
-                    outline: 'none'
-                  }}
-                  onLoad={() => setImageLoaded(true)}
+                  className="w-full h-full rounded-lg"
+                  placeholder={
+                    <div className="w-full h-full flex items-center justify-center text-blue-400 bg-gradient-to-br from-blue-100/20 to-indigo-100/20 rounded-lg">
+                      <div className="text-center">
+                        <div className="text-3xl mb-1">🧵</div>
+                        <div className="text-xs">#{tokenId}</div>
+                      </div>
+                    </div>
+                  }
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-blue-400 bg-gradient-to-br from-blue-100/20 to-indigo-100/20 rounded-lg">
@@ -220,12 +225,6 @@ export default function ListingCard({
                     <div className="text-3xl mb-1">🧵</div>
                     <div className="text-xs">#{tokenId}</div>
                   </div>
-                </div>
-              )}
-              
-              {!imageLoaded && nftData?.animation_url && (
-                <div className="absolute inset-0 flex items-center justify-center bg-blue-100/30 backdrop-blur-sm">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
                 </div>
               )}
             </div>
