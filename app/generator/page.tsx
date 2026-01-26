@@ -23,7 +23,7 @@ import {
   createStripeField,
   getEvolutionStrength,
   resolvePatternThreadColor,
-  resolvePunkThreadColor
+  getPunkPixelColorAtPosition
 } from '@/lib/GeometricPatterns'
 
 // Default pattern parameters since we're not using them anymore
@@ -1234,27 +1234,16 @@ export default function GeneratorPage() {
         g = p.constrain(g, 0, 255)
         b = p.constrain(b, 0, 255)
 
-        // Handle cryptopunk engraving (only for crypto_punk mask type)
-        if (!isTextPixel && (window as any).__DOORMAT_DATA__ && (window as any).__DOORMAT_DATA__.selectedMaskType === 'crypto_punk') {
-          let engravingStrength = basePatternStrength * evolutionStrength
-
-
-          if (engravingStrength > 0) {
-            // Apply punk engraving with actual pixel colors
-            const engravedColor = resolvePunkThreadColor({
-              baseColor: p.color(r, g, b),
-              stripe: sourceStripe,
-              isWarp: true,
-              maskStrength: engravingStrength,
-              p: p,
-              x: x,
-              y: y
-            })
-
-            // Extract RGB from engraved color
-            r = p.red(engravedColor)
-            g = p.green(engravedColor)
-            b = p.blue(engravedColor)
+        // Handle cryptopunk engraving (works like text engraving - always available when punk selected)
+        const selectedPunkId = (window as any).selectedPunkId
+        if (!isTextPixel && selectedPunkId !== undefined && selectedPunkId !== null) {
+          // Check if this pixel should be engraved with punk colors (like text engraving)
+          const punkColor = getPunkPixelColorAtPosition(x, y, selectedPunkId)
+          if (punkColor) {
+            // Use official punk colors as bitmap engraving (like text)
+            r = punkColor.r
+            g = punkColor.g
+            b = punkColor.b
           }
         }
 
@@ -1684,27 +1673,16 @@ export default function GeneratorPage() {
         g = p.constrain(g, 0, 255)
         b = p.constrain(b, 0, 255)
 
-        // Handle cryptopunk engraving (only for crypto_punk mask type)
-        if (!isTextPixel && (window as any).__DOORMAT_DATA__ && (window as any).__DOORMAT_DATA__.selectedMaskType === 'crypto_punk') {
-          let engravingStrength = basePatternStrength * evolutionStrength
-
-
-          if (engravingStrength > 0) {
-            // Apply punk engraving with actual pixel colors
-            const engravedColor = resolvePunkThreadColor({
-              baseColor: p.color(r, g, b),
-              stripe: sourceStripe,
-              isWarp: false, // Weft threads are horizontal
-              maskStrength: engravingStrength,
-              p: p,
-              x: x,
-              y: y
-            })
-
-            // Extract RGB from engraved color
-            r = p.red(engravedColor)
-            g = p.green(engravedColor)
-            b = p.blue(engravedColor)
+        // Handle cryptopunk engraving (works like text engraving - always available when punk selected)
+        const selectedPunkId = (window as any).selectedPunkId
+        if (!isTextPixel && selectedPunkId !== undefined && selectedPunkId !== null) {
+          // Check if this pixel should be engraved with punk colors (like text engraving)
+          const punkColor = getPunkPixelColorAtPosition(x, y, selectedPunkId)
+          if (punkColor) {
+            // Use official punk colors as bitmap engraving (like text)
+            r = punkColor.r
+            g = punkColor.g
+            b = punkColor.b
           }
         }
 

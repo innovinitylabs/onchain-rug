@@ -1037,42 +1037,11 @@ export function resolvePatternThreadColor(params: EngravingResolverParams): any 
  * Cryptopunk engraving resolver - uses actual punk pixel colors
  * Creates vibrant, pixel-perfect punk engravings on the rug base
  */
-export function resolvePunkThreadColor(params: EngravingResolverParams): any {
-  const { baseColor, stripe, isWarp, maskStrength, p } = params
-
-  if (maskStrength <= 0) {
-    return baseColor
-  }
-
-  // Get punk pixel color at this position
-  const punkColor = getPunkPixelColorAtPosition(params.x, params.y, (window as any).selectedPunkId || 0)
-
-  if (!punkColor) {
-    return baseColor // No punk pixel here, use original thread color
-  }
-
-  // Create punk pixel color object
-  const punkColorObj = p.color(punkColor.r, punkColor.g, punkColor.b)
-
-  // Strong engraving for punk pixels - they should be very visible
-  const engravingStrength = Math.min(maskStrength * 1.8, 1.0)
-
-  // Blend base rug thread with punk pixel color
-  let blended = p.lerpColor(baseColor, punkColorObj, engravingStrength)
-
-  // Add subtle variation for woven texture (less than patterns)
-  const noiseInput = stripe.y * 0.005 + (isWarp ? 3000 : 4000) + maskStrength * 5
-  const variation = (p.noise(noiseInput) - 0.5) * 0.02 // ±1% variation
-  const variedStrength = Math.max(0, Math.min(1, engravingStrength + variation))
-
-  return p.lerpColor(baseColor, punkColorObj, variedStrength)
-}
-
 /**
  * Get punk pixel color at canvas position
  * Returns actual RGB values from Cryptopunk SVG data
  */
-function getPunkPixelColorAtPosition(x: number, y: number, punkId: number): {r: number, g: number, b: number} | null {
+export function getPunkPixelColorAtPosition(x: number, y: number, punkId: number): {r: number, g: number, b: number} | null {
   // Get punk renderer from global p5 instance
   const punkRenderer = (window as any).p5Instance?.patternRenderer
   if (!punkRenderer?.punkPixels?.[punkId]) {
@@ -1082,7 +1051,7 @@ function getPunkPixelColorAtPosition(x: number, y: number, punkId: number): {r: 
   // Punk positioning (same as in generateCryptoPunkMask)
   const canvasWidth = (window as any).doormatData?.config?.DOORMAT_WIDTH || 800
   const canvasHeight = (window as any).doormatData?.config?.DOORMAT_HEIGHT || 1200
-  const punkSize = Math.min(canvasWidth, canvasHeight) * 0.70
+  const punkSize = Math.min(canvasWidth, canvasHeight) * 0.50 // Half size of rug
   const centerX = canvasWidth / 2
   const centerY = canvasHeight * 0.55
 
@@ -2048,8 +2017,8 @@ export class GeometricPatternRenderer {
 
   private generateCryptoPunkMask(canvasWidth: number, canvasHeight: number, punkId: number = 0): EngravingMask {
     // Position punk in center-bottom of rug (back side)
-    // Make it prominent as requested - 70% of canvas for visibility
-    const punkSize = Math.min(canvasWidth, canvasHeight) * 0.70; // 70% of canvas
+    // Make it prominent as requested - 50% of canvas for visibility
+    const punkSize = Math.min(canvasWidth, canvasHeight) * 0.50; // Half size of rug
     const centerX = canvasWidth / 2;
     const centerY = canvasHeight * 0.55; // Center it better on the rug
 
