@@ -3598,7 +3598,7 @@ export default function GeneratorPage() {
                                 const newPunkId = parseInt(e.target.value)
                                 setSelectedPunkId(newPunkId)
 
-                                // Trigger immediate redraw with punk engraving
+                                // Punk data is instantly available - trigger redraw
                                 if ((window as any).p5Instance) {
                                   ;(window as any).p5Instance.redraw()
                                 }
@@ -3609,14 +3609,7 @@ export default function GeneratorPage() {
                               <option value="1">Punk #0001 (Ape)</option>
                               <option value="2">Punk #0002 (Zombie)</option>
                               <option value="5">Punk #0005 (Alien)</option>
-                              <option value="26">Punk #0026 (Cap)</option>
-                              <option value="29">Punk #0029 (Beanie)</option>
-                              <option value="58">Punk #0058 (Nerd Glasses)</option>
-                              <option value="64">Punk #0064 (Shades)</option>
-                              <option value="95">Punk #0095 (Crazy Hair)</option>
-                              <option value="465">Punk #0465 (Cool)</option>
                               <option value="3100">Punk #3100 (Famous)</option>
-                              <option value="5217">Punk #5217 (Famous)</option>
                             </select>
                           </div>
 

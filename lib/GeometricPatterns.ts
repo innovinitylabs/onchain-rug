@@ -1117,148 +1117,148 @@ export type FieldType =
 /**
  * Main geometric pattern renderer
  */
-// Hardcoded Cryptopunk pixel data for reliable, instant access
-// These are the 12 curated punks: 0, 1, 2, 5, 26, 29, 58, 64, 95, 465, 3100, 5217
+// Hardcoded Cryptopunk pixel data from real SVGs
+// Auto-generated from downloaded Cryptopunk data
 const HARDCODED_PUNK_DATA: { [key: number]: ({r: number, g: number, b: number} | null)[][] } = {
-  // Punk #0 (Genesis) - simplified 24x24 pixel data
-  0: Array(24).fill(null).map((_, y) =>
-    Array(24).fill(null).map((_, x) => {
-      // Create a simple genesis punk pattern
-      if ((x >= 8 && x <= 15 && y >= 6 && y <= 17) ||
-          (x >= 6 && x <= 17 && y >= 8 && y <= 15)) {
-        return { r: 245, g: 225, b: 195 }; // Skin tone
-      }
-      return null;
-    })
-  ),
+  // Punk #0 (199 pixels)
+  0: [
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null,null],
+    [null,null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null,null],
+    [null,null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null,null],
+    [null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null,null],
+    [null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:44,g:149,b:65},{r:44,g:149,b:65},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:44,g:149,b:65},{r:44,g:149,b:65},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null,null],
+    [null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},{r:44,g:149,b:65},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},{r:44,g:149,b:65},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null,null],
+    [null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null,null],
+    [null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null],
+    [null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null],
+    [null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null],
+    [null,null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:95,g:29,b:9},{r:95,g:29,b:9},{r:95,g:29,b:9},{r:174,g:139,b:97},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,{r:0,g:0,b:0},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,{r:0,g:0,b:0},{r:174,g:139,b:97},{r:0,g:0,b:0},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,{r:0,g:0,b:0},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,{r:0,g:0,b:0},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,{r:0,g:0,b:0},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null,null,null],
+  ],
 
-  // Punk #1 (Ape) - simplified
-  1: Array(24).fill(null).map((_, y) =>
-    Array(24).fill(null).map((_, x) => {
-      if (x >= 7 && x <= 16 && y >= 5 && y <= 18) {
-        return { r: 139, g: 69, b: 19 }; // Brown ape color
-      }
-      return null;
-    })
-  ),
+  // Punk #1 (205 pixels)
+  1: [
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,{r:0,g:0,b:0},{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,{r:0,g:0,b:0},{r:166,g:110,b:44},{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,{r:0,g:0,b:0},{r:166,g:110,b:44},{r:166,g:110,b:44},{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,{r:0,g:0,b:0},{r:133,g:86,b:30},{r:166,g:110,b:44},{r:166,g:110,b:44},{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,{r:0,g:0,b:0},{r:133,g:86,b:30},{r:166,g:110,b:44},{r:166,g:110,b:44},{r:166,g:110,b:44},{r:0,g:0,b:0},{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,{r:0,g:0,b:0},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:166,g:110,b:44},{r:166,g:110,b:44},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:0,g:0,b:0},null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,{r:0,g:0,b:0},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:139,g:83,b:44},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:166,g:110,b:44},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:0,g:0,b:0},null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,{r:0,g:0,b:0},{r:113,g:63,b:29},{r:139,g:83,b:44},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:0,g:0,b:0},null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,{r:0,g:0,b:0},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:0,g:0,b:0},null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,{r:0,g:0,b:0},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:0,g:0,b:0},null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,{r:0,g:0,b:0},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:86,g:38,b:0},{r:86,g:38,b:0},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:86,g:38,b:0},{r:86,g:38,b:0},{r:0,g:0,b:0},null,null,null,null,null,null,null],
+    [null,null,null,null,null,{r:0,g:0,b:0},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:0,g:0,b:0},{r:114,g:55,b:9},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:0,g:0,b:0},{r:114,g:55,b:9},{r:0,g:0,b:0},null,null,null,null,null,null,null],
+    [null,null,null,null,null,{r:0,g:0,b:0},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:0,g:0,b:0},null,null,null,null,null,null,null],
+    [null,null,null,null,null,{r:0,g:0,b:0},{r:0,g:0,b:0},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:0,g:0,b:0},null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,{r:0,g:0,b:0},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:0,g:0,b:0},null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,{r:0,g:0,b:0},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:0,g:0,b:0},null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,{r:0,g:0,b:0},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:0,g:0,b:0},null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,{r:0,g:0,b:0},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:0,g:0,b:0},null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,{r:0,g:0,b:0},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:0,g:0,b:0},null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,{r:0,g:0,b:0},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:0,g:0,b:0},null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,{r:0,g:0,b:0},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:0,g:0,b:0},null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,{r:0,g:0,b:0},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:0,g:0,b:0},null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,{r:0,g:0,b:0},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:0,g:0,b:0},null,null,null,null,null,null,null],
+  ],
 
-  // Punk #2 (Zombie) - simplified
-  2: Array(24).fill(null).map((_, y) =>
-    Array(24).fill(null).map((_, x) => {
-      if (x >= 8 && x <= 15 && y >= 6 && y <= 17) {
-        return { r: 144, g: 238, b: 144 }; // Light green zombie
-      }
-      return null;
-    })
-  ),
+  // Punk #2 (250 pixels)
+  2: [
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+  ],
 
-  // Punk #5 (Alien) - simplified
-  5: Array(24).fill(null).map((_, y) =>
-    Array(24).fill(null).map((_, x) => {
-      if (x >= 7 && x <= 16 && y >= 5 && y <= 18) {
-        return { r: 0, g: 255, b: 0 }; // Bright green alien
-      }
-      return null;
-    })
-  ),
+  // Punk #5 (203 pixels)
+  5: [
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+  ],
 
-  // Punk #26 (Cap) - simplified
-  26: Array(24).fill(null).map((_, y) =>
-    Array(24).fill(null).map((_, x) => {
-      if (x >= 6 && x <= 17 && y >= 4 && y <= 8) {
-        return { r: 255, g: 0, b: 0 }; // Red cap
-      } else if (x >= 8 && x <= 15 && y >= 9 && y <= 17) {
-        return { r: 245, g: 225, b: 195 }; // Skin
-      }
-      return null;
-    })
-  ),
-
-  // Punk #29 (Beanie) - simplified
-  29: Array(24).fill(null).map((_, y) =>
-    Array(24).fill(null).map((_, x) => {
-      if (x >= 5 && x <= 18 && y >= 3 && y <= 7) {
-        return { r: 0, g: 0, b: 255 }; // Blue beanie
-      } else if (x >= 8 && x <= 15 && y >= 8 && y <= 16) {
-        return { r: 245, g: 225, b: 195 }; // Skin
-      }
-      return null;
-    })
-  ),
-
-  // Punk #58 (Nerd Glasses) - simplified
-  58: Array(24).fill(null).map((_, y) =>
-    Array(24).fill(null).map((_, x) => {
-      if (x >= 8 && x <= 15 && y >= 6 && y <= 17) {
-        return { r: 245, g: 225, b: 195 }; // Skin
-      } else if ((x >= 6 && x <= 9 && y >= 8 && y <= 11) ||
-                 (x >= 14 && x <= 17 && y >= 8 && y <= 11)) {
-        return { r: 0, g: 0, b: 0 }; // Black glasses
-      }
-      return null;
-    })
-  ),
-
-  // Punk #64 (Shades) - simplified
-  64: Array(24).fill(null).map((_, y) =>
-    Array(24).fill(null).map((_, x) => {
-      if (x >= 8 && x <= 15 && y >= 6 && y <= 17) {
-        return { r: 245, g: 225, b: 195 }; // Skin
-      } else if ((x >= 5 && x <= 10 && y >= 8 && y <= 12) ||
-                 (x >= 13 && x <= 18 && y >= 8 && y <= 12)) {
-        return { r: 25, g: 25, b: 25 }; // Dark shades
-      }
-      return null;
-    })
-  ),
-
-  // Punk #95 (Crazy Hair) - simplified
-  95: Array(24).fill(null).map((_, y) =>
-    Array(24).fill(null).map((_, x) => {
-      if (x >= 4 && x <= 19 && y >= 2 && y <= 6) {
-        return { r: 255, g: 165, b: 0 }; // Orange crazy hair
-      } else if (x >= 8 && x <= 15 && y >= 7 && y <= 16) {
-        return { r: 245, g: 225, b: 195 }; // Skin
-      }
-      return null;
-    })
-  ),
-
-  // Punk #465 (Cool) - simplified
-  465: Array(24).fill(null).map((_, y) =>
-    Array(24).fill(null).map((_, x) => {
-      if (x >= 8 && x <= 15 && y >= 6 && y <= 17) {
-        return { r: 135, g: 206, b: 235 }; // Sky blue cool
-      } else if (x >= 6 && x <= 17 && y >= 4 && y <= 7) {
-        return { r: 255, g: 215, b: 0 }; // Gold hair
-      }
-      return null;
-    })
-  ),
-
-  // Punk #3100 (Famous) - simplified
-  3100: Array(24).fill(null).map((_, y) =>
-    Array(24).fill(null).map((_, x) => {
-      if (x >= 8 && x <= 15 && y >= 6 && y <= 17) {
-        return { r: 255, g: 218, b: 185 }; // Warm skin
-      } else if (x >= 5 && x <= 18 && y >= 3 && y <= 7) {
-        return { r: 255, g: 255, b: 0 }; // Yellow hair
-      }
-      return null;
-    })
-  ),
-
-  // Punk #5217 (Famous) - simplified
-  5217: Array(24).fill(null).map((_, y) =>
-    Array(24).fill(null).map((_, x) => {
-      if (x >= 8 && x <= 15 && y >= 6 && y <= 17) {
-        return { r: 205, g: 133, b: 63 }; // Peru skin
-      } else if (x >= 6 && x <= 17 && y >= 4 && y <= 8) {
-        return { r: 128, g: 0, b: 128 }; // Purple hair
-      }
-      return null;
-    })
-  )
+  // Punk #3100 (193 pixels)
+  3100: [
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+  ]
 };
 
 export class GeometricPatternRenderer {
