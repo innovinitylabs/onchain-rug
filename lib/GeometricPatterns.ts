@@ -2276,60 +2276,59 @@ export class GeometricPatternRenderer {
   }
 
   /**
-   * Load punk data for our curated 11 punks
-   * These are pre-selected iconic punks for easy testing
+   * Preload all curated punk data synchronously
+   * Load the 12 punks we support for immediate availability
    */
-  async loadPunkData(punkId: number) {
-    // Check if punk data is already loaded
-    if (this.punkPixels[punkId]) {
-      return true; // Already loaded
-    }
+  loadAllPunkData() {
+    console.log('🎨 Preloading all curated punk data...');
 
-    console.log(`🎨 Loading punk #${punkId} data...`);
+    const curatedPunks = [
+      { id: 0, batch: 'punks-000.json' },
+      { id: 1, batch: 'punks-000.json' },
+      { id: 2, batch: 'punks-000.json' },
+      { id: 5, batch: 'punks-000.json' },
+      { id: 26, batch: 'punks-000.json' },
+      { id: 29, batch: 'punks-000.json' },
+      { id: 58, batch: 'punks-005.json' },
+      { id: 64, batch: 'punks-006.json' },
+      { id: 95, batch: 'punks-009.json' },
+      { id: 465, batch: 'punks-004.json' }, // New punk #465
+      { id: 3100, batch: 'punks-031.json' },
+      { id: 5217, batch: 'punks-052.json' }
+    ];
 
-    // Our curated list of 11 punks - check if this punk is supported
-    const supportedPunks = [0, 1, 2, 5, 26, 29, 58, 64, 95, 3100, 5217];
-
-    if (!supportedPunks.includes(punkId)) {
-      console.warn(`⚠️ Punk #${punkId} not in our curated list`);
-      return false;
-    }
+    let loadedCount = 0;
 
     try {
-      // Determine which file contains this punk ID
-      let filename: string;
-      if (punkId < 3100) {
-        // Early punks: determine batch based on ID
-        const batchIndex = Math.floor(punkId / 100);
-        filename = `punks-${batchIndex.toString().padStart(3, '0')}.json`;
-      } else {
-        // Famous punks: use their specific batches
-        if (punkId === 3100) filename = 'punks-031.json';
-        else if (punkId === 5217) filename = 'punks-052.json'; // Approximate batch
-        else filename = 'punks-078.json'; // Approximate batch for 7804
+      // Use XMLHttpRequest for synchronous loading
+      for (const punk of curatedPunks) {
+        try {
+          const xhr = new XMLHttpRequest();
+          xhr.open('GET', `/data/cryptopunks/${punk.batch}`, false); // Synchronous!
+          xhr.send();
+
+          if (xhr.status !== 200) {
+            console.warn(`⚠️ Skipping ${punk.batch} - HTTP ${xhr.status}`);
+            continue;
+          }
+
+          const batchData = JSON.parse(xhr.responseText);
+          const punkData = batchData.find((p: any) => p.id === punk.id);
+
+          if (punkData) {
+            this.loadPunkSvg(punk.id, punkData.svg);
+            loadedCount++;
+          }
+        } catch (error) {
+          console.warn(`❌ Failed to load punk #${punk.id}:`, error);
+        }
       }
 
-      // Load the specific batch file
-      const response = await fetch(`/data/cryptopunks/${filename}`);
-      if (!response.ok) {
-        console.warn(`⚠️ Failed to load ${filename} - HTTP ${response.status}`);
-        return false;
-      }
-
-      const batchData = await response.json();
-      const punkData = batchData.find((p: any) => p.id === punkId);
-
-      if (punkData) {
-        this.loadPunkSvg(punkId, punkData.svg);
-        console.log(`✅ Loaded punk #${punkId} from ${filename}`);
-        return true;
-      } else {
-        console.warn(`⚠️ Punk #${punkId} not found in ${filename}`);
-        return false;
-      }
+      console.log(`🎉 Successfully preloaded ${loadedCount}/12 curated punks`);
+      return loadedCount;
     } catch (error) {
-      console.warn(`❌ Failed to load punk #${punkId}:`, error);
-      return false;
+      console.error('💥 Failed to preload punk data:', error);
+      return 0;
     }
   }
 

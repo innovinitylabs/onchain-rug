@@ -197,13 +197,17 @@ export default function GeneratorPage() {
     if (typeof window !== 'undefined' && (window as any).p5Instance && (window as any).doormatData) {
       // Only create mask if overlay is enabled
       if (enableOverlayRef.current) {
-        // Get or create pattern renderer (punk data loaded on-demand now)
+        // Get or create pattern renderer with preloaded punk data
         let patternRenderer = (window as any).p5Instance.patternRenderer;
         if (!patternRenderer) {
           const currentSeed = (window as any).currentSeed || 42
           const maskPRNG = createDerivedPRNG(currentSeed, 1000)
           patternRenderer = new GeometricPatternRenderer((window as any).p5Instance, maskPRNG)
           ;(window as any).p5Instance.patternRenderer = patternRenderer
+
+          // Preload ALL punk data synchronously for immediate availability
+          const loadedCount = patternRenderer.loadAllPunkData()
+          console.log(`✅ Preloaded ${loadedCount} punks for engraving`)
         }
 
         const palette = extractRugPalette((window as any).doormatData, (window as any).p5Instance)
@@ -1217,6 +1221,13 @@ export default function GeneratorPage() {
             r = punkColor.r
             g = punkColor.g
             b = punkColor.b
+          } else {
+            // Fallback: show a subtle engraving effect when punk data isn't loaded yet
+            // This provides visual feedback that engraving is active
+            const engravingStrength = 0.3
+            r = Math.max(0, r - 25 * engravingStrength)
+            g = Math.max(0, g - 25 * engravingStrength)
+            b = Math.max(0, b - 25 * engravingStrength)
           }
         }
 
@@ -1656,6 +1667,13 @@ export default function GeneratorPage() {
             r = punkColor.r
             g = punkColor.g
             b = punkColor.b
+          } else {
+            // Fallback: show a subtle engraving effect when punk data isn't loaded yet
+            // This provides visual feedback that engraving is active
+            const engravingStrength = 0.3
+            r = Math.max(0, r - 25 * engravingStrength)
+            g = Math.max(0, g - 25 * engravingStrength)
+            b = Math.max(0, b - 25 * engravingStrength)
           }
         }
 
@@ -3578,18 +3596,14 @@ export default function GeneratorPage() {
                             <div className="text-amber-800 text-xs mb-2">Punk Selection:</div>
                             <select
                               value={selectedPunkId}
-                              onChange={async (e) => {
+                              onChange={(e) => {
                                 const newPunkId = parseInt(e.target.value)
                                 setSelectedPunkId(newPunkId)
 
-                                // Preload punk data for immediate engraving
-                                if ((window as any).p5Instance?.patternRenderer) {
-                                  console.log(`🎨 Preloading punk #${newPunkId} data...`)
-                                  await (window as any).p5Instance.patternRenderer.loadPunkData(newPunkId)
-                                  console.log(`✅ Punk #${newPunkId} data loaded`)
+                                // Trigger immediate redraw with punk engraving
+                                if ((window as any).p5Instance) {
+                                  ;(window as any).p5Instance.redraw()
                                 }
-
-                                regenerateMask(selectedMaskType, newPunkId)
                               }}
                               className="w-full bg-white text-amber-900 rounded text-sm font-mono focus:ring-1 focus:ring-amber-500 border border-amber-300 px-2 py-1"
                             >
@@ -3602,6 +3616,7 @@ export default function GeneratorPage() {
                               <option value="58">Punk #0058 (Nerd Glasses)</option>
                               <option value="64">Punk #0064 (Shades)</option>
                               <option value="95">Punk #0095 (Crazy Hair)</option>
+                              <option value="465">Punk #0465 (Cool)</option>
                               <option value="3100">Punk #3100 (Famous)</option>
                               <option value="5217">Punk #5217 (Famous)</option>
                             </select>
