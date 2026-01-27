@@ -1156,7 +1156,8 @@ async function loadPunkDataFromJson(punkId: number): Promise<({r: number, g: num
 
     // Debug: Check what the data looks like
     if (punkId === 0 || punkId === 1) {
-      console.log(`Data for punk ${punkId}:`, data.slice(0, 3));
+      console.log(`Data for punk ${punkId}:`, data.slice(0, 3).map((p, i) => ({ index: i, id: p.id })));
+      console.log(`Looking for punk ${punkId}, found:`, data.find((p: any) => p.id === punkId));
     }
 
     // Try ID lookup first (original method)
