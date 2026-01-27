@@ -2457,14 +2457,15 @@ export function samplePunkPixel(
   const punkPixels = (window as any).__CURRENT_PUNK_PIXELS__
   if (!punkPixels) return null
 
-  const PUNK_RENDER_SIZE = 360 // Slightly bigger for better visibility
+  const PUNK_RENDER_SIZE = 420 // Much bigger for better visibility
   const PUNK_PIXEL_SCALE = PUNK_RENDER_SIZE / 24
 
   const originX = Math.floor(
     (doormatData.config.DOORMAT_WIDTH - PUNK_RENDER_SIZE) / 2
   )
+  // Move closer to bottom by offsetting from the bottom edge
   const originY = Math.floor(
-    (doormatData.config.DOORMAT_HEIGHT - PUNK_RENDER_SIZE) / 2
+    doormatData.config.DOORMAT_HEIGHT - PUNK_RENDER_SIZE - 60 // 60px from bottom
   )
 
   if (
