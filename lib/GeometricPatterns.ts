@@ -1322,7 +1322,6 @@ export type MaskType =
   | 'arc_partition'
   | 'arc_dominance_partition'
   | 'rug_area'
-  | 'crypto_punk'
 
 /**
  * Field types define how stripe sampling behaves inside masks

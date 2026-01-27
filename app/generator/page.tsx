@@ -260,8 +260,7 @@ export default function GeneratorPage() {
           defaultPatternParams,
           palette,
           (window as any).doormatData.config.DOORMAT_WIDTH,
-          (window as any).doormatData.config.DOORMAT_HEIGHT,
-          punkId
+          (window as any).doormatData.config.DOORMAT_HEIGHT
         )
       } else {
         // Disable overlay by setting patternMask to null
