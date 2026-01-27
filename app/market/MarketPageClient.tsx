@@ -339,7 +339,7 @@ export default function MarketPageClient() {
               <ShoppingCart className="w-8 h-8 text-blue-400" />
               <h1 className="text-4xl font-bold text-white">NFT Marketplace</h1>
             </div>
-            <p className="text-white/70">Buy and sell OnchainRugs NFTs</p>
+            <p className="text-white/70">Buy and sell OnchainRugs by Valipokkann NFTs</p>
 
             {/* Stats */}
             <div className="flex items-center justify-center gap-6 mt-6">

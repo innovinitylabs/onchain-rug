@@ -4,7 +4,7 @@ import Footer from '@/components/Footer'
 import { AttributionDashboard } from '@/components/attribution'
 
 export const metadata: Metadata = {
-  title: "Referral Program - Earn 5% Commission | OnchainRugs",
+  title: "Referral Program - Earn 5% Commission | OnchainRugs by Valipokkann",
   description: "Join the OnchainRugs referral program and earn 5% commission on every NFT mint and marketplace purchase. Share your unique referral link and start earning passive income from the growing OnchainRugs community.",
   keywords: [
     "NFT referral program", "earn commission NFTs", "referral rewards", "passive income NFTs",

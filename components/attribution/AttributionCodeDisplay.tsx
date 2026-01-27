@@ -30,7 +30,7 @@ export function AttributionCodeDisplay() {
 
   const shareAttribution = async () => {
     const url = getSharingUrl()
-    const text = `Check out OnchainRugs! Use my ERC-8021 attribution code for exclusive benefits: ${url}`
+    const text = `Check out OnchainRugs by Valipokkann! Use my ERC-8021 attribution code for exclusive benefits: ${url}`
 
     if (navigator.share) {
       try {
@@ -50,21 +50,21 @@ export function AttributionCodeDisplay() {
 
   const shareToTwitter = () => {
     const url = encodeURIComponent(getSharingUrl())
-    const text = encodeURIComponent(`Check out OnchainRugs! Use my ERC-8021 attribution code and get exclusive benefits 🎨✨`)
+    const text = encodeURIComponent(`Check out OnchainRugs by Valipokkann! Use my ERC-8021 attribution code and get exclusive benefits 🎨✨`)
     const twitterUrl = `https://twitter.com/intent/tweet?text=${text}&url=${url}`
     window.open(twitterUrl, '_blank', 'noopener,noreferrer')
   }
 
   const shareToWhatsApp = () => {
     const url = getSharingUrl()
-    const text = `Check out OnchainRugs! Use my ERC-8021 attribution code for exclusive benefits: ${url}`
+    const text = `Check out OnchainRugs by Valipokkann! Use my ERC-8021 attribution code for exclusive benefits: ${url}`
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`
     window.open(whatsappUrl, '_blank', 'noopener,noreferrer')
   }
 
   const shareToTelegram = () => {
     const url = encodeURIComponent(getSharingUrl())
-    const text = encodeURIComponent(`Check out OnchainRugs! Use my ERC-8021 attribution code for exclusive benefits 🎨✨`)
+    const text = encodeURIComponent(`Check out OnchainRugs by Valipokkann! Use my ERC-8021 attribution code for exclusive benefits 🎨✨`)
     const telegramUrl = `https://t.me/share/url?url=${url}&text=${text}`
     window.open(telegramUrl, '_blank', 'noopener,noreferrer')
   }
