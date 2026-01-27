@@ -1244,6 +1244,7 @@ export default function GeneratorPage() {
           // 🔴 PUNK ENGRAVING OVERRIDE (WARP)
           const punkPixel = samplePunkPixel(x, y, doormatData)
           if (punkPixel) {
+            console.log(`🔴 WARP: Applied punk pixel at (${x}, ${y}): rgb(${punkPixel.r}, ${punkPixel.g}, ${punkPixel.b})`)
             r = punkPixel.r
             g = punkPixel.g
             b = punkPixel.b
@@ -1674,6 +1675,7 @@ export default function GeneratorPage() {
           // 🔴 PUNK ENGRAVING OVERRIDE (WEFT)
           const punkPixel = samplePunkPixel(x, y, doormatData)
           if (punkPixel) {
+            console.log(`🔴 WEFT: Applied punk pixel at (${x}, ${y}): rgb(${punkPixel.r}, ${punkPixel.g}, ${punkPixel.b})`)
             r = punkPixel.r
             g = punkPixel.g
             b = punkPixel.b

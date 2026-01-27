@@ -2477,10 +2477,16 @@ export function samplePunkPixel(
 ): { r: number; g: number; b: number } | null {
 
   // Hard-gate: punk sampling only when explicitly enabled
-  if (!(window as any).__ENABLE_PUNK__) return null
+  if (!(window as any).__ENABLE_PUNK__) {
+    console.log(`🚫 Punk engraving disabled, skipping sample at (${x}, ${y})`)
+    return null
+  }
 
   const punkPixels = (window as any).__CURRENT_PUNK_PIXELS__
-  if (!punkPixels) return null
+  if (!punkPixels) {
+    console.log(`⚠️ No punk pixels loaded, skipping sample at (${x}, ${y})`)
+    return null
+  }
 
   const PUNK_RENDER_SIZE = 420 // Much bigger for better visibility
   const PUNK_PIXEL_SCALE = PUNK_RENDER_SIZE / 24
@@ -2508,13 +2514,27 @@ export function samplePunkPixel(
   const px = Math.floor(localX / PUNK_PIXEL_SCALE)
   const py = Math.floor(localY / PUNK_PIXEL_SCALE)
 
-  if (px < 0 || px >= 24 || py < 0 || py >= 24) return null
+  if (px < 0 || px >= 24 || py < 0 || py >= 24) {
+    console.log(`📍 Out of bounds: px=${px}, py=${py} at (${x}, ${y})`)
+    return null
+  }
 
   // Rotate 90 degrees counterclockwise to match rug orientation
   const rotatedPx = 23 - py
   const rotatedPy = px
 
-  return punkPixels[rotatedPy][rotatedPx]
+  const pixel = punkPixels[rotatedPy]?.[rotatedPx]
+
+  // Only log occasionally to avoid spam
+  if (Math.random() < 0.0001) { // 0.01% of the time
+    if (pixel) {
+      console.log(`🎨 Sampled punk pixel at (${x}, ${y}): rgb(${pixel.r}, ${pixel.g}, ${pixel.b})`)
+    } else {
+      console.log(`⚫ No punk pixel at (${x}, ${y})`)
+    }
+  }
+
+  return pixel
 }
 
 /**
