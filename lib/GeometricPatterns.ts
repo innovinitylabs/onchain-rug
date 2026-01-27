@@ -2276,8 +2276,8 @@ export class GeometricPatternRenderer {
   }
 
   /**
-   * Load punk data on-demand for a specific punk ID
-   * Call this when a punk is selected to preload data
+   * Load punk data for our curated 11 punks
+   * These are pre-selected iconic punks for easy testing
    */
   async loadPunkData(punkId: number) {
     // Check if punk data is already loaded
@@ -2287,29 +2287,26 @@ export class GeometricPatternRenderer {
 
     console.log(`🎨 Loading punk #${punkId} data...`);
 
+    // Our curated list of 11 punks - check if this punk is supported
+    const supportedPunks = [0, 1, 2, 5, 26, 29, 58, 64, 95, 3100, 5217];
+
+    if (!supportedPunks.includes(punkId)) {
+      console.warn(`⚠️ Punk #${punkId} not in our curated list`);
+      return false;
+    }
+
     try {
       // Determine which file contains this punk ID
-      let batchIndex = Math.floor(punkId / 100);
-      let filename = `punks-${batchIndex.toString().padStart(3, '0')}.json`;
-
-      // Special handling for our loaded batches
-      const availableFiles = [
-        'punks-000.json', 'punks-001.json', 'punks-002.json', 'punks-003.json',
-        'punks-004.json', 'punks-005.json', 'punks-006.json', 'punks-007.json',
-        'punks-008.json', 'punks-009.json', 'punks-010.json', 'punks-011.json',
-        'punks-012.json', 'punks-013.json', 'punks-014.json', 'punks-016.json',
-        'punks-019.json', 'punks-020.json', 'punks-021.json', 'punks-022.json',
-        'punks-023.json', 'punks-024.json', 'punks-031.json'
-      ];
-
-      if (!availableFiles.includes(filename)) {
-        // Find the closest available batch
-        const availableIndices = availableFiles.map(f => parseInt(f.split('-')[1].split('.')[0]));
-        const closestBatch = availableIndices.reduce((prev, curr) =>
-          Math.abs(curr - batchIndex) < Math.abs(prev - batchIndex) ? curr : prev
-        );
-        filename = `punks-${closestBatch.toString().padStart(3, '0')}.json`;
-        batchIndex = closestBatch;
+      let filename: string;
+      if (punkId < 3100) {
+        // Early punks: determine batch based on ID
+        const batchIndex = Math.floor(punkId / 100);
+        filename = `punks-${batchIndex.toString().padStart(3, '0')}.json`;
+      } else {
+        // Famous punks: use their specific batches
+        if (punkId === 3100) filename = 'punks-031.json';
+        else if (punkId === 5217) filename = 'punks-052.json'; // Approximate batch
+        else filename = 'punks-078.json'; // Approximate batch for 7804
       }
 
       // Load the specific batch file

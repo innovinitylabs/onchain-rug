@@ -103,7 +103,6 @@ export default function GeneratorPage() {
   const [selectedMaskType, setSelectedMaskType] = useState<MaskType>('block_circles')
   const [selectedFieldType, setSelectedFieldType] = useState<FieldType>('stripe_rotation')
   const [selectedPunkId, setSelectedPunkId] = useState<number>(0)
-  const [selectedPunkPattern, setSelectedPunkPattern] = useState<string>('classic')
 
   const [evolutionPhase, setEvolutionPhase] = useState(DEFAULT_EVOLUTION_PHASE)
   const [showPatternDropdown, setShowPatternDropdown] = useState(false)
@@ -193,27 +192,6 @@ export default function GeneratorPage() {
   const textInputRefs = useRef<(HTMLInputElement | null)[]>([])
 
   // Helper function to get punk ID for pattern type
-  const getPunkIdForPattern = (pattern: string): number => {
-    const patternMap: { [key: string]: number } = {
-      '0': 0,        // Genesis punk
-      '1': 1,        // First ape
-      '2': 2,        // First zombie
-      '3': 3,        // First female
-      '4': 4,        // First male
-      '5': 5,        // First alien
-      '29': 29,      // Beanie example
-      '26': 26,      // Cap example
-      '95': 95,      // Crazy hair example
-      '58': 58,      // Nerd glasses example
-      '64': 64,      // Shades example
-      '3100': 3100,  // Famous punk
-      '5217': 5217,  // Famous punk
-      '7804': 7804,  // Famous punk
-      'custom': selectedPunkId // Keep current custom value
-    };
-    return patternMap[pattern] || 0;
-  };
-
   // Helper functions for mask/field regeneration
   const regenerateMask = (maskType: MaskType, punkId?: number) => {
     if (typeof window !== 'undefined' && (window as any).p5Instance && (window as any).doormatData) {
@@ -3599,12 +3577,9 @@ export default function GeneratorPage() {
                           <div>
                             <div className="text-amber-800 text-xs mb-2">Punk Selection:</div>
                             <select
-                              value={selectedPunkPattern}
+                              value={selectedPunkId}
                               onChange={async (e) => {
-                                const newPattern = e.target.value
-                                setSelectedPunkPattern(newPattern)
-                                // Update punkId based on pattern selection
-                                const newPunkId = getPunkIdForPattern(newPattern)
+                                const newPunkId = parseInt(e.target.value)
                                 setSelectedPunkId(newPunkId)
 
                                 // Preload punk data for immediate engraving
@@ -3621,46 +3596,17 @@ export default function GeneratorPage() {
                               <option value="0">Punk #0000 (Genesis)</option>
                               <option value="1">Punk #0001 (Ape)</option>
                               <option value="2">Punk #0002 (Zombie)</option>
-                              <option value="3">Punk #0003 (Female)</option>
-                              <option value="4">Punk #0004 (Male)</option>
                               <option value="5">Punk #0005 (Alien)</option>
-                              <option value="29">Punk #0029 (Beanie)</option>
                               <option value="26">Punk #0026 (Cap)</option>
-                              <option value="95">Punk #0095 (Crazy Hair)</option>
+                              <option value="29">Punk #0029 (Beanie)</option>
                               <option value="58">Punk #0058 (Nerd Glasses)</option>
                               <option value="64">Punk #0064 (Shades)</option>
+                              <option value="95">Punk #0095 (Crazy Hair)</option>
                               <option value="3100">Punk #3100 (Famous)</option>
                               <option value="5217">Punk #5217 (Famous)</option>
-                              <option value="7804">Punk #7804 (Famous)</option>
-                              <option value="custom">Custom Punk ID</option>
                             </select>
                           </div>
 
-                          {selectedPunkPattern === 'custom' && (
-                            <div>
-                              <div className="text-amber-800 text-xs mb-2">Punk ID (0-9999):</div>
-                              <input
-                                type="number"
-                                min="0"
-                                max="9999"
-                                value={selectedPunkId}
-                                onChange={async (e) => {
-                                  const newPunkId = Math.max(0, Math.min(9999, parseInt(e.target.value) || 0))
-                                  setSelectedPunkId(newPunkId)
-
-                                  // Preload punk data for immediate engraving
-                                  if ((window as any).p5Instance?.patternRenderer) {
-                                    console.log(`🎨 Preloading punk #${newPunkId} data...`)
-                                    await (window as any).p5Instance.patternRenderer.loadPunkData(newPunkId)
-                                    console.log(`✅ Punk #${newPunkId} data loaded`)
-                                  }
-
-                                  regenerateMask(selectedMaskType, newPunkId)
-                                }}
-                                className="w-full bg-white text-amber-900 rounded text-sm font-mono focus:ring-1 focus:ring-amber-500 border border-amber-300 px-2 py-1"
-                              />
-                            </div>
-                          )}
 
                           <div className="space-y-2">
                             <div className="flex items-center justify-between bg-gray-800 rounded">
