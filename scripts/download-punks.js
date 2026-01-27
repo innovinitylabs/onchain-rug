@@ -2,9 +2,9 @@
 
 /**
  * Cryptopunk SVG Downloader
- * Downloads all 10,000 Cryptopunk SVGs in parallel batches
+ * Downloads all 10,000 Cryptopunk SVGs from punks.art API
  *
- * Usage: node scripts/download-punks.js [start-id] [end-id] [batch-size]
+ * Usage: node scripts/download-punks.js
  */
 
 import fs from 'fs';
@@ -14,25 +14,13 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Configuration
-const START_ID = parseInt(process.argv[2] || '625');
-const END_ID = parseInt(process.argv[3] || '9999');
-const BATCH_SIZE = parseInt(process.argv[4] || '100');
-
 /**
  * Fetch SVG for a single punk
  */
 async function fetchPunkSvg(punkId) {
   try {
     // Try punks.art API
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-
-    const response = await fetch(`https://punks.art/api/punks/${punkId}?format=svg`, {
-      signal: controller.signal
-    });
-
-    clearTimeout(timeoutId);
+    const response = await fetch(`https://punks.art/api/punks/${punkId}?format=svg`);
 
     if (response.ok) {
       const svgText = await response.text();
@@ -50,13 +38,13 @@ async function fetchPunkSvg(punkId) {
 
     throw new Error(`HTTP ${response.status}`);
   } catch (error) {
-    // Don't throw, just return placeholder
+    // Return placeholder for failed requests
     return `<svg xmlns="http://www.w3.org/2000/svg">Placeholder for punk ${punkId}</svg>`;
   }
 }
 
 /**
- * Download all punks in parallel batches
+ * Download all missing punks
  */
 async function downloadAllPunks() {
   const outputDir = path.join(__dirname, '..', 'public', 'data', 'cryptopunks');
@@ -66,35 +54,40 @@ async function downloadAllPunks() {
   }
 
   console.log('🚀 Starting Cryptopunk SVG download...');
-  console.log(`📊 Range: ${START_ID} to ${END_ID}`);
-  console.log(`📦 Batch size: ${BATCH_SIZE}`);
 
-  const totalPunks = END_ID - START_ID + 1;
-  const totalBatches = Math.ceil(totalPunks / BATCH_SIZE);
+  // Process each batch (0-399, each containing 25 punks)
+  const totalBatches = 400; // 10000 / 25 = 400 batches
   let totalDownloaded = 0;
 
   for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
-    const batchStart = START_ID + (batchIndex * BATCH_SIZE);
-    const batchEnd = Math.min(batchStart + BATCH_SIZE - 1, END_ID);
-    const batchNum = batchIndex + 1;
+    const batchStart = batchIndex * 25;
+    const batchEnd = Math.min(batchStart + 24, 9999);
+    const batchFilename = `punks-${batchIndex.toString().padStart(3, '0')}.json`;
+    const batchPath = path.join(outputDir, batchFilename);
 
-    console.log(`\n📦 Batch ${batchNum}/${totalBatches} (${batchStart}-${batchEnd})`);
+    // Skip if batch file already exists
+    if (fs.existsSync(batchPath)) {
+      console.log(`⏭️  Skipping existing batch ${batchIndex + 1}/${totalBatches} (${batchStart}-${batchEnd})`);
+      continue;
+    }
 
-    // Create promises for all punks in this batch
+    console.log(`📦 Processing batch ${batchIndex + 1}/${totalBatches} (${batchStart}-${batchEnd})`);
+
+    // Download all punks in this batch
     const punkPromises = [];
     for (let punkId = batchStart; punkId <= batchEnd; punkId++) {
       punkPromises.push(fetchPunkData(punkId));
     }
 
-    // Process in chunks of 20 concurrent requests
+    // Process in chunks of 10 concurrent requests
     const results = [];
-    for (let i = 0; i < punkPromises.length; i += 20) {
-      const chunk = punkPromises.slice(i, i + 20);
+    for (let i = 0; i < punkPromises.length; i += 10) {
+      const chunk = punkPromises.slice(i, i + 10);
       const chunkResults = await Promise.allSettled(chunk);
       results.push(...chunkResults);
 
       // Small delay between chunks
-      if (i + 20 < punkPromises.length) {
+      if (i + 10 < punkPromises.length) {
         await new Promise(resolve => setTimeout(resolve, 200));
       }
     }
@@ -112,29 +105,20 @@ async function downloadAllPunks() {
 
       if (result.status === 'fulfilled') {
         totalDownloaded++;
-      } else {
-        console.warn(`❌ Failed punk ${punkId}: ${result.reason?.message || 'Unknown error'}`);
       }
     }
 
     // Save batch
-    const batchFilename = `punks-${String(batchStart).padStart(5, '0')}.json`;
-    const outputPath = path.join(outputDir, batchFilename);
-    fs.writeFileSync(outputPath, JSON.stringify(batchPunks, null, 2));
-
-    console.log(`💾 Saved ${batchFilename} (${batchPunks.length} punks, ${totalDownloaded} total)`);
+    fs.writeFileSync(batchPath, JSON.stringify(batchPunks, null, 2));
+    console.log(`💾 Saved ${batchFilename} (${batchPunks.length} punks)`);
   }
 
-  console.log(`\n✅ Download complete! ${totalDownloaded}/${totalPunks} punks downloaded successfully`);
+  console.log(`\n✅ Download complete! ${totalDownloaded} punks downloaded successfully`);
 }
 
 async function fetchPunkData(punkId) {
-  try {
-    return await fetchPunkSvg(punkId);
-  } catch (error) {
-    console.warn(`⚠️ Punk ${punkId} failed, using placeholder`);
-    return `<svg xmlns="http://www.w3.org/2000/svg">Placeholder for punk ${punkId}</svg>`;
-  }
+  const svg = await fetchPunkSvg(punkId);
+  return svg;
 }
 
 // Run the download
