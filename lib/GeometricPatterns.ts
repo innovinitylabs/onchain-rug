@@ -1154,22 +1154,34 @@ async function loadPunkDataFromJson(punkId: number): Promise<({r: number, g: num
 
     const data = await response.json();
 
-    // Use ID lookup - data structure has id fields
-    const punkData = data.find((p: any) => p.id === punkId);
-
-    if (!punkData) {
-      console.warn(`Punk ${punkId} not found in ${filePath}`);
-      return null;
+    // Build a Map keyed by entry.id for strict resolution
+    const punkMap = new Map<number, any>();
+    for (const entry of data) {
+      if (entry.id !== undefined) {
+        punkMap.set(entry.id, entry);
+      }
     }
 
-    console.log(`🔍 Loading punk ${punkId} - SVG hash: ${punkData.svg.substring(0, 50)}...`);
+    console.log(`📋 Built punk map for ${filePath}: ${punkMap.size} entries (IDs: ${Array.from(punkMap.keys()).slice(0, 10).join(', ')}...)`);
+
+    // Resolve strictly via Map - no fallbacks, no modulo, no array indexing
+    const punkData = punkMap.get(punkId);
+
+    if (!punkData) {
+      const availableIds = Array.from(punkMap.keys()).sort((a, b) => a - b);
+      throw new Error(`Punk ${punkId} not found in ${filePath}. Available IDs: [${availableIds.join(', ')}]`);
+    }
+
+    // Console assertion: verify punk ID matches
+    console.assert(punkData.id === punkId, `Punk ID mismatch: requested ${punkId}, got ${punkData.id}`);
+    console.log(`✅ Resolved punk ${punkId} -> entry.id=${punkData.id}, SVG hash: ${punkData.svg.substring(0, 50)}...`);
 
     const pixelData = await parsePunkSvg(punkData.svg);
     return pixelData;
 
   } catch (error) {
     console.error(`Failed to load punk ${punkId}:`, error);
-    return null;
+    throw error; // Re-throw to prevent silent failures
   }
 }
 
