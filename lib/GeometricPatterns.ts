@@ -1143,7 +1143,9 @@ function getPunkFilePath(punkId: number): string {
 async function loadPunkDataFromJson(punkId: number): Promise<({r: number, g: number, b: number} | null)[][] | null> {
   try {
     const filePath = getPunkFilePath(punkId);
-    const response = await fetch(filePath);
+    // Force fresh load by adding timestamp
+    const freshFilePath = `${filePath}?t=${Date.now()}`;
+    const response = await fetch(freshFilePath);
 
     if (!response.ok) {
       console.warn(`Punk file ${filePath} not found`);
@@ -1159,6 +1161,8 @@ async function loadPunkDataFromJson(punkId: number): Promise<({r: number, g: num
       console.warn(`Punk ${punkId} not found in ${filePath}`);
       return null;
     }
+
+    console.log(`🔍 Loading punk ${punkId} - SVG hash: ${punkData.svg.substring(0, 50)}...`);
 
     const pixelData = await parsePunkSvg(punkData.svg);
     return pixelData;

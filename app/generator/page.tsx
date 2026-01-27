@@ -172,6 +172,7 @@ export default function GeneratorPage() {
     if (!enablePunk) {
       if (typeof window !== 'undefined') {
         ;(window as any).__CURRENT_PUNK_PIXELS__ = null
+        console.log(`🚫 Punk engraving disabled, cleared data`)
       }
       return
     }
@@ -179,17 +180,22 @@ export default function GeneratorPage() {
     // Use official CryptoPunk ID directly as dataset index (for now)
     const datasetIndex = mapOfficialPunkIdToDatasetIndex(selectedPunkId)
 
-    console.log(`🎨 Loading official punk #${selectedPunkId}...`)
+    console.log(`🎨 Loading official punk #${selectedPunkId} (dataset index: ${datasetIndex})...`)
     loadPunkData(datasetIndex).then(punkPixels => {
       if (punkPixels && typeof window !== 'undefined') {
         ;(window as any).__CURRENT_PUNK_PIXELS__ = punkPixels
         console.log(`✅ Official punk #${selectedPunkId} loaded successfully (${punkPixels.flat().filter(p => p !== null).length} pixels)`)
+
+        // Force redraw
         if ((window as any).p5Instance) {
-          (window as any).p5Instance.redraw()
+          ;(window as any).p5Instance.redraw()
+          console.log(`🔄 Canvas redrawn for punk #${selectedPunkId}`)
         }
       } else {
         console.warn(`❌ Failed to load official punk #${selectedPunkId}`)
       }
+    }).catch(error => {
+      console.error(`💥 Error loading punk #${selectedPunkId}:`, error)
     })
   }, [enablePunk, selectedPunkId])
 
