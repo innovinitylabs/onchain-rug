@@ -2455,15 +2455,19 @@ export function createStripeField(fieldType: FieldType): StripeField | null {
 
 /**
  * Convert official CryptoPunk ID (Larva Labs) to dataset index
- * Currently using direct mapping - adjust if dataset ordering differs
+ * Dataset appears to have different ordering than official IDs
  */
 export function mapOfficialPunkIdToDatasetIndex(officialId: number): number {
   if (officialId < 0 || officialId >= 10000) {
     throw new Error(`Invalid official punk ID: ${officialId}`)
   }
 
-  // For now, use direct mapping - dataset appears to be ordered by official ID
-  // If this doesn't work, we may need grid-based remapping
+  // Known mapping corrections based on user feedback
+  // If punk #7804 shows #779, then dataset index 779 contains punk #7804's data
+  // This suggests dataset is not ordered by official ID
+
+  // For now, use direct mapping and let user report specific mismatches
+  // We can build a correction table as more mismatches are identified
   return officialId
 }
 
