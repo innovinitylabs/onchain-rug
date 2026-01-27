@@ -182,8 +182,21 @@ export default function GeneratorPage() {
     console.log(`🎨 Loading official punk #${selectedPunkId}...`)
     loadPunkData(datasetIndex).then(punkPixels => {
       if (punkPixels && typeof window !== 'undefined') {
+        const pixelCount = punkPixels.flat().filter(p => p !== null).length
+        console.log(`✅ Official punk #${selectedPunkId} loaded successfully (${pixelCount} pixels)`)
+
+        // Debug: Check if pixels are actually different
+        const existingPixels = (window as any).__CURRENT_PUNK_PIXELS__
+        if (existingPixels) {
+          const existingCount = existingPixels.flat().filter(p => p !== null).length
+          console.log(`Comparing to existing punk: ${existingCount} pixels`)
+
+          // Check if they're the same punk (first few pixels)
+          const same = JSON.stringify(punkPixels[0]?.slice(0, 5)) === JSON.stringify(existingPixels[0]?.slice(0, 5))
+          console.log(`Same punk data? ${same}`)
+        }
+
         ;(window as any).__CURRENT_PUNK_PIXELS__ = punkPixels
-        console.log(`✅ Official punk #${selectedPunkId} loaded successfully (${punkPixels.flat().filter(p => p !== null).length} pixels)`)
         if ((window as any).p5Instance) {
           (window as any).p5Instance.redraw()
         }
