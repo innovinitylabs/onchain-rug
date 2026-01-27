@@ -56,11 +56,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Onchain Rugs - Fully Onchain Living Generative NFT Art | Shape L2 Blockchain",
-  description: "Experience fully onchain living generative NFT art. Each OnchainRug is a living NFT - completely onchain, generative, and dynamic. They age with dirt accumulation, require your care and maintenance, and evolve over time. 102 color palettes, custom text, authentic physics. Max supply: 10,000 unique living onchain artworks.",
+  title: "Onchain Rugs - Fully Onchain Living Generative NFT Art | Ethereum Blockchain",
+  description: "Experience fully onchain living generative NFT art. Each OnchainRug is a living NFT - completely onchain, generative, and dynamic. They age with dirt accumulation, require your care and maintenance, and evolve over time. 102 color palettes, custom text, authentic physics. Mint directly on Ethereum blockchain. Max supply: 10,000 unique living onchain artworks.",
   keywords: [
     "living NFT", "living onchain NFT", "fully onchain NFT", "onchain generative art", "living generative NFT",
-    "Shape L2 NFT", "onchain textile art", "onchain woven art", "onchain digital rugs", "onchain aging NFT",
+    "Ethereum NFT", "onchain textile art", "onchain woven art", "onchain digital rugs", "onchain aging NFT",
     "living NFT art", "blockchain generative art", "onchain NFT marketplace", "fully onchain collectibles",
     "onchain crypto art", "onchain blockchain art", "onchain NFT", "living digital art", "dynamic NFT"
   ],
@@ -189,7 +189,7 @@ export default function RootLayout({
                   "name": "OnchainRugs",
                   "url": "https://onchainrugs.xyz",
                   "logo": "https://onchainrugs.xyz/valipokkann.svg",
-                  "description": "Living generative NFT art collection featuring woven textile patterns that age over time on the Shape L2 blockchain.",
+                  "description": "Living generative NFT art collection featuring woven textile patterns that age over time on the Ethereum blockchain.",
                   "founder": {
                     "@type": "Person",
                     "name": "valipokkann",
@@ -203,7 +203,7 @@ export default function RootLayout({
                     "NFT Art",
                     "Generative Art",
                     "Blockchain Technology",
-                    "Shape L2 Network",
+                    "Ethereum Blockchain",
                     "Ethereum NFTs",
                     "Digital Collectibles"
                   ]
@@ -229,13 +229,13 @@ export default function RootLayout({
                   "dateCreated": "2024",
                   "artMedium": "Digital (HTML5 Canvas, P5.js)",
                   "artform": "Generative Textile Art",
-                  "material": "On-chain generated, Shape L2 blockchain",
+                  "material": "On-chain generated, Ethereum blockchain",
                   "numberOfItems": "10000",
                   "additionalProperty": [
                     {
                       "@type": "PropertyValue",
                       "name": "Blockchain",
-                      "value": "Shape L2"
+                      "value": "Ethereum"
                     },
                     {
                       "@type": "PropertyValue",

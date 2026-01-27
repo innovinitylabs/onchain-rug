@@ -46,10 +46,10 @@ import { AttributionCodeDisplay } from '@/components/attribution'
 // SEO metadata for the generator page
 const metadata: Metadata = {
   title: "Rug Factory - Create Living Onchain Generative NFT Rugs | OnchainRugs",
-  description: "Create living onchain generative NFT rugs that require your care. Each rug is a living NFT - completely onchain, generative, and dynamic. Custom text, 102 palettes, authentic physics. Mint directly on Shape L2 blockchain.",
+  description: "Create living onchain generative NFT rugs that require your care. Each rug is a living NFT - completely onchain, generative, and dynamic. Custom text, 102 palettes, authentic physics. Mint directly on Ethereum blockchain.",
   keywords: [
     "NFT generator", "create NFT", "generative art", "custom NFT", "rug NFT",
-    "textile NFT", "woven art NFT", "blockchain art generator", "Shape L2 NFT",
+    "textile NFT", "woven art NFT", "blockchain art generator", "Ethereum NFT",
     "living NFT", "aging NFT", "NFT minting", "custom text NFT"
   ],
   openGraph: {
@@ -3105,10 +3105,10 @@ export default function GeneratorPage() {
       <div className="page-wrapper">
         <Head>
         <title>Rug Factory - Create Your Onchain Rug NFT | OnchainRugs</title>
-        <meta name="description" content="Create unique, living Onchain Rug NFTs with custom text, 102 color palettes, and authentic cloth physics. Each rug ages over time and requires maintenance. Mint directly on Shape L2 blockchain." />
-        <meta name="keywords" content="NFT generator, create NFT, generative art, custom NFT, rug NFT, textile NFT, woven art NFT, blockchain art generator, Shape L2 NFT, living NFT, aging NFT, NFT minting, custom text NFT" />
+        <meta name="description" content="Create unique, living Onchain Rug NFTs with custom text, 102 color palettes, and authentic cloth physics. Each rug ages over time and requires maintenance. Mint directly on Ethereum blockchain." />
+        <meta name="keywords" content="NFT generator, create NFT, generative art, custom NFT, rug NFT, textile NFT, woven art NFT, blockchain art generator, Ethereum NFT, living NFT, aging NFT, NFT minting, custom text NFT" />
         <meta property="og:title" content="Rug Factory - Create Your Living Onchain Rug NFT" />
-        <meta property="og:description" content="Design and mint unique generative rug NFTs that age over time. Custom text, 102 palettes, authentic physics. Shape L2 blockchain." />
+        <meta property="og:description" content="Design and mint unique generative rug NFTs that age over time. Custom text, 102 palettes, authentic physics. Mint directly on Ethereum blockchain." />
         <meta property="og:url" content="https://onchainrugs.xyz/generator" />
         <meta property="og:type" content="website" />
         <meta property="og:image" content="https://onchainrugs.xyz/generator-og.jpg" />
