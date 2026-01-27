@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cryptopunk Pixel Engraving - Pixelated Permanence</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            color: #334155;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .content {
+            display: flex;
+            min-height: 600px;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: #f8fafc;
+            padding: 30px;
+            border-right: 1px solid #e2e8f0;
+        }
+
+        .canvas-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            background: #ffffff;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #374151;
+            font-size: 0.9rem;
+        }
+
+        .control-group input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #e5e7eb;
+            outline: none;
+        }
+
+        .control-group input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #6366f1;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .value-display {
+            display: inline-block;
+            margin-left: 10px;
+            font-weight: 600;
+            color: #6366f1;
+            font-size: 0.9rem;
+        }
+
+        .actions {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .actions button {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .regenerate-btn {
+            background: #6366f1;
+            color: white;
+        }
+
+        .regenerate-btn:hover {
+            background: #5855eb;
+            transform: translateY(-1px);
+        }
+
+        .reset-btn {
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+
+        .reset-btn:hover {
+            background: #e5e7eb;
+        }
+
+        .seed-display {
+            background: #f3f4f6;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 600;
+            color: #374151;
+            font-family: 'Courier New', monospace;
+        }
+
+        .description {
+            font-size: 0.9rem;
+            color: #6b7280;
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid #e2e8f0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Pixelated Permanence</h1>
+            <p>Cryptopunk Pixel Engraving - Where Digital Scarcity Meets Physical Eternity</p>
+        </div>
+
+        <div class="content">
+            <div class="sidebar">
+                <div class="description">
+                    This interactive artwork expresses the Pixelated Permanence philosophy - transforming Cryptopunk pixels into engraved rug patterns through algorithmic precision.
+                </div>
+
+                <div class="seed-display" id="seed-display">Seed: 12345</div>
+
+                <div class="control-group">
+                    <label>Engraving Scale</label>
+                    <input type="range" id="scale" min="0.3" max="1.0" step="0.05" value="0.7">
+                    <span class="value-display" id="scale-value">0.7</span>
+                </div>
+
+                <div class="control-group">
+                    <label>Color Intensity</label>
+                    <input type="range" id="intensity" min="0.5" max="2.0" step="0.1" value="1.2">
+                    <span class="value-display" id="intensity-value">1.2</span>
+                </div>
+
+                <div class="control-group">
+                    <label>Pixel Density</label>
+                    <input type="range" id="density" min="0.3" max="1.0" step="0.05" value="0.8">
+                    <span class="value-display" id="density-value">0.8</span>
+                </div>
+
+                <div class="control-group">
+                    <label>Thread Variation</label>
+                    <input type="range" id="variation" min="0.0" max="0.5" step="0.02" value="0.15">
+                    <span class="value-display" id="variation-value">0.15</span>
+                </div>
+
+                <div class="actions">
+                    <button class="regenerate-btn" onclick="regenerate()">Regenerate</button>
+                    <button class="reset-btn" onclick="resetParams()">Reset</button>
+                </div>
+            </div>
+
+            <div class="canvas-container">
+                <div id="canvas-parent"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Algorithmic philosophy: Pixelated Permanence
+        // Expressing Cryptopunk engraving through computational precision
+
+        let seed = 12345;
+        let params = {
+            scale: 0.7,
+            intensity: 1.2,
+            density: 0.8,
+            variation: 0.15
+        };
+
+        // Sample Cryptopunk pixel data (simplified representation)
+        const samplePunkPixels = [
+            // Genesis punk-like pattern (simplified 8x8 for demo)
+            [1,1,1,1,1,1,1,1],
+            [1,0,0,0,0,0,0,1],
+            [1,0,1,0,0,1,0,1],
+            [1,0,0,0,0,0,0,1],
+            [1,0,1,1,1,1,0,1],
+            [1,0,0,0,0,0,0,1],
+            [1,0,1,0,0,1,0,1],
+            [1,1,1,1,1,1,1,1]
+        ];
+
+        function setup() {
+            let canvas = createCanvas(600, 600);
+            canvas.parent('canvas-parent');
+
+            // Initialize with seed
+            randomSeed(seed);
+            noiseSeed(seed);
+
+            noLoop();
+            regenerate();
+        }
+
+        function draw() {
+            background(250, 248, 245); // Warm paper-like background
+
+            // Draw the engraved rug pattern
+            drawEngravedRug();
+
+            // Draw the Cryptopunk pixel engraving
+            drawPixelEngraving();
+        }
+
+        function drawEngravedRug() {
+            // Simulate rug weave pattern with subtle variations
+            stroke(220, 215, 210);
+            strokeWeight(1);
+
+            // Draw warp threads (vertical)
+            for (let x = 0; x < width; x += 8) {
+                let threadOffset = noise(x * 0.01, frameCount * 0.001) * params.variation * 10;
+                stroke(220 + random(-5, 5), 215 + random(-5, 5), 210 + random(-5, 5));
+                line(x + threadOffset, 0, x + threadOffset, height);
+            }
+
+            // Draw weft threads (horizontal)
+            for (let y = 0; y < height; y += 6) {
+                let threadOffset = noise(y * 0.01, frameCount * 0.001 + 1000) * params.variation * 8;
+                stroke(225 + random(-3, 3), 220 + random(-3, 3), 215 + random(-3, 3));
+                line(0, y + threadOffset, width, y + threadOffset);
+            }
+        }
+
+        function drawPixelEngraving() {
+            // Center the engraving on the canvas
+            let engravingSize = min(width, height) * params.scale * 0.6; // Half size as per philosophy
+            let startX = (width - engravingSize) / 2;
+            let startY = (height - engravingSize) / 2;
+
+            // Pixel grid size
+            let pixelSize = engravingSize / 8; // 8x8 grid for demo
+
+            // Draw each "pixel" as an engraved area
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    let x = startX + col * pixelSize;
+                    let y = startY + row * pixelSize;
+
+                    if (samplePunkPixels[row][col]) {
+                        // Engraved pixel - use darker, more saturated colors
+                        let baseHue = (row * 30 + col * 45) % 360;
+                        let saturation = 60 + random(-10, 10) * params.intensity;
+                        let brightness = 40 + random(-5, 5) * params.intensity;
+
+                        fill(baseHue, saturation, brightness);
+                        noStroke();
+
+                        // Draw multiple overlapping threads for depth
+                        for (let i = 0; i < 3; i++) {
+                            let offsetX = random(-2, 2) * params.variation;
+                            let offsetY = random(-2, 2) * params.variation;
+                            rect(x + offsetX, y + offsetY, pixelSize, pixelSize);
+                        }
+
+                        // Add subtle thread lines
+                        stroke(0, 0, 0, 30);
+                        strokeWeight(0.5);
+
+                        // Vertical threads
+                        for (let tx = x; tx < x + pixelSize; tx += 2) {
+                            let threadY = y + random(0, pixelSize);
+                            point(tx, threadY);
+                        }
+
+                        // Horizontal threads
+                        for (let ty = y; ty < y + pixelSize; ty += 2) {
+                            let threadX = x + random(0, pixelSize);
+                            point(threadX, ty);
+                        }
+                    } else {
+                        // Non-engraved area - subtle texture only
+                        fill(240, 235, 230, 50);
+                        noStroke();
+                        rect(x, y, pixelSize, pixelSize);
+                    }
+                }
+            }
+
+            // Add subtle vignette effect
+            for (let i = 0; i < 20; i++) {
+                let alpha = map(i, 0, 20, 0, 10);
+                fill(250, 248, 245, alpha);
+                noStroke();
+                rect(0, 0, width, height);
+            }
+        }
+
+        function regenerate() {
+            seed = floor(random(100000));
+            randomSeed(seed);
+            noiseSeed(seed);
+
+            updateSeedDisplay();
+            redraw();
+        }
+
+        function resetParams() {
+            params.scale = 0.7;
+            params.intensity = 1.2;
+            params.density = 0.8;
+            params.variation = 0.15;
+
+            // Update UI
+            document.getElementById('scale').value = params.scale;
+            document.getElementById('intensity').value = params.intensity;
+            document.getElementById('density').value = params.density;
+            document.getElementById('variation').value = params.variation;
+
+            updateValueDisplays();
+            redraw();
+        }
+
+        function updateSeedDisplay() {
+            document.getElementById('seed-display').textContent = `Seed: ${seed}`;
+        }
+
+        function updateValueDisplays() {
+            document.getElementById('scale-value').textContent = params.scale.toFixed(2);
+            document.getElementById('intensity-value').textContent = params.intensity.toFixed(1);
+            document.getElementById('density-value').textContent = params.density.toFixed(2);
+            document.getElementById('variation-value').textContent = params.variation.toFixed(2);
+        }
+
+        // UI event handlers
+        document.getElementById('scale').addEventListener('input', function(e) {
+            params.scale = parseFloat(e.target.value);
+            updateValueDisplays();
+            redraw();
+        });
+
+        document.getElementById('intensity').addEventListener('input', function(e) {
+            params.intensity = parseFloat(e.target.value);
+            updateValueDisplays();
+            redraw();
+        });
+
+        document.getElementById('density').addEventListener('input', function(e) {
+            params.density = parseFloat(e.target.value);
+            updateValueDisplays();
+            redraw();
+        });
+
+        document.getElementById('variation').addEventListener('input', function(e) {
+            params.variation = parseFloat(e.target.value);
+            updateValueDisplays();
+            redraw();
+        });
+
+        // Initialize displays
+        updateSeedDisplay();
+        updateValueDisplays();
+    </script>
+</body>
+</html>

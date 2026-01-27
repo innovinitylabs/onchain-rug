@@ -1005,6 +1005,14 @@ export function precomputeEngravingProfile(stripe: any, palette: ColorPalette, p
 export function resolvePatternThreadColor(params: EngravingResolverParams): any {
   const { baseColor, stripe, isWarp, maskStrength, p } = params
 
+  // Punk pixels override everything - check first
+  if (params.x !== undefined && params.y !== undefined && params.doormatData) {
+    const punkPixel = samplePunkPixel(params.x, params.y, params.doormatData)
+    if (punkPixel) {
+      return p.color(punkPixel.r, punkPixel.g, punkPixel.b)
+    }
+  }
+
   if (maskStrength <= 0) {
     return baseColor
   }
@@ -1037,79 +1045,255 @@ export function resolvePatternThreadColor(params: EngravingResolverParams): any 
  * Cryptopunk engraving resolver - uses actual punk pixel colors
  * Creates vibrant, pixel-perfect punk engravings on the rug base
  */
-export function resolvePunkThreadColor(params: EngravingResolverParams): any {
-  const { baseColor, stripe, isWarp, maskStrength, p } = params
+// Cache for loaded punk data to avoid re-parsing
+const punkDataCache: { [key: number]: ({r: number, g: number, b: number} | null)[][] | null } = {}
 
-  if (maskStrength <= 0) {
-    return baseColor
+/**
+ * Parse Cryptopunk SVG into 24x24 pixel color array
+ */
+async function parsePunkSvg(svgString: string): Promise<({r: number, g: number, b: number} | null)[][]> {
+  const pixels = Array(24).fill(null).map(() => Array(24).fill(null));
+
+  try {
+    // Create an offscreen canvas to rasterize the SVG
+    const canvas = document.createElement('canvas');
+    canvas.width = 24;
+    canvas.height = 24;
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) {
+      console.error('Could not get canvas context');
+      return pixels;
+    }
+
+    // Create a blob URL for the SVG
+    const svgBlob = new Blob([svgString], { type: 'image/svg+xml' });
+    const svgUrl = URL.createObjectURL(svgBlob);
+
+    // Create an image element to load the SVG
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+
+    return new Promise((resolve) => {
+      img.onload = () => {
+        // Draw the SVG to the canvas at 24x24
+        ctx.drawImage(img, 0, 0, 24, 24);
+
+        // Read the pixel data
+        const imageData = ctx.getImageData(0, 0, 24, 24);
+        const data = imageData.data;
+
+        let coloredPixels = 0;
+        for (let y = 0; y < 24; y++) {
+          for (let x = 0; x < 24; x++) {
+            const index = (y * 24 + x) * 4;
+            const r = data[index];
+            const g = data[index + 1];
+            const b = data[index + 2];
+            const a = data[index + 3];
+
+            // Only consider pixels that are not transparent (keep all colors including black)
+            if (a > 128) {
+              pixels[y][x] = { r, g, b };
+              coloredPixels++;
+            }
+          }
+        }
+
+        // Clean up
+        URL.revokeObjectURL(svgUrl);
+
+        console.log(`Parsed ${coloredPixels} colored pixels for punk`);
+        resolve(pixels);
+      };
+
+      img.onerror = () => {
+        console.error('Failed to load SVG image');
+        URL.revokeObjectURL(svgUrl);
+        resolve(pixels);
+      };
+
+      img.src = svgUrl;
+    });
+
+  } catch (error) {
+    console.error('Failed to parse punk SVG:', error);
+    return pixels;
+  }
+}
+
+// Punk data stored in individual JSON files
+const PUNK_SIZE = 24; // Each punk is 24x24 pixels
+const PUNKS_PER_FILE = 25; // 25 punks per JSON file
+const MAX_PUNKS = 10000; // Total punks available
+
+// Punk engraving rendering constants
+const PUNK_RENDER_SIZE = 240; // 10x scale of 24px punk
+const PUNK_PIXEL_SCALE = PUNK_RENDER_SIZE / 24;
+
+// Generate file path for a given punk ID
+function getPunkFilePath(punkId: number): string {
+  const batchIndex = Math.floor(punkId / PUNKS_PER_FILE);
+  return `/data/cryptopunks/punks-${String(batchIndex).padStart(3, '0')}.json`;
+}
+
+/**
+ * Load punk data from individual JSON files
+ */
+async function loadPunkDataFromJson(punkId: number): Promise<({r: number, g: number, b: number} | null)[][] | null> {
+  try {
+    const filePath = getPunkFilePath(punkId);
+    // Force fresh load by adding timestamp
+    const freshFilePath = `${filePath}?t=${Date.now()}`;
+    const response = await fetch(freshFilePath);
+
+    if (!response.ok) {
+      console.warn(`Punk file ${filePath} not found`);
+      return null;
+    }
+
+    const data = await response.json();
+
+    // Use ID lookup - data structure has id fields
+    const punkData = data.find((p: any) => p.id === punkId);
+
+    if (!punkData) {
+      console.warn(`Punk ${punkId} not found in ${filePath}`);
+      return null;
+    }
+
+    console.log(`🔍 Loading punk ${punkId} - SVG hash: ${punkData.svg.substring(0, 50)}...`);
+
+    const pixelData = await parsePunkSvg(punkData.svg);
+    return pixelData;
+
+  } catch (error) {
+    console.error(`Failed to load punk ${punkId}:`, error);
+    return null;
+  }
+}
+
+/**
+ * Load punk data from JSON files
+ */
+export async function loadPunkData(punkId: number): Promise<({r: number, g: number, b: number} | null)[][] | null> {
+  // Check cache first
+  if (punkDataCache[punkId] !== undefined) {
+    return punkDataCache[punkId];
   }
 
-  // Get punk pixel color at this position
-  const punkColor = getPunkPixelColorAtPosition(params.x, params.y, (window as any).selectedPunkId || 0)
+  try {
+    const pixelData = await loadPunkDataFromJson(punkId);
 
-  if (!punkColor) {
-    return baseColor // No punk pixel here, use original thread color
+    // Cache the result (including null to prevent re-attempts)
+    punkDataCache[punkId] = pixelData;
+
+    if (pixelData) {
+      console.log(`✅ Loaded punk ${punkId} from JSON (${pixelData.flat().filter(p => p !== null).length} colored pixels)`);
+    } else {
+      console.warn(`❌ Failed to load punk ${punkId} from JSON`);
+    }
+
+    return pixelData;
+
+  } catch (error) {
+    console.error(`Failed to load punk ${punkId}:`, error);
+    punkDataCache[punkId] = null;
+    return null;
+  }
+}
+
+/**
+ * Preload punk data for a specific punk ID
+ */
+export async function preloadPunkData(punkId: number): Promise<boolean> {
+  if (punkDataCache[punkId] !== undefined) {
+    return punkDataCache[punkId] !== null;
   }
 
-  // Create punk pixel color object
-  const punkColorObj = p.color(punkColor.r, punkColor.g, punkColor.b)
-
-  // Strong engraving for punk pixels - they should be very visible
-  const engravingStrength = Math.min(maskStrength * 1.8, 1.0)
-
-  // Blend base rug thread with punk pixel color
-  let blended = p.lerpColor(baseColor, punkColorObj, engravingStrength)
-
-  // Add subtle variation for woven texture (less than patterns)
-  const noiseInput = stripe.y * 0.005 + (isWarp ? 3000 : 4000) + maskStrength * 5
-  const variation = (p.noise(noiseInput) - 0.5) * 0.02 // ±1% variation
-  const variedStrength = Math.max(0, Math.min(1, engravingStrength + variation))
-
-  return p.lerpColor(baseColor, punkColorObj, variedStrength)
+  const data = await loadPunkData(punkId);
+  return data !== null;
 }
 
 /**
  * Get punk pixel color at canvas position
  * Returns actual RGB values from Cryptopunk SVG data
  */
-function getPunkPixelColorAtPosition(x: number, y: number, punkId: number): {r: number, g: number, b: number} | null {
-  // Get punk renderer from global p5 instance
-  const punkRenderer = (window as any).p5Instance?.patternRenderer
-  if (!punkRenderer?.punkPixels?.[punkId]) {
-    return null // No punk data loaded
+/**
+ * Get punk origin coordinates for engraving
+ */
+function getPunkOrigin(): { x: number; y: number } {
+  const canvasWidth = (window as any).doormatData?.config?.DOORMAT_WIDTH || 800;
+  const canvasHeight = (window as any).doormatData?.config?.DOORMAT_HEIGHT || 1200;
+
+  const punkOriginX = Math.floor((canvasWidth - PUNK_RENDER_SIZE) / 2);
+  const punkOriginY = Math.floor((canvasHeight - PUNK_RENDER_SIZE) / 2);
+
+  return { x: punkOriginX, y: punkOriginY };
+}
+
+/**
+ * Map rug coordinates to punk pixel coordinates with proper scaling
+ */
+export function getMappedPunkPixel(
+  rugX: number,
+  rugY: number,
+  punkPixels: ({ r: number; g: number; b: number } | null)[][]
+): { r: number; g: number; b: number } | null {
+  const { x: punkOriginX, y: punkOriginY } = getPunkOrigin();
+
+  // Check if we're within the punk engraving bounding box
+  if (
+    rugX < punkOriginX ||
+    rugX >= punkOriginX + PUNK_RENDER_SIZE ||
+    rugY < punkOriginY ||
+    rugY >= punkOriginY + PUNK_RENDER_SIZE
+  ) {
+    return null; // Outside punk engraving area
   }
 
-  // Punk positioning (same as in generateCryptoPunkMask)
-  const canvasWidth = (window as any).doormatData?.config?.DOORMAT_WIDTH || 800
-  const canvasHeight = (window as any).doormatData?.config?.DOORMAT_HEIGHT || 1200
-  const punkSize = Math.min(canvasWidth, canvasHeight) * 0.70
-  const centerX = canvasWidth / 2
-  const centerY = canvasHeight * 0.55
+  // Convert to local coordinates within the engraving box
+  const localX = rugX - punkOriginX;
+  const localY = rugY - punkOriginY;
 
-  // Convert canvas position to local punk coordinates
-  const localX = x - (centerX - punkSize/2)
-  const localY = y - (centerY - punkSize/2)
+  // Map to 24x24 punk pixel coordinates with scaling
+  const punkX = Math.floor(localX / PUNK_PIXEL_SCALE);
+  const punkY = Math.floor(localY / PUNK_PIXEL_SCALE);
 
-  // Check bounds
-  if (localX < 0 || localX >= punkSize || localY < 0 || localY >= punkSize) {
-    return null // Outside punk area
+  // Bounds check for punk pixel coordinates
+  if (punkX < 0 || punkX >= 24 || punkY < 0 || punkY >= 24) {
+    return null;
   }
 
-  // Map to 24x24 punk pixel grid
-  const pixelX = Math.floor((localX / punkSize) * 24)
-  const pixelY = Math.floor((localY / punkSize) * 24)
+  // Return the punk pixel color (with 90-degree clockwise rotation for correct orientation)
+  const rotatedPixelX = 23 - punkY;
+  const rotatedPixelY = punkX;
 
-  // Bounds check for pixel coordinates
-  if (pixelX < 0 || pixelX >= 24 || pixelY < 0 || pixelY >= 24) {
-    return null
+  const result = punkPixels[rotatedPixelY][rotatedPixelX];
+
+  // Debug: occasionally log mapping details
+  if (Math.random() < 0.0001) { // 0.01% of the time
+    console.log(`🗺️ Rug (${rugX}, ${rugY}) → Local (${localX}, ${localY}) → Punk (${punkX}, ${punkY}) → Rotated (${rotatedPixelX}, ${rotatedPixelY}) → Color:`, result)
   }
 
-  // Apply 90-degree counter-clockwise rotation to compensate for rug rotation
-  const rotatedPixelX = pixelY
-  const rotatedPixelY = 23 - pixelX
+  return result;
+}
 
-  // Return actual punk pixel color (already in RGB format)
-  return punkRenderer.punkPixels[punkId][rotatedPixelY][rotatedPixelX]
+/**
+ * Legacy function for backward compatibility - DO NOT USE for new punk engraving
+ * @deprecated Use getMappedPunkPixel with preloaded punk data instead
+ */
+export function getPunkPixelColorAtPosition(x: number, y: number, punkId: number): {r: number, g: number, b: number} | null {
+  // Check if punk data is cached
+  const punkPixelData = punkDataCache[punkId];
+  if (punkPixelData === undefined) {
+    return null; // Punk not loaded yet
+  }
+  if (punkPixelData === null) {
+    return null; // Punk not available
+  }
+
+  return getMappedPunkPixel(x, y, punkPixelData);
 }
 
 /**
@@ -1138,7 +1322,6 @@ export type MaskType =
   | 'arc_partition'
   | 'arc_dominance_partition'
   | 'rug_area'
-  | 'crypto_punk'
 
 /**
  * Field types define how stripe sampling behaves inside masks
@@ -1153,11 +1336,10 @@ export type FieldType =
 /**
  * Main geometric pattern renderer
  */
+
 export class GeometricPatternRenderer {
   private p: any
   private prng: any
-  private punkSvgs: { [key: number]: string } = {}
-  private punkPixels: { [key: number]: ({r: number, g: number, b: number} | null)[][] } = {}
 
   constructor(p5Instance: any, prngInstance: any) {
     this.p = p5Instance
@@ -1210,8 +1392,7 @@ export class GeometricPatternRenderer {
     params: PatternParameters,
     palette: ColorPalette,
     canvasWidth: number,
-    canvasHeight: number,
-    punkId?: number
+    canvasHeight: number
   ): EngravingMask {
     console.log('🎨 createMask called with type:', maskType, 'palette:', palette.colors.length)
 
@@ -1250,10 +1431,6 @@ export class GeometricPatternRenderer {
       }
       case 'rug_area': {
         return this.generateRugAreaMask(canvasWidth, canvasHeight)
-      }
-      case 'crypto_punk': {
-        console.log('🎯 Creating crypto_punk mask for punkId:', punkId);
-        return this.generateCryptoPunkMask(canvasWidth, canvasHeight, punkId || 0)
       }
       case 'none':
       default:
@@ -2046,115 +2223,6 @@ export class GeometricPatternRenderer {
     return shapes
   }
 
-  private generateCryptoPunkMask(canvasWidth: number, canvasHeight: number, punkId: number = 0): EngravingMask {
-    // Position punk in center-bottom of rug (back side)
-    // Make it prominent as requested - 70% of canvas for visibility
-    const punkSize = Math.min(canvasWidth, canvasHeight) * 0.70; // 70% of canvas
-    const centerX = canvasWidth / 2;
-    const centerY = canvasHeight * 0.55; // Center it better on the rug
-
-    console.log(`🎨 Generating punk mask for ID ${punkId}, size: ${punkSize}, data loaded: ${!!this.punkPixels[punkId]}`);
-
-    if (this.punkPixels[punkId]) {
-      // Count how many pixels are set for debugging
-      let pixelCount = 0;
-      for (let y = 0; y < 24; y++) {
-        for (let x = 0; x < 24; x++) {
-          if (this.punkPixels[punkId][y][x]) pixelCount++;
-        }
-      }
-      console.log(`📊 Punk ${punkId} has ${pixelCount} engraved pixels out of 576 total`);
-    }
-
-    return {
-      isActive: (x: number, y: number) => {
-        // Check if point is within punk area - only engrave where punk pixels exist
-        const localX = x - (centerX - punkSize/2);
-        const localY = y - (centerY - punkSize/2);
-
-        // Must be within punk bounding box
-        if (localX < 0 || localX >= punkSize || localY < 0 || localY >= punkSize) {
-          return false;
-        }
-
-        // Map to punk pixel coordinates (24x24 grid)
-        const pixelX = Math.floor((localX / punkSize) * 24);
-        const pixelY = Math.floor((localY / punkSize) * 24);
-
-        // Apply 90-degree counter-clockwise rotation to match rug rotation
-        const rotatedPixelX = pixelY;
-        const rotatedPixelY = 23 - pixelX;
-
-        // Only active if corresponding rotated punk pixel exists
-        return this.punkPixels[punkId] && this.punkPixels[punkId][rotatedPixelY] && this.punkPixels[punkId][rotatedPixelY][rotatedPixelX] !== null;
-      },
-
-      strength: (x: number, y: number) => {
-        const localX = x - (centerX - punkSize/2);
-        const localY = y - (centerY - punkSize/2);
-
-        const pixelX = Math.floor((localX / punkSize) * 24);
-        const pixelY = Math.floor((localY / punkSize) * 24);
-
-        if (pixelX < 0 || pixelX >= 24 || pixelY < 0 || pixelY >= 24) return 0;
-
-        // Apply 90-degree counter-clockwise rotation to match rug rotation
-        const rotatedPixelX = pixelY;
-        const rotatedPixelY = 23 - pixelX;
-
-        // Return maximum engraving strength ONLY for actual rotated punk pixels
-        // This creates the pixelated punk pattern instead of a solid block
-        if (this.punkPixels[punkId] && this.punkPixels[punkId][rotatedPixelY] && this.punkPixels[punkId][rotatedPixelY][rotatedPixelX] !== null) {
-          return 1.0; // Maximum engraving for punk pixels only
-        }
-
-        return 0; // No engraving for empty pixels
-      }
-    };
-  }
-
-  /**
-   * Load a Cryptopunk SVG and parse it into pixel data
-   */
-  loadPunkSvg(punkId: number, svgString: string) {
-    this.punkSvgs[punkId] = svgString;
-    this.punkPixels[punkId] = this.parsePunkSvg(svgString);
-  }
-
-  /**
-   * Parse Cryptopunk SVG into 24x24 pixel color array
-   * SVGs contain <rect> elements with fill colors representing pixels
-   */
-  private parsePunkSvg(svgString: string): ({r: number, g: number, b: number} | null)[][] {
-    const pixels: ({r: number, g: number, b: number} | null)[][] = Array(24).fill(null).map(() => Array(24).fill(null));
-
-    try {
-      // Extract rect elements from SVG with their fill colors (RGB only, ignore alpha)
-      const rectRegex = /<rect[^>]*x="(\d+)"[^>]*y="(\d+)"[^>]*fill="#([0-9a-fA-F]{6})[0-9a-fA-F]{0,2}"[^>]*width="1"[^>]*height="1"[^>]*>/g;
-      let match;
-      let rectCount = 0;
-
-        while ((match = rectRegex.exec(svgString)) !== null) {
-        rectCount++;
-        const x = parseInt(match[1]);
-        const y = parseInt(match[2]);
-        const hexColor = match[3];
-
-        if (x >= 0 && x < 24 && y >= 0 && y < 24 && hexColor) {
-          // Convert hex color to RGB
-          const r = parseInt(hexColor.substring(0, 2), 16);
-          const g = parseInt(hexColor.substring(2, 4), 16);
-          const b = parseInt(hexColor.substring(4, 6), 16);
-
-          pixels[y][x] = { r, g, b }; // Note: SVG y=0 is top, our array y=0 is top
-        }
-      }
-    } catch (error) {
-      console.warn('Failed to parse punk SVG:', error);
-    }
-
-    return pixels;
-  }
 
   /**
    * Fetch punk SVG from CryptoPunksData contract (for development/testing)
@@ -2213,7 +2281,7 @@ export class GeometricPatternRenderer {
       try {
         const svg = await this.fetchRealPunkSvg(punkId, rpcUrl);
         if (svg) {
-          this.loadPunkSvg(punkId, svg);
+          // this.loadPunkSvg(punkId, svg); // Removed - using hardcoded data now
           console.log(`✅ Loaded real punk ${punkId}`);
         }
       } catch (error) {
@@ -2287,7 +2355,7 @@ export class GeometricPatternRenderer {
           const batchData = await response.json();
 
           for (const punk of batchData) {
-            this.loadPunkSvg(punk.id, punk.svg);
+            // this.loadPunkSvg(punk.id, punk.svg); // Removed - using hardcoded data now
           }
 
           totalLoaded += batchData.length;
@@ -2306,57 +2374,6 @@ export class GeometricPatternRenderer {
     }
   }
 
-  /**
-   * Load ALL punk data synchronously - for immediate availability
-   * Only ~625 punks loaded (subset), very fast
-   */
-  loadPunksFromFilesSync() {
-    console.log('🎨 Loading Cryptopunk SVGs synchronously...');
-
-    try {
-      // Load all punks-*.json files from data/cryptopunks/ directory
-      const files = [
-        'punks-000.json', 'punks-001.json', 'punks-002.json', 'punks-003.json',
-        'punks-004.json', 'punks-005.json', 'punks-006.json', 'punks-007.json',
-        'punks-008.json', 'punks-009.json', 'punks-010.json', 'punks-011.json',
-        'punks-012.json', 'punks-013.json', 'punks-014.json', 'punks-016.json',
-        'punks-019.json', 'punks-020.json', 'punks-021.json', 'punks-022.json',
-        'punks-023.json', 'punks-024.json', 'punks-031.json'
-      ];
-
-      let totalLoaded = 0;
-
-      // Use XMLHttpRequest for synchronous loading
-      for (const filename of files) {
-        try {
-          const xhr = new XMLHttpRequest();
-          xhr.open('GET', `/data/cryptopunks/${filename}`, false); // Synchronous!
-          xhr.send();
-
-          if (xhr.status !== 200) {
-            console.warn(`⚠️ Skipping ${filename} - HTTP ${xhr.status}`);
-            continue;
-          }
-
-          const batchData = JSON.parse(xhr.responseText);
-
-          for (const punk of batchData) {
-            this.loadPunkSvg(punk.id, punk.svg);
-          }
-
-          totalLoaded += batchData.length;
-        } catch (error) {
-          console.warn(`❌ Failed to load ${filename}:`, error);
-        }
-      }
-
-      console.log(`🎉 Successfully loaded ${totalLoaded} Cryptopunk SVGs synchronously!`);
-      return totalLoaded;
-    } catch (error) {
-      console.error('💥 Failed to load Cryptopunk SVGs synchronously:', error);
-      return 0;
-    }
-  }
 
 }
 
@@ -2430,6 +2447,74 @@ export function createStripeField(fieldType: FieldType): StripeField | null {
     default:
       return null
   }
+}
+
+/**
+ * Convert official CryptoPunk ID (Larva Labs) to dataset index
+ * Dataset appears to have different ordering than official IDs
+ */
+export function mapOfficialPunkIdToDatasetIndex(officialId: number): number {
+  if (officialId < 0 || officialId >= 10000) {
+    throw new Error(`Invalid official punk ID: ${officialId}`)
+  }
+
+  // Known mapping corrections based on user feedback
+  // If punk #7804 shows #779, then dataset index 779 contains punk #7804's data
+  // This suggests dataset is not ordered by official ID
+
+  // For now, use direct mapping and let user report specific mismatches
+  // We can build a correction table as more mismatches are identified
+  return officialId
+}
+
+/**
+ * Sample punk pixel from global state - single source of truth for punk engraving
+ */
+export function samplePunkPixel(
+  x: number,
+  y: number,
+  doormatData: any
+): { r: number; g: number; b: number } | null {
+
+  // Hard-gate: punk sampling only when explicitly enabled
+  if (!(window as any).__ENABLE_PUNK__) return null
+
+  const punkPixels = (window as any).__CURRENT_PUNK_PIXELS__
+  if (!punkPixels) return null
+
+  const PUNK_RENDER_SIZE = 420 // Much bigger for better visibility
+  const PUNK_PIXEL_SCALE = PUNK_RENDER_SIZE / 24
+
+  const originX = Math.floor(
+    (doormatData.config.DOORMAT_WIDTH - PUNK_RENDER_SIZE) / 2
+  )
+  // Move closer to bottom by offsetting from the bottom edge
+  const originY = Math.floor(
+    doormatData.config.DOORMAT_HEIGHT - PUNK_RENDER_SIZE - 60 // 60px from bottom
+  )
+
+  if (
+    x < originX ||
+    x >= originX + PUNK_RENDER_SIZE ||
+    y < originY ||
+    y >= originY + PUNK_RENDER_SIZE
+  ) {
+    return null
+  }
+
+  const localX = x - originX
+  const localY = y - originY
+
+  const px = Math.floor(localX / PUNK_PIXEL_SCALE)
+  const py = Math.floor(localY / PUNK_PIXEL_SCALE)
+
+  if (px < 0 || px >= 24 || py < 0 || py >= 24) return null
+
+  // Rotate 90 degrees counterclockwise to match rug orientation
+  const rotatedPx = 23 - py
+  const rotatedPy = px
+
+  return punkPixels[rotatedPy][rotatedPx]
 }
 
 /**
