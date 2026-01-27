@@ -3609,6 +3609,7 @@ export default function GeneratorPage() {
                               <option value="1">Punk #0001 (Ape)</option>
                               <option value="2">Punk #0002 (Zombie)</option>
                               <option value="5">Punk #0005 (Alien)</option>
+                              <option value="465">Punk #0465 (Rare)</option>
                               <option value="3100">Punk #3100 (Famous)</option>
                             </select>
                           </div>

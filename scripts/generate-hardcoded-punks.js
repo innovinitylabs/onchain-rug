@@ -60,13 +60,15 @@ function parsePunkSvg(svgString) {
 function loadPunkData(punkId) {
   // Determine which file contains this punk ID
   let filename;
-  if (punkId < 3100) {
+  if (punkId === 465) {
+    filename = 'punks-046.json';
+  } else if (punkId < 3100) {
     const batchIndex = Math.floor(punkId / 100);
     filename = `punks-${batchIndex.toString().padStart(3, '0')}.json`;
   } else {
     if (punkId === 3100) filename = 'punks-031.json';
     else if (punkId === 5217) filename = 'punks-052.json';
-    else filename = 'punks-004.json'; // For 465
+    else filename = 'punks-004.json';
   }
 
   const filePath = path.join(__dirname, '..', 'public', 'data', 'cryptopunks', filename);

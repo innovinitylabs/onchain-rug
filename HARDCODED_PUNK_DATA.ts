@@ -113,6 +113,34 @@ const HARDCODED_PUNK_DATA: { [key: number]: ({r: number, g: number, b: number} |
     [null,null,null,null,null,null,null,null,{r:0,g:0,b:0},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null,null,null],
   ],
 
+  // Punk #465 (199 pixels)
+  465: [
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null,null],
+    [null,null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null,null],
+    [null,null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null,null],
+    [null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null,null],
+    [null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:44,g:149,b:65},{r:44,g:149,b:65},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:44,g:149,b:65},{r:44,g:149,b:65},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null,null],
+    [null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},{r:44,g:149,b:65},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},{r:44,g:149,b:65},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null,null],
+    [null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null,null],
+    [null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null],
+    [null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null],
+    [null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null],
+    [null,null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:95,g:29,b:9},{r:95,g:29,b:9},{r:95,g:29,b:9},{r:174,g:139,b:97},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,{r:0,g:0,b:0},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,{r:0,g:0,b:0},{r:174,g:139,b:97},{r:0,g:0,b:0},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,{r:0,g:0,b:0},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,{r:0,g:0,b:0},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null,{r:0,g:0,b:0},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null,null,null],
+  ],
+
   // Punk #3100 (193 pixels)
   3100: [
     [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
