@@ -2457,7 +2457,7 @@ export function samplePunkPixel(
   const punkPixels = (window as any).__CURRENT_PUNK_PIXELS__
   if (!punkPixels) return null
 
-  const PUNK_RENDER_SIZE = 320 // Increased from 240 for better visibility
+  const PUNK_RENDER_SIZE = 360 // Slightly bigger for better visibility
   const PUNK_PIXEL_SCALE = PUNK_RENDER_SIZE / 24
 
   const originX = Math.floor(
@@ -2484,9 +2484,9 @@ export function samplePunkPixel(
 
   if (px < 0 || px >= 24 || py < 0 || py >= 24) return null
 
-  // Rotate 90 degrees clockwise to match rug orientation
-  const rotatedPx = py
-  const rotatedPy = 23 - px
+  // Rotate 90 degrees counterclockwise to match rug orientation
+  const rotatedPx = 23 - py
+  const rotatedPy = px
 
   return punkPixels[rotatedPy][rotatedPx]
 }
