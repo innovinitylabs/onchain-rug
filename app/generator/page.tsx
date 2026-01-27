@@ -24,7 +24,10 @@ import {
   getEvolutionStrength,
   resolvePatternThreadColor,
   getPunkPixelColorAtPosition,
-  preloadPunkData
+  preloadPunkData,
+  loadPunkData,
+  getMappedPunkPixel,
+  samplePunkPixel
 } from '@/lib/GeometricPatterns'
 
 // Default pattern parameters since we're not using them anymore
@@ -104,6 +107,7 @@ export default function GeneratorPage() {
   const [selectedMaskType, setSelectedMaskType] = useState<MaskType>('block_circles')
   const [selectedFieldType, setSelectedFieldType] = useState<FieldType>('stripe_rotation')
   const [selectedPunkId, setSelectedPunkId] = useState<number>(0)
+  const [currentPunkPixels, setCurrentPunkPixels] = useState<({ r: number; g: number; b: number } | null)[][] | null>(null)
 
   const [evolutionPhase, setEvolutionPhase] = useState(DEFAULT_EVOLUTION_PHASE)
   const [showPatternDropdown, setShowPatternDropdown] = useState(false)
@@ -164,13 +168,18 @@ export default function GeneratorPage() {
     }
   }, [evolutionPhase, selectedMaskType, selectedFieldType, selectedPunkId])
 
-  // Preload punk data when punk selection changes
+  // Load punk data when punk selection changes
   useEffect(() => {
     if (selectedPunkId !== null && selectedPunkId !== undefined) {
-      console.log(`🎨 Preloading punk #${selectedPunkId}...`)
-      preloadPunkData(selectedPunkId).then(success => {
-        if (success) {
-          console.log(`✅ Punk #${selectedPunkId} loaded successfully`)
+      console.log(`🎨 Loading punk #${selectedPunkId}...`)
+      loadPunkData(selectedPunkId).then(punkPixels => {
+        setCurrentPunkPixels(punkPixels)
+        if (punkPixels) {
+          // Promote punk pixels to authoritative global state for renderer access
+          if (typeof window !== 'undefined') {
+            ;(window as any).__CURRENT_PUNK_PIXELS__ = punkPixels
+          }
+          console.log(`✅ Punk #${selectedPunkId} loaded successfully (${punkPixels.flat().filter(p => p !== null).length} pixels)`)
           // Trigger redraw to show the punk
           if ((window as any).p5Instance) {
             (window as any).p5Instance.redraw()
@@ -179,6 +188,8 @@ export default function GeneratorPage() {
           console.warn(`❌ Failed to load punk #${selectedPunkId}`)
         }
       })
+    } else {
+      setCurrentPunkPixels(null)
     }
   }, [selectedPunkId])
 
@@ -1222,29 +1233,13 @@ export default function GeneratorPage() {
           r = p.red(warpColor) + drawingPRNG.range(-15, 15)
           g = p.green(warpColor) + drawingPRNG.range(-15, 15)
           b = p.blue(warpColor) + drawingPRNG.range(-15, 15)
-        }
 
-        r = p.constrain(r, 0, 255)
-        g = p.constrain(g, 0, 255)
-        b = p.constrain(b, 0, 255)
-
-        // Handle cryptopunk engraving (works like text engraving - always available when punk selected)
-        const selectedPunkId = (window as any).selectedPunkId
-        if (!isTextPixel && selectedPunkId !== undefined && selectedPunkId !== null) {
-          // Check if this pixel should be engraved with punk colors (like text engraving)
-          const punkColor = getPunkPixelColorAtPosition(x, y, selectedPunkId)
-          if (punkColor) {
-            // Use official punk colors as bitmap engraving (like text)
-            r = punkColor.r
-            g = punkColor.g
-            b = punkColor.b
-          } else {
-            // Fallback: show a subtle engraving effect when punk data isn't loaded yet
-            // This provides visual feedback that engraving is active
-            const engravingStrength = 0.3
-            r = Math.max(0, r - 25 * engravingStrength)
-            g = Math.max(0, g - 25 * engravingStrength)
-            b = Math.max(0, b - 25 * engravingStrength)
+          // 🔴 PUNK ENGRAVING OVERRIDE (WARP)
+          const punkPixel = samplePunkPixel(x, y, doormatData)
+          if (punkPixel) {
+            r = punkPixel.r
+            g = punkPixel.g
+            b = punkPixel.b
           }
         }
 
@@ -1668,29 +1663,13 @@ export default function GeneratorPage() {
           r = p.red(weftColor) + drawingPRNG.range(-20, 20)
           g = p.green(weftColor) + drawingPRNG.range(-20, 20)
           b = p.blue(weftColor) + drawingPRNG.range(-20, 20)
-        }
 
-        r = p.constrain(r, 0, 255)
-        g = p.constrain(g, 0, 255)
-        b = p.constrain(b, 0, 255)
-
-        // Handle cryptopunk engraving (works like text engraving - always available when punk selected)
-        const selectedPunkId = (window as any).selectedPunkId
-        if (!isTextPixel && selectedPunkId !== undefined && selectedPunkId !== null) {
-          // Check if this pixel should be engraved with punk colors (like text engraving)
-          const punkColor = getPunkPixelColorAtPosition(x, y, selectedPunkId)
-          if (punkColor) {
-            // Use official punk colors as bitmap engraving (like text)
-            r = punkColor.r
-            g = punkColor.g
-            b = punkColor.b
-          } else {
-            // Fallback: show a subtle engraving effect when punk data isn't loaded yet
-            // This provides visual feedback that engraving is active
-            const engravingStrength = 0.3
-            r = Math.max(0, r - 25 * engravingStrength)
-            g = Math.max(0, g - 25 * engravingStrength)
-            b = Math.max(0, b - 25 * engravingStrength)
+          // 🔴 PUNK ENGRAVING OVERRIDE (WEFT)
+          const punkPixel = samplePunkPixel(x, y, doormatData)
+          if (punkPixel) {
+            r = punkPixel.r
+            g = punkPixel.g
+            b = punkPixel.b
           }
         }
 
