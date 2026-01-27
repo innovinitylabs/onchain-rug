@@ -3643,7 +3643,7 @@ export default function GeneratorPage() {
                             </div>
 
                             <div className="text-xs text-amber-600">
-                              💡 Tip: Select a punk ID (0-624) and regenerate your rug to see the engraving!
+                              💡 Tip: Select any punk ID (0-9999) and regenerate your rug to see the engraving!
                             </div>
                           </div>
                         </div>
