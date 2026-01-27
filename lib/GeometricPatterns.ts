@@ -1152,15 +1152,28 @@ async function loadPunkDataFromJson(punkId: number): Promise<({r: number, g: num
 
     const data = await response.json();
 
-    // Use array indexing with correct file size
-    const fileIndex = punkId % PUNKS_PER_FILE;
+    console.log(`Loading punk ${punkId} from ${filePath}, data length: ${data.length}`);
 
-    if (fileIndex >= data.length) {
-      console.warn(`Punk index ${fileIndex} out of bounds in ${filePath} (length: ${data.length})`);
-      return null;
+    // Debug: Check what the data looks like
+    if (punkId === 0 || punkId === 1) {
+      console.log(`Data for punk ${punkId}:`, data.slice(0, 3));
     }
 
-    const punkData = data[fileIndex];
+    // Try ID lookup first (original method)
+    let punkData = data.find((p: any) => p.id === punkId);
+
+    // If not found, try array indexing as fallback
+    if (!punkData) {
+      const fileIndex = punkId % PUNKS_PER_FILE;
+      console.log(`ID lookup failed for punk ${punkId}, trying array index ${fileIndex}`);
+
+      if (fileIndex >= data.length) {
+        console.warn(`Punk index ${fileIndex} out of bounds in ${filePath} (length: ${data.length})`);
+        return null;
+      }
+
+      punkData = data[fileIndex];
+    }
 
     if (!punkData) {
       console.warn(`Punk at index ${fileIndex} not found in ${filePath}`);
