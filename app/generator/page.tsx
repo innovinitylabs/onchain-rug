@@ -23,7 +23,8 @@ import {
   createStripeField,
   getEvolutionStrength,
   resolvePatternThreadColor,
-  getPunkPixelColorAtPosition
+  getPunkPixelColorAtPosition,
+  preloadPunkData
 } from '@/lib/GeometricPatterns'
 
 // Default pattern parameters since we're not using them anymore
@@ -162,6 +163,24 @@ export default function GeneratorPage() {
       }
     }
   }, [evolutionPhase, selectedMaskType, selectedFieldType, selectedPunkId])
+
+  // Preload punk data when punk selection changes
+  useEffect(() => {
+    if (selectedPunkId !== null && selectedPunkId !== undefined) {
+      console.log(`🎨 Preloading punk #${selectedPunkId}...`)
+      preloadPunkData(selectedPunkId).then(success => {
+        if (success) {
+          console.log(`✅ Punk #${selectedPunkId} loaded successfully`)
+          // Trigger redraw to show the punk
+          if ((window as any).p5Instance) {
+            (window as any).p5Instance.redraw()
+          }
+        } else {
+          console.warn(`❌ Failed to load punk #${selectedPunkId}`)
+        }
+      })
+    }
+  }, [selectedPunkId])
 
   // Force canvas redraw when overlay state changes
   useEffect(() => {
@@ -3591,27 +3610,19 @@ export default function GeneratorPage() {
                       {selectedMaskType === 'crypto_punk' && (
                         <div className="space-y-3">
                           <div>
-                            <div className="text-amber-800 text-xs mb-2">Punk Selection:</div>
-                            <select
+                            <div className="text-amber-800 text-xs mb-2">Punk ID (0-9999):</div>
+                            <input
+                              type="number"
+                              min="0"
+                              max="9999"
                               value={selectedPunkId}
                               onChange={(e) => {
-                                const newPunkId = parseInt(e.target.value)
-                                setSelectedPunkId(newPunkId)
-
-                                // Punk data is instantly available - trigger redraw
-                                if ((window as any).p5Instance) {
-                                  ;(window as any).p5Instance.redraw()
-                                }
+                                const newPunkId = parseInt(e.target.value) || 0
+                                setSelectedPunkId(Math.max(0, Math.min(9999, newPunkId)))
                               }}
                               className="w-full bg-white text-amber-900 rounded text-sm font-mono focus:ring-1 focus:ring-amber-500 border border-amber-300 px-2 py-1"
-                            >
-                              <option value="0">Punk #0000 (Genesis)</option>
-                              <option value="1">Punk #0001 (Ape)</option>
-                              <option value="2">Punk #0002 (Zombie)</option>
-                              <option value="5">Punk #0005 (Alien)</option>
-                              <option value="465">Punk #0465 (Rare)</option>
-                              <option value="3100">Punk #3100 (Famous)</option>
-                            </select>
+                              placeholder="Enter punk ID..."
+                            />
                           </div>
 
 

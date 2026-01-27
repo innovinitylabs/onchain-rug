@@ -1037,47 +1037,151 @@ export function resolvePatternThreadColor(params: EngravingResolverParams): any 
  * Cryptopunk engraving resolver - uses actual punk pixel colors
  * Creates vibrant, pixel-perfect punk engravings on the rug base
  */
+// Cache for loaded punk data to avoid re-parsing
+const punkDataCache: { [key: number]: ({r: number, g: number, b: number} | null)[][] | null } = {}
+
+/**
+ * Parse Cryptopunk SVG into 24x24 pixel color array
+ */
+function parsePunkSvg(svgString: string): ({r: number, g: number, b: number} | null)[][] {
+  const pixels = Array(24).fill(null).map(() => Array(24).fill(null));
+
+  try {
+    // Extract rect elements from SVG with their fill colors
+    const rectRegex = /<rect[^>]*x="(\d+)"[^>]*y="(\d+)"[^>]*fill="#([0-9a-fA-F]{6})[0-9a-fA-F]*"[^>]*>/g;
+    let match;
+    let rectCount = 0;
+
+    while ((match = rectRegex.exec(svgString)) !== null) {
+      const x = parseInt(match[1]);
+      const y = parseInt(match[2]);
+      const fillColor = match[3];
+
+      // Only process pixels within 24x24 bounds
+      if (x >= 0 && x < 24 && y >= 0 && y < 24) {
+        // Convert hex color to RGB
+        const r = parseInt(fillColor.substr(0, 2), 16);
+        const g = parseInt(fillColor.substr(2, 2), 16);
+        const b = parseInt(fillColor.substr(4, 2), 16);
+
+        pixels[y][x] = { r, g, b };
+        rectCount++;
+      }
+    }
+
+    console.log(`Parsed ${rectCount} colored pixels for punk`);
+    return pixels;
+  } catch (error) {
+    console.error('Failed to parse punk SVG:', error);
+    return pixels;
+  }
+}
+
+/**
+ * Load punk data from JSON files dynamically
+ */
+async function loadPunkData(punkId: number): Promise<({r: number, g: number, b: number} | null)[][] | null> {
+  // Check cache first
+  if (punkDataCache[punkId] !== undefined) {
+    return punkDataCache[punkId];
+  }
+
+  try {
+    // Determine which file contains this punk ID
+    let filename;
+    if (punkId < 3100) {
+      const batchIndex = Math.floor(punkId / 100);
+      filename = `punks-${batchIndex.toString().padStart(3, '0')}.json`;
+    } else {
+      if (punkId === 3100) filename = 'punks-031.json';
+      else if (punkId === 5217) filename = 'punks-052.json';
+      else filename = `punks-${Math.floor(punkId / 100).toString().padStart(3, '0')}.json`;
+    }
+
+    const response = await fetch(`/data/cryptopunks/${filename}`);
+    if (!response.ok) {
+      console.warn(`Punk file ${filename} not found`);
+      punkDataCache[punkId] = null;
+      return null;
+    }
+
+    const data = await response.json();
+    const punkData = data.find((p: any) => p.id === punkId);
+
+    if (!punkData) {
+      console.warn(`Punk ${punkId} not found in ${filename}`);
+      punkDataCache[punkId] = null;
+      return null;
+    }
+
+    const pixelData = parsePunkSvg(punkData.svg);
+    punkDataCache[punkId] = pixelData;
+    return pixelData;
+
+  } catch (error) {
+    console.error(`Failed to load punk ${punkId}:`, error);
+    punkDataCache[punkId] = null;
+    return null;
+  }
+}
+
+/**
+ * Preload punk data for a specific punk ID
+ */
+export async function preloadPunkData(punkId: number): Promise<boolean> {
+  if (punkDataCache[punkId] !== undefined) {
+    return punkDataCache[punkId] !== null;
+  }
+
+  const data = await loadPunkData(punkId);
+  return data !== null;
+}
+
 /**
  * Get punk pixel color at canvas position
  * Returns actual RGB values from Cryptopunk SVG data
  */
 export function getPunkPixelColorAtPosition(x: number, y: number, punkId: number): {r: number, g: number, b: number} | null {
-  // Check if punk data exists in hardcoded data
-  if (!HARDCODED_PUNK_DATA[punkId]) {
-    return null // Punk not available
+  // Check if punk data is cached
+  const punkPixelData = punkDataCache[punkId];
+  if (punkPixelData === undefined) {
+    return null; // Punk not loaded yet
+  }
+  if (punkPixelData === null) {
+    return null; // Punk not available
   }
 
   // Punk positioning (same as in generateCryptoPunkMask)
-  const canvasWidth = (window as any).doormatData?.config?.DOORMAT_WIDTH || 800
-  const canvasHeight = (window as any).doormatData?.config?.DOORMAT_HEIGHT || 1200
-  const punkSize = Math.min(canvasWidth, canvasHeight) * 0.50 // Half size of rug
-  const centerX = canvasWidth / 2
-  const centerY = canvasHeight * 0.55
+  const canvasWidth = (window as any).doormatData?.config?.DOORMAT_WIDTH || 800;
+  const canvasHeight = (window as any).doormatData?.config?.DOORMAT_HEIGHT || 1200;
+  const punkSize = Math.min(canvasWidth, canvasHeight) * 0.50; // Half size of rug
+  const centerX = canvasWidth / 2;
+  const centerY = canvasHeight * 0.55;
 
   // Convert canvas position to local punk coordinates
-  const localX = x - (centerX - punkSize/2)
-  const localY = y - (centerY - punkSize/2)
+  const localX = x - (centerX - punkSize/2);
+  const localY = y - (centerY - punkSize/2);
 
   // Check bounds
   if (localX < 0 || localX >= punkSize || localY < 0 || localY >= punkSize) {
-    return null // Outside punk area
+    return null; // Outside punk area
   }
 
   // Map to 24x24 punk pixel grid
-  const pixelX = Math.floor((localX / punkSize) * 24)
-  const pixelY = Math.floor((localY / punkSize) * 24)
+  const pixelX = Math.floor((localX / punkSize) * 24);
+  const pixelY = Math.floor((localY / punkSize) * 24);
 
   // Bounds check for pixel coordinates
   if (pixelX < 0 || pixelX >= 24 || pixelY < 0 || pixelY >= 24) {
-    return null
+    return null;
   }
 
   // Apply 90-degree clockwise rotation (opposite of previous counter-clockwise)
-  const rotatedPixelX = 23 - pixelY
-  const rotatedPixelY = pixelX
+  const rotatedPixelX = 23 - pixelY;
+  const rotatedPixelY = pixelX;
 
-  // Return actual punk pixel color from hardcoded data
-  return HARDCODED_PUNK_DATA[punkId][rotatedPixelY][rotatedPixelX]
+  // Return actual punk pixel color
+  return punkPixelData[rotatedPixelY][rotatedPixelX];
 }
 
 /**
@@ -1121,177 +1225,6 @@ export type FieldType =
 /**
  * Main geometric pattern renderer
  */
-// Hardcoded Cryptopunk pixel data from real SVGs
-// Auto-generated from downloaded Cryptopunk data
-const HARDCODED_PUNK_DATA: { [key: number]: ({r: number, g: number, b: number} | null)[][] } = {
-  // Punk #0 (199 pixels)
-  0: [
-    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null,null],
-    [null,null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null,null],
-    [null,null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null,null],
-    [null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null,null],
-    [null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:44,g:149,b:65},{r:44,g:149,b:65},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:44,g:149,b:65},{r:44,g:149,b:65},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null,null],
-    [null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},{r:44,g:149,b:65},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},{r:44,g:149,b:65},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null,null],
-    [null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null,null],
-    [null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null],
-    [null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null],
-    [null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null],
-    [null,null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:95,g:29,b:9},{r:95,g:29,b:9},{r:95,g:29,b:9},{r:174,g:139,b:97},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,null,{r:0,g:0,b:0},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,null,{r:0,g:0,b:0},{r:174,g:139,b:97},{r:0,g:0,b:0},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,null,{r:0,g:0,b:0},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,null,{r:0,g:0,b:0},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,null,{r:0,g:0,b:0},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null,null,null],
-  ],
-
-  // Punk #1 (205 pixels)
-  1: [
-    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,null,null,null,null,null,{r:0,g:0,b:0},{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,null,null,null,null,{r:0,g:0,b:0},{r:166,g:110,b:44},{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,null,null,null,{r:0,g:0,b:0},{r:166,g:110,b:44},{r:166,g:110,b:44},{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,null,null,{r:0,g:0,b:0},{r:133,g:86,b:30},{r:166,g:110,b:44},{r:166,g:110,b:44},{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,null,{r:0,g:0,b:0},{r:133,g:86,b:30},{r:166,g:110,b:44},{r:166,g:110,b:44},{r:166,g:110,b:44},{r:0,g:0,b:0},{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,{r:0,g:0,b:0},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:166,g:110,b:44},{r:166,g:110,b:44},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:0,g:0,b:0},null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,{r:0,g:0,b:0},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:139,g:83,b:44},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:166,g:110,b:44},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:0,g:0,b:0},null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,{r:0,g:0,b:0},{r:113,g:63,b:29},{r:139,g:83,b:44},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:0,g:0,b:0},null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,{r:0,g:0,b:0},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:0,g:0,b:0},null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,{r:0,g:0,b:0},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:0,g:0,b:0},null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,{r:0,g:0,b:0},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:86,g:38,b:0},{r:86,g:38,b:0},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:86,g:38,b:0},{r:86,g:38,b:0},{r:0,g:0,b:0},null,null,null,null,null,null,null],
-    [null,null,null,null,null,{r:0,g:0,b:0},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:0,g:0,b:0},{r:114,g:55,b:9},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:0,g:0,b:0},{r:114,g:55,b:9},{r:0,g:0,b:0},null,null,null,null,null,null,null],
-    [null,null,null,null,null,{r:0,g:0,b:0},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:0,g:0,b:0},null,null,null,null,null,null,null],
-    [null,null,null,null,null,{r:0,g:0,b:0},{r:0,g:0,b:0},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:0,g:0,b:0},null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,{r:0,g:0,b:0},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:0,g:0,b:0},null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,{r:0,g:0,b:0},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:0,g:0,b:0},null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,{r:0,g:0,b:0},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:0,g:0,b:0},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:0,g:0,b:0},null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,{r:0,g:0,b:0},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:0,g:0,b:0},null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,{r:0,g:0,b:0},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:0,g:0,b:0},null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,{r:0,g:0,b:0},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:0,g:0,b:0},null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,{r:0,g:0,b:0},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,{r:0,g:0,b:0},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,{r:0,g:0,b:0},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:113,g:63,b:29},{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null,null,null,null,null],
-  ],
-
-  // Punk #2 (250 pixels)
-  2: [
-    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,{r:0,g:0,b:0},null,null,{r:0,g:0,b:0},null,null,null,{r:0,g:0,b:0},null,null,{r:0,g:0,b:0},null,null,null,null,null,null,null],
-    [null,null,null,null,null,{r:0,g:0,b:0},null,{r:0,g:0,b:0},null,{r:0,g:0,b:0},{r:0,g:0,b:0},null,{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},null,null,{r:0,g:0,b:0},null,null,null,null],
-    [null,null,null,{r:0,g:0,b:0},null,{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},null,{r:0,g:0,b:0},null,null,null,null,null],
-    [null,null,null,null,{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},null,null,null,null,null],
-    [null,null,null,{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},null,null,null,null],
-    [null,null,null,null,{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},null,null,null,null,null],
-    [null,null,null,{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},null,null,null,null,null,null],
-    [null,null,{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},null,null,null,null,null],
-    [null,null,null,null,{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},null,null,null,null],
-    [null,null,null,{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:219,g:177,b:128},{r:166,g:110,b:44},{r:166,g:110,b:44},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:166,g:110,b:44},{r:166,g:110,b:44},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},null,null,null,null,null],
-    [null,null,null,{r:0,g:0,b:0},null,{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:219,g:177,b:128},{r:0,g:0,b:0},{r:210,g:157,b:96},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:0,g:0,b:0},{r:210,g:157,b:96},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},null,null,null,null,null],
-    [null,null,null,null,{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},null,null,null,null],
-    [null,null,null,null,{r:0,g:0,b:0},null,{r:0,g:0,b:0},{r:0,g:0,b:0},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:0,g:0,b:0},{r:0,g:0,b:0},null,null,null,null,null,null],
-    [null,null,null,null,null,null,{r:0,g:0,b:0},{r:0,g:0,b:0},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:0,g:0,b:0},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:0,g:0,b:0},{r:0,g:0,b:0},null,null,null,null,null,null],
-    [null,null,null,null,null,{r:0,g:0,b:0},null,{r:0,g:0,b:0},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:0,g:0,b:0},{r:0,g:0,b:0},null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,{r:0,g:0,b:0},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:113,g:16,b:16},{r:113,g:16,b:16},{r:113,g:16,b:16},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:0,g:0,b:0},null,{r:0,g:0,b:0},null,null,null,null,null],
-    [null,null,null,null,null,null,null,null,{r:0,g:0,b:0},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:0,g:0,b:0},null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,null,{r:0,g:0,b:0},{r:219,g:177,b:128},{r:0,g:0,b:0},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,null,{r:0,g:0,b:0},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,null,{r:0,g:0,b:0},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,null,{r:0,g:0,b:0},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:219,g:177,b:128},{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null,null,null],
-  ],
-
-  // Punk #5 (203 pixels)
-  5: [
-    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,null,null,{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},null,null,null,null,null,null,null],
-    [null,null,null,null,null,{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},null,null,null,null,null,null,null],
-    [null,null,null,null,{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},null,null,null,null,null,null,null],
-    [null,null,null,null,{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:181,g:0,b:175},{r:181,g:0,b:175},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:181,g:0,b:175},{r:181,g:0,b:175},{r:0,g:0,b:0},null,null,null,null,null,null,null],
-    [null,null,null,null,{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:174,g:139,b:97},{r:0,g:0,b:0},{r:181,g:0,b:175},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},{r:181,g:0,b:175},{r:0,g:0,b:0},null,null,null,null,null,null,null],
-    [null,null,null,null,{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},null,null,null,null,null,null,null],
-    [null,null,null,null,{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},null,null,null,null,null,null,null],
-    [null,null,null,null,{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},null,null,null,null,null,null,null],
-    [null,null,null,null,{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},null,null,null,null,null,null,null],
-    [null,null,null,null,{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:95,g:29,b:9},{r:95,g:29,b:9},{r:95,g:29,b:9},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},null,null,null,null,null,null,null],
-    [null,null,null,{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},null,null,null,null,null,null,null,null],
-    [null,null,null,{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:174,g:139,b:97},{r:0,g:0,b:0},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null],
-    [null,null,null,{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,null,{r:0,g:0,b:0},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,null,{r:0,g:0,b:0},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null,null,null],
-  ],
-
-  // Punk #465 (199 pixels)
-  465: [
-    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null,null],
-    [null,null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null,null],
-    [null,null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null,null],
-    [null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null,null],
-    [null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:44,g:149,b:65},{r:44,g:149,b:65},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:44,g:149,b:65},{r:44,g:149,b:65},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null,null],
-    [null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},{r:44,g:149,b:65},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},{r:44,g:149,b:65},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null,null],
-    [null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null,null],
-    [null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null],
-    [null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null],
-    [null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null],
-    [null,null,null,null,null,null,{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:255,g:246,b:142},{r:174,g:139,b:97},{r:95,g:29,b:9},{r:95,g:29,b:9},{r:95,g:29,b:9},{r:174,g:139,b:97},{r:255,g:246,b:142},{r:255,g:246,b:142},null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,null,{r:0,g:0,b:0},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,null,{r:0,g:0,b:0},{r:174,g:139,b:97},{r:0,g:0,b:0},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,null,{r:0,g:0,b:0},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,null,{r:0,g:0,b:0},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,null,{r:0,g:0,b:0},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:174,g:139,b:97},{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null,null,null],
-  ],
-
-  // Punk #3100 (193 pixels)
-  3100: [
-    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,null,{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,null,{r:0,g:0,b:0},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:0,g:0,b:0},null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,{r:0,g:0,b:0},{r:255,g:255,b:255},{r:255,g:255,b:255},{r:255,g:255,b:255},{r:255,g:255,b:255},{r:255,g:255,b:255},{r:255,g:255,b:255},{r:255,g:255,b:255},{r:255,g:255,b:255},{r:255,g:255,b:255},{r:0,g:0,b:0},null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,{r:0,g:0,b:0},{r:26,g:110,b:213},{r:26,g:110,b:213},{r:26,g:110,b:213},{r:26,g:110,b:213},{r:26,g:110,b:213},{r:26,g:110,b:213},{r:26,g:110,b:213},{r:26,g:110,b:213},{r:26,g:110,b:213},{r:0,g:0,b:0},null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,{r:0,g:0,b:0},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:0,g:0,b:0},null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,{r:0,g:0,b:0},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:0,g:0,b:0},null,null,null,null,null,null,null],
-    [null,null,null,null,null,{r:0,g:0,b:0},{r:0,g:0,b:0},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:117,g:189,b:189},{r:0,g:0,b:0},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:117,g:189,b:189},{r:0,g:0,b:0},{r:0,g:0,b:0},null,null,null,null,null,null,null],
-    [null,null,null,null,{r:0,g:0,b:0},{r:200,g:251,b:251},{r:155,g:224,b:224},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:0,g:0,b:0},{r:155,g:224,b:224},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:0,g:0,b:0},{r:155,g:224,b:224},{r:0,g:0,b:0},null,null,null,null,null,null,null],
-    [null,null,null,null,null,{r:0,g:0,b:0},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:0,g:0,b:0},null,null,null,null,null,null,null],
-    [null,null,null,null,null,{r:0,g:0,b:0},{r:0,g:0,b:0},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:155,g:224,b:224},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:0,g:0,b:0},null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,{r:0,g:0,b:0},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:155,g:224,b:224},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:0,g:0,b:0},null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,{r:0,g:0,b:0},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:155,g:224,b:224},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:0,g:0,b:0},null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,{r:0,g:0,b:0},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:0,g:0,b:0},null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,{r:0,g:0,b:0},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:200,g:251,b:251},{r:0,g:0,b:0},null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,{r:0,g:0,b:0},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:0,g:0,b:0},null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,{r:0,g:0,b:0},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:0,g:0,b:0},null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,{r:0,g:0,b:0},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,{r:0,g:0,b:0},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null,null,null,null,null],
-    [null,null,null,null,null,null,{r:0,g:0,b:0},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:200,g:251,b:251},{r:0,g:0,b:0},null,null,null,null,null,null,null,null,null,null,null,null,null],
-  ]
-};
 
 export class GeometricPatternRenderer {
   private p: any
