@@ -1072,8 +1072,12 @@ export function getPunkPixelColorAtPosition(x: number, y: number, punkId: number
     return null
   }
 
+  // Apply 90-degree clockwise rotation (opposite of previous counter-clockwise)
+  const rotatedPixelX = 23 - pixelY
+  const rotatedPixelY = pixelX
+
   // Return actual punk pixel color from hardcoded data
-  return HARDCODED_PUNK_DATA[punkId][pixelY][pixelX]
+  return HARDCODED_PUNK_DATA[punkId][rotatedPixelY][rotatedPixelX]
 }
 
 /**
