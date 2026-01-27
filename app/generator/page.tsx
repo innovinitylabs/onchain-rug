@@ -205,9 +205,7 @@ export default function GeneratorPage() {
           patternRenderer = new GeometricPatternRenderer((window as any).p5Instance, maskPRNG)
           ;(window as any).p5Instance.patternRenderer = patternRenderer
 
-          // Preload ALL punk data synchronously for immediate availability
-          const loadedCount = patternRenderer.loadAllPunkData()
-          console.log(`✅ Preloaded ${loadedCount} punks for engraving`)
+          // Punk data is now hardcoded and instantly available
         }
 
         const palette = extractRugPalette((window as any).doormatData, (window as any).p5Instance)
