@@ -62,7 +62,7 @@ export const metadata: Metadata = {
     "living NFT", "living onchain NFT", "fully onchain NFT", "onchain generative art", "living generative NFT",
     "Ethereum NFT", "onchain textile art", "onchain woven art", "onchain digital rugs", "onchain aging NFT",
     "living NFT art", "blockchain generative art", "onchain NFT marketplace", "fully onchain collectibles",
-    "onchain crypto art", "onchain blockchain art", "onchain NFT", "living digital art", "dynamic NFT"
+    "onchain crypto art", "onchain blockchain art", "onchain NFT", "living digital art", "dynamic NFT", "valipokkann"
   ],
   authors: [{ name: "OnchainRugs Team" }],
   creator: "valipokkann",

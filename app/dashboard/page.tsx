@@ -1162,9 +1162,9 @@ export default function DashboardPage() {
   return (
     <>
       <Head>
-        <title>My Rugs - Manage Your Living Onchain Rug Collection | OnchainRugs</title>
+        <title>My Rugs - Manage Your Living Onchain Rug Collection | OnchainRugs by Valipokkann</title>
         <meta name="description" content="Manage your living onchain generative NFT rug collection. Clean, restore, and maintain your living NFTs that require care. Track dirt levels and frame progression on Ethereum blockchain." />
-        <meta name="keywords" content="NFT dashboard, manage NFTs, rug maintenance, NFT cleaning, NFT restoration, living NFT care, Ethereum NFT wallet, blockchain NFT portfolio, NFT aging system" />
+        <meta name="keywords" content="NFT dashboard, manage NFTs, rug maintenance, NFT cleaning, NFT restoration, living NFT care, Ethereum NFT wallet, blockchain NFT portfolio, NFT aging system, valipokkann" />
         <meta property="og:title" content="My Rugs - Manage Your Living Onchain Generative NFT Collection" />
         <meta property="og:description" content="Manage your living onchain generative NFT rug collection. Clean, restore, and maintain your living NFTs that require care." />
         <meta property="og:url" content="https://onchainrugs.xyz/dashboard" />
@@ -1191,7 +1191,7 @@ export default function DashboardPage() {
             <Wallet className="w-8 h-8 text-blue-400" />
             <h1 className="text-4xl font-bold text-white">My Rug Dashboard</h1>
           </div>
-          <p className="text-white/70">Manage your OnchainRugs collection, maintenance, and trading</p>
+          <p className="text-white/70">Manage your OnchainRugs by Valipokkann collection, maintenance, and trading</p>
 
           {/* Stats */}
           <div className="flex items-center justify-center gap-6 mt-6">
