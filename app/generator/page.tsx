@@ -3610,7 +3610,7 @@ export default function GeneratorPage() {
                       {selectedMaskType === 'crypto_punk' && (
                         <div className="space-y-3">
                           <div>
-                            <div className="text-amber-800 text-xs mb-2">Punk ID (0-624, 1500-9999):</div>
+                            <div className="text-amber-800 text-xs mb-2">Punk ID (0-9999):</div>
                             <input
                               type="number"
                               min="0"
@@ -3643,7 +3643,7 @@ export default function GeneratorPage() {
                             </div>
 
                             <div className="text-xs text-amber-600">
-                              💡 Tip: Select a punk ID (0-624 or 1500-9999) and regenerate your rug to see the engraving!
+                              💡 Tip: Select any punk ID (0-9999) and regenerate your rug to see the engraving!
                             </div>
                           </div>
                         </div>
