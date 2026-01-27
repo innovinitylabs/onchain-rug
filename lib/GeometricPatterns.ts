@@ -1077,6 +1077,210 @@ function parsePunkSvg(svgString: string): ({r: number, g: number, b: number} | n
   }
 }
 
+// Mapping of punk ranges to files
+const PUNK_FILE_MAPPING: { [key: string]: string } = {
+  // 0-24: punks-000.json
+  '0': 'punks-000.json',
+  // 25-49: punks-001.json
+  '25': 'punks-001.json',
+  // 50-74: punks-002.json
+  '50': 'punks-002.json',
+  // 75-99: punks-003.json
+  '75': 'punks-003.json',
+  // 100-124: punks-004.json
+  '100': 'punks-004.json',
+  // 125-149: punks-005.json
+  '125': 'punks-005.json',
+  // 150-174: punks-006.json
+  '150': 'punks-006.json',
+  // 175-199: punks-007.json
+  '175': 'punks-007.json',
+  // 200-224: punks-008.json
+  '200': 'punks-008.json',
+  // 225-249: punks-009.json
+  '225': 'punks-009.json',
+  // 250-274: punks-010.json
+  '250': 'punks-010.json',
+  // 275-299: punks-011.json
+  '275': 'punks-011.json',
+  // 300-324: punks-012.json
+  '300': 'punks-012.json',
+  // 325-349: punks-013.json
+  '325': 'punks-013.json',
+  // 350-374: punks-014.json
+  '350': 'punks-014.json',
+  // 400-424: punks-016.json
+  '400': 'punks-016.json',
+  // 475-499: punks-019.json
+  '475': 'punks-019.json',
+  // 500-524: punks-020.json
+  '500': 'punks-020.json',
+  // 525-549: punks-021.json
+  '525': 'punks-021.json',
+  // 550-574: punks-022.json
+  '550': 'punks-022.json',
+  // 575-599: punks-023.json
+  '575': 'punks-023.json',
+  // 600-624: punks-024.json
+  '600': 'punks-024.json',
+  // 1500: punks-015.json
+  '1500': 'punks-015.json',
+  // 1700-1799: punks-017.json
+  '1700': 'punks-017.json',
+  // 1800-1899: punks-018.json
+  '1800': 'punks-018.json',
+  // 2500-2599: punks-025.json
+  '2500': 'punks-025.json',
+  // 2600-2699: punks-026.json
+  '2600': 'punks-026.json',
+  // 2700-2799: punks-027.json
+  '2700': 'punks-027.json',
+  // 2800-2899: punks-028.json
+  '2800': 'punks-028.json',
+  // 2900-2999: punks-029.json
+  '2900': 'punks-029.json',
+  // 3000-3099: punks-030.json
+  '3000': 'punks-030.json',
+  // 3100-3199: punks-031.json
+  '3100': 'punks-031.json',
+  // 3200-3299: punks-032.json
+  '3200': 'punks-032.json',
+  // 3300-3399: punks-033.json
+  '3300': 'punks-033.json',
+  // 3400-3499: punks-034.json
+  '3400': 'punks-034.json',
+  // 3500-3599: punks-035.json
+  '3500': 'punks-035.json',
+  // 3600-3699: punks-036.json
+  '3600': 'punks-036.json',
+  // 3701: punks-037.json (only has punk 3701)
+  '3701': 'punks-037.json',
+  // 3800-3899: punks-038.json
+  '3800': 'punks-038.json',
+  // 3900-3999: punks-039.json
+  '3900': 'punks-039.json',
+  // 4000-4099: punks-040.json
+  '4000': 'punks-040.json',
+  // 4100-4199: punks-041.json
+  '4100': 'punks-041.json',
+  // 4200-4299: punks-042.json
+  '4200': 'punks-042.json',
+  // 4300-4399: punks-043.json
+  '4300': 'punks-043.json',
+  // 4400-4499: punks-044.json
+  '4400': 'punks-044.json',
+  // 4500-4599: punks-045.json
+  '4500': 'punks-045.json',
+  // 465: punks-046.json (only has punk 465)
+  '465': 'punks-046.json',
+  // 4700-4799: punks-047.json
+  '4700': 'punks-047.json',
+  // 4800-4899: punks-048.json
+  '4800': 'punks-048.json',
+  // 4900-4999: punks-049.json
+  '4900': 'punks-049.json',
+  // 5000-5099: punks-050.json
+  '5000': 'punks-050.json',
+  // 5100-5199: punks-051.json
+  '5100': 'punks-051.json',
+  // 5200-5299: punks-052.json
+  '5200': 'punks-052.json',
+  // 5300-5399: punks-053.json
+  '5300': 'punks-053.json',
+  // 5400-5499: punks-054.json
+  '5400': 'punks-054.json',
+  // 5500-5599: punks-055.json
+  '5500': 'punks-055.json',
+  // 5600-5699: punks-056.json
+  '5600': 'punks-056.json',
+  // 5700-5799: punks-057.json
+  '5700': 'punks-057.json',
+  // 5800-5899: punks-058.json
+  '5800': 'punks-058.json',
+  // 5900-5999: punks-059.json
+  '5900': 'punks-059.json',
+  // 6000-6099: punks-060.json
+  '6000': 'punks-060.json',
+  // 6100-6199: punks-061.json
+  '6100': 'punks-061.json',
+  // 6200-6299: punks-062.json
+  '6200': 'punks-062.json',
+  // 6300-6399: punks-063.json
+  '6300': 'punks-063.json',
+  // 6400-6499: punks-064.json
+  '6400': 'punks-064.json',
+  // 6500-6599: punks-065.json
+  '6500': 'punks-065.json',
+  // 6600-6699: punks-066.json
+  '6600': 'punks-066.json',
+  // 6700-6799: punks-067.json
+  '6700': 'punks-067.json',
+  // 6800-6899: punks-068.json
+  '6800': 'punks-068.json',
+  // 6900-6999: punks-069.json
+  '6900': 'punks-069.json',
+  // 7000-7099: punks-070.json
+  '7000': 'punks-070.json',
+  // 7100-7199: punks-071.json
+  '7100': 'punks-071.json',
+  // 7200-7299: punks-072.json
+  '7200': 'punks-072.json',
+  // 7300-7399: punks-073.json
+  '7300': 'punks-073.json',
+  // 7400-7499: punks-074.json
+  '7400': 'punks-074.json',
+  // 7500-7599: punks-075.json
+  '7500': 'punks-075.json',
+  // 7600-7699: punks-076.json
+  '7600': 'punks-076.json',
+  // 7700-7799: punks-077.json
+  '7700': 'punks-077.json',
+  // 7800-7899: punks-078.json
+  '7800': 'punks-078.json',
+  // 7900-7999: punks-079.json
+  '7900': 'punks-079.json',
+  // 8000-8099: punks-080.json
+  '8000': 'punks-080.json',
+  // 8100-8199: punks-081.json
+  '8100': 'punks-081.json',
+  // 8200-8299: punks-082.json
+  '8200': 'punks-082.json',
+  // 8300-8399: punks-083.json
+  '8300': 'punks-083.json',
+  // 8400-8499: punks-084.json
+  '8400': 'punks-084.json',
+  // 8500-8599: punks-085.json
+  '8500': 'punks-085.json',
+  // 8600-8699: punks-086.json
+  '8600': 'punks-086.json',
+  // 8700-8799: punks-087.json
+  '8700': 'punks-087.json',
+  // 8800-8899: punks-088.json
+  '8800': 'punks-088.json',
+  // 8900-8999: punks-089.json
+  '8900': 'punks-089.json',
+  // 9000-9099: punks-090.json
+  '9000': 'punks-090.json',
+  // 9100-9199: punks-091.json
+  '9100': 'punks-091.json',
+  // 9200-9299: punks-092.json
+  '9200': 'punks-092.json',
+  // 9300-9399: punks-093.json
+  '9300': 'punks-093.json',
+  // 9400-9499: punks-094.json
+  '9400': 'punks-094.json',
+  // 9500-9599: punks-095.json
+  '9500': 'punks-095.json',
+  // 9600-9699: punks-096.json
+  '9600': 'punks-096.json',
+  // 9700-9799: punks-097.json
+  '9700': 'punks-097.json',
+  // 9800-9899: punks-098.json
+  '9800': 'punks-098.json',
+  // 9900-9999: punks-099.json
+  '9900': 'punks-099.json',
+};
+
 /**
  * Load punk data from JSON files dynamically
  */
@@ -1087,15 +1291,33 @@ async function loadPunkData(punkId: number): Promise<({r: number, g: number, b: 
   }
 
   try {
-    // Determine which file contains this punk ID
-    let filename;
-    if (punkId < 3100) {
-      const batchIndex = Math.floor(punkId / 100);
-      filename = `punks-${batchIndex.toString().padStart(3, '0')}.json`;
-    } else {
-      if (punkId === 3100) filename = 'punks-031.json';
-      else if (punkId === 5217) filename = 'punks-052.json';
-      else filename = `punks-${Math.floor(punkId / 100).toString().padStart(3, '0')}.json`;
+    // Find which file contains this punk ID by checking all possible starting points
+    let filename = null;
+    for (const [startId, file] of Object.entries(PUNK_FILE_MAPPING)) {
+      const start = parseInt(startId);
+      // Check if this punk ID falls within this file's range
+      if (punkId >= start) {
+        // Load the file and check if it contains this punk
+        try {
+          const response = await fetch(`/data/cryptopunks/${file}`);
+          if (response.ok) {
+            const data = await response.json();
+            const punkData = data.find((p: any) => p.id === punkId);
+            if (punkData) {
+              filename = file;
+              break;
+            }
+          }
+        } catch (e) {
+          // Continue to next file
+        }
+      }
+    }
+
+    if (!filename) {
+      console.warn(`No file found containing punk ${punkId}`);
+      punkDataCache[punkId] = null;
+      return null;
     }
 
     const response = await fetch(`/data/cryptopunks/${filename}`);
