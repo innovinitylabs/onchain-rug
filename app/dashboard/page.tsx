@@ -1163,8 +1163,8 @@ export default function DashboardPage() {
     <>
       <Head>
         <title>My Rugs - Manage Your Living Onchain Rug Collection | OnchainRugs</title>
-        <meta name="description" content="Manage your living onchain generative NFT rug collection. Clean, restore, and maintain your living NFTs that require care. Track dirt levels and frame progression on Shape L2 blockchain." />
-        <meta name="keywords" content="NFT dashboard, manage NFTs, rug maintenance, NFT cleaning, NFT restoration, living NFT care, Shape L2 NFT wallet, blockchain NFT portfolio, NFT aging system" />
+        <meta name="description" content="Manage your living onchain generative NFT rug collection. Clean, restore, and maintain your living NFTs that require care. Track dirt levels and frame progression on Ethereum blockchain." />
+        <meta name="keywords" content="NFT dashboard, manage NFTs, rug maintenance, NFT cleaning, NFT restoration, living NFT care, Ethereum NFT wallet, blockchain NFT portfolio, NFT aging system" />
         <meta property="og:title" content="My Rugs - Manage Your Living Onchain Generative NFT Collection" />
         <meta property="og:description" content="Manage your living onchain generative NFT rug collection. Clean, restore, and maintain your living NFTs that require care." />
         <meta property="og:url" content="https://onchainrugs.xyz/dashboard" />
