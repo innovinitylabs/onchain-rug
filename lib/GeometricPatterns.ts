@@ -1072,8 +1072,12 @@ export function getPunkPixelColorAtPosition(x: number, y: number, punkId: number
     return null
   }
 
-  // Return actual punk pixel color from hardcoded data (no rotation needed for simplified patterns)
-  return HARDCODED_PUNK_DATA[punkId][pixelY][pixelX]
+  // Apply 90-degree counter-clockwise rotation to compensate for rug's 90-degree clockwise rotation
+  const rotatedPixelX = pixelY
+  const rotatedPixelY = 23 - pixelX
+
+  // Return actual punk pixel color from hardcoded data
+  return HARDCODED_PUNK_DATA[punkId][rotatedPixelY][rotatedPixelX]
 }
 
 /**
