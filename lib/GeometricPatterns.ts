@@ -1387,8 +1387,7 @@ export class GeometricPatternRenderer {
     params: PatternParameters,
     palette: ColorPalette,
     canvasWidth: number,
-    canvasHeight: number,
-    punkId?: number
+    canvasHeight: number
   ): EngravingMask {
     console.log('🎨 createMask called with type:', maskType, 'palette:', palette.colors.length)
 
@@ -2453,6 +2452,9 @@ export function samplePunkPixel(
   y: number,
   doormatData: any
 ): { r: number; g: number; b: number } | null {
+
+  // Hard-gate: punk sampling only when explicitly enabled
+  if (!(window as any).__ENABLE_PUNK__) return null
 
   const punkPixels = (window as any).__CURRENT_PUNK_PIXELS__
   if (!punkPixels) return null
