@@ -176,10 +176,10 @@ export default function GeneratorPage() {
       return
     }
 
-    // Map official CryptoPunk ID to dataset index
+    // Use official CryptoPunk ID directly as dataset index (for now)
     const datasetIndex = mapOfficialPunkIdToDatasetIndex(selectedPunkId)
 
-    console.log(`🎨 Loading official punk #${selectedPunkId} (dataset index: ${datasetIndex})...`)
+    console.log(`🎨 Loading official punk #${selectedPunkId}...`)
     loadPunkData(datasetIndex).then(punkPixels => {
       if (punkPixels && typeof window !== 'undefined') {
         ;(window as any).__CURRENT_PUNK_PIXELS__ = punkPixels
@@ -188,7 +188,7 @@ export default function GeneratorPage() {
           (window as any).p5Instance.redraw()
         }
       } else {
-        console.warn(`❌ Failed to load official punk #${selectedPunkId} (dataset index: ${datasetIndex})`)
+        console.warn(`❌ Failed to load official punk #${selectedPunkId}`)
       }
     })
   }, [enablePunk, selectedPunkId])
