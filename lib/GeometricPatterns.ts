@@ -2445,6 +2445,33 @@ export function createStripeField(fieldType: FieldType): StripeField | null {
 }
 
 /**
+ * Convert official CryptoPunk ID (Larva Labs) to dataset index
+ * This normalizes reconstructed datasets to canonical grid order
+ */
+export function mapOfficialPunkIdToDatasetIndex(officialId: number): number {
+  if (officialId < 0 || officialId >= 10000) {
+    throw new Error(`Invalid official punk ID: ${officialId}`)
+  }
+
+  const GRID_SIZE = 100
+
+  const row = Math.floor(officialId / GRID_SIZE)
+  const col = officialId % GRID_SIZE
+
+  /**
+   * DATASET NORMALIZATION
+   *
+   * Adjust these ONLY if dataset is inverted/mirrored.
+   * Start with identity mapping.
+   */
+
+  const normalizedRow = row            // flip with: 99 - row
+  const normalizedCol = col            // flip with: 99 - col
+
+  return normalizedRow * GRID_SIZE + normalizedCol
+}
+
+/**
  * Sample punk pixel from global state - single source of truth for punk engraving
  */
 export function samplePunkPixel(

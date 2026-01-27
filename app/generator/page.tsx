@@ -24,7 +24,8 @@ import {
   getEvolutionStrength,
   resolvePatternThreadColor,
   loadPunkData,
-  samplePunkPixel
+  samplePunkPixel,
+  mapOfficialPunkIdToDatasetIndex
 } from '@/lib/GeometricPatterns'
 
 // Default pattern parameters since we're not using them anymore
@@ -175,16 +176,19 @@ export default function GeneratorPage() {
       return
     }
 
-    console.log(`🎨 Loading punk #${selectedPunkId}...`)
-    loadPunkData(selectedPunkId).then(punkPixels => {
+    // Map official CryptoPunk ID to dataset index
+    const datasetIndex = mapOfficialPunkIdToDatasetIndex(selectedPunkId)
+
+    console.log(`🎨 Loading official punk #${selectedPunkId} (dataset index: ${datasetIndex})...`)
+    loadPunkData(datasetIndex).then(punkPixels => {
       if (punkPixels && typeof window !== 'undefined') {
         ;(window as any).__CURRENT_PUNK_PIXELS__ = punkPixels
-        console.log(`✅ Punk #${selectedPunkId} loaded successfully (${punkPixels.flat().filter(p => p !== null).length} pixels)`)
+        console.log(`✅ Official punk #${selectedPunkId} loaded successfully (${punkPixels.flat().filter(p => p !== null).length} pixels)`)
         if ((window as any).p5Instance) {
           (window as any).p5Instance.redraw()
         }
       } else {
-        console.warn(`❌ Failed to load punk #${selectedPunkId}`)
+        console.warn(`❌ Failed to load official punk #${selectedPunkId} (dataset index: ${datasetIndex})`)
       }
     })
   }, [enablePunk, selectedPunkId])
@@ -3526,7 +3530,7 @@ export default function GeneratorPage() {
                       {/* Punk ID Input */}
                       {enablePunk && (
                         <div className="flex items-center space-x-2">
-                          <label className="text-gray-600 text-sm min-w-fit">Punk ID:</label>
+                          <label className="text-gray-600 text-sm min-w-fit">CryptoPunk ID (Official):</label>
                           <input
                             type="number"
                             min={0}
