@@ -50,7 +50,7 @@ const metadata: Metadata = {
   keywords: [
     "NFT generator", "create NFT", "generative art", "custom NFT", "rug NFT",
     "textile NFT", "woven art NFT", "blockchain art generator", "Ethereum NFT",
-    "living NFT", "aging NFT", "NFT minting", "custom text NFT"
+    "living NFT", "aging NFT", "NFT minting", "custom text NFT", "valipokkann"
   ],
   openGraph: {
     title: "Rug Factory - Create Fully Onchain Living Generative NFT Rugs",
@@ -3106,7 +3106,7 @@ export default function GeneratorPage() {
         <Head>
         <title>Rug Factory - Create Your Onchain Rug NFT | OnchainRugs</title>
         <meta name="description" content="Create unique, living Onchain Rug NFTs with custom text, 102 color palettes, and authentic cloth physics. Each rug ages over time and requires maintenance. Mint directly on Ethereum blockchain." />
-        <meta name="keywords" content="NFT generator, create NFT, generative art, custom NFT, rug NFT, textile NFT, woven art NFT, blockchain art generator, Ethereum NFT, living NFT, aging NFT, NFT minting, custom text NFT" />
+        <meta name="keywords" content="NFT generator, create NFT, generative art, custom NFT, rug NFT, textile NFT, woven art NFT, blockchain art generator, Ethereum NFT, living NFT, aging NFT, NFT minting, custom text NFT, valipokkann" />
         <meta property="og:title" content="Rug Factory - Create Your Living Onchain Rug NFT" />
         <meta property="og:description" content="Design and mint unique generative rug NFTs that age over time. Custom text, 102 palettes, authentic physics. Mint directly on Ethereum blockchain." />
         <meta property="og:url" content="https://onchainrugs.xyz/generator" />
