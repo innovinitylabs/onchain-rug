@@ -1044,10 +1044,12 @@ const punkDataCache: { [key: number]: ({r: number, g: number, b: number} | null)
  * Parse Cryptopunk SVG into 24x24 pixel color array
  */
 function parsePunkSvg(svgString: string): ({r: number, g: number, b: number} | null)[][] {
-  const pixels = Array(24).fill(null).map(() => Array(24).fill(null));
+  const pixels: ({r: number, g: number, b: number} | null)[][] = Array(24).fill(null).map(() => Array(24).fill(null));
 
   try {
-    // Extract rect elements from SVG with their fill colors
+    let totalPixels = 0;
+
+    // Handle rect elements with hex colors (original format)
     const rectRegex = /<rect[^>]*x="(\d+)"[^>]*y="(\d+)"[^>]*fill="#([0-9a-fA-F]{6})[0-9a-fA-F]*"[^>]*>/g;
     let match;
     let rectCount = 0;
@@ -1069,7 +1071,58 @@ function parsePunkSvg(svgString: string): ({r: number, g: number, b: number} | n
       }
     }
 
-    console.log(`Parsed ${rectCount} colored pixels for punk`);
+    // Handle path elements with RGB colors (new format from zweistein1326 repo)
+    if (rectCount === 0) {
+      // Extract path elements with RGB fill colors
+      const pathRegex = /<path[^>]*d="([^"]*)"[^>]*style="fill:rgb\((\d+),\s*(\d+),\s*(\d+)\);[^"]*"[^>]*>/g;
+      let pathMatch;
+      let pathCount = 0;
+
+      while ((pathMatch = pathRegex.exec(svgString)) !== null) {
+        const pathData = pathMatch[1];
+        const r = parseInt(pathMatch[2]);
+        const g = parseInt(pathMatch[3]);
+        const b = parseInt(pathMatch[4]);
+
+        // Parse path data to extract pixel coordinates
+        // Path format: "M x,y L x,y L x,y ... Z" for rectangles/filled areas
+        const coordRegex = /(\d+),(\d+)/g;
+        let coordMatch;
+        const coords: {x: number, y: number}[] = [];
+
+        while ((coordMatch = coordRegex.exec(pathData)) !== null) {
+          const x = parseInt(coordMatch[1]);
+          const y = parseInt(coordMatch[2]);
+          if (x >= 0 && x < 24 && y >= 0 && y < 24) {
+            coords.push({x, y});
+          }
+        }
+
+        // Fill all pixels in this path (assuming rectangular areas defined by the coordinates)
+        if (coords.length >= 2) {
+          const minX = Math.min(...coords.map(c => c.x));
+          const maxX = Math.max(...coords.map(c => c.x));
+          const minY = Math.min(...coords.map(c => c.y));
+          const maxY = Math.max(...coords.map(c => c.y));
+
+          for (let y = minY; y <= maxY; y++) {
+            for (let x = minX; x <= maxX; x++) {
+              if (x >= 0 && x < 24 && y >= 0 && y < 24) {
+                pixels[y][x] = { r, g, b };
+                pathCount++;
+              }
+            }
+          }
+        }
+      }
+
+      totalPixels = pathCount;
+      console.log(`Parsed ${pathCount} colored pixels from path elements for punk`);
+    } else {
+      totalPixels = rectCount;
+      console.log(`Parsed ${rectCount} colored pixels from rect elements for punk`);
+    }
+
     return pixels;
   } catch (error) {
     console.error('Failed to parse punk SVG:', error);
