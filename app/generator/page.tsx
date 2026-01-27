@@ -24,8 +24,7 @@ import {
   getEvolutionStrength,
   resolvePatternThreadColor,
   loadPunkData,
-  samplePunkPixel,
-  mapOfficialPunkIdToDatasetIndex
+  samplePunkPixel
 } from '@/lib/GeometricPatterns'
 
 // Default pattern parameters since we're not using them anymore
@@ -177,14 +176,12 @@ export default function GeneratorPage() {
       return
     }
 
-    // Use official CryptoPunk ID directly as dataset index (for now)
-    const datasetIndex = mapOfficialPunkIdToDatasetIndex(selectedPunkId)
-
-    console.log(`🎨 Loading official punk #${selectedPunkId} (dataset index: ${datasetIndex})...`)
-    loadPunkData(datasetIndex).then(punkPixels => {
+    // Use official CryptoPunk ID directly (canonical Larva Labs ordering)
+    console.log(`🎨 Loading canonical punk #${selectedPunkId} from PNG...`)
+    loadPunkData(selectedPunkId).then(punkPixels => {
       if (punkPixels && typeof window !== 'undefined') {
         ;(window as any).__CURRENT_PUNK_PIXELS__ = punkPixels
-        console.log(`✅ Official punk #${selectedPunkId} loaded successfully (${punkPixels.flat().filter(p => p !== null).length} pixels)`)
+        console.log(`✅ Canonical punk #${selectedPunkId} loaded successfully (${punkPixels.flat().filter(p => p !== null).length} pixels)`)
 
         // Force redraw
         if ((window as any).p5Instance) {
@@ -192,10 +189,10 @@ export default function GeneratorPage() {
           console.log(`🔄 Canvas redrawn for punk #${selectedPunkId}`)
         }
       } else {
-        console.warn(`❌ Failed to load official punk #${selectedPunkId}`)
+        console.warn(`❌ Failed to load canonical punk #${selectedPunkId}`)
       }
     }).catch(error => {
-      console.error(`💥 Error loading punk #${selectedPunkId}:`, error)
+      console.error(`💥 Error loading canonical punk #${selectedPunkId}:`, error)
     })
   }, [enablePunk, selectedPunkId])
 

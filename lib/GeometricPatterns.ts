@@ -1051,142 +1051,116 @@ const punkDataCache: { [key: number]: ({r: number, g: number, b: number} | null)
 /**
  * Parse Cryptopunk SVG into 24x24 pixel color array
  */
-async function parsePunkSvg(svgString: string): Promise<({r: number, g: number, b: number} | null)[][]> {
-  const pixels = Array(24).fill(null).map(() => Array(24).fill(null));
+// Global cache for the canonical punks.png image
+let punksImage: HTMLImageElement | null = null;
+let punksImageLoaded = false;
+
+/**
+ * Load the canonical CryptoPunks PNG image
+ */
+async function loadPunksImage(): Promise<HTMLImageElement> {
+  if (punksImage && punksImageLoaded) {
+    return punksImage;
+  }
+
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+
+    img.onload = () => {
+      punksImage = img;
+      punksImageLoaded = true;
+      console.log('✅ Loaded canonical CryptoPunks PNG (2400x2400 pixels)');
+      resolve(img);
+    };
+
+    img.onerror = () => {
+      console.error('❌ Failed to load canonical CryptoPunks PNG');
+      reject(new Error('Failed to load punks.png'));
+    };
+
+    // Use GitHub raw content URL for the canonical punks.png
+    img.src = 'https://raw.githubusercontent.com/larvalabs/cryptopunks/master/punks.png';
+  });
+}
+
+/**
+ * Extract pixel data for a specific punk from the canonical PNG
+ * Punk ID follows Larva Labs canonical ordering: id = row * 100 + col
+ */
+async function loadCanonicalPunkPixels(punkId: number): Promise<({r: number, g: number, b: number} | null)[][]> {
+  if (punkId < 0 || punkId >= 10000) {
+    throw new Error(`Invalid punk ID: ${punkId}. Must be 0-9999`);
+  }
+
+  // Calculate position in the 100x100 grid
+  const row = Math.floor(punkId / 100);
+  const col = punkId % 100;
+
+  // Each punk is 24x24 pixels in the PNG
+  const sx = col * 24;
+  const sy = row * 24;
 
   try {
-    // Create an offscreen canvas to rasterize the SVG
+    // Load the canonical PNG if not already loaded
+    const punksImg = await loadPunksImage();
+
+    // Create a canvas to extract the specific punk region
     const canvas = document.createElement('canvas');
     canvas.width = 24;
     canvas.height = 24;
     const ctx = canvas.getContext('2d');
 
     if (!ctx) {
-      console.error('Could not get canvas context');
-      return pixels;
+      throw new Error('Could not get canvas context');
     }
 
-    // Create a blob URL for the SVG
-    const svgBlob = new Blob([svgString], { type: 'image/svg+xml' });
-    const svgUrl = URL.createObjectURL(svgBlob);
+    // Draw the specific 24x24 region from the PNG
+    ctx.drawImage(punksImg, sx, sy, 24, 24, 0, 0, 24, 24);
 
-    // Create an image element to load the SVG
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
+    // Read the pixel data
+    const imageData = ctx.getImageData(0, 0, 24, 24);
+    const data = imageData.data;
 
-    return new Promise((resolve) => {
-      img.onload = () => {
-        // Draw the SVG to the canvas at 24x24
-        ctx.drawImage(img, 0, 0, 24, 24);
+    // Convert to 24x24 pixel matrix matching the existing format
+    const pixels = Array(24).fill(null).map(() => Array(24).fill(null));
 
-        // Read the pixel data
-        const imageData = ctx.getImageData(0, 0, 24, 24);
-        const data = imageData.data;
+    let coloredPixels = 0;
+    for (let y = 0; y < 24; y++) {
+      for (let x = 0; x < 24; x++) {
+        const index = (y * 24 + x) * 4;
+        const r = data[index];
+        const g = data[index + 1];
+        const b = data[index + 2];
+        const a = data[index + 3];
 
-        let coloredPixels = 0;
-        for (let y = 0; y < 24; y++) {
-          for (let x = 0; x < 24; x++) {
-            const index = (y * 24 + x) * 4;
-            const r = data[index];
-            const g = data[index + 1];
-            const b = data[index + 2];
-            const a = data[index + 3];
-
-            // Only consider pixels that are not transparent (keep all colors including black)
-            if (a > 128) {
-              pixels[y][x] = { r, g, b };
-              coloredPixels++;
-            }
-          }
+        // Preserve exact RGBA values - only null out fully transparent pixels
+        if (a > 0) {
+          pixels[y][x] = { r, g, b };
+          coloredPixels++;
         }
-
-        // Clean up
-        URL.revokeObjectURL(svgUrl);
-
-        console.log(`Parsed ${coloredPixels} colored pixels for punk`);
-        resolve(pixels);
-      };
-
-      img.onerror = () => {
-        console.error('Failed to load SVG image');
-        URL.revokeObjectURL(svgUrl);
-        resolve(pixels);
-      };
-
-      img.src = svgUrl;
-    });
-
-  } catch (error) {
-    console.error('Failed to parse punk SVG:', error);
-    return pixels;
-  }
-}
-
-// Punk data stored in individual JSON files
-const PUNK_SIZE = 24; // Each punk is 24x24 pixels
-const PUNKS_PER_FILE = 25; // 25 punks per JSON file
-const MAX_PUNKS = 10000; // Total punks available
-
-// Punk engraving rendering constants
-const PUNK_RENDER_SIZE = 240; // 10x scale of 24px punk
-const PUNK_PIXEL_SCALE = PUNK_RENDER_SIZE / 24;
-
-// Generate file path for a given punk ID
-function getPunkFilePath(punkId: number): string {
-  const batchIndex = Math.floor(punkId / PUNKS_PER_FILE);
-  return `/data/cryptopunks/punks-${String(batchIndex).padStart(3, '0')}.json`;
-}
-
-/**
- * Load punk data from individual JSON files
- */
-async function loadPunkDataFromJson(punkId: number): Promise<({r: number, g: number, b: number} | null)[][] | null> {
-  try {
-    const filePath = getPunkFilePath(punkId);
-    // Force fresh load by adding timestamp
-    const freshFilePath = `${filePath}?t=${Date.now()}`;
-    const response = await fetch(freshFilePath);
-
-    if (!response.ok) {
-      console.warn(`Punk file ${filePath} not found`);
-      return null;
-    }
-
-    const data = await response.json();
-
-    // Build a Map keyed by entry.id for strict resolution
-    const punkMap = new Map<number, any>();
-    for (const entry of data) {
-      if (entry.id !== undefined) {
-        punkMap.set(entry.id, entry);
       }
     }
 
-    console.log(`📋 Built punk map for ${filePath}: ${punkMap.size} entries (IDs: ${Array.from(punkMap.keys()).slice(0, 10).join(', ')}...)`);
-
-    // Resolve strictly via Map - no fallbacks, no modulo, no array indexing
-    const punkData = punkMap.get(punkId);
-
-    if (!punkData) {
-      const availableIds = Array.from(punkMap.keys()).sort((a, b) => a - b);
-      throw new Error(`Punk ${punkId} not found in ${filePath}. Available IDs: [${availableIds.join(', ')}]`);
-    }
-
-    // Console assertion: verify punk ID matches
-    console.assert(punkData.id === punkId, `Punk ID mismatch: requested ${punkId}, got ${punkData.id}`);
-    console.log(`✅ Resolved punk ${punkId} -> entry.id=${punkData.id}, SVG hash: ${punkData.svg.substring(0, 50)}...`);
-
-    const pixelData = await parsePunkSvg(punkData.svg);
-    return pixelData;
+    console.log(`🎨 Extracted punk #${punkId} from canonical PNG (${coloredPixels} colored pixels, row=${row}, col=${col})`);
+    return pixels;
 
   } catch (error) {
-    console.error(`Failed to load punk ${punkId}:`, error);
-    throw error; // Re-throw to prevent silent failures
+    console.error(`❌ Failed to extract punk #${punkId} from canonical PNG:`, error);
+    throw error;
   }
 }
 
+// Canonical CryptoPunks from Larva Labs PNG
+const PUNK_SIZE = 24; // Each punk is 24x24 pixels
+const MAX_PUNKS = 10000; // Total punks available (100x100 grid)
+
+// Punk engraving rendering constants
+const PUNK_RENDER_SIZE = 420; // Bigger scale for better visibility
+const PUNK_PIXEL_SCALE = PUNK_RENDER_SIZE / 24;
+
 /**
- * Load punk data from JSON files
+ * Load punk data from canonical Larva Labs PNG
  */
 export async function loadPunkData(punkId: number): Promise<({r: number, g: number, b: number} | null)[][] | null> {
   // Check cache first
@@ -1195,21 +1169,21 @@ export async function loadPunkData(punkId: number): Promise<({r: number, g: numb
   }
 
   try {
-    const pixelData = await loadPunkDataFromJson(punkId);
+    const pixelData = await loadCanonicalPunkPixels(punkId);
 
     // Cache the result (including null to prevent re-attempts)
     punkDataCache[punkId] = pixelData;
 
     if (pixelData) {
-      console.log(`✅ Loaded punk ${punkId} from JSON (${pixelData.flat().filter(p => p !== null).length} colored pixels)`);
+      console.log(`✅ Loaded punk ${punkId} from canonical PNG (${pixelData.flat().filter(p => p !== null).length} colored pixels)`);
     } else {
-      console.warn(`❌ Failed to load punk ${punkId} from JSON`);
+      console.warn(`❌ Failed to load punk ${punkId} from canonical PNG`);
     }
 
     return pixelData;
 
   } catch (error) {
-    console.error(`Failed to load punk ${punkId}:`, error);
+    console.error(`❌ Failed to load punk ${punkId} from canonical PNG:`, error);
     punkDataCache[punkId] = null;
     return null;
   }
@@ -2236,155 +2210,7 @@ export class GeometricPatternRenderer {
   }
 
 
-  /**
-   * Fetch punk SVG from CryptoPunksData contract (for development/testing)
-   * Note: This requires a real RPC endpoint with API key for production use
-   */
-  async fetchPunkSvg(punkId: number): Promise<string> {
-    try {
-      // For demo purposes, return a simple SVG. In production, you'd use:
-      // const response = await fetch('https://eth-mainnet.g.alchemy.com/v2/YOUR_API_KEY', { ... })
 
-      console.log(`🎨 Fetching punk ${punkId} SVG...`);
-
-      // For now, return empty string. Load real SVGs from files instead
-      return '';
-
-      /* Production code would be:
-      const response = await fetch('https://eth-mainnet.g.alchemy.com/v2/YOUR_API_KEY', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          method: 'eth_call',
-          params: [{
-            to: '0x16f5a35647d6f03d5d3da7b35409d65ba03af3b2', // CryptoPunksData
-            data: `0xc87b56dd${punkId.toString(16).padStart(64, '0')}` // punkImageSvg(uint16)
-          }, 'latest'],
-          id: 1
-        })
-      });
-
-      const result = await response.json();
-      const svgData = result.result;
-
-      // Decode the returned bytes to string
-      let svg = '';
-      for (let i = 2; i < svgData.length; i += 2) {
-        svg += String.fromCharCode(parseInt(svgData.substr(i, 2), 16));
-      }
-      return svg;
-      */
-    } catch (error) {
-      console.warn(`Failed to fetch punk ${punkId}:`, error);
-      return ''; // No fallback - use loadPunksFromFiles instead
-    }
-  }
-
-
-
-  /**
-   * Batch load real Cryptopunk SVGs (use with caution - rate limited)
-   */
-  async loadRealPunks(punkIds: number[], rpcUrl?: string) {
-    console.log('🎨 Loading real Cryptopunk SVGs from blockchain...');
-
-    for (const punkId of punkIds) {
-      try {
-        const svg = await this.fetchRealPunkSvg(punkId, rpcUrl);
-        if (svg) {
-          // this.loadPunkSvg(punkId, svg); // Removed - using hardcoded data now
-          console.log(`✅ Loaded real punk ${punkId}`);
-        }
-      } catch (error) {
-        console.warn(`❌ Failed to load real punk ${punkId}:`, error);
-      }
-
-      // Rate limiting
-      await new Promise(resolve => setTimeout(resolve, 200));
-    }
-  }
-
-  /**
-   * Fetch real punk SVG from CryptoPunksData contract
-   */
-  private async fetchRealPunkSvg(punkId: number, rpcUrl?: string): Promise<string> {
-    const endpoint = rpcUrl || 'https://eth-mainnet.g.alchemy.com/v2/demo';
-
-    try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          method: 'eth_call',
-          params: [{
-            to: '0x16f5a35647d6f03d5d3da7b35409d65ba03af3b2', // CryptoPunksData
-            data: `0xc87b56dd${punkId.toString(16).padStart(64, '0')}` // punkImageSvg(uint16)
-          }, 'latest'],
-          id: 1
-        })
-      });
-
-      const result = await response.json();
-      const svgData = result.result;
-
-      // The result is already a string (SVG), not hex-encoded bytes for this function
-      return svgData;
-    } catch (error) {
-      console.warn(`Failed to fetch real punk ${punkId}:`, error);
-      return '';
-    }
-  }
-
-  /**
-   * Load punk SVGs from downloaded JSON files
-   */
-  async loadPunksFromFiles() {
-    console.log('🎨 Loading 625+ Cryptopunk SVGs...');
-
-    try {
-      // Load all punks-*.json files from data/cryptopunks/ directory
-      const files = [
-        'punks-000.json', 'punks-001.json', 'punks-002.json', 'punks-003.json',
-        'punks-004.json', 'punks-005.json', 'punks-006.json', 'punks-007.json',
-        'punks-008.json', 'punks-009.json', 'punks-010.json', 'punks-011.json',
-        'punks-012.json', 'punks-013.json', 'punks-014.json', 'punks-016.json',
-        'punks-019.json', 'punks-020.json', 'punks-021.json', 'punks-022.json',
-        'punks-023.json', 'punks-024.json', 'punks-031.json'
-      ];
-
-      let totalLoaded = 0;
-
-      for (const filename of files) {
-        try {
-          const response = await fetch(`/data/cryptopunks/${filename}`);
-          if (!response.ok) {
-            console.warn(`⚠️ Skipping ${filename} - not found`);
-            continue;
-          }
-
-          const batchData = await response.json();
-
-          for (const punk of batchData) {
-            // this.loadPunkSvg(punk.id, punk.svg); // Removed - using hardcoded data now
-          }
-
-          totalLoaded += batchData.length;
-          console.log(`✅ Loaded ${batchData.length} punks from ${filename} (${totalLoaded} total)`);
-        } catch (error) {
-          console.warn(`❌ Failed to load ${filename}:`, error);
-        }
-      }
-
-      console.log(`🎉 Successfully loaded ${totalLoaded} Cryptopunk SVGs!`);
-      return totalLoaded;
-    } catch (error) {
-      console.warn('❌ Failed to load punks from files:', error);
-      console.log('💡 Make sure punk files are in public/data/cryptopunks/');
-      return 0;
-    }
-  }
 
 
 }
@@ -2461,23 +2287,6 @@ export function createStripeField(fieldType: FieldType): StripeField | null {
   }
 }
 
-/**
- * Convert official CryptoPunk ID (Larva Labs) to dataset index
- * Dataset appears to have different ordering than official IDs
- */
-export function mapOfficialPunkIdToDatasetIndex(officialId: number): number {
-  if (officialId < 0 || officialId >= 10000) {
-    throw new Error(`Invalid official punk ID: ${officialId}`)
-  }
-
-  // Known mapping corrections based on user feedback
-  // If punk #7804 shows #779, then dataset index 779 contains punk #7804's data
-  // This suggests dataset is not ordered by official ID
-
-  // For now, use direct mapping and let user report specific mismatches
-  // We can build a correction table as more mismatches are identified
-  return officialId
-}
 
 /**
  * Sample punk pixel from global state - single source of truth for punk engraving
