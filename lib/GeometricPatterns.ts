@@ -2276,15 +2276,24 @@ export class GeometricPatternRenderer {
   }
 
   /**
-   * Load ALL punk data synchronously - for immediate availability
-   * Only ~625 punks loaded (subset), very fast
+   * Load punk data on-demand for a specific punk ID
+   * Call this when a punk is selected to preload data
    */
-  loadPunksFromFilesSync() {
-    console.log('🎨 Loading Cryptopunk SVGs synchronously...');
+  async loadPunkData(punkId: number) {
+    // Check if punk data is already loaded
+    if (this.punkPixels[punkId]) {
+      return true; // Already loaded
+    }
+
+    console.log(`🎨 Loading punk #${punkId} data...`);
 
     try {
-      // Load all punks-*.json files from data/cryptopunks/ directory
-      const files = [
+      // Determine which file contains this punk ID
+      let batchIndex = Math.floor(punkId / 100);
+      let filename = `punks-${batchIndex.toString().padStart(3, '0')}.json`;
+
+      // Special handling for our loaded batches
+      const availableFiles = [
         'punks-000.json', 'punks-001.json', 'punks-002.json', 'punks-003.json',
         'punks-004.json', 'punks-005.json', 'punks-006.json', 'punks-007.json',
         'punks-008.json', 'punks-009.json', 'punks-010.json', 'punks-011.json',
@@ -2293,37 +2302,37 @@ export class GeometricPatternRenderer {
         'punks-023.json', 'punks-024.json', 'punks-031.json'
       ];
 
-      let totalLoaded = 0;
-
-      // Use XMLHttpRequest for synchronous loading
-      for (const filename of files) {
-        try {
-          const xhr = new XMLHttpRequest();
-          xhr.open('GET', `/data/cryptopunks/${filename}`, false); // Synchronous!
-          xhr.send();
-
-          if (xhr.status !== 200) {
-            console.warn(`⚠️ Skipping ${filename} - HTTP ${xhr.status}`);
-            continue;
-          }
-
-          const batchData = JSON.parse(xhr.responseText);
-
-          for (const punk of batchData) {
-            this.loadPunkSvg(punk.id, punk.svg);
-          }
-
-          totalLoaded += batchData.length;
-        } catch (error) {
-          console.warn(`❌ Failed to load ${filename}:`, error);
-        }
+      if (!availableFiles.includes(filename)) {
+        // Find the closest available batch
+        const availableIndices = availableFiles.map(f => parseInt(f.split('-')[1].split('.')[0]));
+        const closestBatch = availableIndices.reduce((prev, curr) =>
+          Math.abs(curr - batchIndex) < Math.abs(prev - batchIndex) ? curr : prev
+        );
+        filename = `punks-${closestBatch.toString().padStart(3, '0')}.json`;
+        batchIndex = closestBatch;
       }
 
-      console.log(`🎉 Successfully loaded ${totalLoaded} Cryptopunk SVGs synchronously!`);
-      return totalLoaded;
+      // Load the specific batch file
+      const response = await fetch(`/data/cryptopunks/${filename}`);
+      if (!response.ok) {
+        console.warn(`⚠️ Failed to load ${filename} - HTTP ${response.status}`);
+        return false;
+      }
+
+      const batchData = await response.json();
+      const punkData = batchData.find((p: any) => p.id === punkId);
+
+      if (punkData) {
+        this.loadPunkSvg(punkId, punkData.svg);
+        console.log(`✅ Loaded punk #${punkId} from ${filename}`);
+        return true;
+      } else {
+        console.warn(`⚠️ Punk #${punkId} not found in ${filename}`);
+        return false;
+      }
     } catch (error) {
-      console.error('💥 Failed to load Cryptopunk SVGs synchronously:', error);
-      return 0;
+      console.warn(`❌ Failed to load punk #${punkId}:`, error);
+      return false;
     }
   }
 

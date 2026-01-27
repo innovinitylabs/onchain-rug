@@ -219,18 +219,13 @@ export default function GeneratorPage() {
     if (typeof window !== 'undefined' && (window as any).p5Instance && (window as any).doormatData) {
       // Only create mask if overlay is enabled
       if (enableOverlayRef.current) {
-        // Get or create pattern renderer with punk data preloaded
+        // Get or create pattern renderer (punk data loaded on-demand now)
         let patternRenderer = (window as any).p5Instance.patternRenderer;
         if (!patternRenderer) {
           const currentSeed = (window as any).currentSeed || 42
           const maskPRNG = createDerivedPRNG(currentSeed, 1000)
           patternRenderer = new GeometricPatternRenderer((window as any).p5Instance, maskPRNG)
           ;(window as any).p5Instance.patternRenderer = patternRenderer
-
-          // Load ALL punk data synchronously - it's only ~10k punks, not much data
-          console.log('🎨 Loading all Cryptopunk SVGs synchronously...')
-          patternRenderer.loadPunksFromFilesSync()
-          console.log('✅ All Cryptopunk SVGs loaded synchronously!')
         }
 
         const palette = extractRugPalette((window as any).doormatData, (window as any).p5Instance)
@@ -400,7 +395,7 @@ export default function GeneratorPage() {
       { name: "Cornell Red", colors: ['#b31b1b', '#ffffff', '#222222', '#e5e5e5'] },
       { name: "Princeton Orange", colors: ['#ff8f1c', '#000000', '#ffffff', '#e5e5e5'] },
       { name: "Dartmouth Green", colors: ['#00693e', '#ffffff', '#000000', '#a3c1ad'] },
-      { name: "Indian Flag", colors: ['#ff9933', '#ffffff', '#138808', '#000080'] },
+      { name: "Indian Flag", colors: ['#ff9933', '#ffffff', '#138808', '#000080','#FF671F'] },
       { name: "Oxford Tartan", colors: ['#002147', '#c8102e', '#ffd700', '#ffffff', '#008272'] },
       { name: "Black Watch", colors: ['#1c2a3a', '#2e4a62', '#1e2d24', '#3a5f0b'] },
       { name: "Royal Stewart", colors: ['#e10600', '#ffffff', '#000000', '#ffd700', '#007a3d'] },
@@ -3605,12 +3600,20 @@ export default function GeneratorPage() {
                             <div className="text-amber-800 text-xs mb-2">Punk Selection:</div>
                             <select
                               value={selectedPunkPattern}
-                              onChange={(e) => {
+                              onChange={async (e) => {
                                 const newPattern = e.target.value
                                 setSelectedPunkPattern(newPattern)
                                 // Update punkId based on pattern selection
                                 const newPunkId = getPunkIdForPattern(newPattern)
                                 setSelectedPunkId(newPunkId)
+
+                                // Preload punk data for immediate engraving
+                                if ((window as any).p5Instance?.patternRenderer) {
+                                  console.log(`🎨 Preloading punk #${newPunkId} data...`)
+                                  await (window as any).p5Instance.patternRenderer.loadPunkData(newPunkId)
+                                  console.log(`✅ Punk #${newPunkId} data loaded`)
+                                }
+
                                 regenerateMask(selectedMaskType, newPunkId)
                               }}
                               className="w-full bg-white text-amber-900 rounded text-sm font-mono focus:ring-1 focus:ring-amber-500 border border-amber-300 px-2 py-1"
@@ -3641,9 +3644,17 @@ export default function GeneratorPage() {
                                 min="0"
                                 max="9999"
                                 value={selectedPunkId}
-                                onChange={(e) => {
+                                onChange={async (e) => {
                                   const newPunkId = Math.max(0, Math.min(9999, parseInt(e.target.value) || 0))
                                   setSelectedPunkId(newPunkId)
+
+                                  // Preload punk data for immediate engraving
+                                  if ((window as any).p5Instance?.patternRenderer) {
+                                    console.log(`🎨 Preloading punk #${newPunkId} data...`)
+                                    await (window as any).p5Instance.patternRenderer.loadPunkData(newPunkId)
+                                    console.log(`✅ Punk #${newPunkId} data loaded`)
+                                  }
+
                                   regenerateMask(selectedMaskType, newPunkId)
                                 }}
                                 className="w-full bg-white text-amber-900 rounded text-sm font-mono focus:ring-1 focus:ring-amber-500 border border-amber-300 px-2 py-1"
