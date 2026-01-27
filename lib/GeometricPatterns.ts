@@ -1092,8 +1092,8 @@ async function parsePunkSvg(svgString: string): Promise<({r: number, g: number, 
             const b = data[index + 2];
             const a = data[index + 3];
 
-            // Only consider pixels that are not transparent and not pure black (background)
-            if (a > 128 && !(r === 0 && g === 0 && b === 0)) {
+            // Only consider pixels that are not transparent (keep all colors including black)
+            if (a > 128) {
               pixels[y][x] = { r, g, b };
               coloredPixels++;
             }
