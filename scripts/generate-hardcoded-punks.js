@@ -96,6 +96,7 @@ function generateTypeScriptCode() {
 
   const punkDataEntries = [];
 
+  let processedCount = 0;
   for (const punkId of CURATED_PUNKS) {
     console.log(`📊 Processing punk #${punkId}...`);
     const pixelData = loadPunkData(punkId);
@@ -122,6 +123,9 @@ function generateTypeScriptCode() {
   ${punkId}: [
 ${rows.map(row => `    ${row}`).join(',\n')},
   ]`);
+
+      processedCount++;
+      console.log(`   ✅ Added punk #${punkId} to output (${processedCount}/${CURATED_PUNKS.length})`);
     } else {
       console.warn(`   → Failed to load punk #${punkId}, skipping`);
     }
