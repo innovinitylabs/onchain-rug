@@ -171,22 +171,18 @@ export default function GeneratorPage() {
     if (!enablePunk) {
       if (typeof window !== 'undefined') {
         ;(window as any).__CURRENT_PUNK_PIXELS__ = null
-        console.log(`🚫 Punk engraving disabled, cleared data`)
       }
       return
     }
 
     // Use official CryptoPunk ID directly (canonical Larva Labs ordering)
-    console.log(`🎨 Loading canonical punk #${selectedPunkId} from PNG...`)
     loadPunkData(selectedPunkId).then(punkPixels => {
       if (punkPixels && typeof window !== 'undefined') {
         ;(window as any).__CURRENT_PUNK_PIXELS__ = punkPixels
-        console.log(`✅ Canonical punk #${selectedPunkId} loaded successfully (${punkPixels.flat().filter(p => p !== null).length} pixels)`)
 
         // Force redraw
         if ((window as any).p5Instance) {
           ;(window as any).p5Instance.redraw()
-          console.log(`🔄 Canvas redrawn for punk #${selectedPunkId}`)
         }
       } else {
         console.warn(`❌ Failed to load canonical punk #${selectedPunkId}`)
@@ -235,7 +231,6 @@ export default function GeneratorPage() {
   // Force canvas redraw when overlay state changes
   useEffect(() => {
     if (typeof window !== 'undefined' && (window as any).p5Instance) {
-      console.log('🎨 Overlay state changed, triggering redraw:', enableGeometricOverlay)
       // Force a redraw by calling redraw() on the p5 instance
       try {
         ;(window as any).p5Instance.redraw()
@@ -316,7 +311,6 @@ export default function GeneratorPage() {
     return new Promise<void>((resolve) => {
       // Check if P5.js is already loaded
       if (typeof window !== 'undefined' && (window as any).p5) {
-        console.log('✅ P5.js already available')
         resolve()
         return
       }
@@ -325,7 +319,6 @@ export default function GeneratorPage() {
       const script = document.createElement('script')
       script.src = 'https://cdn.jsdelivr.net/npm/p5@1.11.10/lib/p5.min.js'
       script.onload = () => {
-        console.log('✅ P5.js loaded successfully')
         resolve()
       }
       script.onerror = () => {
@@ -344,7 +337,6 @@ export default function GeneratorPage() {
       // This avoids loading issues and keeps everything in one place
       if (typeof window !== 'undefined') {
         ;(window as any).paletteCollections = getEmbeddedPalettes()
-        console.log(`✅ Loaded ${getEmbeddedPalettes().length} palettes`)
       }
       resolve()
     })
@@ -456,7 +448,6 @@ export default function GeneratorPage() {
 
   // Self-contained doormat generation (no external scripts needed)
   const initializeDoormat = () => {
-    console.log('🎨 Initializing self-contained doormat generator...')
 
     // Configuration
     const config = {
@@ -475,12 +466,7 @@ export default function GeneratorPage() {
 
     if (typeof window !== 'undefined' && (window as any).paletteCollections) {
       colorPalettes = (window as any).paletteCollections
-      console.log(`✅ Loaded external palettes: ${colorPalettes.length} palettes`)
-    } else {
-      console.log(`📦 Using embedded fallback palettes: ${colorPalettes.length} palettes`)
     }
-
-    console.log(`🎨 Total palettes available: ${colorPalettes.length}`)
 
     // Character map for text embedding
     const characterMap = {
@@ -565,7 +551,6 @@ export default function GeneratorPage() {
       ;(window as any).doormatTextRows = doormatTextRows
     }
     
-    console.log('✅ Self-contained doormat generator initialized')
     return {
       config,
       colorPalettes,
@@ -595,14 +580,12 @@ export default function GeneratorPage() {
       // Wait for canvas container to exist
       const waitForContainer = () => {
         if (!canvasContainerRef.current) {
-          console.log('⏳ Waiting for canvas container...')
           setTimeout(waitForContainer, 50)
           return
         }
 
         // Prevent multiple instances
         if (typeof window !== 'undefined' && (window as any).p5Instance) {
-          console.log('⚠️ P5.js instance already exists, removing old one')
           ;(window as any).p5Instance.remove()
           delete (window as any).p5Instance
         }
@@ -631,8 +614,6 @@ export default function GeneratorPage() {
             const defaultFlipped = (window as any).__DEFAULT_FLIPPED__ === true
             ;(window as any).__RUG_FLIPPED__ = defaultFlipped
 
-            console.log('🎨 P5.js canvas created with original dimensions')
-            console.log('🔄 Default flip state:', defaultFlipped)
 
             // Trigger initial render
             p.redraw()
@@ -750,7 +731,6 @@ export default function GeneratorPage() {
 
 // Wrong generateDoormatCore removed - correct one defined later
   const generateDoormatCore = (seed: number, doormatData: any) => {
-    console.log('🎨 Generating doormat with seed:', seed)
     
     // Store seed globally for drawing function access
     if (typeof window !== 'undefined') {
@@ -760,14 +740,6 @@ export default function GeneratorPage() {
     initPRNG(seed)
     const prng = getPRNG()
     
-    // Test PRNG determinism - log first few values
-    console.log('🧪 PRNG Test - First 5 values:', [
-      prng.next().toFixed(6),
-      prng.next().toFixed(6), 
-      prng.next().toFixed(6),
-      prng.next().toFixed(6),
-      prng.next().toFixed(6)
-    ])
     
     // RARITY-BASED WARP THICKNESS SELECTION
     // Limited to 1-4 to prevent text clipping with 5 lines
@@ -782,14 +754,10 @@ export default function GeneratorPage() {
     let cumulativeWeight = 0
     let selectedWarpThickness = 3 // Default to most common
     
-    console.log(`🎲 Warp Thickness Roll: ${warpThicknessRoll.toFixed(4)} (seed: ${seed})`)
-    
     for (const [thickness, weight] of Object.entries(warpThicknessWeights)) {
       cumulativeWeight += weight
-      console.log(`  Thickness ${thickness}: ${(weight * 100).toFixed(1)}% chance (cumulative: ${(cumulativeWeight * 100).toFixed(1)}%)`)
       if (warpThicknessRoll <= cumulativeWeight) {
         selectedWarpThickness = parseInt(thickness)
-        console.log(`  ✅ SELECTED: Thickness ${thickness} (roll ${warpThicknessRoll.toFixed(4)} <= ${cumulativeWeight.toFixed(4)})`)
         break
       }
     }
@@ -969,9 +937,6 @@ export default function GeneratorPage() {
     const palette = colorPalettes.find(p => p.name === selectedPaletteName) || colorPalettes[0]
     
     doormatData.selectedPalette = palette
-    console.log(`🎯 Generated ${selectedRarity} rarity doormat with palette: ${palette.name}`)
-    console.log(`📊 Available ${selectedRarity} palettes: ${tierPalettes.length} options`)
-    console.log(`🎨 Selected palette index: ${tierPaletteIndex}/${tierPalettes.length - 1}`)
     
     // Original doormat.js stripe generation logic
     const totalHeight = config.DOORMAT_HEIGHT
@@ -1042,10 +1007,6 @@ export default function GeneratorPage() {
       }
       // Common keeps 15% chance
       
-      // Log secondary color chance for first stripe only
-      if (currentY === 0) {
-        console.log(`🎨 ${selectedRarity} Secondary Color Chance: ${(secondaryColorChance * 100).toFixed(1)}%`)
-      }
       
       const hasSecondaryColor = stripePRNG.next() < secondaryColorChance
       const secondaryColor = hasSecondaryColor ? palette.colors[Math.floor(stripePRNG.next() * palette.colors.length)] : null
@@ -1081,11 +1042,6 @@ export default function GeneratorPage() {
       }
       // Common keeps original probabilities
       
-      // Log weave pattern probabilities for first stripe only
-      if (currentY === 0) {
-        console.log(`🎨 ${selectedRarity} Weave Pattern Probabilities:`)
-        console.log(`  Solid: ${(solidChance * 100).toFixed(1)}%, Textured: ${(texturedChance * 100).toFixed(1)}%, Mixed: ${(mixedChance * 100).toFixed(1)}%`)
-      }
       
       // Prevent consecutive mixed stripes to avoid text obfuscation
       if (weaveRand < solidChance) {
@@ -1266,7 +1222,6 @@ export default function GeneratorPage() {
           // 🔴 PUNK ENGRAVING OVERRIDE (WARP)
           const punkPixel = samplePunkPixel(x, y, doormatData)
           if (punkPixel) {
-            console.log(`🔴 WARP: Applied punk pixel at (${x}, ${y}): rgb(${punkPixel.r}, ${punkPixel.g}, ${punkPixel.b})`)
             r = punkPixel.r
             g = punkPixel.g
             b = punkPixel.b
@@ -1697,7 +1652,6 @@ export default function GeneratorPage() {
           // 🔴 PUNK ENGRAVING OVERRIDE (WEFT)
           const punkPixel = samplePunkPixel(x, y, doormatData)
           if (punkPixel) {
-            console.log(`🔴 WEFT: Applied punk pixel at (${x}, ${y}): rgb(${punkPixel.r}, ${punkPixel.g}, ${punkPixel.b})`)
             r = punkPixel.r
             g = punkPixel.g
             b = punkPixel.b
@@ -2395,27 +2349,21 @@ export default function GeneratorPage() {
 
   // Initialize the generator
   const init = async () => {
-    console.log('🚀 Starting initialization...')
-
     try {
       // Load P5.js first
       await loadP5()
-      console.log('✅ P5.js loaded')
 
       // Load palette data
       await loadPaletteData()
-      console.log('✅ Palette data loaded')
 
       // Initialize self-contained doormat generator
       const doormatData = initializeDoormat()
       if (typeof window !== 'undefined') {
         ;(window as any).doormatData = doormatData // Store globally for access
       }
-      console.log('✅ Doormat generator initialized')
 
       // Create P5.js instance
       await createP5Instance()
-      console.log('✅ P5.js instance created')
 
       // Now that p5Instance exists, regenerate text data for the initial rug
       updateTextColors((window as any).p5Instance, doormatData)
@@ -2456,7 +2404,6 @@ export default function GeneratorPage() {
   const updatePaletteDisplay = () => {
     if (typeof window !== 'undefined' && (window as any).selectedPalette) {
       setPalette((window as any).selectedPalette)
-      console.log('🎨 Palette updated:', (window as any).selectedPalette)
     }
   }
 
@@ -2655,7 +2602,6 @@ export default function GeneratorPage() {
   const updateTraitsDisplay = () => {
     const traits = calculateTraits()
     setTraits(traits)
-    console.log('🏷️ Comprehensive traits calculated:', traits)
   }
 
   // Update flip state - authoritative handler for flip toggling
@@ -2682,7 +2628,6 @@ export default function GeneratorPage() {
       // Force redraw to show front side immediately
       ;(window as any).p5Instance.redraw()
 
-      console.log('🎨 Generating new doormat with seed:', seed)
       generateDoormatCore(seed, (window as any).doormatData)
 
       // Initialize preview flags and evolution phase
@@ -2765,7 +2710,6 @@ export default function GeneratorPage() {
   // Generate from seed
   const generateFromSeed = () => {
     if (typeof window !== 'undefined' && (window as any).p5Instance) {
-      console.log('🎨 Generating doormat from seed:', currentSeed)
       generateDoormatCore(currentSeed, (window as any).doormatData)
 
       // Initialize preview flags and evolution phase
@@ -2882,7 +2826,6 @@ export default function GeneratorPage() {
     
     if (validTexts.length > 0 && typeof window !== 'undefined' && (window as any).doormatData) {
       (window as any).doormatData.doormatTextRows = validTexts
-      console.log('📝 Text added to doormat:', validTexts)
       
       // Update text colors and generate text data
       if (typeof window !== 'undefined' && (window as any).p5Instance) {
@@ -2993,15 +2936,12 @@ export default function GeneratorPage() {
       const positionCanvas = () => {
         const canvas = document.querySelector('canvas')
         if (canvas && canvas.width > 0 && canvas.height > 0 && canvasContainerRef.current) {
-          console.log('🎯 Positioning canvas - dimensions ready:', canvas.width, 'x', canvas.height)
-          
           canvas.style.position = 'absolute'
           canvas.style.top = '0'
           canvas.style.left = '0'
           canvas.style.width = '100%'
           canvas.style.height = '100%'
           canvas.style.objectFit = 'fill'
-          console.log('✅ Canvas positioned perfectly - robust approach')
         } else {
           // Canvas not ready yet, check again in 100ms
           setTimeout(positionCanvas, 100)
@@ -3018,11 +2958,8 @@ export default function GeneratorPage() {
     if (isLoaded && typeof window !== 'undefined') {
       // Delay auto-generation to ensure canvas is fully positioned and rendered
       const startAutoGeneration = () => {
-        console.log('🎲 Starting auto-generation cycle after page load...')
-
         const doormatData = (window as any).doormatData
         if (!doormatData) {
-          console.log('⚠️ Doormat data not available, skipping auto-generation')
           return
         }
 
@@ -3032,7 +2969,6 @@ export default function GeneratorPage() {
         const autoGenerate = () => {
           if (currentGeneration < generationCount) {
             const randomSeed = Math.floor(Math.random() * 100000)
-            console.log(`🎲 Auto-generation ${currentGeneration + 1}/${generationCount} with seed: ${randomSeed}`)
             generateDoormatCore(randomSeed, doormatData)
 
             // Initialize preview flags and evolution phase
@@ -3062,7 +2998,6 @@ export default function GeneratorPage() {
           } else {
             // Final generation - update state so minting works
             const finalSeed = Math.floor(Math.random() * 100000)
-            console.log(`🎯 Final generation with seed: ${finalSeed}`)
             generateDoormatCore(finalSeed, doormatData)
 
             // Initialize preview flags and evolution phase
@@ -3086,7 +3021,6 @@ export default function GeneratorPage() {
             setCurrentSeed(finalSeed) // Update the state so minting works
             setWarpThickness(doormatData.warpThickness) // Update warp thickness state
  // Update complexity state
-            console.log('✅ Auto-generation cycle complete - page fully ready!')
           }
         }
 
