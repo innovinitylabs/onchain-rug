@@ -207,6 +207,31 @@ export default function GeneratorPage() {
     }
   }, [enablePunk, selectedPunkId])
 
+  // Add/remove 4 spaces prefix based on punk engraving state
+  useEffect(() => {
+    const updatedTextInputs = textInputs.map(text => {
+      if (enablePunk) {
+        // Add 4 spaces if punk engraving is enabled and text doesn't start with 4 spaces
+        if (!text.startsWith('    ')) {
+          return '    ' + text
+        }
+        return text
+      } else {
+        // Remove 4 spaces if punk engraving is disabled and text starts with 4 spaces
+        if (text.startsWith('    ')) {
+          return text.slice(4)
+        }
+        return text
+      }
+    })
+
+    // Only update if there are actual changes
+    if (updatedTextInputs.some((text, index) => text !== textInputs[index])) {
+      setTextInputs(updatedTextInputs)
+      updateTextLive(updatedTextInputs)
+    }
+  }, [enablePunk, textInputs])
+
   // Force canvas redraw when overlay state changes
   useEffect(() => {
     if (typeof window !== 'undefined' && (window as any).p5Instance) {
