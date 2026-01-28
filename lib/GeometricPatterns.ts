@@ -1070,7 +1070,6 @@ async function loadPunksImage(): Promise<HTMLImageElement> {
     img.onload = () => {
       punksImage = img;
       punksImageLoaded = true;
-      console.log('✅ Loaded canonical CryptoPunks PNG (2400x2400 pixels)');
       resolve(img);
     };
 
@@ -1142,7 +1141,6 @@ async function loadCanonicalPunkPixels(punkId: number): Promise<({r: number, g: 
       }
     }
 
-    console.log(`🎨 Extracted punk #${punkId} from canonical PNG (${coloredPixels} colored pixels, row=${row}, col=${col})`);
     return pixels;
 
   } catch (error) {
@@ -1175,7 +1173,6 @@ export async function loadPunkData(punkId: number): Promise<({r: number, g: numb
     punkDataCache[punkId] = pixelData;
 
     if (pixelData) {
-      console.log(`✅ Loaded punk ${punkId} from canonical PNG (${pixelData.flat().filter(p => p !== null).length} colored pixels)`);
     } else {
       console.warn(`❌ Failed to load punk ${punkId} from canonical PNG`);
     }
@@ -1257,10 +1254,6 @@ export function getMappedPunkPixel(
 
   const result = punkPixels[rotatedPixelY][rotatedPixelX];
 
-  // Debug: occasionally log mapping details
-  if (Math.random() < 0.0001) { // 0.01% of the time
-    console.log(`🗺️ Rug (${rugX}, ${rugY}) → Local (${localX}, ${localY}) → Punk (${punkX}, ${punkY}) → Rotated (${rotatedPixelX}, ${rotatedPixelY}) → Color:`, result)
-  }
 
   return result;
 }
@@ -1343,7 +1336,6 @@ export class GeometricPatternRenderer {
     canvasWidth: number,
     canvasHeight: number
   ): EngravingMask {
-    console.log('🎨 createPatternMask called with type:', patternType, 'palette:', palette.colors.length)
 
     // Convert legacy pattern type to mask type for backward compatibility
     let maskType: MaskType = 'none'
@@ -1380,7 +1372,6 @@ export class GeometricPatternRenderer {
     canvasWidth: number,
     canvasHeight: number
   ): EngravingMask {
-    console.log('🎨 createMask called with type:', maskType, 'palette:', palette.colors.length)
 
     switch (maskType) {
       case 'block_circles': {
@@ -1421,7 +1412,6 @@ export class GeometricPatternRenderer {
       case 'none':
       default:
         // Empty mask for 'none' type
-        console.log('🎨 Creating empty mask')
         return new BlockPatternMask([])
     }
   }
@@ -1446,8 +1436,6 @@ export class GeometricPatternRenderer {
       width: canvasWidth - 2 * totalMargin,
       height: canvasHeight - 2 * totalMargin
     }
-
-    console.log('🎨 Rug area mask:', rugArea)
 
     // Create a simple rectangular shape covering the main rug area
     const shapes: BlockShape[] = [{
@@ -2219,14 +2207,11 @@ export class GeometricPatternRenderer {
  * Extract color palette from rug data
  */
 export function extractRugPalette(rugData: any, p?: any): ColorPalette {
-  console.log('🎨 Extracting palette from rugData:', !!rugData, 'palette exists:', !!rugData?.selectedPalette)
   const colors: ColorPalette['colors'] = []
 
   if (rugData?.selectedPalette?.colors) {
-    console.log('🎨 Found selectedPalette with', rugData.selectedPalette.colors.length, 'colors')
     // Extract from palette - supports both hex strings and RGB objects
     rugData.selectedPalette.colors.forEach((color: any, index: number) => {
-      console.log('🎨 Color', index, ':', color)
       if (typeof color === 'string') {
         // Handle hex strings by converting to RGB
         const p5Color = p.color(color)
@@ -2244,12 +2229,10 @@ export function extractRugPalette(rugData: any, p?: any): ColorPalette {
 
   // Only fall back to brown if palette data structure doesn't exist at all
   if (colors.length === 0 && !rugData?.selectedPalette) {
-    console.log('🎨 No palette data found, using minimal fallback')
     colors.push({ r: 139, g: 69, b: 19 }) // Saddle brown
     colors.push({ r: 160, g: 82, b: 45 }) // Sienna
   }
 
-  console.log('🎨 Final palette:', colors.length, 'colors')
   return { colors }
 }
 
@@ -2299,13 +2282,11 @@ export function samplePunkPixel(
 
   // Hard-gate: punk sampling only when explicitly enabled
   if (!(window as any).__ENABLE_PUNK__) {
-    console.log(`🚫 Punk engraving disabled, skipping sample at (${x}, ${y})`)
     return null
   }
 
   const punkPixels = (window as any).__CURRENT_PUNK_PIXELS__
   if (!punkPixels) {
-    console.log(`⚠️ No punk pixels loaded, skipping sample at (${x}, ${y})`)
     return null
   }
 
@@ -2336,7 +2317,6 @@ export function samplePunkPixel(
   const py = Math.floor(localY / PUNK_PIXEL_SCALE)
 
   if (px < 0 || px >= 24 || py < 0 || py >= 24) {
-    console.log(`📍 Out of bounds: px=${px}, py=${py} at (${x}, ${y})`)
     return null
   }
 
@@ -2346,14 +2326,6 @@ export function samplePunkPixel(
 
   const pixel = punkPixels[rotatedPy]?.[rotatedPx]
 
-  // Only log occasionally to avoid spam
-  if (Math.random() < 0.0001) { // 0.01% of the time
-    if (pixel) {
-      console.log(`🎨 Sampled punk pixel at (${x}, ${y}): rgb(${pixel.r}, ${pixel.g}, ${pixel.b})`)
-    } else {
-      console.log(`⚫ No punk pixel at (${x}, ${y})`)
-    }
-  }
 
   return pixel
 }
