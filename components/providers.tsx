@@ -4,8 +4,9 @@
 import '@/lib/bigint-polyfill'
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { WagmiProvider } from 'wagmi'
+import { WagmiProvider, createConfig, http } from 'wagmi'
 import { RainbowKitProvider, getDefaultConfig, Theme } from '@rainbow-me/rainbowkit'
+import { metaMask, walletConnect, injected } from 'wagmi/connectors'
 import { config as appConfig } from '@/lib/config'
 import { ethereumSepolia, shapeSepolia, shapeMainnet, baseSepolia, baseMainnet, wagmiConfig } from '@/lib/web3'
 
@@ -93,8 +94,25 @@ try {
   ssr: true,
 })
 } catch (error) {
-  console.error('Failed to initialize RainbowKit config, falling back to wagmi config:', error)
-  rainbowKitConfig = wagmiConfig
+  console.error('Failed to initialize RainbowKit config, falling back to basic wagmi config with connectors:', error)
+
+  // Create a fallback config with basic connectors
+  rainbowKitConfig = createConfig({
+    chains: [baseSepolia, baseMainnet, ethereumSepolia, shapeSepolia, shapeMainnet],
+    connectors: [
+      metaMask(),
+      walletConnect({ projectId }),
+      injected(),
+    ],
+    transports: {
+      [ethereumSepolia.id]: http(),
+      [shapeSepolia.id]: http(),
+      [shapeMainnet.id]: http(),
+      [baseSepolia.id]: http(),
+      [baseMainnet.id]: http(),
+    },
+  })
+
   useRainbowKit = false
 }
 
