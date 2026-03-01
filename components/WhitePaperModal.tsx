@@ -1,7 +1,7 @@
 // Minimal, launch-safe Specification modal
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState } from 'react'
 import { X, FileText, Palette, Target, Clock, Gem } from 'lucide-react'
 
 interface SpecificationModalProps {
@@ -13,6 +13,7 @@ const sections = [
   { id: 'overview', label: 'Overview', icon: Target },
   { id: 'object', label: 'The Object', icon: Palette },
   { id: 'aging', label: 'Aging & Care', icon: Clock },
+  { id: 'stewardship', label: 'Stewardship & Agents', icon: Gem },
   { id: 'economics', label: 'Pricing & Royalties', icon: Gem },
   { id: 'notes', label: 'Irreversibility', icon: FileText }
 ] as const
@@ -21,59 +22,6 @@ type SectionId = typeof sections[number]['id']
 
 export default function SpecificationModal({ isOpen, onClose }: SpecificationModalProps) {
   const [activeSection, setActiveSection] = useState<SectionId>('overview')
-  const navRef = useRef<HTMLElement>(null)
-  const scrollAnimationRef = useRef<number | undefined>(undefined)
-
-  const handleNavMouseMove = useCallback((e: React.MouseEvent<HTMLElement>) => {
-    if (!navRef.current) return
-
-    const nav = navRef.current
-    const rect = nav.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const edgeThreshold = 24
-
-    // Check if content overflows
-    if (nav.scrollWidth <= nav.clientWidth) return
-
-    let scrollDirection = 0
-
-    if (x <= edgeThreshold) {
-      scrollDirection = -1 // Scroll left
-    } else if (x >= rect.width - edgeThreshold) {
-      scrollDirection = 1 // Scroll right
-    }
-
-    if (scrollDirection !== 0) {
-      const scrollStep = () => {
-        if (!navRef.current) return
-
-        const currentNav = navRef.current
-        const maxScroll = currentNav.scrollWidth - currentNav.clientWidth
-
-        if ((scrollDirection < 0 && currentNav.scrollLeft > 0) ||
-            (scrollDirection > 0 && currentNav.scrollLeft < maxScroll)) {
-          currentNav.scrollLeft += scrollDirection * 2 // Slow, calm scroll speed
-          scrollAnimationRef.current = requestAnimationFrame(scrollStep)
-        }
-      }
-
-      if (!scrollAnimationRef.current) {
-        scrollAnimationRef.current = requestAnimationFrame(scrollStep)
-      }
-    } else {
-      if (scrollAnimationRef.current) {
-        cancelAnimationFrame(scrollAnimationRef.current)
-        scrollAnimationRef.current = undefined
-      }
-    }
-  }, [])
-
-  const handleNavMouseLeave = useCallback(() => {
-    if (scrollAnimationRef.current) {
-      cancelAnimationFrame(scrollAnimationRef.current)
-      scrollAnimationRef.current = undefined
-    }
-  }, [])
 
   if (!isOpen) return null
 
@@ -111,6 +59,21 @@ export default function SpecificationModal({ isOpen, onClose }: SpecificationMod
             </ul>
           </div>
         )
+      case 'stewardship':
+        return (
+          <div className="space-y-4">
+            <ul className="text-slate-300/60 space-y-3 text-sm leading-relaxed">
+              <li>• Owners may maintain rugs manually or delegate care</li>
+              <li>• Delegation enables on-chain custodial agents</li>
+              <li>• Agents execute cleaning and maintenance logic</li>
+              <li>• Uses ERC-8004, ERC-8021, and x402-compatible delegation to authorize constrained custodial agents</li>
+              <li>• Stewardship can be ritualized, automated, or hybrid</li>
+            </ul>
+            <p className="text-slate-300/60 text-sm leading-relaxed pt-2">
+              Digital objects do not decay physically. Here, decay and conservation are programmable, intentional, and optional.
+            </p>
+          </div>
+        )
       case 'economics':
         return (
           <div className="space-y-4">
@@ -141,7 +104,7 @@ export default function SpecificationModal({ isOpen, onClose }: SpecificationMod
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/85">
-      <div className="relative w-full max-w-md mx-auto bg-slate-800/95 rounded-lg shadow-xl border border-slate-600/20">
+      <div className="relative w-full max-w-2xl mx-auto bg-slate-800/95 rounded-lg shadow-xl border border-slate-600/20">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-slate-300/60 hover:text-slate-200/80"
@@ -152,14 +115,7 @@ export default function SpecificationModal({ isOpen, onClose }: SpecificationMod
         <div className="px-8 pt-8 pb-6">
           <h1 className="text-xl font-medium text-slate-100/95 mb-6">Specification</h1>
           <nav
-            ref={navRef}
-            className="flex flex-nowrap space-x-4 md:space-x-6 mb-8 overflow-x-auto px-2"
-            onMouseMove={handleNavMouseMove}
-            onMouseLeave={handleNavMouseLeave}
-            style={{
-              scrollbarWidth: 'none',
-              msOverflowStyle: 'none'
-            }}
+            className="flex flex-wrap gap-4 mb-8"
           >
             {sections.map((section) => (
               <button

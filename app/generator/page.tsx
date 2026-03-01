@@ -3476,7 +3476,7 @@ export default function GeneratorPage() {
                   {isLoaded && (
                   <div className="border-t border-gray-600/30 pt-4">
                     <div className="text-gray-700 text-sm mb-3 font-mono">🎨 CryptoPunk Engraving</div>
-                    <div className="text-gray-600 text-xs mb-3 opacity-75">[experimental] Punk engraving renders on rug back, i have a different idea for this but punk stays on till this project id deployed on ETH Mainnet</div>
+                    <div className="text-gray-600 text-xs mb-3 opacity-75">[experimental] Punk engraving renders on rug back, i have a different idea for this but punk stays on till this project gets deployed on ETH Mainnet</div>
 
                     <div className="space-y-3">
                       {/* Enable Toggle */}
