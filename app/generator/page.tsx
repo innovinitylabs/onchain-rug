@@ -1696,11 +1696,12 @@ export default function GeneratorPage() {
 
   /*
    * Perlin Color Diffusion System
-   * Fine-grain textile variation with secondary palette mixing.
+   * Aging changes visual structure: tighter patterns when new, wider diffusion when aged.
    * Rendering-only: no contract, RugData, or metadata changes.
    *
-   * Uses noise(x * 0.02, y * 0.02) for fine grain; secondary hues when noise > 0.65;
-   * bleed strength clamped to 0.6; color bias toward original for harmony.
+   * - Noise scale lerp(0.025, 0.01, ageFactor): tighter when new, wider dye spread when aged.
+   * - Secondary threshold lerp(0.85, 0.55, ageFactor): more secondary palette colors over time.
+   * - Bleed strength: noise * pow(ageFactor, 1.4) * multiplier, clamp 0.6 for pattern clarity.
    */
 
   /**
@@ -1709,16 +1710,16 @@ export default function GeneratorPage() {
    */
   const applyPaletteBleedAging = (p: any, pixelColor: any, palette: string[], ageFactor: number, noise: number) => {
     if (!palette || palette.length === 0) return pixelColor
-    const bleedNoise = noise
-    let bleedStrength = bleedNoise * ageFactor * BLEED_STRENGTH_MULTIPLIER
+    let bleedStrength = noise * Math.pow(ageFactor, 1.4) * BLEED_STRENGTH_MULTIPLIER
     bleedStrength = Math.min(bleedStrength, 0.6)
     if (bleedStrength <= 0) return pixelColor
 
+    const secondaryThreshold = p.lerp(0.85, 0.55, ageFactor)
     const paletteIndexA = Math.floor(noise * palette.length) % palette.length
     const paletteIndexB = (paletteIndexA + 1) % palette.length
     const colorA = p.color(palette[paletteIndexA])
     const colorB = p.color(palette[paletteIndexB])
-    let bleedColor = noise > 0.65 && palette.length > 1
+    let bleedColor = noise > secondaryThreshold && palette.length > 1
       ? p.lerpColor(colorA, colorB, 0.5)
       : colorA
     bleedColor = p.lerpColor(pixelColor, bleedColor, 0.8)
@@ -1745,16 +1746,18 @@ export default function GeneratorPage() {
     const stripeData = doormatData.stripeData || []
     if (!palette || palette.length === 0) return { r: 0, g: 0, b: 0, a: 0 }
 
-    const noiseValue = p.noise(x * 0.02, y * 0.02, seed)
-    let bleedStrength = noiseValue * ageFactor * BLEED_STRENGTH_MULTIPLIER
+    const noiseScale = p.lerp(0.025, 0.01, ageFactor)
+    const noiseValue = p.noise(x * noiseScale, y * noiseScale, seed)
+    let bleedStrength = noiseValue * Math.pow(ageFactor, 1.4) * BLEED_STRENGTH_MULTIPLIER
     bleedStrength = Math.min(Math.max(bleedStrength, 0), 0.6)
     if (bleedStrength <= 0) return { r: 0, g: 0, b: 0, a: 0 }
 
+    const secondaryThreshold = p.lerp(0.85, 0.55, ageFactor)
     const paletteIndexA = Math.floor(noiseValue * palette.length) % palette.length
     const paletteIndexB = (paletteIndexA + 1) % palette.length
     const colorA = p.color(palette[paletteIndexA])
     const colorB = p.color(palette[paletteIndexB])
-    let bleedColor = noiseValue > 0.65 && palette.length > 1
+    let bleedColor = noiseValue > secondaryThreshold && palette.length > 1
       ? p.lerpColor(colorA, colorB, 0.5)
       : colorA
 
