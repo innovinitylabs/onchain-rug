@@ -35,6 +35,13 @@ const defaultPatternParams = {
   xOffset: 0,
   yOffset: 0
 }
+
+/*
+ * Palette Bleed Aging System (experimental)
+ * Set to true to use palette-based dye diffusion instead of grey aging.
+ * Set to false to fall back to original grey texture overlay for comparison.
+ */
+const DEBUG_BLEED_AGING = true
 import { useChainId } from 'wagmi'
 import { contractAddresses } from '@/lib/web3'
 import { getChainDisplayName } from '@/lib/networks'
@@ -647,11 +654,12 @@ export default function GeneratorPage() {
               drawStripeOriginal(p, stripe, doormatData, drawingPRNG, false) // Always front logic
             }
 
-            // Add overall texture overlay if enabled
+            // Add overall texture overlay if enabled (palette bleed or grey aging per DEBUG_BLEED_AGING)
             const currentShowTexture = (window as any).showTexture || false
             const currentTextureLevel = (window as any).textureLevel || 0
+            const currentDirtLevel = (window as any).dirtLevel || 0
             if (currentShowTexture && currentTextureLevel > 0) {
-              drawTextureOverlayWithLevel(p, doormatData, currentTextureLevel)
+              drawTextureOverlayWithLevel(p, doormatData, currentTextureLevel, currentDirtLevel)
             }
 
             // Draw fringe and selvedge (always front orientation - transform handles flipping)
@@ -663,7 +671,6 @@ export default function GeneratorPage() {
 
             // Draw dirt overlay if enabled
             const currentShowDirt = (window as any).showDirt || false
-            const currentDirtLevel = (window as any).dirtLevel || 0
             if (currentShowDirt && currentDirtLevel > 0) {
               drawDirtOverlay(p, doormatData, drawingPRNG, currentDirtLevel)
             }
@@ -1685,6 +1692,75 @@ export default function GeneratorPage() {
     }
   }
 
+  /*
+   * Palette Bleed Aging System
+   * Simulates dye diffusion in textile fibers.
+   * Creates secondary palette colors as rug ages (natural dye bleed, watercolor diffusion, Madras-style migration).
+   * Rendering-only: no contract, RugData, or metadata changes.
+   */
+
+  /**
+   * Apply palette-based bleed aging to a single pixel color.
+   * Used when we have the underlying pixel; for overlay we use getBleedOverlayColor instead.
+   * @param p - p5 instance
+   * @param pixelColor - current color at pixel
+   * @param palette - array of hex color strings from rug palette
+   * @param ageFactor - 0..1, from textureLevel and dirtLevel
+   * @param noise - 0..1 diffusion noise at this position
+   * @returns modified color (bleed blended in, brightness preserved)
+   */
+  const applyPaletteBleedAging = (p: any, pixelColor: any, palette: string[], ageFactor: number, noise: number) => {
+    if (!palette || palette.length === 0) return pixelColor
+    const bleedStrength = Math.min(1, ageFactor * noise)
+    if (bleedStrength <= 0) return pixelColor
+
+    const idx = Math.floor(noise * palette.length * 1.7) % palette.length
+    const nextIdx = (idx + 1) % palette.length
+    let bleedColor = p.color(palette[idx])
+    if (noise > 0.8 && palette.length > 1) {
+      const other = p.color(palette[nextIdx])
+      bleedColor = p.lerpColor(bleedColor, other, 0.5)
+    }
+    const mixed = p.lerpColor(pixelColor, bleedColor, 0.6)
+    const blended = p.lerpColor(pixelColor, mixed, bleedStrength)
+    const r = p.red(blended)
+    const g = p.green(blended)
+    const b = p.blue(blended)
+    const baseBright = (p.red(pixelColor) + p.green(pixelColor) + p.blue(pixelColor)) / 3
+    const outBright = (r + g + b) / 3
+    if (outBright <= 0) return pixelColor
+    const scale = Math.min(1.5, baseBright / outBright)
+    return p.color(
+      Math.min(255, Math.max(0, r * scale)),
+      Math.min(255, Math.max(0, g * scale)),
+      Math.min(255, Math.max(0, b * scale))
+    )
+  }
+
+  /**
+   * Get the bleed overlay color and alpha for drawing at (x, y).
+   * Reuses existing noise; no extra canvas layers.
+   */
+  const getBleedOverlayColor = (p: any, palette: string[], x: number, y: number, ageFactor: number, seed: number) => {
+    if (!palette || palette.length === 0) return { r: 0, g: 0, b: 0, a: 0 }
+    const bleedNoise = p.noise(x * 0.02, y * 0.02, seed)
+    const bleedStrength = Math.min(1, ageFactor * bleedNoise)
+    if (bleedStrength <= 0) return { r: 0, g: 0, b: 0, a: 0 }
+    const idx = Math.floor(bleedNoise * palette.length * 1.7) % palette.length
+    const nextIdx = (idx + 1) % palette.length
+    let bleedColor = p.color(palette[idx])
+    if (bleedNoise > 0.8 && palette.length > 1) {
+      const other = p.color(palette[nextIdx])
+      bleedColor = p.lerpColor(bleedColor, other, 0.5)
+    }
+    const r = p.red(bleedColor)
+    const g = p.green(bleedColor)
+    const b = p.blue(bleedColor)
+    const maxAlpha = 0.35
+    const a = Math.min(255, 255 * bleedStrength * maxAlpha)
+    return { r, g, b, a }
+  }
+
   // Original doormat.js drawTextureOverlay function
   const drawTextureOverlayOriginal = (p: any, doormatData: any) => {
     const config = doormatData.config
@@ -1722,37 +1798,77 @@ export default function GeneratorPage() {
     p.pop()
   }
 
-  // Enhanced texture overlay with 10-level intensity progression
-  const drawTextureOverlayWithLevel = (p: any, doormatData: any, textureLevel: number) => {
+  /*
+   * Enhanced texture overlay with 10-level intensity progression.
+   * When DEBUG_BLEED_AGING is true: palette-based color bleed (dye diffusion) replaces grey aging.
+   * When false: original grey multiply overlay for comparison.
+   * ageFactor combines textureLevel and dirtLevel for bleed intensity (Stage 0 clean -> Stage 3 bloom).
+   */
+  const drawTextureOverlayWithLevel = (p: any, doormatData: any, textureLevel: number, dirtLevel: number = 0) => {
     const config = doormatData.config
+    const palette = doormatData.selectedPalette?.colors
+    const seed = doormatData.seed != null ? doormatData.seed : 42
 
-    // Scale all effects based on 10-level system (0-10)
-    const intensityMultiplier = textureLevel / 10 // 0.0 to 1.0
+    if (DEBUG_BLEED_AGING && palette && palette.length > 0) {
+      /* Palette bleed aging: dye diffusion, watercolor-style bloom. No grey; palette-derived colors only. */
+      const ageFactor = Math.min(1, textureLevel * 0.1 + dirtLevel * 0.2)
+      if (ageFactor <= 0) return
 
-    // Progressive intensity scaling
-    const hatchingIntensity = p.map(intensityMultiplier, 0, 1, 0, 120)  // 0 to 120 opacity
-    const reliefIntensity = p.map(intensityMultiplier, 0, 1, 0, 60)     // 0 to 60 opacity
-    const reliefThreshold = p.map(intensityMultiplier, 0, 1, 0.8, 0.3)  // 0.8 to 0.3 (more relief as wear increases)
-    const wearLineDensity = p.map(intensityMultiplier, 0, 1, 0.9, 0.4)   // 0.9 to 0.4 (more wear lines)
-    const fringeWear = textureLevel >= 5 // Fringe wear starts at level 5
-    const cornerDamage = textureLevel >= 8 // Corner damage starts at level 8
+      p.push()
+      p.blendMode(p.BLEND)
+
+      for (let x = 0; x < config.DOORMAT_WIDTH; x += 4) {
+        for (let y = 0; y < config.DOORMAT_HEIGHT; y += 4) {
+          const { r, g, b, a } = getBleedOverlayColor(p, palette, x, y, ageFactor, seed)
+          if (a > 0) {
+            p.fill(r, g, b, a)
+            p.noStroke()
+            p.rect(x, y, 4, 4)
+          }
+        }
+      }
+
+      /* Stage 2+: visible bleed halos - slightly larger diffusion cells at higher levels */
+      if (textureLevel >= 4) {
+        for (let x = 0; x < config.DOORMAT_WIDTH; x += 8) {
+          for (let y = 0; y < config.DOORMAT_HEIGHT; y += 8) {
+            const n = p.noise(x * 0.015, y * 0.015, seed + 1)
+            if (n > 0.5) {
+              const { r, g, b, a } = getBleedOverlayColor(p, palette, x, y, ageFactor * 0.6, seed + 1)
+              if (a > 0) {
+                p.fill(r, g, b, a * 0.5)
+                p.noStroke()
+                p.rect(x, y, 8, 8)
+              }
+            }
+          }
+        }
+      }
+
+      p.pop()
+      return
+    }
+
+    /* Original grey aging overlay (when DEBUG_BLEED_AGING is false) */
+    const intensityMultiplier = textureLevel / 10
+    const hatchingIntensity = p.map(intensityMultiplier, 0, 1, 0, 120)
+    const reliefIntensity = p.map(intensityMultiplier, 0, 1, 0, 60)
+    const reliefThreshold = p.map(intensityMultiplier, 0, 1, 0.8, 0.3)
+    const wearLineDensity = p.map(intensityMultiplier, 0, 1, 0.9, 0.4)
 
     p.push()
     p.blendMode(p.MULTIPLY)
 
-    // Base hatching effect - scales with level
     for (let x = 0; x < config.DOORMAT_WIDTH; x += 2) {
       for (let y = 0; y < config.DOORMAT_HEIGHT; y += 2) {
         const noiseVal = p.noise(x * 0.02, y * 0.02)
         const intensity = p.map(noiseVal, 0, 1, 0, hatchingIntensity)
-
         p.fill(0, 0, 0, intensity)
         p.noStroke()
         p.rect(x, y, 2, 2)
       }
     }
 
-    // Relief effect - more prominent with higher levels
     for (let x = 0; x < config.DOORMAT_WIDTH; x += 6) {
       for (let y = 0; y < config.DOORMAT_HEIGHT; y += 6) {
         const reliefNoise = p.noise(x * 0.03, y * 0.03)
@@ -1768,9 +1884,7 @@ export default function GeneratorPage() {
       }
     }
 
-    // Progressive wear patterns based on level
     if (textureLevel >= 1) {
-      // Level 1+: Basic wear lines
       for (let x = 0; x < config.DOORMAT_WIDTH; x += 12) {
         for (let y = 0; y < config.DOORMAT_HEIGHT; y += 12) {
           const wearNoise = p.noise(x * 0.008, y * 0.008)
@@ -1778,14 +1892,13 @@ export default function GeneratorPage() {
             const lineOpacity = p.map(textureLevel, 1, 10, 8, 25)
             p.fill(0, 0, 0, lineOpacity)
             p.noStroke()
-            p.rect(x, y, 12, 1) // Horizontal wear lines
+            p.rect(x, y, 12, 1)
           }
         }
       }
     }
 
     if (textureLevel >= 3) {
-      // Level 3+: Vertical wear patterns
       for (let x = 0; x < config.DOORMAT_WIDTH; x += 15) {
         for (let y = 0; y < config.DOORMAT_HEIGHT; y += 15) {
           const verticalNoise = p.noise(x * 0.006, y * 0.006)
@@ -1793,23 +1906,19 @@ export default function GeneratorPage() {
             const lineOpacity = p.map(textureLevel, 3, 10, 6, 20)
             p.fill(0, 0, 0, lineOpacity)
             p.noStroke()
-            p.rect(x, y, 1, 15) // Vertical wear lines
+            p.rect(x, y, 1, 15)
           }
         }
       }
     }
 
     if (textureLevel >= 5) {
-      // Level 5+: Fringe wear (edges of rug)
-      const fringeWidth = 20
       for (let x = 0; x < config.DOORMAT_WIDTH; x += 4) {
-        // Top fringe
         if (p.noise(x * 0.05) > 0.6) {
           p.fill(0, 0, 0, p.map(textureLevel, 5, 10, 10, 35))
           p.noStroke()
           p.rect(x, 0, 4, p.random(2, 6))
         }
-        // Bottom fringe
         if (p.noise(x * 0.05, 100) > 0.6) {
           p.fill(0, 0, 0, p.map(textureLevel, 5, 10, 10, 35))
           p.noStroke()
@@ -1819,7 +1928,6 @@ export default function GeneratorPage() {
     }
 
     if (textureLevel >= 7) {
-      // Level 7+: Patchy wear areas
       for (let x = 0; x < config.DOORMAT_WIDTH; x += 25) {
         for (let y = 0; y < config.DOORMAT_HEIGHT; y += 25) {
           const patchNoise = p.noise(x * 0.004, y * 0.004)
@@ -1834,7 +1942,6 @@ export default function GeneratorPage() {
     }
 
     if (textureLevel >= 9) {
-      // Level 9+: Heavy concentrated wear
       for (let x = 0; x < config.DOORMAT_WIDTH; x += 30) {
         for (let y = 0; y < config.DOORMAT_HEIGHT; y += 30) {
           const heavyNoise = p.noise(x * 0.003, y * 0.003)
@@ -1849,12 +1956,10 @@ export default function GeneratorPage() {
     }
 
     if (textureLevel === 10) {
-      // Level 10: Maximum degradation - add some highlight damage
       for (let x = 0; x < config.DOORMAT_WIDTH; x += 20) {
         for (let y = 0; y < config.DOORMAT_HEIGHT; y += 20) {
           const damageNoise = p.noise(x * 0.02, y * 0.02)
           if (damageNoise > 0.85) {
-            // Add some white highlights for extreme wear
             p.fill(255, 255, 255, 30)
             p.noStroke()
             p.rect(x, y, 20, 20)
