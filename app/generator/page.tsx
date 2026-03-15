@@ -1696,12 +1696,14 @@ export default function GeneratorPage() {
 
   /*
    * Perlin Color Diffusion System
-   * Aging changes visual structure: tighter patterns when new, wider diffusion when aged.
+   * All 10 texture levels produce visible differences; aging evolves gradually (no saturation at 5).
    * Rendering-only: no contract, RugData, or metadata changes.
    *
-   * - Noise scale lerp(0.025, 0.01, ageFactor): tighter when new, wider dye spread when aged.
-   * - Secondary threshold lerp(0.85, 0.55, ageFactor): more secondary palette colors over time.
-   * - Bleed strength: noise * pow(ageFactor, 1.4) * multiplier, clamp 0.6 for pattern clarity.
+   * - ageNorm = textureLevel / 10 drives all aging.
+   * - Noise scale lerp(0.025, 0.012, ageNorm): early levels small fiber bleed, high levels wider diffusion.
+   * - Bleed strength: noise * pow(ageNorm, 1.3) * multiplier, clamp 0.6.
+   * - Secondary threshold lerp(0.85, 0.5, ageNorm): mid/high levels introduce more secondary colors.
+   * - textureLevel > 6: large bloom diffusion added (noise 0.005 scale), clamp again.
    */
 
   /**
@@ -1739,20 +1741,26 @@ export default function GeneratorPage() {
   }
 
   /**
-   * Get bleed overlay color and alpha at (x, y). Perlin noise only; secondary palette mixing; no blur.
+   * Get bleed overlay color and alpha at (x, y). Normalized aging (ageNorm = textureLevel/10) so levels 1-10 evolve gradually.
    */
-  const getBleedOverlayColor = (p: any, doormatData: any, x: number, y: number, ageFactor: number, seed: number) => {
+  const getBleedOverlayColor = (p: any, doormatData: any, x: number, y: number, textureLevel: number, seed: number) => {
     const palette = doormatData.selectedPalette?.colors
     const stripeData = doormatData.stripeData || []
     if (!palette || palette.length === 0) return { r: 0, g: 0, b: 0, a: 0 }
 
-    const noiseScale = p.lerp(0.025, 0.01, ageFactor)
+    const ageNorm = textureLevel / 10
+    const noiseScale = p.lerp(0.025, 0.012, ageNorm)
     const noiseValue = p.noise(x * noiseScale, y * noiseScale, seed)
-    let bleedStrength = noiseValue * Math.pow(ageFactor, 1.4) * BLEED_STRENGTH_MULTIPLIER
+    let bleedStrength = noiseValue * Math.pow(ageNorm, 1.3) * BLEED_STRENGTH_MULTIPLIER
     bleedStrength = Math.min(Math.max(bleedStrength, 0), 0.6)
+    if (textureLevel > 6) {
+      const bloomNoise = p.noise(x * 0.005, y * 0.005, seed + 100)
+      bleedStrength += bloomNoise * (textureLevel - 6) * 0.05
+      bleedStrength = Math.min(bleedStrength, 0.6)
+    }
     if (bleedStrength <= 0) return { r: 0, g: 0, b: 0, a: 0 }
 
-    const secondaryThreshold = p.lerp(0.85, 0.55, ageFactor)
+    const secondaryThreshold = p.lerp(0.85, 0.5, ageNorm)
     const paletteIndexA = Math.floor(noiseValue * palette.length) % palette.length
     const paletteIndexB = (paletteIndexA + 1) % palette.length
     const colorA = p.color(palette[paletteIndexA])
@@ -1836,17 +1844,14 @@ export default function GeneratorPage() {
     const seed = doormatData.seed != null ? doormatData.seed : 42
 
     if (DEBUG_BLEED_AGING && palette && palette.length > 0) {
-      /* Stripe edge dye bleed: Perlin micro diffusion, edge bias, single overlay pass. */
-      let ageFactor = textureLevel * 0.15 + dirtLevel * 0.25
-      ageFactor = Math.min(ageFactor, 1)
-      if (ageFactor <= 0) return
+      if (textureLevel <= 0) return
 
       p.push()
       p.blendMode(p.BLEND)
 
       for (let x = 0; x < config.DOORMAT_WIDTH; x += 4) {
         for (let y = 0; y < config.DOORMAT_HEIGHT; y += 4) {
-          const { r, g, b, a } = getBleedOverlayColor(p, doormatData, x, y, ageFactor, seed)
+          const { r, g, b, a } = getBleedOverlayColor(p, doormatData, x, y, textureLevel, seed)
           if (a > 0) {
             p.fill(r, g, b, a)
             p.noStroke()
