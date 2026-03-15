@@ -42,6 +42,8 @@ const defaultPatternParams = {
  * Set to false to fall back to original grey texture overlay for comparison.
  */
 const DEBUG_BLEED_AGING = true
+/* Global tuning: multiplies final bleed strength for visibility. Keep >= 1. */
+const BLEED_STRENGTH_MULTIPLIER = 2.5
 import { useChainId } from 'wagmi'
 import { contractAddresses } from '@/lib/web3'
 import { getChainDisplayName } from '@/lib/networks'
@@ -1693,35 +1695,34 @@ export default function GeneratorPage() {
   }
 
   /*
-   * Textile Dye Diffusion System
-   * Simulates natural dye migration through woven fibers.
+   * Perlin Color Diffusion System
+   * Fine-grain textile variation with secondary palette mixing.
    * Rendering-only: no contract, RugData, or metadata changes.
    *
-   * Features:
-   * - Warp-direction diffusion (thread-following bleed)
-   * - Adjacent stripe color bleed (red + yellow -> orange, etc.)
-   * - Organic dye bloom spots (watercolor pigment pooling)
-   * - Age-dependent diffusion scale (older rugs bleed more)
+   * Uses noise(x * 0.02, y * 0.02) for fine grain; secondary hues when noise > 0.65;
+   * bleed strength clamped to 0.6; color bias toward original for harmony.
    */
 
   /**
    * Apply palette-based bleed aging to a single pixel color.
-   * Used when we have the underlying pixel; overlay uses getBleedOverlayColor instead.
+   * Perlin-controlled tint with secondary palette mixing; bias toward pixel color to avoid mud.
    */
   const applyPaletteBleedAging = (p: any, pixelColor: any, palette: string[], ageFactor: number, noise: number) => {
     if (!palette || palette.length === 0) return pixelColor
-    const bleedStrength = Math.min(1, ageFactor * noise)
+    const bleedNoise = noise
+    let bleedStrength = bleedNoise * ageFactor * BLEED_STRENGTH_MULTIPLIER
+    bleedStrength = Math.min(bleedStrength, 0.6)
     if (bleedStrength <= 0) return pixelColor
 
-    const idx = Math.floor(noise * palette.length * 1.7) % palette.length
-    const nextIdx = (idx + 1) % palette.length
-    let bleedColor = p.color(palette[idx])
-    if (noise > 0.8 && palette.length > 1) {
-      const other = p.color(palette[nextIdx])
-      bleedColor = p.lerpColor(bleedColor, other, 0.5)
-    }
-    const mixed = p.lerpColor(pixelColor, bleedColor, 0.6)
-    const blended = p.lerpColor(pixelColor, mixed, bleedStrength)
+    const paletteIndexA = Math.floor(noise * palette.length) % palette.length
+    const paletteIndexB = (paletteIndexA + 1) % palette.length
+    const colorA = p.color(palette[paletteIndexA])
+    const colorB = p.color(palette[paletteIndexB])
+    let bleedColor = noise > 0.65 && palette.length > 1
+      ? p.lerpColor(colorA, colorB, 0.5)
+      : colorA
+    bleedColor = p.lerpColor(pixelColor, bleedColor, 0.8)
+    const blended = p.lerpColor(pixelColor, bleedColor, bleedStrength)
     const r = p.red(blended)
     const g = p.green(blended)
     const b = p.blue(blended)
@@ -1737,57 +1738,36 @@ export default function GeneratorPage() {
   }
 
   /**
-   * Get bleed overlay color and alpha at (x, y) using textile dye diffusion.
-   * Uses warp-biased noise, adjacent-stripe colors, optional bloom, and age-dependent scale.
+   * Get bleed overlay color and alpha at (x, y). Perlin noise only; secondary palette mixing; no blur.
    */
   const getBleedOverlayColor = (p: any, doormatData: any, x: number, y: number, ageFactor: number, seed: number) => {
     const palette = doormatData.selectedPalette?.colors
     const stripeData = doormatData.stripeData || []
     if (!palette || palette.length === 0) return { r: 0, g: 0, b: 0, a: 0 }
 
-    /* Age-dependent diffusion scale: older rugs develop larger blooms (lower frequency). */
-    const diffusionScale = p.lerp(0.04, 0.01, ageFactor)
-    const warpNoise = p.noise(x * diffusionScale, seed)
-    const weftNoise = p.noise(y * diffusionScale, seed)
-    const diffusion = p.lerp(warpNoise, weftNoise, 0.3)
-
-    let bleedStrength = Math.min(1, ageFactor * diffusion)
+    const noiseValue = p.noise(x * 0.02, y * 0.02, seed)
+    let bleedStrength = noiseValue * ageFactor * BLEED_STRENGTH_MULTIPLIER
+    bleedStrength = Math.min(Math.max(bleedStrength, 0), 0.6)
     if (bleedStrength <= 0) return { r: 0, g: 0, b: 0, a: 0 }
 
-    /* Dye bloom spots: rare areas where pigment pools (watercolor-style). */
-    const bloomNoise = p.noise(x * 0.01, y * 0.01, seed + 999)
-    if (bloomNoise > 0.92) {
-      bleedStrength = Math.min(1, bleedStrength + ageFactor * 0.6)
-    }
+    const paletteIndexA = Math.floor(noiseValue * palette.length) % palette.length
+    const paletteIndexB = (paletteIndexA + 1) % palette.length
+    const colorA = p.color(palette[paletteIndexA])
+    const colorB = p.color(palette[paletteIndexB])
+    let bleedColor = noiseValue > 0.65 && palette.length > 1
+      ? p.lerpColor(colorA, colorB, 0.5)
+      : colorA
 
-    /* Bleed color from adjacent stripe first; fallback to palette. */
-    let stripeIndex = -1
+    let stripeColor: any = null
     for (let i = 0; i < stripeData.length; i++) {
       const s = stripeData[i]
       if (y >= s.y && y < s.y + s.height) {
-        stripeIndex = i
+        stripeColor = p.color(s.primaryColor)
         break
       }
     }
-
-    let bleedColor: any
-    if (stripeIndex >= 0 && stripeData.length > 0) {
-      const currentStripe = stripeData[stripeIndex]
-      const neighborStripe = stripeData[(stripeIndex + 1) % stripeData.length]
-      const neighborColor = p.color(neighborStripe.primaryColor)
-      if (diffusion > 0.8 && stripeData.length > 1) {
-        const currentColor = p.color(currentStripe.primaryColor)
-        bleedColor = p.lerpColor(currentColor, neighborColor, 0.5)
-      } else {
-        bleedColor = neighborColor
-      }
-    } else {
-      const idx = Math.floor(diffusion * palette.length * 1.7) % palette.length
-      const nextIdx = (idx + 1) % palette.length
-      bleedColor = p.color(palette[idx])
-      if (diffusion > 0.8 && palette.length > 1) {
-        bleedColor = p.lerpColor(bleedColor, p.color(palette[nextIdx]), 0.5)
-      }
+    if (stripeColor) {
+      bleedColor = p.lerpColor(stripeColor, bleedColor, 0.8)
     }
 
     let r = p.red(bleedColor)
@@ -1799,7 +1779,7 @@ export default function GeneratorPage() {
     g = Math.min(255, Math.max(0, g * scale))
     b = Math.min(255, Math.max(0, b * scale))
 
-    const maxAlpha = 0.35
+    const maxAlpha = 0.5
     const a = Math.min(255, 255 * bleedStrength * maxAlpha)
     return { r, g, b, a }
   }
@@ -1853,8 +1833,9 @@ export default function GeneratorPage() {
     const seed = doormatData.seed != null ? doormatData.seed : 42
 
     if (DEBUG_BLEED_AGING && palette && palette.length > 0) {
-      /* Textile dye diffusion: warp-direction bleed, adjacent-stripe colors, bloom spots. Single overlay pass. */
-      const ageFactor = Math.min(1, textureLevel * 0.1 + dirtLevel * 0.2)
+      /* Stripe edge dye bleed: Perlin micro diffusion, edge bias, single overlay pass. */
+      let ageFactor = textureLevel * 0.15 + dirtLevel * 0.25
+      ageFactor = Math.min(ageFactor, 1)
       if (ageFactor <= 0) return
 
       p.push()
