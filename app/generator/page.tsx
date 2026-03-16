@@ -101,6 +101,7 @@ export default function GeneratorPage() {
   const [lastTextureLevel, setLastTextureLevel] = useState(1) // Remember last non-zero texture level
   const [patinaLocked, setPatinaLocked] = useState(false)
   const [focusNewRow, setFocusNewRow] = useState(false)
+  const [noiseType, setNoiseType] = useState('perlin') // Patina algorithm for preview only; does not affect mint
   // Diamond frame aging (hardcoded - most impressive longevity)
   const [warpThickness, setWarpThickness] = useState(2) // Default warp thickness
 
@@ -174,6 +175,15 @@ export default function GeneratorPage() {
       }
     }
   }, [evolutionPhase, selectedMaskType, selectedFieldType])
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && (window as any).__DOORMAT_DATA__) {
+      ;(window as any).__DOORMAT_DATA__.noiseType = noiseType
+      if ((window as any).p5Instance) {
+        (window as any).p5Instance.redraw()
+      }
+    }
+  }, [noiseType])
 
   // Load punk data only when enabled
   useEffect(() => {
@@ -831,7 +841,8 @@ export default function GeneratorPage() {
         selectedMaskType: selectedMaskType,
         selectedFieldType: selectedFieldType,
         patternMask: doormatData.patternMask,
-        stripeField: doormatData.stripeField
+        stripeField: doormatData.stripeField,
+        noiseType: noiseType
       }
 
       // Keep legacy properties for backward compatibility
@@ -1741,6 +1752,53 @@ export default function GeneratorPage() {
   }
 
   /**
+   * Lightweight cellular (Worley) noise approximation; returns 0-1.
+   */
+  const cellularNoise = (p: any, x: number, y: number, seed: number): number => {
+    const gx = Math.floor(x)
+    const gy = Math.floor(y)
+    let minDist = 999
+    for (let i = -1; i <= 1; i++) {
+      for (let j = -1; j <= 1; j++) {
+        const px = gx + i + p.noise(gx + i, gy + j, seed)
+        const py = gy + j + p.noise(gx + i + 100, gy + j + 100, seed)
+        const d = p.dist(x, y, px, py)
+        minDist = Math.min(minDist, d)
+      }
+    }
+    return Math.min(1, minDist * 0.4)
+  }
+
+  /**
+   * Patina noise value 0-1 by algorithm. Default PERLIN if noiseType undefined (mint unchanged).
+   */
+  const getPatinaNoise = (p: any, x: number, y: number, scale: number, seed: number, noiseType: string): number => {
+    const nt = noiseType || 'perlin'
+    switch (nt) {
+      case 'fbm': {
+        let v = p.noise(x * scale, y * scale, seed) +
+          p.noise(x * scale * 2, y * scale * 2, seed + 1) * 0.5 +
+          p.noise(x * scale * 4, y * scale * 4, seed + 2) * 0.25
+        return v / 1.75
+      }
+      case 'warp': {
+        const warpX = p.noise(x * 0.01, y * 0.01, seed)
+        const warpY = p.noise(x * 0.01 + 100, y * 0.01 + 100, seed)
+        return p.noise((x + warpX * 40) * scale, (y + warpY * 40) * scale, seed)
+      }
+      case 'worley':
+        return cellularNoise(p, x * scale, y * scale, seed)
+      case 'thread': {
+        const warpNoise = p.noise(x * scale, seed)
+        const weftNoise = p.noise(y * scale, seed + 1)
+        return warpNoise * 0.7 + weftNoise * 0.3
+      }
+      default:
+        return p.noise(x * scale, y * scale, seed)
+    }
+  }
+
+  /**
    * Get bleed overlay color and alpha at (x, y). Normalized aging (ageNorm = textureLevel/10) so levels 1-10 evolve gradually.
    */
   const getBleedOverlayColor = (p: any, doormatData: any, x: number, y: number, textureLevel: number, seed: number) => {
@@ -1748,13 +1806,14 @@ export default function GeneratorPage() {
     const stripeData = doormatData.stripeData || []
     if (!palette || palette.length === 0) return { r: 0, g: 0, b: 0, a: 0 }
 
+    const noiseType = doormatData.noiseType || 'perlin'
     const ageNorm = textureLevel / 10
     const noiseScale = p.lerp(0.025, 0.012, ageNorm)
-    const noiseValue = p.noise(x * noiseScale, y * noiseScale, seed)
+    const noiseValue = getPatinaNoise(p, x, y, noiseScale, seed, noiseType)
     let bleedStrength = noiseValue * Math.pow(ageNorm, 1.3) * BLEED_STRENGTH_MULTIPLIER
     bleedStrength = Math.min(Math.max(bleedStrength, 0), 0.6)
     if (textureLevel > 6) {
-      const bloomNoise = p.noise(x * 0.005, y * 0.005, seed + 100)
+      const bloomNoise = getPatinaNoise(p, x, y, 0.005, seed + 100, noiseType)
       bleedStrength += bloomNoise * (textureLevel - 6) * 0.05
       bleedStrength = Math.min(bleedStrength, 0.6)
     }
@@ -3507,6 +3566,23 @@ export default function GeneratorPage() {
                     <Shuffle className="w-4 h-4" />
                     RANDOMISE
                   </button>
+                </div>
+
+                {/* Patina Algorithm - preview only, does not affect mint */}
+                <div className="space-y-1">
+                  <label className="text-amber-700 text-sm font-mono font-medium">Patina Algorithm</label>
+                  <select
+                    value={noiseType}
+                    onChange={(e) => setNoiseType(e.target.value)}
+                    className="w-full px-3 py-2 text-sm rounded border border-amber-600/50 bg-gray-900 text-amber-200 font-mono focus:ring-1 focus:ring-amber-500 focus:border-transparent"
+                    title="Visual testing only; does not affect mint data"
+                  >
+                    <option value="perlin">Perlin</option>
+                    <option value="fbm">Fractal (fBm)</option>
+                    <option value="warp">Domain Warp</option>
+                    <option value="worley">Worley / Cellular</option>
+                    <option value="thread">Thread Noise</option>
+                  </select>
                 </div>
 
                 {/* Stacked Layout: Text Embedding (Top) | Systems (Bottom) */}
