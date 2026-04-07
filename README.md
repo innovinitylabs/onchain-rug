@@ -2,9 +2,9 @@
 
 Generative on-chain rug NFTs: a Next.js application for minting, previewing, maintaining, and exploring rugs tied to EVM smart contracts, with server-side rendering helpers and marketplace-oriented APIs.
 
-## Innovative features and resume highlights
+## Innovative features
 
-Points below summarize what is relatively unusual or strong interview material in this codebase. Use them on a resume or portfolio only for parts you actually shipped or maintain.
+
 
 ### Distinctive technical choices
 
